@@ -1,0 +1,517 @@
+/**
+ * AI 命理对话 — 结果页集成模块 v3.0
+ * 支持：前2次免费 + 次数包(¥9.9/10次) + 月会员(¥29.9/30天) + 老用户迁移
+ */
+(function() {
+  'use strict';
+
+  // ===== 状态 =====
+  var AI = {
+    credits: 0,
+    code: '',
+    messages: [],
+    isWaiting: false,
+    drawerOpen: false,
+    pageType: '',
+    isMonthly: false,       // 月会员标记
+    monthlyExpires: '',     // 会员到期时间
+    freeRemaining: 0,       // 免费剩余次数
+    freeId: '',             // 免费用户标识
+  };
+
+  var $fab, $badge, $backdrop, $drawer, $messages, $input, $sendBtn, $emptyState,
+      $creditsLabel, $buyBar, $inputWrap, $redeemRow, $statusLine;
+
+  // ===== 初始化 =====
+  function init() {
+    // 检测页面类型
+    if (typeof _bazi !== 'undefined' || typeof _params !== 'undefined') {
+      AI.pageType = 'result';
+    } else if (typeof window._hepanData !== 'undefined') {
+      AI.pageType = 'hepan';
+    }
+
+    // 初始化免费用户标识
+    initFreeId();
+
+    waitForData(function() {
+      injectUI();
+      restoreSession();
+      migrateLegacyUsers();
+    });
+  }
+
+  function initFreeId() {
+    var id = localStorage.getItem('ai_free_id');
+    if (!id) {
+      id = 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      localStorage.setItem('ai_free_id', id);
+    }
+    AI.freeId = id;
+    // 从 localStorage 读取已用次数
+    var used = parseInt(localStorage.getItem('ai_free_used') || '0');
+    var maxFree = 2;
+    AI.freeRemaining = Math.max(0, maxFree - used);
+  }
+
+  function useFreeCredit() {
+    var used = parseInt(localStorage.getItem('ai_free_used') || '0') + 1;
+    localStorage.setItem('ai_free_used', used);
+    AI.freeRemaining = Math.max(0, 2 - used);
+  }
+
+  function waitForData(cb) {
+    var maxWait = 50, attempts = 0;
+    function check() {
+      attempts++;
+      var ready = false;
+      if (AI.pageType === 'result') ready = (typeof _bazi !== 'undefined' && _bazi !== null);
+      else if (AI.pageType === 'hepan') ready = (typeof window._hepanData !== 'undefined' && window._hepanData !== null);
+      else ready = true;
+      if (ready) { cb(); return; }
+      if (attempts > maxWait) { cb(); return; }
+      setTimeout(check, 100);
+    }
+    check();
+  }
+
+  // ===== 注入 HTML =====
+  function injectUI() {
+    var html = '';
+
+    html += '<div id="aiFab" class="ai-fab" onclick="window._aiToggle()" title="AI 命理咨询">AI';
+    html += '<span class="ai-fab-badge" id="aiFabBadge"></span></div>';
+    html += '<div class="ai-drawer-backdrop" id="aiBackdrop" onclick="window._aiClose()"></div>';
+
+    html += '<div class="ai-drawer" id="aiDrawer">';
+    html += '<div class="ai-drawer-handle"></div>';
+    html += '<div class="ai-drawer-header">';
+    html += '<span class="ai-drawer-title">🏮 AI 命理师</span>';
+    html += '<span class="ai-drawer-credits" id="aiCreditsLabel">未激活</span>';
+    html += '<button class="ai-drawer-close" onclick="window._aiClose()">✕</button>';
+    html += '</div>';
+
+    // 消息区
+    html += '<div class="chat-messages-wrap" id="aiMessages">';
+    html += '<div class="chat-empty-wrap" id="aiEmpty">';
+    html += '<div class="empty-icon">🏮</div>';
+    html += '<h4>知时 AI 命理师</h4>';
+    html += '<p id="aiEmptyDesc">首次体验免费，可提问 2 次</p>';
+    html += '<code id="aiEmptyCode">免费体验中 · 无需付费</code>';
+    html += '</div></div>';
+
+    // 购买条（合并选项）
+    html += '<div class="chat-buy-bar" id="aiBuyBar" style="display:none;flex-wrap:wrap;gap:8px;justify-content:center">';
+    html += '<button class="buy-btn" onclick="window._aiBuy(\'credit_pack\')" style="font-size:12px">💎 ¥9.9 买10次</button>';
+    html += '<button class="buy-btn" onclick="window._aiBuy(\'monthly\')" style="font-size:12px">👑 ¥29.9 包月30天</button>';
+    html += '<span class="buy-hint" style="width:100%;text-align:center">买10次适合偶尔使用 · 包月适合深度咨询</span>';
+    html += '</div>';
+
+    // 兑换码
+    html += '<div class="redeem-row" id="aiRedeemRow">';
+    html += '<input type="text" id="aiRedeemInput" placeholder="输入兑换码" maxlength="32">';
+    html += '<button onclick="window._aiRedeem()">激活</button>';
+    html += '</div>';
+
+    // 输入区
+    html += '<div class="chat-input-wrap" id="aiInputWrap">';
+    html += '<textarea id="aiInput" placeholder="输入你的问题..." rows="1" onkeydown="window._aiKey(event)"></textarea>';
+    html += '<button class="chat-send" id="aiSendBtn" onclick="window._aiSend()">▶</button>';
+    html += '</div>';
+
+    html += '</div>'; // .ai-drawer
+
+    var container = document.createElement('div');
+    container.innerHTML = html;
+    while (container.firstChild) document.body.appendChild(container.firstChild);
+
+    // 缓存 DOM
+    $fab = document.getElementById('aiFab');
+    $badge = document.getElementById('aiFabBadge');
+    $backdrop = document.getElementById('aiBackdrop');
+    $drawer = document.getElementById('aiDrawer');
+    $messages = document.getElementById('aiMessages');
+    $input = document.getElementById('aiInput');
+    $sendBtn = document.getElementById('aiSendBtn');
+    $emptyState = document.getElementById('aiEmpty');
+    $creditsLabel = document.getElementById('aiCreditsLabel');
+    $buyBar = document.getElementById('aiBuyBar');
+    $inputWrap = document.getElementById('aiInputWrap');
+    $redeemRow = document.getElementById('aiRedeemRow');
+    $statusLine = document.getElementById('aiEmptyCode');
+
+    window._aiToggle = toggle;
+    window._aiClose = close;
+    window._aiOpen = open;
+    window._aiSend = sendMessage;
+    window._aiBuy = startPayment;
+    window._aiRedeem = redeemCode;
+    window._aiKey = handleKey;
+
+    // 初始状态：显示免费
+    updateFreeDisplay();
+  }
+
+  // ===== 抽屉控制 =====
+  function open() { if (!$drawer) return; $drawer.classList.add('open'); $backdrop.classList.add('open'); AI.drawerOpen = true; if ($input) $input.focus(); }
+  function close() { if (!$drawer) return; $drawer.classList.remove('open'); $backdrop.classList.remove('open'); AI.drawerOpen = false; }
+  function toggle() { AI.drawerOpen ? close() : open(); }
+
+  // ===== 发送消息 =====
+  function sendMessage() {
+    if (AI.isWaiting) return;
+    var text = ($input && $input.value || '').trim();
+    if (!text) return;
+
+    if (AI.credits <= 0 && !AI.isMonthly && AI.freeRemaining <= 0) {
+      if ($buyBar) $buyBar.style.display = 'flex';
+      return;
+    }
+
+    addMessage('user', text);
+    if ($input) $input.value = '';
+    showTyping();
+    AI.isWaiting = true;
+    updateSendBtn();
+
+    var chartData = buildChartData();
+    var body = { question: text, chartData: chartData, history: AI.messages.slice(-6) };
+
+    // 免费模式
+    if (AI.freeRemaining > 0 && !AI.isMonthly && AI.credits <= 0) {
+      body.free_mode = true;
+      body.free_id = AI.freeId;
+    } else {
+      body.code = AI.code;
+    }
+
+    fetch('/api/ai-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      hideTyping();
+      if (data.error) {
+        if (data.free_exhausted) {
+          useFreeCredit(); // 确保本地也归零
+          updateFreeDisplay();
+          showBuyBar();
+        }
+        addMessage('ai', '抱歉，' + data.error);
+      } else {
+        addMessage('ai', data.reply);
+        if (data.is_free) {
+          useFreeCredit();
+          updateFreeDisplay();
+          if (data.free_remaining <= 0) showBuyBar();
+        } else if (data.is_monthly) {
+          AI.isMonthly = true;
+          AI.monthlyExpires = data.monthly_expires || '';
+          updateMonthlyDisplay();
+        } else if (data.credits_left !== undefined) {
+          AI.credits = data.credits_left;
+          updateCreditsDisplay(data.credits_left);
+        }
+      }
+      AI.isWaiting = false;
+      updateSendBtn();
+    })
+    .catch(function(e) {
+      hideTyping();
+      addMessage('ai', '抱歉，网络出现异常，请稍后重试。');
+      AI.isWaiting = false;
+      updateSendBtn();
+    });
+  }
+
+  // ===== 支付 =====
+  function startPayment(mode) {
+    mode = mode || 'credit_pack';
+    var label = mode === 'monthly' ? '¥29.9 包月30天' : '¥9.9 买10次';
+
+    fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: mode, money: mode === 'monthly' ? 29.9 : 9.9, name: label })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { alert('创建订单失败：' + data.error); return; }
+      if (data.pay_url) {
+        localStorage.setItem('ai_pending_order', data.out_trade_no);
+        localStorage.setItem('ai_pending_mode', mode);
+        window.open(data.pay_url, '_blank');
+        startPolling(data.out_trade_no, mode);
+        // 提示用户
+        if ($emptyState) {
+          document.getElementById('aiEmptyDesc').textContent = '支付完成后自动激活，请稍候...';
+        }
+      } else if (data.test_mode) {
+        var testCode = prompt('【测试模式】输入兑换码（留空自动生成）：');
+        if (!testCode) testCode = 'TEST' + Math.random().toString(36).slice(2, 8).toUpperCase();
+        if (mode === 'monthly') {
+          handleMonthlySuccess(testCode, '30天后');
+        } else {
+          handlePaymentSuccess(testCode, 10);
+        }
+      } else {
+        localStorage.setItem('ai_pending_order', data.out_trade_no);
+        localStorage.setItem('ai_pending_mode', mode);
+        startPolling(data.out_trade_no, mode);
+      }
+    })
+    .catch(function(e) { alert('网络错误，请重试'); });
+  }
+
+  function startPolling(outTradeNo, mode) {
+    var attempts = 0, maxAttempts = 120;
+    var poll = setInterval(function() {
+      attempts++;
+      if (attempts > maxAttempts) { clearInterval(poll); return; }
+      fetch('/api/check-order?out_trade_no=' + outTradeNo)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.paid) {
+            clearInterval(poll);
+            localStorage.removeItem('ai_pending_order');
+            localStorage.removeItem('ai_pending_mode');
+            if (data._type === 'monthly' || mode === 'monthly') {
+              handleMonthlySuccess(data.code, '30天后');
+            } else {
+              handlePaymentSuccess(data.code, data.credits || 10);
+            }
+          }
+        }).catch(function() {});
+    }, 2000);
+  }
+
+  function handlePaymentSuccess(code, credits) {
+    AI.code = code;
+    AI.isMonthly = false;
+    AI.credits = credits;
+    localStorage.setItem('ai_chat_code', code);
+    localStorage.setItem('ai_chat_type', 'credits');
+
+    updateCreditsDisplay(credits);
+    showBuyBar(); // 更新购买条
+    if ($statusLine) $statusLine.textContent = '已激活 · 剩余 ' + credits + ' 次';
+    if ($emptyState) document.getElementById('aiEmptyDesc').textContent = '基于你的八字命盘，尽情提问吧';
+
+    if (AI.messages.length === 0) addGreeting();
+  }
+
+  function handleMonthlySuccess(code, expires) {
+    AI.code = code;
+    AI.isMonthly = true;
+    AI.monthlyExpires = expires;
+    localStorage.setItem('ai_chat_code', code);
+    localStorage.setItem('ai_chat_type', 'monthly');
+    localStorage.setItem('ai_chat_expires', expires);
+
+    updateMonthlyDisplay();
+    showBuyBar();
+    if ($statusLine) $statusLine.textContent = '👑 会员有效 · ' + expires;
+    if ($emptyState) document.getElementById('aiEmptyDesc').textContent = '会员期间无限次提问';
+
+    if (AI.messages.length === 0) addGreeting();
+  }
+
+  // ===== 状态显示 =====
+  function updateFreeDisplay() {
+    if ($badge) {
+      if (AI.freeRemaining > 0) {
+        $badge.textContent = AI.freeRemaining;
+        $badge.style.display = 'flex';
+        $badge.style.background = '#2d8a4a'; // 绿色表示免费
+      } else if (AI.credits <= 0 && !AI.isMonthly) {
+        $badge.style.display = 'none';
+      }
+    }
+    if ($creditsLabel) {
+      if (AI.freeRemaining > 0) {
+        $creditsLabel.innerHTML = '免费体验 <strong style="color:#4adf7a">剩' + AI.freeRemaining + '次</strong>';
+      }
+    }
+    if ($statusLine && AI.freeRemaining > 0) {
+      $statusLine.textContent = '免费体验中 · 还剩 ' + AI.freeRemaining + ' 次';
+    }
+    // 输入框始终可用（免费模式不需要先购买）
+    if ($inputWrap) $inputWrap.style.display = 'flex';
+    if ($input) $input.disabled = false;
+    if ($sendBtn) $sendBtn.disabled = false;
+    updateSendBtn();
+  }
+
+  function updateCreditsDisplay(count) {
+    AI.credits = count;
+    if ($badge) {
+      if (count > 0) { $badge.textContent = count; $badge.style.display = 'flex'; $badge.style.background = ''; }
+      else { $badge.style.display = 'none'; }
+    }
+    if ($creditsLabel) {
+      if (count > 0) $creditsLabel.innerHTML = '剩余 <strong>' + count + '</strong> 次';
+      else if (AI.code && !AI.isMonthly) $creditsLabel.innerHTML = '<span style="color:var(--red)">次数已用完</span>';
+    }
+    if (count > 0) { if ($inputWrap) $inputWrap.style.display = 'flex'; if ($buyBar) $buyBar.style.display = 'none'; }
+    updateSendBtn();
+  }
+
+  function updateMonthlyDisplay() {
+    if ($badge) { $badge.textContent = '∞'; $badge.style.display = 'flex'; $badge.style.background = '#8a6d28'; }
+    if ($creditsLabel) $creditsLabel.innerHTML = '👑 <strong>会员</strong> · 无限次';
+    if ($inputWrap) $inputWrap.style.display = 'flex';
+    if ($input) $input.disabled = false;
+    if ($sendBtn) $sendBtn.disabled = false;
+    updateSendBtn();
+  }
+
+  function showBuyBar() {
+    if (AI.isMonthly) {
+      if ($buyBar) $buyBar.style.display = 'none';
+      return;
+    }
+    if (AI.freeRemaining > 0) {
+      if ($buyBar) $buyBar.style.display = 'flex'; // 显示购买选项
+      return;
+    }
+    if (AI.credits <= 0) {
+      if ($buyBar) $buyBar.style.display = 'flex';
+      if ($inputWrap && AI.code) $inputWrap.style.display = 'flex';
+      if ($input && AI.code) $input.disabled = true;
+    }
+  }
+
+  function updateSendBtn() {
+    if ($sendBtn) {
+      var canSend = AI.freeRemaining > 0 || AI.isMonthly || AI.credits > 0;
+      $sendBtn.disabled = AI.isWaiting || !canSend;
+    }
+  }
+
+  // ===== 排盘上下文（保持不变） =====
+  function buildChartData() {
+    if (AI.pageType === 'result') return buildResultContext();
+    if (AI.pageType === 'hepan') return buildHePanContext();
+    return null;
+  }
+
+  function buildResultContext() {
+    var data = {};
+    if (typeof _params !== 'undefined' && _params) {
+      data.birthInfo = { year: _params.year, month: _params.month, day: _params.day, hour: _params.hour, gender: _params.gender };
+      if (_params.clock !== undefined) data.birthInfo.clock = _params.clock;
+    }
+    if (typeof _bazi !== 'undefined' && _bazi) {
+      data.fourPillars = {};
+      ['year','month','day','hour'].forEach(function(pos) {
+        var p = _bazi[pos]; if (!p) return;
+        data.fourPillars[pos] = { gan: p.gan, zhi: p.zhi, ganWX: p.wuXing ? p.wuXing.gan : '', zhiWX: p.wuXing ? p.wuXing.zhi : '', shiShenGan: p.shiShen ? p.shiShen.gan : '', shiShenZhi: p.shiShen ? p.shiShen.zhi : '', nayin: _bazi.naYin || '', cangGan: (p.cangGan || []).map(function(cg) { return { gan: cg }; }) };
+      });
+      if (_bazi.wuXingCount) data.wuXingCount = _bazi.wuXingCount;
+      if (_bazi.day && _bazi.day.gan) {
+        data.dayMaster = { gan: _bazi.day.gan, wuXing: _bazi.day.wuXing ? _bazi.day.wuXing.gan : '' };
+        data.dayMaster.yinYang = ['甲','丙','戊','庚','壬'].indexOf(_bazi.day.gan) >= 0 ? '阳' : '阴';
+      }
+      if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calcDayMasterStrength) {
+        try { data.dayMasterStrength = BaZiCalculator.calcDayMasterStrength(_bazi); } catch(e) {}
+      }
+    }
+    if (typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list) {
+      data.daYun = { direction: _daYunData.isForward ? '顺行' : '逆行', startAge: _daYunData.qiYunAge, cycles: _daYunData.list.map(function(dy) { return { gan: dy.gan, zhi: dy.zhi, displayAge: dy.displayAge, startYear: dy.startYear, endYear: dy.endYear }; }) };
+      if (typeof _currentDaYunIndex !== 'undefined') data.currentDaYunIndex = _currentDaYunIndex;
+    }
+    data.currentYear = new Date().getFullYear();
+    if (typeof _nativeShenSha !== 'undefined' && _nativeShenSha) data.shenSha = _nativeShenSha.map(function(s) { return { name: s.name || s }; });
+    return data;
+  }
+
+  function buildHePanContext() {
+    var hd = window._hepanData; if (!hd) return null;
+    return { type: 'hepan', relationType: hd.relationType || '情侣', score: hd.result ? hd.result.score : null, person1: extractPerson(hd.p1), person2: extractPerson(hd.p2) };
+  }
+
+  function extractPerson(p) {
+    if (!p) return null; var d = {};
+    if (p.pillars) { d.fourPillars = {}; ['year','month','day','hour'].forEach(function(l,i) { if (p.pillars[i]) d.fourPillars[l] = { gan: p.pillars[i].gan, zhi: p.pillars[i].zhi, nayin: p.pillars[i].nayin || '' }; }); }
+    if (p.dayGan) d.dayMaster = { gan: p.dayGan, wuXing: p.dmWuxing || '' };
+    if (p.wuxing) d.wuXingCount = p.wuxing;
+    if (p.shenSha) d.shenSha = p.shenSha.map(function(s) { return { name: s.name || s }; });
+    return d;
+  }
+
+  function addGreeting() {
+    var cd = buildChartData();
+    var g = '🧧 **AI 命理师已就绪**\n\n';
+    if (cd && cd.dayMaster) { g += '你的日主为**' + cd.dayMaster.gan + '**' + (cd.dayMaster.wuXing ? '（' + cd.dayMaster.wuXing + '）' : '') + (cd.dayMasterStrength ? '，命局**' + cd.dayMasterStrength + '**' : '') + '。\n\n可以问我任何命理问题：\n• 我的喜用神是什么？\n• 财运事业如何？\n• 今年运势怎么样？\n• 婚姻感情如何？'; }
+    else { g += '你可以问我任何八字命理问题。'; }
+    if (AI.isMonthly) g = '👑 **会员已激活**\n\n' + g;
+    if (AI.freeRemaining > 0) g += '\n\n💡 你还有 ' + AI.freeRemaining + ' 次免费提问机会';
+    addMessage('ai', g);
+  }
+
+  // ===== 消息 UI =====
+  function addMessage(role, content) { AI.messages.push({ role: role, content: content }); if ($emptyState) $emptyState.style.display = 'none'; var div = document.createElement('div'); div.className = 'message ' + (role === 'user' ? 'user' : 'ai'); var a = document.createElement('div'); a.className = 'msg-avatar'; a.textContent = role === 'user' ? '我' : '师'; var b = document.createElement('div'); b.className = 'msg-bubble'; b.innerHTML = renderMarkdown(content); div.appendChild(a); div.appendChild(b); $messages.appendChild(div); $messages.scrollTop = $messages.scrollHeight; }
+  function renderMarkdown(t) { if (!t) return ''; var h = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); h = h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>'); h = h.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>'); return '<p>'+h+'</p>'; }
+  function showTyping() { hideTyping(); var d = document.createElement('div'); d.className = 'typing-indicator'; d.id = 'aiTyping'; d.innerHTML = '<span></span><span></span><span></span>'; $messages.appendChild(d); $messages.scrollTop = $messages.scrollHeight; }
+  function hideTyping() { var e = document.getElementById('aiTyping'); if (e) e.remove(); }
+  function handleKey(ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); sendMessage(); } }
+
+  // ===== 兑换码 =====
+  function redeemCode() {
+    var inp = document.getElementById('aiRedeemInput'); var cd = (inp && inp.value || '').trim(); if (!cd) { alert('请输入兑换码'); return; }
+    fetch('/api/credits?code=' + encodeURIComponent(cd)).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.error) { alert(d.error); return; }
+      if (d.credits > 0) { AI.code = cd; localStorage.setItem('ai_chat_code', cd); updateCreditsDisplay(d.credits); if ($buyBar) $buyBar.style.display = 'none'; handlePaymentSuccess(cd, d.credits); }
+      else if (d.credits === -1) { AI.code = cd; AI.isMonthly = true; localStorage.setItem('ai_chat_code', cd); localStorage.setItem('ai_chat_type', 'monthly'); updateMonthlyDisplay(); if ($buyBar) $buyBar.style.display = 'none'; handleMonthlySuccess(cd, '激活中'); }
+      else { alert('该兑换码已用完或已过期'); }
+    }).catch(function() { alert('网络错误'); });
+  }
+
+  // ===== 会话恢复 =====
+  function restoreSession() {
+    var pending = localStorage.getItem('ai_pending_order');
+    if (pending) { var mode = localStorage.getItem('ai_pending_mode') || 'credit_pack'; startPolling(pending, mode); return; }
+
+    var savedCode = localStorage.getItem('ai_chat_code');
+    var savedType = localStorage.getItem('ai_chat_type');
+    if (savedCode) {
+      fetch('/api/credits?code=' + encodeURIComponent(savedCode)).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.credits > 0) { AI.code = savedCode; updateCreditsDisplay(d.credits); }
+        else if (d.credits === -1) { AI.code = savedCode; AI.isMonthly = true; AI.monthlyExpires = localStorage.getItem('ai_chat_expires') || ''; updateMonthlyDisplay(); }
+        else { AI.code = savedCode; updateCreditsDisplay(0); }
+        showBuyBar();
+      }).catch(function() {});
+    }
+    // 恢复免费状态
+    updateFreeDisplay();
+  }
+
+  // ===== 老用户迁移 =====
+  function migrateLegacyUsers() {
+    var oldToken = localStorage.getItem('bazi_paywall');
+    if (!oldToken) return;
+    // 检查是否已经迁移过
+    if (localStorage.getItem('ai_migrated')) return;
+
+    try {
+      var payload = oldToken.split('.')[0];
+      // 简单解码
+      var decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      if (decoded && decoded.exp && decoded.exp > Date.now()) {
+        // 老付费用户：给一个有价值的迁移提示
+        var migratedCode = 'MIG' + Math.random().toString(36).slice(2, 6).toUpperCase();
+        // 弹窗提示
+        var migrateMsg = '🎁 **老用户权益升级**\n\n感谢你之前的支持！作为早期付费用户，你已获得：\n• 30 天免费会员（价值 ¥29.9）\n• 20 次额外 AI 提问额度\n\n你的专属兑换码：**' + migratedCode + '**\n\n请在兑换码输入框中激活。';
+        addMessage('ai', migrateMsg);
+        open();
+        localStorage.setItem('ai_migrated', '1');
+      }
+    } catch(e) { /* 忽略解析错误 */ }
+  }
+
+  // ===== 启动 =====
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
+  else { init(); }
+})();

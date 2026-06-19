@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#06060e;font-family:"Noto Serif SC",serif;color:#e0d8c8}
+
+.g{color:#e0c860}
+.gb{background:rgba(212,175,55,0.07)}
+.gl{border:1px solid rgba(212,175,55,0.16)}
+.gline{height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.22),transparent)}
+.tag{display:inline-block;padding:4px 14px;border-radius:20px;font-size:13px;letter-spacing:3px;font-weight:600}
+.orb{position:absolute;border-radius:50%;filter:blur(120px);pointer-events:none}
+.scene{position:absolute;top:0;bottom:220px;left:0;right:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3;padding:0 60px}
+.photo-row{display:flex;gap:10px;justify-content:center;width:100%;max-width:960px}
+.photo-cell{overflow:hidden;border-radius:12px;padding:0}
+.photo-cell img{width:100%;height:100%;object-fit:contain;display:block;background:#0d0d18}
+
+.f-item{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.03);text-align:left}
+.f-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center;line-height:1}
+.f-body{flex:1}
+.f-title{font-size:18px;color:#e0c860;font-weight:600;letter-spacing:1px}
+.f-desc{font-size:14px;color:rgba(180,170,150,.42);margin-top:3px;line-height:1.6}
+
+.card{padding:18px;border-radius:14px;text-align:center}
+
+/* BG */
+@keyframes drift1{0%{transform:translate(0,0)}33%{transform:translate(40px,-30px)}66%{transform:translate(-30px,20px)}100%{transform:translate(0,0)}}
+@keyframes drift2{0%{transform:translate(0,0)}33%{transform:translate(-50px,20px)}66%{transform:translate(20px,-40px)}100%{transform:translate(0,0)}}
+@keyframes drift3{0%{transform:translate(0,0)}33%{transform:translate(30px,40px)}66%{transform:translate(-40px,-20px)}100%{transform:translate(0,0)}}
+@keyframes pulse1{0%,100%{opacity:.06}50%{opacity:.14}}
+@keyframes pulse2{0%,100%{opacity:.04}50%{opacity:.1}}
+@keyframes floatUp1{0%{transform:translateY(0) scaleX(1);opacity:.07}50%{transform:translateY(-60px) scaleX(1.3);opacity:.15}100%{transform:translateY(-120px) scaleX(1);opacity:0}}
+
+.ai-v1 #ai-text{font-family:"Noto Serif SC",serif;font-size:220px;font-weight:900;letter-spacing:40px;color:#e0c860;text-shadow:0 0 100px rgba(224,200,96,.10)}
+.ai-v2 #ai-text{font-family:"ZCOOL XiaoWei","Noto Serif SC",serif;font-size:240px;font-weight:400;letter-spacing:30px;color:#e0c860;text-shadow:0 4px 20px rgba(0,0,0,.5),0 0 80px rgba(224,200,96,.12);line-height:.85}
+.ai-v3 #ai-text{font-family:"Noto Serif SC",serif;font-size:200px;font-weight:200;letter-spacing:50px;color:#d8be58;text-shadow:0 0 40px rgba(200,180,100,.06)}
+.ai-v4 #ai-text{font-family:"Noto Serif SC",serif;font-size:250px;font-weight:900;letter-spacing:20px;color:transparent;-webkit-text-stroke:3px #e0c860;text-shadow:none}
+.ai-v5 #ai-text{font-family:"Noto Serif SC",serif;font-size:200px;font-weight:700;letter-spacing:35px;color:#fff8e0;text-shadow:0 0 30px rgba(224,200,96,.6),0 0 80px rgba(224,200,96,.35),0 0 140px rgba(224,200,96,.15)}
+
+/* ── B1: text glow breathing ── */
+@keyframes glowBreathe{0%,100%{text-shadow:0 0 20px rgba(224,200,96,.08)}50%{text-shadow:0 0 40px rgba(224,200,96,.2),0 0 80px rgba(224,200,96,.06)}}
+.glow-text{animation:glowBreathe 3s ease-in-out infinite}
+
+/* ── B2: card border flowing light ── */
+@keyframes borderFlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+.flow-border{position:relative;overflow:hidden}
+.flow-border::after{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(120deg,transparent 30%,rgba(224,200,96,.3) 50%,transparent 70%);background-size:200% 100%;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:borderFlow 3s linear infinite;pointer-events:none}
+
+/* ── A1: gold particles floating ── */
+@keyframes particleRise{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.6}80%{opacity:.2}100%{transform:translateY(-600px) translateX(var(--dx));opacity:0}}
+@keyframes particleDrift{0%{transform:translateY(0) translateX(0);opacity:0}15%{opacity:.5}85%{opacity:.15}100%{transform:translateY(-400px) translateX(var(--dx));opacity:0}}
+.gold-particle{position:absolute;width:var(--sz);height:var(--sz);border-radius:50%;background:radial-gradient(circle,rgba(224,200,96,.7),transparent);pointer-events:none;z-index:2;animation:particleRise var(--dur) ease-out var(--delay) infinite;left:var(--x);top:var(--y)}
+
+/* ── D1: ancient chars ── */
+@keyframes charFade{0%{opacity:0;transform:translateY(10px) scale(.8)}15%{opacity:.12}85%{opacity:.06}100%{opacity:0;transform:translateY(-60px) scale(1.1)}}
+.ancient-char{position:absolute;font-family:"Noto Serif SC",serif;font-size:var(--fs);color:rgba(200,180,140,.15);pointer-events:none;z-index:1;animation:charFade var(--dur) ease-in-out var(--delay) infinite;left:var(--x);top:var(--y)}
+</style>
+</head>
+<body class="ai-v1">
+
+<div data-hf-id="hf-tu05" id="root" data-composition-id="main" data-start="0" data-duration="104" data-width="1080" data-height="1920">
+
+<!-- ═══════════ BACKGROUND ═══════════ -->
+<div data-hf-id="hf-mlmg" class="orb clip" data-start="0" data-duration="104" data-track-index="50" style="width:700px;height:700px;top:10%;left:5%;background:radial-gradient(circle,rgba(224,200,96,.1),transparent);animation:drift1 18s infinite;opacity:1"></div>
+<div data-hf-id="hf-f30t" class="orb clip" data-start="0" data-duration="104" data-track-index="50" style="width:500px;height:500px;bottom:15%;right:0;background:radial-gradient(circle,rgba(160,140,80,.07),transparent);animation:drift2 22s infinite;opacity:1"></div>
+<div data-hf-id="hf-wbym" class="orb clip" data-start="0" data-duration="104" data-track-index="50" style="width:400px;height:400px;top:45%;left:40%;background:radial-gradient(circle,rgba(140,160,200,.06),transparent);animation:drift3 20s infinite;opacity:1"></div>
+<div data-hf-id="hf-cqtm" class="orb clip" data-start="0" data-duration="104" data-track-index="50" style="width:350px;height:350px;top:70%;left:50%;background:radial-gradient(circle,rgba(200,220,240,.05),transparent);animation:pulse1 6s infinite;opacity:1"></div>
+<div data-hf-id="hf-djc7" class="orb clip" data-start="0" data-duration="104" data-track-index="50" style="width:280px;height:280px;top:20%;right:15%;background:radial-gradient(circle,rgba(200,180,100,.06),transparent);animation:pulse2 8s infinite;opacity:1"></div>
+<div data-hf-id="hf-a9bk" class="clip" data-start="1" data-duration="15" data-track-index="50" style="position:absolute;left:50%;top:15%;width:1px;height:160px;background:linear-gradient(to bottom,transparent,rgba(212,175,55,.12),transparent);animation:floatUp1 8s infinite;z-index:0;pointer-events:none"></div>
+<div data-hf-id="hf-c2og" class="clip" data-start="3" data-duration="15" data-track-index="50" style="position:absolute;left:30%;top:20%;width:1px;height:120px;background:linear-gradient(to bottom,transparent,rgba(212,175,55,.08),transparent);animation:floatUp1 10s infinite;z-index:0;pointer-events:none"></div>
+
+<!-- ═══════════ TRANSITION HELEPR ═══════════ -->
+<div data-hf-id="hf-ow03" id="t0" class="clip" data-start="-0.5" data-duration="0.5" data-track-index="100" style="position:absolute;inset:0;z-index:10;pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 1: OPENING 0-4s ═══════════ -->
+<div data-hf-id="hf-9x6x" id="s1" class="scene clip" data-start="0" data-duration="4" data-track-index="1">
+ <div data-hf-id="hf-81i5" style="text-align:center">
+  <div data-hf-id="hf-3v99" id="ai-text" class="glow-text">AI</div>
+  <div data-hf-id="hf-2sq3" id="s1-sub" style="font-size:56px;letter-spacing:16px;font-weight:400;color:#d8be58;line-height:1.5;margin-top:20px">真的能代替<br data-hf-id="hf-x5px">传统大师吗</div>
+  <div data-hf-id="hf-m4h0" class="gline" style="width:200px;margin:36px auto 0"></div>
+  <div data-hf-id="hf-xto8" style="font-size:22px;color:rgba(180,170,150,.28);letter-spacing:8px;margin-top:20px;font-weight:300">知时 · 功能更新</div>
+ </div>
+</div>
+<div data-hf-id="hf-ep3b" id="t1" class="clip" data-start="3.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 2: FEEDBACK + PHOTOS 4-20s ═══════════ -->
+<div data-hf-id="hf-ux7c" id="s2" class="scene clip" data-start="4" data-duration="16" data-track-index="2">
+ <div data-hf-id="hf-zha6" style="width:100%;max-width:940px;display:flex;flex-direction:column;gap:10px;align-items:center">
+  <div data-hf-id="hf-567l" style="text-align:center">
+   <div data-hf-id="hf-h7vm" class="tag gb gl" style="color:#7ec87e;font-size:14px">用户共建</div>
+   <div data-hf-id="hf-xdvk" class="glow-text" style="font-size:32px;color:#e0c860;letter-spacing:8px;margin-top:6px;font-weight:700">来自用户的真实声音</div>
+  </div>
+  <!-- Feedback UI mini -->
+  <div data-hf-id="hf-0zkk" id="s2-ui" class="card" style="width:100%;background:rgba(18,18,35,.85);border:1px solid rgba(255,255,255,.04);border-radius:14px;padding:12px 20px;text-align:left">
+   <div data-hf-id="hf-idzd" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <div data-hf-id="hf-k6kd" style="width:28px;height:28px;border-radius:50%;background:rgba(140,200,120,.15);display:flex;align-items:center;justify-content:center;font-size:14px">💬</div>
+    <div data-hf-id="hf-8zip" style="font-size:15px;color:#e0c860;font-weight:600">意见反馈</div>
+   </div>
+   <div data-hf-id="hf-k4cw" style="display:flex;gap:6px;margin-bottom:8px">
+    <span data-hf-id="hf-vaxf" style="padding:3px 10px;border-radius:20px;background:rgba(140,200,120,.06);border:1px solid rgba(140,200,120,.12);font-size:10px;color:#7ec87e">🐛 问题</span>
+    <span data-hf-id="hf-kdc6" style="padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:10px;color:rgba(180,170,150,.35)">💡 建议</span>
+    <span data-hf-id="hf-x1rj" style="padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:10px;color:rgba(180,170,150,.35)">👍 评价</span>
+   </div>
+   <div data-hf-id="hf-43vh" style="padding:7px 10px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.03);font-size:11px;color:rgba(180,170,150,.18);margin-bottom:6px">写下你的想法…</div>
+   <div data-hf-id="hf-95dk" style="text-align:right"><span data-hf-id="hf-583i" style="padding:4px 14px;border-radius:6px;background:rgba(140,200,120,.1);border:1px solid rgba(140,200,120,.15);font-size:10px;color:#7ec87e">提交</span></div>
+  </div>
+  <!-- Photos: 3 feedback top row, 4 suggestions bottom row -->
+  <div data-hf-id="hf-f13v" class="photo-row">
+   <div data-hf-id="hf-gi0m" id="s2-p1" class="photo-cell" style="flex:1;border:2px solid rgba(140,200,120,.15);max-height:420px"><img data-hf-id="hf-v6cr" src="./assets/feedback-1.jpg" style="min-height:400px"></div>
+   <div data-hf-id="hf-225b" id="s2-p2" class="photo-cell" style="flex:1;border:2px solid rgba(140,200,120,.15);max-height:420px"><img data-hf-id="hf-jc1i" src="./assets/feedback-2.jpg" style="min-height:400px"></div>
+   <div data-hf-id="hf-jrfg" id="s2-p3" class="photo-cell" style="flex:1;border:2px solid rgba(140,200,120,.15);max-height:420px"><img data-hf-id="hf-4i85" src="./assets/feedback-3.jpg" style="min-height:400px"></div>
+  </div>
+  <div data-hf-id="hf-8ecb" class="photo-row">
+   <div data-hf-id="hf-omdl" id="s2-p4" class="photo-cell" style="flex:1;border:2px solid rgba(212,175,55,.10);max-height:360px"><img data-hf-id="hf-qmzf" src="./assets/suggest-1.jpg" style="min-height:340px"></div>
+   <div data-hf-id="hf-oxt0" id="s2-p5" class="photo-cell" style="flex:1;border:2px solid rgba(212,175,55,.10);max-height:360px"><img data-hf-id="hf-a94y" src="./assets/suggest-2.jpg" style="min-height:340px"></div>
+   <div data-hf-id="hf-9fg3" id="s2-p6" class="photo-cell" style="flex:1;border:2px solid rgba(212,175,55,.10);max-height:360px"><img data-hf-id="hf-g3qh" src="./assets/suggest-3.jpg" style="min-height:340px"></div>
+   <div data-hf-id="hf-7iwm" id="s2-p7" class="photo-cell" style="flex:1;border:2px solid rgba(212,175,55,.10);max-height:360px"><img data-hf-id="hf-s73k" src="./assets/suggest-4.jpg" style="min-height:340px"></div>
+  </div>
+ </div>
+</div>
+<div data-hf-id="hf-oe71" id="t2" class="clip" data-start="19.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 3: HEPAN OVERVIEW 20-44s ═══════════ -->
+<div data-hf-id="hf-yw01" id="s3" class="scene clip" data-start="20" data-duration="24" data-track-index="3">
+ <div data-hf-id="hf-eau6" style="width:100%;max-width:920px;display:flex;flex-direction:column;gap:12px;align-items:center">
+  <div data-hf-id="hf-6d4o" style="text-align:center">
+   <div data-hf-id="hf-ob32" class="tag" style="background:rgba(140,200,140,.06);border:1px solid rgba(140,200,140,.12);color:#7ec87e;font-size:14px">核心新增</div>
+   <div data-hf-id="hf-lyzz" class="glow-text" style="font-size:38px;color:#e0c860;letter-spacing:10px;margin-top:4px;font-weight:700">八字合盘</div>
+   <div data-hf-id="hf-736v" style="font-size:15px;color:rgba(180,170,150,.26);margin-top:4px;letter-spacing:2px">情侣 · 朋友 · 夫妻 三模式</div>
+  </div>
+  <div data-hf-id="hf-e0m9" style="display:flex;gap:10px;width:100%">
+   <div data-hf-id="hf-avjr" id="s3-m1" class="card gl gb" style="flex:1;padding:14px 10px">
+    <div data-hf-id="hf-rdvs" style="font-size:26px">💕</div>
+    <div data-hf-id="hf-o5ar" style="font-size:20px;color:#e0c860;font-weight:600;letter-spacing:2px">情侣</div>
+    <div data-hf-id="hf-r797" style="display:flex;gap:5px;justify-content:center;margin:8px 0">
+     <div data-hf-id="hf-u4zn" style="padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-nttd" style="font-size:8px;color:rgba(180,170,150,.2)">契合</div><div data-hf-id="hf-4ify" style="font-size:17px;color:#e0c860;font-weight:700">72</div></div>
+     <div data-hf-id="hf-e1j7" style="padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-eq21" style="font-size:8px;color:rgba(180,170,150,.2)">互补</div><div data-hf-id="hf-6ixc" style="font-size:17px;color:#e0c860;font-weight:700">85</div></div>
+    </div>
+    <div data-hf-id="hf-qcfu" style="font-size:11px;color:rgba(180,170,150,.38);line-height:1.5">吸引力评估<br data-hf-id="hf-rsrt">默契指数计算</div>
+   </div>
+   <div data-hf-id="hf-m8f2" id="s3-m2" class="card gl gb" style="flex:1;padding:14px 10px">
+    <div data-hf-id="hf-g2az" style="font-size:26px">🤝</div>
+    <div data-hf-id="hf-0ny1" style="font-size:20px;color:#e0c860;font-weight:600;letter-spacing:2px">朋友</div>
+    <div data-hf-id="hf-o7qz" style="display:flex;gap:5px;justify-content:center;margin:8px 0">
+     <div data-hf-id="hf-dn86" style="padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-9fx1" style="font-size:8px;color:rgba(180,170,150,.2)">比劫</div><div data-hf-id="hf-9961" style="font-size:17px;color:#e0c860;font-weight:700">68</div></div>
+     <div data-hf-id="hf-d8x5" style="padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-s6c8" style="font-size:8px;color:rgba(180,170,150,.2)">平衡</div><div data-hf-id="hf-8hi8" style="font-size:17px;color:#e0c860;font-weight:700">78</div></div>
+    </div>
+    <div data-hf-id="hf-p632" style="font-size:11px;color:rgba(180,170,150,.38);line-height:1.5">五行图谱<br data-hf-id="hf-szow">默契加分</div>
+   </div>
+  </div>
+  <div data-hf-id="hf-rta0" id="s3-m3" class="card" style="width:100%;padding:18px 16px;border-radius:16px;background:rgba(212,175,55,.03);border:1px solid rgba(212,175,55,.12)">
+   <div data-hf-id="hf-xpwq" style="font-size:34px;margin-bottom:2px">💍</div>
+   <div data-hf-id="hf-xcj2" style="font-size:26px;color:#e0c860;font-weight:700;letter-spacing:4px;margin-bottom:10px">夫妻模式</div>
+   <div data-hf-id="hf-lxcx" style="display:flex;gap:8px;justify-content:center;margin-bottom:10px">
+    <div data-hf-id="hf-yopv" style="padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-mpuk" style="font-size:8px;color:rgba(180,170,150,.18)">夫妻宫</div><div data-hf-id="hf-56xn" style="font-size:21px;font-weight:700;color:#e0c860">81</div></div>
+    <div data-hf-id="hf-aher" style="padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-4dxg" style="font-size:8px;color:rgba(180,170,150,.18)">互补</div><div data-hf-id="hf-8row" style="font-size:21px;font-weight:700;color:#e0c860">88</div></div>
+    <div data-hf-id="hf-a33q" style="padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-c0sl" style="font-size:8px;color:rgba(180,170,150,.18)">和谐</div><div data-hf-id="hf-5m6x" style="font-size:21px;font-weight:700;color:#e0c860">76</div></div>
+    <div data-hf-id="hf-9osp" style="padding:7px 11px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04)"><div data-hf-id="hf-0sd1" style="font-size:8px;color:rgba(180,170,150,.18)">平衡</div><div data-hf-id="hf-6cwh" style="font-size:21px;font-weight:700;color:#e0c860">90</div></div>
+   </div>
+   <div data-hf-id="hf-7pmj" style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center">
+    <span data-hf-id="hf-4la4" class="tag gb gl" style="color:#e0c860;font-size:11px">🎯 综合评分</span>
+    <span data-hf-id="hf-7il5" class="tag gb gl" style="color:#e0c860;font-size:11px">☯ 五行互补</span>
+    <span data-hf-id="hf-29hn" class="tag gb gl" style="color:#e0c860;font-size:11px">⚡ 相合相克</span>
+    <span data-hf-id="hf-pwcq" class="tag gb gl" style="color:#e0c860;font-size:11px">🔑 相处密码</span>
+    <span data-hf-id="hf-1cov" class="tag gb gl" style="color:#e0c860;font-size:11px">📅 未来三年</span>
+    <span data-hf-id="hf-7q1c" class="tag gb gl" style="color:#e0c860;font-size:11px">✅ 宜忌指南</span>
+   </div>
+  </div>
+  <!-- Case study -->
+  <div data-hf-id="hf-zpie" id="s3-case" class="card" style="width:100%;padding:14px;border-radius:14px;background:rgba(20,25,40,.7);border:1px solid rgba(100,180,200,.10)">
+   <div data-hf-id="hf-5rrw" style="display:flex;align-items:center;gap:10px">
+    <div data-hf-id="hf-r8u2" style="text-align:center;flex:1">
+     <div data-hf-id="hf-rmgd" style="font-size:11px;color:rgba(100,160,200,.3);margin-bottom:4px">乾造 1995-06-15</div>
+     <div data-hf-id="hf-tbqa" style="display:flex;gap:3px;justify-content:center"><span data-hf-id="hf-p9yb" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">乙亥</span><span data-hf-id="hf-oznd" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">壬午</span><span data-hf-id="hf-9twl" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">乙巳</span><span data-hf-id="hf-d43s" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">丙戌</span></div>
+    </div>
+    <div data-hf-id="hf-5ytn" style="text-align:center"><div data-hf-id="hf-fn37" style="font-size:38px;font-weight:900;color:#e0c860">78</div><div data-hf-id="hf-i5xn" style="font-size:8px;color:rgba(180,170,150,.25)">缘分</div></div>
+    <div data-hf-id="hf-hezi" style="text-align:center;flex:1">
+     <div data-hf-id="hf-4d8m" style="font-size:11px;color:rgba(200,120,140,.3);margin-bottom:4px">坤造 1997-03-22</div>
+     <div data-hf-id="hf-r1c6" style="display:flex;gap:3px;justify-content:center"><span data-hf-id="hf-siav" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">丁丑</span><span data-hf-id="hf-ajeg" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">癸卯</span><span data-hf-id="hf-0hww" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">甲寅</span><span data-hf-id="hf-39p5" style="padding:3px 5px;border-radius:4px;background:rgba(255,255,255,.015);font-size:10px;color:#e0c860">丁卯</span></div>
+    </div>
+   </div>
+   <div data-hf-id="hf-n1ku" class="gline" style="width:140px;margin:8px auto 0"></div>
+   <div data-hf-id="hf-b6uh" style="display:flex;gap:4px;justify-content:center;margin-top:5px"><span data-hf-id="hf-3fhb" style="font-size:9px;color:rgba(180,170,150,.2);padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.015)">日柱81</span><span data-hf-id="hf-7itj" style="font-size:9px;color:rgba(180,170,150,.2);padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.015)">五行72</span><span data-hf-id="hf-1bm1" style="font-size:9px;color:rgba(180,170,150,.2);padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.015)">甲己合</span><span data-hf-id="hf-45j4" style="font-size:9px;color:rgba(180,170,150,.2);padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.015)">寅亥合</span></div>
+  </div>
+  <div data-hf-id="hf-jdzu" id="s3-wisdom" style="text-align:center;margin-top:2px"><div data-hf-id="hf-9vqt" style="font-size:16px;color:rgba(200,180,140,.26);letter-spacing:4px;font-style:italic;font-weight:300">缘分如织 · 命局如镜 · 知命而不认命</div></div>
+ </div>
+</div>
+<div data-hf-id="hf-iemn" id="t3" class="clip" data-start="43.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 4: HEPAN DETAILS 44-58s ═══════════ -->
+<div data-hf-id="hf-x54o" id="s4" class="scene clip" data-start="44" data-duration="14" data-track-index="4">
+ <div data-hf-id="hf-lynt" style="width:100%;max-width:880px;display:flex;flex-direction:column;gap:8px;align-items:center;padding-top:10px">
+  <div data-hf-id="hf-3zai" style="text-align:center">
+   <div data-hf-id="hf-9iu2" class="tag" style="background:rgba(140,200,140,.06);border:1px solid rgba(140,200,140,.12);color:#7ec87e;font-size:14px">功能详解</div>
+   <div data-hf-id="hf-bc4h" class="glow-text" style="font-size:32px;color:#e0c860;letter-spacing:8px;margin-top:4px;font-weight:700">结构化分析</div>
+  </div>
+  <div data-hf-id="hf-6iwu" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-z809" class="f-icon">🎯</div><div data-hf-id="hf-vm1r" class="f-body"><div data-hf-id="hf-lj8d" class="f-title">综合评分</div><div data-hf-id="hf-n0zk" class="f-desc">基于十天干生克制化+十二地支刑冲合害，日柱契合度、五行平衡度、宫位匹配度三维加权输出0-100缘分指数</div></div></div>
+  <div data-hf-id="hf-f40y" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-3jfp" class="f-icon">☯</div><div data-hf-id="hf-d6fz" class="f-body"><div data-hf-id="hf-whb8" class="f-title">五行互补分析</div><div data-hf-id="hf-pqrv" class="f-desc">结合双方八字中各五行旺衰分布，判断「金木相成」「水火既济」等互补格局，精确计算五行互补得分</div></div></div>
+  <div data-hf-id="hf-fibz" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-jtmz" class="f-icon">⚡</div><div data-hf-id="hf-cs4y" class="f-body"><div data-hf-id="hf-g67x" class="f-title">相合与相克之处</div><div data-hf-id="hf-vfct" class="f-desc">筛查双方四柱天干五合与地支六合/三合/六冲/六害/相刑，标注化学反应与潜在摩擦点</div></div></div>
+  <div data-hf-id="hf-fwn0" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-9zns" class="f-icon">⭐</div><div data-hf-id="hf-cdtx" class="f-body"><div data-hf-id="hf-pgit" class="f-title">喜用神分析</div><div data-hf-id="hf-latz" class="f-desc">推算双方日主旺衰，确定喜用忌神。喜用相近则价值观趋同，一方喜用恰为另一方忌神则需多一分包容</div></div></div>
+  <div data-hf-id="hf-gay1" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-5hrc" class="f-icon">🔗</div><div data-hf-id="hf-f5z4" class="f-body"><div data-hf-id="hf-f9ne" class="f-title">日柱契合度</div><div data-hf-id="hf-nzvn" class="f-desc">日柱为夫妻宫所在，通过日干生克关系与日支刑冲合害判定相处基本模式与和谐度</div></div></div>
+  <div data-hf-id="hf-gp92" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-33x6" class="f-icon">🔑</div><div data-hf-id="hf-ero3" class="f-body"><div data-hf-id="hf-3cgm" class="f-title">相处密码</div><div data-hf-id="hf-oflk" class="f-desc">根据双方十神配置与性格画像，生成专属沟通建议与相处策略——理解彼此天性差异才是长久之道</div></div></div>
+  <div data-hf-id="hf-h3k3" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-0hni" class="f-icon">📅</div><div data-hf-id="hf-edd2" class="f-body"><div data-hf-id="hf-h7zb" class="f-title">未来三年关键节点</div><div data-hf-id="hf-6etb" class="f-desc">结合双方大运流年走势，标注关键年份运势转折点：哪些年适合推进关系、哪些年需要多些耐心</div></div></div>
+  <div data-hf-id="hf-lju8" class="s4-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-g307" class="f-icon">✅</div><div data-hf-id="hf-dz21" class="f-body"><div data-hf-id="hf-92a1" class="f-title">宜忌指南</div><div data-hf-id="hf-5wuc" class="f-desc">从五行、方位、季节、颜色等多维度给出实用建议——宏观指导配合微观操作，让缘分更顺畅</div></div></div>
+ </div>
+</div>
+<div data-hf-id="hf-vd35" id="t4" class="clip" data-start="57.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 5: CALENDAR 58-73s ═══════════ -->
+<div data-hf-id="hf-x26y" id="s5" class="scene clip" data-start="58" data-duration="15" data-track-index="5">
+ <div data-hf-id="hf-2lr1" style="width:100%;max-width:880px;display:flex;flex-direction:column;gap:14px;align-items:center">
+  <div data-hf-id="hf-3kzh" style="text-align:center">
+   <div data-hf-id="hf-13ei" class="tag gb gl" style="color:#e0c860;font-size:14px">体验升级</div>
+   <div data-hf-id="hf-0ibr" class="glow-text" style="font-size:36px;color:#e0c860;letter-spacing:8px;margin-top:4px;font-weight:700">农历公历智能转换</div>
+   <div data-hf-id="hf-q05k" style="font-size:14px;color:rgba(180,170,150,.26);margin-top:4px;letter-spacing:2px">再也不用自己查表了</div>
+  </div>
+  <div data-hf-id="hf-wys8" id="s5-cal" class="card" style="width:100%;padding:22px 18px;border-radius:16px;background:rgba(18,22,35,.85);border:1px solid rgba(212,175,55,.10)">
+   <div data-hf-id="hf-uey6" style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px">
+    <div data-hf-id="hf-66b6" style="padding:12px 22px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);text-align:center">
+     <div data-hf-id="hf-1fm3" style="font-size:10px;color:rgba(180,170,150,.2)">公历</div>
+     <div data-hf-id="hf-227z" style="font-size:20px;color:#e0c860;font-weight:600;margin-top:4px">1995-06-15</div>
+    </div>
+    <div data-hf-id="hf-kdc3" style="display:flex;flex-direction:column;align-items:center;gap:4px"><span data-hf-id="hf-r7fp" style="font-size:24px;color:rgba(224,200,96,.25)">↻</span><span data-hf-id="hf-d3dm" style="font-size:9px;color:rgba(200,180,120,.12)">转换</span></div>
+    <div data-hf-id="hf-1cm5" style="padding:12px 22px;border-radius:10px;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.14);text-align:center">
+     <div data-hf-id="hf-0v2z" style="font-size:10px;color:rgba(180,170,150,.2)">农历</div>
+     <div data-hf-id="hf-l719" style="font-size:20px;color:#e0c860;font-weight:600;margin-top:4px">乙亥年五月十八</div>
+    </div>
+   </div>
+   <div data-hf-id="hf-p10a" class="gline" style="width:100px;margin:0 auto 8px"></div>
+   <div data-hf-id="hf-bbhu" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+    <span data-hf-id="hf-uwwg" class="tag gb gl" style="color:rgba(200,180,140,.32);font-size:10px">阴阳历互转</span>
+    <span data-hf-id="hf-8cth" class="tag gb gl" style="color:rgba(200,180,140,.32);font-size:10px">节气自动校正</span>
+    <span data-hf-id="hf-ehqe" class="tag gb gl" style="color:rgba(200,180,140,.32);font-size:10px">真太阳时校准</span>
+   </div>
+  </div>
+  <div data-hf-id="hf-acyd" id="s5-wisdom" style="text-align:center"><div data-hf-id="hf-8rcf" style="font-size:16px;color:rgba(200,180,140,.26);letter-spacing:4px;font-style:italic;font-weight:300">天干为引 · 地支为根 · 精准合历</div></div>
+ </div>
+</div>
+<div data-hf-id="hf-zab9" id="t5" class="clip" data-start="72.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 6: FEEDBACK 73-83s ═══════════ -->
+<div data-hf-id="hf-a1te" id="s6" class="scene clip" data-start="73" data-duration="10" data-track-index="6">
+ <div data-hf-id="hf-a5uf" style="width:100%;max-width:860px;display:flex;flex-direction:column;gap:14px;align-items:center">
+  <div data-hf-id="hf-4rwk" style="text-align:center">
+   <div data-hf-id="hf-uqzi" class="tag gb gl" style="color:#e0c860;font-size:14px">体验升级</div>
+   <div data-hf-id="hf-2lw1" class="glow-text" style="font-size:36px;color:#e0c860;letter-spacing:8px;margin-top:4px;font-weight:700">反馈机制</div>
+   <div data-hf-id="hf-h0xd" style="font-size:14px;color:rgba(180,170,150,.26);margin-top:4px;letter-spacing:2px">你的声音 · 我们真的会听</div>
+  </div>
+  <div data-hf-id="hf-m770" id="s6-fb" class="card" style="width:100%;padding:20px 18px;border-radius:16px;background:rgba(18,22,35,.85);border:1px solid rgba(140,200,120,.10);text-align:left">
+   <div data-hf-id="hf-0st8" style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <div data-hf-id="hf-lv9j" style="width:34px;height:34px;border-radius:50%;background:rgba(140,200,120,.15);display:flex;align-items:center;justify-content:center;font-size:16px">💬</div>
+    <div data-hf-id="hf-yeow"><div data-hf-id="hf-279f" style="font-size:17px;color:#e0c860;font-weight:600">意见反馈</div><div data-hf-id="hf-66ud" style="font-size:10px;color:rgba(180,170,150,.22);margin-top:2px">每条分析结果下方均可提交</div></div>
+   </div>
+   <div data-hf-id="hf-dek3" style="display:flex;gap:6px;margin-bottom:10px"><span data-hf-id="hf-s7jx" style="padding:5px 14px;border-radius:20px;background:rgba(140,200,120,.08);border:1px solid rgba(140,200,120,.14);font-size:11px;color:#7ec87e">🐛 报告问题</span><span data-hf-id="hf-ij37" style="padding:5px 14px;border-radius:20px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:11px;color:rgba(180,170,150,.35)">💡 功能建议</span><span data-hf-id="hf-evp9" style="padding:5px 14px;border-radius:20px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:11px;color:rgba(180,170,150,.35)">👍 体验评价</span></div>
+   <div data-hf-id="hf-0uvj" style="padding:10px 14px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.03);font-size:12px;color:rgba(180,170,150,.16);margin-bottom:8px;min-height:40px">描述你的使用体验、遇到的问题、或希望加入的新功能…</div>
+   <div data-hf-id="hf-mxjk" style="text-align:right"><span data-hf-id="hf-6oe2" style="padding:6px 20px;border-radius:8px;background:rgba(140,200,120,.1);border:1px solid rgba(140,200,120,.18);font-size:12px;color:#7ec87e;letter-spacing:2px">提交反馈</span></div>
+  </div>
+  <div data-hf-id="hf-kws4" id="s6-wisdom" style="text-align:center"><div data-hf-id="hf-b3uk" style="font-size:16px;color:rgba(200,180,140,.26);letter-spacing:4px;font-style:italic;font-weight:300">每一条反馈 · 都被认真对待</div></div>
+ </div>
+</div>
+<div data-hf-id="hf-3sap" id="t6" class="clip" data-start="82.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 7: OVERVIEW 83-95s ═══════════ -->
+<div data-hf-id="hf-vamv" id="s7" class="scene clip" data-start="83" data-duration="12" data-track-index="7">
+ <div data-hf-id="hf-8xal" style="width:100%;max-width:880px;display:flex;flex-direction:column;gap:8px;align-items:center;padding-top:10px">
+  <div data-hf-id="hf-4dlj" style="text-align:center">
+   <div data-hf-id="hf-9xx6" class="tag gb gl" style="color:#e0c860;font-size:14px">平台概览</div>
+   <div data-hf-id="hf-trtp" style="font-size:32px;color:#e0c860;letter-spacing:8px;margin-top:4px;font-weight:700">一站完成</div>
+  </div>
+  <div data-hf-id="hf-up67" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-vvz1" class="f-icon">🧍</div><div data-hf-id="hf-aeas" class="f-body"><div data-hf-id="hf-ddhm" class="f-title">日主性格画像</div><div data-hf-id="hf-ddlj" class="f-desc">以日干五行+十神配置推演先天性情——例如乙木日主柔韧细腻，善借势而为、以柔克刚</div></div></div>
+  <div data-hf-id="hf-nc3z" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-x5om" class="f-icon">💍</div><div data-hf-id="hf-9zzr" class="f-body"><div data-hf-id="hf-xdmu" class="f-title">婚姻感情分析</div><div data-hf-id="hf-s4cl" class="f-desc">定位配偶星所在宫位+婚姻宫支藏关系，结合流年桃花判断正缘时机与感情走势</div></div></div>
+  <div data-hf-id="hf-mxsy" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-yclp" class="f-icon">💰</div><div data-hf-id="hf-dttp" class="f-body"><div data-hf-id="hf-en8a" class="f-title">财运事业分析</div><div data-hf-id="hf-766l" class="f-desc">财星旺衰与日主强弱之配比，结合行业五行宜忌给出事业方向建议</div></div></div>
+  <div data-hf-id="hf-mjhx" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-rclv" class="f-icon">🔮</div><div data-hf-id="hf-e84q" class="f-body"><div data-hf-id="hf-y5l2" class="f-title">今年运势解读</div><div data-hf-id="hf-1vaa" class="f-desc">当年流年干支对照原局，算出流年十神配置与神煞吉凶，逐月标记关键节点</div></div></div>
+  <div data-hf-id="hf-pbn4" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-2h6n" class="f-icon">📊</div><div data-hf-id="hf-emfr" class="f-body"><div data-hf-id="hf-xzxx" class="f-title">大运流年推演</div><div data-hf-id="hf-qu7e" class="f-desc">十年大运+五年流年逐段推算，标出大运转换年份，让你对人生节奏心中有数</div></div></div>
+  <div data-hf-id="hf-oxc3" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-mnq1" class="f-icon">🌿</div><div data-hf-id="hf-f0qs" class="f-body"><div data-hf-id="hf-ky87" class="f-title">五行调理与缺失补救</div><div data-hf-id="hf-e9fn" class="f-desc">统计五行出现频次，从颜色、方位、职业、佩戴饰品等维度给出平衡建议</div></div></div>
+  <div data-hf-id="hf-oj12" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-r0th" class="f-icon">👨‍👩‍👧</div><div data-hf-id="hf-ff1t" class="f-body"><div data-hf-id="hf-ketm" class="f-title">父母关系解读</div><div data-hf-id="hf-c99e" class="f-desc">父星与母星旺衰及宫位关系，结合日主强弱与喜用忌神分析原生家庭影响</div></div></div>
+  <div data-hf-id="hf-o4q1" class="s7-detail f-item flow-border" style="width:100%"><div data-hf-id="hf-03ch" class="f-icon">📄</div><div data-hf-id="hf-ftcu" class="f-body"><div data-hf-id="hf-o4f8" class="f-title">分析报告导出</div><div data-hf-id="hf-49nr" class="f-desc">以上全部内容一键导出，内含日主性格、婚姻感情、财运事业、今年运势等完整模块</div></div></div>
+ </div>
+</div>
+<div data-hf-id="hf-3npv" id="t7" class="clip" data-start="94.5" data-duration="1" data-track-index="100" style="position:absolute;inset:0;z-index:10;background:radial-gradient(ellipse at center,rgba(6,6,14,0),rgba(6,6,14,.95) 80%);pointer-events:none;opacity:0"></div>
+
+<!-- ═══════════ SCENE 8: CLOSING 95-104s ═══════════ -->
+<div data-hf-id="hf-igto" id="s8" class="scene clip" data-start="95" data-duration="9" data-track-index="8">
+ <div data-hf-id="hf-8qyu" style="text-align:center">
+  <div data-hf-id="hf-1kpw" style="font-size:18px;color:rgba(180,170,150,.16);letter-spacing:5px;margin-bottom:14px;font-weight:300">希望你能喜欢</div>
+  <div data-hf-id="hf-qt55" class="glow-text" style="font-size:76px;color:#e0c860;letter-spacing:28px;font-weight:900;text-shadow:0 0 60px rgba(224,200,96,.06)">知 时</div>
+  <div data-hf-id="hf-dgzw" style="font-size:24px;color:#a89858;letter-spacing:14px;margin-top:16px;font-weight:400">知 天 时 · 见 自 己</div>
+  <div data-hf-id="hf-w12e" class="gline" style="width:160px;margin:22px auto 0"></div>
+  <div data-hf-id="hf-amws" style="display:flex;gap:14px;margin-top:16px">
+   <span data-hf-id="hf-jgac" style="color:rgba(180,170,150,.18);font-size:14px;letter-spacing:4px">排盘</span><span data-hf-id="hf-a6pr" style="color:rgba(200,180,120,.08)">·</span>
+   <span data-hf-id="hf-ei4o" style="color:rgba(180,170,150,.18);font-size:14px;letter-spacing:4px">分析</span><span data-hf-id="hf-ca67" style="color:rgba(200,180,120,.08)">·</span>
+   <span data-hf-id="hf-4c6g" style="color:rgba(180,170,150,.18);font-size:14px;letter-spacing:4px">合婚</span><span data-hf-id="hf-bvv6" style="color:rgba(200,180,120,.08)">·</span>
+   <span data-hf-id="hf-wve9" style="color:rgba(180,170,150,.18);font-size:14px;letter-spacing:4px">报告</span>
+  </div>
+  <div data-hf-id="hf-zizc" class="gline" style="width:80px;margin:18px auto 0"></div>
+  <div data-hf-id="hf-sjwu" style="font-size:13px;color:rgba(180,170,150,.12);letter-spacing:3px;margin-top:10px;font-style:italic">知命 · 知时 · 知己 · 方能从容</div>
+ </div>
+</div>
+
+<!-- subtitle zone -->
+<div data-hf-id="hf-dlzr" style="position:absolute;bottom:0;left:0;right:0;height:220px;pointer-events:none;z-index:99;background:linear-gradient(to top,rgba(6,6,14,.3),transparent)"></div>
+
+</div>
+
+<script>
+
+// ═══ A1: Gold particles ═══
+(function(){
+  var root = document.getElementById('root');
+  for (var i=0; i<35; i++) {
+    var p = document.createElement('div');
+    p.className = 'gold-particle';
+    p.style.setProperty('--sz', (2 + Math.random()*3) + 'px');
+    p.style.setProperty('--x', Math.random()*100 + '%');
+    p.style.setProperty('--y', (60 + Math.random()*30) + '%');
+    p.style.setProperty('--dx', (Math.random()*80-40) + 'px');
+    p.style.setProperty('--dur', (6 + Math.random()*10) + 's');
+    p.style.setProperty('--delay', (Math.random()*8) + 's');
+    root.appendChild(p);
+  }
+})();
+
+// ═══ D1: Ancient characters ═══
+(function(){
+  var chars = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸','子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var root = document.getElementById('root');
+  for (var i=0; i<20; i++) {
+    var el = document.createElement('div');
+    el.className = 'ancient-char';
+    el.textContent = chars[Math.floor(Math.random()*chars.length)];
+    el.style.setProperty('--fs', (28 + Math.random()*40) + 'px');
+    el.style.setProperty('--x', Math.random()*100 + '%');
+    el.style.setProperty('--y', (10 + Math.random()*85) + '%');
+    el.style.setProperty('--dur', (8 + Math.random()*12) + 's');
+    el.style.setProperty('--delay', (Math.random()*10) + 's');
+    root.appendChild(el);
+  }
+})();
+
+
+window.__timelines = window.__timelines || {};
+var tl = gsap.timeline({ paused: true });
+function T(id, at) { tl.to("#"+id, { opacity:1, duration:0.6, ease:"power4.out" }, at); tl.to("#"+id, { opacity:0, duration:0.5, ease:"power4.in" }, at+0.6); }
+
+// S1 (0-3.5s)
+tl.from("#ai-text", { opacity:0, scale:1.5, y:60, duration:1.2, ease:"power4.out" }, 0);
+tl.from("#s1-sub",  { opacity:0, y:60, duration:0.9, ease:"power3.out" }, 0.4);
+tl.to("#s1",        { opacity:0, duration:0.3 }, 3.5); T("t1", 3.5);
+
+// S2 (4-19.5s)
+tl.from("#s2",     { opacity:0, duration:0.4 }, 4);
+tl.from("#s2-ui",  { opacity:0, y:20, duration:0.35, ease:"power2.out" }, 4.3);
+tl.from("#s2-p1",  { opacity:0, y:25, scale:.92, duration:0.4, ease:"back.out(1.2)" }, 4.8);
+tl.from("#s2-p2",  { opacity:0, y:25, scale:.92, duration:0.4, ease:"back.out(1.2)" }, 5.1);
+tl.from("#s2-p3",  { opacity:0, y:25, scale:.92, duration:0.4, ease:"back.out(1.2)" }, 5.4);
+tl.from("#s2-p4",  { opacity:0, y:20, scale:.92, duration:0.35, ease:"back.out(1.2)" }, 6);
+tl.from("#s2-p5",  { opacity:0, y:20, scale:.92, duration:0.35, ease:"back.out(1.2)" }, 6.2);
+tl.from("#s2-p6",  { opacity:0, y:20, scale:.92, duration:0.35, ease:"back.out(1.2)" }, 6.4);
+tl.from("#s2-p7",  { opacity:0, y:20, scale:.92, duration:0.35, ease:"back.out(1.2)" }, 6.6);
+tl.to("#s2",        { opacity:0, duration:0.3 }, 19.5); T("t2", 19.5);
+
+// S3 (20-43.5s)
+tl.from("#s3",     { opacity:0, duration:0.4 }, 20);
+tl.from("#s3-m1",  { opacity:0, x:-50, duration:0.5, ease:"power3.out" }, 20.5);
+tl.from("#s3-m2",  { opacity:0, x:50, duration:0.5, ease:"power3.out" }, 20.9);
+tl.from("#s3-m3",  { opacity:0, y:30, duration:0.55, ease:"back.out(1.2)" }, 21.5);
+tl.from("#s3-case",{ opacity:0, y:20, duration:0.4, ease:"power2.out" }, 22.5);
+tl.from("#s3-wisdom",{opacity:0, duration:0.35}, 23);
+tl.to("#s3",        { opacity:0, duration:0.3 }, 43.5); T("t3", 43.5);
+
+// S4 (44-57.5s) — 8 f-items
+tl.from("#s4",     { opacity:0, duration:0.4 }, 44);
+var s4d = document.querySelectorAll(".s4-detail");
+tl.from(s4d, { opacity:0, x:-30, duration:0.3, stagger:0.15, ease:"power2.out" }, 44.5);
+tl.to("#s4",        { opacity:0, duration:0.3 }, 57.5); T("t4", 57.5);
+
+// S5 (58-72.5s)
+tl.from("#s5",     { opacity:0, duration:0.4 }, 58);
+tl.from("#s5-cal", { opacity:0, y:20, duration:0.45, ease:"power2.out" }, 58.5);
+tl.from("#s5-wisdom",{opacity:0, duration:0.35}, 59.5);
+tl.to("#s5",        { opacity:0, duration:0.3 }, 72.5); T("t5", 72.5);
+
+// S6 (73-82.5s)
+tl.from("#s6",     { opacity:0, duration:0.4 }, 73);
+tl.from("#s6-fb",  { opacity:0, y:20, duration:0.45, ease:"power2.out" }, 73.4);
+tl.from("#s6-wisdom",{opacity:0, duration:0.35}, 74);
+tl.to("#s6",        { opacity:0, duration:0.3 }, 82.5); T("t6", 82.5);
+
+// S7 (83-94.5s) — f-item overview
+tl.from("#s7",     { opacity:0, duration:0.4 }, 83);
+var s7d = document.querySelectorAll(".s7-detail");
+tl.from(s7d, { opacity:0, x:-30, duration:0.3, stagger:0.12, ease:"power2.out" }, 83.5);
+tl.to("#s7",        { opacity:0, duration:0.3 }, 94.5); T("t7", 94.5);
+
+// S8 (95-103s)
+tl.from("#s8",     { opacity:0, duration:1, ease:"power3.out" }, 95);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

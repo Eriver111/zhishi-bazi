@@ -1,0 +1,1871 @@
+/* ============================================
+   知时 - 结果页样式 v2
+   字体统一 · 神煞 · 流年
+   ============================================ */
+
+.result-container {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+}
+
+/* ---- 顶部信息 ---- */
+.result-header {
+    text-align: center;
+    padding: 20px 0 25px;
+    border-bottom: 1px solid var(--border-gold);
+    margin-bottom: 25px;
+}
+
+.back-link {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+    transition: color 0.3s;
+}
+.back-link:hover { color: var(--gold); }
+
+.result-title {
+    font-family: 'STKaiti','KaiTi','FangSong',cursive;
+    font-size: 36px;
+    color: var(--gold);
+    letter-spacing: 8px;
+    text-shadow: 0 0 15px var(--gold-glow);
+    margin-bottom: 12px;
+}
+.result-title a{color:inherit;text-decoration:none}
+
+.birth-info {
+    font-size: 14px;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+}
+
+.info-sep { margin: 0 8px; opacity: 0.3; }
+
+.nayin-info {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    letter-spacing: 1px;
+}
+
+.share-btn {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 5px 16px;
+    font-size: 12px; color: var(--gold);
+    background: rgba(212,175,55,0.06);
+    border: 1px solid rgba(212,175,55,0.15);
+    border-radius: 2px; cursor: pointer;
+    letter-spacing: 1px; transition: all 0.2s;
+    font-family: inherit;
+}
+.share-btn:hover { background: rgba(212,175,55,0.14); }
+.share-btn.copied { color: #4ade80; border-color: rgba(74,222,128,0.3); }
+.download-btn-old { display:none; }
+
+/* ---- 报告下载横幅 ---- */
+.download-banner {
+  margin: 20px auto 0; max-width: 420px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(212,175,55,.08), rgba(212,175,55,.02));
+  border: 1px solid rgba(212,175,55,.2); border-radius: 12px;
+  text-align: center;
+  animation: bannerIn .4s ease-out;
+}
+@keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.dl-banner-title{font-size:17px;color:var(--gold);font-weight:700;letter-spacing:3px;margin-bottom:16px}
+.dl-banner-btns{display:flex;gap:10px}
+.dl-btn{flex:1;padding:14px 8px;font-size:15px;font-weight:700;font-family:inherit;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .25s;border:1px solid transparent}
+.dl-btn-pdf{background:rgba(100,180,140,.15);color:#a0d8b0;border-color:rgba(100,180,140,.3)}
+.dl-btn-pdf:hover{background:rgba(100,180,140,.25);transform:translateY(-1px)}
+.dl-btn-html{background:rgba(212,175,55,.12);color:var(--gold);border-color:rgba(212,175,55,.25)}
+.dl-btn-html:hover{background:rgba(212,175,55,.2);transform:translateY(-1px)}
+
+/* ---- 抽屉式 Section ---- */
+.section-drawer {
+    margin-bottom: 20px;
+    border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.drawer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(212,175,55,0.02);
+    transition: background 0.3s;
+    border-bottom: 1px solid rgba(212,175,55,0.1);
+}
+
+.drawer-toggle:hover {
+    background: rgba(212,175,55,0.06);
+}
+
+.drawer-arrow {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--gold);
+    transition: transform 0.35s ease;
+    flex-shrink: 0;
+}
+
+.section-drawer.drawer-open .drawer-arrow {
+    transform: rotate(90deg);
+}
+
+.drawer-toggle h2 {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--gold);
+    letter-spacing: 4px;
+    margin: 0;
+    line-height: 1;
+}
+
+.drawer-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.section-drawer.drawer-open .drawer-body {
+    max-height: 4000px;
+}
+
+.section-sub {
+    font-size: 12px;
+    color: #8a7e6a;
+    margin-left: 4px;
+}
+
+/* ============================
+   大运
+   ============================ */
+.section-dayun {
+    margin-bottom: 28px;
+    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));
+    border: 1px solid rgba(201,168,76,.18);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);
+}
+
+.dayun-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0 12px;
+}
+
+.dayun-scroll-wrapper::-webkit-scrollbar { height: 4px; }
+.dayun-scroll-wrapper::-webkit-scrollbar-track { background: rgba(201,168,76,0.04); }
+.dayun-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 2px; }
+
+.dayun-table {
+    display: flex;
+    min-width: max-content;
+    margin: 0 2px;
+}
+
+.dayun-col {
+    flex: 0 0 80px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(20,18,26,.5);
+    border-right: 1px solid rgba(201,168,76,.06);
+    margin-right: 1px;
+    border-radius: 3px;
+    padding: 4px 0 6px;
+}
+.dayun-col:last-child { border-right: none; margin-right: 0; }
+.dayun-col.current { background: rgba(201,168,76,.12); box-shadow: inset 0 0 12px rgba(201,168,76,.08); }
+.dayun-col.past { opacity: 0.4; }
+.dayun-col.active { background: rgba(201,168,76,.2); box-shadow: 0 0 16px rgba(201,168,76,.15); }
+
+.dayun-age {
+    font-size: 11px;
+    color: rgba(180,170,150,.45);
+    padding: 6px 0 4px;
+    border-bottom: 1px solid rgba(201,168,76,.08);
+    margin: 0 8px;
+}
+
+.dayun-gz {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #e0d8c8;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(201,168,76,.08);
+    letter-spacing: 3px;
+    margin: 0 8px;
+}
+.dayun-col.current .dayun-gz { color: var(--gold); }
+.dayun-col.active .dayun-gz { color: var(--gold); text-shadow: 0 0 12px rgba(201,168,76,.35); }
+
+.dayun-ss {
+    font-size: 11px;
+    color: rgba(180,170,150,.35);
+    padding: 6px 0;
+    margin: 0 8px;
+}
+.dayun-col.current .dayun-ss { color: rgba(201,168,76,.7); }
+
+/* === 核芯区域头部（大运/流年/四柱）=== */
+.section-dayun .section-header,
+.section-liunian .section-header,
+.section-sizhu .section-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(201,168,76,.1);
+    background: rgba(201,168,76,.03);
+}
+.section-dayun .section-header h2,
+.section-liunian .section-header h2,
+.section-sizhu .section-header h2 {
+    font-size: 18px; font-weight: 600; color: var(--gold);
+    letter-spacing: 5px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 12px rgba(201,168,76,.2);
+}
+.section-dayun .section-sub,
+.section-liunian .section-sub,
+.section-sizhu .section-sub {
+    font-size: 12px; color: rgba(180,170,150,.35); letter-spacing: 2px;
+}
+
+/* ============================
+   流年
+   ============================ */
+.section-liunian {
+    margin-bottom: 28px;
+    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));
+    border: 1px solid rgba(201,168,76,.18);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);
+}
+
+.liunian-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0 12px;
+}
+.liunian-scroll-wrapper::-webkit-scrollbar { height: 4px; }
+.liunian-scroll-wrapper::-webkit-scrollbar-track { background: rgba(201,168,76,.04); }
+.liunian-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(201,168,76,.25); border-radius: 2px; }
+
+.liunian-table {
+    display: flex;
+    min-width: max-content;
+    margin: 0 2px;
+}
+
+.liunian-col {
+    flex: 0 0 72px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .3s;
+    background: rgba(20,18,26,.5);
+    border-right: 1px solid rgba(201,168,76,.06);
+    margin-right: 1px;
+    border-radius: 3px;
+    padding: 3px 0 5px;
+}
+.liunian-col:last-child { border-right: none; margin-right: 0; }
+.liunian-col.current-year { background: rgba(201,168,76,.14); box-shadow: inset 0 0 10px rgba(201,168,76,.06); }
+.liunian-col.past-year { opacity: 0.35; }
+.liunian-col.active-ln {
+    background: rgba(201,168,76,.22);
+    box-shadow: 0 0 20px rgba(201,168,76,.2), inset 0 0 12px rgba(201,168,76,.12);
+}
+.liunian-col.active-ln .liunian-gz { color: var(--gold) !important; text-shadow: 0 0 10px rgba(201,168,76,.3); }
+.liunian-col.active-ln .liunian-ss { color: rgba(201,168,76,.8); }
+
+.liunian-year-label {
+    font-size: 11px;
+    color: rgba(180,170,150,.4);
+    padding: 5px 0 3px;
+    border-bottom: 1px solid rgba(201,168,76,.08);
+    margin: 0 6px;
+}
+
+.liunian-gz {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #e0d8c8;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(201,168,76,.08);
+    letter-spacing: 2px;
+    margin: 0 6px;
+}
+.liunian-col.current-year .liunian-gz { color: var(--gold); }
+
+.liunian-ss {
+    font-size: 10px;
+    color: rgba(180,170,150,.3);
+    padding: 5px 0;
+    margin: 0 6px;
+}
+
+/* ============================
+   四柱主盘表格（统一字体）
+   ============================ */
+.section-sizhu {
+    margin-bottom: 28px;
+    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));
+    border: 1px solid rgba(201,168,76,.18);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);
+}
+
+.paipan-table {
+    max-width: 100%;
+    margin: 0 2px 8px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.pp-row {
+    display: flex;
+    border-bottom: 1px solid rgba(201,168,76,.06);
+}
+.pp-row:last-child { border-bottom: none; }
+
+.pp-label {
+    flex: 0 0 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    border-right: 1px solid rgba(212,175,55,0.1);
+    padding: 10px 4px;
+    text-align: center;
+    line-height: 1.4;
+    background: rgba(212,175,55,0.02);
+}
+
+.pp-col {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 6px;
+    border-right: 1px solid rgba(212,175,55,0.08);
+    min-height: 44px;
+}
+.pp-col:last-child { border-right: none; }
+
+.pp-day {
+    background: rgba(212,175,55,0.04);
+}
+
+/* 大运列/流年列 - 特殊样式 */
+.pp-dayun-col,
+.pp-liunian-col {
+    flex: 0 0 80px;
+    min-width: 80px;
+    position: relative;
+    transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.pp-dayun-col {
+    background: rgba(212,175,55,0.02);
+    border-right: 1px solid rgba(212,175,55,0.15);
+}
+
+.pp-liunian-col {
+    background: rgba(212,175,55,0.01);
+    border-right: 1px solid rgba(212,175,55,0.12);
+}
+
+/* 大运列高亮 - 当上方大运被选中时 */
+.pp-dayun-col.active-dayun {
+    background: rgba(212,175,55,0.12);
+    box-shadow: inset 0 0 12px rgba(212,175,55,0.1);
+}
+
+/* 流年列高亮 - 当上方流年被选中时 */
+.pp-liunian-col.active-liunian {
+    background: rgba(212,175,55,0.10);
+    box-shadow: inset 0 0 12px rgba(212,175,55,0.08);
+}
+
+/* 大运/流年列中的天干地支 */
+.pp-dayun-col .tian-gan,
+.pp-dayun-col .di-zhi,
+.pp-liunian-col .tian-gan,
+.pp-liunian-col .di-zhi {
+    font-size: 24px;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+/* 高亮时天干地支变金色 */
+.pp-dayun-col.active-dayun .tian-gan,
+.pp-dayun-col.active-dayun .di-zhi {
+    color: var(--gold) !important;
+    text-shadow: 0 0 8px var(--gold-glow);
+}
+
+.pp-liunian-col.active-liunian .tian-gan,
+.pp-liunian-col.active-liunian .di-zhi {
+    color: var(--gold-light) !important;
+    text-shadow: 0 0 8px var(--gold-glow);
+}
+
+/* 大运/流年列中的十神 */
+.pp-dayun-col.active-dayun .pp-ss-text,
+.pp-liunian-col.active-liunian .pp-ss-text {
+    color: var(--gold);
+    opacity: 0.9;
+}
+
+/* 表头 */
+.pp-header .pp-col {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 4px;
+    padding: 10px 6px;
+    background: rgba(212,175,55,0.03);
+}
+
+/* 十神行 */
+.pp-ss-row .pp-col {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+
+.day-master-tag {
+    font-size: 13px;
+    color: var(--gold);
+    background: rgba(212,175,55,0.1);
+    padding: 2px 10px;
+    border-radius: 2px;
+    letter-spacing: 2px;
+}
+
+/* 天干 - 统一使用 Noto Serif SC，加粗加大 */
+.pp-gan-row {
+    background: rgba(255,255,255,0.02);
+}
+
+.tian-gan {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+.day-master-gan {
+    color: var(--gold) !important;
+    text-shadow: 0 0 10px var(--gold-glow);
+}
+
+/* 地支 - 与天干同字体同大小 */
+.di-zhi {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+/* 藏干（含十神） — 紧凑竖排条目，横排分布在列内，空间不够自动换行 */
+.pp-cang {
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    gap: 2px 6px;
+    padding: 4px 2px !important;
+}
+
+.cang-entry {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cang-gan-char {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.cang-ss-text {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 8px;
+    font-weight: 400;
+    color: #b8a878;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+/* 神煞行 */
+.pp-shensha-row .pp-col {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 8px 6px !important;
+}
+
+.pp-shensha {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+}
+
+.shensha-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.shensha-tag.ji {
+    color: #F44336;
+    background: rgba(244,67,54,0.08);
+    border: 1px solid rgba(244,67,54,0.15);
+}
+
+.shensha-tag.ji-shen {
+    color: #4CAF50;
+    background: rgba(76,175,80,0.08);
+    border: 1px solid rgba(76,175,80,0.15);
+}
+
+.shensha-tag.zhong {
+    color: var(--gold);
+    background: rgba(212,175,55,0.08);
+    border: 1px solid rgba(212,175,55,0.15);
+}
+
+/* ============================
+   神煞详解 - 折叠面板 accordion
+   ============================ */
+.section-shensha-detail .shensha-accordion {
+    padding: 12px 18px 16px;
+}
+
+.shensha-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ss-accordion-item {
+    border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 2px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.3s;
+}
+.ss-accordion-item:hover {
+    border-color: rgba(212,175,55,0.25);
+}
+.ss-accordion-item.open {
+    border-color: rgba(212,175,55,0.35);
+}
+
+.ss-accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s;
+}
+.ss-accordion-header:hover {
+    background: rgba(212,175,55,0.04);
+}
+
+.ss-accordion-arrow {
+    flex: 0 0 16px;
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: transform 0.3s;
+    text-align: center;
+}
+.ss-accordion-item.open .ss-accordion-arrow {
+    transform: rotate(90deg);
+    color: var(--gold);
+}
+
+.ss-accordion-type-badge {
+    flex: 0 0 auto;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.ss-accordion-type-badge.ji-shen {
+    color: #4CAF50;
+    background: rgba(76,175,80,0.12);
+}
+.ss-accordion-type-badge.zhong {
+    color: var(--gold);
+    background: rgba(212,175,55,0.12);
+}
+.ss-accordion-type-badge.ji {
+    color: #F44336;
+    background: rgba(244,67,54,0.12);
+}
+
+.ss-accordion-name {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 2px;
+    flex: 1;
+}
+
+.ss-accordion-pos {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.ss-accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+}
+.ss-accordion-item.open .ss-accordion-body {
+    max-height: 200px;
+}
+
+.ss-accordion-content {
+    padding: 0 16px 14px 42px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+/* ============================
+   袁天罡称骨
+   ============================ */
+.chenggu-content { padding: 16px 18px 20px; }
+
+.cg-breakdown {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.cg-row {
+    background: rgba(212,175,55,0.04);
+    border: 1px solid rgba(212,175,55,0.1);
+    border-radius: 2px;
+    padding: 10px 6px;
+    text-align: center;
+}
+.cg-label {
+    display: block;
+    font-size: 11px;
+    color: var(--gold);
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+}
+.cg-value {
+    display: block;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.cg-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    background: rgba(212,175,55,0.06);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 2px;
+    margin-bottom: 18px;
+}
+.cg-total-weight { font-size: 16px; color: var(--text-primary); letter-spacing: 1px; }
+.cg-total-weight strong { font-size: 26px; font-weight: 900; color: var(--gold); margin: 0 4px; }
+.cg-rate { font-size: 14px; color: var(--gold); font-weight: 600; letter-spacing: 1px; }
+
+.cg-geyao {
+    padding: 18px;
+    background: rgba(20,20,35,0.6);
+    border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 2px;
+}
+.cg-geyao-header { margin-bottom: 12px; display: flex; align-items: baseline; gap: 8px; }
+.cg-geyao-ming { font-size: 18px; font-weight: 700; color: var(--gold); letter-spacing: 2px; font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif; }
+.cg-geyao-geju { font-size: 13px; color: var(--text-secondary); }
+.cg-geyao-duan {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 2;
+    letter-spacing: 0.5px;
+    text-align: justify;
+}
+
+/* ============================
+   日主解析 · 滴天髓
+   ============================ */
+.section-rizhu .rizhu-content { padding: 18px 20px 22px; }
+
+.dt-header { text-align: center; margin-bottom: 18px; }
+.dt-badge {
+    display: inline-block;
+    padding: 6px 20px;
+    border: 1px solid;
+    border-radius: 2px;
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+.dt-shi {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    text-align: center;
+    line-height: 2;
+    letter-spacing: 2px;
+    padding: 14px 12px;
+    background: rgba(212,175,55,0.04);
+    border: 1px solid rgba(212,175,55,0.1);
+    border-radius: 2px;
+}
+
+.dt-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0 14px;
+}
+.dt-divider::before, .dt-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(212,175,55,0.12);
+}
+.dt-divider-label {
+    padding: 0 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 3px;
+}
+
+.dt-jiexi { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.dt-line {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 10px 14px;
+    background: rgba(212,175,55,0.02);
+    border-left: 2px solid rgba(212,175,55,0.15);
+    border-radius: 0 2px 2px 0;
+    transition: border-color 0.3s;
+}
+.dt-line:hover { border-left-color: var(--gold); background: rgba(212,175,55,0.05); }
+.dt-ju {
+    flex-shrink: 0;
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 1px;
+    min-width: 80px;
+}
+.dt-yi {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.dt-yuanzhu {
+    padding: 16px 18px;
+    background: rgba(20,25,40,0.6);
+    border: 1px solid rgba(212,175,55,0.08);
+    border-radius: 2px;
+}
+.dt-yz-label {
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+}
+.dt-yz-text {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.9;
+    text-align: justify;
+}
+
+/* ============================
+   夫妻宫
+   ============================ */
+.section-fuqi .fuqi-content { padding: 16px 18px 20px; }
+
+.fq-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.fq-pillar-name {
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    padding: 4px 14px;
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 2px;
+}
+.fq-pillar-gz {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: 4px;
+}
+
+.fq-zhi-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: rgba(212,175,55,0.03);
+    border-radius: 2px;
+}
+.fq-label { font-size: 12px; color: var(--text-secondary); letter-spacing: 1px; }
+.fq-cang { display: flex; align-items: center; gap: 4px; }
+.fq-cang-gan {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 18px;
+    font-weight: 700;
+}
+.fq-cang-sep { color: var(--text-dim); font-size: 10px; }
+
+.fq-ss-badge {
+    margin-bottom: 14px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+.fq-ss-tag {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 2px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+.fq-ss-tag.fq-ji { color: #4dadff; border: 1px solid rgba(77,173,255,0.3); background: rgba(77,173,255,0.06); }
+.fq-ss-tag.fq-shang { color: #ff9f43; border: 1px solid rgba(255,159,67,0.3); background: rgba(255,159,67,0.06); }
+.fq-ss-tag.fq-cai { color: #feca57; border: 1px solid rgba(254,202,87,0.3); background: rgba(254,202,87,0.06); }
+.fq-ss-tag.fq-bi { color: #a29bfe; border: 1px solid rgba(162,155,254,0.3); background: rgba(162,155,254,0.06); }
+
+.fq-trait {
+    display: flex;
+    gap: 14px;
+    padding: 16px 18px;
+    background: rgba(20,25,40,0.5);
+    border: 1px solid rgba(212,175,55,0.08);
+    border-radius: 2px;
+}
+.fq-trait-icon { font-size: 24px; flex-shrink: 0; opacity: 0.7; }
+.fq-trait-text { font-size: 14px; color: var(--text-primary); line-height: 1.8; text-align: justify; }
+.fq-looks { margin-top: 10px; }
+
+/* ============================
+   配偶年龄
+   ============================ */
+.section-spouse-age .spouse-age-content { padding: 16px 18px 20px; }
+
+.sa-result {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.sa-badge {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 3px;
+    padding: 6px 18px;
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 2px;
+    background: rgba(212,175,55,0.05);
+}
+.sa-desc { font-size: 14px; color: var(--text-secondary); }
+
+.sa-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.sa-bar-item { display: flex; align-items: center; gap: 12px; }
+.sa-bar-label {
+    flex: 0 0 100px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-align: right;
+}
+.sa-bar-sub { display: block; font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+.sa-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 1px;
+    overflow: hidden;
+}
+.sa-bar-fill { height: 100%; border-radius: 1px; transition: width 0.6s ease; }
+.sa-big { background: linear-gradient(90deg, rgba(77,173,255,0.4), #4dadff); }
+.sa-small { background: linear-gradient(90deg, rgba(254,202,87,0.4), #feca57); }
+.sa-same { background: linear-gradient(90deg, rgba(162,155,254,0.4), #a29bfe); }
+.sa-bar-num { font-size: 13px; color: var(--text-secondary); font-weight: 600; min-width: 24px; }
+
+.sa-detail {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.9;
+    padding: 14px 16px;
+    background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06);
+    border-radius: 2px;
+}
+
+.sa-loc-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+.sa-loc-card {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.07);
+    border-radius: 2px;
+    transition: border-color 0.3s;
+}
+.sa-loc-card:hover { border-color: rgba(212,175,55,0.18); }
+.sa-loc-icon { font-size: 20px; flex-shrink: 0; opacity: 0.8; line-height: 1.3; }
+.sa-loc-body { flex: 1; }
+.sa-loc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sa-loc-tag {
+    font-size: 11px;
+    font-weight: 400;
+    padding: 1px 10px;
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 2px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+.sa-loc-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.8;
+}
+
+/* ============================
+   父母关系
+   ============================ */
+.section-parents .parents-content { padding: 12px 18px 18px; }
+
+.pr-card {
+    display: flex;
+    gap: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06);
+    border-radius: 2px;
+    transition: border-color 0.3s;
+}
+.pr-card:hover { border-color: rgba(212,175,55,0.15); }
+.pr-card-icon { font-size: 28px; flex-shrink: 0; opacity: 0.8; line-height: 1; }
+.pr-card-body { flex: 1; }
+.pr-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pr-star-tag {
+    font-size: 11px;
+    font-weight: 400;
+    padding: 2px 10px;
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 2px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+.pr-card-text { font-size: 13px; color: var(--text-primary); line-height: 1.8; }
+
+.pr-summary {
+    padding: 16px;
+    background: rgba(212,175,55,0.04);
+    border: 1px solid rgba(212,175,55,0.1);
+    border-radius: 2px;
+}
+.pr-summary-label { font-size: 12px; color: var(--gold); letter-spacing: 3px; margin-bottom: 6px; font-weight: 600; }
+.pr-summary-text { font-size: 13px; color: var(--text-primary); line-height: 1.8; }
+
+/* 分组标题 */
+.ss-group-header {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--gold);
+    letter-spacing: 4px;
+    padding: 14px 0 6px 0;
+    border-bottom: 1px solid rgba(212,175,55,0.08);
+    margin-top: 8px;
+}
+.ss-group-header:first-child {
+    margin-top: 0;
+    padding-top: 4px;
+}
+
+/* ============================
+   日主性格
+   ============================ */
+.section-character .character-content { padding: 16px 18px 20px; }
+
+.ch-header { text-align: center; margin-bottom: 18px; }
+.ch-gan-badge {
+    display: inline-block;
+    padding: 6px 22px;
+    border: 1px solid;
+    border-radius: 2px;
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+}
+.ch-ss-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.ch-ss-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border: 1px solid rgba(212,175,55,0.15);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+
+.ch-dual {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.ch-card {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 2px;
+    border: 1px solid rgba(212,175,55,0.07);
+}
+.ch-strength { background: rgba(76,175,80,0.04); border-color: rgba(76,175,80,0.12); }
+.ch-weakness { background: rgba(255,159,67,0.04); border-color: rgba(255,159,67,0.12); }
+.ch-card-icon { font-size: 18px; flex-shrink: 0; opacity: 0.8; }
+.ch-card-body { flex: 1; }
+.ch-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+.ch-strength .ch-card-title { color: #81C784; }
+.ch-weakness .ch-card-title { color: #ff9f43; }
+.ch-card-text { font-size: 12px; color: var(--text-primary); line-height: 1.7; }
+
+.ch-composite {
+    padding: 14px 16px;
+    background: rgba(20,25,40,0.5);
+    border: 1px solid rgba(212,175,55,0.08);
+    border-radius: 2px;
+    margin-bottom: 10px;
+}
+.ch-comp-label {
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+.ch-comp-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.9;
+    text-align: justify;
+}
+
+/* ============================
+   财运分析
+   ============================ */
+.section-wealth .wealth-content { padding: 16px 18px 20px; }
+
+.wl-top {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.wl-top-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(212,175,55,0.03);
+    border: 1px solid rgba(212,175,55,0.08);
+    border-radius: 2px;
+}
+.wl-top-icon { font-size: 20px; opacity: 0.8; }
+.wl-top-label { display: block; font-size: 10px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 2px; }
+.wl-top-val { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: var(--text-primary); }
+
+.wl-wang-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06);
+    border-radius: 2px;
+}
+.wl-wang-label { font-size: 12px; color: var(--text-secondary); letter-spacing: 1px; flex-shrink: 0; }
+.wl-wang-track { flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 1px; overflow: hidden; }
+.wl-wang-fill { height: 100%; border-radius: 1px; transition: width 0.6s ease; }
+.wl-wang-num { font-size: 13px; color: var(--gold); font-weight: 700; min-width: 32px; text-align: right; }
+
+.wl-pos-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.wl-pos-label { font-size: 12px; color: var(--text-secondary); letter-spacing: 1px; flex-shrink: 0; }
+.wl-pos-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.wl-pos-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border: 1px solid rgba(212,175,55,0.15);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    background: rgba(212,175,55,0.03);
+}
+
+.wl-analysis { display: flex; flex-direction: column; gap: 12px; }
+.wl-ana-item {
+    padding: 14px 16px;
+    background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06);
+    border-radius: 2px;
+}
+.wl-ana-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+.wl-ana-text { font-size: 13px; color: var(--text-primary); line-height: 1.8; }
+
+/* ============================
+   专业解读抽屉（含子区）
+   ============================ */
+.section-pro .drawer-body { padding: 8px 16px 16px; }
+.pro-sub { margin-bottom: 12px; }
+.pro-sub:last-child { margin-bottom: 0; }
+
+.pro-sub-title {
+    font-size: 13px; color: var(--gold);
+    letter-spacing: 3px; font-weight: 600;
+    padding: 8px 0 6px;
+    border-bottom: 1px solid rgba(212,175,55,0.08);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+}
+.pro-sub-count { font-size: 11px; color: var(--text-dim); font-weight: 400; letter-spacing: 0; }
+
+/* ============================
+   婚姻感情（合并版）
+   ============================ */
+.section-marriage .marriage-content { padding: 14px 18px 20px; }
+
+.mp-couple { text-align: center; margin-bottom: 14px; }
+.mp-day-gz {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 28px; font-weight: 700; color: var(--gold);
+    letter-spacing: 4px;
+}
+.mp-day-label { display: block; font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 2px; }
+
+.mp-spouse-desc {
+    font-size: 14px; color: var(--text-primary); line-height: 2;
+    padding: 12px 16px; background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06); border-radius: 2px;
+    margin-bottom: 14px;
+}
+
+.mp-section-title {
+    font-size: 12px; color: var(--gold); letter-spacing: 3px;
+    margin-bottom: 6px; font-weight: 600;
+}
+.mp-looks {
+    font-size: 13px; color: var(--text-primary); line-height: 1.9;
+    padding: 10px 14px; background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06); border-radius: 2px;
+    margin-bottom: 14px;
+}
+.mp-age-badge {
+    display: inline-block;
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 20px; font-weight: 700; color: var(--gold);
+    padding: 4px 14px; border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 2px; margin-bottom: 6px;
+    letter-spacing: 2px;
+}
+.mp-age-desc { font-size: 13px; color: var(--text-primary); line-height: 1.9; margin-bottom: 14px; }
+
+.mp-bars { margin-bottom: 14px; }
+.mp-loc-row { display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 600px) {
+    .mp-day-gz { font-size: 24px; }
+    .mp-spouse-desc { font-size: 13px; }
+    .mp-age-badge { font-size: 18px; }
+    .section-pro .drawer-body { padding: 8px 12px 14px; }
+    .pro-sub-title { font-size: 12px; letter-spacing: 2px; }
+}
+
+/* ============================
+   流年运势
+   ============================ */
+.section-fortune .fortune-content { padding: 14px 18px 20px; }
+
+.ft-dy-info {
+    font-size: 13px; color: var(--text-secondary);
+    padding: 10px 14px; background: rgba(212,175,55,0.03);
+    border: 1px solid rgba(212,175,55,0.08); border-radius: 2px;
+    margin-bottom: 14px; letter-spacing: 1px;
+}
+
+.ft-legend {
+    display: flex; gap: 16px; justify-content: center;
+    margin-bottom: 16px; padding: 8px 0;
+}
+.ft-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+.ft-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.ft-cards { display: flex; flex-direction: column; gap: 10px; }
+
+.ft-card {
+    padding: 14px 16px;
+    background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.07);
+    border-radius: 2px;
+    transition: border-color 0.3s;
+}
+.ft-card:hover { border-color: rgba(212,175,55,0.18); }
+
+.ft-year-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px; flex-wrap: wrap;
+}
+.ft-year-num {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 22px; font-weight: 900; color: var(--gold); letter-spacing: 1px;
+}
+.ft-year-gz {
+    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+    font-size: 17px; font-weight: 700; color: var(--text-primary); letter-spacing: 3px;
+}
+.ft-tag {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border: 1px solid; border-radius: 2px;
+    letter-spacing: 2px;
+}
+.ft-ss-badge {
+    font-size: 11px; color: var(--text-dim);
+    padding: 2px 10px; border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 2px; letter-spacing: 1px;
+}
+
+.ft-body { display: flex; flex-direction: column; gap: 6px; }
+.ft-desc { font-size: 13px; color: var(--text-primary); line-height: 1.8; }
+.ft-risk {
+    font-size: 12px; color: #ff8a80;
+    padding: 8px 12px; background: rgba(244,67,54,0.06);
+    border-left: 2px solid rgba(244,67,54,0.3); border-radius: 0 2px 2px 0;
+    line-height: 1.7;
+}
+.ft-opp {
+    font-size: 12px; color: #81C784;
+    padding: 8px 12px; background: rgba(76,175,80,0.06);
+    border-left: 2px solid rgba(76,175,80,0.3); border-radius: 0 2px 2px 0;
+    line-height: 1.7;
+}
+.ft-caution {
+    font-size: 12px; color: var(--text-secondary);
+    padding: 10px 12px; background: rgba(255,193,7,0.04);
+    border-left: 2px solid rgba(255,193,7,0.25); border-radius: 0 2px 2px 0;
+    line-height: 1.9;
+    margin-top: 6px;
+}
+.ft-caution-item { display: flex; gap: 6px; margin-bottom: 4px; }
+.ft-caution-item:last-child { margin-bottom: 0; }
+.ft-caution-dot { color: var(--gold); font-weight: 700; flex-shrink: 0; }
+.ft-disclaimer { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 14px; opacity: 0.6; }
+
+/* ============================
+   学业分析
+   ============================ */
+.section-study .study-content { padding: 16px 18px 20px; }
+
+.st-level { text-align: center; margin-bottom: 18px; }
+.st-level-badge {
+    display: inline-block;
+    padding: 8px 28px;
+    border: 1px solid;
+    border-radius: 2px;
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 18px; font-weight: 700; letter-spacing: 4px;
+}
+
+.st-metrics {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 16px;
+}
+.st-metric { display: flex; align-items: center; gap: 10px; }
+.st-metric-icon { font-size: 16px; flex-shrink: 0; }
+.st-metric-label { font-size: 12px; color: var(--text-secondary); flex: 0 0 36px; letter-spacing: 1px; }
+.st-metric-bar { flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 1px; overflow: hidden; }
+.st-metric-fill { height: 100%; border-radius: 1px; transition: width 0.6s ease; }
+.st-metric-num { font-size: 12px; color: var(--text-secondary); font-weight: 600; min-width: 32px; text-align: right; }
+
+.st-desc {
+    font-size: 14px; color: var(--text-primary); line-height: 1.9;
+    padding: 14px 16px; background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06); border-radius: 2px;
+    margin-bottom: 14px;
+}
+
+.st-yin-pos {
+    padding: 14px 16px; background: rgba(20,25,40,0.4);
+    border: 1px solid rgba(212,175,55,0.06); border-radius: 2px;
+    margin-bottom: 12px;
+}
+.st-section-label {
+    font-size: 12px; font-weight: 600; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 6px;
+}
+.st-yin-text { font-size: 13px; color: var(--text-primary); line-height: 2; }
+
+.st-advice {
+    padding: 14px 16px; background: rgba(212,175,55,0.03);
+    border: 1px solid rgba(212,175,55,0.1); border-radius: 2px;
+}
+.st-advice-text { font-size: 13px; color: var(--text-primary); line-height: 1.9; }
+
+/* ============================
+   五行分析
+   ============================ */
+.section-wuxing .wuxing-stats,
+.section-wuxing .wuxing-summary {
+    padding: 12px 18px 16px;
+}
+
+.wuxing-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wx-item { display: flex; align-items: center; gap: 12px; }
+
+.wx-name {
+    flex: 0 0 28px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.wx-bar {
+    flex: 1;
+    height: 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.wx-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.8s ease;
+    width: 0;
+}
+
+.wx-num {
+    flex: 0 0 24px;
+    font-size: 15px;
+    color: var(--gold);
+    text-align: center;
+    font-weight: 700;
+}
+
+.wx-item[data-wx="金"] .wx-name { color: #FFD700; }
+.wx-item[data-wx="木"] .wx-name { color: #4CAF50; }
+.wx-item[data-wx="水"] .wx-name { color: #2196F3; }
+.wx-item[data-wx="火"] .wx-name { color: #F44336; }
+.wx-item[data-wx="土"] .wx-name { color: #CD853F; }
+
+.wx-item[data-wx="金"] .wx-fill { background: linear-gradient(90deg, rgba(255,215,0,0.3), #FFD700); }
+.wx-item[data-wx="木"] .wx-fill { background: linear-gradient(90deg, rgba(76,175,80,0.3), #4CAF50); }
+.wx-item[data-wx="水"] .wx-fill { background: linear-gradient(90deg, rgba(33,150,243,0.3), #2196F3); }
+.wx-item[data-wx="火"] .wx-fill { background: linear-gradient(90deg, rgba(244,67,54,0.3), #F44336); }
+.wx-item[data-wx="土"] .wx-fill { background: linear-gradient(90deg, rgba(205,133,63,0.3), #CD853F); }
+
+.wuxing-summary {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: rgba(212,175,55,0.05);
+    border: 1px solid rgba(212,175,55,0.1);
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    letter-spacing: 1px;
+}
+
+/* ---- 底部声明 ---- */
+.result-footer {
+    margin: 48px 0 30px;
+    padding: 0 16px;
+}
+.ft-disclaimer {
+    text-align: center; font-size: 11px; color: var(--text-dim);
+    letter-spacing: 1px; margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.ft-contact { display: flex; gap: 14px; }
+.ft-wechat, .ft-feedback {
+    flex: 1; display: flex; align-items: center; gap: 14px;
+    padding: 20px 16px;
+    border-radius: 14px; border: 1px solid transparent;
+    transition: all .3s;
+}
+.ft-wechat {
+    background: linear-gradient(135deg, rgba(42,166,108,.12), rgba(42,166,108,.04));
+    border-color: rgba(42,166,108,.2);
+    box-shadow: 0 0 30px rgba(42,166,108,.04);
+}
+.ft-feedback {
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(201,168,76,.1), rgba(201,168,76,.03));
+    border-color: rgba(201,168,76,.18);
+    box-shadow: 0 0 30px rgba(201,168,76,.04);
+}
+.ft-feedback:hover { background: linear-gradient(135deg, rgba(201,168,76,.16), rgba(201,168,76,.06)); border-color: rgba(201,168,76,.3); transform: translateY(-1px); }
+.ft-wechat:hover { transform: translateY(-1px); }
+.ft-wx-icon, .ft-fb-icon {
+    font-size: 32px; flex-shrink: 0;
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+}
+.ft-wx-icon { background: rgba(42,166,108,.15); }
+.ft-fb-icon { background: rgba(201,168,76,.12); }
+.ft-wx-label, .ft-fb-label {
+    font-size: 13px; color: rgba(255,255,255,.55); font-weight: 500;
+    letter-spacing: 1px; margin-bottom: 4px;
+}
+.ft-wx-id {
+    font-size: 18px; color: #4fd490; font-weight: 700;
+    letter-spacing: 2px; font-family: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Source Han Sans SC',sans-serif;
+}
+.ft-fb-hint { font-size: 12px; color: var(--gold); font-weight: 500; letter-spacing: 1px; }
+
+/* ---- 付费遮罩（嵌在 drawer-body 内部） ---- */
+.drawer-body { position: relative; }
+
+/* 付费板块强制撑开内容区，确保遮罩完整可见 */
+.drawer-body.paywall-active {
+    min-height: 180px;
+    max-height: none !important;
+    overflow: visible !important;
+    transition: none !important;
+}
+
+.paywall-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom,
+        rgba(10,12,22,0.92) 0%,
+        rgba(10,12,22,0.96) 6%,
+        rgba(10,12,22,1) 12%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 12px;
+}
+
+.paywall-card {
+    text-align: center;
+    padding: 20px 20px 24px;
+    max-width: 280px;
+}
+
+.paywall-card-title {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 20px; color: var(--gold);
+    letter-spacing: 4px; margin-bottom: 6px;
+}
+
+.paywall-card-sub {
+    font-size: 11px; color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.paywall-price { margin-bottom: 14px; }
+
+.paywall-current {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 24px; color: var(--gold); font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.paywall-btn {
+    display: inline-block;
+    padding: 9px 32px;
+    background: rgba(212,175,55,0.12);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-size: 14px; font-weight: 600; letter-spacing: 2px;
+    border-radius: 2px; cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    -webkit-appearance: none;
+}
+.paywall-btn:hover {
+    background: rgba(212,175,55,0.22);
+}
+.paywall-btn:disabled {
+    opacity: 0.5; cursor: not-allowed;
+}
+
+.paywall-btn-check {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 7px 0;
+    background: transparent;
+    border: none;
+    color: rgba(160,140,100,0.6);
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: underline;
+    -webkit-appearance: none;
+    transition: color 0.2s;
+}
+.paywall-btn-check:hover { color: rgba(200,170,120,0.9); }
+
+.paywall-tip {
+    font-size: 11px; color: var(--text-dim);
+    line-height: 1.6;
+}
+
+/* ---- 支付二维码弹窗 ---- */
+.payqr-backdrop {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65); z-index: 9998;
+    backdrop-filter: blur(3px);
+}
+.payqr-dialog {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1d2e;
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 4px;
+    padding: 30px 28px 24px;
+    text-align: center;
+    z-index: 9999;
+    min-width: 270px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.payqr-close {
+    position: absolute; top: 8px; right: 14px;
+    font-size: 18px; color: var(--text-dim); cursor: pointer;
+}
+.payqr-close:hover { color: var(--text-primary); }
+.payqr-title {
+    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+    font-size: 20px; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 6px;
+}
+.payqr-sub {
+    font-size: 11px; color: var(--text-dim);
+    margin-bottom: 18px; letter-spacing: 1px;
+}
+.payqr-img {
+    width: 200px; height: 200px;
+    border: 4px solid rgba(212,175,55,0.15);
+    border-radius: 4px; margin-bottom: 14px;
+    background: #fff;
+}
+.payqr-tip {
+    font-size: 11px; color: var(--text-dim);
+    line-height: 1.6;
+}
+
+/* ---- 响应式（手机适配） ---- */
+@media (max-width: 600px) {
+    .result-container { padding: 12px 8px 40px; }
+    .result-title { font-size: 28px; letter-spacing: 6px; }
+
+    /* 顶部信息 */
+    .nayin-info { font-size: 12px; flex-wrap: wrap; gap: 4px; }
+    .info-sep { margin: 0 4px; }
+
+    /* 四柱表格 */
+    .pp-label { flex: 0 0 42px; font-size: 10px; }
+    .tian-gan, .di-zhi { font-size: 22px; }
+    .pp-col { padding: 8px 4px; }
+    .cang-gan-char { font-size: 15px; }
+    .pp-cang { padding: 6px 4px !important; }
+    .cang-ss-text { font-size: 9px; color: #b8a878; }
+
+    .pp-dayun-col, .pp-liunian-col {
+        flex: 0 0 60px;
+        min-width: 60px;
+    }
+    .pp-dayun-col .tian-gan, .pp-dayun-col .di-zhi,
+    .pp-liunian-col .tian-gan, .pp-liunian-col .di-zhi {
+        font-size: 18px;
+    }
+
+    /* 大运流年 */
+    .dayun-col { flex: 0 0 65px; }
+    .dayun-gz { font-size: 17px; }
+    .liunian-col { flex: 0 0 58px; }
+    .liunian-gz { font-size: 15px; }
+
+    /* 抽屉标题 */
+    .drawer-toggle { padding: 12px 14px; }
+    .drawer-toggle h2 { font-size: 16px; letter-spacing: 3px; }
+    .drawer-body { padding: 0 10px; }
+
+    /* 神煞 */
+    .section-shensha-detail .shensha-accordion { padding: 10px 12px 14px; }
+    .ss-accordion-header { padding: 10px 12px; gap: 6px; }
+    .ss-accordion-content { padding: 0 12px 10px 34px; }
+
+    /* v3.0 手机端专项修复 */
+    /* 四柱表格横向滚动 */
+    .pp-row { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* 大运时间轴触控优化 */
+    .dayun-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+    .liunian-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* 支付二维码弹窗 */
+    .payqr-dialog { max-width: 90vw; padding: 20px 16px; }
+    /* 反馈弹窗 */
+    .feedback-dialog { max-width: 90vw; padding: 20px 16px; }
+    /* 下载横幅 */
+    .download-banner { flex-direction: column; gap: 8px; padding: 10px 14px; }
+    .download-banner .btn { width: 100%; }
+    /* 分享按钮区域 */
+    .share-btn { font-size: 12px; padding: 6px 12px; }
+    /* 付费遮罩按钮 */
+    .paywall-btn { width: 100%; max-width: 280px; font-size: 14px; }
+  }
+
+  /* 超小屏 (<380px) 进一步压缩 */
+  @media (max-width: 380px) {
+    .pp-col { padding: 4px 2px; }
+    .tian-gan, .di-zhi { font-size: 18px; }
+    .pp-label { flex: 0 0 36px; font-size: 9px; }
+    .result-title { font-size: 24px; letter-spacing: 4px; }
+  }
+    .ss-accordion-name { font-size: 14px; }
+    .ss-badge { font-size: 10px; padding: 1px 8px; }
+    .ss-group-header { font-size: 12px; letter-spacing: 3px; }
+
+    /* 五行分析 */
+    .section-wuxing .wuxing-stats,
+    .section-wuxing .wuxing-summary { padding: 10px 12px 14px; }
+    .wx-name { font-size: 13px; flex: 0 0 24px; }
+    .wx-num { font-size: 13px; flex: 0 0 20px; }
+
+    /* 称骨 */
+    .section-chenggu .chenggu-content { padding: 10px 12px 14px; }
+    .cg-breakdown { grid-template-columns: 1fr 1fr; gap: 6px; }
+     .cg-total { flex-direction: column; gap: 8px; text-align: center; }
+     .cg-item-value { font-size: 12px; }
+    .cg-geyao-header { flex-direction: column; gap: 4px; }
+    .cg-geyao-ming { font-size: 18px; }
+    .cg-geyao-duan { font-size: 13px; line-height: 1.8; }
+
+    /* 性格 */
+    .ch-dual { flex-direction: column; gap: 8px; }
+    .ch-gan-badge { font-size: 15px; padding: 4px 16px; }
+    .ch-card-text { font-size: 12px; }
+    .ch-comp-text { font-size: 13px; }
+    .ch-ss-tag { font-size: 10px; padding: 2px 7px; }
+
+    /* 配偶年龄 */
+    .sa-badge { font-size: 18px; padding: 4px 12px; }
+    .sa-bar-label { flex: 0 0 70px; font-size: 11px; }
+    .sa-desc { font-size: 13px; }
+
+    /* 流年运势 */
+    .ft-year-num { font-size: 18px; }
+    .ft-year-gz { font-size: 15px; }
+    .ft-legend { gap: 10px; }
+    .ft-desc { font-size: 12px; }
+
+    /* 学业分析 */
+    .st-level-badge { font-size: 16px; padding: 6px 20px; }
+    .st-metric-label { flex: 0 0 28px; font-size: 11px; }
+    .st-metric-num { font-size: 11px; }
+    .st-desc { font-size: 13px; }
+
+    /* 日主解析·滴天髓 */
+    .dt-shi { font-size: 16px; padding: 10px 8px; }
+    .dt-line { flex-direction: column; gap: 4px; }
+    .dt-ju { font-size: 14px; min-width: auto; }
+
+    /* 夫妻宫 */
+    .fq-pillar-gz { font-size: 22px; }
+    .fq-cang-gan { font-size: 16px; }
+    .fq-trait-text { font-size: 13px; }
+
+    /* 财运 */
+    .wl-top { flex-direction: column; gap: 8px; }
+    .wl-top-val { font-size: 14px; }
+    .wl-wang-bar { padding: 10px 12px; }
+
+    /* 父母 */
+    .pr-card { flex-direction: column; gap: 8px; }
+    .pr-card-icon { font-size: 24px; }
+    .pr-card-title { font-size: 14px; }
+
+    /* 通用 */
+    .section-header h2 { font-size: 16px; }
+    .taiji-deco { opacity: 0.06; }
+
+    /* 核芯区域移动端紧缩 */
+    .section-dayun, .section-liunian, .section-sizhu { margin-bottom: 20px; border-radius: 12px; }
+    .section-dayun .section-header, .section-liunian .section-header, .section-sizhu .section-header { padding: 12px 14px 10px; }
+    .section-dayun .section-header h2, .section-liunian .section-header h2, .section-sizhu .section-header h2 { font-size: 16px; letter-spacing: 3px; }
+    .dayun-col { flex: 0 0 68px; }
+
+    /* 下载横幅 */
+    .download-banner { margin: 16px 10px 0; padding: 14px 16px; }
+    .dl-banner-title { font-size: 15px; letter-spacing: 2px; margin-bottom: 12px; }
+    .dl-banner-btns { flex-direction: column; gap: 8px; }
+    .dl-btn { padding: 12px 8px; font-size: 14px; }
+
+    /* 底部联系 */
+     .ft-contact { flex-direction: column; gap: 10px; }
+     .ft-wechat, .ft-feedback { padding: 16px 14px; }
+     .ft-wx-icon, .ft-fb-icon { font-size: 26px; width: 46px; height: 46px; }
+     .ft-wx-id { font-size: 16px; }
+     .ft-wx-label, .ft-fb-label { font-size: 12px; }
+}
+/* ---- 反馈机制 ---- */
+.feedback-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;
+  align-items:center;justify-content:center }
+.feedback-overlay.show { display:flex }
+.feedback-dialog { background:#1a1a2e;border:1px solid rgba(212,175,55,.15);border-radius:16px;
+  padding:32px 28px 24px;width:90%;max-width:420px;position:relative }
+.feedback-close { position:absolute;top:12px;right:16px;font-size:20px;color:rgba(255,255,255,.2);
+  cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:all .2s }
+.feedback-close:hover { color:rgba(255,255,255,.6);background:rgba(255,255,255,.05) }
+.feedback-title { font-size:22px;color:#e0c860;text-align:center;font-weight:600;letter-spacing:2px;
+  margin-bottom:6px }
+.feedback-sub { font-size:13px;color:rgba(255,255,255,.3);text-align:center;margin-bottom:20px;
+  letter-spacing:1px }
+.feedback-textarea { width:100%;min-height:120px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;color:#ccc;
+  font-size:14px;resize:vertical;font-family:inherit;line-height:1.6;outline:none;transition:border .2s }
+.feedback-textarea:focus { border-color:rgba(212,175,55,.3) }
+.feedback-textarea::placeholder { color:rgba(255,255,255,.15) }
+.feedback-input { width:100%;margin-top:12px;padding:12px 14px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#ccc;font-size:14px;
+  font-family:inherit;outline:none;transition:border .2s }
+.feedback-input:focus { border-color:rgba(212,175,55,.3) }
+.feedback-input::placeholder { color:rgba(255,255,255,.15) }
+.feedback-submit { width:100%;margin-top:18px;padding:12px;background:rgba(212,175,55,.12);
+  border:1px solid rgba(212,175,55,.3);color:#e0c860;font-size:15px;font-weight:600;
+  border-radius:10px;cursor:pointer;letter-spacing:2px;font-family:inherit;
+  transition:all .2s }
+.feedback-submit:hover { background:rgba(212,175,55,.2) }
+.feedback-submit:disabled { opacity:.4;cursor:not-allowed }
+.feedback-result { text-align:center;margin-top:14px;font-size:13px;color:#8a8;min-height:20px }

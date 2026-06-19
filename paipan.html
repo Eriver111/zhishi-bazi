@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 - 传统文化探索工具</title>
+<meta name="description" content="知时，传统文化探索工具。输入生日，获取你的性格倾向、人生节奏参考。仅供娱乐交流。">
+<link rel="stylesheet" href="css/style.css">
+<script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_ID"></script>
+</head>
+<body>
+<div class="bg-layer"><canvas id="bgCanvas"></canvas><div class="bg-overlay"></div></div>
+<div class="ink-splash tl"></div>
+<div class="ink-splash br"></div>
+
+<div class="app">
+  <header class="header">
+    <div class="header-line"></div>
+    <h1><a href="index.html">知 时</a></h1>
+    <p class="tagline">知天时 · 见自己</p>
+  </header>
+
+  <div class="card">
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="solar" onclick="switchMode('solar')">公历</button>
+      <button class="mode-tab" data-mode="lunar" onclick="switchMode('lunar')">农历</button>
+      <a href="hepan.html" class="mode-tab" style="color:#a0d8b0;border:1px solid rgba(100,180,140,.25);margin-left:auto;text-decoration:none;padding:4px 14px;border-radius:20px;font-size:13px;letter-spacing:2px;transition:all .25s">合盘 ▸</a>
+    </div>
+
+    <form id="birthForm" novalidate>
+      <div class="mode-panel active" id="solarPanel">
+        <div class="row two">
+          <div class="field">
+            <label>年份</label>
+            <select id="sYear" required><option value="">选择年份</option></select>
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <select id="sMonth" required><option value="">选择月份</option></select>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="field">
+            <label>日期</label>
+            <select id="sDay" required><option value="">选择日期</option></select>
+          </div>
+          <div class="field">
+            <label>时辰（精确到点）</label>
+            <select id="sHour" required><option value="">选择时辰</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>精确分钟</label>
+            <input type="number" id="sMinute" min="0" max="59" placeholder="如 30" class="minute-inp">
+            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="lunarPanel">
+        <div class="row two">
+          <div class="field">
+            <label>农历年份</label>
+            <select id="lYear" required><option value="">选择年份</option></select>
+          </div>
+          <div class="field">
+            <label>农历月份</label>
+            <select id="lMonth" required><option value="">选择月份</option></select>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="field">
+            <label>农历日期</label>
+            <select id="lDay" required><option value="">选择日期</option></select>
+          </div>
+          <div class="field">
+            <label>时辰（精确到点）</label>
+            <select id="lHour" required><option value="">选择时辰</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>精确分钟</label>
+            <input type="number" id="lMinute" min="0" max="59" placeholder="如 30" class="minute-inp">
+            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          </div>
+        </div>
+        <div class="lunar-preview" id="lunarPreview"></div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>性别</label>
+          <div class="radio-group">
+            <label class="radio"><input type="radio" name="gender" value="male" required> <span>乾造 · 男</span></label>
+            <label class="radio"><input type="radio" name="gender" value="female"> <span>坤造 · 女</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div class="field">
+          <label>出生地 · 省</label>
+          <select id="province" required><option value="">选择省份</option></select>
+        </div>
+        <div class="field">
+          <label>出生地 · 市</label>
+          <select id="city" required disabled><option value="">选择城市</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>出生地 · 区县</label>
+          <select id="district" required disabled><option value="">选择区县</option></select>
+        </div>
+      </div>
+
+      <button type="submit" class="submit">起盘推演</button>
+    </form>
+
+    <div class="trust">
+      <span>🔒 全程加密</span>
+      <span>☁️ 不留存数据</span>
+      <span>⚡ 秒出结果</span>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>知天时，见自己 · 仅供娱乐交流</p>
+    <p class="disc">※ 本站内容仅供学习参考与娱乐交流，不构成任何决策建议</p>
+  </footer>
+</div>
+
+<script src="js/lunar.js"></script>
+<script src="js/region.js"></script>
+<script src="js/bg-animation.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

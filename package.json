@@ -1,0 +1,12 @@
+{
+  "name": "bazi-website-ai",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "crypto-js": "^4.2.0"
+  }
+}

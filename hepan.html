@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 合盘</title>
+<meta name="description" content="知时 · 合盘。输入双方生辰，查看合盘缘分分析。仅供娱乐交流。">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/hepan.css">
+</head>
+<body>
+
+<div class="hepan-wrap">
+  <!-- ====== Header ====== -->
+  <header class="header">
+    <div class="header-line"></div>
+    <h1><a href="index.html">知时</a></h1>
+    <p class="tagline">合盘</p>
+  </header>
+
+  <!-- ====== 关系类型选择 ====== -->
+  <div class="relation-types" id="relationTypes">
+    <div class="rel-card selected" data-type="夫妻" onclick="selectRelation(this)">
+      <span class="rel-icon">&#x1f48d;</span>
+      <span class="rel-label">夫妻</span>
+      <span class="rel-sub">婚姻缘分</span>
+    </div>
+    <div class="rel-card" data-type="情侣" onclick="selectRelation(this)">
+      <span class="rel-icon">&#x2764;</span>
+      <span class="rel-label">情侣</span>
+      <span class="rel-sub">恋爱契合</span>
+    </div>
+    <div class="rel-card" data-type="朋友" onclick="selectRelation(this)">
+      <span class="rel-icon">&#x1f91d;</span>
+      <span class="rel-label">朋友</span>
+      <span class="rel-sub">知己同行</span>
+    </div>
+  </div>
+
+  <!-- ====== 甲方 Section ====== -->
+  <div class="person-section" id="p1Section">
+    <div class="person-label">甲 方</div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="solar" onclick="switchModeP1('solar')">公历</button>
+      <button class="mode-tab" data-mode="lunar" onclick="switchModeP1('lunar')">农历</button>
+    </div>
+
+    <form id="p1Form" novalidate>
+      <!-- 公历面板 -->
+      <div class="mode-panel active" id="solarPanel-p1">
+        <div class="row two">
+          <div class="field">
+            <label>年份</label>
+            <select id="sYear-p1" required><option value="">选择年份</option></select>
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <select id="sMonth-p1" required><option value="">选择月份</option></select>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="field">
+            <label>日期</label>
+            <select id="sDay-p1" required><option value="">选择日期</option></select>
+          </div>
+          <div class="field">
+            <label>时辰（精确到点）</label>
+            <select id="sHour-p1" required><option value="">选择时辰</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>精确分钟</label>
+            <input type="number" id="sMinute-p1" min="0" max="59" placeholder="如 30" class="minute-inp">
+            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 农历面板 -->
+      <div class="mode-panel" id="lunarPanel-p1">
+        <div class="row two">
+          <div class="field">
+            <label>农历年份</label>
+            <select id="lYear-p1" required><option value="">选择年份</option></select>
+          </div>
+          <div class="field">
+            <label>农历月份</label>
+            <select id="lMonth-p1" required><option value="">选择月份</option></select>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="field">
+            <label>农历日期</label>
+            <select id="lDay-p1" required><option value="">选择日期</option></select>
+          </div>
+          <div class="field">
+            <label>时辰（精确到点）</label>
+            <select id="lHour-p1" required><option value="">选择时辰</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>精确分钟</label>
+            <input type="number" id="lMinute-p1" min="0" max="59" placeholder="如 30" class="minute-inp">
+            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          </div>
+        </div>
+        <div class="lunar-preview" id="lunarPreview-p1"></div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>性别</label>
+          <div class="radio-group">
+            <label class="radio"><input type="radio" name="gender-p1" value="male" required> <span>乾造 · 男</span></label>
+            <label class="radio"><input type="radio" name="gender-p1" value="female"> <span>坤造 · 女</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div class="field">
+          <label>出生地 · 省</label>
+          <select id="province-p1" required><option value="">选择省份</option></select>
+        </div>
+        <div class="field">
+          <label>出生地 · 市</label>
+          <select id="city-p1" required disabled><option value="">选择城市</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>出生地 · 区县</label>
+          <select id="district-p1" required disabled><option value="">选择区县</option></select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ====== 切换甲乙 ====== -->
+  <div class="swap-bar">
+    <button class="swap-btn" onclick="swapPersons()">
+      <span class="swap-arrow">&#x21c5;</span> 切换甲乙
+    </button>
+  </div>
+
+  <!-- ====== 乙方 Section ====== -->
+  <div class="person-section" id="p2Section">
+    <div class="person-label p2">乙 方</div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="solar" onclick="switchModeP2('solar')">公历</button>
+      <button class="mode-tab" data-mode="lunar" onclick="switchModeP2('lunar')">农历</button>
+    </div>
+
+    <form id="p2Form" novalidate>
+      <!-- 公历面板 -->
+      <div class="mode-panel active" id="solarPanel-p2">
+        <div class="row two">
+          <div class="field">
+            <label>年份</label>
+            <select id="sYear-p2" required><option value="">选择年份</option></select>
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <select id="sMonth-p2" required><option value="">选择月份</option></select>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="field">
+            <label>日期</label>
+            <select id="sDay-p2" required><option value="">选择日期</option></select>
+          </div>
+          <div class="field">
+            <label>时辰（精确到点）</label>
+            <select id="sHour-p2" required><option value="">选择时辰</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>精确分钟</label>
+            <input type="number" id="sMinute-p2" min="0" max="59" placeholder="如 30" class="minute-inp">
+            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 农历面板 -->
+      <div class="mode-panel" id="lunarPanel-p2">
+        <div class="row two">
+          <div class="field">
+            <label>农历年份</label>
+            <select id="lYear-p2" required><option value="">选择年份</option></select>
+          </div>
+          <div class="field">
+            <label>农历月份</label>
+            <select id="lMonth-p2" required><option value="">选择月份</option></select>
+          </div>
+        </div>
+        <div class="row two">
+          <div class="field">
+            <label>农历日期</label>
+            <select id="lDay-p2" required><option value="">选择日期</option></select>
+          </div>
+          <div class="field">
+            <label>时辰（精确到点）</label>
+            <select id="lHour-p2" required><option value="">选择时辰</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>精确分钟</label>
+            <input type="number" id="lMinute-p2" min="0" max="59" placeholder="如 30" class="minute-inp">
+            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          </div>
+        </div>
+        <div class="lunar-preview" id="lunarPreview-p2"></div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>性别</label>
+          <div class="radio-group">
+            <label class="radio"><input type="radio" name="gender-p2" value="male" required> <span>乾造 · 男</span></label>
+            <label class="radio"><input type="radio" name="gender-p2" value="female"> <span>坤造 · 女</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row two">
+        <div class="field">
+          <label>出生地 · 省</label>
+          <select id="province-p2" required><option value="">选择省份</option></select>
+        </div>
+        <div class="field">
+          <label>出生地 · 市</label>
+          <select id="city-p2" required disabled><option value="">选择城市</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>出生地 · 区县</label>
+          <select id="district-p2" required disabled><option value="">选择区县</option></select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ====== 提交 ====== -->
+  <button class="hepan-submit" id="submitBtn" onclick="handleSubmit()">开始合盘</button>
+
+  <!-- ====== Footer ====== -->
+  <footer class="hepan-footer">
+    <p>知天时，见自己 · 仅供娱乐交流</p>
+    <p class="disc">※ 本站内容仅供学习参考与娱乐交流，不构成任何决策建议</p>
+  </footer>
+</div>
+
+<script src="js/lunar.js"></script>
+<script src="js/region.js"></script>
+
+<script>
+// ============ 页面级 JS ============
+
+// --- 全局状态 ---
+var selectedRelation = '夫妻';
+var modeP1 = 'solar';
+var modeP2 = 'solar';
+
+// ============ 初始化 ============
+document.addEventListener('DOMContentLoaded', function() {
+  // 分别初始化两个人的控件
+  initPersonSelects('p1');
+  initPersonSelects('p2');
+  initPersonProvinces('p1');
+  initPersonProvinces('p2');
+  initPersonHourSelects('p1');
+  initPersonHourSelects('p2');
+  initPersonEvents('p1');
+  initPersonEvents('p2');
+
+  // 初始禁用隐藏面板（两个人的农历面板均隐藏）
+  setPanelFields(document.getElementById('lunarPanel-p1'), true);
+  setPanelFields(document.getElementById('lunarPanel-p2'), true);
+});
+
+// ============ 关系选择 ============
+function selectRelation(card) {
+  var cards = document.querySelectorAll('#relationTypes .rel-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('selected');
+  }
+  card.classList.add('selected');
+  selectedRelation = card.getAttribute('data-type');
+}
+
+// ============ 日期控件初始化 ============
+function initPersonSelects(pid) {
+  // 公历年份
+  var sY = document.getElementById('sYear-' + pid);
+  for (var y = 2025; y >= 1900; y--) {
+    var o = document.createElement('option'); o.value = y; o.textContent = y + '年'; sY.appendChild(o);
+  }
+  // 公历月份
+  var sM = document.getElementById('sMonth-' + pid);
+  for (var m = 1; m <= 12; m++) {
+    var o = document.createElement('option'); o.value = m; o.textContent = m + '月'; sM.appendChild(o);
+  }
+  // 农历年份
+  var lY = document.getElementById('lYear-' + pid);
+  for (var y = 2025; y >= 1900; y--) {
+    var o = document.createElement('option'); o.value = y;
+    o.textContent = y + '年（' + LunarCalendar.ANIMALS[(y - 4) % 12] + '年）';
+    lY.appendChild(o);
+  }
+}
+
+// ============ 时辰控件初始化 ============
+function initPersonHourSelects(pid) {
+  var hourMap = {24: [
+    {v:0,l:'子',c:23,t:'23点（晚子时）'},{v:0,l:'子',c:0,t:' 0点（早子时）'},
+    {v:1,l:'丑',c:1,t:' 1点'},{v:1,l:'丑',c:2,t:' 2点'},
+    {v:2,l:'寅',c:3,t:' 3点'},{v:2,l:'寅',c:4,t:' 4点'},
+    {v:3,l:'卯',c:5,t:' 5点'},{v:3,l:'卯',c:6,t:' 6点'},
+    {v:4,l:'辰',c:7,t:' 7点'},{v:4,l:'辰',c:8,t:' 8点'},
+    {v:5,l:'巳',c:9,t:' 9点'},{v:5,l:'巳',c:10,t:'10点'},
+    {v:6,l:'午',c:11,t:'11点'},{v:6,l:'午',c:12,t:'12点'},
+    {v:7,l:'未',c:13,t:'13点'},{v:7,l:'未',c:14,t:'14点'},
+    {v:8,l:'申',c:15,t:'15点'},{v:8,l:'申',c:16,t:'16点'},
+    {v:9,l:'酉',c:17,t:'17点'},{v:9,l:'酉',c:18,t:'18点'},
+    {v:10,l:'戌',c:19,t:'19点'},{v:10,l:'戌',c:20,t:'20点'},
+    {v:11,l:'亥',c:21,t:'21点'},{v:11,l:'亥',c:22,t:'22点'}
+  ]};
+
+  var groups = {};
+  hourMap[24].forEach(function(sc) {
+    var gid = sc.l + '时';
+    if (!groups[gid]) groups[gid] = [];
+    groups[gid].push(sc);
+  });
+
+  var hourLabels = ['23:00-01:00','01:00-03:00','03:00-05:00','05:00-07:00','07:00-09:00',
+    '09:00-11:00','11:00-13:00','13:00-15:00','15:00-17:00','17:00-19:00',
+    '19:00-21:00','21:00-23:00'];
+
+  ['sHour-' + pid, 'lHour-' + pid].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">选择时辰</option>';
+    var idx = 0;
+    Object.keys(groups).forEach(function(name) {
+      var og = document.createElement('optgroup');
+      og.label = name + ' ' + (hourLabels[idx] || '');
+      groups[name].forEach(function(sc) {
+        var o = document.createElement('option');
+        o.value = sc.v; o.setAttribute('data-clock', sc.c);
+        o.textContent = sc.t;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+      idx++;
+    });
+  });
+}
+
+// ============ 省份联动初始化 ============
+function initPersonProvinces(pid) {
+  var pS = document.getElementById('province-' + pid);
+  if (!pS || typeof REGION_DATA === 'undefined') return;
+  Object.keys(REGION_DATA).forEach(function(p) {
+    var o = document.createElement('option'); o.value = p; o.textContent = p; pS.appendChild(o);
+  });
+
+  var cS = document.getElementById('city-' + pid);
+  var dS = document.getElementById('district-' + pid);
+  pS.addEventListener('change', function() {
+    var p = this.value;
+    cS.innerHTML = '<option value="">选择城市</option>';
+    dS.innerHTML = '<option value="">选择区县</option>';
+    cS.disabled = true; dS.disabled = true;
+    if (!p || !REGION_DATA[p]) return;
+    Object.keys(REGION_DATA[p]).forEach(function(c) {
+      var o = document.createElement('option'); o.value = c; o.textContent = c; cS.appendChild(o);
+    });
+    cS.disabled = false;
+  });
+  cS.addEventListener('change', function() {
+    var p = pS.value, c = this.value;
+    dS.innerHTML = '<option value="">选择区县</option>';
+    dS.disabled = true;
+    if (!p || !c || !REGION_DATA[p] || !REGION_DATA[p][c]) return;
+    REGION_DATA[p][c].forEach(function(d) {
+      var o = document.createElement('option'); o.value = d; o.textContent = d; dS.appendChild(o);
+    });
+    dS.disabled = false;
+  });
+}
+
+// ============ 事件绑定 ============
+function initPersonEvents(pid) {
+  var sY = document.getElementById('sYear-' + pid);
+  var sM = document.getElementById('sMonth-' + pid);
+  var lY = document.getElementById('lYear-' + pid);
+  var lM = document.getElementById('lMonth-' + pid);
+
+  if (sY) sY.addEventListener('change', function() { updateSolarDays(pid); });
+  if (sM) sM.addEventListener('change', function() { updateSolarDays(pid); });
+  if (lY) lY.addEventListener('change', function() { updateLunarMonths(pid); });
+  if (lM) lM.addEventListener('change', function() { updateLunarDays(pid); });
+}
+
+// ---- 公历日联动 ----
+document.addEventListener('change', function(e) {
+  // 公历→农历预览
+  if (e.target.id === 'sYear-p1' || e.target.id === 'sMonth-p1' || e.target.id === 'sDay-p1') {
+    showSolarLunarHint('p1');
+  }
+  if (e.target.id === 'sYear-p2' || e.target.id === 'sMonth-p2' || e.target.id === 'sDay-p2') {
+    showSolarLunarHint('p2');
+  }
+  // 农历日→公历预览
+  if (e.target.id === 'lDay-p1') {
+    var y = parseInt(document.getElementById('lYear-p1').value);
+    var mV = document.getElementById('lMonth-p1').value;
+    var ld = parseInt(e.target.value);
+    if (y && mV && ld) {
+      var lm = parseInt(mV), isLeap = mV.startsWith('r');
+      if (isLeap) lm = parseInt(mV.substring(1));
+      showLunarPreview('p1', y, lm, ld, isLeap);
+    }
+  }
+  if (e.target.id === 'lDay-p2') {
+    var y = parseInt(document.getElementById('lYear-p2').value);
+    var mV = document.getElementById('lMonth-p2').value;
+    var ld = parseInt(e.target.value);
+    if (y && mV && ld) {
+      var lm = parseInt(mV), isLeap = mV.startsWith('r');
+      if (isLeap) lm = parseInt(mV.substring(1));
+      showLunarPreview('p2', y, lm, ld, isLeap);
+    }
+  }
+});
+
+function updateSolarDays(pid) {
+  var ys = document.getElementById('sYear-' + pid);
+  var ms = document.getElementById('sMonth-' + pid);
+  var dS = document.getElementById('sDay-' + pid);
+  if (!ys || !ms || !dS) return;
+  var y = parseInt(ys.value);
+  var m = parseInt(ms.value);
+  if (!y || !m) { dS.innerHTML = '<option value="">选择日期</option>'; return; }
+  var max = new Date(y, m, 0).getDate();
+  var cur = dS.value;
+  dS.innerHTML = '<option value="">选择日期</option>';
+  for (var d = 1; d <= max; d++) {
+    var o = document.createElement('option'); o.value = d; o.textContent = d + '日'; dS.appendChild(o);
+  }
+  if (cur && parseInt(cur) <= max) dS.value = cur;
+}
+
+function updateLunarMonths(pid) {
+  var y = parseInt(document.getElementById('lYear-' + pid).value);
+  var mS = document.getElementById('lMonth-' + pid);
+  var prev = document.getElementById('lunarPreview-' + pid);
+  if (!y) { mS.innerHTML = '<option value="">选择月份</option>'; prev.classList.remove('show'); return; }
+
+  var leapMonth = LunarCalendar.leapMonth(y);
+  mS.innerHTML = '<option value="">选择月份</option>';
+  var LM = LunarCalendar.LUNAR_MONTH;
+  for (var m = 1; m <= 12; m++) {
+    var o = document.createElement('option'); o.value = m;
+    o.textContent = LM[m - 1] + '月';
+    mS.appendChild(o);
+    if (m === leapMonth) {
+      var o2 = document.createElement('option');
+      o2.value = 'r' + m;
+      o2.textContent = '闰' + LM[m - 1] + '月';
+      mS.appendChild(o2);
+    }
+  }
+  updateLunarDays(pid);
+}
+
+function updateLunarDays(pid) {
+  var y = parseInt(document.getElementById('lYear-' + pid).value);
+  var mV = document.getElementById('lMonth-' + pid).value;
+  var dS = document.getElementById('lDay-' + pid);
+  var prev = document.getElementById('lunarPreview-' + pid);
+  if (!y || !mV) { dS.innerHTML = '<option value="">选择日期</option>'; prev.classList.remove('show'); return; }
+
+  var lm = parseInt(mV);
+  var isLeap = false;
+  if (mV.startsWith('r')) { lm = parseInt(mV.substring(1)); isLeap = true; }
+
+  var maxDay;
+  try { maxDay = LunarCalendar.monthDays(y, lm); } catch(e) { maxDay = 29; }
+
+  dS.innerHTML = '<option value="">选择日期</option>';
+  var LD = LunarCalendar.LUNAR_DAY;
+  for (var d = 1; d <= maxDay; d++) {
+    var o = document.createElement('option'); o.value = d; o.textContent = LD[d]; dS.appendChild(o);
+  }
+
+  var ld = parseInt(dS.value);
+  if (ld > 0) showLunarPreview(pid, y, lm, ld, isLeap);
+}
+
+function showSolarLunarHint(pid) {
+  var y = parseInt(document.getElementById('sYear-' + pid).value);
+  var m = parseInt(document.getElementById('sMonth-' + pid).value);
+  var d = parseInt(document.getElementById('sDay-' + pid).value);
+  var prev = document.getElementById('lunarPreview-' + pid);
+  if (!y || !m || !d) { prev.classList.remove('show'); return; }
+  try {
+    var lr = LunarCalendar.solarToLunar(y, m, d);
+    prev.textContent = '对应农历：' + lr.yearName + ' ' + lr.monthName + lr.dayName;
+    prev.classList.add('show');
+  } catch(e) { prev.classList.remove('show'); }
+}
+
+function showLunarPreview(pid, ly, lm, ld, isLeap) {
+  var prev = document.getElementById('lunarPreview-' + pid);
+  try {
+    var sr = LunarCalendar.lunarToSolar(ly, lm, ld, isLeap);
+    prev.textContent = '对应公历：' + sr.year + '年' + sr.month + '月' + sr.day + '日';
+    prev.classList.add('show');
+  } catch(e) { prev.classList.remove('show'); }
+}
+
+// ============ 模式切换（独立 for 甲/乙） ============
+function switchModeP1(mode) {
+  switchModeForPerson('p1', mode);
+}
+function switchModeP2(mode) {
+  switchModeForPerson('p2', mode);
+}
+
+function switchModeForPerson(pid, mode) {
+  var currentMode = pid === 'p1' ? modeP1 : modeP2;
+  if (currentMode === mode) return;
+
+  if (pid === 'p1') modeP1 = mode; else modeP2 = mode;
+
+  // 更新该人 tabs
+  var pSection = document.getElementById(pid === 'p1' ? 'p1Section' : 'p2Section');
+  var tabs = pSection.querySelectorAll('.mode-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].getAttribute('data-mode') === mode);
+  }
+
+  var oldPanel = pSection.querySelector('.mode-panel.active');
+  var newId = mode === 'solar' ? 'solarPanel-' + pid : 'lunarPanel-' + pid;
+  var newPanel = document.getElementById(newId);
+
+  if (oldPanel === newPanel) return;
+
+  if (oldPanel) { oldPanel.classList.remove('active'); setPanelFields(oldPanel, true); }
+  if (newPanel) { newPanel.classList.add('active'); setPanelFields(newPanel, false); }
+
+  var prev = document.getElementById('lunarPreview-' + pid);
+  if (prev) prev.classList.remove('show');
+}
+
+function setPanelFields(panel, disabled) {
+  var fields = panel.querySelectorAll('select, input');
+  for (var i = 0; i < fields.length; i++) {
+    if (disabled) {
+      fields[i].setAttribute('data-was-required', fields[i].hasAttribute('required'));
+      fields[i].removeAttribute('required');
+      fields[i].disabled = true;
+    } else {
+      if (fields[i].getAttribute('data-was-required') === 'true') {
+        fields[i].setAttribute('required', '');
+      }
+      fields[i].removeAttribute('data-was-required');
+      fields[i].disabled = false;
+    }
+  }
+}
+
+// ============ 切换甲乙 ============
+function swapPersons() {
+  // 交换两个人的数据 —— 收集当前双方数据，然后互换写入
+  var p1 = collectPersonData('p1');
+  var p2 = collectPersonData('p2');
+
+  applyPersonData('p1', p2);
+  applyPersonData('p2', p1);
+
+  // 交换日历模式
+  var tmpMode = modeP1;
+  modeP1 = modeP2;
+  modeP2 = tmpMode;
+
+  // 直观显示当前模式
+  switchModeForPersonUI('p1', modeP1);
+  switchModeForPersonUI('p2', modeP2);
+
+  showToast('已切换甲乙双方信息');
+}
+
+function collectPersonData(pid) {
+  var data = {};
+  // Solar fields
+  data.sYear = document.getElementById('sYear-' + pid).value;
+  data.sMonth = document.getElementById('sMonth-' + pid).value;
+  data.sDay = document.getElementById('sDay-' + pid).value;
+  data.sHour = document.getElementById('sHour-' + pid).value;
+  data.sMinute = document.getElementById('sMinute-' + pid).value;
+  // Lunar fields
+  data.lYear = document.getElementById('lYear-' + pid).value;
+  data.lMonth = document.getElementById('lMonth-' + pid).value;
+  data.lDay = document.getElementById('lDay-' + pid).value;
+  data.lHour = document.getElementById('lHour-' + pid).value;
+  data.lMinute = document.getElementById('lMinute-' + pid).value;
+  // Gender
+  var g = document.querySelector('input[name="gender-' + pid + '"]:checked');
+  data.gender = g ? g.value : '';
+  // Location
+  data.prov = document.getElementById('province-' + pid).value;
+  data.city = document.getElementById('city-' + pid).value;
+  data.dist = document.getElementById('district-' + pid).value;
+  // Calendar mode
+  data.calMode = (pid === 'p1') ? modeP1 : modeP2;
+  return data;
+}
+
+function applyPersonData(pid, data) {
+  // Solar
+  document.getElementById('sYear-' + pid).value = data.sYear || '';
+  document.getElementById('sMonth-' + pid).value = data.sMonth || '';
+  document.getElementById('sDay-' + pid).value = data.sDay || '';
+  document.getElementById('sHour-' + pid).value = data.sHour || '';
+  document.getElementById('sMinute-' + pid).value = data.sMinute || '';
+  // Lunar
+  document.getElementById('lYear-' + pid).value = data.lYear || '';
+  document.getElementById('lMonth-' + pid).value = data.lMonth || '';
+  document.getElementById('lDay-' + pid).value = data.lDay || '';
+  document.getElementById('lHour-' + pid).value = data.lHour || '';
+  document.getElementById('lMinute-' + pid).value = data.lMinute || '';
+  // Gender
+  if (data.gender) {
+    var radios = document.querySelectorAll('input[name="gender-' + pid + '"]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].checked = (radios[i].value === data.gender);
+    }
+  }
+  // Location
+  if (data.prov) {
+    document.getElementById('province-' + pid).value = data.prov;
+    // Trigger city populate
+    var pS = document.getElementById('province-' + pid);
+    var cS = document.getElementById('city-' + pid);
+    var dS = document.getElementById('district-' + pid);
+    if (REGION_DATA && REGION_DATA[data.prov]) {
+      cS.innerHTML = '<option value="">选择城市</option>';
+      Object.keys(REGION_DATA[data.prov]).forEach(function(c) {
+        var o = document.createElement('option'); o.value = c; o.textContent = c; cS.appendChild(o);
+      });
+      cS.disabled = false;
+      if (data.city && REGION_DATA[data.prov][data.city]) {
+        cS.value = data.city;
+        dS.innerHTML = '<option value="">选择区县</option>';
+        REGION_DATA[data.prov][data.city].forEach(function(d) {
+          var o = document.createElement('option'); o.value = d; o.textContent = d; dS.appendChild(o);
+        });
+        dS.disabled = false;
+        if (data.dist) dS.value = data.dist;
+      }
+    }
+  }
+}
+
+function switchModeForPersonUI(pid, mode) {
+  var pSection = document.getElementById(pid === 'p1' ? 'p1Section' : 'p2Section');
+  var tabs = pSection.querySelectorAll('.mode-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].getAttribute('data-mode') === mode);
+  }
+  var solarPanel = document.getElementById('solarPanel-' + pid);
+  var lunarPanel = document.getElementById('lunarPanel-' + pid);
+  if (mode === 'solar') {
+    solarPanel.classList.add('active'); setPanelFields(solarPanel, false);
+    lunarPanel.classList.remove('active'); setPanelFields(lunarPanel, true);
+  } else {
+    lunarPanel.classList.add('active'); setPanelFields(lunarPanel, false);
+    solarPanel.classList.remove('active'); setPanelFields(solarPanel, true);
+  }
+}
+
+// ============ Toast ============
+function showToast(msg) {
+  var existing = document.querySelector('.valid-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'valid-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transition = 'opacity .3s';
+    setTimeout(function() { if (t.parentNode) t.remove(); }, 300);
+  }, 1500);
+}
+
+// ============ 提交流程 ============
+function handleSubmit() {
+  var btn = document.getElementById('submitBtn');
+
+  // 1. 验证关系类型
+  if (!selectedRelation) {
+    showToast('请选择合盘关系类型');
+    return;
+  }
+
+  // 2. 收集并验证双方数据
+  var p1 = collectPersonFormData('p1');
+  if (!p1) return;
+  var p2 = collectPersonFormData('p2');
+  if (!p2) return;
+
+  // 3. 构造 URL 参数
+  btn.classList.add('loading');
+  btn.textContent = '正在准备...';
+
+  var params = new URLSearchParams();
+  params.set('type', selectedRelation);
+
+  // Person 1 params
+  appendPersonParams(params, 'p1', p1);
+  // Person 2 params
+  appendPersonParams(params, 'p2', p2);
+
+  setTimeout(function() {
+    window.location.href = 'hepan-result.html?' + params.toString();
+  }, 500);
+}
+
+function collectPersonFormData(pid) {
+  var label = pid === 'p1' ? '甲方' : '乙方';
+  var calMode = pid === 'p1' ? modeP1 : modeP2;
+
+  var year, month, day, hour, clock, minute;
+
+  if (calMode === 'solar') {
+    year = parseInt(document.getElementById('sYear-' + pid).value);
+    month = parseInt(document.getElementById('sMonth-' + pid).value);
+    day = parseInt(document.getElementById('sDay-' + pid).value);
+    hour = parseInt(document.getElementById('sHour-' + pid).value);
+
+    if (!year || !month || !day || isNaN(hour)) {
+      showToast(label + '：请完整填写公历出生日期和时辰');
+      return null;
+    }
+
+    var hSel = document.getElementById('sHour-' + pid);
+    clock = hSel && hSel.selectedOptions[0] ? hSel.selectedOptions[0].getAttribute('data-clock') : null;
+    var mEl = document.getElementById('sMinute-' + pid);
+    minute = (mEl && mEl.value) ? parseInt(mEl.value) || 0 : 0;
+  } else {
+    // lunar mode
+    var ly = parseInt(document.getElementById('lYear-' + pid).value);
+    var mV = document.getElementById('lMonth-' + pid).value;
+    var ld = parseInt(document.getElementById('lDay-' + pid).value);
+    var lm = parseInt(mV);
+    var isLeap = mV.startsWith('r');
+    if (isLeap) lm = parseInt(mV.substring(1));
+
+    if (!ly || !mV || !ld) {
+      showToast(label + '：请完整填写农历出生日期');
+      return null;
+    }
+
+    try {
+      var sr = LunarCalendar.lunarToSolar(ly, lm, ld, isLeap);
+      year = sr.year; month = sr.month; day = sr.day;
+    } catch(e) {
+      showToast(label + '：农历转换失败，请重试');
+      return null;
+    }
+
+    hour = parseInt(document.getElementById('lHour-' + pid).value);
+    var lhSel = document.getElementById('lHour-' + pid);
+    clock = lhSel && lhSel.selectedOptions[0] ? lhSel.selectedOptions[0].getAttribute('data-clock') : null;
+    minute = parseInt(document.getElementById('lMinute-' + pid).value) || 0;
+  }
+
+  if (!year || !month || !day || isNaN(hour)) {
+    showToast(label + '：请完整填写所有信息');
+    return null;
+  }
+
+  var gender = document.querySelector('input[name="gender-' + pid + '"]:checked');
+  if (!gender) {
+    showToast(label + '：请选择性别');
+    return null;
+  }
+  gender = gender.value;
+
+  var prov = document.getElementById('province-' + pid).value;
+  var city = document.getElementById('city-' + pid).value;
+  var dist = document.getElementById('district-' + pid).value;
+
+  if (!prov || !city || !dist) {
+    showToast(label + '：请完整选择出生地（省/市/区）');
+    return null;
+  }
+
+  return {
+    year: year, month: month, day: day, hour: hour,
+    clock: clock, minute: minute, gender: gender,
+    prov: prov, city: city, dist: dist, cal: calMode
+  };
+}
+
+function appendPersonParams(params, prefix, data) {
+  params.set(prefix + 'y', data.year);
+  params.set(prefix + 'm', data.month);
+  params.set(prefix + 'd', data.day);
+  params.set(prefix + 'h', data.hour);
+  if (data.clock) params.set(prefix + 'clock', data.clock);
+  if (data.minute !== undefined && data.minute !== 0) params.set(prefix + 'min', data.minute);
+  params.set(prefix + 'g', data.gender);
+  params.set(prefix + 'prov', data.prov);
+  params.set(prefix + 'city', data.city);
+  params.set(prefix + 'dist', data.dist);
+  params.set(prefix + 'cal', data.cal);
+}
+</script>
+
+</body>
+</html>

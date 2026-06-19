@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      margin: 0; width: 1920px; height: 1080px; overflow: hidden;
+      background: #0a0a14; font-family: "Noto Sans JP","Noto Sans JP","Noto Sans JP",serif; color: #e0d8c8;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+
+    /* Background orbs */
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.08;
+      pointer-events: none;
+    }
+    .clip-fade {
+      opacity: 0;
+    }
+
+    /* Section backgrounds */
+    .section-bg {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+
+    /* Gold accent */
+    .gold { color: #e0c860; }
+    .gold-bg { background: rgba(212,175,55,0.08); }
+    .gold-border { border: 1px solid rgba(212,175,55,0.2); }
+    .gold-line { height: 1px; background: linear-gradient(90deg,transparent,rgba(212,175,55,.25),transparent); }
+    .gold-line-v { width: 1px; background: linear-gradient(180deg,transparent,rgba(212,175,55,.2),transparent); }
+
+    /* Common cards */
+    .pillar-box {
+      display: inline-flex; flex-direction: column; align-items: center;
+      padding: 12px 14px; border-radius: 8px; min-width: 70px;
+    }
+    .pillar-gan { font-size: 28px; font-weight: 700; }
+    .pillar-zhi { font-size: 28px; font-weight: 700; }
+    .pillar-label { font-size: 11px; color: rgba(180,170,150,.4); margin-bottom: 6px; }
+
+    .feature-tag {
+      display: inline-block; padding: 4px 14px; border-radius: 20px;
+      font-size: 14px; letter-spacing: 3px; font-weight: 600;
+    }
+
+    .cta-btn {
+      display: inline-block; padding: 16px 48px; border-radius: 8px;
+      font-size: 22px; font-weight: 700; letter-spacing: 5px;
+      text-decoration: none;
+    }
+
+    /* Fade reveal */
+    .fade-reveal { position: absolute; left:0; right:0; height: 200px; pointer-events: none; z-index: 5; }
+    .fade-top { top: 0; background: linear-gradient(to bottom, #0a0a14, transparent); }
+    .fade-bottom { bottom: 0; background: linear-gradient(to top, #0a0a14, transparent); }
+
+    /* Price tag */
+    .price-bubble {
+      width: 140px; height: 140px; border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-weight: 900;
+    }
+  </style>
+</head>
+<body>
+
+<div data-hf-id="hf-7tcw" id="root" data-composition-id="main" data-start="0" data-duration="55" data-width="1920" data-height="1080">
+
+  <!-- ============================================================
+       SCENE 1: 0-6s — BRAND INTRO
+       ============================================================ -->
+  <!-- Orbs for atmosphere -->
+  <div data-hf-id="hf-b9lb" class="orb clip clip-fade" data-start="0" data-duration="6" data-track-index="0" id="orb1" style="width:600px;height:600px;top:-100px;left:660px;background:radial-gradient(circle,#e0c860,transparent)"></div>
+  <div data-hf-id="hf-q1yw" class="orb clip clip-fade" data-start="0" data-duration="6" data-track-index="10" id="orb2" style="width:400px;height:400px;bottom:-80px;right:400px;background:radial-gradient(circle,#a89858,transparent)"></div>
+
+  <!-- Brand -->
+  <div data-hf-id="hf-aop8" id="brandName" class="clip" data-start="0" data-duration="5.5" data-track-index="10" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:2">
+    <div data-hf-id="hf-jihk" style="font-size:100px;color:#e0c860;letter-spacing:40px;font-weight:900;line-height:1">知 时</div>
+    <div data-hf-id="hf-q713" style="font-size:28px;color:#a89858;letter-spacing:20px;margin-top:20px">知 天 时 · 见 自 己</div>
+    <div data-hf-id="hf-alwy" class="gold-line" style="width:200px;margin:30px auto 0"></div>
+    <div data-hf-id="hf-bz32" style="font-size:16px;color:rgba(180,170,150,.4);letter-spacing:8px;margin-top:18px">八字命理 · 排盘分析 · 在线合婚</div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 2: 6-16s — 智能排盘
+       ============================================================ -->
+  <div data-hf-id="hf-ed50" class="orb clip clip-fade" data-start="6" data-duration="10" data-track-index="0" id="orb3" style="width:500px;height:500px;top:200px;left:150px;background:radial-gradient(circle,rgba(100,180,240,.15),transparent);border-radius:50%;filter:blur(100px)"></div>
+
+  <div data-hf-id="hf-il8t" id="scene2Title" class="clip" data-start="6" data-duration="9" data-track-index="11" style="position:absolute;top:80px;left:0;right:0;text-align:center;z-index:2">
+    <div data-hf-id="hf-axbt" class="feature-tag" style="background:rgba(100,180,240,.1);border:1px solid rgba(100,180,240,.2);color:#7cb8e6">功能一</div>
+    <div data-hf-id="hf-mdhc" style="font-size:48px;color:#e0c860;letter-spacing:12px;margin-top:14px;font-weight:700">智能八字排盘</div>
+    <div data-hf-id="hf-qxdh" style="font-size:20px;color:rgba(180,170,150,.5);margin-top:10px;letter-spacing:4px">输入生辰 · 秒出四柱 · 真太阳时校正</div>
+  </div>
+
+  <!-- Input form mini -->
+  <div data-hf-id="hf-eyt3" id="formCard" class="clip" data-start="7" data-duration="8" data-track-index="2" style="position:absolute;left:200px;top:320px;z-index:2;
+              background:rgba(20,20,35,.85);border-radius:14px;padding:28px 32px;
+              border:1px solid rgba(255,255,255,.06);width:340px">
+    <div data-hf-id="hf-46wb" style="font-size:14px;color:rgba(180,170,150,.4);margin-bottom:10px;letter-spacing:2px">出生信息</div>
+    <div data-hf-id="hf-dawl" style="display:flex;gap:8px;margin-bottom:10px">
+      <div data-hf-id="hf-js7u" style="flex:1;padding:10px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:14px;color:rgba(200,190,160,.5)">1995</div>
+      <div data-hf-id="hf-32yo" style="flex:1;padding:10px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:14px;color:rgba(200,190,160,.5)">06</div>
+      <div data-hf-id="hf-leno" style="flex:1;padding:10px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:14px;color:rgba(200,190,160,.5)">15</div>
+    </div>
+    <div data-hf-id="hf-by36" style="margin-bottom:10px">
+      <div data-hf-id="hf-aa8n" style="padding:10px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);font-size:14px;color:rgba(200,190,160,.5)">08:00 &#160;·&#160; 男</div>
+    </div>
+    <div data-hf-id="hf-2v1k" style="text-align:center;padding:12px;border-radius:8px;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.25);color:#e0c860;font-size:16px;font-weight:600;letter-spacing:4px">开始排盘 →</div>
+  </div>
+
+  <!-- Pillars output -->
+  <div data-hf-id="hf-3eqr" id="pillarsOut" class="clip" data-start="8.5" data-duration="6.5" data-track-index="3" style="position:absolute;left:620px;top:340px;z-index:2;display:flex;gap:14px">
+    <div data-hf-id="hf-pbmb" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-x91e" class="pillar-label">年柱</div><div data-hf-id="hf-tlto" class="pillar-gan gold">乙</div><div data-hf-id="hf-vevj" class="pillar-zhi">亥</div></div>
+    <div data-hf-id="hf-hhf7" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-kbba" class="pillar-label">月柱</div><div data-hf-id="hf-8ckz" class="pillar-gan gold">壬</div><div data-hf-id="hf-ju5k" class="pillar-zhi">午</div></div>
+    <div data-hf-id="hf-h346" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-trfz" class="pillar-label">日柱</div><div data-hf-id="hf-3c50" class="pillar-gan gold">乙</div><div data-hf-id="hf-5vnd" class="pillar-zhi">巳</div></div>
+    <div data-hf-id="hf-got5" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-t9jo" class="pillar-label">时柱</div><div data-hf-id="hf-j1fg" class="pillar-gan gold">丙</div><div data-hf-id="hf-br3o" class="pillar-zhi">戌</div></div>
+  </div>
+
+  <!-- Detail lines -->
+  <div data-hf-id="hf-yylc" id="detailLines" class="clip" data-start="9.5" data-duration="5.5" data-track-index="4" style="position:absolute;left:620px;top:500px;z-index:2;font-size:15px;color:rgba(180,170,150,.6);line-height:2.2">
+    <div data-hf-id="hf-wcs1">🕐 真太阳时自动校正</div>
+    <div data-hf-id="hf-ukvm">🌏 全国城市经纬度数据库</div>
+    <div data-hf-id="hf-bfwh">📅 公历 / 农历 双模式输入</div>
+    <div data-hf-id="hf-yqw1" style="margin-top:8px;font-size:13px;color:rgba(140,130,110,.4)">暗色护眼界面 · 手机电脑全适配</div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 3: 16-26s — AI 深度分析
+       ============================================================ -->
+  <div data-hf-id="hf-rior" class="orb clip clip-fade" data-start="16" data-duration="10" data-track-index="0" id="orb4" style="width:550px;height:550px;bottom:100px;right:100px;background:radial-gradient(circle,rgba(200,160,60,.12),transparent);filter:blur(100px)"></div>
+
+  <div data-hf-id="hf-so84" id="scene3Title" class="clip" data-start="16" data-duration="9" data-track-index="12" style="position:absolute;top:80px;left:0;right:0;text-align:center;z-index:2">
+    <div data-hf-id="hf-4h3q" class="feature-tag" style="background:rgba(200,160,60,.1);border:1px solid rgba(200,160,60,.2);color:#d8be58">功能二</div>
+    <div data-hf-id="hf-o81z" style="font-size:48px;color:#e0c860;letter-spacing:12px;margin-top:14px;font-weight:700">AI 深度分析报告</div>
+    <div data-hf-id="hf-3rdi" style="font-size:20px;color:rgba(180,170,150,.5);margin-top:10px;letter-spacing:4px">十神推演 · 神煞统计 · 大运流年 · 白话解读</div>
+  </div>
+
+  <!-- Analysis cards grid -->
+  <div data-hf-id="hf-76py" id="analysisGrid" class="clip" data-start="17.5" data-duration="7.5" data-track-index="2" style="position:absolute;left:120px;top:300px;z-index:2;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;width:1680px">
+    <div data-hf-id="hf-i9ne" class="gold-bg gold-border" style="padding:24px 20px;border-radius:12px;text-align:center">
+      <div data-hf-id="hf-hcot" style="font-size:32px;margin-bottom:8px">🧍</div>
+      <div data-hf-id="hf-2v4y" style="font-size:20px;color:#e0c860;font-weight:700;letter-spacing:3px">日主性格</div>
+      <div data-hf-id="hf-509x" style="font-size:13px;color:rgba(180,170,150,.5);margin-top:6px;line-height:1.6">十神论命<br data-hf-id="hf-x5px">先天性格画像<br data-hf-id="hf-rsrt">优势与发展方向</div>
+    </div>
+    <div data-hf-id="hf-s6m6" class="gold-bg gold-border" style="padding:24px 20px;border-radius:12px;text-align:center">
+      <div data-hf-id="hf-vw12" style="font-size:32px;margin-bottom:8px">💍</div>
+      <div data-hf-id="hf-mlzi" style="font-size:20px;color:#e0c860;font-weight:700;letter-spacing:3px">婚姻感情</div>
+      <div data-hf-id="hf-73ln" style="font-size:13px;color:rgba(180,170,150,.5);margin-top:6px;line-height:1.6">配偶星定位<br data-hf-id="hf-szow">婚姻宫分析<br data-hf-id="hf-sldv">桃花与缘分</div>
+    </div>
+    <div data-hf-id="hf-skx7" class="gold-bg gold-border" style="padding:24px 20px;border-radius:12px;text-align:center">
+      <div data-hf-id="hf-7ncd" style="font-size:32px;margin-bottom:8px">💰</div>
+      <div data-hf-id="hf-uxkq" style="font-size:20px;color:#e0c860;font-weight:700;letter-spacing:3px">财运事业</div>
+      <div data-hf-id="hf-zmy5" style="font-size:13px;color:rgba(180,170,150,.5);margin-top:6px;line-height:1.6">财星旺衰<br data-hf-id="hf-qluq">五行生克平衡<br data-hf-id="hf-q7jp">宜忌行业</div>
+    </div>
+    <div data-hf-id="hf-sz88" class="gold-bg gold-border" style="padding:24px 20px;border-radius:12px;text-align:center">
+      <div data-hf-id="hf-yfqr" style="font-size:32px;margin-bottom:8px">🔮</div>
+      <div data-hf-id="hf-eu6q" style="font-size:20px;color:#e0c860;font-weight:700;letter-spacing:3px">今年运势</div>
+      <div data-hf-id="hf-c70x" style="font-size:13px;color:rgba(180,170,150,.5);margin-top:6px;line-height:1.6">流年神煞<br data-hf-id="hf-regs">关键节点提醒<br data-hf-id="hf-r05r">逐月指南</div>
+    </div>
+  </div>
+
+  <!-- Bottom note -->
+  <div data-hf-id="hf-6k64" id="analysisNote" class="clip" data-start="19" data-duration="6" data-track-index="3" style="position:absolute;left:0;right:0;bottom:100px;text-align:center;z-index:2">
+    <div data-hf-id="hf-zbe4" class="gold-line" style="width:300px;margin:0 auto"></div>
+    <div data-hf-id="hf-s2e2" style="font-size:16px;color:rgba(180,170,150,.35);margin-top:14px;letter-spacing:3px">还有婚姻感情 · 财运分析 · 学业分析 · 五行调理 · 父母关系 · 五年流年运势</div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 4: 26-38s — 合盘功能
+       ============================================================ -->
+  <div data-hf-id="hf-leyi" class="orb clip clip-fade" data-start="26" data-duration="12" data-track-index="0" id="orb5" style="width:500px;height:500px;top:250px;left:710px;background:radial-gradient(circle,rgba(140,200,120,.12),transparent);filter:blur(100px)"></div>
+
+  <div data-hf-id="hf-2q3k" id="scene4Title" class="clip" data-start="26" data-duration="11" data-track-index="13" style="position:absolute;top:80px;left:0;right:0;text-align:center;z-index:2">
+    <div data-hf-id="hf-sxym" class="feature-tag" style="background:rgba(140,200,120,.1);border:1px solid rgba(140,200,120,.2);color:#8c8">功能三</div>
+    <div data-hf-id="hf-k9sn" style="font-size:48px;color:#e0c860;letter-spacing:12px;margin-top:14px;font-weight:700">八字合盘</div>
+    <div data-hf-id="hf-hv83" style="font-size:20px;color:rgba(180,170,150,.5);margin-top:10px;letter-spacing:4px">夫妻 · 情侣 · 朋友 · 缘分深度解析</div>
+  </div>
+
+  <!-- Two person cards -->
+  <div data-hf-id="hf-x7gx" id="hepanCards" class="clip" data-start="27.5" data-duration="9.5" data-track-index="2" style="position:absolute;left:200px;top:300px;z-index:2;display:flex;gap:60px;align-items:center">
+    <!-- Person A -->
+    <div data-hf-id="hf-81i5" style="text-align:center">
+      <div data-hf-id="hf-c055" style="font-size:22px;color:#e0c860;letter-spacing:4px;margin-bottom:8px">⚤ 男方</div>
+      <div data-hf-id="hf-938p" style="display:flex;gap:8px;margin-bottom:10px">
+        <div data-hf-id="hf-gai4" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-vmbr" class="pillar-label">年</div><div data-hf-id="hf-257x" class="pillar-gan gold">乙</div><div data-hf-id="hf-82lr" class="pillar-zhi">亥</div></div>
+        <div data-hf-id="hf-fw73" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-xh1v" class="pillar-label">月</div><div data-hf-id="hf-kv83" class="pillar-gan gold">壬</div><div data-hf-id="hf-1hsw" class="pillar-zhi">午</div></div>
+        <div data-hf-id="hf-fhw2" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-cgas" class="pillar-label">日</div><div data-hf-id="hf-2jiy" class="pillar-gan gold">乙</div><div data-hf-id="hf-e6h9" class="pillar-zhi">巳</div></div>
+        <div data-hf-id="hf-f3l1" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-4wh9" class="pillar-label">时</div><div data-hf-id="hf-jr04" class="pillar-gan gold">丙</div><div data-hf-id="hf-9n2k" class="pillar-zhi">戌</div></div>
+      </div>
+      <div data-hf-id="hf-blmp" style="font-size:13px;color:rgba(180,170,150,.4)">1995-06-15 · 乾造</div>
+    </div>
+    <!-- VS -->
+    <div data-hf-id="hf-9mw3" style="font-size:60px;color:rgba(212,175,55,.15);font-weight:900;letter-spacing:10px">✦</div>
+    <!-- Person B -->
+    <div data-hf-id="hf-567l" style="text-align:center">
+      <div data-hf-id="hf-mz80" style="font-size:22px;color:#e0c860;letter-spacing:4px;margin-bottom:8px">⚥ 女方</div>
+      <div data-hf-id="hf-aa5s" style="display:flex;gap:8px;margin-bottom:10px">
+        <div data-hf-id="hf-epa0" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-8jqf" class="pillar-label">年</div><div data-hf-id="hf-m7vo" class="pillar-gan gold">丁</div><div data-hf-id="hf-brzn" class="pillar-zhi">丑</div></div>
+        <div data-hf-id="hf-eayz" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-r94j" class="pillar-label">月</div><div data-hf-id="hf-01in" class="pillar-gan gold">癸</div><div data-hf-id="hf-trt9" class="pillar-zhi">卯</div></div>
+        <div data-hf-id="hf-pqbd" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-814s" class="pillar-label">日</div><div data-hf-id="hf-ev8t" class="pillar-gan gold">甲</div><div data-hf-id="hf-hl4f" class="pillar-zhi">寅</div></div>
+        <div data-hf-id="hf-q4me" class="pillar-box gold-bg gold-border"><div data-hf-id="hf-ldlt" class="pillar-label">时</div><div data-hf-id="hf-csv0" class="pillar-gan gold">丁</div><div data-hf-id="hf-we9t" class="pillar-zhi">卯</div></div>
+      </div>
+      <div data-hf-id="hf-4058" style="font-size:13px;color:rgba(180,170,150,.4)">1997-03-22 · 坤造</div>
+    </div>
+  </div>
+
+  <!-- Analysis items -->
+  <div data-hf-id="hf-utle" id="hepanItems" class="clip" data-start="29" data-duration="8" data-track-index="3" style="position:absolute;left:220px;bottom:100px;z-index:2;display:flex;gap:14px;flex-wrap:wrap;width:1480px">
+    <div data-hf-id="hf-fkw2" class="gold-bg gold-border" style="padding:12px 20px;border-radius:8px;font-size:15px;color:#e0c860;letter-spacing:2px">🎯 综合缘分评分</div>
+    <div data-hf-id="hf-s6pf" class="gold-bg gold-border" style="padding:12px 20px;border-radius:8px;font-size:15px;color:#e0c860;letter-spacing:2px">☯ 五行互补分析</div>
+    <div data-hf-id="hf-wu3m" class="gold-bg gold-border" style="padding:12px 20px;border-radius:8px;font-size:15px;color:#e0c860;letter-spacing:2px">⚡ 相合与相克之处</div>
+    <div data-hf-id="hf-uxab" class="gold-bg gold-border" style="padding:12px 20px;border-radius:8px;font-size:15px;color:#e0c860;letter-spacing:2px">🔑 专属相处密码</div>
+    <div data-hf-id="hf-2nt7" class="gold-bg gold-border" style="padding:12px 20px;border-radius:8px;font-size:15px;color:#e0c860;letter-spacing:2px">📅 未来三年关键节点</div>
+    <div data-hf-id="hf-d1xw" class="gold-bg gold-border" style="padding:12px 20px;border-radius:8px;font-size:15px;color:#e0c860;letter-spacing:2px">✅ 宜忌清单</div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 5: 38-48s — 付费 & PDF
+       ============================================================ -->
+  <div data-hf-id="hf-s2xt" class="orb clip clip-fade" data-start="38" data-duration="10" data-track-index="0" id="orb6" style="width:450px;height:450px;top:300px;right:300px;background:radial-gradient(circle,rgba(212,175,55,.1),transparent);filter:blur(80px)"></div>
+
+  <div data-hf-id="hf-zhbg" id="scene5Title" class="clip" data-start="38" data-duration="9" data-track-index="14" style="position:absolute;top:80px;left:0;right:0;text-align:center;z-index:2">
+    <div data-hf-id="hf-6jg5" class="feature-tag" style="background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);color:#d8be58">功能四</div>
+    <div data-hf-id="hf-o9jf" style="font-size:48px;color:#e0c860;letter-spacing:12px;margin-top:14px;font-weight:700">深度解锁 &amp; 报告下载</div>
+    <div data-hf-id="hf-r10c" style="font-size:20px;color:rgba(180,170,150,.5);margin-top:10px;letter-spacing:4px">核心分析板块付费查看 · 一键下载 PDF 报告</div>
+  </div>
+
+  <!-- Paywall visual -->
+  <div data-hf-id="hf-0lgp" id="paywallUI" class="clip" data-start="39.5" data-duration="7.5" data-track-index="2" style="position:absolute;left:280px;top:320px;z-index:2;
+              background:rgba(15,15,30,.92);border:1px solid rgba(212,175,55,.15);border-radius:16px;
+              padding:36px 44px;text-align:center;width:380px">
+    <div data-hf-id="hf-ud14" style="font-size:22px;color:#e0c860;letter-spacing:4px;margin-bottom:8px">AI 分析报告</div>
+    <div data-hf-id="hf-3lck" style="font-size:13px;color:rgba(180,170,150,.4);margin-bottom:20px">付费解锁后查看完整内容</div>
+    <div data-hf-id="hf-5hou" style="font-size:48px;color:#e0c860;font-weight:900;letter-spacing:2px;margin-bottom:8px">￥9.9</div>
+    <div data-hf-id="hf-y8vc" style="font-size:11px;color:rgba(180,170,150,.3);margin-bottom:20px">一次付费 · 永久解锁 · 可下载 PDF</div>
+    <div data-hf-id="hf-vqf8" class="cta-btn gold-bg gold-border" style="color:#e0c860;cursor:default">解锁全部内容</div>
+  </div>
+
+  <!-- PDF download visual -->
+  <div data-hf-id="hf-4liw" id="pdfUI" class="clip" data-start="40.5" data-duration="6.5" data-track-index="3" style="position:absolute;right:280px;top:340px;z-index:2;
+              background:rgba(20,20,35,.85);border:1px solid rgba(100,180,140,.2);border-radius:16px;
+              padding:36px 44px;text-align:center;width:340px">
+    <div data-hf-id="hf-2iml" style="font-size:48px;margin-bottom:12px">📄</div>
+    <div data-hf-id="hf-603h" style="font-size:22px;color:#8c8;letter-spacing:4px;margin-bottom:8px">完整分析报告</div>
+    <div data-hf-id="hf-gfae" style="font-size:14px;color:rgba(180,170,150,.5);margin-bottom:20px;line-height:1.8">
+      日主性格 · 婚姻感情 · 财运事业<br data-hf-id="hf-p0mm">
+      今年运势 · 父母关系 · 五行调理<br data-hf-id="hf-ombl">
+      近五年流年运势
+    </div>
+    <div data-hf-id="hf-e1uz" class="cta-btn" style="background:rgba(100,180,140,.12);border:1px solid rgba(100,180,140,.25);color:#7ec87e;cursor:default">📥 下载 PDF 报告</div>
+  </div>
+
+  <!-- ============================================================
+       SCENE 6: 48-55s — CTA
+       ============================================================ -->
+  <div data-hf-id="hf-6t9s" class="orb clip clip-fade" data-start="48" data-duration="7" data-track-index="0" id="orb7" style="width:700px;height:700px;top:50%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(224,200,96,.1),transparent);filter:blur(140px)"></div>
+
+  <div data-hf-id="hf-xtew" id="ctaSection" class="clip" data-start="48" data-duration="7" data-track-index="15" style="position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div data-hf-id="hf-oaxw" style="font-size:20px;color:rgba(180,170,150,.35);letter-spacing:6px;margin-bottom:16px">打开浏览器，即刻体验</div>
+    <div data-hf-id="hf-0ko4" style="font-size:72px;color:#e0c860;letter-spacing:16px;font-weight:900">knowbazi.online</div>
+    <div data-hf-id="hf-ufvx" style="font-size:24px;color:#a89858;letter-spacing:10px;margin-top:12px">知 天 时 · 见 自 己</div>
+    <div data-hf-id="hf-24yh" class="gold-line" style="width:260px;margin:24px auto 0"></div>
+    <div data-hf-id="hf-lp93" style="margin-top:20px;display:flex;gap:14px;align-items:center;font-size:14px;color:rgba(180,170,150,.3);letter-spacing:3px">
+      <span data-hf-id="hf-09tv">排盘</span><span data-hf-id="hf-kcq7" style="color:rgba(212,175,55,.15)">·</span>
+      <span data-hf-id="hf-5ynj">分析</span><span data-hf-id="hf-mh73" style="color:rgba(212,175,55,.15)">·</span>
+      <span data-hf-id="hf-fi0z">合婚</span><span data-hf-id="hf-m2w2" style="color:rgba(212,175,55,.15)">·</span>
+      <span data-hf-id="hf-ubqq">报告</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  window.__timelines = window.__timelines || {};
+  const tl = gsap.timeline({ paused: true });
+
+  // --- SCENE 1: Brand Intro (0-5.5s) ---
+  tl.from("#brandName", { opacity: 0, scale: 0.85, duration: 1.2, ease: "power3.out" }, 0);
+  tl.from("#orb1", { opacity: 0, duration: 1.5 }, 0);
+  tl.from("#orb2", { opacity: 0, duration: 1.5 }, 0);
+
+  // --- SCENE 2: Paipan (6-16s) ---
+  tl.from("#scene2Title", { opacity: 0, y: -30, duration: 0.8, ease: "power2.out" }, 6);
+  tl.from("#formCard", { opacity: 0, x: -40, duration: 0.7, ease: "power2.out" }, 7);
+  tl.from("#pillarsOut .pillar-box", { opacity: 0, y: 20, duration: 0.4, stagger: 0.15, ease: "back.out(1.4)" }, 8.5);
+  tl.from("#detailLines div", { opacity: 0, x: 20, duration: 0.35, stagger: 0.15, ease: "power2.out" }, 9.5);
+  tl.from("#orb3", { opacity: 0, duration: 1 }, 6);
+
+  // --- SCENE 3: Analysis (16-26s) ---
+  tl.from("#scene3Title", { opacity: 0, y: -30, duration: 0.8, ease: "power2.out" }, 16);
+  // Card reveal with stagger
+  var gridCards = document.querySelectorAll("#analysisGrid > div");
+  tl.from(gridCards, { opacity: 0, y: 30, duration: 0.5, stagger: 0.2, ease: "back.out(1.2)" }, 17.5);
+  tl.from("#analysisNote", { opacity: 0, duration: 0.6 }, 19);
+  tl.from("#orb4", { opacity: 0, duration: 1 }, 16);
+
+  // --- SCENE 4: Hepan (26-38s) ---
+  tl.from("#scene4Title", { opacity: 0, y: -30, duration: 0.8, ease: "power2.out" }, 26);
+  // Dual cards
+  tl.from("#hepanCards", { opacity: 0, scale: 0.9, duration: 0.8, ease: "power3.out" }, 27.5);
+  // Tag chips
+  var hepanChips = document.querySelectorAll("#hepanItems > div");
+  tl.from(hepanChips, { opacity: 0, y: 15, duration: 0.35, stagger: 0.12, ease: "power2.out" }, 29);
+  tl.from("#orb5", { opacity: 0, duration: 1 }, 26);
+
+  // --- SCENE 5: Paywall & PDF (38-48s) ---
+  tl.from("#scene5Title", { opacity: 0, y: -30, duration: 0.8, ease: "power2.out" }, 38);
+  tl.from("#paywallUI", { opacity: 0, x: -40, duration: 0.7, ease: "power2.out" }, 39.5);
+  tl.from("#pdfUI", { opacity: 0, x: 40, duration: 0.7, ease: "power2.out" }, 40.5);
+  tl.from("#orb6", { opacity: 0, duration: 1 }, 38);
+
+  // --- SCENE 6: CTA (48-55s) ---
+  tl.from("#ctaSection", { opacity: 0, duration: 1, ease: "power2.out" }, 48);
+  tl.to("#orb7", { opacity: 0.3, duration: 2 }, 48);
+
+  window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

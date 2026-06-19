@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 合盘结果 | knowbazi.online</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/hepan.css">
+<link rel="stylesheet" href="css/result.css">
+<link rel="stylesheet" href="css/ai-chat-integration.css">
+<style>
+/* ============================================
+   合盘结果页 - 专属样式
+   ============================================ */
+
+/* --- Score Banner 内部 --- */
+.hp-score-banner .hp-score-ring {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 120px; height: 120px; border-radius: 50%;
+  border: 3px solid rgba(201,168,76,.25);
+  margin-bottom: 10px; position: relative;
+}
+@keyframes hepan-spin { to { transform: rotate(360deg); } }
+
+.hp-score-banner .hp-score-value {
+  font-family: 'STKaiti','KaiTi','FangSong',cursive;
+  font-size: 42px; font-weight: 900; color: var(--gold-l);
+  text-shadow: 0 0 20px var(--gold-glow);
+}
+.hp-score-banner .hp-score-label {
+  font-size: 14px; color: var(--tx2); letter-spacing: 4px; margin-bottom: 6px;
+}
+.hp-score-banner .hp-score-grade {
+  font-family: 'STKaiti','KaiTi','FangSong',cursive;
+  font-size: 22px; font-weight: 700; color: var(--gold);
+  letter-spacing: 4px; margin-bottom: 6px;
+}
+.hp-score-banner .hp-score-desc {
+  font-size: 13px; color: var(--tx2); letter-spacing: 1px;
+  max-width: 420px; margin: 0 auto; line-height: 1.8;
+}
+
+/* --- Dual Bazi 并排 --- */
+.hp-dual-bazi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.hp-dual-bazi-card {
+  background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));
+  border: 1px solid rgba(201,168,76,.18); border-radius: 14px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);
+}
+.hp-dual-bazi-card .hp-bazi-label {
+  text-align: center; font-size: 13px; font-weight: 700;
+  color: var(--gold); letter-spacing: 4px; margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1px solid rgba(201,168,76,.1);
+}
+.hp-dual-bazi-card .hp-bazi-info {
+  text-align: center; font-size: 12px; color: var(--tx2);
+  letter-spacing: 1px; margin-bottom: 12px;
+}
+.hp-dual-bazi-card .hp-bazi-info span { margin: 0 4px; }
+.hp-dual-bazi-card .hp-bazi-info .hp-sep { opacity: .3; }
+
+/* Dual bazi table 四柱简表 */
+.hp-dual-pp-table { width: 100%; border-collapse: collapse; }
+.hp-dual-pp-table th {
+  font-size: 11px; color: var(--tx3); letter-spacing: 2px;
+  padding: 6px 4px; border-bottom: 1px solid rgba(201,168,76,.08);
+  font-weight: 400; text-align: center;
+}
+.hp-dual-pp-table td {
+  padding: 6px 4px; text-align: center; vertical-align: middle;
+}
+.hp-dual-pp-table .hp-pp-gan {
+  font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+  font-size: 24px; font-weight: 900; color: var(--tx);
+}
+.hp-dual-pp-table .hp-pp-zhi {
+  font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+  font-size: 24px; font-weight: 900; color: var(--tx);
+}
+.hp-dual-pp-table .hp-pp-day { color: var(--gold); text-shadow: 0 0 10px var(--gold-glow); }
+.hp-dual-pp-table .hp-pp-ss {
+  font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+  font-size: 12px; font-weight: 600; color: var(--tx2); letter-spacing: 1px;
+}
+.hp-dual-pp-table th.hp-col-day { color: var(--gold); }
+
+/* --- Section drawer (复用 result.css 的 .section-drawer 体系) --- */
+.hp-section {
+  margin-bottom: 20px;
+  border: 1px solid rgba(201,168,76,.12);
+  border-radius: 2px; overflow: hidden;
+}
+.hp-section .hp-section-toggle {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; cursor: pointer; user-select: none;
+  background: rgba(201,168,76,.02); border-bottom: 1px solid rgba(201,168,76,.1);
+  transition: background .3s;
+}
+.hp-section .hp-section-toggle:hover { background: rgba(201,168,76,.06); }
+.hp-section .hp-section-arrow {
+  display: inline-block; font-size: 10px; color: var(--gold);
+  transition: transform .35s ease; flex-shrink: 0;
+}
+.hp-section.hp-open .hp-section-arrow { transform: rotate(90deg); }
+.hp-section .hp-section-toggle h2 {
+  font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;
+  font-size: 18px; font-weight: 400; color: var(--gold);
+  letter-spacing: 4px; margin: 0; line-height: 1;
+}
+.hp-section .hp-section-body {
+  max-height: 0; overflow: hidden; transition: max-height .5s ease;
+}
+.hp-section.hp-open .hp-section-body { max-height: 4000px; }
+.hp-section .hp-section-content { padding: 16px 18px 20px; }
+
+/* 通用内容排版 */
+.hp-content-text {
+  font-size: 14px; color: var(--tx); line-height: 2; text-align: justify;
+}
+.hp-content-subtitle {
+  font-size: 13px; font-weight: 700; color: var(--gold);
+  letter-spacing: 3px; margin-bottom: 8px;
+}
+
+/* 五行对比条 */
+.hp-wx-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.hp-wx-label {
+  font-size: 13px; font-weight: 700; flex: 0 0 28px;
+  text-align: center; color: var(--tx);
+}
+.hp-wx-bars { flex: 1; display: flex; gap: 2px; }
+.hp-wx-bar-wrap { flex: 1; position: relative; }
+.hp-wx-bar-label {
+  font-size: 9px; color: var(--tx3); text-align: center; margin-bottom: 2px; letter-spacing: 0;
+}
+.hp-wx-bar-track { height: 12px; background: rgba(255,255,255,.04); border-radius: 1px; overflow: hidden; }
+.hp-wx-bar-fill { height: 100%; border-radius: 1px; transition: width .6s ease; }
+.hp-wx-bar-num { font-size: 10px; color: var(--tx3); text-align: center; margin-top: 1px; }
+.hp-wx-item[data-wx="金"] .hp-wx-label { color: #FFD700; }
+.hp-wx-item[data-wx="木"] .hp-wx-label { color: #4CAF50; }
+.hp-wx-item[data-wx="水"] .hp-wx-label { color: #2196F3; }
+.hp-wx-item[data-wx="火"] .hp-wx-label { color: #F44336; }
+.hp-wx-item[data-wx="土"] .hp-wx-label { color: #CD853F; }
+
+/* --- 合盘维度评分卡片 --- */
+.hp-dim-card {
+  padding: 14px 16px;
+  background: rgba(20,25,40,.4);
+  border: 1px solid rgba(201,168,76,.07);
+  border-radius: 2px; margin-bottom: 10px;
+  transition: border-color .3s;
+}
+.hp-dim-card:hover { border-color: rgba(201,168,76,.18); }
+.hp-dim-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+}
+.hp-dim-icon { font-size: 20px; flex-shrink: 0; opacity: .8; }
+.hp-dim-title {
+  font-size: 14px; font-weight: 700; color: var(--gold);
+  letter-spacing: 2px; flex: 1;
+}
+.hp-dim-score {
+  font-size: 16px; font-weight: 900; color: var(--gold-l);
+}
+.hp-dim-bar { height: 6px; background: rgba(255,255,255,.05); border-radius: 1px; overflow: hidden; margin-bottom: 6px; }
+.hp-dim-fill { height: 100%; border-radius: 1px; transition: width .6s ease; background: linear-gradient(90deg, rgba(201,168,76,.4), var(--gold)); }
+.hp-dim-text { font-size: 13px; color: var(--tx); line-height: 1.8; }
+
+/* --- Mobile --- */
+@media (max-width: 600px) {
+  .hp-result-container { padding: 12px 8px 40px; }
+  .hp-header h1 { font-size: 28px; letter-spacing: 6px; }
+  .hp-header a { font-size: 12px; }
+  .hp-score-banner { padding: 20px 14px; }
+  .hp-score-banner .hp-score-ring { width: 90px; height: 90px; }
+  .hp-score-banner .hp-score-value { font-size: 32px; }
+  .hp-score-banner .hp-score-grade { font-size: 18px; }
+  .hp-score-banner .hp-score-desc { font-size: 12px; }
+  .hp-dual-bazi-grid { grid-template-columns: 1fr; gap: 14px; }
+  .hp-dual-bazi-card { padding: 16px 12px 12px; }
+  .hp-dual-pp-table .hp-pp-gan,
+  .hp-dual-pp-table .hp-pp-zhi { font-size: 20px; }
+  .hp-dual-pp-table .hp-pp-ss { font-size: 11px; }
+  .hp-section .hp-section-toggle { padding: 12px 14px; }
+  .hp-section .hp-section-toggle h2 { font-size: 16px; letter-spacing: 3px; }
+  .hp-section .hp-section-content { padding: 10px 12px 14px; }
+  .hp-content-text { font-size: 13px; }
+  /* Footer cards 竖排 */
+  #hpSections ~ .result-footer > div:last-child { flex-direction: column; }
+}
+</style>
+
+</head>
+<body>
+
+<canvas id="mxhCanvas" style="position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none"></canvas>
+
+<div class="hp-result-container" style="position:relative;z-index:1;max-width:960px;margin:0 auto;padding:20px 16px 60px;background:var(--ink)">
+
+  <!-- ====== Header ====== -->
+  <header class="hp-header" style="text-align:center;padding:20px 0 25px;border-bottom:1px solid rgba(201,168,76,.12);margin-bottom:25px">
+    <a href="hepan.html" style="display:inline-block;font-size:13px;color:var(--tx2);text-decoration:none;letter-spacing:2px;margin-bottom:15px;transition:color .3s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--tx2)'">&larr; 重新合盘</a>
+    <h1 style="font-family:'STKaiti','KaiTi','FangSong',cursive;font-size:36px;color:var(--gold);letter-spacing:8px;text-shadow:0 0 15px var(--gold-glow);margin-bottom:12px">知时 · 合盘</h1>
+    <span id="typeLabel" style="font-size:14px;color:var(--tx2);letter-spacing:2px"></span>
+  </header>
+
+  <!-- ====== Score Banner ====== -->
+  <div class="hp-score-banner" id="scoreBanner" style="margin-bottom:28px;text-align:center;padding:28px 20px;background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(15,12,8,.5));border:1px solid rgba(201,168,76,.18);border-radius:14px;box-shadow:0 0 30px rgba(201,168,76,.04),inset 0 0 30px rgba(201,168,76,.02)"></div>
+
+  <!-- ====== Dual Bazi ====== -->
+  <div class="hp-dual-bazi" id="dualBazi" style="margin-bottom:28px"></div>
+
+  <!-- ====== Analysis Sections ====== -->
+  <div id="hpSections"></div>
+
+  <!-- ====== Footer ====== -->
+  <footer class="result-footer" style="margin:48px 0 30px;padding:0 16px">
+    <div style="text-align:center;font-size:11px;color:var(--tx3);letter-spacing:1px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.04)">
+      &lowast; 本合盘报告仅供学习参考与娱乐交流，不构成任何决策建议
+    </div>
+    <div style="display:flex;gap:14px">
+      <div style="flex:1;display:flex;align-items:center;gap:14px;padding:20px 16px;border-radius:14px;border:1px solid rgba(42,166,108,.2);background:linear-gradient(135deg,rgba(42,166,108,.12),rgba(42,166,108,.04));box-shadow:0 0 30px rgba(42,166,108,.04);transition:all .3s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+        <div style="font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(42,166,108,.15)">&#x1F4F1;</div>
+        <div>
+          <div style="font-size:13px;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:1px;margin-bottom:4px">联系客服微信</div>
+          <div style="font-size:18px;color:#4fd490;font-weight:700;letter-spacing:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Source Han Sans SC',sans-serif">EriverLife</div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;gap:14px;padding:20px 16px;border-radius:14px;border:1px solid rgba(201,168,76,.18);background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));box-shadow:0 0 30px rgba(201,168,76,.04);cursor:pointer;transition:all .3s" onmouseover="this.style.background='linear-gradient(135deg,rgba(201,168,76,.16),rgba(201,168,76,.06))';this.style.borderColor='rgba(201,168,76,.3)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03))';this.style.borderColor='rgba(201,168,76,.18)';this.style.transform='none'" onclick="showFeedback()">
+        <div style="font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,.12)">&#x1F4AC;</div>
+        <div>
+          <div style="font-size:13px;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:1px;margin-bottom:4px">帮助我们做得更好</div>
+          <div style="font-size:12px;color:var(--gold);font-weight:500;letter-spacing:1px">你的建议和反馈</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ====== 反馈弹窗 ====== -->
+<div id="feedbackOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center" onclick="closeFeedback(event)">
+  <div style="background:#1a1a2e;border:1px solid rgba(212,175,55,.15);border-radius:16px;padding:32px 28px 24px;width:90%;max-width:420px;position:relative" onclick="event.stopPropagation()">
+    <div style="position:absolute;top:12px;right:16px;font-size:20px;color:rgba(255,255,255,.2);cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s" onclick="closeFeedback()" onmouseover="this.style.color='rgba(255,255,255,.6)';this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.color='rgba(255,255,255,.2)';this.style.background='none'">&times;</div>
+    <div style="font-size:22px;color:#e0c860;text-align:center;font-weight:600;letter-spacing:2px;margin-bottom:6px">你的声音，我们很在意</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.3);text-align:center;margin-bottom:20px;letter-spacing:1px">无论建议还是吐槽，都欢迎告诉我们</div>
+    <textarea id="feedbackMsg" placeholder="写下你的想法……（比如：希望增加什么功能、哪里用得不够顺手）" maxlength="500" style="width:100%;min-height:120px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;color:#ccc;font-size:14px;resize:vertical;font-family:inherit;line-height:1.6;outline:none;transition:border .2s" onfocus="this.style.borderColor='rgba(212,175,55,.3)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'"></textarea>
+    <input id="feedbackContact" placeholder="联系方式（微信号/手机号，优秀反馈将获得免费体验券）" maxlength="100" style="width:100%;margin-top:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#ccc;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='rgba(212,175,55,.3)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'" />
+    <button onclick="submitFeedback()" style="width:100%;margin-top:18px;padding:12px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:#e0c860;font-size:15px;font-weight:600;border-radius:10px;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:all .2s" onmouseover="this.style.background='rgba(212,175,55,.2)'" onmouseout="this.style.background='rgba(212,175,55,.12)'">提交反馈</button>
+    <div id="feedbackResult" style="text-align:center;margin-top:14px;font-size:13px;color:#8a8;min-height:20px"></div>
+  </div>
+</div>
+
+<script src="js/mo-xing-he.js"></script>
+<script>MoXingHe.start('mxhCanvas', false);</script>
+<script src="js/bazi.js"></script>
+<script src="js/lunar.js"></script>
+<script src="js/hepan-core.js"></script>
+<script src="js/hepan-paywall.js"></script>
+<script src="js/hepan-result.js"></script>
+<script src="js/ai-chat-integration.js"></script>
+
+<script>
+// ============================================
+// 反馈弹窗 (inline, 不依赖外部)
+// ============================================
+function showFeedback() {
+  var ov = document.getElementById('feedbackOverlay');
+  ov.style.display = 'flex';
+}
+function closeFeedback(e) {
+  if (e && e.target !== document.getElementById('feedbackOverlay')) return;
+  document.getElementById('feedbackOverlay').style.display = 'none';
+}
+function submitFeedback() {
+  var msg = document.getElementById('feedbackMsg').value.trim();
+  if (!msg) { document.getElementById('feedbackResult').textContent = '请输入反馈内容'; return; }
+  var btn = document.querySelector('#feedbackOverlay button');
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+  fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: msg,
+      contact: document.getElementById('feedbackContact').value.trim(),
+      page: 'hepan-result',
+      time: new Date().toISOString()
+    })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    document.getElementById('feedbackResult').textContent = data.message || '收到，谢谢你！';
+    setTimeout(function() { document.getElementById('feedbackOverlay').style.display = 'none'; }, 2000);
+  }).catch(function() {
+    document.getElementById('feedbackResult').textContent = '收到，谢谢你！';
+    setTimeout(function() { document.getElementById('feedbackOverlay').style.display = 'none'; }, 2000);
+  }).finally(function() {
+    btn.disabled = false;
+    btn.textContent = '提交反馈';
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+/* ============================================
+   知时 Landing — 品牌首页
+   水墨星河全屏背景 + 卷轴式产品介绍
+   ============================================ */
+
+/* === Canvas 背景 === */
+#mxhCanvas{position:fixed;inset:0;z-index:0;width:100%;height:100%}
+
+/* === 主容器 === */
+.landing-wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:0 20px 60px}
+
+/* ============ HERO ============ */
+.hero{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;text-align:center;padding:60px 0 24px}
+.hero-brand{margin-bottom:28px;opacity:0;animation:heroReveal 1.2s ease-out forwards}
+@keyframes heroReveal{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.hero-line{width:72px;height:1px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:0 auto 28px}
+.hero h1{font-size:64px;font-weight:900;letter-spacing:32px;margin-left:32px;
+  background:linear-gradient(180deg,#e8cf70,#c9a84c,#8a6d28);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 40px rgba(201,168,76,.15));margin-bottom:16px}
+.hero-tagline{font-size:17px;color:rgba(180,170,150,.4);letter-spacing:16px;font-weight:400}
+.hero-desc{font-size:14px;color:rgba(180,170,150,.3);line-height:2;letter-spacing:2px;
+  margin-bottom:40px;opacity:0;animation:heroReveal 1s ease-out .3s forwards}
+.hero-cta{display:inline-block;padding:16px 48px;font-size:17px;font-weight:700;
+  letter-spacing:6px;color:#0a0a0f;
+  background:linear-gradient(135deg,#8a6d28,#c9a84c,#e8cf70);background-size:200% 100%;
+  border-radius:10px;text-decoration:none;transition:all .35s;
+  box-shadow:0 4px 28px rgba(201,168,76,.25);
+  opacity:0;animation:heroReveal 1s ease-out .6s forwards}
+.hero-cta:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(201,168,76,.35)}
+.hero-scroll-hint{position:absolute;bottom:28px;font-size:11px;color:rgba(180,170,150,.2);
+  letter-spacing:4px;opacity:0;animation:heroReveal .8s ease-out 1s forwards}
+
+/* === 古籍滚动条 === */
+.book-scroll-wrap{margin-top:36px;width:100%;overflow:hidden;position:relative;
+  background:rgba(255,255,255,.015);border-top:1px solid rgba(201,168,76,.12);
+  border-bottom:1px solid rgba(201,168,76,.12);padding:14px 0}
+.book-scroll-wrap::before,.book-scroll-wrap::after{
+  content:'';position:absolute;top:0;width:52px;height:100%;z-index:2;pointer-events:none}
+.book-scroll-wrap::before{left:0;background:linear-gradient(90deg,rgba(10,10,15,.95),transparent)}
+.book-scroll-wrap::after{right:0;background:linear-gradient(270deg,rgba(10,10,15,.95),transparent)}
+.book-scroll-track{display:flex;white-space:nowrap;animation:scrollBooks 60s linear infinite}
+.book-scroll-inner{display:inline-flex;gap:0;font-size:13px;color:#c9a84c;font-weight:600;
+  letter-spacing:3px;padding-right:48px;
+  text-shadow:0 0 8px rgba(201,168,76,.35),0 0 20px rgba(201,168,76,.12)}
+@keyframes scrollBooks{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ============ FEATURES ============ */
+.features{display:flex;flex-direction:column;gap:16px;margin:20px 0 60px}
+.feat-card{padding:26px 22px;background:rgba(20,20,36,.5);
+  border:1px solid rgba(255,255,255,.04);border-radius:14px;
+  transition:all .3s;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.feat-card:hover{border-color:rgba(201,168,76,.15);background:rgba(24,24,42,.6);
+  transform:translateY(-1px);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.feat-icon{font-size:32px;margin-bottom:14px}
+.feat-card h3{font-size:18px;color:#e0d8c8;letter-spacing:4px;margin-bottom:10px;font-weight:700}
+.feat-card p{font-size:13px;color:rgba(180,170,150,.4);line-height:1.9;letter-spacing:1px}
+
+/* ============ TRUST ============ */
+.trust-section{margin:0 0 60px}
+.trust-section h2{text-align:center;font-size:20px;color:#c9a84c;letter-spacing:6px;
+  margin-bottom:32px;font-weight:600}
+.trust-grid{display:flex;flex-direction:column;gap:20px}
+.trust-item{display:flex;gap:16px;padding:0 4px}
+.trust-num{flex-shrink:0;width:44px;height:44px;border-radius:50%;
+  border:1px solid rgba(201,168,76,.15);color:#c9a84c;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;letter-spacing:1px}
+.trust-body h4{font-size:15px;color:#e0d8c8;font-weight:600;letter-spacing:2px;margin-bottom:6px}
+.trust-body p{font-size:12px;color:rgba(180,170,150,.35);line-height:1.8;letter-spacing:1px}
+
+/* ============ CTA-Bottom ============ */
+.cta-bottom{text-align:center;margin:0 0 60px;padding:40px 20px;
+  background:rgba(20,20,36,.4);border:1px solid rgba(255,255,255,.03);border-radius:16px}
+.cta-bottom h2{font-size:22px;color:#e0d8c8;letter-spacing:8px;margin-bottom:14px}
+.cta-bottom p{font-size:13px;color:rgba(180,170,150,.3);letter-spacing:2px;margin-bottom:28px}
+.cta-btn{display:inline-block;padding:16px 44px;font-size:16px;font-weight:700;
+  letter-spacing:6px;color:#0a0a0f;
+  background:linear-gradient(135deg,#8a6d28,#c9a84c,#e8cf70);background-size:200% 100%;
+  border-radius:10px;text-decoration:none;transition:all .35s;
+  box-shadow:0 4px 24px rgba(201,168,76,.2)}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(201,168,76,.35)}
+
+/* ============ Footer ============ */
+.land-footer{text-align:center;margin-top:20px}
+.land-footer p{font-size:12px;color:rgba(180,170,150,.18);letter-spacing:2px;line-height:2.2}
+.land-footer .disc{font-size:10px;opacity:.5}
+
+/* ============ Mobile ============ */
+@media(max-width:400px){
+  .landing-wrap{padding:0 14px 48px}
+  .hero{min-height:90vh;padding:40px 0 20px;justify-content:center}
+  .hero h1{font-size:48px;letter-spacing:24px;margin-left:24px}
+  .hero-tagline{font-size:14px;letter-spacing:12px}
+  .hero-desc{font-size:12px;letter-spacing:1px}
+  .hero-cta{padding:14px 36px;font-size:15px}
+  .hero-scroll-hint{bottom:16px}
+  .book-scroll-wrap{margin-top:24px}
+  .book-scroll-inner{font-size:10px}
+  .features{gap:12px}
+  .feat-card{padding:20px 16px}
+  .cta-bottom{padding:32px 14px}
+}

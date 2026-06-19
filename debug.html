@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>Debug</title></head><body>
+<h2>Lunar Debug</h2>
+<div id="log"></div>
+<script>
+var log=document.getElementById('log');
+function L(s){log.innerHTML+=s+'<br>';console.log(s);}
+try{window.onerror=function(m,u,l,c,e){L('ERR: '+m+' @'+u+':'+l);return false;};}catch(e){}
+</script>
+<script src="js/vendor/solarlunar_browser.js"></script>
+<script>
+L('1. solarLunar loaded: '+(typeof solarLunar));
+L('   solar2lunar: '+(typeof solarLunar.solar2lunar));
+try{var r=solarLunar.solar2lunar(2000,2,5);L('   test: '+r.gzYear+r.monthCn+r.dayCn);}catch(e){L('   ERR: '+e.message);}
+</script>
+<script src="js/lunar.js"></script>
+<script>
+L('2. LunarCalendar loaded: '+(typeof LunarCalendar));
+try{var lr=LunarCalendar.solarToLunar(2000,2,5);L('   test: '+lr.yearName+lr.monthName+lr.dayName);}catch(e){L('   ERR: '+e.message);}
+</script>
+<script src="js/region.js"></script>
+<script src="js/bg-animation.js"></script>
+<script src="js/main.js"></script>
+<script>
+L('3. main.js loaded');
+try{var ys=document.getElementById('sYear');L('   sYear options: '+ys.options.length);}catch(e){L('   ERR: '+e.message);}
+try{var ly=document.getElementById('lYear');L('   lYear options: '+ly.options.length);}catch(e){L('   ERR: '+e.message);}
+</script>
+</body></html>
