@@ -1,7 +1,8 @@
 {
   "cleanUrls": true,
   "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" }
+    { "src": "server.js", "use": "@vercel/node", "config": { "includeFiles": "**" } },
+    { "src": "!{api/**,server.js,lib/**}", "use": "@vercel/static" }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
