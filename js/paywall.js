@@ -12,12 +12,15 @@ function initPaywall(bp){
   var first=document.getElementById(secs[0]);
   if(!first||document.getElementById('unifiedReport'))return;
 
+  // 先渲染付费内容（这样遮罩下面有实际内容）
+  if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
+  // 然后折叠所有板块
+  secs.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('drawer-open')});
+
   var wrap=document.createElement('div');wrap.id='unifiedReport';
-  wrap.style.cssText='position:relative';
+  wrap.style.cssText='position:relative;min-height:300px';
   first.parentNode.insertBefore(wrap,first);
   secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
-  // Set a min-height so the overlay covers the sections
-  wrap.style.minHeight=wrap.scrollHeight+'px';
 
   if(iru()){unlock();return}
   injectQRModal();
