@@ -59,17 +59,12 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ---- 旧版报告支付（生成 zpayz URL + 前端 QR） ----
+    // ---- 旧版报告支付（POST zpayz 获取真实支付宝链接） ----
     if (!year && !hash && (money || amount)) {
       const payAmount = money || amount || 5;
       const payName = name || description || 'AI命理咨询·5次提问';
       const orderId = 'rpt_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
-      if (!PAY_PID || !PAY_KEY) {
-        return res.status(200).json({
-          pay_url: null, out_trade_no: orderId,
-          test_mode: true, message: '支付未配置，测试模式'
-        });
-      }
+
       const payParams = {
         pid: PAY_PID, type: 'alipay',
         out_trade_no: orderId, notify_url: SITE + '/api/callback',
@@ -78,18 +73,45 @@ module.exports = async function handler(req, res) {
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';
 
-      // 构建 zpayz 支付页面 URL（GET 方式）
-      const zpayzUrl = PAY_URL + '?' + Object.keys(payParams)
-        .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k]))
-        .join('&');
+      const formBody = Object.keys(payParams).map(k =>
+        encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k])
+      ).join('&');
 
-      // 同时生成 QR 图片（通过 QuickChart）
-      const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(zpayzUrl);
-
-      return res.status(200).json({
-        out_trade_no: orderId, pay_url: zpayzUrl, qrcode: qrImg,
-        amount: payAmount, status: 'pending'
-      });
+      try {
+        const payResp = await fetch(PAY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody
+        });
+        const text = await payResp.text();
+        let zdata;
+        try { zdata = JSON.parse(text); } catch (e) {
+          // zpayz unreachable, fallback to GET URL + QuickChart QR
+          const fallbackUrl = PAY_URL + '?' + formBody;
+          const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
+          return res.status(200).json({
+            out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+            amount: payAmount, status: 'pending'
+          });
+        }
+        if (zdata.code !== 1) {
+          return res.status(502).json({ error: zdata.msg || '支付下单失败' });
+        }
+        // Return the real Alipay URL + QR
+        return res.status(200).json({
+          out_trade_no: orderId, pay_url: zdata.payurl || zdata.qrcode || '',
+          qrcode: zdata.img || zdata.qrcode || '',
+          amount: payAmount, status: 'pending'
+        });
+      } catch (e) {
+        // Network error, fallback
+        const fallbackUrl = PAY_URL + '?' + formBody;
+        const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
+        return res.status(200).json({
+          out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+          amount: payAmount, status: 'pending'
+        });
+      }
     }
 
     // ---- 合盘模式 ----

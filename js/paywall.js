@@ -44,21 +44,27 @@ var _qrTimer=null;
 
 function startRP(){
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
-  var status=document.getElementById('qrStatus');if(status)status.textContent='正在生成...';
+  var status=document.getElementById('qrStatus');if(status)status.textContent='正在连接支付...';
   var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='none';
 
   fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:9.9,name:'八字完整分析报告'})})
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){alert(d.error);return}
     localStorage.setItem('rpt_ord',d.out_trade_no);
-    // QR image: from API qrcode field, or generate from pay_url
-    var qrSrc=d.qrcode || '';
-    if(!qrSrc&&d.pay_url) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);
-    var c=document.getElementById('qrContainer');
-    if(c&&qrSrc){
-      c.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:#333;padding:20px>扫码支付 ¥9.9<br><small>真实zpayz支付通道</small></p>\'">';
+
+    // 优先使用 zpayz 返回的支付宝链接直接跳转
+    if(d.pay_url && d.pay_url.includes('alipay')){
+      window.open(d.pay_url,'_blank');
+      if(status)status.textContent='已打开支付页面，支付后自动解锁';
     }
-    if(status)status.textContent='请扫码支付 ¥9.9';
+    // 否则显示二维码
+    else {
+      var qrSrc=d.qrcode||d.pay_url||'';
+      if(!qrSrc&&d.pay_url) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);
+      var c=document.getElementById('qrContainer');
+      if(c&&qrSrc) c.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px">';
+      if(status)status.textContent='请扫码支付 ¥9.9';
+    }
     startQRPoll(d.out_trade_no);
   }).catch(function(e){
     if(status)status.textContent='网络错误，请重试';
