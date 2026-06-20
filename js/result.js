@@ -90,19 +90,10 @@ function render(data) {
     updateDayunColumn(currentDaYunIdx);
     updateLiuNianColumn(currentDaYun, _currentLiuNianIndex);
 
-    // 神煞
     _nativeShenSha = data.shenSha;
-    _dayunShenSha = [];
-    _liunianShenSha = [];
-    renderShenSha();
 
-    // 五行
-    renderWuXing(bazi.wuXingCount);
 
-    // 日主解析 · 滴天髓
-    renderRiZhuJieXi(bazi.day.gan);
 
-    // 专业解读不自动打开（默认关闭）
 
     // 真太阳时
     renderSolarTime(_params.year, _params.month, _params.day, _params.hour);
@@ -121,8 +112,6 @@ function render(data) {
     // 付费板块：解锁后才渲染（避免内容撑开抽屉）
     // 由 renderPaidContent() 在付费后渲染
 
-    // 神煞统计
-    document.getElementById('shenshaCount').textContent = '（共' + data.shenSha.length + '项）';
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
     initPaywall({
@@ -412,7 +401,6 @@ function clearLiuNianColumn() {
     document.getElementById('shensha-liunian').innerHTML = '<span style="color:var(--text-dim)">—</span>';
 
     // 清空流年神煞并刷新
-    _liunianShenSha = [];
     refreshShenShaDetail();
 }
 
