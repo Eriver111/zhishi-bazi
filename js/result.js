@@ -122,7 +122,7 @@ function render(data) {
     // 由 renderPaidContent() 在付费后渲染
 
     // 神煞统计
-    (function(){try{document.getElementById('shenshaCount').textContent}catch(e){}})(), = '（共' + data.shenSha.length + '项）';
+    // shensha removed
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
     initPaywall({
