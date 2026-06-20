@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
     if (!orderId) return res.status(400).json({ error: '缺少 orderId' });
 
     // ---- v3.0 AI 付费订单：查 Supabase ----
-    if (orderId.startsWith('aichat_') || orderId.startsWith('credit_') || orderId.startsWith('monthly_')) {
+    if (orderId.startsWith('aichat_') || orderId.startsWith('credit_') || orderId.startsWith('credit3_') || orderId.startsWith('credit10_') || orderId.startsWith('credit20_') || orderId.startsWith('monthly_')) {
       const credits = await getCreditsByOrderId(orderId);
       if (credits) {
         return res.status(200).json({

@@ -26,7 +26,10 @@ module.exports = async function handler(req, res) {
     // ---- 判断订单类型并写入 ----
     const outTradeNo = params.out_trade_no || '';
 
-    if (outTradeNo.startsWith('monthly_')) {
+    if (outTradeNo.startsWith('credit3_')) { const code = generateCode(); await insertCredits(code, outTradeNo, 3); }
+  else if (outTradeNo.startsWith('credit10_')) { const code = generateCode(); await insertCredits(code, outTradeNo, 10); }
+  else if (outTradeNo.startsWith('credit20_')) { const code = generateCode(); await insertCredits(code, outTradeNo, 20); }
+  else if (outTradeNo.startsWith('monthly_')) {
       // 月度会员：30 天有效期
       const code = generateCode();
       await activateMonthly(code, outTradeNo);

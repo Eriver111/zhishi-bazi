@@ -13,6 +13,9 @@ const SITE = (process.env.SITE_URL || 'https://zhishi.online').trim();
 
 // v3.0 定价
 const PRICING = {
+  credit_3: { amount: 4.9, credits: 3, label: 'AI体验包·3次', prefix: 'credit3_' },
+  credit_10: { amount: 9.9, credits: 10, label: 'AI进阶包·10次', prefix: 'credit10_' },
+  credit_20: { amount: 14.9, credits: 20, label: 'AI专业包·20次', prefix: 'credit20_' },
   credit_pack: { amount: 9.9, credits: 10, label: 'AI提问·10次', prefix: 'credit_' },
   monthly: { amount: 29.9, days: 30, label: 'AI会员·30天', prefix: 'monthly_' },
   ai_chat: { amount: 5, credits: 5, label: 'AI提问·5次', prefix: 'aichat_' },
@@ -28,7 +31,7 @@ module.exports = async function handler(req, res) {
     const { year, month, day, hour, gender, amount, hash, description, money, name, mode } = body;
 
     // ---- v3.0 AI 付费模式（次数包 + 月会员） ----
-    if (mode === 'credit_pack' || mode === 'monthly' || mode === 'ai-chat') {
+    if (mode === 'credit_pack' || mode === 'monthly' || mode === 'ai-chat' || mode === 'credit_3' || mode === 'credit_10' || mode === 'credit_20') {
       const pricing = PRICING[mode] || PRICING.ai_chat;
       const payAmount = pricing.amount;
       const payName = name || pricing.label;

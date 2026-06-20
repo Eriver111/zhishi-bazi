@@ -104,7 +104,7 @@
     html += '<div class="chat-buy-bar" id="aiBuyBar" style="display:none;flex-wrap:wrap;gap:8px;justify-content:center">';
     html += '<button class="buy-btn" onclick="window._aiBuy(\'credit_pack\')" style="font-size:12px">💎 ¥9.9 买10次</button>';
     html += '<button class="buy-btn" onclick="window._aiBuy(\'monthly\')" style="font-size:12px">👑 ¥29.9 包月30天</button>';
-    html += '<span class="buy-hint" style="width:100%;text-align:center">买10次适合偶尔使用 · 包月适合深度咨询</span>';
+    html += '<button class="buy-btn" onclick="window._aiBuy('credit_20')" style="font-size:11px">🚀 ¥14.9/20次</button><button class="buy-btn" onclick="window._aiBuy('monthly')" style="font-size:11px">👑 ¥29.9/月</button><span class="buy-hint" style="width:100%;text-align:center">按需选择 · 月会员无限畅聊</span>';
     html += '</div>';
 
     // 我的兑换码（激活后显示）
@@ -529,6 +529,40 @@
   var _origPS=handlePaymentSuccess;handlePaymentSuccess=function(c,cr){_origPS(c,cr);showMyCode(c);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp}};
   var _origMS=handleMonthlySuccess;handleMonthlySuccess=function(c,e){_origMS(c,e);showMyCode(c)};
   var _origRS=restoreSession;restoreSession=function(){var sc=localStorage.getItem('ai_chat_code');if(sc)showMyCode(sc);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp};_origRS()};
+
+  // AI按钮拖动
+  (function(){
+    var fab=null, dragging=false, startX=0, startY=0, origLeft=0, origTop=0;
+    function initFab(){
+      fab=document.getElementById('aiFab'); if(!fab) { setTimeout(initFab,500); return }
+      fab.style.touchAction='none';
+      fab.addEventListener('pointerdown',function(e){
+        dragging=true; startX=e.clientX; startY=e.clientY;
+        var r=fab.getBoundingClientRect();
+        origLeft=r.left; origTop=r.top;
+        fab.style.transition='none'; fab.style.cursor='grabbing';
+        fab.setPointerCapture(e.pointerId);
+      });
+      fab.addEventListener('pointermove',function(e){
+        if(!dragging)return;
+        var dx=e.clientX-startX, dy=e.clientY-startY;
+        fab.style.right='auto'; fab.style.bottom='auto';
+        fab.style.left=(origLeft+dx)+'px'; fab.style.top=(origTop+dy)+'px';
+      });
+      fab.addEventListener('pointerup',function(e){
+        if(!dragging)return;
+        dragging=false; fab.style.transition=''; fab.style.cursor='pointer';
+        var r=fab.getBoundingClientRect();
+        if(r.top<60)fab.style.top='65px';
+        if(r.left<0)fab.style.left='10px';
+        if(r.bottom>window.innerHeight-80)fab.style.top=(window.innerHeight-140)+'px';
+        if(r.right>window.innerWidth)fab.style.left=(window.innerWidth-r.width-10)+'px';
+        if(Math.abs(e.clientX-startX)<5&&Math.abs(e.clientY-startY)<5){window._aiToggle()}
+      });
+    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();
+  })();
+
   // ===== 启动 =====
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
   else { init(); }
