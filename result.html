@@ -2882,39 +2882,34 @@ body.has-mobile-nav{padding-bottom:60px}
         </section>
 
         <!-- ==================== 专业解读（抽屉式·默认关闭） ==================== -->
-        <section class="section-drawer section-pro" id="proSection">
+                <!-- ==================== 专业解读（默认展开） ==================== -->
+        <section class="section-drawer drawer-open" id="proSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('proSection')">
-                <span class="drawer-arrow">▶</span>
+                <span class="drawer-arrow" style="transform:rotate(90deg)">▶</span>
                 <h2>专业解读</h2>
-                <span class="section-sub">神煞 · 五行 · 日柱</span>
+                <span class="section-sub">四柱 · 五行 · 格局</span>
             </div>
             <div class="drawer-body">
-                <!-- 神煞详解 -->
                 <div class="pro-sub">
-                    <div class="pro-sub-title">神煞详解 <span class="pro-sub-count" id="shenshaCount"></span></div>
-                    <div class="shensha-accordion" id="shenshaAccordion"></div>
+                    <div class="pro-sub-title">四柱生克分析</div>
+                    <div id="pillarAnalysis"></div>
                 </div>
-                <!-- 五行分析 -->
                 <div class="pro-sub">
-                    <div class="pro-sub-title">五行分析</div>
-                    <div class="wuxing-stats">
-                        <div class="wx-item" id="wx-jin" data-wx="金"><span class="wx-name">金</span><div class="wx-bar"><div class="wx-fill"></div></div><span class="wx-num">0</span></div>
-                        <div class="wx-item" id="wx-mu" data-wx="木"><span class="wx-name">木</span><div class="wx-bar"><div class="wx-fill"></div></div><span class="wx-num">0</span></div>
-                        <div class="wx-item" id="wx-shui" data-wx="水"><span class="wx-name">水</span><div class="wx-bar"><div class="wx-fill"></div></div><span class="wx-num">0</span></div>
-                        <div class="wx-item" id="wx-huo" data-wx="火"><span class="wx-name">火</span><div class="wx-bar"><div class="wx-fill"></div></div><span class="wx-num">0</span></div>
-                        <div class="wx-item" id="wx-tu" data-wx="土"><span class="wx-name">土</span><div class="wx-bar"><div class="wx-fill"></div></div><span class="wx-num">0</span></div>
-                    </div>
+                    <div class="pro-sub-title">五行能量</div>
+                    <canvas id="radarCanvas" style="display:block;margin:10px auto;width:280px;height:280px"></canvas>
                     <div class="wuxing-summary" id="wuxingSummary"></div>
                 </div>
-                <!-- 日主解析·滴天髓 -->
                 <div class="pro-sub">
-                    <div class="pro-sub-title">日主解析 · 滴天髓</div>
-                    <div class="rizhu-content" id="rizhuContent"></div>
+                    <div class="pro-sub-title">日主能量</div>
+                    <div id="dayMasterPower"></div>
+                </div>
+                <div class="pro-sub">
+                    <div class="pro-sub-title">命局格局</div>
+                    <div id="patternAnalysis"></div>
                 </div>
             </div>
         </section>
-
-        <!-- ==================== 日主性格（大白话） ==================== -->
+<!-- ==================== 日主性格（大白话） ==================== -->
         <section class="section-drawer section-character" id="characterSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('characterSection')">
                 <span class="drawer-arrow">▶</span>
