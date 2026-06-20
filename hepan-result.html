@@ -3396,13 +3396,16 @@ function submitFeedback() {
   }
   
   function startHPay(){
+    var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:13.9,name:'合盘完整分析报告'})})
     .then(function(r){return r.json()}).then(function(d){
       if(d.error){alert(d.error);return}
       localStorage.setItem('hpo2',d.out_trade_no);
-      if(d.pay_url){window.open(d.pay_url,'_blank')}
+      // 手机直接跳转，电脑显示二维码
+      if(isMobile&&d.pay_url){window.location.href=d.pay_url}
+      else if(d.pay_url){var qr='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);var w=window.open('','_blank','width=400,height=500');if(w){w.document.write('<html><head><title>扫码支付 ¥13.9</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;background:#0d1525;color:#e2dcc8}img{border-radius:12px;border:2px solid #c9a84c}</style></head><body><h3>📱 扫码支付 ¥13.9</h3><img src="'+qr+'" style="width:220px;height:220px"><p style="margin-top:12px;color:#989080">支付后自动解锁，请勿关闭页面</p></body></html>');w.document.close()}}
       pollHP(d.out_trade_no);
-    });
+    }).catch(function(){alert('网络错误，请重试')});
   }
   
   function pollHP(oid){var n=0;var t=setInterval(function(){n++;if(n>120){clearInterval(t);return};fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){if(d.paid||d.status==='paid'){clearInterval(t);localStorage.removeItem('hpo2');unlockHP()}}).catch(function(){})},2000)}

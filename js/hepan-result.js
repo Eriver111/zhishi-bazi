@@ -241,9 +241,7 @@
     window._hepanData = { result: result, relationType: relationType, p1: p1, p2: p2 };
 
     // 初始化付费遮罩
-    if (typeof initHePanPaywall === 'function') {
-      initHePanPaywall(p1, p2, relationType);
-    }
+    // old paywall disabled, using new inline version
   }
 
   // 构建 drawer 包装器，idx 为序号用于付费 ID 定位
