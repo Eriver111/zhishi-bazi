@@ -45,6 +45,7 @@ let _params = null;       // URL参数（供后续函数使用）
 
 // ==================== 主渲染 ====================
 function render(data) {
+  console.log("RENDER OK: pillarAnalysis="+!!document.getElementById("pillarAnalysis"));
     const bazi = data.bazi;
     _bazi = bazi;  // 存储供 renderPaidContent 使用
     const dayGan = bazi.day.gan;
