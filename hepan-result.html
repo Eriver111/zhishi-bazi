@@ -3406,7 +3406,7 @@ function submitFeedback() {
       localStorage.setItem("hpo2",d.out_trade_no);
       if(isM&&d.pay_url){window.location.href=d.pay_url;return}
       var container=document.getElementById("hpQrContainer");
-      if(container&&d.pay_url){container.innerHTML="<img src=\""+d.pay_url+"\" style=\"width:200px;height:200px\">"}
+      if(container&&d.pay_url){container.innerHTML="<img src=\""+(d.qrcode||d.pay_url)+"\" style=\"width:200px;height:200px\">"}
       if(status)status.textContent="请扫码支付 ¥13.9";
       pollHP(d.out_trade_no);
     }).catch(function(){alert("网络错误，请重试")});
