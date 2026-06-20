@@ -1005,5 +1005,25 @@ body::before{
 
 
 <script>setTimeout(function(){var o=document.getElementById("eyeOverlay");if(o){o.style.opacity="0";o.style.visibility="hidden";setTimeout(function(){o.remove()},600)}},2500)</script>
+
+<script>
+(function(){
+  var c=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸','子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥','金','木','水','火','土','正官','七杀','正印','偏印','正财','偏财','食神','伤官','比肩','劫财','天乙','文昌','桃花','驿马','华盖','羊刃','魁罡','太极','学堂','天德','月德','将星','禄神'];
+  var box=document.getElementById('eyeParticles');
+  if(!box)return;
+  for(var i=0;i<40;i++){
+    var s=document.createElement('span');
+    s.textContent=c[Math.floor(Math.random()*c.length)];
+    var x=20+Math.random()*60,y=20+Math.random()*60;
+    var dx=(50-x)*(.5+Math.random()*.5),dy=(50-y)*(.5+Math.random()*.5);
+    s.style.cssText='position:absolute;font-size:'+(10+Math.random()*16)+'px;color:rgba(201,168,76,'+(.2+Math.random()*.5)+');left:'+x+'%;top:'+y+'%;animation:suckIn '+(2+Math.random()*2.5)+'s ease-in '+(Math.random()*2)+'s both;letter-spacing:2px;font-weight:bold';
+    s.setAttribute('data-dx',dx);s.setAttribute('data-dy',dy);
+    box.appendChild(s);
+  }
+  var st=document.createElement('style');
+  st.textContent='@keyframes suckIn{0%{opacity:0;transform:translate(0,0) scale(.5)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px)) scale(0)}}';
+  document.head.appendChild(st);
+})();
+</script>
 </body>
 </html>
