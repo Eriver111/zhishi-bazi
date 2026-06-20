@@ -91,7 +91,7 @@ module.exports = async function handler(req, res) {
         const text = await payResp.text();
         let data;
         try { data = JSON.parse(text); } catch (e) {
-          return res.status(502).json({ error: '支付平台返回异常: ' + text.slice(0, 100) });
+          return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
         }
         if (data.code !== 1) {
           return res.status(502).json({ error: data.msg || '支付下单失败' });
@@ -100,7 +100,7 @@ module.exports = async function handler(req, res) {
         const qrcode = data.qrcode || data.payurl || '';
         return res.status(200).json({ orderId, out_trade_no: orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
       } catch (e) {
-        return res.status(502).json({ error: '支付平台请求失败: ' + e.message });
+        return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
       }
     }
 
@@ -135,7 +135,7 @@ module.exports = async function handler(req, res) {
         const text = await payResp.text();
         let data;
         try { data = JSON.parse(text); } catch (e) {
-          return res.status(502).json({ error: '支付平台返回异常: ' + text.slice(0, 100) });
+          return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
         }
         if (data.code !== 1) {
           return res.status(502).json({ error: data.msg || '支付下单失败' });
@@ -143,7 +143,7 @@ module.exports = async function handler(req, res) {
         qrcode = data.qrcode || data.payurl || '';
         payUrl = data.payurl || data.qrcode || '';
       } catch (e) {
-        return res.status(502).json({ error: '支付平台请求失败: ' + e.message });
+        return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
       }
 
       return res.status(200).json({ orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
@@ -181,7 +181,7 @@ module.exports = async function handler(req, res) {
       const text = await payResp.text();
       let data;
       try { data = JSON.parse(text); } catch (e) {
-        return res.status(502).json({ error: '支付平台返回异常: ' + text.slice(0, 100) });
+        return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
       }
       if (data.code !== 1) {
         return res.status(502).json({ error: data.msg || '支付下单失败' });
@@ -189,7 +189,7 @@ module.exports = async function handler(req, res) {
       qrcode = data.qrcode || data.payurl || '';
       payUrl = data.payurl || data.qrcode || '';
     } catch (e) {
-      return res.status(502).json({ error: '支付平台请求失败: ' + e.message });
+      return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
     }
 
     return res.status(200).json({ orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
