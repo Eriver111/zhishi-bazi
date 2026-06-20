@@ -109,8 +109,8 @@ function render(data) {
     renderParents(bazi, _params.gender);
     document.getElementById('parentsSection').classList.add('drawer-open');
 
-    // 付费板块：解锁后才渲染（避免内容撑开抽屉）
-    // 由 renderPaidContent() 在付费后渲染
+    // 付费板块：自动渲染（付费遮罩由paywall.js处理）
+    renderPaidContent();
 
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
@@ -504,7 +504,7 @@ function refreshShenShaDetail() {
     }
 
     // 更新计数
-    const countEl = document.getElementById('shenshaCount');
+    var countEl=document.getElementById('shenshaCount');if(!countEl)return;
     if (countEl) countEl.textContent = '（共' + allList.length + '项）';
 
     // 按类型排序：吉神 > 中性 > 凶煞
