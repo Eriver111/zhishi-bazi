@@ -1315,6 +1315,12 @@ var MoXingHe = (function(){
 `;
   document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
+</script>
+<script>
+(function(){
+  var m=location.search.match(/ref=([^&]+)/);
+  if(m){localStorage.setItem('ai_ref',m[1])}
+})();
 </script></body>
 </html>
 <!-- deploy: nav_1781955491 -->

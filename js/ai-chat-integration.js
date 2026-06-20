@@ -119,6 +119,12 @@
     html += '<span id="aiBindMsg" style="margin-left:4px"></span>';
     html += '</div>';
     // 兑换码输入
+    <div id="aiShareBox" style="display:none;padding:12px 16px;border-top:1px solid var(--bd);text-align:center">
+  <p style="color:var(--gold-l);font-size:13px;margin-bottom:8px">🎁 免费次数用完了？</p>
+  <p style="color:var(--tx2);font-size:11px;margin-bottom:10px">分享给朋友，双方各得 1 次免费提问</p>
+  <button onclick="window._aiShare()" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border:none;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px">📤 分享得免费次数</button>
+  <p id="aiShareMsg" style="color:var(--tx3);font-size:11px;margin-top:6px"></p>
+</div>
     html += '<div class="redeem-row" id="aiRedeemRow">';
     html += '<input type="text" id="aiRedeemInput" placeholder="输入兑换码" maxlength="32">';
     html += '<button onclick="window._aiRedeem()">激活</button>';
@@ -561,6 +567,39 @@
       });
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();
+  })();
+
+
+  // 分享功能
+  window._aiShare=function(){
+    var url='https://zhishi.online/?ref='+AI.freeId;
+    if(navigator.share){
+      navigator.share({title:'知时命理 - AI免费解读',text:'来试试这个AI八字命理，超准！',url:url}).then(function(){
+        document.getElementById('aiShareMsg').textContent='✅ 已分享，等待朋友点击';
+      });
+    } else if(navigator.clipboard){
+      navigator.clipboard.writeText(url).then(function(){
+        document.getElementById('aiShareMsg').textContent='✅ 链接已复制，发给朋友吧';
+      });
+    } else {
+      prompt('复制链接分享给朋友：',url);
+    }
+  };
+
+  // 检测分享链接来访
+  (function(){
+    var m=location.search.match(/ref=([^&]+)/);
+    if(!m)return;
+    var ref=m[1];
+    var visitor=AI.freeId||('v_'+Date.now());
+    fetch('/api/referral?ref='+ref+'&visitor='+visitor).then(function(r){return r.json()}).then(function(d){
+      if(d.success){
+        var el=document.getElementById('aiEmpty');
+        if(el){el.innerHTML='<div class="chat-empty-wrap"><div class="empty-icon">🎁</div><h4>朋友邀请你来的！</h4><p>你和朋友各获得 1 次额外免费提问</p><code>直接开始提问吧</code></div>'}
+        // 刷新免费次数
+        AI.freeRemaining=1; updateFreeDisplay();
+      }
+    });
   })();
 
   // ===== 启动 =====
