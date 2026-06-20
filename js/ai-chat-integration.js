@@ -104,7 +104,7 @@
     html += '<div class="chat-buy-bar" id="aiBuyBar" style="display:none;flex-wrap:wrap;gap:8px;justify-content:center">';
     html += '<button class="buy-btn" onclick="window._aiBuy(\'credit_pack\')" style="font-size:12px">💎 ¥9.9 买10次</button>';
     html += '<button class="buy-btn" onclick="window._aiBuy(\'monthly\')" style="font-size:12px">👑 ¥29.9 包月30天</button>';
-    html += '<button class="buy-btn" onclick="window._aiBuy('credit_20')" style="font-size:11px">🚀 ¥14.9/20次</button><button class="buy-btn" onclick="window._aiBuy('monthly')" style="font-size:11px">👑 ¥29.9/月</button><span class="buy-hint" style="width:100%;text-align:center">按需选择 · 月会员无限畅聊</span>';
+    html += '<button class="buy-btn" onclick="window._aiBuy(this.dataset.mode)" data-mode="credit_20" style="font-size:11px">🚀 ¥14.9/20次</button><button class="buy-btn" onclick="window._aiBuy(this.dataset.mode)" data-mode="monthly" style="font-size:11px">👑 ¥29.9/月</button><span class="buy-hint" style="width:100%;text-align:center">按需选择 · 月会员无限畅聊</span>';
     html += '</div>';
 
     // 我的兑换码（激活后显示）

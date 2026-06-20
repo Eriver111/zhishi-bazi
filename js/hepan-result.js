@@ -780,6 +780,8 @@
 
       // 6. 渲染结果
       renderAll(result, relationType, person1, person2);
+      // v3.0: init hepan paywall
+      if(window._initHePanPay) window._initHePanPay(person1, person2, relationType);
 
     } catch (err) {
       console.error('[hepan-result] 分析出错:', err);
