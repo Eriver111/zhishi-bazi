@@ -2,9 +2,15 @@
   "cleanUrls": true,
   "builds": [
     { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "**", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" }
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "css/*.css", "use": "@vercel/static" },
+    { "src": "js/*.js", "use": "@vercel/static" },
+    { "src": "js/vendor/*.js", "use": "@vercel/static" },
+    { "src": "lib/*.js", "use": "@vercel/static" },
+    { "src": "schema.sql", "use": "@vercel/static" },
+    { "src": "package.json", "use": "@vercel/static" },
+    { "src": "assets/**", "use": "@vercel/static" },
+    { "src": ".env.example", "use": "@vercel/static" },
+    { "src": ".gitignore", "use": "@vercel/static" }
   ]
 }
