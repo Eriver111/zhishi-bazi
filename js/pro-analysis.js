@@ -144,20 +144,43 @@
 function renderPower(bazi){
     var c=document.getElementById('dayMasterPower');if(!c)return;
     var g=bazi.day.gan,w=TG[g]||'?';
-    var r;try{var fn=window.BaZiCalculator.calcDayMasterStrength;if(fn)r=fn(bazi);else r={score:40,detail:'乙木生于申月，庚金当令，身偏弱。赖壬印甲劫帮扶。'}}catch(e){r={score:40,detail:'乙木生于申月，庚金当令，身偏弱。'}}
-    var l=r.score||40,lb=l>=65?'身强':l>=45?'中和':'身弱',co=l>=65?'#e07050':l>=45?'#c9a84c':'#5b9fd4';
+    var score=50,detail='';
+    
+    // Try to call the real algorithm
+    try{
+      if(window.BaZiCalculator&&window.BaZiCalculator.calcDayMasterStrength){
+        var r=window.BaZiCalculator.calcDayMasterStrength(bazi);
+        if(r&&typeof r.score==='number'){score=r.score;detail=r.detail||r.label||''}
+      }
+    }catch(e){}
+    
+    // Fallback manual calculation for when algorithm is unavailable
+    if(score===50&&!detail){
+      // Simple scoring
+      var dgWx=TG[g],mz=bazi.month.zhi,mWx=DZ[mz];
+      score=50;
+      if(mWx===dgWx)score+=30;else{var SG2={'木':'火','火':'土','土':'金','金':'水','水':'木'};var KE2={'木':'土','土':'水','水':'火','火':'金','金':'木'};if(KE2[dgWx]===mWx)score-=25;else if(SG2[dgWx]===mWx)score-=15}
+      // Count helpers
+      ['year','month','hour'].forEach(function(p){var gw2=TG[bazi[p].gan];if(gw2===dgWx)score+=6;else if(SG2[gw2]===dgWx)score+=4;else if(KE2[dgWx]===gw2)score-=4;else if(SG2[dgWx]===gw2)score-=3});
+      detail='乙木生于申月，庚金当令克身，赖壬印甲劫帮扶。';
+    }
+    
+    var l=Math.max(5,Math.min(95,score));
+    var lb=l>=65?'身强':l>=45?'中和':'身弱';
+    var co=l>=65?'#e07050':l>=45?'#c9a84c':'#5b9fd4';
+    var emoji=l>=65?'🔥':l>=45?'⚖️':'💧';
+    
     c.innerHTML=''+
-      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+(l>=65?'🔥':l>=45?'⚖️':'💧')+'</span>'+
-      '<div style="font-size:22px;font-weight:900;color:'+co+';margin:4px 0">'+lb+'</div></div>'+
+      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+emoji+'</span>'+
+      '<div style="font-size:22px;font-weight:900;color:'+co+';margin:4px 0">'+lb+'（'+l+'分）</div></div>'+
       '<div style="display:flex;align-items:center;gap:4px;padding:2px 0"><span style="font-size:9px;color:var(--tx3)">弱</span>'+
       '<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:'+l+'%;height:100%;background:linear-gradient(90deg,#5b9fd4,#c9a84c,#e07050);border-radius:3px"></div></div>'+
-      '<span style="font-size:9px;color:var(--tx3)">强</span><span style="font-weight:700;color:'+co+';font-size:12px;margin-left:4px">'+l+'%</span></div>'+
-      '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;font-size:10px;color:var(--tx2);line-height:1.5;opacity:.85">'+r.detail+'</div>'+
-      '<div style="font-size:9px;color:var(--tx3);margin-top:4px;line-height:1.4;font-style:italic">📖 《滴天髓》："乙木虽柔，刲羊解牛。""阳干从气，阴干从势。"</div>';
-  }
+      '<span style="font-size:9px;color:var(--tx3)">强</span><span style="font-weight:700;color:'+co+';font-size:12px">'+l+'%</span></div>'+
+      '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;font-size:10px;color:var(--tx2);line-height:1.5">'+detail+'</div>'+
+      '<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-style:italic">📖 《滴天髓》："乙木虽柔，刲羊解牛。"秋木枯槁，赖水滋养。</div>';
+}
 
-  // ============ 格局判定 ============
-  function renderPattern(bazi){
+function renderPattern(bazi){
     var c=document.getElementById('patternAnalysis');if(!c)return;
     var monthSS=(bazi.month.shiShen&&bazi.month.shiShen.zhi)||'';
     var touSS=[];
@@ -189,23 +212,27 @@ function renderPower(bazi){
   // ============ 喜用忌神 ============
   function renderXiyong(bazi){
     var c=document.getElementById('xiyongAnalysis');if(!c)return;
-    var r;try{var fn=window.BaZiCalculator.calcDayMasterStrength;if(fn)r=fn(bazi);else r={score:40}}catch(e){r={score:40}}
-    var weak=r.score<45;
+    var dgWx=TG[bazi.day.gan],mWx=DZ[bazi.month.zhi];
+    var KE2={'木':'土','土':'水','水':'火','火':'金','金':'木'};
+    // 身弱判断：月令克日主
+    var weak=KE2[dgWx]===mWx;
+    // Also check score if available
+    try{if(window.BaZiCalculator&&window.BaZiCalculator.calcDayMasterStrength){var r=window.BaZiCalculator.calcDayMasterStrength(bazi);if(r&&typeof r.score==='number')weak=r.score<45}}catch(e){}
+    
     var y='',x='',j='';
     if(weak){
-      y='💧 水（壬癸亥子）— 印星生身';x='🌿 木（甲乙寅卯）— 比劫帮身';j='⚠️ 金（庚辛申酉）官杀克身 · 土（戊己辰戌丑未）财星耗身 · 火（丙丁巳午）食伤泄身';
+      y='💧 水（壬癸亥子）— 印星生身，第一用神';x='🌿 木（甲乙寅卯）— 比劫帮身，喜神辅助';j='⚠️ 金（庚辛申酉）官杀克身 · 土（戊己辰戌丑未）财星耗身 · 火（丙丁巳午）食伤泄身';
     }else{
-      y='（命局中和）';x='（随大运调节）';j='视大运流年而定';
+      y='（命局中和或偏强）';x='（随大运流年调节）';j='视大运流年而定';
     }
     c.innerHTML=''+
-      '<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:80px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">用神（最需）</div><div style="font-size:16px;font-weight:900;color:#4f8">'+y+'</div><div style="font-size:9px;color:var(--tx3);margin-top:4px">第一优先</div></div>'+
-      '<div style="flex:1;min-width:80px;background:rgba(91,127,165,.1);border:1px solid rgba(91,127,165,.2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">喜神（辅助）</div><div style="font-size:16px;font-weight:900;color:#6db86d">'+x+'</div><div style="font-size:9px;color:var(--tx3);margin-top:4px">次优先</div></div>'+
-      '<div style="flex:1;min-width:80px;background:rgba(196,30,58,.08);border:1px solid rgba(196,30,58,.15);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">忌神（避开）</div><div style="font-size:13px;font-weight:700;color:#e07050">'+j+'</div><div style="font-size:9px;color:var(--tx3);margin-top:4px">需规避制化</div></div></div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:80px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">用神（最需）</div><div style="font-size:14px;font-weight:900;color:#4f8;line-height:1.6">'+y+'</div></div>'+
+      '<div style="flex:1;min-width:80px;background:rgba(91,127,165,.1);border:1px solid rgba(91,127,165,.2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">喜神（辅助）</div><div style="font-size:14px;font-weight:900;color:#6db86d;line-height:1.6">'+x+'</div></div>'+
+      '<div style="flex:1;min-width:80px;background:rgba(196,30,58,.08);border:1px solid rgba(196,30,58,.15);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">忌神（避开）</div><div style="font-size:12px;font-weight:700;color:#e07050;line-height:1.6">'+j+'</div></div></div>'+
       '<div style="margin-top:10px;font-size:10px;color:var(--tx2);line-height:1.5">📖 《穷通宝鉴》："乙木生于申月，庚金当令，壬水为尊。取印化杀，无壬用癸，总之水为第一要义。"<br>📖 《滴天髓》："何知其人吉，用神有气而已矣。"</div>';
-  }
+}
 
-  // ============ 五行雷达图 ============
-  function drawRadar(bazi){
+function drawRadar(bazi){
     if(!bazi.wuXingCount)return;
     var c=document.getElementById('radarCanvas');if(!c)return;
     var ctx=c.getContext('2d'),dpr=window.devicePixelRatio||1,s=250;
