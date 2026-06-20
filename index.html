@@ -1,16 +1,41 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{--ink:#080c14;--gold:#c9a84c;--gold-l:#e8cf70;--tx:#e2dcc8}
+body{background:var(--ink);color:var(--tx);font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
+</style>
 <title>知时 · 知天时 · 见自己</title>
 <meta name="description" content="知时，传承千年东方智慧。输入生辰，获得专属于你的命理分析报告。八字排盘、大运流年、性格解析，AI 参详，引经据典。">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/landing.css">
 <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_ID"></script>
+<script>
+window.onload=function(){
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;bottom:10px;right:10px;background:#333;color:#0f0;padding:5px 10px;z-index:9999;font-size:12px;border-radius:4px';
+  d.id='_diag';
+
+  // Test if external JS loaded
+  var tests=[];
+  if(typeof MoXingHe!=='undefined') tests.push('MoXingHe:OK'); else tests.push('MoXingHe:NO');
+  if(document.getElementById('bgCanvas')) tests.push('bgCanvas:OK'); else tests.push('bgCanvas:NO');
+
+  // Test CSS loaded
+  var s=getComputedStyle(document.body);
+  if(s.background.includes('rgb(')&&s.background!=='rgba(0, 0, 0, 0)') tests.push('CSS:OK');
+  else tests.push('CSS:NO');
+
+  d.innerHTML=tests.join(' | ');
+  document.body.appendChild(d);
+}
+</script>
 </head>
 <body>
 <canvas id="mxhCanvas"></canvas>
+<canvas id="bgCanvas"></canvas>
 
 <div class="landing-wrap">
   <!-- ====== Hero ====== -->
@@ -21,8 +46,11 @@
       <p class="hero-tagline">知天时 · 见自己</p>
     </div>
     <p class="hero-desc">传承千年东方智慧，AI 参详引经据典<br>为你解读专属命盘，知命不认命</p>
-    <a href="paipan.html" class="hero-cta">免费起盘 ▸</a>
-    <a href="hepan.html" class="hero-cta" style="background:linear-gradient(135deg,rgba(100,180,140,.15),rgba(100,180,140,.06));color:#a0d8b0;border:1px solid rgba(100,180,140,.2);box-shadow:0 4px 28px rgba(100,180,140,.15);margin-top:14px">合盘缘分 ▸</a>
+    <div class="hero-ctas">
+      <a href="paipan" class="hero-cta cta-paipan">📜 免费起盘</a>
+      <a href="hepan" class="hero-cta cta-hepan">💞 合盘缘分</a>
+      <a href="paipan" class="hero-cta cta-ai">🤖 AI 命理</a>
+    </div>
     <div class="book-scroll-wrap">
       <div class="book-scroll-track" id="bookTrack"></div>
     </div>
@@ -34,17 +62,17 @@
     <div class="feat-card">
       <div class="feat-icon">📜</div>
       <h3>八字排盘</h3>
-      <p>支持公历 / 农历双模式输入<br>精确到时辰分钟，真太阳时校正<br>纳音神煞，十神旺衰，一目了然</p>
+      <p>公历 / 农历双模式输入<br>精确到时辰分钟，真太阳时校正<br>纳音神煞，十神旺衰，一目了然</p>
     </div>
     <div class="feat-card">
-      <div class="feat-icon">🔮</div>
-      <h3>大运流年</h3>
-      <p>从 0 岁到末年，完整大运推演<br>近 5 年流年逐岁详参<br>五行力量均衡度量化对比</p>
+      <div class="feat-icon">💞</div>
+      <h3>合盘缘分</h3>
+      <p>双人八字深度合盘分析<br>五行互补、日柱契合、相处模式<br>未来三年关键节点推演</p>
     </div>
     <div class="feat-card">
-      <div class="feat-icon">🗂</div>
-      <h3>专题解读</h3>
-      <p>性格特质 · 事业财运 · 婚姻情感<br>健康提醒 · 父母关系 · 流年建议<br>六大维度，逐一展开深度分析</p>
+      <div class="feat-icon">🤖</div>
+      <h3>AI 命理师</h3>
+      <p>DeepSeek 大模型深度推演<br>子平八字 + 盲派理论融合<br>前2次免费 · 月会员无限畅聊</p>
     </div>
   </section>
 
@@ -76,8 +104,8 @@
       <div class="trust-item">
         <div class="trust-num">04</div>
         <div class="trust-body">
-          <h4>按次计费 · 无订阅</h4>
-          <p>解锁完整报告仅需一次付费，无月费、无自动续费。所见即所得，付多少得多少。</p>
+          <h4>灵活付费 · 自由选择</h4>
+          <p>前2次AI提问完全免费，次数包 ¥9.9/10次 满足偶尔使用，月会员 ¥29.9 适合深度咨询。无自动续费陷阱。</p>
         </div>
       </div>
     </div>
@@ -87,8 +115,9 @@
   <section class="cta-bottom">
     <h2>准备好了吗？</h2>
     <p>输入你的生辰，看看千年前的东方智慧如何解读你的生命密码</p>
-    <a href="paipan.html" class="cta-btn">免费起盘 ▸</a>
-    <a href="hepan.html" class="cta-btn" style="background:linear-gradient(135deg,rgba(100,180,140,.18),rgba(100,180,140,.04));color:#a0d8b0;border:1px solid rgba(100,180,140,.22);box-shadow:0 4px 24px rgba(100,180,140,.12);margin-left:14px;margin-top:10px;display:inline-block">合盘缘分 ▸</a>
+    <a href="paipan" class="cta-btn">📜 免费起盘</a>
+    <a href="hepan" class="cta-btn" style="background:linear-gradient(135deg,rgba(91,127,165,.18),rgba(91,127,165,.04));color:#a0c8e8;border:1px solid rgba(91,127,165,.22);margin-left:8px">💞 合盘缘分</a>
+    <a href="paipan" class="cta-btn" style="background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(91,127,165,.08));color:#f0d060;border:1px solid rgba(201,168,76,.35);margin-left:8px">🤖 AI 命理咨询</a>
   </section>
 
   <!-- ====== Footer ====== -->
@@ -99,7 +128,10 @@
 </div>
 
 <script src="js/mo-xing-he.js"></script>
-<script>MoXingHe.start('mxhCanvas');
+<script src="js/bg-animation.js"></script>
+<script src="js/effects.js"></script>
+<script>
+MoXingHe.start('mxhCanvas');
 
 // 古籍书名滚动
 (function(){
@@ -121,6 +153,7 @@
   el2.className='book-scroll-inner';
   el2.textContent=books.join(' · ');
   track.appendChild(el2);
-})();</script>
+})();
+</script>
 </body>
 </html>

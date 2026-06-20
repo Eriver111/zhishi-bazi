@@ -86,14 +86,25 @@ module.exports = async function handler(req, res) {
     let credits = null;
     let monthlyActive = false;
 
-    // ---- 免费模式：前 N 次免费 ----
+    // ---- 免费模式：前 N 次免费（双重校验：浏览器ID + 服务端指纹） ----
     if (free_mode && free_id) {
-      const freeInfo = await getFreeUsage(free_id);
-      if (freeInfo.remaining > 0) {
-        const trackResult = await trackFreeUsage(free_id);
+      // 服务端指纹：IP + UserAgent 哈希，用户清浏览器也绕不过
+      const serverFingerprint = getServerFingerprint(req);
+
+      // 同时查浏览器ID和服务端指纹，取已用次数最多的那个
+      const usageByClient = await getFreeUsage(free_id);
+      const usageByServer = await getFreeUsage(serverFingerprint);
+      const maxUsed = Math.max(
+        usageByClient ? usageByClient.used : 0,
+        usageByServer ? usageByServer.used : 0
+      );
+      const maxRemaining = Math.max(0, (parseInt(process.env.FREE_CREDITS_PER_DEVICE) || 2) - maxUsed);
+
+      if (maxRemaining > 0) {
+        // 同时以两个标识记录（防止用户换ID或换IP任一方式绕过）
+        const trackResult = await trackFreeUsage(free_id, serverFingerprint);
         await saveChatHistory('free_' + free_id, 'user', question);
 
-        // 免费模式也尝试用 AI 回答
         const freeReply = await callAI(question, chartData, bazi, history);
         await saveChatHistory('free_' + free_id, 'assistant', freeReply);
         return res.status(200).json({
@@ -363,6 +374,20 @@ function buildBasicBaziContext(bazi) {
 /**
  * 模拟回复（无 AI Key 时使用，chartData 模式下提供更精准的模板）
  */
+/**
+ * 生成服务端指纹：IP + UserAgent 的哈希
+ * 即使用户清除浏览器/localStorage，同一设备同一网络的指纹相同
+ */
+const crypto = require('crypto');
+function getServerFingerprint(req) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+          || req.headers['x-real-ip']
+          || req.connection?.remoteAddress
+          || '0.0.0.0';
+  const ua = (req.headers['user-agent'] || '').slice(0, 200);
+  return 'sfp_' + crypto.createHash('sha256').update(ip + '|' + ua).digest('hex').slice(0, 24);
+}
+
 function generateMockReply(question, chartData, bazi) {
   const hasChart = !!(chartData && (chartData.fourPillars || chartData.person1));
   const q = question.toLowerCase();

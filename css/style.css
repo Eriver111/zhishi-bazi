@@ -1,25 +1,29 @@
 /* ============================================
-   知时 — 八字 AI 命理咨询
-   墨黑 · 流金 · 雾灰 · 气韵流动
+   知时 — 墨渊星汉 · AI 命理
+   深空蓝黑 · 流金辉光 · 玻璃质感 · 星河流转
    ============================================ */
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --ink:#0a0a0f;
-  --paper:#0f0f18;
-  --card:rgba(15,15,26,.88);
+  --ink:#080c14;
+  --paper:#0d1525;
+  --card:rgba(13,21,37,.82);
   --gold:#c9a84c;
   --gold-l:#e8cf70;
   --gold-d:#8a6d28;
-  --gold-glow:rgba(201,168,76,.12);
-  --mist:rgba(180,170,150,.35);
-  --mist-dim:rgba(180,170,150,.18);
-  --tx:#e0d8c8;
-  --tx2:#989080;
-  --tx3:#585048;
-  --bd:rgba(201,168,76,.12);
-  --bd2:rgba(201,168,76,.28);
-  --radius:10px;
+  --gold-glow:rgba(201,168,76,.14);
+  --star:#5b7fa5;
+  --star-dim:#3a5068;
+  --star-glow:rgba(91,127,165,.1);
+  --mist:rgba(160,170,185,.38);
+  --mist-dim:rgba(160,170,185,.18);
+  --tx:#e2dcc8;
+  --tx2:#a09888;
+  --tx3:#8a8580;
+  --bd:rgba(201,168,76,.1);
+  --bd2:rgba(201,168,76,.25);
+  --bd-star:rgba(91,127,165,.08);
+  --radius:12px;
   --red:#c41e3a;
 }
 html{font-size:16px;-webkit-font-smoothing:antialiased}
@@ -32,8 +36,9 @@ body{
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.015'/%3E%3C/svg%3E");
-  opacity:.5;
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(91,127,165,.03) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 70% 70%, rgba(201,168,76,.02) 0%, transparent 50%);
+  opacity:.7;
 }
 
 /* === Background Canvas === */
@@ -214,6 +219,22 @@ body::before{
   color:var(--gold-l);box-shadow:0 0 24px var(--gold-glow);
 }
 .radio span{pointer-events:none;letter-spacing:1px}
+
+/* paipan.html 的起盘推演按钮 */
+.submit{
+  width:100%;padding:16px;margin-top:12px;
+  font-family:inherit;font-size:17px;font-weight:700;letter-spacing:10px;
+  color:var(--ink);
+  background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 40%,var(--gold-l) 100%);
+  background-size:200% 100%;
+  border:none;border-radius:8px;cursor:pointer;
+  transition:all .4s;
+  box-shadow:0 4px 24px rgba(201,168,76,.2);
+  animation:shimmer 3s ease-in-out infinite;
+}
+.submit:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.3)}
+.submit:active{transform:translateY(0);box-shadow:0 2px 12px rgba(201,168,76,.15)}
+.submit.loading{pointer-events:none;opacity:.65}
 
 .submit-btn{
   width:100%;padding:14px;margin-top:8px;

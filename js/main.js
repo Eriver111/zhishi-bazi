@@ -345,6 +345,6 @@ function handleSubmit(e) {
   if (dist) params.set('dist', dist);
 
   setTimeout(function() {
-    window.location.href = 'result.html?' + params.toString();
+    window.location.href = 'result?' + params.toString();
   }, 600);
 }
