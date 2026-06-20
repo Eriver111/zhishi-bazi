@@ -2162,10 +2162,13 @@ function analyzeParents(bazi, gender) {
 
 // ==================== 日主性格分析 ====================
 function analyzeCharacter(bazi) {
-    const DAY = bazi.day.gan;
-    const WX = WU_XING[DAY];
-
-    // --- 十天干本性 ---
+    var DAY = bazi.day.gan;
+    var WX = WU_XING[DAY];
+    var yy = (["甲","丙","戊","庚","壬"].indexOf(DAY)>=0) ? "阳" : "阴";
+    if (window._GAN_CHARACTERS && window._GAN_CHARACTERS[DAY]) {
+        return "日主"+DAY+"（"+WX+"·"+yy+"）\n\n"+window._GAN_CHARACTERS[DAY];
+    }
+    // fallback to old data
     const ganNature = {
         '甲': {
             positive: '正直仁厚、有担当与领导力，志向高远、积极进取，如参天大树般给人以安全感和信赖。',
