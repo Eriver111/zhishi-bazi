@@ -865,7 +865,7 @@ body::before{
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
 <style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
-<svg viewBox="0 0 100 60" style="width:120px;height:72px;position:relative;z-index:1">
+<div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0" id="eyeParticles"></div><svg viewBox="0 0 100 60" style="width:120px;height:72px;position:relative;z-index:1">
 <defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
 <path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150" filter="url(#eyeGlow)"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1.2s" fill="freeze"/></path>
 <circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1s" fill="freeze"/><animate attributeName="r" from="3" to="7" dur="0.4s" begin="1s" fill="freeze"/></circle>
