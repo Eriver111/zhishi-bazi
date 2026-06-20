@@ -131,8 +131,8 @@
     for(var i=0;i<4;i++){for(var j=i+1;j<4;j++){if(CHONG[zs[i]]===zs[j])rels.push({t:'六冲',c:'#f44',d:bn[i]+'申↔'+bn[j]+'申'});if(HE[zs[i]]===zs[j])rels.push({t:'六合',c:'#4f8',d:bn[i]+'↔'+bn[j]});if(HAI[zs[i]]===zs[j])rels.push({t:'六害',c:'#f84',d:bn[i]+'↔'+bn[j]});if(zs[i]===zs[j])rels.push({t:'伏吟',c:'#ca4',d:bn[i]+'↔'+bn[j]});}}
 
     h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;text-align:center">';
-    if(rels.length===0)h+='<span style="font-size:10px;color:var(--tx3)">地支平和，无特殊刑冲合害</span>';
-    else rels.forEach(function(r){h+='<span style="display:inline-block;margin:2px 6px;font-size:10px;padding:1px 8px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid '+r.c+';color:var(--tx2)"><b style="color:'+r.c+'">'+r.t+'</b> '+r.d+'</span>'});
+    if(rels.length===0)h+='<span style="font-size:10px;color:var(--tx3)">地支平和，无特殊刑冲合害</span>';else{rels.forEach(function(r){h+='<span style="display:inline-block;margin:2px 6px;font-size:10px;padding:2px 10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid '+r.c+';color:var(--tx2)"><b style="color:'+r.c+'">'+r.t+'</b> '+r.d+'</span>'});h+='<div style="margin-top:8px;font-size:9px;color:var(--tx3);line-height:1.6;text-align:left;padding:6px 10px;background:rgba(255,255,255,.01);border-radius:8px">';rels.forEach(function(r){var exp="";if(r.t==="六冲")exp="冲则动，主动荡变化、奔波。冲为对立，两败俱伤。";if(r.t==="六合")exp="合则聚，主合作顺利。合为融合，化敌为友。";if(r.t==="六害")exp="穿则暗损，主小人暗算。害为隐蔽之伤，持续耗损。";if(r.t==="伏吟")exp="重复出现，主纠结反复。伏吟多忧虑、进退两难。";h+='<div style="margin:3px 0"><b style="color:'+r.c+'">'+r.t+' '+r.d+'</b>：'+exp+'</div>'});h+='</div>'}
+    // removed: rels.forEach(function(r){h+='<span style="display:inline-block;margin:2px 6px;font-size:10px;padding:1px 8px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid '+r.c+';color:var(--tx2)"><b style="color:'+r.c+'">'+r.t+'</b> '+r.d+'</span>'});
     h+='</div>';
 
     // Legend
@@ -193,7 +193,7 @@ function renderPower(bazi){
     var weak=r.score<45;
     var y='',x='',j='';
     if(weak){
-      y='💧 水（印星）';x='🌿 木（比劫）';j='⚠️ 金（官杀）、土（财星）、火（食伤）';
+      y='💧 水（壬癸亥子）— 印星生身';x='🌿 木（甲乙寅卯）— 比劫帮身';j='⚠️ 金（庚辛申酉）官杀克身 · 土（戊己辰戌丑未）财星耗身 · 火（丙丁巳午）食伤泄身';
     }else{
       y='（命局中和）';x='（随大运调节）';j='视大运流年而定';
     }
