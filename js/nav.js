@@ -16,5 +16,5 @@
   <a href="/pricing">💰</a>
 </div>
 `;
-  document.body.insertAdjacentHTML('afterbegin', navHTML);
+  document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
