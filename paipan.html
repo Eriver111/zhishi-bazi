@@ -1070,6 +1070,30 @@ body.has-mobile-nav{padding-bottom:60px}
 `;
   document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
+</script>
+<script>
+(function(){
+  var t=localStorage.getItem('ai_chat_type');
+  if(t==='monthly'){
+    var p=localStorage.getItem('last_bazi_params');
+    if(p){
+      var d=new URLSearchParams(p);
+      // Auto-fill form
+      setTimeout(function(){
+        var sy=document.getElementById('sYear'),sm=document.getElementById('sMonth'),sd=document.getElementById('sDay'),sh=document.getElementById('sHour');
+        if(sy&&d.get('year'))sy.value=d.get('year');
+        if(sm&&d.get('month'))sm.value=d.get('month');
+        if(sd&&d.get('day'))sd.value=d.get('day');
+        if(sh&&d.get('hour'))sh.value=d.get('hour');
+        var g=document.querySelector('input[name=gender][value='+(d.get('gender')||'male')+']');
+        if(g)g.checked=true;
+        // Show hint
+        var c=document.querySelector('.card');
+        if(c){var hint=document.createElement('div');hint.style.cssText='text-align:center;color:var(--gold);font-size:12px;margin-top:8px;padding:8px;background:rgba(201,168,76,.08);border-radius:8px';hint.textContent='👑 会员自动加载上次命盘';c.appendChild(hint)}
+      },600);
+    }
+  }
+})();
 </script></body>
 </html>
 <!-- deploy: nav_1781955491 -->

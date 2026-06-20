@@ -225,21 +225,32 @@ async function callAI(question, chartData, bazi, history) {
     return generateMockReply(question, chartData, bazi) + '\n\n---\n※ ⚠ 当前为模拟模式，请配置 AI_API_KEY 环境变量以启用真实 AI 分析';
   }
 
-  // 真实 AI 调用
+  // AI 流式调用
   const aiResp = await fetch(AI_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
-    body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 2000 })
+    body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 2000, stream: true })
   });
 
-  if (!aiResp.ok) {
-    const errText = await aiResp.text();
-    console.error('AI API 错误:', aiResp.status, errText);
-    throw new Error(`AI 服务异常 (${aiResp.status})`);
+  if (!aiResp.ok) { throw new Error(`AI error ${aiResp.status}`); }
+  
+  // Collect streamed response
+  let fullText = '';
+  const reader = aiResp.body;
+  for await (const chunk of reader) {
+    const lines = chunk.toString().split('
+').filter(l => l.startsWith('data: '));
+    for (const line of lines) {
+      const data = line.slice(6);
+      if (data === '[DONE]') continue;
+      try {
+        const parsed = JSON.parse(data);
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) fullText += content;
+      } catch(e) {}
+    }
   }
-
-  const aiData = await aiResp.json();
-  return aiData.choices?.[0]?.message?.content || '抱歉，未能获取回答，请稍后重试。';
+  return fullText || '抱歉，未能获取回答';
 }
 
 /**

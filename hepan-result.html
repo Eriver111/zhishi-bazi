@@ -3369,6 +3369,53 @@ function submitFeedback() {
 `;
   document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
+</script>
+<script>
+(function(){
+  var _hh='';
+  function hh(p1,p2,t){return [p1.dayGan,p1.dayZhi,p2.dayGan,p2.dayZhi,t].join('|')}
+  function iru(){var s=localStorage.getItem('hp_rpt2');if(!s)return false;try{var d=JSON.parse(s);return d.h===_hh&&d.e>Date.now()}catch(e){return false}}
+  function sru(){localStorage.setItem('hp_rpt2',JSON.stringify({h:_hh,e:Date.now()+365*86400000}))}
+
+  function initHePanPay(p1,p2,t){
+    _hh=hh(p1,p2,t);
+    if(iru()){unlockHP();return}
+    var secs=['hp-drawer-4','hp-drawer-5','hp-drawer-6','hp-drawer-7'];
+    var first=document.getElementById(secs[0]);
+    if(!first||document.getElementById('hpUnified'))return;
+    
+    var wrap=document.createElement('div');wrap.id='hpUnified';
+    wrap.style.cssText='position:relative;min-height:300px;margin:16px 0';
+    first.parentNode.insertBefore(wrap,first);
+    secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
+    
+    var pw=document.createElement('div');pw.id='hpPaywall';
+    pw.style.cssText='position:absolute;inset:0;background:rgba(8,12,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px';
+    pw.innerHTML='<div style="font-size:48px">🔒</div><h3 style="color:var(--gold-l);margin:8px 0">完整合盘分析报告</h3><p style="color:var(--tx2);font-size:13px;text-align:center">跨盘干支交互 · 核心相处模式<br>未来三年节点 · 宜忌指南</p><div style="font-size:30px;font-weight:900;color:var(--gold-l);margin:10px 0">¥13.9</div><button class="submit-btn" onclick="startHPay()" style="max-width:280px">🔓 解锁合盘报告</button><p style="color:var(--tx3);font-size:11px;margin-top:8px">一次付费 · 永久查看 · 支持下载</p><div style="margin-top:20px;padding:14px 18px;background:rgba(201,168,76,.08);border:1px dashed var(--bd2);border-radius:10px;text-align:center"><p style="color:var(--gold-l);font-size:15px;font-weight:600">🤖 试试知时AI解读合盘</p><p style="color:var(--gold);font-size:13px;margin-top:6px;cursor:pointer" onclick="window._aiOpen()">👉 前2次免费 · 深度解读合盘缘分</p></div>';
+    wrap.appendChild(pw);
+  }
+  
+  function startHPay(){
+    fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:13.9,name:'合盘完整分析报告'})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.error){alert(d.error);return}
+      localStorage.setItem('hpo2',d.out_trade_no);
+      if(d.pay_url){window.open(d.pay_url,'_blank')}
+      pollHP(d.out_trade_no);
+    });
+  }
+  
+  function pollHP(oid){var n=0;var t=setInterval(function(){n++;if(n>120){clearInterval(t);return};fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){if(d.paid||d.status==='paid'){clearInterval(t);localStorage.removeItem('hpo2');unlockHP()}}).catch(function(){})},2000)}
+  
+  function unlockHP(){
+    sru();
+    var pw=document.getElementById('hpPaywall');if(pw)pw.remove();
+    ['hp-drawer-4','hp-drawer-5','hp-drawer-6','hp-drawer-7'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hp-open')});
+    var b=document.getElementById('downloadBanner');if(b)b.style.display='flex';
+  }
+  
+  window._initHePanPay=initHePanPay;
+})();
 </script></body>
 </html>
 <!-- deploy: nav_1781955491 -->
