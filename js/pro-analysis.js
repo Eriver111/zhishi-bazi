@@ -74,7 +74,7 @@
     var zs=[bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi];
     var ns=['年柱','月柱','日柱','时柱'];
     var gw=[TG[gs[0]],TG[gs[1]],TG[gs[2]],TG[gs[3]]];
-    var zw=[DZ[zs[0]],DZ[zs[1]],DZ[zs[2]],DZ[zs[3]]];
+    var zw=[DZ[zs[0]]||'?',DZ[zs[1]]||'?',DZ[zs[2]]||'?',DZ[zs[3]]||'?'];
 
     // Build as one cohesive SVG-like HTML diagram
     var h='<div style="overflow-x:auto;padding:8px 0"><div style="min-width:420px;margin:0 auto">';
@@ -85,7 +85,7 @@
       var isD=(i===2);
       h+='<div style="text-align:center;'+(isD?'background:rgba(201,168,76,.12);border:2px solid rgba(201,168,76,.35);':'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);')+'border-radius:12px;padding:'+(isD?'12px 14px':'8px 10px')+';width:'+(isD?'64px':'56px')+'">';
       h+='<div style="font-size:10px;color:var(--tx3);margin-bottom:1px">'+ns[i]+'</div>';
-      h+='<div style="font-size:'+(isD?'26px':'20px')+';font-weight:700;color:'+(TC[gw[i]]||'#fff')+'">'+gs[i]+'</div>';
+      h+='<div style="font-size:'+(isD?'26px':'20px')+';font-weight:700;color:'+((TC[gw[i]]||'#fff')||'#fff')+'">'+gs[i]+'</div>';
       h+='<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+gw[i]+'</div>';
       if(isD)h+='<div style="font-size:8px;color:var(--gold-l);background:rgba(201,168,76,.2);border-radius:8px;padding:0 6px;display:inline-block;margin-top:2px">☀日主</div>';
       h+='</div>';
@@ -112,7 +112,7 @@
     for(var i=0;i<4;i++){
       var isD2=(i===2);
       h+='<div style="text-align:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:8px 10px;width:'+(isD2?'64px':'56px')+'">';
-      h+='<div style="font-size:17px;font-weight:600;color:'+(TC[zw[i]]||'#fff')+'">'+zs[i]+'</div>';
+      h+='<div style="font-size:17px;font-weight:600;color:'+((TC[zw[i]]||'#fff')||'#fff')+'">'+zs[i]+'</div>';
       h+='<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+zw[i]+'</div>';
       h+='</div>';
       if(i<3){
