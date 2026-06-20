@@ -3,24 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>知时 · 付费方案</title>
+<title>知时 · 积分方案</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/landing.css">
-
 <style>
-.pricing-wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px;position:relative;z-index:1}
+.pricing-wrap{max-width:1000px;margin:0 auto;padding:60px 24px 80px;position:relative;z-index:1}
 .pricing-hero{text-align:center;margin-bottom:40px}
 .pricing-hero h1{font-size:36px;color:var(--gold-l);letter-spacing:6px;margin-bottom:8px}
 .pricing-hero p{color:var(--tx2);font-size:14px}
-.pricing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
-.pricing-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:32px 24px;text-align:center;
-  backdrop-filter:blur(20px);transition:all .3s;position:relative;overflow:hidden}
-.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.pricing-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:32px 24px;text-align:center;backdrop-filter:blur(20px);transition:all .3s;position:relative;overflow:hidden}
+.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4}
 .pricing-card:hover{transform:translateY(-4px);border-color:var(--bd2);box-shadow:0 12px 40px rgba(0,0,0,.4)}
 .pricing-card.featured{border-color:var(--gold);box-shadow:0 0 40px rgba(201,168,76,.12)}
-.pricing-card.featured::after{content:'推荐';position:absolute;top:12px;right:-28px;background:var(--gold);
-  color:#1a1a1a;font-size:11px;font-weight:700;padding:2px 30px;transform:rotate(45deg)}
+.pricing-card.featured::after{content:'推荐';position:absolute;top:12px;right:-28px;background:var(--gold);color:#1a1a1a;font-size:11px;font-weight:700;padding:2px 30px;transform:rotate(45deg)}
 .pricing-icon{font-size:36px;margin-bottom:12px}
 .pricing-name{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:4px;letter-spacing:2px}
 .pricing-price{font-size:36px;font-weight:900;color:var(--gold-l);margin:12px 0}
@@ -30,45 +26,15 @@
 .pricing-features{list-style:none;text-align:left;margin-bottom:20px;font-size:13px;color:var(--tx2)}
 .pricing-features li{padding:4px 0;padding-left:16px;position:relative}
 .pricing-features li::before{content:'◆';position:absolute;left:0;color:var(--gold);font-size:7px;top:7px}
-.pricing-btn{display:block;width:100%;padding:12px;border-radius:25px;font-size:15px;font-weight:700;
-  letter-spacing:2px;cursor:pointer;font-family:inherit;text-align:center;text-decoration:none;
-  transition:all .3s;border:none}
-.btn-gold-pricing{background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));background-size:200% 100%;
-  color:#1a1a1a;animation:shimmer 3s infinite}
+.pricing-btn{display:block;width:100%;padding:12px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;text-align:center;text-decoration:none;transition:all .3s;border:none}
+.btn-gold-pricing{background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));background-size:200% 100%;color:#1a1a1a;animation:shimmer 3s infinite}
 .btn-gold-pricing:hover{box-shadow:0 6px 24px rgba(201,168,76,.3);transform:translateY(-1px)}
 .btn-outline-pricing{background:transparent;border:2px solid var(--bd2);color:var(--gold-l)}
 .btn-outline-pricing:hover{background:rgba(201,168,76,.08)}
 .pricing-note{text-align:center;margin-top:24px;color:var(--tx3);font-size:11px}
-.pricing-note a{color:var(--gold)}
-@media(max-width:768px){
-  .pricing-grid{grid-template-columns:1fr;max-width:380px;margin:0 auto}
-}
+@media(max-width:600px){.pricing-grid{grid-template-columns:1fr 1fr;gap:12px}.pricing-card{padding:20px 14px}.pricing-price{font-size:28px}}
 </style>
-<style>/* 桌面导航 */
-.zhishi-nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(8,12,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);height:50px}
-.nav-brand{font-size:20px;font-weight:900;color:var(--gold-l);letter-spacing:4px;text-decoration:none}
-.nav-links{display:flex;gap:20px;align-items:center}
-.nav-links a{color:var(--tx2);text-decoration:none;font-size:14px;letter-spacing:1px;transition:color .2s;padding:6px 12px;border-radius:6px}
-.nav-links a:hover{color:var(--gold-l)}
-.nav-links .nav-cta{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;font-weight:700;border-radius:16px;padding:6px 16px;animation:shimmer 3s infinite;background-size:200% 100%}
-.nav-links .nav-cta:hover{color:#1a1a1a;box-shadow:0 0 20px var(--gold-glow)}
-
-/* 手机底部导航 */
-.zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:rgba(8,12,20,.92);backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
-.zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px}
-.zhishi-mobile-nav a:active{color:var(--gold-l)}
-
-/* 页面留出导航空间 */
-body.has-nav{padding-top:50px}
-body.has-mobile-nav{padding-bottom:60px}
-
-@media(max-width:768px){
-  .zhishi-nav .nav-links{display:none}
-  .zhishi-mobile-nav{display:flex}
-  body.has-mobile-nav{padding-bottom:60px}
-  .zhishi-nav{justify-content:center;padding:8px 16px;height:44px}
-}
-</style></head>
+</head>
 <body>
 <canvas id="mxhCanvas"></canvas>
 <canvas id="bgCanvas"></canvas>
@@ -80,81 +46,82 @@ body.has-mobile-nav{padding-bottom:60px}
   </div>
 
   <div class="pricing-grid">
-    <!-- 次数包 -->
     <div class="pricing-card">
       <div class="pricing-icon">💎</div>
       <div class="pricing-name">体验包</div>
-      <div class="pricing-price"><small>¥</small>9.9<span class="unit"> / 10次</span></div>
+      <div class="pricing-price"><small>¥</small>4.9<span class="unit"> / 3次</span></div>
       <p class="pricing-desc">初次尝试，超低价体验</p>
       <ul class="pricing-features">
-        <li>3 次 AI 命理深度对话</li>
-        <li>子平八字 + 盲派理论</li>
+        <li>3 次 AI 命理对话</li>
+        <li>子平八字+盲派理论</li>
         <li>完整排盘数据注入</li>
         <li>兑换码永久有效</li>
-        <li>绑定手机可找回</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-gold-pricing">¥4.9 开始使用</a>
+      <a href="/paipan" class="pricing-btn btn-outline-pricing">¥4.9 体验</a>
     </div>
 
-    <!-- 月会员 -->
     <div class="pricing-card featured">
-      <div class="pricing-icon">👑</div>
-      <div class="pricing-name">月度会员</div>
-      <div class="pricing-price"><small>¥</small>29.9<span class="unit"> / 30天</span></div>
-      <p class="pricing-desc">深度咨询，最受欢迎</p>
+      <div class="pricing-icon">⭐</div>
+      <div class="pricing-name">进阶包</div>
+      <div class="pricing-price"><small>¥</small>9.9<span class="unit"> / 10次</span></div>
+      <p class="pricing-desc">最受欢迎，性价比最高</p>
       <ul class="pricing-features">
-        <li>30 天无限次 AI 对话</li>
-        <li>子平八字 + 盲派全体系</li>
-        <li>完整八字命盘上下文</li>
-        <li>兑换码绑定手机</li>
-        <li>新功能优先体验</li>
-        <li>支持随时续费</li>
+        <li>10 次 AI 命理对话</li>
+        <li>子平八字+盲派全体系</li>
+        <li>八字命盘上下文</li>
+        <li>兑换码永久有效</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-gold-pricing">开始使用</a>
+      <a href="/paipan" class="pricing-btn btn-gold-pricing">¥9.9 体验</a>
     </div>
 
-    <!-- 报告 -->
     <div class="pricing-card">
-      <div class="pricing-icon">📋</div>
+      <div class="pricing-icon">🚀</div>
       <div class="pricing-name">专业包</div>
-      <div class="pricing-price"><small>¥</small>9.9<span class="unit"> / 次</span></div>
+      <div class="pricing-price"><small>¥</small>14.9<span class="unit"> / 20次</span></div>
       <p class="pricing-desc">重度用户，超值选择</p>
       <ul class="pricing-features">
-        <li>20 次 AI 命理深度对话</li>
-        <li>子平八字 + 盲派全体系</li>
-        <li>完整排盘 + 大运流年</li>
+        <li>20 次 AI 命理对话</li>
+        <li>完整排盘+大运流年</li>
         <li>单次仅 ¥0.75</li>
         <li>兑换码永久有效</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-outline-pricing">¥14.9 开始使用</a>
-    <div class="pricing-card" style="margin-top:16px"><div class="pricing-icon">👑</div><div class="pricing-name">月度会员</div><div class="pricing-price"><small>¥</small>29.9<span class="unit"> / 30天</span></div><p class="pricing-desc">无限提问，专属特权</p><ul class="pricing-features"><li>30 天无限次 AI 对话</li><li>所有积分包功能</li><li>新功能优先体验</li></ul><a href="/paipan" class="pricing-btn btn-gold-pricing">¥29.9 开通</a></div></div>
-  <p class="pricing-note">所有方案前2次AI提问免费体验 · <a href="/api/ping">服务状态</a></p>
+      <a href="/paipan" class="pricing-btn btn-outline-pricing">¥14.9 体验</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-icon">👑</div>
+      <div class="pricing-name">月度会员</div>
+      <div class="pricing-price"><small>¥</small>29.9<span class="unit"> / 30天</span></div>
+      <p class="pricing-desc">无限提问，专属特权</p>
+      <ul class="pricing-features">
+        <li>30天无限次AI对话</li>
+        <li>所有积分包功能</li>
+        <li>新功能优先体验</li>
+        <li>支持随时续费</li>
+      </ul>
+      <a href="/paipan" class="pricing-btn btn-gold-pricing">¥29.9 开通</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-icon">📋</div>
+      <div class="pricing-name">合盘报告</div>
+      <div class="pricing-price"><small>¥</small>13.9<span class="unit"> / 次</span></div>
+      <p class="pricing-desc">双人合盘深度分析</p>
+      <ul class="pricing-features">
+        <li>跨盘干支交互分析</li>
+        <li>核心相处模式解读</li>
+        <li>未来三年关键节点</li>
+        <li>宜忌指南报告</li>
+      </ul>
+      <a href="/hepan" class="pricing-btn btn-outline-pricing">¥13.9 体验</a>
+    </div>
+  </div>
+
+  <p class="pricing-note">所有方案前2次AI提问免费 · 兑换码绑定手机可找回</p>
 </div>
 
 <script src="js/mo-xing-he.js"></script>
 <script src="js/bg-animation.js"></script>
-
 <script>MoXingHe.start('mxhCanvas')</script>
-<script>(function(){
-  var navHTML = `
-<div id="zhishi-nav" class="zhishi-nav">
-  <a href="/" class="nav-brand">知时</a>
-  <div class="nav-links">
-    <a href="/">首页</a>
-    <a href="/paipan">排盘</a>
-    <a href="/hepan">合盘</a>
-    <a href="/pricing" class="nav-cta">💰 付费</a>
-  </div>
-</div>
-<div id="zhishi-mobile-nav" class="zhishi-mobile-nav">
-  <a href="/">🏠</a>
-  <a href="/paipan">📜</a>
-  <a href="/hepan">💞</a>
-  <a href="/pricing">💰</a>
-</div>
-`;
-  document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
-})();
-</script></body>
+</body>
 </html>
-<!-- deploy: nav_1781955491 -->
