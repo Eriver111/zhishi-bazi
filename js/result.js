@@ -126,7 +126,7 @@ function render(data) {
 // ---- 付费内容渲染 (由 paywall 在解锁后调用) ----
 function renderPaidContent() {
     if (!_bazi || !_params) return;
-    renderThisYear(_bazi, _params.gender);
+    renderThisYear(_bazi, _params.gender);var ts=document.getElementById("thisYearSection");if(ts){ts.classList.add("drawer-open");ts.style.display="block"}
     document.getElementById('paidReportContent').classList.add('drawer-open');
     renderMarriage(_bazi, _params.gender);
     document.getElementById('marriageSection').classList.add('drawer-open');
