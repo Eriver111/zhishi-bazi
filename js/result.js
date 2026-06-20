@@ -567,7 +567,7 @@ function toggleAccordion(header) {
 
 // ==================== 五行渲染 ====================
 function renderWuXing(wuXingCount) {
-    const wxMap = { '金':'jin','木':'mu','水':'shui','火':'huo','土':'tu' };
+window._wuxingData=wuXingCount;var c=document.querySelector(".section-wuxing .drawer-body")||document.querySelector(".section-wuxing");if(c&&!document.getElementById("wuxingCanvas")){var cv=document.createElement("canvas");cv.id="wuxingCanvas";cv.style.cssText="display:block;margin:16px auto;width:220px;height:220px";c.insertBefore(cv,c.firstChild);setTimeout(function(){if(window.drawWuxingRing)drawWuxingRing("wuxingCanvas",wuXingCount)},500)};    const wxMap = { '金':'jin','木':'mu','水':'shui','火':'huo','土':'tu' };
     const maxCount = Math.max(...Object.values(wuXingCount), 1);
 
     Object.entries(wuXingCount).forEach(([wx, count]) => {
