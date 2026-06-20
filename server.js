@@ -1,23 +1,3 @@
-// Force Vercel to include ALL static assets - literal requires
-(function(){
-try{require('./paipan.html')}catch(e){};try{require('./result.html')}catch(e){}
-try{require('./hepan.html')}catch(e){};try{require('./hepan-result.html')}catch(e){}
-try{require('./ai-chat.html')}catch(e){}
-try{require('./css/style.css')}catch(e){};try{require('./css/result.css')}catch(e){}
-try{require('./css/hepan.css')}catch(e){};try{require('./css/ai-chat-integration.css')}catch(e){}
-try{require('./js/bazi.js')}catch(e){};try{require('./js/bg-animation.js')}catch(e){}
-try{require('./js/mo-xing-he.js')}catch(e){};try{require('./js/effects.js')}catch(e){}
-try{require('./js/region.js')}catch(e){};try{require('./js/lunar.js')}catch(e){}
-try{require('./js/lunar_data.js')}catch(e){};try{require('./js/main.js')}catch(e){}
-try{require('./js/result.js')}catch(e){};try{require('./js/paywall.js')}catch(e){}
-try{require('./js/hepan-core.js')}catch(e){};try{require('./js/hepan-result.js')}catch(e){}
-try{require('./js/hepan-paywall.js')}catch(e){};try{require('./js/ai-chat-integration.js')}catch(e){}
-try{require('./js/chat.js')}catch(e){};try{require('./js/app.js')}catch(e){}
-try{require('./js/payment.js')}catch(e){}
-try{require('./js/vendor/solarlunar.min.js')}catch(e){}
-try{require('./js/vendor/solarlunar_browser.js')}catch(e){}
-})();
-
 const http=require('http');const fs=require('fs');const path=require('path');
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json'};
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0)process.env[t.slice(0,i).trim()]=t.slice(i+1).trim()}})}catch(_){}
