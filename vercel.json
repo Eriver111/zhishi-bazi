@@ -1,23 +1,9 @@
 {
   "cleanUrls": true,
-  "rewrites": [
-    { "source": "/api/ping", "destination": "/api/ping" },
-    { "source": "/api/ai-chat", "destination": "/api/ai-chat" },
-    { "source": "/api/credits", "destination": "/api/credits" },
-    { "source": "/api/create-order", "destination": "/api/create-order" },
-    { "source": "/api/check-order", "destination": "/api/check-order" },
-    { "source": "/api/callback", "destination": "/api/callback" },
-    { "source": "/api/verify-token", "destination": "/api/verify-token" },
-    { "source": "/api/feedback", "destination": "/api/feedback" }
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" }
   ],
-  "functions": {
-    "api/ping.js": { "memory": 128 },
-    "api/ai-chat.js": { "memory": 512, "maxDuration": 60 },
-    "api/credits.js": { "memory": 256 },
-    "api/create-order.js": { "memory": 256 },
-    "api/check-order.js": { "memory": 256 },
-    "api/callback.js": { "memory": 256 },
-    "api/verify-token.js": { "memory": 256 },
-    "api/feedback.js": { "memory": 256 }
-  }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ]
 }
