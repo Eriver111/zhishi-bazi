@@ -2732,7 +2732,7 @@ body.has-mobile-nav{padding-bottom:60px}
   .zhishi-nav{justify-content:center;padding:8px 16px;height:44px}
 }
 </style></head>
-<body>
+<body><div id="debugBanner" style="background:#f44;color:#fff;padding:4px;text-align:center;font-size:12px;position:fixed;top:0;z-index:99999">✅ 新版本已加载 (v3-final)</div>
     <canvas id="mxhCanvas" style="position:fixed;inset:0;z-index:0;width:100%;height:100%"></canvas>
     <div class="bg-layer" style="display:none">
         <canvas id="bgCanvas"></canvas>
@@ -2883,13 +2883,13 @@ body.has-mobile-nav{padding-bottom:60px}
 
         <!-- ==================== 专业解读（抽屉式·默认关闭） ==================== -->
         
-        <section class="section-drawer drawer-open" id="proSection">
+        <section class="section-drawer" style="display:block!important" id="proSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer("proSection")">
                 <span class="drawer-arrow" style="transform:rotate(90deg)">▶</span>
                 <h2>专业解读</h2>
                 <span class="section-sub">四柱 · 五行 · 格局</span>
             </div>
-            <div class="drawer-body">
+            <div class="drawer-body" style="display:block!important;max-height:none!important">
                 <div class="pro-sub"><div class="pro-sub-title">四柱生克分析</div><div id="pillarAnalysis"></div></div>
                 <div class="pro-sub"><div class="pro-sub-title">五行能量</div><canvas id="radarCanvas" style="display:block;margin:10px auto;width:280px;height:280px"></canvas><div class="wuxing-summary" id="wuxingSummary"></div></div>
                 <div class="pro-sub"><div class="pro-sub-title">日主能量</div><div id="dayMasterPower"></div></div>
@@ -3198,5 +3198,5 @@ body.has-mobile-nav{padding-bottom:60px}
 `;
   document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
-</script></body>
+</script><script>window.onerror=function(m){var d=document.getElementById("debugBanner");if(d)d.textContent="❌ JS错误: "+m;return false};setTimeout(function(){var ok=typeof renderPillarAnalysis==="function"&&typeof renderDayMasterPower==="function"&&typeof renderPattern==="function";var d=document.getElementById("debugBanner");if(d)d.style.background=ok?"#4a4":"#f44";d.textContent=ok?"✅ 新函数就绪 "+(document.getElementById("pillarAnalysis")?"容器OK":"容器缺失"):"❌ 函数缺失"},500);</script></body>
 </html><!-- deploy: nav_1781955491 -->
