@@ -861,7 +861,19 @@ body::before{
 <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_ID"></script>
 </head>
 <body>
-<div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:#080c14;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s"><svg viewBox="0 0 100 60" style="width:120px;height:72px"><path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1.2s" fill="freeze"/></path><circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1s" fill="freeze"/><animate attributeName="r" from="3" to="7" dur="0.4s" begin="1s" fill="freeze"/></circle><circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0"><animate attributeName="opacity" from="0.6" to="0" dur="0.8s" begin="1.3s" fill="freeze"/><animate attributeName="r" from="8" to="25" dur="0.8s" begin="1.3s" fill="freeze"/></circle></svg><div style="color:#e8cf70;margin-top:16px;font-size:13px;letter-spacing:4px">知 时 命 理</div></div>
+<div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
+<style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
+<svg viewBox="0 0 100 60" style="width:120px;height:72px;position:relative;z-index:1">
+<defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150" filter="url(#eyeGlow)"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1.2s" fill="freeze"/></path>
+<circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1s" fill="freeze"/><animate attributeName="r" from="3" to="7" dur="0.4s" begin="1s" fill="freeze"/></circle>
+<circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0"><animate attributeName="opacity" from="0.6" to="0" dur="0.8s" begin="1.3s" fill="freeze"/><animate attributeName="r" from="8" to="25" dur="0.8s" begin="1.3s" fill="freeze"/></circle>
+</svg>
+<div style="color:#e8cf70;margin-top:16px;font-size:13px;letter-spacing:4px;position:relative;z-index:1">知 时 命 理</div>
+<div style="color:rgba(180,160,140,.35);margin-top:8px;font-size:11px;letter-spacing:6px;position:relative;z-index:1">盲 派 · 天 眼 观 命</div>
+</div>
 
 <div class="bg-layer"><canvas id="bgCanvas"></canvas><div class="bg-overlay"></div></div>
 <div class="ink-splash tl"></div>
@@ -992,6 +1004,6 @@ body::before{
 <script src="js/main.js"></script>
 
 
-<script>setTimeout(function(){var o=document.getElementById("eyeOverlay");if(o){o.style.opacity="0";o.style.visibility="hidden";setTimeout(function(){o.remove()},600)}},2400)</script>
+<script>setTimeout(function(){var o=document.getElementById("eyeOverlay");if(o){o.style.opacity="0";o.style.visibility="hidden";setTimeout(function(){o.remove()},600)}},2500)</script>
 </body>
 </html>
