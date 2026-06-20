@@ -32,23 +32,10 @@ let _pollTimer = null;
 
 // ---- 初始化 ----
 function initPaywall(baziParams) {
-  _baziHash = hashParams(baziParams);
-
-  // v3.0: 月度会员自动解锁付费墙
-  var chatType = localStorage.getItem('ai_chat_type');
-  if (chatType === 'monthly') {
-    hidePaywall();
-    if (typeof renderPaidContent === 'function') {
-      try { renderPaidContent(); } catch(e) { console.log('会员自动解锁'); }
-    }
-    return;
-  }
-
-  const saved = readSaved();
-  if (saved && saved.baziHash === _baziHash) {
-    verifyAndUnlock(saved.token);
-  } else {
-    showPaywall();
+  // v3.0: 所有八字分析内容免费开放
+  hidePaywall();
+  if (typeof renderPaidContent === 'function') {
+    try { renderPaidContent(); } catch(e) {}
   }
 }
 

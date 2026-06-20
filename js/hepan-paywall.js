@@ -14,32 +14,10 @@ var _hepanHash = null;
 var _hepanPollTimer = null;
 
 // ═══ 初始化 ═══
-function initHePanPaywall(p1, p2, relationType) {
-  _hepanHash = hashHePanParams(p1, p2, relationType);
-
-  // 1. 检查 localStorage 是否有有效解锁记录
-  var saved = readHePanSaved();
-  if (saved && saved.hepanHash === _hepanHash) {
-    verifyHePanAndUnlock(saved.token);
-    return;
-  }
-
-  // 2. 检查是否有待确认的支付订单（页面重载后恢复）
-  var pending = recoverHePanPendingOrder();
-  if (pending) {
-    _hepanOrderId = pending.orderId;
-    // hash 不一致说明参数变了，清除旧的
-    if (pending.hepanHash !== _hepanHash) {
-      clearHePanPendingOrder();
-      showHePanPaywall();
-      return;
-    }
-    resumeHePanPayment(pending.orderId);
-    return;
-  }
-
-  // 3. 显示付费墙
-  showHePanPaywall();
+function initHePanPaywall(p1,p2,result,type){
+  // v3.0: 合盘分析内容免费开放
+  var sections=["hp-drawer-4","hp-drawer-5","hp-drawer-6","hp-drawer-7"];
+  sections.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add("hp-open");});
 }
 
 // ═══ hash ═══
