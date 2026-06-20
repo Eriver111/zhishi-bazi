@@ -107,7 +107,18 @@
     html += '<span class="buy-hint" style="width:100%;text-align:center">买10次适合偶尔使用 · 包月适合深度咨询</span>';
     html += '</div>';
 
-    // 兑换码
+    // 我的兑换码（激活后显示）
+    html += '<div id="aiMyCode" style="display:none;padding:8px 16px;border-top:1px solid var(--bd);font-size:12px;color:var(--tx2);text-align:center">';
+    html += '🔑 你的兑换码：<strong id="aiCodeDisplay" style="color:var(--gold-l);font-size:14px;letter-spacing:2px;user-select:all"></strong>';
+    html += '<button onclick="window._aiCopyCode()" style="margin-left:8px;background:none;border:1px solid var(--bd2);color:var(--gold);padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer">复制</button>';
+    html += '</div>';
+    // 手机绑定（找回用）
+    html += '<div id="aiBindPhone" style="display:none;padding:4px 16px 8px;text-align:center;font-size:11px;color:var(--tx3)">';
+    html += '绑定手机找回：<input type="tel" id="aiPhoneInput" placeholder="输入手机号" maxlength="11" style="width:120px;padding:4px 8px;background:var(--bg-input);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:11px;margin:0 4px">';
+    html += '<button onclick="window._aiBindPhone()" style="background:none;border:1px solid var(--bd2);color:var(--gold);padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer">绑定</button>';
+    html += '<span id="aiBindMsg" style="margin-left:4px"></span>';
+    html += '</div>';
+    // 兑换码输入
     html += '<div class="redeem-row" id="aiRedeemRow">';
     html += '<input type="text" id="aiRedeemInput" placeholder="输入兑换码" maxlength="32">';
     html += '<button onclick="window._aiRedeem()">激活</button>';
@@ -511,6 +522,13 @@
     } catch(e) { /* 忽略解析错误 */ }
   }
 
+
+  function showMyCode(code){var el=document.getElementById('aiMyCode');var d=document.getElementById('aiCodeDisplay');var b=document.getElementById('aiBindPhone');if(el)el.style.display='block';if(d)d.textContent=code||AI.code||'';if(b)b.style.display='block'}
+  window._aiCopyCode=function(){var c=AI.code;if(!c)return;if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){alert('兑换码已复制: '+c)})}else{prompt('复制兑换码:',c)}};
+  window._aiBindPhone=function(){var p=document.getElementById('aiPhoneInput').value.trim();if(!/^1d{10}$/.test(p)){alert('请输入正确手机号');return}if(!AI.code){alert('请先激活兑换码');return}var m=document.getElementById('aiBindMsg');if(m)m.textContent='绑定中...';fetch('/api/bind-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code,phone:p})}).then(function(r){return r.json()}).then(function(d){if(m)m.textContent=d.success?'✅ 已绑定':'❌ 失败';if(d.success)localStorage.setItem('ai_bound_phone',p)})};
+  var _origPS=handlePaymentSuccess;handlePaymentSuccess=function(c,cr){_origPS(c,cr);showMyCode(c);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp}};
+  var _origMS=handleMonthlySuccess;handleMonthlySuccess=function(c,e){_origMS(c,e);showMyCode(c)};
+  var _origRS=restoreSession;restoreSession=function(){var sc=localStorage.getItem('ai_chat_code');if(sc)showMyCode(sc);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp};_origRS()};
   // ===== 启动 =====
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
   else { init(); }

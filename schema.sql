@@ -31,6 +31,15 @@ CREATE TABLE IF NOT EXISTS free_credits_log (
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 手机绑定表（找回兑换码）
+CREATE TABLE IF NOT EXISTS phone_bindings (
+  id          BIGSERIAL PRIMARY KEY,
+  phone       VARCHAR(11) UNIQUE NOT NULL,
+  code        VARCHAR(32) NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 聊天记录表
 CREATE TABLE IF NOT EXISTS chat_history (
   id          BIGSERIAL PRIMARY KEY,
