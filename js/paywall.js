@@ -42,33 +42,47 @@ function injectQRModal(){
 
 var _qrTimer=null;
 
+function isMobile(){return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent)}
+
 function startRP(){
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
   var status=document.getElementById('qrStatus');if(status)status.textContent='正在连接支付...';
   var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='none';
+  var container=document.getElementById('qrContainer');
+  if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
   fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:9.9,name:'八字完整分析报告'})})
-  .then(function(r){return r.json()}).then(function(d){
-    if(d.error){alert(d.error);return}
+  .then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(d){
+    if(d.error){status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
     localStorage.setItem('rpt_ord',d.out_trade_no);
 
-    // 优先使用 zpayz 返回的支付宝链接直接跳转
-    if(d.pay_url && d.pay_url.includes('alipay')){
-      window.open(d.pay_url,'_blank');
-      if(status)status.textContent='已打开支付页面，支付后自动解锁';
+    var payUrl=d.pay_url||'';
+
+    // 手机端：直接跳转支付宝/支付页面
+    if(isMobile()&&payUrl){
+      if(status)status.textContent='正在跳转支付...';
+      setTimeout(function(){window.location.href=payUrl},500);
     }
-    // 否则显示二维码
+    // 电脑端/无真实链接：显示二维码
     else {
-      var qrSrc=d.qrcode||d.pay_url||'';
-      if(!qrSrc&&d.pay_url) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);
-      var c=document.getElementById('qrContainer');
-      if(c&&qrSrc) c.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px">';
+      // 用 zpayz 返回的真实 QR 图，或 QuickChart 生成
+      var qrSrc=d.qrcode||'';
+      if(!qrSrc&&payUrl) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(payUrl);
+      if(container&&qrSrc){
+        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:#333;padding:20px>请用支付宝扫描<br>二维码支付 ¥9.9</p>\'">';
+      } else if(container){
+        container.innerHTML='<p style=color:var(--tx)">请用支付宝扫描二维码支付 ¥9.9</p><p style=color:var(--tx3);font-size:11px">如未显示二维码，请点击重新支付</p>';
+      }
       if(status)status.textContent='请扫码支付 ¥9.9';
     }
     startQRPoll(d.out_trade_no);
   }).catch(function(e){
-    if(status)status.textContent='网络错误，请重试';
-    var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';
+    if(status)status.textContent='连接失败，请重试';
+    if(retry)retry.style.display='block';
+    if(container)container.innerHTML='<p style=color:var(--tx3)">支付服务暂时不可用</p>';
   });
 }
 
