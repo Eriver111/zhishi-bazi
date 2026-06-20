@@ -39,8 +39,8 @@ let _bazi = null;
 let _currentDaYunIndex = -1;
 let _currentLiuNianIndex = -1;
 let _nativeShenSha = [];  // 四柱神煞
-let // shensha removed   // 大运柱神煞
-let // shensha removed // 流年柱神煞
+var _dummyShensha = [];   // 大运柱神煞
+let _liunianShenSha = [];
 let _params = null;       // URL参数（供后续函数使用）
 
 // ==================== 主渲染 ====================
