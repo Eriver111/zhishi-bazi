@@ -2882,34 +2882,22 @@ body.has-mobile-nav{padding-bottom:60px}
         </section>
 
         <!-- ==================== 专业解读（抽屉式·默认关闭） ==================== -->
-                <!-- ==================== 专业解读（默认展开） ==================== -->
+        
         <section class="section-drawer drawer-open" id="proSection">
-            <div class="section-header drawer-toggle" onclick="toggleDrawer('proSection')">
+            <div class="section-header drawer-toggle" onclick="toggleDrawer("proSection")">
                 <span class="drawer-arrow" style="transform:rotate(90deg)">▶</span>
                 <h2>专业解读</h2>
                 <span class="section-sub">四柱 · 五行 · 格局</span>
             </div>
             <div class="drawer-body">
-                <div class="pro-sub">
-                    <div class="pro-sub-title">四柱生克分析</div>
-                    <div id="pillarAnalysis"></div>
-                </div>
-                <div class="pro-sub">
-                    <div class="pro-sub-title">五行能量</div>
-                    <canvas id="radarCanvas" style="display:block;margin:10px auto;width:280px;height:280px"></canvas>
-                    <div class="wuxing-summary" id="wuxingSummary"></div>
-                </div>
-                <div class="pro-sub">
-                    <div class="pro-sub-title">日主能量</div>
-                    <div id="dayMasterPower"></div>
-                </div>
-                <div class="pro-sub">
-                    <div class="pro-sub-title">命局格局</div>
-                    <div id="patternAnalysis"></div>
-                </div>
+                <div class="pro-sub"><div class="pro-sub-title">四柱生克分析</div><div id="pillarAnalysis"></div></div>
+                <div class="pro-sub"><div class="pro-sub-title">五行能量</div><canvas id="radarCanvas" style="display:block;margin:10px auto;width:280px;height:280px"></canvas><div class="wuxing-summary" id="wuxingSummary"></div></div>
+                <div class="pro-sub"><div class="pro-sub-title">日主能量</div><div id="dayMasterPower"></div></div>
+                <div class="pro-sub"><div class="pro-sub-title">命局格局</div><div id="patternAnalysis"></div></div>
             </div>
         </section>
-<!-- ==================== 日主性格（大白话） ==================== -->
+
+        <!-- ==================== 日主性格（大白话） ==================== -->
         <section class="section-drawer section-character" id="characterSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('characterSection')">
                 <span class="drawer-arrow">▶</span>
@@ -3021,8 +3009,8 @@ body.has-mobile-nav{padding-bottom:60px}
         </div>
     </div>
 
-    <script src="js/bazi.js"></script>
-    <script src="js/mo-xing-he.js"></script>
+    <script src="js/bazi.js?v=1781962250"></script>
+    <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
  * 知时 — 动态效果库 v2.0
  * 排盘逐柱浮现 + 五行环形图
@@ -3166,9 +3154,9 @@ body.has-mobile-nav{padding-bottom:60px}
   }
 })();
 </script>
-    <script src="js/result.js"></script>
-    <script src="js/paywall.js"></script>
-<script src="js/ai-chat-integration.js"></script>
+    <script src="js/result.js?v=1781962250"></script>
+    <script src="js/paywall.js?v=1781962250"></script>
+<script src="js/ai-chat-integration.js?v=1781962250"></script>
     <script>
         MoXingHe.start('mxhCanvas', false);
     function shareResult() {
@@ -3212,4 +3200,3 @@ body.has-mobile-nav{padding-bottom:60px}
 })();
 </script></body>
 </html><!-- deploy: nav_1781955491 -->
-<!-- v3 final -->

@@ -45,7 +45,6 @@ let _params = null;       // URL参数（供后续函数使用）
 
 // ==================== 主渲染 ====================
 function render(data) {
-  console.log("RENDER OK: pillarAnalysis="+!!document.getElementById("pillarAnalysis"));
     const bazi = data.bazi;
     _bazi = bazi;  // 存储供 renderPaidContent 使用
     const dayGan = bazi.day.gan;
@@ -109,10 +108,10 @@ function render(data) {
     renderSolarTime(_params.year, _params.month, _params.day, _params.hour);
 
     // 日主性格（大白话）
-    renderCharacter(bazi);
     renderPillarAnalysis(bazi);
     renderDayMasterPower(bazi);
     renderPattern(bazi);
+    renderCharacter(bazi);
     document.getElementById('characterSection').classList.add('drawer-open');
 
     // 父母关系
@@ -123,7 +122,7 @@ function render(data) {
     // 由 renderPaidContent() 在付费后渲染
 
     // 神煞统计
-    // shensha removed
+    document.getElementById('shenshaCount').textContent = '（共' + data.shenSha.length + '项）';
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
     initPaywall({
@@ -1367,65 +1366,7 @@ function submitFeedback() {
     });
 }
 
-// ============ v3.0 新分析函数 ============
-
-function renderPillarAnalysis(bazi) {
-  var c=document.getElementById('pillarAnalysis'); if(!c)return;
-  var wxMap={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
-  var cols={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};
-  var sheng={'木':'火','火':'土','土':'金','金':'水','水':'木'};
-  var ke={'木':'土','土':'水','水':'火','火':'金','金':'木'};
-  var pos=['year','month','day','hour'],names=['年柱','月柱','日柱','时柱'];
-  var h='<div style="display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 0 12px">';
-  for(var i=0;i<4;i++){
-    var p=bazi[pos[i]],g=p.gan,w=wxMap[g]||'?';
-    h+='<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;min-width:55px">';
-    h+='<div style="font-size:10px;color:var(--tx3)">'+names[i]+'</div>';
-    h+='<div style="font-size:20px;font-weight:700;color:'+(cols[w]||'#fff')+'">'+g+'</div>';
-    h+='<div style="font-size:13px;color:var(--tx2)">'+p.zhi+'</div>';
-    if(i===2)h+='<div style="font-size:9px;color:var(--gold-l)">☀日主</div>';
-    h+='</div>';
-    if(i<3){var w2=wxMap[bazi[pos[i+1]].gan],rel='';if(sheng[w]===w2)rel='<span style="color:#4f8;font-size:14px">生➡</span>';else if(ke[w]===w2)rel='<span style="color:#f44;font-size:14px">克➡</span>';else if(sheng[w2]===w)rel='<span style="color:#4f8;font-size:14px">⬅生</span>';else if(ke[w2]===w)rel='<span style="color:#f44;font-size:14px">⬅克</span>';else rel='<span style="color:#888">—</span>';h+='<div style="min-width:30px;text-align:center">'+rel+'</div>';}
-  }
-  h+='</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:8px">🟢相生 🔴相克 箭头→被影响方</div>';
-  c.innerHTML=h;
-}
-
-function renderDayMasterPower(bazi) {
-  var c=document.getElementById('dayMasterPower'); if(!c)return;
-  var wxMap={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
-  var gan=bazi.day.gan,wx=wxMap[gan]||'?';
-  var result={score:50,detail:'日主中和。'};
-  try{if(typeof calcDayMasterStrength==='function')result=calcDayMasterStrength(bazi)}catch(e){}
-  var level=result.score||50;
-  var label=level>=65?'身强':level>=45?'中和':'身弱';
-  var color=level>=65?'#e44':level>=45?'#ca4':'#48f';
-  var h='<div style="display:flex;align-items:center;gap:8px;padding:4px 0">';
-  h+='<span style="font-size:11px;color:var(--tx3)">身弱</span>';
-  h+='<div style="flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:4px"><div style="width:'+level+'%;height:100%;background:'+color+';border-radius:4px"></div></div>';
-  h+='<span style="font-size:11px;color:var(--tx3)">身强</span>';
-  h+='<span style="font-weight:700;color:'+color+';font-size:15px;margin-left:8px">'+label+'</span></div>';
-  h+='<p style="color:var(--tx2);font-size:11px;margin-top:4px;line-height:1.6">'+result.detail+'</p>';
-  c.innerHTML=h;
-}
-
-function renderPattern(bazi) {
-  var c=document.getElementById('patternAnalysis'); if(!c)return;
-  var monthSS=(bazi.month.shiShen&&bazi.month.shiShen.zhi)||'';
-  var patterns={
-    '正官':{name:'正官格',desc:'月令正官当权。为人正直，责任心强。"官以任能，贵乎清正。"'},
-    '七杀':{name:'七杀格',desc:'月令七杀当权。果断刚毅，杀需制化——食神制杀出武将，印化杀出文贵。'},
-    '正财':{name:'正财格',desc:'月令正财当权。务实稳健，善于理财。"财为养命之源。"'},
-    '偏财':{name:'偏财格',desc:'月令偏财当权。慷慨大方，商业嗅觉敏锐，适合投资经营。'},
-    '正印':{name:'正印格',desc:'月令正印当权。温厚善良，学识渊博。印喜官杀来生，忌财星破印。'},
-    '偏印':{name:'偏印格',desc:'月令偏印当权。思维独特，善于钻研。枭神需财星制化。'},
-    '食神':{name:'食神格',desc:'月令食神当权。温和聪慧，有艺术才华。"食神有气胜财官。"'},
-    '伤官':{name:'伤官格',desc:'月令伤官当权。聪明机敏，创造力强。伤官需配印制化或生财。'},
-    '建禄':{name:'建禄格',desc:'日主得月令禄位，自身强旺。禄喜财官，不宜再行比劫运。'},
-    '羊刃':{name:'羊刃格',desc:'日主得月令帝旺，气势极强。"羊刃驾杀，威震边疆。"'}
-  };
-  var p=patterns[monthSS]||{name:'杂格',desc:'月令格局不显，需结合天干透出与地支合局综合判断。'};
-  var h='<p style="color:var(--gold-l);font-size:15px;font-weight:700;margin-bottom:4px">'+p.name+'</p>';
-  h+='<p style="color:var(--tx2);font-size:12px;line-height:1.6">'+p.desc+'</p>';
-  c.innerHTML=h;
-}
+// ============ v3.0 ============
+function renderPillarAnalysis(bazi){var c=document.getElementById('pillarAnalysis');if(!c)return;var m={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};var cl={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};var sg={'木':'火','火':'土','土':'金','金':'水','水':'木'};var ke={'木':'土','土':'水','水':'火','火':'金','金':'木'};var ps=['year','month','day','hour'],ns=['年柱','月柱','日柱','时柱'];var h='<div style="display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 0">';for(var i=0;i<4;i++){var p=bazi[ps[i]],g=p.gan,w=m[g]||'?';h+='<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;min-width:55px">';h+='<div style="font-size:10px;color:var(--tx3)">'+ns[i]+'</div>';h+='<div style="font-size:20px;font-weight:700;color:'+(cl[w]||'#fff')+'">'+g+'</div>';h+='<div style="font-size:13px;color:var(--tx2)">'+p.zhi+'</div>';if(i===2)h+='<div style="font-size:9px;color:var(--gold-l)">☀日主</div>';h+='</div>';if(i<3){var w2=m[bazi[ps[i+1]].gan],rel='';if(sg[w]===w2)rel='<span style="color:#4f8;font-size:14px">生➡</span>';else if(ke[w]===w2)rel='<span style="color:#f44;font-size:14px">克➡</span>';else if(sg[w2]===w)rel='<span style="color:#4f8;font-size:14px">⬅生</span>';else if(ke[w2]===w)rel='<span style="color:#f44;font-size:14px">⬅克</span>';else rel='<span style="color:#888">—</span>';h+='<div style="min-width:30px;text-align:center">'+rel+'</div>';}}h+='</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:8px">🟢相生 🔴相克 箭头→被影响方</div>';c.innerHTML=h}
+function renderDayMasterPower(bazi){var c=document.getElementById('dayMasterPower');if(!c)return;var m={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};var g=bazi.day.gan,w=m[g]||'?';var r;try{r=calcDayMasterStrength(bazi)}catch(e){r={score:50,detail:'日主中和'}}var l=r.score||50;var lb=l>=65?'身强':l>=45?'中和':'身弱';var co=l>=65?'#e44':l>=45?'#ca4':'#48f';var h='<div style="display:flex;align-items:center;gap:8px;padding:4px 0">';h+='<span style="font-size:11px;color:var(--tx3)">身弱</span>';h+='<div style="flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:4px"><div style="width:'+l+'%;height:100%;background:'+co+';border-radius:4px"></div></div>';h+='<span style="font-size:11px;color:var(--tx3)">身强</span>';h+='<span style="font-weight:700;color:'+co+';font-size:15px;margin-left:8px">'+lb+'</span></div>';h+='<p style="color:var(--tx2);font-size:11px;margin-top:4px;line-height:1.6">'+r.detail+'</p>';c.innerHTML=h}
+function renderPattern(bazi){var c=document.getElementById('patternAnalysis');if(!c)return;var ss=(bazi.month.shiShen&&bazi.month.shiShen.zhi)||'';var pt={'正官':{n:'正官格',d:'月令正官当权。为人正直有责任心。"官以任能，贵乎清正。"'},'七杀':{n:'七杀格',d:'月令七杀当权。果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。'},'正财':{n:'正财格',d:'月令正财当权。务实稳健善理财。财宜食伤来生，官星来护。'},'偏财':{n:'偏财格',d:'月令偏财当权。慷慨大方，商业嗅觉敏锐。'},'正印':{n:'正印格',d:'月令正印当权。温厚善良，学识渊博。印喜官杀来生。'},'偏印':{n:'偏印格',d:'月令偏印当权。思维独特善钻研。枭神需财星制化。'},'食神':{n:'食神格',d:'月令食神当权。温和聪慧有才华。"食神有气胜财官。"'},'伤官':{n:'伤官格',d:'月令伤官当权。聪明机敏创造力强。伤官需印制或生财。'},'建禄':{n:'建禄格',d:'日主得月令禄位，自身强旺。禄喜财官。'},'羊刃':{n:'羊刃格',d:'日主得帝旺之位，气势极强。"羊刃驾杀，威震边疆。"'}};var p=pt[ss]||{n:'杂格',d:'格局不显，需结合天干透出与地支合局综合判断。'};c.innerHTML='<p style="color:var(--gold-l);font-size:15px;font-weight:700;margin-bottom:4px">'+p.n+'</p><p style="color:var(--tx2);font-size:12px;line-height:1.6">'+p.d+'</p>'}
