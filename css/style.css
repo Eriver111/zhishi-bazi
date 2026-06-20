@@ -422,3 +422,28 @@ body::before{
   .header h1{font-size:30px;letter-spacing:12px}
   .tagline{font-size:12px;letter-spacing:5px}
 }
+
+<style>
+/* 加载过渡动画 */
+.page-loader{position:fixed;inset:0;z-index:9999;background:var(--ink,#080c14);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  transition:opacity .5s ease,visibility .5s ease}
+.page-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+/* 太极旋转loader */
+.loader-taiji{width:48px;height:48px;border-radius:50%;
+  background:conic-gradient(var(--gold,#c9a84c) 0 180deg,var(--star,#5b7fa5) 180deg 360deg);
+  animation:taijiSpin 1.2s linear infinite;position:relative}
+.loader-taiji::after{content:"";position:absolute;top:10%;left:50%;transform:translateX(-50%);
+  width:20%;height:20%;background:var(--star,#5b7fa5);border-radius:50%}
+.loader-taiji::before{content:"";position:absolute;bottom:10%;left:50%;transform:translateX(-50%);
+  width:20%;height:20%;background:var(--gold,#c9a84c);border-radius:50%}
+@keyframes taijiSpin{to{transform:rotate(360deg)}}
+.loader-text{color:var(--gold-l,#e8cf70);margin-top:20px;font-size:14px;letter-spacing:4px;
+  animation:loaderPulse 2s ease-in-out infinite}
+@keyframes loaderPulse{0%,100%{opacity:.4}50%{opacity:1}}
+/* 页面内容初始隐藏 */
+body.loading .landing-wrap,body.loading .app,body.loading .result-container{opacity:0}
+body.loaded .landing-wrap,body.loaded .app,body.loaded .result-container{
+  animation:pageReveal .6s ease-out forwards}
+@keyframes pageReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>

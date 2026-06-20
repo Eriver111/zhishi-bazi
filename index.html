@@ -583,7 +583,8 @@ window.onload=function(){
 }
 </script>
 </head>
-<body>
+<body class="loading">
+<div class="page-loader" id="pageLoader"><div class="loader-taiji"></div><div class="loader-text">知 时 命 理</div></div>
 <canvas id="mxhCanvas"></canvas>
 <canvas id="bgCanvas"></canvas>
 
@@ -1232,5 +1233,6 @@ var MoXingHe = (function(){
   }
 })();
 </script>
+<script>window.addEventListener('load',function(){document.body.classList.replace('loading','loaded');var l=document.getElementById('pageLoader');if(l)l.classList.add('hidden')})</script>
 </body>
 </html>

@@ -860,7 +860,8 @@ body::before{
 </style>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_ID"></script>
 </head>
-<body>
+<body class="loading">
+<div class="page-loader" id="pageLoader"><div class="loader-taiji"></div><div class="loader-text">起 盘 推 演</div></div>
 <div class="bg-layer"><canvas id="bgCanvas"></canvas><div class="bg-overlay"></div></div>
 <div class="ink-splash tl"></div>
 <div class="ink-splash br"></div>
@@ -988,5 +989,6 @@ body::before{
 <script src="js/region.js"></script>
 <script src="js/bg-animation.js"></script>
 <script src="js/main.js"></script>
+<script>window.addEventListener('load',function(){document.body.classList.replace('loading','loaded');var l=document.getElementById('pageLoader');if(l)l.classList.add('hidden')})</script>
 </body>
 </html>
