@@ -3396,14 +3396,17 @@ function submitFeedback() {
   }
   
   function startHPay(){
-    var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    var modal=document.getElementById("hpQrModal");if(modal)modal.style.display="flex";
+    var status=document.getElementById("hpQrStatus");if(status)status.textContent="正在生成...";
+    var retry=document.getElementById("hpQrRetry");if(retry)retry.style.display="none";
+    var isM=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:13.9,name:'合盘完整分析报告'})})
     .then(function(r){return r.json()}).then(function(d){
       if(d.error){alert(d.error);return}
       localStorage.setItem('hpo2',d.out_trade_no);
       // 手机直接跳转，电脑显示二维码
       if(isMobile&&d.pay_url){window.location.href=d.pay_url}
-      else if(d.pay_url){var qr='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);var w=window.open('','_blank','width=400,height=500');if(w){w.document.write('<html><head><title>扫码支付 ¥13.9</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;background:#0d1525;color:#e2dcc8}img{border-radius:12px;border:2px solid #c9a84c}</style></head><body><h3>📱 扫码支付 ¥13.9</h3><img src="'+qr+'" style="width:220px;height:220px"><p style="margin-top:12px;color:#989080">支付后自动解锁，请勿关闭页面</p></body></html>');w.document.close()}}
+      else if(d.pay_url){var qr='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);var w=window.open('','_blank','width=400,height=500');if(w){w.document.write('<html><head><title>扫码支付 ¥13.9</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;background:#0d1525;color:#e2dcc8}img{border-radius:12px;border:2px solid #c9a84c}</style></head><body><h3>📱 扫码支付 ¥13.9</h3><img src="'+qr+'" style="width:220px;height:220px"><p style="margin-top:12px;color:#989080">支付后自动解锁，请勿关闭页面</p><div id="hpQrModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display="none""><div style="background:var(--card,#0d1525);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative"><button onclick="document.getElementById("hpQrModal").style.display="none"" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px">📱 扫码支付 ¥13.9</h3><div id="hpQrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="hpQrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="hpQrRetry" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="window.startHPay()">🔄 重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--bd)" onclick="window.manualHPUnlock()">我已付过款，点此解锁</button></div></div></body></html>');w.document.close()}}
       pollHP(d.out_trade_no);
     }).catch(function(){alert('网络错误，请重试')});
   }
@@ -3419,6 +3422,7 @@ function submitFeedback() {
   
   window._initHePanPay=initHePanPay;
   window.startHPay=startHPay;
+  window.manualHPUnlock=function(){var oid=localStorage.getItem("hpo2");if(!oid)return;fetch("/api/check-order?out_trade_no="+oid).then(function(r){return r.json()}).then(function(d){if(d.paid||d.status==="paid"){clearInterval(window._hpTimer);localStorage.removeItem("hpo2");var m=document.getElementById("hpQrModal");if(m)m.style.display="none";window.unlockHP()}else{alert("尚未检测到支付，请确认已付款后重试")}})};
   window.pollHP=pollHP;
   window.unlockHP=unlockHP;
 })();
