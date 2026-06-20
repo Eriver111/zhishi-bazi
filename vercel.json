@@ -3,5 +3,8 @@
   "builds": [
     { "src": "server.js", "use": "@vercel/node", "config": { "includeFiles": "**" } },
     { "src": "!{api/**,server.js,lib/**}", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/server.js" }
   ]
 }
