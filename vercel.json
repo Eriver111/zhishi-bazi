@@ -1,13 +1,7 @@
 {
   "cleanUrls": true,
-  "functions": {
-    "api/ai-chat.js": { "memory": 512, "maxDuration": 60 },
-    "api/callback.js": { "memory": 256 },
-    "api/check-order.js": { "memory": 256 },
-    "api/create-order.js": { "memory": 256 },
-    "api/credits.js": { "memory": 256 },
-    "api/feedback.js": { "memory": 256 },
-    "api/ping.js": { "memory": 128 },
-    "api/verify-token.js": { "memory": 256 }
-  }
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node", "config": { "includeFiles": "**" } },
+    { "src": "!{api/**,server.js}", "use": "@vercel/static" }
+  ]
 }
