@@ -3224,7 +3224,7 @@ body::before{
 .nav-links .nav-cta:hover{color:#1a1a1a;box-shadow:0 0 20px var(--gold-glow)}
 
 /* 手机底部导航 */
-.zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:rgba(8,12,20,.92);backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
+.zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:#080c14;backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
 .zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px}
 .zhishi-mobile-nav a:active{color:var(--gold-l)}
 
@@ -3390,7 +3390,7 @@ function submitFeedback() {
     secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
     
     var pw=document.createElement('div');pw.id='hpPaywall';
-    pw.style.cssText='position:absolute;inset:0;background:rgba(8,12,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px';
+    pw.style.cssText='position:absolute;inset:0;background:#080c14;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px';
     pw.innerHTML='<div style="font-size:48px">🔒</div><h3 style="color:var(--gold-l);margin:8px 0">完整合盘分析报告</h3><p style="color:var(--tx2);font-size:13px;text-align:center">跨盘干支交互 · 核心相处模式<br>未来三年节点 · 宜忌指南</p><div style="font-size:30px;font-weight:900;color:var(--gold-l);margin:10px 0">¥13.9</div><button class="submit-btn" onclick="startHPay()" style="max-width:280px">🔓 解锁合盘报告</button><p style="color:var(--tx3);font-size:11px;margin-top:8px">一次付费 · 永久查看 · 支持下载</p><div style="margin-top:20px;padding:14px 18px;background:rgba(201,168,76,.08);border:1px dashed var(--bd2);border-radius:10px;text-align:center"><p style="color:var(--gold-l);font-size:15px;font-weight:600">🤖 试试知时AI解读合盘</p><p style="color:var(--gold);font-size:13px;margin-top:6px;cursor:pointer" onclick="window._aiOpen()">👉 前2次免费 · 深度解读合盘缘分</p></div>';
     wrap.appendChild(pw);
   }
