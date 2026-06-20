@@ -14,3 +14,4 @@ if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.
 const fp=__dirname+pn;try{const b=fs.readFileSync(fp);res.writeHead(200,{'Content-Type':M[path.extname(pn).toLowerCase()]||'text/plain'});res.end(b);return}catch(e){}
 if(!path.extname(pn)){try{const b=fs.readFileSync(fp+'.html');res.writeHead(200,{'Content-Type':'text/html'});res.end(b);return}catch(e){}}
 res.writeHead(404);res.end('404')});s.listen(process.env.PORT||3000,()=>console.log('OK'));
+// force rebuild 1781971871
