@@ -749,6 +749,18 @@ function renderCharacter(bazi) {
     var ch = window.BaZiCalculator.analyzeCharacter(bazi);
     var el = document.getElementById('characterContent');
     if (!el) return;
+
+    // v3.0: 新格式是纯文本字符串，直接显示
+    if (typeof ch === 'string') {
+        el.innerHTML = '<div style="line-height:2;font-size:14px;padding:12px 0">' +
+            ch.split('\n').filter(function(l){return l.trim()}).map(function(l){
+                if(l.startsWith('日主')) return '<p style="color:var(--gold-l);font-size:16px;font-weight:700;margin-bottom:12px">'+l+'</p>';
+                if(l.startsWith('适合')) return '<p style="color:var(--tx2);font-size:12px;margin-top:10px;padding:8px 12px;background:rgba(201,168,76,.06);border-radius:8px">'+l+'</p>';
+                return '<p style="margin-bottom:6px;color:var(--tx)">'+l+'</p>';
+            }).join('') + '</div>';
+        return;
+    }
+
     var wxColor = { '木':'#4CAF50','火':'#F44336','土':'#CD853F','金':'#FFD700','水':'#2196F3' };
 
     // ---- 把后端数据拆解出来，换成真人说话的句子 ----
