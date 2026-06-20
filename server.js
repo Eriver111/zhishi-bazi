@@ -1,14 +1,21 @@
-// DUMMY REQUIRES: Force Vercel to include these files in the deployment bundle
-// These never execute - they just tell Vercel's bundler not to tree-shake these assets
+// Force Vercel to include ALL static assets - literal requires
 (function(){
-  var _assets=['./paipan.html','./result.html','./hepan.html','./hepan-result.html','./ai-chat.html',
-    './css/style.css','./css/result.css','./css/hepan.css','./css/ai-chat-integration.css',
-    './js/bazi.js','./js/bg-animation.js','./js/mo-xing-he.js','./js/effects.js','./js/region.js',
-    './js/lunar.js','./js/lunar_data.js','./js/main.js','./js/result.js',
-    './js/paywall.js','./js/hepan-core.js','./js/hepan-result.js','./js/hepan-paywall.js',
-    './js/ai-chat-integration.js','./js/chat.js','./js/app.js','./js/payment.js',
-    './js/vendor/solarlunar.min.js','./js/vendor/solarlunar_browser.js'];
-  try{_assets.forEach(function(f){try{require(f)}catch(e){}})}catch(e){}
+try{require('./paipan.html')}catch(e){};try{require('./result.html')}catch(e){}
+try{require('./hepan.html')}catch(e){};try{require('./hepan-result.html')}catch(e){}
+try{require('./ai-chat.html')}catch(e){}
+try{require('./css/style.css')}catch(e){};try{require('./css/result.css')}catch(e){}
+try{require('./css/hepan.css')}catch(e){};try{require('./css/ai-chat-integration.css')}catch(e){}
+try{require('./js/bazi.js')}catch(e){};try{require('./js/bg-animation.js')}catch(e){}
+try{require('./js/mo-xing-he.js')}catch(e){};try{require('./js/effects.js')}catch(e){}
+try{require('./js/region.js')}catch(e){};try{require('./js/lunar.js')}catch(e){}
+try{require('./js/lunar_data.js')}catch(e){};try{require('./js/main.js')}catch(e){}
+try{require('./js/result.js')}catch(e){};try{require('./js/paywall.js')}catch(e){}
+try{require('./js/hepan-core.js')}catch(e){};try{require('./js/hepan-result.js')}catch(e){}
+try{require('./js/hepan-paywall.js')}catch(e){};try{require('./js/ai-chat-integration.js')}catch(e){}
+try{require('./js/chat.js')}catch(e){};try{require('./js/app.js')}catch(e){}
+try{require('./js/payment.js')}catch(e){}
+try{require('./js/vendor/solarlunar.min.js')}catch(e){}
+try{require('./js/vendor/solarlunar_browser.js')}catch(e){}
 })();
 
 const http=require('http');const fs=require('fs');const path=require('path');
