@@ -51,10 +51,17 @@ function startRP(){
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){alert(d.error);return}
     localStorage.setItem('rpt_ord',d.out_trade_no);
-    var payUrl=d.pay_url||d.payUrl||('https://zhishi.online/paid?oid='+d.out_trade_no);
-    var qrUrl='https://api.quickchart.io/qr?size=200&text='+encodeURIComponent(payUrl);
+    // Use real QR from zpayz if available, otherwise generate from pay URL
+    var qrSrc=d.qrcode || d.payUrl || d.pay_url || '';
+    if(!qrSrc && d.pay_url) qrSrc='https://api.quickchart.io/qr?size=200&text='+encodeURIComponent(d.pay_url);
     var c=document.getElementById('qrContainer');
-    if(c)c.innerHTML='<img src="'+qrUrl+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:#333;font-size:13px>请用支付宝/微信扫描<br>二维码支付 ¥9.9<br><small style=color:#999>真实zpayz支付通道</small></p>\'">';
+    if(c){
+      if(qrSrc){
+        c.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:#333;font-size:13px>扫码支付 ¥9.9<br><small style=color:#999>真实zpayz支付通道</small></p>\'">';
+      } else {
+        c.innerHTML='<p style=color:#333;font-size:13px>请用支付宝/微信扫描<br>二维码支付 ¥9.9</p><p style=color:#999;font-size:11px>如未显示二维码，请刷新重试</p>';
+      }
+    }
     if(status)status.textContent='请扫码支付 ¥9.9';
     startQRPoll(d.out_trade_no);
   }).catch(function(e){
@@ -70,7 +77,7 @@ function startQRPoll(oid){
     n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
     fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-      if(d.paid){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+      if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
         var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     }).catch(function(){});
   },2000);
@@ -79,7 +86,7 @@ function startQRPoll(oid){
 function manualUnlock(){
   var oid=localStorage.getItem('rpt_ord');if(!oid)return;
   fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-    if(d.paid){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+    if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
   }).catch(function(){alert('网络错误')});

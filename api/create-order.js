@@ -59,11 +59,11 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ---- 旧版 AI 模式兼容（无 mode 但有 money 参数） ----
+    // ---- 旧版报告支付（POST zpayz 拿真实支付链接） ----
     if (!year && !hash && (money || amount)) {
       const payAmount = money || amount || 5;
       const payName = name || description || 'AI命理咨询·5次提问';
-      const orderId = 'aichat_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+      const orderId = 'rpt_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
       if (!PAY_PID || !PAY_KEY) {
         return res.status(200).json({
           pay_url: null, out_trade_no: orderId,
@@ -77,12 +77,31 @@ module.exports = async function handler(req, res) {
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';
-      const payUrl = PAY_URL + '?' + Object.keys(payParams)
-        .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k]))
-        .join('&');
-      return res.status(200).json({
-        pay_url: payUrl, out_trade_no: orderId, status: 'pending'
-      });
+
+      // POST to zpayz to get real payment URL (same as old site)
+      const formBody = Object.keys(payParams).map(k =>
+        encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k])
+      ).join('&');
+      try {
+        const payResp = await fetch(PAY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody
+        });
+        const text = await payResp.text();
+        let data;
+        try { data = JSON.parse(text); } catch (e) {
+          return res.status(502).json({ error: '支付平台返回异常: ' + text.slice(0, 100) });
+        }
+        if (data.code !== 1) {
+          return res.status(502).json({ error: data.msg || '支付下单失败' });
+        }
+        const payUrl = data.payurl || data.qrcode || '';
+        const qrcode = data.qrcode || data.payurl || '';
+        return res.status(200).json({ orderId, out_trade_no: orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
+      } catch (e) {
+        return res.status(502).json({ error: '支付平台请求失败: ' + e.message });
+      }
     }
 
     // ---- 合盘模式 ----
