@@ -216,9 +216,25 @@ function renderPattern(bazi){
   // ============ 喜用忌神 ============
   function renderXiyong(bazi){
     var c=document.getElementById('xiyongAnalysis');if(!c)return;
-    var dgWx=TG[bazi.day.gan],mWx=DZ[bazi.month.zhi];
-    // 月令克日主 → 身弱
-    var weak=KE[dgWx]===mWx;
+    var g=bazi.day.gan,dgWx=TG[g],mz=bazi.month.zhi,mWx=DZ[mz];
+    
+    // Use the SAME scoring algorithm as renderPower
+    var score=50;
+    if(mWx===dgWx)score+=30;
+    else if(SG[mWx]===dgWx)score+=20;
+    else if(SG[dgWx]===mWx)score-=15;
+    else if(KE[mWx]===dgWx)score-=25;
+    ['year','month','hour'].forEach(function(p){
+      var gw2=TG[bazi[p].gan];
+      if(gw2===dgWx)score+=6;
+      else if(SG[gw2]===dgWx)score+=4;
+      else if(KE[dgWx]===gw2)score-=4;
+      else if(SG[dgWx]===gw2)score-=3;
+      else if(KE[gw2]===dgWx)score-=5;
+    });
+    score+=8; // 藏干印星
+    
+    var weak=score<45; // 同阈值
     
     if(weak){
       c.innerHTML=''+
@@ -237,11 +253,13 @@ function renderPattern(bazi){
             '<div style="font-size:9px;color:var(--tx3);margin-top:4px">官杀克身 · 财星耗身 · 食伤泄身</div></div>'+
         '</div>'+
         '<div style="margin-top:10px;font-size:10px;color:var(--tx2);line-height:1.5">'+
-          '📖 《穷通宝鉴》："乙木生于申月，庚金当令，壬水为尊。取印化杀，无壬用癸，总之水为第一要义。"<br>'+
-          '📖 《滴天髓》："何知其人吉，用神有气而已矣。"用神有力且不受克破，则一生顺遂。'+
+          '📖 《穷通宝鉴》："乙木生于申月，庚金当令，壬水为尊。取印化杀，总之水为第一要义。"<br>'+
+          '📖 《滴天髓》："何知其人吉，用神有气而已矣。"'+
         '</div>';
     } else {
-      c.innerHTML='<div style="text-align:center;color:var(--tx2);padding:16px">日主不弱，喜用忌神需结合具体命局和大运流年综合判断。</div>';
+      c.innerHTML='<div style="text-align:center;color:var(--tx2);padding:20px;line-height:1.8">'+
+        '日主身'+(score>=65?'强':'中和')+'（'+score+'分），喜用忌神需结合具体命局、大运流年综合判断。<br>'+
+        '<span style="font-size:10px;color:var(--tx3)">📖 《子平真诠》："中和为贵，偏枯为病。不宜轻言用神。"</span></div>';
     }
 }
 
