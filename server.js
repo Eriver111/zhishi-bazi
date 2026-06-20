@@ -1,3 +1,16 @@
+// DUMMY REQUIRES: Force Vercel to include these files in the deployment bundle
+// These never execute - they just tell Vercel's bundler not to tree-shake these assets
+(function(){
+  var _assets=['./paipan.html','./result.html','./hepan.html','./hepan-result.html','./ai-chat.html',
+    './css/style.css','./css/result.css','./css/hepan.css','./css/ai-chat-integration.css',
+    './js/bazi.js','./js/bg-animation.js','./js/mo-xing-he.js','./js/effects.js','./js/region.js',
+    './js/lunar.js','./js/lunar_data.js','./js/main.js','./js/result.js',
+    './js/paywall.js','./js/hepan-core.js','./js/hepan-result.js','./js/hepan-paywall.js',
+    './js/ai-chat-integration.js','./js/chat.js','./js/app.js','./js/payment.js',
+    './js/vendor/solarlunar.min.js','./js/vendor/solarlunar_browser.js'];
+  try{_assets.forEach(function(f){try{require(f)}catch(e){}})}catch(e){}
+})();
+
 const http=require('http');const fs=require('fs');const path=require('path');
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json'};
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0)process.env[t.slice(0,i).trim()]=t.slice(i+1).trim()}})}catch(_){}
