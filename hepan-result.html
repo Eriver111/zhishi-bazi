@@ -3304,7 +3304,7 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/bazi.js"></script>
 <script src="js/lunar.js"></script>
 <script src="js/hepan-core.js"></script>
-<script src="js/hepan-paywall.js"></script>
+<script src="js/paywall.js"></script>
 <script src="js/hepan-result.js"></script>
 <script src="js/ai-chat-integration.js"></script>
 
@@ -3395,33 +3395,10 @@ function submitFeedback() {
     wrap.appendChild(pw);
   }
   
-  function startHPay(){
-    var modal=document.getElementById("hpQrModal");if(modal)modal.style.display="flex";
-    var status=document.getElementById("hpQrStatus");if(status)status.textContent="正在生成...";
-    var retry=document.getElementById("hpQrRetry");if(retry)retry.style.display="none";
-    var isM=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    fetch("/api/create-order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({money:13.9,name:"合盘完整分析报告"})})
-    .then(function(r){return r.json()}).then(function(d){
-      if(d.error){alert(d.error);return}
-      localStorage.setItem("hpo2",d.out_trade_no);
-      if(isM&&d.pay_url){window.location.href=d.pay_url;return}
-      var container=document.getElementById("hpQrContainer");
-      if(container&&d.pay_url){container.innerHTML="<img src=\""+(d.qrcode||d.pay_url)+"\" style=\"width:200px;height:200px\">"}
-      if(status)status.textContent="请扫码支付 ¥13.9";
-      pollHP(d.out_trade_no);
-    }).catch(function(){alert("网络错误，请重试")});
-  }
-  function pollHP(oid){var n=0;var t=setInterval(function(){n++;if(n>120){clearInterval(t);return};fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){if(d.paid||d.status==='paid'){clearInterval(t);localStorage.removeItem('hpo2');unlockHP()}}).catch(function(){})},2000)}
+
   
-  function unlockHP(){
-    sru();
-    var pw=document.getElementById('hpPaywall');if(pw)pw.remove();
-    ['hp-drawer-4','hp-drawer-5','hp-drawer-6','hp-drawer-7'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hp-open')});
-    var b=document.getElementById('downloadBanner');if(b)b.style.display='flex';
-  }
   
   window._initHePanPay=initHePanPay;
-  window.startHPay=startHPay;
   window.manualHPUnlock=function(){var oid=localStorage.getItem("hpo2");if(!oid)return;fetch("/api/check-order?out_trade_no="+oid).then(function(r){return r.json()}).then(function(d){if(d.paid||d.status==="paid"){clearInterval(window._hpTimer);localStorage.removeItem("hpo2");var m=document.getElementById("hpQrModal");if(m)m.style.display="none";window.unlockHP()}else{alert("尚未检测到支付，请确认已付款后重试")}})};
   window.pollHP=pollHP;
   window.unlockHP=unlockHP;
