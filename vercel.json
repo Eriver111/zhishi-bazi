@@ -1,7 +1,6 @@
 {
   "cleanUrls": true,
   "builds": [
-    { "src": "server.js", "use": "@vercel/node", "config": { "includeFiles": "**,api/**" } },
-    { "src": "!{api/**,server.js,lib/**}", "use": "@vercel/static" }
+    { "src": "server.js", "use": "@vercel/node", "config": { "includeFiles": "**" } }
   ]
 }
