@@ -51,16 +51,12 @@ function startRP(){
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){alert(d.error);return}
     localStorage.setItem('rpt_ord',d.out_trade_no);
-    // Use real QR from zpayz if available, otherwise generate from pay URL
-    var qrSrc=d.qrcode || d.payUrl || d.pay_url || '';
-    if(!qrSrc && d.pay_url) qrSrc='https://api.quickchart.io/qr?size=200&text='+encodeURIComponent(d.pay_url);
+    // QR image: from API qrcode field, or generate from pay_url
+    var qrSrc=d.qrcode || '';
+    if(!qrSrc&&d.pay_url) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);
     var c=document.getElementById('qrContainer');
-    if(c){
-      if(qrSrc){
-        c.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:#333;font-size:13px>扫码支付 ¥9.9<br><small style=color:#999>真实zpayz支付通道</small></p>\'">';
-      } else {
-        c.innerHTML='<p style=color:#333;font-size:13px>请用支付宝/微信扫描<br>二维码支付 ¥9.9</p><p style=color:#999;font-size:11px>如未显示二维码，请刷新重试</p>';
-      }
+    if(c&&qrSrc){
+      c.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:#333;padding:20px>扫码支付 ¥9.9<br><small>真实zpayz支付通道</small></p>\'">';
     }
     if(status)status.textContent='请扫码支付 ¥9.9';
     startQRPoll(d.out_trade_no);

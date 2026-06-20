@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ---- 旧版报告支付（POST zpayz 拿真实支付链接） ----
+    // ---- 旧版报告支付（生成 zpayz URL + 前端 QR） ----
     if (!year && !hash && (money || amount)) {
       const payAmount = money || amount || 5;
       const payName = name || description || 'AI命理咨询·5次提问';
@@ -78,30 +78,18 @@ module.exports = async function handler(req, res) {
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';
 
-      // POST to zpayz to get real payment URL (same as old site)
-      const formBody = Object.keys(payParams).map(k =>
-        encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k])
-      ).join('&');
-      try {
-        const payResp = await fetch(PAY_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formBody
-        });
-        const text = await payResp.text();
-        let data;
-        try { data = JSON.parse(text); } catch (e) {
-          return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
-        }
-        if (data.code !== 1) {
-          return res.status(502).json({ error: data.msg || '支付下单失败' });
-        }
-        const payUrl = data.payurl || data.qrcode || '';
-        const qrcode = data.qrcode || data.payurl || '';
-        return res.status(200).json({ orderId, out_trade_no: orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
-      } catch (e) {
-        return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
-      }
+      // 构建 zpayz 支付页面 URL（GET 方式）
+      const zpayzUrl = PAY_URL + '?' + Object.keys(payParams)
+        .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k]))
+        .join('&');
+
+      // 同时生成 QR 图片（通过 QuickChart）
+      const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(zpayzUrl);
+
+      return res.status(200).json({
+        out_trade_no: orderId, pay_url: zpayzUrl, qrcode: qrImg,
+        amount: payAmount, status: 'pending'
+      });
     }
 
     // ---- 合盘模式 ----
