@@ -135,7 +135,7 @@ function render(data) {
 function renderPaidContent() {
     if (!_bazi || !_params) return;
     renderThisYear(_bazi, _params.gender);
-    document.getElementById('thisYearSection').classList.add('drawer-open');
+    document.getElementById('paidReportContent').classList.add('drawer-open');
     renderMarriage(_bazi, _params.gender);
     document.getElementById('marriageSection').classList.add('drawer-open');
     renderWealth(_bazi, _params.gender);
