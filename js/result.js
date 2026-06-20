@@ -39,8 +39,8 @@ let _bazi = null;
 let _currentDaYunIndex = -1;
 let _currentLiuNianIndex = -1;
 let _nativeShenSha = [];  // 四柱神煞
-let _dayunShenSha = [];   // 大运柱神煞
-let _liunianShenSha = []; // 流年柱神煞
+let // shensha removed   // 大运柱神煞
+let // shensha removed // 流年柱神煞
 let _params = null;       // URL参数（供后续函数使用）
 
 // ==================== 主渲染 ====================
@@ -94,13 +94,13 @@ function render(data) {
     _nativeShenSha = data.shenSha;
     _dayunShenSha = [];
     _liunianShenSha = [];
-    renderShenSha();
+    // shensha removed
 
     // 五行
-    renderWuXing(bazi.wuXingCount);
+    // wuxing merged into pro analysis
 
     // 日主解析 · 滴天髓
-    renderRiZhuJieXi(bazi.day.gan);
+    // merged into day master power
 
     // 专业解读不自动打开（默认关闭）
 
@@ -120,7 +120,7 @@ function render(data) {
     // 由 renderPaidContent() 在付费后渲染
 
     // 神煞统计
-    document.getElementById('shenshaCount').textContent = '（共' + data.shenSha.length + '项）';
+    // shensha removed
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
     initPaywall({
