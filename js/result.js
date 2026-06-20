@@ -102,11 +102,11 @@ function render(data) {
     renderPillarAnalysis(bazi);
     renderDayMasterPower(bazi);
     renderPattern(bazi);
-    renderCharacter(bazi);
+    try{renderCharacter(bazi)}catch(e){console.log("character error:",e);document.getElementById("characterSection").innerHTML="<div class=drawer-body><p>性格数据加载中...</p></div>"}
     document.getElementById('characterSection').classList.add('drawer-open');
 
     // 父母关系
-    renderParents(bazi, _params.gender);
+    try{renderParents(bazi, _params.gender)}catch(e){console.log("parents error:",e)}
     document.getElementById('parentsSection').classList.add('drawer-open');
 
     // 付费板块：自动渲染（付费遮罩由paywall.js处理）
