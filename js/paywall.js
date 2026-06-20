@@ -13,15 +13,17 @@ function initPaywall(bp){
   if(!first||document.getElementById('unifiedReport'))return;
 
   var wrap=document.createElement('div');wrap.id='unifiedReport';
-  wrap.style.cssText='position:relative;margin:16px 0';
+  wrap.style.cssText='position:relative';
   first.parentNode.insertBefore(wrap,first);
   secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
+  // Set a min-height so the overlay covers the sections
+  wrap.style.minHeight=wrap.scrollHeight+'px';
 
   if(iru()){unlock();return}
   injectQRModal();
 
   var pw=document.createElement('div');pw.id='rptPaywall';
-  pw.style.cssText='position:absolute;inset:0;background:rgba(8,12,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(8px)';
+  pw.style.cssText='position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(8,12,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(8px)';
   pw.innerHTML='<div style="font-size:48px">🔒</div><h3 style="color:var(--gold-l);margin:8px 0">深度命理分析报告</h3><p style="color:var(--tx2);font-size:13px;text-align:center;line-height:1.8">今年运势 · 婚姻感情 · 财运分析<br>学业分析 · 近5年流年运势</p><div style="font-size:30px;font-weight:900;color:var(--gold-l);margin:10px 0">¥9.9</div><button class="submit-btn" onclick="startRP()" style="max-width:280px">🔓 解锁完整报告</button><p style="color:var(--tx3);font-size:11px;margin-top:8px">一次付费 · 永久查看 · 支持下载</p><div style="margin-top:22px;padding:16px 20px;background:rgba(201,168,76,.1);border:1px dashed var(--bd2);border-radius:12px;text-align:center"><p style="color:var(--gold-l);font-size:16px;font-weight:700;margin-bottom:6px">🤖 不想看报告？试试知时AI</p><p style="color:var(--tx);font-size:14px;margin-bottom:4px">基于子平八字+盲派理论，为你深度解读命盘</p><p style="color:var(--gold);font-size:14px;font-weight:600;margin-top:8px;cursor:pointer" onclick="window._aiOpen()">👉 前2次免费 · 点我开始对话</p></div>';
   wrap.appendChild(pw);
   autoRestore();
@@ -46,10 +48,10 @@ function startRP(){
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){alert(d.error);return}
     localStorage.setItem('rpt_ord',d.out_trade_no);
-    var payUrl=d.pay_url||('https://zhishi.online/paid?oid='+d.out_trade_no);
+    var payUrl=d.pay_url||d.payUrl||('https://zhishi.online/paid?oid='+d.out_trade_no);
     var qrUrl='https://api.quickchart.io/qr?size=200&text='+encodeURIComponent(payUrl);
     var c=document.getElementById('qrContainer');
-    if(c)c.innerHTML='<img src="'+qrUrl+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:#333>扫码支付 ¥9.9</p>\'">';
+    if(c)c.innerHTML='<img src="'+qrUrl+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:#333;font-size:13px>请用支付宝/微信扫描<br>二维码支付 ¥9.9<br><small style=color:#999>真实zpayz支付通道</small></p>\'">';
     if(status)status.textContent='请扫码支付 ¥9.9';
     startQRPoll(d.out_trade_no);
   }).catch(function(e){
