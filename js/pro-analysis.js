@@ -73,74 +73,75 @@
     var gs=[bazi.year.gan,bazi.month.gan,bazi.day.gan,bazi.hour.gan];
     var zs=[bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi];
     var ns=['年柱','月柱','日柱','时柱'];
+    var gw=[TG[gs[0]],TG[gs[1]],TG[gs[2]],TG[gs[3]]];
+    var zw=[DZ[zs[0]],DZ[zs[1]],DZ[zs[2]],DZ[zs[3]]];
 
-    // === 天干行 ===
-    var h='<div style="margin-bottom:2px"><div style="font-size:10px;color:var(--tx3);margin-bottom:4px;letter-spacing:2px">▸ 天干生克</div>';
-    h+='<div style="display:flex;justify-content:center;align-items:center;gap:0;flex-wrap:wrap">';
-    for(var i=0;i<4;i++){
-      h+=pillBox(gs[i],zs[i],ns[i],i===2);
-      if(i<3)h+=arrow(gs[i],gs[i+1],true);
-    }
-    h+='</div></div>';
+    // Build as one cohesive SVG-like HTML diagram
+    var h='<div style="overflow-x:auto;padding:8px 0"><div style="min-width:420px;margin:0 auto">';
 
-    // === 地支行 ===
-    h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.04);padding-top:10px"><div style="font-size:10px;color:var(--tx3);margin-bottom:4px;letter-spacing:2px">▸ 地支生克</div>';
-    h+='<div style="display:flex;justify-content:center;align-items:center;gap:0;flex-wrap:wrap">';
+    // ====== ROW 1: 天干四柱 ======
+    h+='<div style="display:flex;justify-content:center;align-items:flex-end;gap:0;margin-bottom:2px">';
     for(var i=0;i<4;i++){
-      var zw=DZ[zs[i]]||'?';
-      h+='<div style="text-align:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:8px 10px;min-width:52px">';
-      h+='<div style="font-size:10px;color:var(--tx3);margin-bottom:2px">'+ns[i]+'</div>';
-      h+='<div style="font-size:17px;font-weight:600;color:'+(TC[zw]||'#fff')+'">'+zs[i]+'</div>';
-      h+='<div style="font-size:9px;color:var(--tx3)">'+zw+'</div>';
+      var isD=(i===2);
+      h+='<div style="text-align:center;'+(isD?'background:rgba(201,168,76,.12);border:2px solid rgba(201,168,76,.35);':'background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);')+'border-radius:12px;padding:'+(isD?'12px 14px':'8px 10px')+';width:'+(isD?'64px':'56px')+'">';
+      h+='<div style="font-size:10px;color:var(--tx3);margin-bottom:1px">'+ns[i]+'</div>';
+      h+='<div style="font-size:'+(isD?'26px':'20px')+';font-weight:700;color:'+(TC[gw[i]]||'#fff')+'">'+gs[i]+'</div>';
+      h+='<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+gw[i]+'</div>';
+      if(isD)h+='<div style="font-size:8px;color:var(--gold-l);background:rgba(201,168,76,.2);border-radius:8px;padding:0 6px;display:inline-block;margin-top:2px">☀日主</div>';
       h+='</div>';
       if(i<3){
-        var a=DZ[zs[i]],b=DZ[zs[i+1]],rel='';
-        if(SG[a]===b)rel='<span style="color:#4f8;font-size:11px;font-weight:600">生➡</span>';
-        else if(KE[a]===b)rel='<span style="color:#f44;font-size:11px;font-weight:600">克➡</span>';
-        else if(SG[b]===a)rel='<span style="color:#4f8;font-size:11px">⬅生</span>';
-        else if(KE[b]===a)rel='<span style="color:#f44;font-size:11px">⬅克</span>';
-        else rel='<span style="color:#666;font-size:10px">—</span>';
-        h+='<div style="min-width:38px;text-align:center">'+rel+'</div>';
+        var r1='',c1='';if(SG[gw[i]]===gw[i+1]){r1='生→';c1='#4f8'}else if(KE[gw[i]]===gw[i+1]){r1='克→';c1='#f44'}else if(SG[gw[i+1]]===gw[i]){r1='←生';c1='#4f8'}else if(KE[gw[i+1]]===gw[i]){r1='←克';c1='#f44'}else{r1='—';c1='#666'}
+        h+='<div style="width:38px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;font-size:11px;font-weight:700;color:'+c1+'">'+r1+'</div>';
       }
     }
-    h+='</div></div>';
+    h+='</div>';
 
-    // === 天干与地支关系 ===
-    h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.04);padding-top:10px"><div style="font-size:10px;color:var(--tx3);margin-bottom:4px;letter-spacing:2px">▸ 天干与座下地支</div>';
-    h+='<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:10px">';
+    // ====== 天干-地支 垂直关系箭头 ======
+    h+='<div style="display:flex;justify-content:center;gap:0;margin-bottom:1px">';
     for(var i=0;i<4;i++){
-      var gw=TG[gs[i]],zw=DZ[zs[i]],rel='';
-      if(SG[gw]===zw)rel='<span style="color:#4f8">天干生地支(泄)</span>';
-      else if(SG[zw]===gw)rel='<span style="color:#4f8">地支生天干(旺)</span>';
-      else if(KE[gw]===zw)rel='<span style="color:#f44">天干克地支(耗)</span>';
-      else if(KE[zw]===gw)rel='<span style="color:#f44">地支克天干(伤)</span>';
-      else rel='<span style="color:#888">比和</span>';
-      h+='<div style="padding:2px 8px;background:rgba(255,255,255,.02);border-radius:6px">'+ns[i]+' '+gs[i]+'↔'+zs[i]+' '+rel+'</div>';
+      var w=(i===2)?'64px':'56px';
+      var rel='',cl='#888',symbol='↕';
+      if(SG[gw[i]]===zw[i]){rel='泄';cl='#f84'}else if(SG[zw[i]]===gw[i]){rel='生';cl='#4f8'}else if(KE[gw[i]]===zw[i]){rel='耗';cl='#f44'}else if(KE[zw[i]]===gw[i]){rel='克';cl='#f44'}else{rel='比';cl='#888'}
+      h+='<div style="width:'+w+';text-align:center;font-size:9px;color:'+cl+';padding:2px 0">'+symbol+'<br>'+rel+'</div>';
+      if(i<3)h+='<div style="width:38px"></div>';
     }
-    h+='</div></div>';
+    h+='</div>';
 
-    // === 刑冲合害 ===
-    var branches=[bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi];
-    var bn=['年支申','月支申','日支丑','时支丑'];
+    // ====== ROW 2: 地支四柱 ======
+    h+='<div style="display:flex;justify-content:center;align-items:flex-start;gap:0">';
+    for(var i=0;i<4;i++){
+      var isD2=(i===2);
+      h+='<div style="text-align:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:8px 10px;width:'+(isD2?'64px':'56px')+'">';
+      h+='<div style="font-size:17px;font-weight:600;color:'+(TC[zw[i]]||'#fff')+'">'+zs[i]+'</div>';
+      h+='<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+zw[i]+'</div>';
+      h+='</div>';
+      if(i<3){
+        var r2='',c2='';if(SG[zw[i]]===zw[i+1]){r2='生→';c2='#4f8'}else if(KE[zw[i]]===zw[i+1]){r2='克→';c2='#f44'}else if(SG[zw[i+1]]===zw[i]){r2='←生';c2='#4f8'}else if(KE[zw[i+1]]===zw[i]){r2='←克';c2='#f44'}else{r2='—';c2='#666'}
+        h+='<div style="width:38px;display:flex;align-items:flex-start;justify-content:center;padding-top:6px;font-size:11px;font-weight:700;color:'+c2+'">'+r2+'</div>';
+      }
+    }
+    h+='</div>';
+
+    // ===== 刑冲合害 =====
     var rels=[];
     var CHONG={子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:'酉',酉:'卯',辰:'戌',戌:'辰',巳:'亥',亥:'巳'};
     var HE={子:'丑',丑:'子',寅:'亥',亥:'寅',卯:'戌',戌:'卯',辰:'酉',酉:'辰',巳:'申',申:'巳',午:'未',未:'午'};
     var HAI={子:'未',未:'子',丑:'午',午:'丑',寅:'巳',巳:'寅',卯:'辰',辰:'卯',申:'亥',亥:'申',酉:'戌',戌:'酉'};
+    var bn=['年','月','日','时'];
+    for(var i=0;i<4;i++){for(var j=i+1;j<4;j++){if(CHONG[zs[i]]===zs[j])rels.push({t:'六冲',c:'#f44',d:bn[i]+'申↔'+bn[j]+'申'});if(HE[zs[i]]===zs[j])rels.push({t:'六合',c:'#4f8',d:bn[i]+'↔'+bn[j]});if(HAI[zs[i]]===zs[j])rels.push({t:'六害',c:'#f84',d:bn[i]+'↔'+bn[j]});if(zs[i]===zs[j])rels.push({t:'伏吟',c:'#ca4',d:bn[i]+'↔'+bn[j]});}}
 
-    for(var i=0;i<4;i++){for(var j=i+1;j<4;j++){var a=branches[i],b=branches[j];if(CHONG[a]===b)rels.push({t:'六冲',c:'f44',d:bn[i]+'↔'+bn[j]+' 相冲——两败俱伤，主动荡'});if(HE[a]===b)rels.push({t:'六合',c:'4f8',d:bn[i]+'↔'+bn[j]+' 相合——情投意合，力量凝聚'});if(HAI[a]===b)rels.push({t:'六害',c:'f84',d:bn[i]+'↔'+bn[j]+' 相穿——暗中损伤'});if(a===b&&(a==='申'||a==='丑'))rels.push({t:'伏吟',c:'ca4',d:bn[i]+'↔'+bn[j]+' 伏吟——反复纠结，内心不安'});}}
-
-    h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.04);padding-top:10px">';
-    h+='<div style="font-size:10px;color:var(--tx2);font-weight:600;margin-bottom:6px">🔗 地支刑冲合害：</div>';
-    if(rels.length===0)h+='<div style="font-size:10px;color:var(--tx3)">此地支组合平和，无特殊刑冲合害。</div>';
-    else rels.forEach(function(r){h+='<div style="font-size:10px;padding:3px 8px;margin:2px 0;border-left:2px solid #'+r.c+';color:var(--tx2)"><b style="color:#'+r.c+'">'+r.t+'</b> '+r.d+'</div>'});
-    h+='<div style="font-size:9px;color:var(--tx3);margin-top:6px">📖 《渊海子平》："刑冲克害，生克制化，乃论命之纲纪。" 🟢合=聚 🔴冲=动 🟠刑=伤 🔵害=损</div>';
+    h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;text-align:center">';
+    if(rels.length===0)h+='<span style="font-size:10px;color:var(--tx3)">地支平和，无特殊刑冲合害</span>';
+    else rels.forEach(function(r){h+='<span style="display:inline-block;margin:2px 6px;font-size:10px;padding:1px 8px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid '+r.c+';color:var(--tx2)"><b style="color:'+r.c+'">'+r.t+'</b> '+r.d+'</span>'});
     h+='</div>';
 
+    // Legend
+    h+='<div style="text-align:center;font-size:9px;color:var(--tx3);margin-top:6px">🟢生 🔴克 🟠刑 🟡伏吟 · 箭头→被影响方</div>';
+    h+='</div></div>';
     c.innerHTML=h;
-  }
+}
 
-  // ============ 日主能量 ============
-  function renderPower(bazi){
+function renderPower(bazi){
     var c=document.getElementById('dayMasterPower');if(!c)return;
     var g=bazi.day.gan,w=TG[g]||'?';
     var r;try{var fn=window.BaZiCalculator.calcDayMasterStrength;if(fn)r=fn(bazi);else r={score:40,detail:'乙木生于申月，庚金当令，身偏弱。赖壬印甲劫帮扶。'}}catch(e){r={score:40,detail:'乙木生于申月，庚金当令，身偏弱。'}}
