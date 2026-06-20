@@ -257,9 +257,7 @@ function renderPattern(bazi){
           '📖 《滴天髓》："何知其人吉，用神有气而已矣。"'+
         '</div>';
     } else {
-      c.innerHTML='<div style="text-align:center;color:var(--tx2);padding:20px;line-height:1.8">'+
-        '日主身'+(score>=65?'强':'中和')+'（'+score+'分），喜用忌神需结合具体命局、大运流年综合判断。<br>'+
-        '<span style="font-size:10px;color:var(--tx3)">📖 《子平真诠》："中和为贵，偏枯为病。不宜轻言用神。"</span></div>';
+      c.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:80px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">用神（克泄耗）</div><div style="font-size:13px;font-weight:900;color:#e07050;line-height:1.8">🔥 食伤泄秀<br>💰 财星耗身<br>⚔️ 官杀克身</div><div style="font-size:9px;color:var(--tx3);margin-top:4px">身强以克泄耗为用</div></div><div style="flex:1;min-width:80px;background:rgba(196,30,58,.08);border:1px solid rgba(196,30,58,.15);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--tx3);margin-bottom:4px">忌神（避免）</div><div style="font-size:13px;font-weight:900;color:#5b9fd4;line-height:1.8">💧 印星生身<br>🌿 比劫帮身</div><div style="font-size:9px;color:var(--tx3);margin-top:4px">身强再逢生扶则过旺</div></div></div><div style="margin-top:10px;font-size:10px;color:var(--tx2);line-height:1.5">📖 《滴天髓》："旺者冲衰，衰者冲旺。"身强以克泄耗为用。</div>';
     }
 }
 
