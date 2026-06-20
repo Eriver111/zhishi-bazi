@@ -127,14 +127,17 @@ function render(data) {
 function renderPaidContent() {
     if (!_bazi || !_params) return;
     renderThisYear(_bazi, _params.gender);var ts=document.getElementById("thisYearSection");if(ts){ts.classList.add("drawer-open");ts.style.display="block"}
-    document.getElementById('paidReportContent').classList.add('drawer-open');
     renderMarriage(_bazi, _params.gender);
+    var el=document.getElementById('marriageSection');if(el){el.classList.add('drawer-open');el.style.display='block'}
     document.getElementById('marriageSection').classList.add('drawer-open');
     renderWealth(_bazi, _params.gender);
+    var el2=document.getElementById('wealthSection');if(el2){el2.classList.add('drawer-open');el2.style.display='block'}
     document.getElementById('wealthSection').classList.add('drawer-open');
     renderStudy(_bazi);
+    var el3=document.getElementById('studySection');if(el3){el3.classList.add('drawer-open');el3.style.display='block'}
     document.getElementById('studySection').classList.add('drawer-open');
     renderFortune(_bazi, _params.gender);
+    var el4=document.getElementById('fortuneSection');if(el4){el4.classList.add('drawer-open');el4.style.display='block'}
     document.getElementById('fortuneSection').classList.add('drawer-open');
 }
 
