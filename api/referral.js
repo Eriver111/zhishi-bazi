@@ -17,6 +17,10 @@ module.exports = async function handler(req, res) {
     if (ref === visitor) return res.status(200).json({ success: false, reason: 'self' });
 
     const db = getSupabase();
+  if (!global._refLog) global._refLog = {};
+  const memKey = ref + "_" + visitor;
+  if (global._refLog[memKey]) return res.status(200).json({ success: false, reason: "used" });
+  global._refLog[memKey] = true;
     const key = 'ref_' + ref + '_' + visitor;
 
     if (db) {

@@ -119,12 +119,7 @@
     html += '<span id="aiBindMsg" style="margin-left:4px"></span>';
     html += '</div>';
     // 兑换码输入
-    <div id="aiShareBox" style="display:none;padding:12px 16px;border-top:1px solid var(--bd);text-align:center">
-  <p style="color:var(--gold-l);font-size:13px;margin-bottom:8px">🎁 免费次数用完了？</p>
-  <p style="color:var(--tx2);font-size:11px;margin-bottom:10px">分享给朋友，双方各得 1 次免费提问</p>
-  <button onclick="window._aiShare()" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border:none;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px">📤 分享得免费次数</button>
-  <p id="aiShareMsg" style="color:var(--tx3);font-size:11px;margin-top:6px"></p>
-</div>
+
     html += '<div class="redeem-row" id="aiRedeemRow">';
     html += '<input type="text" id="aiRedeemInput" placeholder="输入兑换码" maxlength="32">';
     html += '<button onclick="window._aiRedeem()">激活</button>';
