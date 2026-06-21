@@ -1908,7 +1908,25 @@ function calcDayMasterStrength(bazi) {
     });
   });
 
-  // ---------- ⑤ 调候（滴天髓：寒暖燥湿） ----------
+  // ---------- ⑤ 五行过耗修正（日主克月令时，月令五行过旺则日主被反耗） ----------
+  // 统计月令五行在盘面中的出现次数（天干+地支）
+  var mwxCount = 0, totalKeXieHao = 0;
+  ['year','month','day','hour'].forEach(function(pos) {
+    if (WU_XING[bazi[pos].gan] === mwx) mwxCount++;
+    if (DI_ZHI_WU_XING[bazi[pos].zhi] === mwx) mwxCount++;
+    // 统计所有克泄耗元素
+    var gwx = WU_XING[bazi[pos].gan], zwx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    if (KEWO[dgWx] === gwx || WOSHENG[dgWx] === gwx || WOKE[dgWx] === gwx) totalKeXieHao++;
+    if (KEWO[dgWx] === zwx || WOSHENG[dgWx] === zwx || WOKE[dgWx] === zwx) totalKeXieHao++;
+  });
+  // 囚令·休令时，月令五行过旺会过度消耗日主
+  // 死令不额外扣分（-25已足够）
+  if (mwxCount >= 2) {
+    if (WOKE[dgWx] === mwx) score -= (mwxCount - 1) * 8;   // 囚令：日主克月令反被耗（如金克木，木多金缺）
+    else if (WOSHENG[dgWx] === mwx) score -= (mwxCount - 1) * 4; // 休令：日主生月令泄气过重
+  }
+
+  // ---------- ⑥ 调候（滴天髓：寒暖燥湿） ----------
   var mZhi = bazi.month.zhi;
   var allGan = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
   var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
