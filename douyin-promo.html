@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080,height=1920">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  width:1080px;height:1920px;overflow:hidden;
+  font-family:'STKaiti','KaiTi','Source Han Serif SC','PingFang SC',sans-serif;
+  background:#080c14;color:#e2dcc8;
+  position:relative;
+}
+/* 背景粒子 */
+.bg-particles{position:absolute;inset:0;z-index:0;pointer-events:none}
+.particle{position:absolute;border-radius:50%;animation:float 8s ease-in-out infinite;opacity:.3}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-60px) rotate(180deg)}}
+/* 墨韵光圈 */
+.ink-ring{position:absolute;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:expand 6s ease-out infinite}
+@keyframes expand{0%{transform:scale(.8);opacity:.6}100%{transform:scale(1.4);opacity:0}}
+
+/* 幻灯片 */
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transform:translateY(40px);transition:all 1.2s cubic-bezier(.4,0,.2,1);z-index:1}
+.slide.active{opacity:1;transform:translateY(0)}
+.slide.exit{opacity:0;transform:translateY(-40px)}
+
+/* 品牌字 */
+.brand{font-size:120px;font-weight:900;letter-spacing:40px;
+  background:linear-gradient(180deg,#e8cf70 0%,#c9a84c 50%,#8a6d28 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 40px rgba(201,168,76,.3));
+  margin-bottom:20px}
+.tagline{font-size:36px;color:rgba(200,190,170,.6);letter-spacing:24px;margin-bottom:60px}
+.subtitle{font-size:28px;color:rgba(200,190,170,.4);letter-spacing:8px;text-align:center;line-height:1.8}
+
+/* 功能卡片 */
+.feat-row{display:flex;gap:40px;margin-top:80px}
+.feat-card{width:260px;padding:50px 30px;text-align:center;
+  border:1px solid rgba(201,168,76,.15);border-radius:20px;
+  background:rgba(13,21,37,.7);backdrop-filter:blur(10px);
+  animation:cardIn .8s ease-out both}
+.feat-card:nth-child(1){animation-delay:.3s}
+.feat-card:nth-child(2){animation-delay:.6s}
+.feat-card:nth-child(3){animation-delay:.9s}
+@keyframes cardIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.feat-num{font-size:64px;font-weight:900;color:rgba(201,168,76,.15);margin-bottom:16px}
+.feat-title{font-size:32px;color:#c9a84c;letter-spacing:6px;margin-bottom:12px}
+.feat-desc{font-size:22px;color:rgba(200,190,170,.5);line-height:1.6}
+
+/* 大字标题 */
+.big-title{font-size:56px;color:#e8cf70;letter-spacing:12px;margin-bottom:30px;text-align:center}
+.big-desc{font-size:28px;color:rgba(200,190,170,.5);letter-spacing:4px;text-align:center;line-height:2;max-width:800px}
+
+/* 八字展示 */
+.bazi-display{display:flex;gap:24px;margin-top:60px}
+.bazi-pillar{width:160px;padding:30px 20px;text-align:center;
+  border:1px solid rgba(201,168,76,.2);border-radius:16px;background:rgba(13,21,37,.6)}
+.bazi-label{font-size:20px;color:rgba(200,190,170,.4);letter-spacing:4px;margin-bottom:16px}
+.bazi-gan{font-size:56px;font-weight:900;color:#e2dcc8}
+.bazi-zhi{font-size:40px;color:rgba(200,190,170,.6);margin-top:8px}
+.bazi-ss{font-size:18px;color:rgba(201,168,76,.5);margin-top:8px}
+
+/* AI 展示 */
+.ai-box{width:800px;padding:40px;border:1px solid rgba(201,168,76,.2);border-radius:20px;
+  background:rgba(13,21,37,.8);margin-top:60px;text-align:left}
+.ai-label{font-size:24px;color:#c9a84c;letter-spacing:6px;margin-bottom:20px}
+.ai-msg{font-size:26px;color:#e2dcc8;line-height:1.8}
+.ai-msg .highlight{color:#e8cf70;font-weight:700}
+
+/* 底部二维码区 */
+.qr-section{text-align:center;margin-top:40px}
+.qr-text{font-size:30px;color:#e8cf70;letter-spacing:8px;margin-bottom:30px}
+
+/* 进度条 */
+.progress-bar{position:absolute;bottom:80px;left:200px;right:200px;height:3px;
+  background:rgba(255,255,255,.05);border-radius:2px;z-index:10}
+.progress-fill{height:100%;background:linear-gradient(90deg,transparent,#c9a84c);
+  border-radius:2px;transition:width .3s;width:0%}
+
+/* 水墨点缀 */
+.ink-splash{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.04) 0%,transparent 70%)}
+</style>
+</head>
+<body>
+
+<!-- 背景粒子 -->
+<div class="bg-particles" id="particles"></div>
+<div class="ink-splash" style="width:600px;height:600px;top:-200px;left:-200px"></div>
+<div class="ink-splash" style="width:400px;height:400px;bottom:-100px;right:-100px"></div>
+
+<!-- 进度条 -->
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<!-- Slide 1: 品牌 -->
+<div class="slide active" id="slide1">
+  <div class="brand">知 时</div>
+  <div class="tagline">知 天 时 · 见 自 己</div>
+  <div class="subtitle">千年东方智慧 · AI 参详引经据典<br>专属于你的命理分析报告</div>
+</div>
+
+<!-- Slide 2: 古法排盘 -->
+<div class="slide" id="slide2">
+  <div class="big-title">古 法 排 盘</div>
+  <div class="big-desc">公历 / 农历双模式输入<br>真太阳时自动校正 · 1900–2100 年数据可验<br>纳音神煞十神旺衰 · 每一步都可追溯</div>
+  <div class="bazi-display">
+    <div class="bazi-pillar"><div class="bazi-label">年柱</div><div class="bazi-gan">甲</div><div class="bazi-zhi">子</div><div class="bazi-ss">劫财</div></div>
+    <div class="bazi-pillar"><div class="bazi-label">月柱</div><div class="bazi-gan">丙</div><div class="bazi-zhi">寅</div><div class="bazi-ss">食神</div></div>
+    <div class="bazi-pillar"><div class="bazi-label">日柱</div><div class="bazi-gan" style="color:#e8cf70">甲</div><div class="bazi-zhi" style="color:#e8cf70">辰</div><div class="bazi-ss">日主</div></div>
+    <div class="bazi-pillar"><div class="bazi-label">时柱</div><div class="bazi-gan">壬</div><div class="bazi-zhi">申</div><div class="bazi-ss">偏印</div></div>
+  </div>
+</div>
+
+<!-- Slide 3: AI 知时先生 -->
+<div class="slide" id="slide3">
+  <div class="big-title">知 时 先 生</div>
+  <div class="big-desc">子平八字 × 盲派命理<br>DeepSeek V4 Pro 驱动</div>
+  <div class="ai-box">
+    <div class="ai-label">知时先生 · AI 命理师</div>
+    <div class="ai-msg">
+      你的日主为<span class="highlight">甲木</span>（木），综合判断<span class="highlight">身偏强</span>。<br><br>
+      命局格局：<span class="highlight">食神格</span><br>
+      喜用神：<span class="highlight">火、土、金</span>来克泄耗<br>
+      忌神：<span class="highlight">水、木</span>再来生扶<br><br>
+      《滴天髓》云："甲木参天，脱胎要火。"
+    </div>
+  </div>
+</div>
+
+<!-- Slide 4: 专业解读 -->
+<div class="slide" id="slide4">
+  <div class="big-title">专 业 解 读</div>
+  <div class="feat-row">
+    <div class="feat-card"><div class="feat-num">01</div><div class="feat-title">格局旺衰</div><div class="feat-desc">透干取格<br>调候评分<br>从格判定</div></div>
+    <div class="feat-card"><div class="feat-num">02</div><div class="feat-title">喜用忌神</div><div class="feat-desc">扶抑通关<br>病药顺势<br>五行量化</div></div>
+    <div class="feat-card"><div class="feat-num">03</div><div class="feat-title">大运流年</div><div class="feat-desc">从 0 岁到 末年<br>完整推演<br>逐岁详参</div></div>
+  </div>
+</div>
+
+<!-- Slide 5: 结尾 -->
+<div class="slide" id="slide5">
+  <div class="brand" style="font-size:80px">知 时</div>
+  <div class="tagline">知天时 · 见自己</div>
+  <div class="qr-section" style="margin-top:100px">
+    <div class="qr-text">▼ 扫码即可体验</div>
+  </div>
+  <div class="subtitle" style="margin-top:60px">微信搜索 · 知时命理<br>前 2 次 AI 提问免费</div>
+</div>
+
+<script>
+// 粒子生成
+(function(){
+  var p=document.getElementById('particles');
+  for(var i=0;i<30;i++){
+    var d=document.createElement('div');d.className='particle';
+    d.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;width:'+(2+Math.random()*4)+'px;height:'+(2+Math.random()*4)+'px;background:rgba(201,168,76,'+(.1+Math.random()*.2)+');animation-delay:'+Math.random()*8+'s;animation-duration:'+(6+Math.random()*8)+'s';
+    p.appendChild(d);
+  }
+})();
+
+// 幻灯片自动播放
+var slides=document.querySelectorAll('.slide');
+var current=0;
+var totalSlides=slides.length;
+var progress=document.getElementById('progress');
+var durations=[4000,5000,6000,5000,4000]; // 每页停留时间(ms)
+var totalTime=durations.reduce(function(a,b){return a+b},0);
+var elapsed=0;
+
+function nextSlide(){
+  slides[current].classList.remove('active');
+  slides[current].classList.add('exit');
+  current=(current+1)%totalSlides;
+  slides[current].classList.remove('exit');
+  slides[current].classList.add('active');
+
+  // 重置上一页的退出状态
+  setTimeout(function(){
+    var prev=(current-1+totalSlides)%totalSlides;
+    slides[prev].classList.remove('exit');
+  },1200);
+
+  elapsed+=durations[current];
+  progress.style.width=(elapsed/totalTime*100)+'%';
+
+  if(current<totalSlides-1){
+    setTimeout(nextSlide,durations[current]);
+  }
+}
+
+// 启动自动播放
+setTimeout(nextSlide,durations[0]);
+progress.style.width='0%';
+</script>
+</body>
+</html>
