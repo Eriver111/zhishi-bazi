@@ -1317,7 +1317,7 @@ function openReportInNewTab() {
 
 // ==================== 反馈机制 ====================
 function showFeedback() {
-    document.getElementById('feedbackOverlay').classList.add('show');
+    document.getElementById('feedbackOverlay').style.display = 'flex';
     document.getElementById('feedbackResult').textContent = '';
     document.getElementById('feedbackMsg').value = '';
     document.getElementById('feedbackContact').value = '';
@@ -1325,7 +1325,7 @@ function showFeedback() {
 
 function closeFeedback(e) {
     if (e && e.target !== document.getElementById('feedbackOverlay')) return;
-    document.getElementById('feedbackOverlay').classList.remove('show');
+    document.getElementById('feedbackOverlay').style.display = 'none';
 }
 
 function submitFeedback() {
