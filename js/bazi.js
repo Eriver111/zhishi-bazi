@@ -1031,11 +1031,15 @@ const SHEN_SHA_DEFS = [
         name: '空亡', type: 'ji',
         desc: '主凡事不顺，空虚不实，需看具体位置',
         find: function(bazi) {
-            // 以日柱查旬空
-            const dayNaYin = (bazi.day.ganIndex * 6 + bazi.day.zhiIndex) % 60;
-            const xun = Math.floor(dayNaYin / 10);
-            const kw = [['戌','亥'],['申','酉'],['午','未'],['辰','巳'],['寅','卯'],['子','丑']][xun] || [];
-            const f = []; ['year','month','day','hour'].forEach(p => { if(kw.includes(bazi[p].zhi)) f.push(p); });
+            // 以日柱查旬空（修正：遍历60甲子找匹配位置）
+            var dgi = bazi.day.ganIndex, dzi = bazi.day.zhiIndex;
+            var day60Idx;
+            for (day60Idx = 0; day60Idx < 60; day60Idx++) {
+              if (day60Idx % 10 === dgi && day60Idx % 12 === dzi) break;
+            }
+            var xun = Math.floor(day60Idx / 10);
+            var kw = [['戌','亥'],['申','酉'],['午','未'],['辰','巳'],['寅','卯'],['子','丑']][xun] || [];
+            var f = []; ['year','month','day','hour'].forEach(function(p) { if(kw.indexOf(bazi[p].zhi) >= 0) f.push(p); });
             return f;
         }
     },
@@ -3210,19 +3214,34 @@ function getPattern(bazi) {
  */
 function getYongJi(bazi) {
   var dmStr = calcDayMasterStrength(bazi);
-  var dmLevel = dmStr.level; // 极强/偏强/中和/偏弱/极弱
+  var dmLevel = dmStr.level;
   var dmWx = WU_XING[bazi.day.gan];
   var WX = ['木','火','土','金','水'];
 
-  // 五行关系表（以日主为中心）
   var di = WX.indexOf(dmWx);
-  var WO_SHENG = WX[(di + 1) % 5];   // 食伤（我生）
-  var WO_KE   = WX[(di + 2) % 5];   // 财星（我克）
-  var KE_WO   = WX[(di + 3) % 5];   // 官杀（克我）
-  var SHENG_WO = WX[(di + 4) % 5];  // 印星（生我）
-  var TONG    = dmWx;                // 比劫（同我）
+  var WO_SHENG = WX[(di + 1) % 5];
+  var WO_KE   = WX[(di + 2) % 5];
+  var KE_WO   = WX[(di + 3) % 5];
+  var SHENG_WO = WX[(di + 4) % 5];
+  var TONG    = dmWx;
 
   var xiShen = [], yongShen = [], jiShen = [], reasoning = '';
+
+  // ---- v3.4: 从格优先 ----
+  var cong = getCongGe(bazi);
+  if (cong.isCong) {
+    xiShen = cong.xiOverride;
+    jiShen = cong.jiOverride;
+    yongShen = xiShen.slice(0, 1);
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。'
+      + '喜：' + xiShen.join('、') + '来顺势助旺。'
+      + '忌：' + jiShen.join('、') + '来逆势破格。';
+    return {
+      dayMasterLevel: dmLevel, dayMasterScore: dmStr.score,
+      xiShen: xiShen, yongShen: yongShen, jiShen: jiShen,
+      reasoning: reasoning, congGe: cong
+    };
+  }
 
   if (dmLevel === '极强' || dmLevel === '偏强') {
     // 身强 — 喜克泄耗（官杀/食伤/财星）
@@ -3374,6 +3393,178 @@ function getBranchRelations(bazi) {
   return result;
 }
 
+// ==================== v3.4 补全 ====================
+
+/**
+ * 十二长生 — 天干在各地支的生命阶段
+ * 甲: 亥长生→子沐浴→丑冠带→寅临官→卯帝旺→辰衰→巳病→午死→未墓→申绝→酉胎→戌养
+ * 乙: 午长生→…
+ * 返回: { [地支]: { stage, index } }
+ */
+function getChangSheng(gan) {
+  var stages = ['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
+  var startMap = { '甲':0,'乙':6,'丙':8,'丁':2,'戊':0,'己':6,'庚':4,'辛':10,'壬':2,'癸':8 };
+  var start = startMap[gan] || 0;
+  var result = {};
+  [['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']].forEach(function(arr) {
+    arr.forEach(function(zhi, i) {
+      result[zhi] = { stage: stages[(i + start) % 12], index: (i + start) % 12 };
+    });
+  });
+  return result;
+}
+
+/**
+ * 从格判定 — 日主极强或极弱时是否成从格
+ * 从强/从旺：日主极强且无克泄 → 顺势用比劫印
+ * 从杀：日主极弱 + 官杀极旺 → 从官杀之势
+ * 从财：日主极弱 + 财星极旺 → 从财星之势
+ * 从儿：日主极弱 + 食伤极旺 → 从食伤之势
+ */
+function getCongGe(bazi) {
+  var ds = calcDayMasterStrength(bazi);
+  var dgWx = WU_XING[bazi.day.gan];
+  var WXL = ['木','火','土','金','水'];
+  var di = WXL.indexOf(dgWx);
+  var SHENGWO = WXL[(di + 4) % 5], WOSHENG = WXL[(di + 1) % 5];
+  var KEWO = WXL[(di + 3) % 5], WOKE = WXL[(di + 2) % 5];
+
+  // 统计各五行力量
+  var wxPower = { '木':0,'火':0,'土':0,'金':0,'水':0 };
+  ['year','month','day','hour'].forEach(function(pos) {
+    wxPower[WU_XING[bazi[pos].gan]] += 2;
+    wxPower[DI_ZHI_WU_XING[bazi[pos].zhi]] += 1;
+  });
+
+  var dgPower = wxPower[dgWx] || 0;
+  var kePower = wxPower[KEWO] || 0;
+  var caiPower = wxPower[WOKE] || 0;
+  var shiPower = wxPower[WOSHENG] || 0;
+  var yinPower = wxPower[SHENGWO] || 0;
+
+  var level = ds.level, score = ds.score;
+
+  // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱
+  if (level === '极强' && kePower <= 1 && shiPower <= 1) {
+    return {
+      isCong: true, name: '从强格',
+      desc: '日主极强，局中无克泄耗，一气专旺，顺势而行。喜印比生扶，忌克泄耗破格。',
+      xiOverride: [SHENGWO, dgWx], jiOverride: [KEWO, WOSHENG, WOKE],
+      source: '从旺/从强'
+    };
+  }
+  // 从杀：日主极弱(<35)且官杀极旺(≥其他两倍)
+  if ((level === '极弱' || level === '偏弱') && kePower >= 6 && kePower >= dgPower * 2) {
+    return {
+      isCong: true, name: '从杀格',
+      desc: '日主弱极，官杀成势，不得不从。"弃命从杀，杀旺为贵。"喜财官杀顺势，忌印比破格。',
+      xiOverride: [KEWO, WOKE], jiOverride: [SHENGWO, dgWx],
+      source: '弃命从杀'
+    };
+  }
+  // 从财：日主极弱且财星极旺
+  if ((level === '极弱' || level === '偏弱') && caiPower >= 6 && caiPower >= dgPower * 2) {
+    return {
+      isCong: true, name: '从财格',
+      desc: '日主弱极，财星成势，弃命从财。"从财格成，富压一方。"喜食伤财官顺势，忌印比破格。',
+      xiOverride: [WOKE, WOSHENG, KEWO], jiOverride: [SHENGWO, dgWx],
+      source: '弃命从财'
+    };
+  }
+  // 从儿：日主极弱且食伤极旺
+  if ((level === '极弱' || level === '偏弱') && shiPower >= 6 && shiPower >= dgPower * 2) {
+    return {
+      isCong: true, name: '从儿格',
+      desc: '日主弱极，食伤成势，弃命从儿。"从儿格，不论身强弱，只要我生者成势即可。"喜食伤财顺势，忌印星破格。',
+      xiOverride: [WOSHENG, WOKE], jiOverride: [SHENGWO],
+      source: '弃命从儿'
+    };
+  }
+  return { isCong: false };
+}
+
+/**
+ * 天干五合 — 检测四柱天干之间的五合关系
+ * 甲己合土/乙庚合金/丙辛化水/丁壬合木/戊癸合火
+ */
+function getGanHe(bazi) {
+  var heMap = { '甲己':1,'己甲':1,'乙庚':1,'庚乙':1,'丙辛':1,'辛丙':1,'丁壬':1,'壬丁':1,'戊癸':1,'癸戊':1 };
+  var wuXingResult = { '甲己':'土','己甲':'土','乙庚':'金','庚乙':'金','丙辛':'水','辛丙':'水','丁壬':'木','壬丁':'木','戊癸':'火','癸戊':'火' };
+  var pos = ['year','month','day','hour'];
+  var names = ['年柱','月柱','日柱','时柱'];
+  var result = [];
+
+  for (var i = 0; i < 4; i++) {
+    for (var j = i + 1; j < 4; j++) {
+      var pair = bazi[pos[i]].gan + bazi[pos[j]].gan;
+      if (heMap[pair]) {
+        result.push({
+          from: names[i], to: names[j],
+          gan1: bazi[pos[i]].gan, gan2: bazi[pos[j]].gan,
+          huaWx: wuXingResult[pair],
+          desc: names[i] + '天干' + bazi[pos[i]].gan + ' 合 ' + names[j] + '天干' + bazi[pos[j]].gan + ' → 化' + wuXingResult[pair] + '（合化为情，二人同心之象）'
+        });
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * 地支三会 — 寅卯辰会木/巳午未会火/申酉戌会金/亥子丑会水
+ */
+function getSanHui(bazi) {
+  var SAN_HUI = [
+    { branches: ['寅','卯','辰'], wx: '木', name: '寅卯辰三会木局' },
+    { branches: ['巳','午','未'], wx: '火', name: '巳午未三会火局' },
+    { branches: ['申','酉','戌'], wx: '金', name: '申酉戌三会金局' },
+    { branches: ['亥','子','丑'], wx: '水', name: '亥子丑三会水局' }
+  ];
+  var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+  var names = ['年柱','月柱','日柱','时柱'];
+  var result = [];
+
+  SAN_HUI.forEach(function(hui) {
+    var found = hui.branches.filter(function(b) { return allZhi.indexOf(b) >= 0; });
+    if (found.length >= 3) {
+      var pillars = found.map(function(b) {
+        for (var k = 0; k < 4; k++) { if (allZhi[k] === b) return names[k]; }
+        return b;
+      });
+      result.push({
+        name: hui.name, wx: hui.wx,
+        matched: found.length,
+        desc: hui.name + '（' + pillars.join('+') + '）——' + hui.wx + '势汇聚，力量极强。三会局是地支最大合力，超越三合。'
+      });
+    }
+  });
+  return result;
+}
+
+/**
+ * 藏干深度分析 — 区分本气/中气/余气
+ * 返回每个地支的藏干及其深度等级
+ */
+function getCangGanDepth(bazi) {
+  var pos = ['year','month','day','hour'];
+  var names = ['年柱','月柱','日柱','时柱'];
+  var levels = ['本气','中气','余气'];
+  var result = {};
+
+  pos.forEach(function(p, i) {
+    var cg = getCangGan(bazi[p].zhi);
+    var items = cg.map(function(gan, j) {
+      return {
+        gan: gan,
+        level: j < levels.length ? levels[j] : '余气',
+        weight: j === 0 ? 3 : (j === 1 ? 2 : 1) // 本气3,中气2,余气1
+      };
+    });
+    result[p] = { name: names[i], zhi: bazi[p].zhi, cangGan: items };
+  });
+  return result;
+}
+
 window.BaZiCalculator = {
     calculate: calculateBaZi,
     calculateDaYun: calculateDaYun,
@@ -3396,6 +3587,11 @@ window.BaZiCalculator = {
     getYongJi: getYongJi,
     getPillarRelations: getPillarRelations,
     getBranchRelations: getBranchRelations,
+    getChangSheng: getChangSheng,
+    getCongGe: getCongGe,
+    getGanHe: getGanHe,
+    getSanHui: getSanHui,
+    getCangGanDepth: getCangGanDepth,
     analyzeCharacter: analyzeCharacter,
     analyzeWealth: analyzeWealth,
     analyzeFortune: analyzeFortune,

@@ -511,6 +511,33 @@
         if (BaZiCalculator.getBranchRelations) {
           try { data.branchRelations = BaZiCalculator.getBranchRelations(_bazi); } catch(e) {}
         }
+        // v3.4: 十二长生
+        if (BaZiCalculator.getChangSheng) {
+          try {
+            var cs = BaZiCalculator.getChangSheng(_bazi.day.gan);
+            data.changSheng = {};
+            ['year','month','day','hour'].forEach(function(pos) {
+              var z = _bazi[pos].zhi;
+              data.changSheng[pos] = cs[z] ? cs[z].stage : '?';
+            });
+          } catch(e) {}
+        }
+        // v3.4: 从格
+        if (BaZiCalculator.getCongGe) {
+          try { data.congGe = BaZiCalculator.getCongGe(_bazi); } catch(e) {}
+        }
+        // v3.4: 天干五合
+        if (BaZiCalculator.getGanHe) {
+          try { data.ganHe = BaZiCalculator.getGanHe(_bazi); } catch(e) {}
+        }
+        // v3.4: 地支三会
+        if (BaZiCalculator.getSanHui) {
+          try { data.sanHui = BaZiCalculator.getSanHui(_bazi); } catch(e) {}
+        }
+        // v3.4: 藏干深度
+        if (BaZiCalculator.getCangGanDepth) {
+          try { data.cangGanDepth = BaZiCalculator.getCangGanDepth(_bazi); } catch(e) {}
+        }
       }
     }
     // 大运

@@ -357,6 +357,13 @@ function buildSingleChart(data) {
     ctx += `\n日主旺衰评定：${ds.level || '?'}（评分 ${ds.score || '?'}/100，${ds.label || ''}）\n`;
   }
 
+  // v3.4: 从格判定
+  if (data.congGe && data.congGe.isCong) {
+    ctx += `\n⚠从格判定：${data.congGe.name}（${data.congGe.source}）\n`;
+    ctx += `  解读：${data.congGe.desc}\n`;
+    ctx += `  喜：${(data.congGe.xiOverride || []).join('、')} 忌：${(data.congGe.jiOverride || []).join('、')}\n`;
+  }
+
   // v3.1: 格局
   if (data.pattern) {
     const pt = data.pattern;
@@ -431,6 +438,27 @@ function buildSingleChart(data) {
     if (data.currentDaYun && data.currentDaYun.shiShen) {
       ctx += `  注意：当前行${data.currentDaYun.shiShen}大运，遇${ln.shiShen || ln.gan + ln.zhi}流年——需结合大运流年与原局关系综合判断吉凶。\n`;
     }
+  }
+
+  // v3.4: 十二长生（日主在地支各柱的阶段）
+  if (data.changSheng) {
+    ctx += `\n日主十二长生：\n`;
+    const labels = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
+    for (const [pos, label] of Object.entries(labels)) {
+      if (data.changSheng[pos]) ctx += `  ${label}：${data.changSheng[pos]}\n`;
+    }
+  }
+
+  // v3.4: 天干五合
+  if (data.ganHe && data.ganHe.length) {
+    ctx += `\n天干五合：\n`;
+    data.ganHe.forEach(h => { ctx += `  ${h.desc}\n`; });
+  }
+
+  // v3.4: 地支三会
+  if (data.sanHui && data.sanHui.length) {
+    ctx += `\n地支三会：\n`;
+    data.sanHui.forEach(h => { ctx += `  ${h.desc}\n`; });
   }
 
   return ctx;
