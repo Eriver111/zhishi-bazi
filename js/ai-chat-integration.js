@@ -162,31 +162,38 @@
     // 初始状态：显示免费
     updateFreeDisplay();
 
-    // FAB：click=打开，拖拽(>10px)=移动位置
+    // FAB：click=打开，长按拖拽=移动位置
     (function(){
       var fab = document.getElementById('aiFab');
       if (!fab) return;
-      var startX, startY, startLeft, startTop, moved = false, down = false;
-      fab.addEventListener('click', function(e) { if (!moved) toggle(); moved = false; });
+      var startX, startY, startLeft, startTop, moved = false, down = false, longPressTimer = null;
+      fab.addEventListener('click', function(e) {
+        if (!moved) toggle();
+        moved = false;
+      });
       fab.addEventListener('pointerdown', function(e) {
         down = true; moved = false;
         startX = e.clientX; startY = e.clientY;
         var r = fab.getBoundingClientRect();
         startLeft = r.left; startTop = r.top;
-        fab.setPointerCapture(e.pointerId);
+        // 长按 150ms 后才允许拖拽，防止点击误判
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(function() {
+          if (down) { fab.setPointerCapture(e.pointerId); }
+        }, 150);
       });
       fab.addEventListener('pointermove', function(e) {
         if (!down) return;
         var dx = e.clientX - startX, dy = e.clientY - startY;
-        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) moved = true;
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) moved = true;
         if (moved) {
           fab.style.left = (startLeft + dx) + 'px';
           fab.style.top = (startTop + dy) + 'px';
           fab.style.right = 'auto'; fab.style.bottom = 'auto';
         }
       });
-      fab.addEventListener('pointerup', function() { down = false; });
-      fab.addEventListener('pointercancel', function() { down = false; });
+      fab.addEventListener('pointerup', function() { down = false; clearTimeout(longPressTimer); });
+      fab.addEventListener('pointercancel', function() { down = false; clearTimeout(longPressTimer); });
     })();
   }
 
