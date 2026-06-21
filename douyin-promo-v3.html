@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1920px;overflow:hidden;font-family:'STKaiti','KaiTi','PingFang SC',sans-serif;background:#060a10;color:#d8d0c0}
+
+/* 背景 */
+.bg{position:absolute;inset:0;z-index:0}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(80,160,200,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(80,160,200,.025) 1px,transparent 1px);background-size:50px 50px}
+.bg-glow1{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(rgba(201,168,76,.06),transparent);top:-150px;left:190px;filter:blur(80px)}
+.bg-glow2{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(rgba(80,160,200,.05),transparent);bottom:300px;right:-100px;filter:blur(60px)}
+.scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(80,160,200,.06),transparent);animation:scan 3s linear infinite}
+@keyframes scan{0%{top:0}100%{top:100%}}
+
+/* 幻灯片 */
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .8s,transform .8s cubic-bezier(.4,0,.2,1);z-index:1}
+.slide.active{opacity:1;transform:none}
+.slide:not(.active){transform:translateY(30px)}
+
+/* 标题 */
+.brand{font-size:88px;font-weight:900;letter-spacing:32px;
+  background:linear-gradient(180deg,#f0e0a0,#c9a84c 50%,#8a6d28);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 30px rgba(201,168,76,.4))}
+.section-title{font-size:48px;color:#e8cf70;letter-spacing:14px;margin-bottom:40px}
+.section-sub{font-size:26px;color:rgba(200,190,170,.45);letter-spacing:6px;text-align:center;line-height:2;margin-bottom:30px;max-width:800px}
+
+/* 八字推算步骤动画 */
+.steps-row{display:flex;gap:24px;align-items:flex-start;margin:20px 0}
+.step{width:200px;text-align:center;padding:32px 20px;border:1px solid rgba(80,160,200,.12);
+  border-radius:16px;background:rgba(13,21,37,.5);position:relative;
+  animation:stepIn .6s ease-out both}
+.step:nth-child(1){animation-delay:.2s}.step:nth-child(2){animation-delay:.5s}
+.step:nth-child(3){animation-delay:.8s}.step:nth-child(4){animation-delay:1.1s}
+@keyframes stepIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.step-num{font-size:40px;font-weight:900;color:rgba(80,160,200,.15);margin-bottom:8px}
+.step-title{font-size:26px;color:#e8cf70;letter-spacing:4px;margin-bottom:8px}
+.step-result{font-size:32px;font-weight:700;color:#d8d0c0;font-family:'PingFang SC',sans-serif}
+.step-detail{font-size:18px;color:rgba(200,190,170,.4);margin-top:6px}
+.step-arrow{font-size:36px;color:rgba(80,160,200,.2);align-self:center;margin:0 -8px}
+
+/* 评分条 */
+.score-row{display:flex;align-items:center;gap:16px;width:700px;margin:8px 0}
+.score-label{width:80px;font-size:22px;color:rgba(200,190,170,.5);text-align:right;letter-spacing:2px}
+.score-bar{flex:1;height:12px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden}
+.score-fill{height:100%;border-radius:6px;transition:width 1s ease-out}
+.score-num{width:50px;font-size:20px;color:#e8cf70;font-weight:700;text-align:left}
+
+/* 五行关系图 */
+.wx-pentagram{position:relative;width:500px;height:500px;margin:20px auto}
+.wx-node{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:900;color:#fff;border:2px solid;transition:all .5s}
+.wx-node.wx-mu{background:rgba(76,175,80,.15);border-color:#4CAF50;top:10px;left:220px}
+.wx-node.wx-huo{background:rgba(244,67,54,.15);border-color:#F44336;top:150px;right:30px}
+.wx-node.wx-tu{background:rgba(205,133,63,.15);border-color:#CD853F;bottom:150px;right:30px}
+.wx-node.wx-jin{background:rgba(255,215,0,.15);border-color:#FFD700;bottom:10px;left:220px}
+.wx-node.wx-shui{background:rgba(33,150,243,.15);border-color:#2196F3;top:150px;left:30px}
+.wx-edge{position:absolute;height:1px;background:rgba(255,255,255,.08);transform-origin:left center}
+.wx-edge.sheng{background:rgba(76,175,80,.2)}.wx-edge.ke{background:rgba(244,67,54,.15);border-top-style:dashed}
+
+/* AI对话窗 */
+.ai-window{width:780px;background:rgba(13,21,37,.85);border:1px solid rgba(80,160,200,.15);border-radius:20px;
+  padding:32px;margin:20px 0}
+.ai-msg{margin-bottom:20px;padding:16px 20px;border-radius:14px;max-width:650px;font-size:22px;line-height:1.8}
+.ai-msg.user{align-self:flex-end;background:rgba(80,160,200,.08);color:#d8d0c0;margin-left:auto}
+.ai-msg.bot{background:rgba(201,168,76,.06);color:#e8cf70}
+.ai-typing{display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,.4);animation:type .8s infinite}
+.ai-typing:nth-child(2){animation-delay:.2s}.ai-typing:nth-child(3){animation-delay:.4s}
+@keyframes type{0%,100%{opacity:.2}50%{opacity:1}}
+
+/* 手机截图 */
+.phone{width:320px;height:560px;background:#0d1525;border:2px solid rgba(80,160,200,.2);border-radius:28px;
+  overflow:hidden;box-shadow:0 0 50px rgba(80,160,200,.08)}
+.phone img{width:100%;height:100%;object-fit:cover}
+.phone-notch{width:100px;height:20px;background:#060a10;border-radius:0 0 12px 12px;margin:0 auto;position:relative;z-index:2}
+
+/* 数据标签 */
+.tag{display:inline-block;padding:4px 14px;border-radius:20px;font-size:18px;letter-spacing:2px;margin:4px}
+.tag.gold{border:1px solid rgba(201,168,76,.3);color:#e8cf70}
+.tag.blue{border:1px solid rgba(80,160,200,.3);color:#8cc8e8}
+
+/* 合规 */
+.disclaimer{position:absolute;bottom:30px;left:0;right:0;text-align:center;font-size:16px;color:rgba(255,255,255,.1);letter-spacing:3px;z-index:5}
+
+/* 脉冲点 */
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#4CAF50;animation:pulse 1.5s ease-in-out infinite;margin-right:8px}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="bg-grid"></div><div class="bg-glow1"></div><div class="bg-glow2"></div><div class="scanline" style="animation-delay:0s"></div><div class="scanline" style="animation-delay:1.5s"></div></div>
+
+<!-- S0: 品牌 -->
+<div class="slide active" id="s0">
+  <div class="brand">知 时</div>
+  <div style="font-size:32px;color:rgba(200,190,170,.45);letter-spacing:18px;margin:30px 0">知 天 时 · 见 自 己</div>
+  <p style="font-size:26px;color:rgba(200,190,170,.35);letter-spacing:4px;text-align:center;line-height:2.2">
+    千年东方易学智慧<br>AI 辅助解读 · 引经据典
+  </p>
+</div>
+
+<!-- S1: 输入演示 -->
+<div class="slide" id="s1">
+  <div class="section-title">第一步：信息输入</div>
+  <div class="section-sub">公历 / 农历双模式 · 真太阳时自动校正 · 寿星万年历数据</div>
+  <div class="phone"><div class="phone-notch"></div><img src="promo_screenshots/01_paipan.png"></div>
+</div>
+
+<!-- S2: 四柱推算 -->
+<div class="slide" id="s2">
+  <div class="section-title">第二步：四柱排盘</div>
+  <div class="section-sub" style="margin-bottom:20px">年柱以立春为界 · 月柱依节气而定 · 日柱精确计算 · 时柱五鼠遁法</div>
+  <div class="steps-row">
+    <div class="step"><div class="step-num">年</div><div class="step-title">年柱</div><div class="step-result">甲申</div><div class="step-detail">立春分界 · 2004甲申年</div></div>
+    <div class="step-arrow">→</div>
+    <div class="step"><div class="step-num">月</div><div class="step-title">月柱</div><div class="step-result">丁卯</div><div class="step-detail">节气定月 · 惊蛰后卯月</div></div>
+    <div class="step-arrow">→</div>
+    <div class="step"><div class="step-num">日</div><div class="step-title">日柱</div><div class="step-result">丙午</div><div class="step-detail">公式推算 · 60甲子定位</div></div>
+    <div class="step-arrow">→</div>
+    <div class="step"><div class="step-num">时</div><div class="step-title">时柱</div><div class="step-result">癸巳</div><div class="step-detail">五鼠遁时 · 巳时定癸巳</div></div>
+  </div>
+  <div style="margin-top:20px">
+    <span class="tag gold">十神分析</span><span class="tag gold">藏干计算</span><span class="tag blue">纳音匹配</span><span class="tag blue">神煞标注</span>
+  </div>
+</div>
+
+<!-- S3: 旺衰评分 -->
+<div class="slide" id="s3">
+  <div class="section-title">第三步：旺衰量化评分</div>
+  <div class="section-sub" style="margin-bottom:30px">得令 · 得地 · 得势 · 调候 —— 综合评分判定日主强弱</div>
+  <div class="score-row" style="animation:fadeIn 1s .3s both"><span class="score-label">得令</span><div class="score-bar"><div class="score-fill" style="width:66%;background:linear-gradient(90deg,#4CAF50,#81C784)"></div></div><span class="score-num">+20</span></div>
+  <div class="score-row" style="animation:fadeIn 1s .6s both"><span class="score-label">得地</span><div class="score-bar"><div class="score-fill" style="width:40%;background:linear-gradient(90deg,#2196F3,#64B5F6)"></div></div><span class="score-num">+12</span></div>
+  <div class="score-row" style="animation:fadeIn 1s .9s both"><span class="score-label">得势</span><div class="score-bar"><div class="score-fill" style="width:36%;background:linear-gradient(90deg,#FF9800,#FFB74D)"></div></div><span class="score-num">+10</span></div>
+  <div class="score-row" style="animation:fadeIn 1s 1.2s both"><span class="score-label">调候</span><div class="score-bar"><div class="score-fill" style="width:16%;background:linear-gradient(90deg,#F44336,#EF5350)"></div></div><span class="score-num">+5</span></div>
+  <div style="margin-top:30px;text-align:center;animation:fadeIn 1s 1.5s both">
+    <span style="font-size:56px;font-weight:900;color:#e8cf70">102</span>
+    <span style="font-size:28px;color:rgba(200,190,170,.5);margin-left:12px">分</span>
+    <span class="tag gold" style="font-size:24px;margin-left:20px;padding:6px 24px">身强</span>
+  </div>
+</div>
+
+<!-- S4: 五行生克图 -->
+<div class="slide" id="s4">
+  <div class="section-title">五行生克关系</div>
+  <div class="wx-pentagram">
+    <div class="wx-node wx-mu">木</div><div class="wx-node wx-huo">火</div>
+    <div class="wx-node wx-tu">土</div><div class="wx-node wx-jin">金</div>
+    <div class="wx-node wx-shui">水</div>
+  </div>
+  <div style="text-align:center;margin-top:10px">
+    <span style="color:#81C784;font-size:22px">—— 相生：木→火→土→金→水→木</span><br>
+    <span style="color:rgba(244,67,54,.6);font-size:22px">--- 相克：木→土→水→火→金→木</span>
+  </div>
+  <div style="margin-top:20px;text-align:center">
+    <span class="tag gold">格局：偏印格</span>
+    <span class="tag gold">喜：水木</span>
+    <span class="tag blue">忌：金土</span>
+  </div>
+</div>
+
+<!-- S5: AI对话 -->
+<div class="slide" id="s5">
+  <div class="section-title">AI 易学助手</div>
+  <div class="section-sub">融合传统子平法与盲派体系 · DeepSeek 驱动 · 白话/深度双模式</div>
+  <div class="ai-window">
+    <div class="ai-msg user">我的喜用神是什么？</div>
+    <div class="ai-msg bot"><span class="dot"></span>你的日主为丙火，生于卯月（春木），综合评分102分，属于<span style="font-weight:700">身强</span>。格局为偏印格。喜神：水、金、土，用神：水、金。忌神：木、火。</div>
+    <div class="ai-msg user">今年运势怎么样？</div>
+    <div class="ai-msg bot"><span class="dot"></span>当前行乙巳大运（34岁），2026丙午流年。大运与流年皆为火，比劫帮扶过旺，今年注意理财和人际关系，但火旺也主热情和行动力……</div>
+  </div>
+  <div style="margin-top:16px">
+    <span class="tag gold">格局判定</span><span class="tag gold">喜用忌神</span><span class="tag gold">大运流年</span>
+    <span class="tag blue">引据经典</span><span class="tag blue">白话解读</span>
+  </div>
+</div>
+
+<!-- S6: 结尾 -->
+<div class="slide" id="s6">
+  <div class="brand" style="font-size:64px">知 时</div>
+  <div style="font-size:28px;color:rgba(200,190,170,.4);letter-spacing:12px;margin:30px 0">知天时 · 见自己</div>
+  <div style="padding:40px 60px;border:1px solid rgba(80,160,200,.12);border-radius:20px;background:rgba(13,21,37,.4);text-align:center;margin-top:40px">
+    <p style="font-size:32px;color:#e8cf70;letter-spacing:8px">即刻开启你的易学探索之旅</p>
+    <p style="font-size:22px;color:rgba(200,190,170,.35);margin-top:20px;letter-spacing:4px">※ 仅供传统文化学习参考与娱乐交流</p>
+  </div>
+</div>
+
+<div class="disclaimer">※ 本内容仅供传统文化学习参考与娱乐交流，不构成任何决策建议</div>
+
+<script>
+(function(){
+  var s=document.querySelectorAll('.slide'),c=0,t=s.length;
+  var d=[4000,6000,7000,7000,5000,7000,4000]; // 配旁白时长 共43s (实际旁白73s, 挑关键段)
+  var total=d.reduce(function(a,b){return a+b},0);
+  function n(){
+    s[c].classList.remove('active');c=(c+1)%t;s[c].classList.add('active');
+    if(c<t-1)setTimeout(n,d[c]);
+  }
+  setTimeout(n,d[0]);
+})();
+</script>
+</body>
+</html>
