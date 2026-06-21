@@ -162,15 +162,15 @@
     // 初始状态：显示免费
     updateFreeDisplay();
 
-    // FAB：短点=打开抽屉，长拖=移动位置（pointer事件统一桌面+手机）
+    // FAB：click 直接打开；pointer 拖拽移动位置（阈值10px防误判）
     (function(){
       var fab = document.getElementById('aiFab');
       if (!fab) return;
-      var startX, startY, startLeft, startTop, moved = false, down = false, startTime;
+      var startX, startY, startLeft, startTop, moved = false, down = false;
+      fab.addEventListener('click', function(e) { if (!moved) toggle(); moved = false; });
       fab.addEventListener('pointerdown', function(e) {
         down = true; moved = false;
         startX = e.clientX; startY = e.clientY;
-        startTime = Date.now();
         var r = fab.getBoundingClientRect();
         startLeft = r.left; startTop = r.top;
         fab.style.transition = 'none';
@@ -179,23 +179,15 @@
       fab.addEventListener('pointermove', function(e) {
         if (!down) return;
         var dx = e.clientX - startX, dy = e.clientY - startY;
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) moved = true;
         if (moved) {
           fab.style.left = (startLeft + dx) + 'px';
           fab.style.top = (startTop + dy) + 'px';
           fab.style.right = 'auto'; fab.style.bottom = 'auto';
         }
       });
-      fab.addEventListener('pointerup', function(e) {
-        if (!down) return;
-        down = false;
-        fab.style.transition = '';
-        if (!moved && Date.now() - startTime < 500) { toggle(); }
-      });
-      fab.addEventListener('pointercancel', function(e) {
-        down = false;
-        fab.style.transition = '';
-      });
+      fab.addEventListener('pointerup', function(e) { down = false; fab.style.transition = ''; });
+      fab.addEventListener('pointercancel', function(e) { down = false; fab.style.transition = ''; });
     })();
   }
 
