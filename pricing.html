@@ -146,6 +146,14 @@ function stopPolling() {
 }
 
 function buyCredits(mode, amount, name) {
+  // 强制清空旧状态，防止多订单互相干扰
+  stopPolling();
+  _currentOrderId = null;
+  localStorage.removeItem('credit_ord');
+  // 重置 QR 容器为加载状态
+  var container = document.getElementById('qrContainer');
+  if (container) container.innerHTML = '生成二维码中...';
+
   injectQrModal();
   var modal = document.getElementById('creditQrModal');
   if (modal) modal.style.display = 'flex';
@@ -220,8 +228,6 @@ function startPolling(orderId) {
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.paid || d.status === 'paid') {
-          stopPolling();
-          localStorage.removeItem('credit_ord');
           onPaySuccess(d);
         }
       })
@@ -230,6 +236,9 @@ function startPolling(orderId) {
 }
 
 function onPaySuccess(data) {
+  stopPolling();
+  _currentOrderId = null;
+  localStorage.removeItem('credit_ord');
   var modal = document.getElementById('creditQrModal');
   if (modal) modal.style.display = 'none';
 
@@ -263,8 +272,6 @@ function checkManualPayment() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.paid || d.status === 'paid') {
-        stopPolling();
-        localStorage.removeItem('credit_ord');
         onPaySuccess(d);
       } else {
         if (status) status.textContent = '暂未查到支付记录，请确认已付款';
