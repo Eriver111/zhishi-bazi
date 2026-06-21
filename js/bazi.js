@@ -1904,7 +1904,44 @@ function calcDayMasterStrength(bazi) {
     });
   });
 
-  // ---------- ⑤ 分级输出 ----------
+  // ---------- ⑤ 调候（滴天髓：寒暖燥湿） ----------
+  var mZhi = bazi.month.zhi;
+  var allGan = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
+  var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+  var isSummer = ['巳','午','未'].indexOf(mZhi) >= 0;  // 夏季火旺
+  var isWinter = ['亥','子','丑'].indexOf(mZhi) >= 0;  // 冬季水旺
+  var isSpring = ['寅','卯','辰'].indexOf(mZhi) >= 0;  // 春季木旺
+  var isAutumn = ['申','酉','戌'].indexOf(mZhi) >= 0;  // 秋季金旺
+
+  // 盘面中是否存在某五行
+  function hasWx(wx) {
+    for (var i = 0; i < 4; i++) {
+      if (WU_XING[allGan[i]] === wx) return true;
+      if (DI_ZHI_WU_XING[allZhi[i]] === wx) return true;
+    }
+    return false;
+  }
+
+  // 夏季火炎土燥，需水调候润局
+  if (isSummer && dgWx !== '水') {
+    if (hasWx('水')) score += 5;       // 有水润燥——水火既济，温度得宜
+    else score -= 8;                     // 无水润局——火炎土燥，偏枯
+  }
+  // 冬季水冷金寒，需火调候暖局
+  if (isWinter && dgWx !== '火') {
+    if (hasWx('火')) score += 5;       // 有火暖局——寒谷回春，生机勃发
+    else score -= 8;                     // 无火暖局——金寒水冷，生机不展
+  }
+  // 春季木旺，需金修剪（但木为日主时不需）
+  if (isSpring && dgWx !== '木' && dgWx !== '金') {
+    if (!hasWx('金')) score -= 3;       // 木无金制，枝蔓过盛
+  }
+  // 秋季金旺，需火炼金成器（但金为日主时不需）
+  if (isAutumn && dgWx !== '金' && dgWx !== '火') {
+    if (!hasWx('火')) score -= 3;       // 金无火炼，顽金不器
+  }
+
+  // ---------- ⑥ 分级输出 ----------
   var level, label;
   if (score >= 85)      { level = '极强'; label = '元气充沛'; }
   else if (score >= 65) { level = '偏强'; label = '元气较足'; }
@@ -3312,6 +3349,28 @@ function getBranchRelations(bazi) {
       }
     }
   }
+  // 三合局检测（全局）
+  var SAN_HE = [
+    { name: '寅午戌三合火局', branches: ['寅','午','戌'], desc: '火势滔天——热情激烈，需水润燥否则偏枯' },
+    { name: '申子辰三合水局', branches: ['申','子','辰'], desc: '水势浩荡——智慧深沉，需火暖局否则阴冷' },
+    { name: '亥卯未三合木局', branches: ['亥','卯','未'], desc: '木势参天——仁德宽厚，需金修剪否则枝蔓' },
+    { name: '巳酉丑三合金局', branches: ['巳','酉','丑'], desc: '金势刚锐——果断决绝，需火炼金否则顽钝' }
+  ];
+  SAN_HE.forEach(function(san) {
+    var match = san.branches.every(function(b) { return branches.indexOf(b) >= 0; });
+    if (match) {
+      var pillars = san.branches.map(function(b) {
+        for (var k = 0; k < 4; k++) { if (branches[k] === b) return names[k]; }
+        return b;
+      });
+      result.push({
+        from: '全局', to: '三合',
+        branch1: san.branches.join(''), branch2: '',
+        relations: [{ type: '三合局', detail: san.name + '（' + pillars.join('+') + '）——' + san.desc }]
+      });
+    }
+  });
+
   return result;
 }
 
