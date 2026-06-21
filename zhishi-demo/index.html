@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<script src="gsap.min.js"></script>
+<style>
+@font-face{font-family:'STKaiti';src:local('STKaiti'),local('KaiTi'),local('楷体');font-display:swap;unicode-range:U+4E00-9FFF}
+@font-face{font-family:'KaiTi';src:local('KaiTi'),local('STKaiti'),local('楷体');font-display:swap;unicode-range:U+4E00-9FFF}
+@font-face{font-family:'PingFang SC';src:local('PingFang SC'),local('Microsoft YaHei'),local('微软雅黑');font-display:swap}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#060a10;font-family:'PingFang SC','STKaiti','KaiTi',sans-serif;color:#d8d0c0}
+.bg{position:fixed;inset:0;z-index:0}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(80,160,200,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(80,160,200,.018) 1px,transparent 1px);background-size:50px 50px}
+.glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.05}
+.g1{width:700px;height:700px;background:radial-gradient(#c9a84c,transparent);top:-150px;left:200px}
+.g2{width:500px;height:500px;background:radial-gradient(#5b9fd4,transparent);bottom:200px;right:-50px}
+
+.clip{position:absolute;opacity:0}
+.clip.on{opacity:1}
+
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;inset:0}
+
+.brand{font-size:100px;font-weight:900;letter-spacing:40px;background:linear-gradient(180deg,#f0e0a0,#c9a84c 50%,#8a6d28);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(201,168,76,.4))}
+.tagline{font-size:34px;color:rgba(200,190,170,.5);letter-spacing:20px}
+.section-title{font-size:44px;color:#e8cf70;letter-spacing:12px;margin-bottom:30px}
+
+.phone{position:relative;border:2px solid rgba(201,168,76,.2);border-radius:28px;overflow:hidden;box-shadow:0 0 60px rgba(80,160,200,.1)}
+.phone img{display:block;width:100%}
+.phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:20px;background:#060a10;border-radius:0 0 12px 12px;z-index:2}
+
+.score-row{display:flex;align-items:center;gap:14px;width:700px;margin:8px 0}
+.score-label{width:80px;font-size:22px;color:rgba(200,190,170,.45);text-align:right}
+.score-track{flex:1;height:12px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden}
+.score-fill{height:100%;border-radius:6px;width:0}
+.score-num{width:50px;font-size:20px;color:#e8cf70;font-weight:700}
+
+.tag{display:inline-block;padding:6px 16px;margin:5px;border-radius:20px;font-size:20px;letter-spacing:2px;font-weight:600}
+.tag.xi{border:1px solid rgba(76,175,80,.3);color:#81C784}
+.tag.ji{border:1px solid rgba(244,67,54,.3);color:#E57373}
+.tag.blue{border:1px solid rgba(33,150,243,.3);color:#64B5F6}
+
+.ai-bubble{padding:18px 22px;border-radius:14px;font-size:22px;line-height:1.7;margin:10px 0}
+.ai-bubble.user{background:rgba(80,160,200,.08);color:#d8d0c0;width:320px}
+.ai-bubble.bot{background:rgba(201,168,76,.06);color:#e8cf70;width:650px}
+
+.feat-grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:880px}
+.feat-card{width:170px;padding:22px 14px;text-align:center;border:1px solid rgba(80,160,200,.1);border-radius:14px;background:rgba(13,21,37,.5)}
+.feat-card .icon{font-size:34px;margin-bottom:6px}
+.feat-card .label{font-size:20px;color:#e8cf70;letter-spacing:2px}
+
+.sub{font-size:26px;color:rgba(200,190,170,.4);letter-spacing:4px;text-align:center;line-height:2}
+.disclaimer{position:fixed;bottom:30px;left:0;right:0;text-align:center;font-size:16px;color:rgba(255,255,255,.08);letter-spacing:3px;z-index:99}
+</style>
+</head>
+<body>
+<div data-composition-id="main" data-start="0" data-width="1080" data-height="1920" style="width:1080px;height:1920px;overflow:hidden;position:relative">
+<div class="bg"><div class="bg-grid"></div><div class="glow g1"></div><div class="glow g2"></div></div>
+<div class="disclaimer">仅供传统文化学习参考与娱乐交流</div>
+
+<!-- S0 Hook 0-8s -->
+<div id="scene-hook" class="clip center" data-start="0" data-duration="8" data-track-index="0">
+  <div class="brand">知 时</div>
+  <div class="tagline" style="margin-top:24px">知天时 · 见自己</div>
+  <div class="sub" style="margin-top:40px">一个人 · 一台电脑 · 一个月<br>AI + 传统易学 + 算法</div>
+</div>
+
+<!-- S1 排盘 8-18s -->
+<div id="scene-input" class="clip center" data-start="8" data-duration="10" data-track-index="1">
+  <div class="section-title">信息输入</div>
+  <div class="phone" style="width:310px"><div class="notch"></div><img src="01_paipan.png"></div>
+  <div class="sub" style="margin-top:16px">公历/农历双模式 · 真太阳时校正<br>寿星万年历 · 1900—2100</div>
+</div>
+
+<!-- S2 四柱 18-28s -->
+<div id="scene-sizhu" class="clip center" data-start="18" data-duration="10" data-track-index="2">
+  <div class="section-title">四柱排盘 · 一步到位</div>
+  <div class="phone" style="width:330px"><div class="notch"></div><img src="02_result_top.png"></div>
+  <div style="margin-top:14px"><span class="tag xi">十神</span><span class="tag blue">藏干</span><span class="tag xi">纳音</span><span class="tag blue">神煞</span><span class="tag xi">天乙贵人</span></div>
+</div>
+
+<!-- S3 旺衰 28-38s -->
+<div id="scene-wangshuai" class="clip center" data-start="28" data-duration="10" data-track-index="3" style="padding:60px">
+  <div class="section-title">旺衰量化评分</div>
+  <div class="score-row"><span class="score-label">得令</span><div class="score-track"><div class="score-fill" style="width:66%;background:linear-gradient(90deg,#4CAF50,#81C784)"></div></div><span class="score-num">+20</span></div>
+  <div class="score-row"><span class="score-label">得地</span><div class="score-track"><div class="score-fill" style="width:40%;background:linear-gradient(90deg,#2196F3,#64B5F6)"></div></div><span class="score-num">+12</span></div>
+  <div class="score-row"><span class="score-label">得势</span><div class="score-track"><div class="score-fill" style="width:33%;background:linear-gradient(90deg,#FF9800,#FFB74D)"></div></div><span class="score-num">+10</span></div>
+  <div class="score-row"><span class="score-label">调候</span><div class="score-track"><div class="score-fill" style="width:16%;background:linear-gradient(90deg,#9C27B0,#CE93D8)"></div></div><span class="score-num">+5</span></div>
+  <div style="margin-top:24px;font-size:52px;font-weight:900;color:#e8cf70">102 分 · 身强</div>
+</div>
+
+<!-- S4 格局 38-48s -->
+<div id="scene-pattern" class="clip center" data-start="38" data-duration="10" data-track-index="4">
+  <div class="section-title">格局与喜用忌神</div>
+  <div style="font-size:36px;color:#e8cf70;margin-bottom:16px">官印相生格</div>
+  <div><span class="tag xi">喜：水木</span><span class="tag blue">用：水</span><span class="tag ji">忌：金土</span></div>
+  <div class="phone" style="width:280px;margin-top:20px"><div class="notch"></div><img src="03_result_pro.png"></div>
+</div>
+
+<!-- S5 AI 48-58s -->
+<div id="scene-ai" class="clip center" data-start="48" data-duration="10" data-track-index="5" style="padding:40px">
+  <div class="section-title">知时助手</div>
+  <div style="width:780px;margin-top:20px">
+    <div class="ai-bubble user">我的财运怎么样</div>
+    <div class="ai-bubble bot">你的日主为丙火，喜水木来生扶。食神生财，才华变现——适合技艺、创作类发展路线。</div>
+  </div>
+  <div style="margin-top:16px"><span class="tag xi">白话模式</span><span class="tag blue">深度模式</span><span class="tag xi">子平法</span><span class="tag blue">盲派体系</span></div>
+</div>
+
+<!-- S6 全功能 58-68s -->
+<div id="scene-features" class="clip center" data-start="58" data-duration="10" data-track-index="6">
+  <div class="section-title">六大维度 · 全面解读</div>
+  <div class="feat-grid" style="margin-top:30px">
+    <div class="feat-card"><div class="icon">📊</div><div class="label">四柱盘面</div></div>
+    <div class="feat-card"><div class="icon">📈</div><div class="label">大运流年</div></div>
+    <div class="feat-card"><div class="icon">🎯</div><div class="label">性格特质</div></div>
+    <div class="feat-card"><div class="icon">💼</div><div class="label">事业参考</div></div>
+    <div class="feat-card"><div class="icon">❤️</div><div class="label">情感分析</div></div>
+    <div class="feat-card"><div class="icon">👨‍👩‍👧</div><div class="label">父母关系</div></div>
+    <div class="feat-card"><div class="icon">📅</div><div class="label">流年建议</div></div>
+    <div class="feat-card"><div class="icon">🔮</div><div class="label">合盘分析</div></div>
+  </div>
+</div>
+
+<!-- S7 结尾 68-75s -->
+<div id="scene-ending" class="clip center" data-start="68" data-duration="7" data-track-index="7">
+  <div class="brand" style="font-size:80px">知 时</div>
+  <div class="tagline" style="margin-top:24px">知天时 · 见自己</div>
+  <div class="sub" style="margin-top:50px">从一行代码到完整系统<br>即刻开始你的探索之旅</div>
+</div>
+
+<script>
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = gsap.timeline({paused: true});
+
+// Simple fade-in animation for clips — the .on class is controlled by hyperframes via data-start/duration
+// GSAP only used for entry animation within each clip
+document.querySelectorAll('.clip').forEach(function(el) {
+  var start = parseFloat(el.getAttribute('data-start') || '0');
+  window.__timelines["main"].fromTo(el, {opacity:0}, {opacity:1, duration:.6}, start);
+  var end = start + parseFloat(el.getAttribute('data-duration') || '5') - .6;
+  window.__timelines["main"].to(el, {opacity:0, duration:.6}, end);
+});
+</script>
+</div>
+</body>
+</html>
