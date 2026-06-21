@@ -162,7 +162,7 @@
     // 初始状态：显示免费
     updateFreeDisplay();
 
-    // FAB：click 直接打开；pointer 拖拽移动位置（阈值10px防误判）
+    // FAB：click=打开，拖拽(>10px)=移动位置
     (function(){
       var fab = document.getElementById('aiFab');
       if (!fab) return;
@@ -173,7 +173,6 @@
         startX = e.clientX; startY = e.clientY;
         var r = fab.getBoundingClientRect();
         startLeft = r.left; startTop = r.top;
-        fab.style.transition = 'none';
         fab.setPointerCapture(e.pointerId);
       });
       fab.addEventListener('pointermove', function(e) {
@@ -186,8 +185,8 @@
           fab.style.right = 'auto'; fab.style.bottom = 'auto';
         }
       });
-      fab.addEventListener('pointerup', function(e) { down = false; fab.style.transition = ''; });
-      fab.addEventListener('pointercancel', function(e) { down = false; fab.style.transition = ''; });
+      fab.addEventListener('pointerup', function() { down = false; });
+      fab.addEventListener('pointercancel', function() { down = false; });
     })();
   }
 
