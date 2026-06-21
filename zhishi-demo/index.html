@@ -9,23 +9,25 @@
 @font-face{font-family:'KaiTi';src:local('KaiTi'),local('STKaiti');font-display:swap;unicode-range:U+4E00-9FFF}
 @font-face{font-family:'PingFang SC';src:local('PingFang SC'),local('Microsoft YaHei');font-display:swap}
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi',sans-serif;color:#d8d0c0}
+html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi',sans-serif;color:#d8d0c0;background:#060a10}
 
-.bg{position:fixed;inset:0;z-index:0;background:#060a10}
+.bg{position:fixed;inset:0;z-index:0}
 .bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(80,160,200,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(80,160,200,.02) 1px,transparent 1px);background-size:50px 50px}
 .glow{position:absolute;border-radius:50%;filter:blur(140px)}
 .g1{width:700px;height:700px;background:radial-gradient(rgba(201,168,76,.06),transparent);top:-100px;left:200px}
 .g2{width:500px;height:500px;background:radial-gradient(rgba(80,160,200,.04),transparent);bottom:100px;right:-50px}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(201,168,76,.06);animation:ringPulse 4s ease-in-out infinite}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.1);opacity:.6}}
 
 .clip{position:absolute;inset:0;opacity:0}
 .clip.on{opacity:1}
 
-.row{display:flex;align-items:center;justify-content:center;gap:60px;width:100%;height:100%;padding:60px 80px}
-.col-text{flex:1;max-width:480px}
+.row{display:flex;align-items:center;justify-content:center;gap:50px;width:100%;height:100%;padding:60px 70px}
+.col-text{flex:1;max-width:500px}
 .col-phone{flex-shrink:0}
 
 .section-title{font-size:44px;color:#e8cf70;letter-spacing:8px;margin-bottom:20px;font-family:'STKaiti','KaiTi',serif}
-.section-desc{font-size:26px;color:rgba(200,190,170,.5);line-height:1.8;letter-spacing:3px}
+.section-desc{font-size:24px;color:rgba(200,190,170,.5);line-height:1.9;letter-spacing:3px}
 
 .phone{position:relative;border:2px solid rgba(201,168,76,.2);border-radius:28px;overflow:hidden;box-shadow:0 0 60px rgba(80,160,200,.12),0 20px 40px rgba(0,0,0,.4)}
 .phone img{display:block;width:100%}
@@ -43,28 +45,33 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 .tag.blue{border:1px solid rgba(33,150,243,.3);color:#64B5F6}
 .tag.gold{border:1px solid rgba(201,168,76,.3);color:#e8cf70}
 
-.big-num{font-size:72px;font-weight:900;color:#e8cf70;font-family:'PingFang SC',sans-serif}
+.big-num{font-size:72px;font-weight:900;color:#e8cf70}
 .big-label{font-size:28px;color:rgba(200,190,170,.5);margin-left:16px}
 
-.chat-bubble{padding:18px 22px;border-radius:16px;font-size:22px;line-height:1.7;margin:12px 0}
+.chat-bubble{padding:18px 22px;border-radius:16px;font-size:22px;line-height:1.7;margin:12px 0;max-width:450px}
 .chat-bubble.user{background:rgba(80,160,200,.1);color:#d8d0c0;border:1px solid rgba(80,160,200,.15)}
 .chat-bubble.bot{background:rgba(201,168,76,.08);color:#e8cf70;border:1px solid rgba(201,168,76,.15)}
 
-.data-point{display:flex;align-items:center;gap:12px;margin:8px 0;font-size:22px;color:rgba(200,190,170,.6)}
-.data-dot{width:10px;height:10px;border-radius:50%}
-.data-dot.sheng{background:#81C784}
-.data-dot.ke{background:#E57373}
+.quote{font-family:'STKaiti','KaiTi',serif;font-size:28px;color:rgba(201,168,76,.3);letter-spacing:4px;font-style:italic;position:absolute}
+.quote::before{content:'"';font-size:40px;color:rgba(201,168,76,.15)}
+
+.data-point{display:flex;align-items:center;gap:12px;margin:6px 0;font-size:21px;color:rgba(200,190,170,.55)}
+.data-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.data-dot.sheng{background:#81C784}.data-dot.ke{background:#E57373}
 
 .brand{font-size:100px;font-weight:900;letter-spacing:48px;background:linear-gradient(180deg,#f0e0a0,#c9a84c 50%,#8a6d28);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(201,168,76,.4))}
 .tagline{font-size:34px;color:rgba(200,190,170,.5);letter-spacing:20px}
 .sub{font-size:26px;color:rgba(200,190,170,.4);letter-spacing:4px;text-align:center;line-height:2}
 
-.feat-grid{display:flex;flex-wrap:wrap;gap:16px;max-width:900px;justify-content:center}
+.feat-grid{display:flex;flex-wrap:wrap;gap:14px;max-width:900px;justify-content:center}
 .feat-card{width:170px;padding:22px 14px;text-align:center;border:1px solid rgba(80,160,200,.1);border-radius:14px;background:rgba(13,21,37,.5)}
 .feat-card .icon{font-size:34px;margin-bottom:6px}
 .feat-card .label{font-size:20px;color:#e8cf70;letter-spacing:2px}
 
 .disclaimer{position:fixed;bottom:30px;left:0;right:0;text-align:center;font-size:16px;color:rgba(255,255,255,.08);letter-spacing:3px;z-index:99}
+
+.hero-ring{position:absolute;border-radius:50%;border:1px solid;opacity:0;top:50%;left:50%;transform:translate(-50%,-50%)}
+.hero-particle{position:absolute;width:3px;height:3px;background:rgba(201,168,76,.4);border-radius:50%;opacity:0}
 </style>
 </head>
 <body>
@@ -75,15 +82,25 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 
 <!-- S0 Hook 0-8s -->
 <div id="s0" class="clip" data-start="0" data-duration="8" data-track-index="0">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%" id="s0-inner">
-    <div class="brand" id="s0-brand">知 时</div>
-    <div class="tagline" style="margin-top:30px" id="s0-tag">知天时 · 见自己</div>
-    <div class="sub" style="margin-top:50px" id="s0-sub">一个人 · 一台电脑 · 一个月<br>AI + 传统易学 + 算法</div>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <!-- 冲击光圈 -->
+    <div class="hero-ring" id="s0-ring1" style="width:200px;height:200px;border-color:rgba(201,168,76,.1)"></div>
+    <div class="hero-ring" id="s0-ring2" style="width:350px;height:350px;border-color:rgba(201,168,76,.06)"></div>
+    <div class="hero-ring" id="s0-ring3" style="width:500px;height:500px;border-color:rgba(80,160,200,.06)"></div>
+    <!-- 粒子 -->
+    <div id="s0-particles" style="position:absolute;inset:0"></div>
+    <!-- 标题 -->
+    <div class="brand" id="s0-brand" style="opacity:0">知 时</div>
+    <div class="tagline" style="margin-top:30px;opacity:0" id="s0-tag">知天时 · 见自己</div>
+    <!-- 引用 -->
+    <div class="quote" style="position:relative;margin-top:40px;opacity:0" id="s0-quote">滴天髓：何知其人吉，用神有气而已矣</div>
+    <div class="sub" style="margin-top:50px;opacity:0" id="s0-sub">一个人 · 一台电脑 · 一个月<br>AI + 算法 × 千年易学智慧</div>
   </div>
 </div>
 
 <!-- S1 排盘 8-18s -->
 <div id="s1" class="clip" data-start="8" data-duration="10" data-track-index="1">
+  <div class="quote" style="top:60px;left:80px;opacity:0" id="s1-quote">子平真诠：八字用神，专求月令</div>
   <div class="row">
     <div class="col-phone"><div class="phone" style="width:330px" id="s1-phone"><div class="phone-notch"></div><img src="01_paipan.png"></div></div>
     <div class="col-text">
@@ -92,17 +109,19 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
       <div style="margin-top:20px" id="s1-tags"><span class="tag gold">公历</span><span class="tag gold">农历</span><span class="tag blue">真太阳时</span></div>
     </div>
   </div>
+  <div class="quote" style="bottom:60px;right:80px;opacity:0" id="s1-quote2">三命通会：五行之性，各有所主</div>
 </div>
 
 <!-- S2 四柱+神煞 18-28s -->
 <div id="s2" class="clip" data-start="18" data-duration="10" data-track-index="2">
+  <div class="quote" style="top:60px;right:80px;opacity:0" id="s2-quote">滴天髓：甲木参天，脱胎要火</div>
   <div class="row">
     <div class="col-text">
       <div class="section-title" id="s2-title">四柱排盘</div>
       <div class="section-desc" id="s2-desc">年柱以立春为界<br>月柱依节气而定<br>日柱数学公式精算<br>时柱五鼠遁法推演</div>
       <div style="margin-top:20px" id="s2-tags">
         <span class="tag green">十神</span><span class="tag blue">藏干</span>
-        <span class="tag gold">纳音</span><span class="tag green">神煞</span>
+        <span class="tag gold">纳音</span><span class="tag green">天乙贵人</span>
       </div>
     </div>
     <div class="col-phone"><div class="phone" style="width:330px" id="s2-phone"><div class="phone-notch"></div><img src="02_result_top.png"></div></div>
@@ -111,14 +130,15 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 
 <!-- S3 旺衰评分 28-38s -->
 <div id="s3" class="clip" data-start="28" data-duration="10" data-track-index="3">
+  <div class="quote" style="top:60px;left:80px;opacity:0" id="s3-quote">滴天髓：能知旺衰之真机，其于三命之奥，思过半矣</div>
   <div class="row">
     <div class="col-text">
       <div class="section-title" id="s3-title">旺衰量化评分</div>
       <div style="margin-top:20px" id="s3-bars">
-        <div class="score-row"><span class="score-label">得令</span><div class="score-track"><div class="score-fill s3-fill" style="width:0;background:#4CAF50"></div></div><span class="score-num">+20</span></div>
-        <div class="score-row"><span class="score-label">得地</span><div class="score-track"><div class="score-fill s3-fill" style="width:0;background:#2196F3"></div></div><span class="score-num">+12</span></div>
-        <div class="score-row"><span class="score-label">得势</span><div class="score-track"><div class="score-fill s3-fill" style="width:0;background:#FF9800"></div></div><span class="score-num">+10</span></div>
-        <div class="score-row"><span class="score-label">调候</span><div class="score-track"><div class="score-fill s3-fill" style="width:0;background:#9C27B0"></div></div><span class="score-num">+5</span></div>
+        <div class="score-row"><span class="score-label">得令</span><div class="score-track"><div class="score-fill s3f" style="background:#4CAF50"></div></div><span class="score-num">+20</span></div>
+        <div class="score-row"><span class="score-label">得地</span><div class="score-track"><div class="score-fill s3f" style="background:#2196F3"></div></div><span class="score-num">+12</span></div>
+        <div class="score-row"><span class="score-label">得势</span><div class="score-track"><div class="score-fill s3f" style="background:#FF9800"></div></div><span class="score-num">+10</span></div>
+        <div class="score-row"><span class="score-label">调候</span><div class="score-track"><div class="score-fill s3f" style="background:#9C27B0"></div></div><span class="score-num">+5</span></div>
       </div>
       <div style="margin-top:24px;opacity:0" id="s3-result">
         <span class="big-num">102</span><span class="big-label">分 · 身强</span>
@@ -126,7 +146,7 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
     </div>
     <div class="col-phone">
       <div class="phone" style="width:330px" id="s3-phone"><div class="phone-notch"></div><img src="02_result_top.png"></div>
-      <div style="margin-top:16px;text-align:center" id="s3-wx">
+      <div style="margin-top:16px" id="s3-wx">
         <div class="data-point"><span class="data-dot sheng"></span>得令：月令生扶 +20</div>
         <div class="data-point"><span class="data-dot sheng"></span>得地：日支通根 +12</div>
         <div class="data-point"><span class="data-dot ke"></span>调候：无水润燥 -5</div>
@@ -137,6 +157,7 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 
 <!-- S4 格局+喜用 38-48s -->
 <div id="s4" class="clip" data-start="38" data-duration="10" data-track-index="4">
+  <div class="quote" style="top:60px;right:80px;opacity:0" id="s4-quote">子平真诠：有官有印，无破作廊庙之材</div>
   <div class="row">
     <div class="col-phone"><div class="phone" style="width:300px" id="s4-phone"><div class="phone-notch"></div><img src="03_result_pro.png"></div></div>
     <div class="col-text">
@@ -152,13 +173,14 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
   </div>
 </div>
 
-<!-- S5 AI助手 48-58s -->
+<!-- S5 AI 48-58s -->
 <div id="s5" class="clip" data-start="48" data-duration="10" data-track-index="5">
+  <div class="quote" style="top:60px;left:80px;opacity:0" id="s5-quote">渊海子平：食神有气胜财官</div>
   <div class="row">
     <div class="col-text">
       <div class="section-title" id="s5-title">知时助手</div>
       <div id="s5-chat" style="margin-top:16px">
-        <div class="chat-bubble user" id="s5-q">我的财运怎么样</div>
+        <div class="chat-bubble user" id="s5-q" style="margin-left:0">我的财运怎么样</div>
         <div class="chat-bubble bot" id="s5-a">你的日主为丙火，喜水木来生扶。食神生财，才华变现——适合技艺、创作类发展路线。</div>
       </div>
       <div style="margin-top:16px" id="s5-modes">
@@ -171,6 +193,7 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 
 <!-- S6 全功能 58-68s -->
 <div id="s6" class="clip" data-start="58" data-duration="10" data-track-index="6">
+  <div class="quote" style="top:60px;right:80px;opacity:0" id="s6-quote">滴天髓：阳刃驾杀，威震边疆</div>
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">
     <div class="section-title" style="margin-bottom:30px" id="s6-title">六大维度 · 全面解读</div>
     <div class="feat-grid" id="s6-grid">
@@ -184,14 +207,17 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
       <div class="feat-card"><div class="icon">🔮</div><div class="label">合盘分析</div></div>
     </div>
   </div>
+  <div class="quote" style="bottom:60px;left:80px;opacity:0" id="s6-quote2">三命通会：命理之道，贵在明理</div>
 </div>
 
 <!-- S7 结尾 68-78s -->
 <div id="s7" class="clip" data-start="68" data-duration="10" data-track-index="7">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%" id="s7-inner">
-    <div class="brand" style="font-size:80px" id="s7-brand">知 时</div>
-    <div class="tagline" style="margin-top:30px" id="s7-tag">知天时 · 见自己</div>
-    <div class="sub" style="margin-top:50px" id="s7-sub">从一行代码到完整系统<br>即刻开始你的探索之旅</div>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div class="hero-ring" id="s7-ring1" style="width:200px;height:200px;border-color:rgba(201,168,76,.1)"></div>
+    <div class="brand" style="font-size:80px;opacity:0" id="s7-brand">知 时</div>
+    <div class="tagline" style="margin-top:30px;opacity:0" id="s7-tag">知天时 · 见自己</div>
+    <div class="quote" style="position:relative;margin-top:40px;opacity:0" id="s7-quote">滴天髓：命由天定，运在人为</div>
+    <div class="sub" style="margin-top:50px;opacity:0" id="s7-sub">从一行代码到完整系统<br>即刻开始你的探索之旅</div>
   </div>
 </div>
 
@@ -201,74 +227,91 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 window.__timelines = window.__timelines || {};
 var tl = window.__timelines["main"] = gsap.timeline({paused:true});
 
-function anim(id, start, dur, props) {
-  tl.fromTo(id, {opacity:0}, {opacity:1, duration:.5, ...props}, start);
-  tl.to(id, {opacity:0, duration:.4}, start+dur-.4);
+function sceneIn(id, startSec) { tl.set("#"+id, {opacity:1}, startSec); }
+function sceneOut(id, startSec) { tl.set("#"+id, {opacity:0}, startSec); }
+function inOut(id, s, d) { sceneIn(id, s); sceneOut(id, s+d-.3); }
+
+// ====== S0: Hook 0-8s ======
+inOut("s0",0,8);
+// 冲击光圈
+tl.fromTo("#s0-ring1",{opacity:0,scale:.5},{opacity:1,scale:1,duration:1,ease:"power2.out"},.3);
+tl.fromTo("#s0-ring2",{opacity:0,scale:.3},{opacity:1,scale:1,duration:1.2},.5);
+tl.fromTo("#s0-ring3",{opacity:0,scale:.3},{opacity:1,scale:1,duration:1.5},.7);
+// 粒子闪烁 - create 20 particles
+for(var i=0;i<20;i++){
+  var d=document.createElement('div');d.className='hero-particle';
+  d.style.cssText='left:'+(20+Math.random()*60)+'%;top:'+(20+Math.random()*60)+'%';
+  d.id='s0-p'+i;document.getElementById('s0-particles').appendChild(d);
+  tl.fromTo("#s0-p"+i,{opacity:0,scale:0},{opacity:.5+Math.random()*.3,scale:1,duration:.6},.2+Math.random()*1.5);
 }
+// 标题
+tl.fromTo("#s0-brand",{opacity:0,y:60},{opacity:1,y:0,duration:1,ease:"power3.out"},1);
+tl.fromTo("#s0-tag",{opacity:0},{opacity:1,duration:.8},2);
+tl.fromTo("#s0-quote",{opacity:0,y:20},{opacity:1,y:0,duration:.8},2.5);
+tl.fromTo("#s0-sub",{opacity:0},{opacity:1,duration:.8},3.5);
 
-// S0: Hook
-anim("#s0", 0, 8, {});
-tl.fromTo("#s0-brand", {opacity:0, y:40}, {opacity:1, y:0, duration:.8}, 0.3);
-tl.fromTo("#s0-tag", {opacity:0}, {opacity:1, duration:.6}, 1.2);
-tl.fromTo("#s0-sub", {opacity:0}, {opacity:1, duration:.6}, 2);
+// ====== S1: Input 8-18s ======
+inOut("s1",8,10);
+tl.fromTo("#s1-quote",{opacity:0,x:-30},{opacity:1,x:0,duration:.8},8.2);
+tl.fromTo("#s1-phone",{opacity:0,x:-80,scale:.85},{opacity:1,x:0,scale:1,duration:1,ease:"power2.out"},8.3);
+tl.fromTo("#s1-title",{opacity:0,x:40},{opacity:1,x:0,duration:.6},8.6);
+tl.fromTo("#s1-desc",{opacity:0,y:20},{opacity:1,y:0,duration:.6},9);
+tl.fromTo("#s1-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.15,duration:.4},9.5);
+tl.fromTo("#s1-quote2",{opacity:0,x:30},{opacity:1,x:0,duration:.8},9.5);
 
-// S1: Input
-anim("#s1", 8, 10, {});
-tl.fromTo("#s1-phone", {opacity:0, x:-60, scale:.9}, {opacity:1, x:0, scale:1, duration:.8}, 8.2);
-tl.fromTo("#s1-title", {opacity:0, x:40}, {opacity:1, x:0, duration:.6}, 8.5);
-tl.fromTo("#s1-desc", {opacity:0, y:20}, {opacity:1, y:0, duration:.6}, 9);
-tl.fromTo("#s1-tags .tag", {opacity:0, scale:0}, {opacity:1, scale:1, stagger:.15, duration:.4}, 9.5);
+// ====== S2: Sizhu 18-28s ======
+inOut("s2",18,10);
+tl.fromTo("#s2-quote",{opacity:0,x:30},{opacity:1,x:0,duration:.8},18.2);
+tl.fromTo("#s2-phone",{opacity:0,x:80,scale:.85},{opacity:1,x:0,scale:1,duration:1},18.3);
+tl.fromTo("#s2-title",{opacity:0,x:-40},{opacity:1,x:0,duration:.6},18.6);
+tl.fromTo("#s2-desc",{opacity:0,y:20},{opacity:1,y:0,duration:.6},19);
+tl.fromTo("#s2-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.15,duration:.4},19.5);
 
-// S2: Sizhu
-anim("#s2", 18, 10, {});
-tl.fromTo("#s2-phone", {opacity:0, x:60, scale:.9}, {opacity:1, x:0, scale:1, duration:.8}, 18.2);
-tl.fromTo("#s2-title", {opacity:0, x:-40}, {opacity:1, x:0, duration:.6}, 18.5);
-tl.fromTo("#s2-desc", {opacity:0, y:20}, {opacity:1, y:0, duration:.6}, 19);
-tl.fromTo("#s2-tags .tag", {opacity:0, scale:0}, {opacity:1, scale:1, stagger:.15, duration:.4}, 19.5);
-
-// S3: Score
-anim("#s3", 28, 10, {});
-tl.fromTo("#s3-title", {opacity:0}, {opacity:1, duration:.5}, 28.2);
-[".s3-fill:nth-child(1)",".s3-fill:nth-child(2)",".s3-fill:nth-child(3)",".s3-fill:nth-child(4)"].forEach(function(sel,i){
-  tl.to(sel, {width:"66%", duration:.8, ease:"power2.out"}, 28.5+i*.5);
-  if(i===0)tl.to(sel, {width:"66%", duration:0});
-  if(i===1)tl.to(sel, {width:"40%", duration:0});
-  if(i===2)tl.to(sel, {width:"33%", duration:0});
-  if(i===3)tl.to(sel, {width:"16%", duration:0});
+// ====== S3: Score 28-38s ======
+inOut("s3",28,10);
+tl.fromTo("#s3-quote",{opacity:0},{opacity:1,duration:.8},28.2);
+tl.fromTo("#s3-title",{opacity:0},{opacity:1,duration:.5},28.3);
+// Bar fills
+var widths=[66,40,33,16];
+document.querySelectorAll('.s3f').forEach(function(el,i){
+  tl.to(el,{width:widths[i]+"%",duration:1,ease:"power2.out"},28.5+i*.6);
 });
-// Fix: use correct widths
-tl.set(".s3-fill:nth-child(1)", {width:"66%"}, 29.5);
-tl.set(".s3-fill:nth-child(2)", {width:"40%"}, 30);
-tl.set(".s3-fill:nth-child(3)", {width:"33%"}, 30.5);
-tl.set(".s3-fill:nth-child(4)", {width:"16%"}, 31);
-tl.fromTo("#s3-result", {opacity:0, scale:.5}, {opacity:1, scale:1, duration:.6}, 31.5);
+tl.fromTo("#s3-result",{opacity:0,scale:.3},{opacity:1,scale:1,duration:.7,ease:"back.out(2)"},31.5);
+tl.fromTo("#s3-phone",{opacity:0,x:80,scale:.85},{opacity:1,x:0,scale:1,duration:.8},28.3);
+tl.fromTo("#s3-wx .data-point",{opacity:0,x:-20},{opacity:1,x:0,stagger:.15,duration:.5},32);
 
-// S4: Pattern
-anim("#s4", 38, 10, {});
-tl.fromTo("#s4-phone", {opacity:0, x:-60, scale:.9}, {opacity:1, x:0, scale:1, duration:.8}, 38.2);
-tl.fromTo("#s4-title", {opacity:0, x:40}, {opacity:1, x:0, duration:.6}, 38.5);
-tl.fromTo("#s4-pattern", {opacity:0, y:20}, {opacity:1, y:0, duration:.5}, 39);
-tl.fromTo("#s4-tags .tag", {opacity:0, scale:0}, {opacity:1, scale:1, stagger:.2, duration:.4}, 39.5);
-tl.fromTo("#s4-desc", {opacity:0}, {opacity:1, duration:.5}, 40.5);
+// ====== S4: Pattern 38-48s ======
+inOut("s4",38,10);
+tl.fromTo("#s4-quote",{opacity:0,x:30},{opacity:1,x:0,duration:.8},38.2);
+tl.fromTo("#s4-phone",{opacity:0,x:-80,scale:.85},{opacity:1,x:0,scale:1,duration:1},38.3);
+tl.fromTo("#s4-title",{opacity:0,x:40},{opacity:1,x:0,duration:.6},38.6);
+tl.fromTo("#s4-pattern",{opacity:0,y:30,scale:.5},{opacity:1,y:0,scale:1,duration:.7,ease:"back.out(2)"},39);
+tl.fromTo("#s4-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.2,duration:.4,ease:"back.out(2)"},39.5);
+tl.fromTo("#s4-desc",{opacity:0},{opacity:1,duration:.5},40.5);
 
-// S5: AI
-anim("#s5", 48, 10, {});
-tl.fromTo("#s5-title", {opacity:0}, {opacity:1, duration:.5}, 48.2);
-tl.fromTo("#s5-q", {opacity:0, x:-30}, {opacity:1, x:0, duration:.5}, 48.8);
-tl.fromTo("#s5-a", {opacity:0, x:30}, {opacity:1, x:0, duration:.5}, 49.8);
-tl.fromTo("#s5-modes .tag", {opacity:0, scale:0}, {opacity:1, scale:1, stagger:.2, duration:.4}, 51);
-tl.fromTo("#s5-phone", {opacity:0, x:60, scale:.9}, {opacity:1, x:0, scale:1, duration:.8}, 48.2);
+// ====== S5: AI 48-58s ======
+inOut("s5",48,10);
+tl.fromTo("#s5-quote",{opacity:0},{opacity:1,duration:.8},48.2);
+tl.fromTo("#s5-title",{opacity:0},{opacity:1,duration:.5},48.3);
+tl.fromTo("#s5-q",{opacity:0,x:-40},{opacity:1,x:0,duration:.6},48.8);
+tl.fromTo("#s5-a",{opacity:0,x:40},{opacity:1,x:0,duration:.6},49.8);
+tl.fromTo("#s5-modes .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.2,duration:.4},51);
+tl.fromTo("#s5-phone",{opacity:0,x:80,scale:.85},{opacity:1,x:0,scale:1,duration:.8},48.3);
 
-// S6: Features
-anim("#s6", 58, 10, {});
-tl.fromTo("#s6-title", {opacity:0}, {opacity:1, duration:.5}, 58.2);
-tl.fromTo("#s6-grid .feat-card", {opacity:0, scale:0, y:30}, {opacity:1, scale:1, y:0, stagger:.1, duration:.5, ease:"back.out(1.5)"}, 58.8);
+// ====== S6: Features 58-68s ======
+inOut("s6",58,10);
+tl.fromTo("#s6-quote",{opacity:0},{opacity:1,duration:.8},58.2);
+tl.fromTo("#s6-title",{opacity:0},{opacity:1,duration:.5},58.3);
+tl.fromTo("#s6-quote2",{opacity:0},{opacity:1,duration:.8},58.5);
+tl.fromTo("#s6-grid .feat-card",{opacity:0,scale:0,y:40},{opacity:1,scale:1,y:0,stagger:.08,duration:.5,ease:"back.out(2)"},58.8);
 
-// S7: Ending
-anim("#s7", 68, 10, {});
-tl.fromTo("#s7-brand", {opacity:0, y:40}, {opacity:1, y:0, duration:.8}, 68.3);
-tl.fromTo("#s7-tag", {opacity:0}, {opacity:1, duration:.6}, 69.2);
-tl.fromTo("#s7-sub", {opacity:0}, {opacity:1, duration:.6}, 70);
+// ====== S7: Ending 68-78s ======
+inOut("s7",68,10);
+tl.fromTo("#s7-ring1",{opacity:0,scale:.5},{opacity:1,scale:1,duration:1},68.3);
+tl.fromTo("#s7-brand",{opacity:0,y:40},{opacity:1,y:0,duration:1,ease:"power3.out"},68.5);
+tl.fromTo("#s7-tag",{opacity:0},{opacity:1,duration:.8},69.5);
+tl.fromTo("#s7-quote",{opacity:0},{opacity:1,duration:.8},70);
+tl.fromTo("#s7-sub",{opacity:0},{opacity:1,duration:.8},71);
 </script>
 </body>
 </html>
