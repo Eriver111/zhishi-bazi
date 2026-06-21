@@ -563,26 +563,7 @@ body::before{
   .trust-grid{grid-template-columns:1fr}
 }
 </style>
-<script>
-window.onload=function(){
-  var d=document.createElement('div');
-  d.style.cssText='position:fixed;bottom:10px;right:10px;background:#333;color:#0f0;padding:5px 10px;z-index:9999;font-size:12px;border-radius:4px';
-  d.id='_diag';
-
-  // Test if external JS loaded
-  var tests=[];
-  if(typeof MoXingHe!=='undefined') tests.push('MoXingHe:OK'); else tests.push('MoXingHe:NO');
-  if(document.getElementById('bgCanvas')) tests.push('bgCanvas:OK'); else tests.push('bgCanvas:NO');
-
-  // Test CSS loaded
-  var s=getComputedStyle(document.body);
-  if(s.background.includes('rgb(')&&s.background!=='rgba(0, 0, 0, 0)') tests.push('CSS:OK');
-  else tests.push('CSS:NO');
-
-  d.innerHTML=tests.join(' | ');
-  document.body.appendChild(d);
-}
-</script>
+<!-- debug removed -->
 <style>/* 桌面导航 */
 .zhishi-nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(8,12,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);height:50px}
 .nav-brand{font-size:20px;font-weight:900;color:var(--gold-l);letter-spacing:4px;text-decoration:none}
@@ -594,7 +575,7 @@ window.onload=function(){
 
 /* 手机底部导航 */
 .zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:rgba(8,12,20,.92);backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
-.zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 12px}
+.zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;padding:4px 12px}
 .zhishi-mobile-nav a:active{color:var(--gold-l)}
 
 /* 页面留出导航空间 */
@@ -1306,10 +1287,10 @@ var MoXingHe = (function(){
   </div>
 </div>
 <div id="zhishi-mobile-nav" class="zhishi-mobile-nav">
-  <a href="/">🏠</a>
-  <a href="/paipan">📜</a>
-  <a href="/hepan">💞</a>
-  <a href="/pricing"></a>
+  <a href="/">首页</a>
+  <a href="/paipan">排盘</a>
+  <a href="/hepan">合盘</a>
+  <a href="/pricing">积分</a>
 </div>
 `;
   document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
