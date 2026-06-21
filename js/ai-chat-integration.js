@@ -165,14 +165,39 @@
     // FAB 点击打开（拖拽后续再加）
     var fab = document.getElementById('aiFab');
     if (fab) {
-      fab.addEventListener('click', function() { toggle(); });
+      fab.addEventListener('click', function(e) {
+        console.log('[AI] FAB clicked! target:', e.target.tagName, e.target.id);
+        toggle();
+      });
+      console.log('[AI] FAB click listener attached to', fab.id);
+    } else {
+      console.error('[AI] FAB element not found!');
     }
   }
 
   // ===== 抽屉控制 =====
-  function open() { if (!$drawer) return; $drawer.classList.add('open'); $backdrop.classList.add('open'); AI.drawerOpen = true; if ($input) $input.focus(); }
-  function close() { if (!$drawer) return; $drawer.classList.remove('open'); $backdrop.classList.remove('open'); AI.drawerOpen = false; }
-  function toggle() { AI.drawerOpen ? close() : open(); }
+  function open() {
+    console.log('[AI] open() called, drawer:', !!$drawer, 'backdrop:', !!$backdrop);
+    if (!$drawer) { console.error('[AI] drawer element missing!'); return; }
+    $drawer.classList.add('open');
+    if ($backdrop) $backdrop.classList.add('open');
+    AI.drawerOpen = true;
+    if ($input) $input.focus();
+  }
+  function close() {
+    if (!$drawer) return;
+    $drawer.classList.remove('open');
+    if ($backdrop) $backdrop.classList.remove('open');
+    AI.drawerOpen = false;
+  }
+  var _toggleDebounce = 0;
+  function toggle() {
+    var now = Date.now();
+    if (now - _toggleDebounce < 250) { console.log('[AI] toggle() debounced (too fast)'); return; }
+    _toggleDebounce = now;
+    console.log('[AI] toggle() called, drawerOpen:', AI.drawerOpen);
+    AI.drawerOpen ? close() : open();
+  }
 
   // ===== 发送消息 =====
   function sendMessage() {
