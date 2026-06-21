@@ -438,29 +438,12 @@
       if (hint) hint.style.display = 'block';
       return;
     }
-    // 有免费或有积分 → 隐藏分享条
+    // 有免费或有积分 → 隐藏分享条，启用输入
     if ($buyBar) $buyBar.style.display = 'none';
+    if ($input) $input.disabled = false;
+    if ($sendBtn) $sendBtn.disabled = false;
+    if ($inputWrap) $inputWrap.style.display = 'flex';
   }
-
-  // 分享得次数
-  window._aiShare = function() {
-    var shareUrl = window.location.href.split('?')[0] + '?ref=' + (AI.code || AI.freeId || 'share');
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl).then(function() {
-        alert('分享链接已复制！\n\n好友通过此链接访问后，你将获得 1 次额外提问机会。\n\n链接：' + shareUrl);
-      });
-    } else {
-      prompt('复制此链接分享给好友，他们访问后你将获得 1 次额外提问：', shareUrl);
-    }
-    // 调用后端记录分享
-    try {
-      fetch('/api/referral', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: AI.code || '', freeId: AI.freeId, action: 'share' })
-      }).catch(function(){});
-    } catch(e) {}
-  };
 
   function updateSendBtn() {
     if ($sendBtn) {
@@ -635,7 +618,18 @@
     var inp = document.getElementById('aiRedeemInput'); var cd = (inp && inp.value || '').trim(); if (!cd) { alert('请输入兑换码'); return; }
     fetch('/api/credits?code=' + encodeURIComponent(cd)).then(function(r) { return r.json(); }).then(function(d) {
       if (d.error) { alert(d.error); return; }
-      if (d.credits > 0) { AI.code = cd; localStorage.setItem('ai_chat_code', cd); updateCreditsDisplay(d.credits); if ($buyBar) $buyBar.style.display = 'none'; handlePaymentSuccess(cd, d.credits); }
+      if (d.credits > 0) {
+        var totalCredits = AI.credits + d.credits; // 叠加而非覆盖
+        AI.code = cd; AI.credits = totalCredits;
+        // 存储所有兑换过的码，下次恢复时累加
+        var usedCodes = JSON.parse(localStorage.getItem('ai_used_codes') || '[]');
+        if (usedCodes.indexOf(cd) < 0) usedCodes.push(cd);
+        localStorage.setItem('ai_used_codes', JSON.stringify(usedCodes));
+        localStorage.setItem('ai_chat_code', cd);
+        updateCreditsDisplay(totalCredits);
+        if ($buyBar) $buyBar.style.display = 'none';
+        handlePaymentSuccess(cd, totalCredits);
+      }
       else if (d.credits === -1) { AI.code = cd; AI.isMonthly = true; localStorage.setItem('ai_chat_code', cd); localStorage.setItem('ai_chat_type', 'monthly'); updateMonthlyDisplay(); if ($buyBar) $buyBar.style.display = 'none'; handleMonthlySuccess(cd, '激活中'); }
       else { alert('该兑换码已用完或已过期'); }
     }).catch(function() { alert('网络错误'); });
@@ -725,19 +719,19 @@
   })();
 
 
-  // 分享功能
+  // 分享功能（合并版：mobile原生分享+桌面复制+API记录）
   window._aiShare=function(){
     var url='https://zhishi.online/?ref='+AI.freeId;
+    var done=function(){
+      fetch('/api/referral',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code||'',freeId:AI.freeId,action:'share'})}).catch(function(){});
+      alert('链接已分享！好友通过此链接访问后，你将获得 1 次额外免费提问。');
+    };
     if(navigator.share){
-      navigator.share({title:'知时命理 - AI免费解读',text:'来试试这个AI八字命理，超准！',url:url}).then(function(){
-        document.getElementById('aiShareMsg').textContent='✅ 已分享，等待朋友点击';
-      });
+      navigator.share({title:'知时',text:'AI+传统易学，前两次免费体验',url:url}).then(done).catch(function(){});
     } else if(navigator.clipboard){
-      navigator.clipboard.writeText(url).then(function(){
-        document.getElementById('aiShareMsg').textContent='✅ 链接已复制，发给朋友吧';
-      });
+      navigator.clipboard.writeText(url).then(done);
     } else {
-      prompt('复制链接分享给朋友：',url);
+      prompt('复制链接分享给朋友：',url); done();
     }
   };
 
@@ -752,7 +746,7 @@
         var el=document.getElementById('aiEmpty');
         if(el){el.innerHTML='<div class="chat-empty-wrap"><div class="empty-icon">🎁</div><h4>朋友邀请你来的！</h4><p>你和朋友各获得 1 次额外免费提问</p><code>直接开始提问吧</code></div>'}
         // 刷新免费次数
-        AI.freeRemaining=1; updateFreeDisplay();
+        AI.freeRemaining=1; updateFreeDisplay(); showBuyBar();
       }
     });
   })();
