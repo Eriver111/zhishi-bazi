@@ -162,39 +162,39 @@
     // 初始状态：显示免费
     updateFreeDisplay();
 
-    // FAB：桌面直接点开，手机短点打开/长拖移动
+    // FAB：短点=打开抽屉，长拖=移动位置（pointer事件统一桌面+手机）
     (function(){
       var fab = document.getElementById('aiFab');
       if (!fab) return;
-      // 桌面：click 即 toggle
-      fab.addEventListener('click', function(e) { toggle(); });
-      // 手机：触摸拖拽
-      var startX, startY, startLeft, startTop, moved = false, pressed = false, startTime;
-      fab.addEventListener('touchstart', function(e) {
-        pressed = true; moved = false;
-        var p = e.touches[0];
-        startX = p.clientX; startY = p.clientY;
+      var startX, startY, startLeft, startTop, moved = false, down = false, startTime;
+      fab.addEventListener('pointerdown', function(e) {
+        down = true; moved = false;
+        startX = e.clientX; startY = e.clientY;
         startTime = Date.now();
         var r = fab.getBoundingClientRect();
         startLeft = r.left; startTop = r.top;
         fab.style.transition = 'none';
-      }, {passive: false});
-      fab.addEventListener('touchmove', function(e) {
-        if (!pressed) return;
-        var p = e.touches[0];
-        var dx = p.clientX - startX, dy = p.clientY - startY;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) { moved = true; e.preventDefault(); }
+        fab.setPointerCapture(e.pointerId);
+      });
+      fab.addEventListener('pointermove', function(e) {
+        if (!down) return;
+        var dx = e.clientX - startX, dy = e.clientY - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
         if (moved) {
           fab.style.left = (startLeft + dx) + 'px';
           fab.style.top = (startTop + dy) + 'px';
           fab.style.right = 'auto'; fab.style.bottom = 'auto';
         }
-      }, {passive: false});
-      fab.addEventListener('touchend', function(e) {
-        if (!pressed) return;
-        pressed = false;
+      });
+      fab.addEventListener('pointerup', function(e) {
+        if (!down) return;
+        down = false;
         fab.style.transition = '';
-        if (!moved && Date.now() - startTime < 400) { toggle(); }
+        if (!moved && Date.now() - startTime < 500) { toggle(); }
+      });
+      fab.addEventListener('pointercancel', function(e) {
+        down = false;
+        fab.style.transition = '';
       });
     })();
   }
