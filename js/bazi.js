@@ -3403,13 +3403,24 @@ function getBranchRelations(bazi) {
  */
 function getChangSheng(gan) {
   var stages = ['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
-  var startMap = { '甲':0,'乙':6,'丙':8,'丁':2,'戊':0,'己':6,'庚':4,'辛':10,'壬':2,'癸':8 };
-  var start = startMap[gan] || 0;
+  // 长生起始地支索引（阳干顺行，阴干逆行用同一个表但逆序取）
+  // 甲长生亥(11), 乙长生午(6), 丙长生寅(2), 丁长生酉(9), 戊长生寅(2)
+  // 己长生酉(9), 庚长生巳(5), 辛长生子(0), 壬长生申(8), 癸长生卯(3)
+  var startMap = { '甲':11,'乙':6,'丙':2,'丁':9,'戊':2,'己':9,'庚':5,'辛':0,'壬':8,'癸':3 };
+  var isYang = ['甲','丙','戊','庚','壬'].indexOf(gan) >= 0;
+  var start = startMap[gan] !== undefined ? startMap[gan] : 0;
   var result = {};
-  [['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']].forEach(function(arr) {
-    arr.forEach(function(zhi, i) {
-      result[zhi] = { stage: stages[(i + start) % 12], index: (i + start) % 12 };
-    });
+  var zhiOrder = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  zhiOrder.forEach(function(zhi, i) {
+    var idx;
+    if (isYang) {
+      // 阳干顺行：从长生位置开始递增
+      idx = ((i - start) % 12 + 12) % 12;
+    } else {
+      // 阴干逆行：从长生位置开始递减
+      idx = ((start - i) % 12 + 12) % 12;
+    }
+    result[zhi] = { stage: stages[idx], index: idx };
   });
   return result;
 }
