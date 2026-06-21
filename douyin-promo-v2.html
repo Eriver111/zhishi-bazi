@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  width:1080px;height:1920px;overflow:hidden;
+  font-family:'STKaiti','KaiTi','PingFang SC','Source Han Serif SC',sans-serif;
+  background:#060a10;color:#d8d0c0;
+}
+.bg{position:absolute;inset:0;z-index:0}
+/* 科技网格 */
+.tech-grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(100,180,200,.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(100,180,200,.03) 1px,transparent 1px);
+  background-size:60px 60px;opacity:.5}
+/* 光晕 */
+.glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.08}
+.glow1{width:800px;height:800px;background:radial-gradient(#c9a84c,transparent);top:-200px;left:140px}
+.glow2{width:600px;height:600px;background:radial-gradient(#5b9fd4,transparent);bottom:200px;right:-100px}
+
+/* 幻灯片容器 */
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transform:scale(.95);transition:all 1s cubic-bezier(.4,0,.2,1);z-index:1}
+.slide.active{opacity:1;transform:scale(1)}
+.slide.exit{opacity:0;transform:scale(1.05)}
+
+/* 标题 */
+.main-title{font-size:72px;font-weight:900;letter-spacing:24px;
+  background:linear-gradient(180deg,#f0e0a0 0%,#c9a84c 40%,#8a6d28 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 30px rgba(201,168,76,.4));margin-bottom:30px}
+.sub-title{font-size:32px;color:rgba(200,190,170,.5);letter-spacing:16px;margin-bottom:40px}
+.section-title{font-size:44px;color:#e8cf70;letter-spacing:12px;margin-bottom:24px}
+
+/* 手机窗口 */
+.phone-frame{position:relative;width:340px;height:600px;background:#0d1525;
+  border:2px solid rgba(201,168,76,.25);border-radius:32px;overflow:hidden;
+  box-shadow:0 0 60px rgba(100,180,200,.1),0 0 0 1px rgba(255,255,255,.03) inset}
+.phone-frame img{width:100%;height:100%;object-fit:cover;object-position:top}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:24px;background:#060a10;border-radius:0 0 16px 16px;z-index:2}
+
+/* 两列布局 */
+.two-col{display:flex;gap:60px;align-items:center;margin-top:40px}
+.text-col{flex:1;text-align:left;max-width:500px}
+.text-col h3{font-size:36px;color:#e8cf70;letter-spacing:8px;margin-bottom:20px}
+.text-col p{font-size:26px;color:rgba(200,190,170,.6);line-height:2;letter-spacing:3px}
+
+/* 科技数据环 */
+.data-ring{position:relative;width:200px;height:200px;margin:20px auto;
+  border-radius:50%;border:1px solid rgba(100,180,200,.15);
+  animation:spin 20s linear infinite}
+.data-ring::after{content:'';position:absolute;inset:20px;border-radius:50%;border:1px dashed rgba(201,168,76,.12);
+  animation:spin 15s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:#e8cf70;font-weight:700;letter-spacing:4px}
+
+/* 特性卡片 */
+.feat-row{display:flex;gap:30px;margin-top:50px}
+.feat-item{width:220px;padding:36px 20px;text-align:center;
+  border:1px solid rgba(100,180,200,.1);border-radius:20px;
+  background:rgba(13,21,37,.6);backdrop-filter:blur(10px);
+  position:relative;overflow:hidden}
+.feat-item::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(100,180,200,.3),transparent)}
+.feat-icon{font-size:40px;margin-bottom:12px}
+.feat-label{font-size:24px;color:#e8cf70;letter-spacing:4px}
+.feat-sub{font-size:18px;color:rgba(200,190,170,.4);margin-top:8px}
+
+/* CTA */
+.cta-box{margin-top:60px;padding:30px 60px;border:1px solid rgba(201,168,76,.2);border-radius:20px;
+  background:rgba(13,21,37,.5);text-align:center}
+.cta-text{font-size:36px;color:#f0e0a0;letter-spacing:8px;margin-bottom:16px}
+.cta-sub{font-size:22px;color:rgba(200,190,170,.5)}
+
+/* 合规水印 */
+.disclaimer{position:absolute;bottom:40px;left:0;right:0;text-align:center;
+  font-size:16px;color:rgba(255,255,255,.12);letter-spacing:2px;z-index:5}
+
+/* 扫描线效果 */
+.scanline{position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(100,180,200,.08),transparent);
+  animation:scanDown 4s linear infinite}
+@keyframes scanDown{0%{top:0}100%{top:100%}}
+
+/* 数据点 */
+.data-dot{position:absolute;width:4px;height:4px;background:rgba(100,180,200,.4);border-radius:50%;
+  animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="tech-grid"></div>
+  <div class="glow glow1"></div>
+  <div class="glow glow2"></div>
+  <div class="scanline" style="animation-delay:0s"></div>
+  <div class="scanline" style="animation-delay:2s"></div>
+</div>
+
+<!-- Slide 1: 品牌开场 -->
+<div class="slide active" id="s0">
+  <div class="data-ring"><div class="ring-label">知 时</div></div>
+  <div class="main-title" style="margin-top:40px">知 时</div>
+  <div class="sub-title">知 天 时 · 见 自 己</div>
+  <p style="font-size:26px;color:rgba(200,190,170,.4);letter-spacing:6px;text-align:center;line-height:2">
+    千年东方传统易学智慧<br>AI 辅助解读 · 引经据典<br>专属于你的人生参考报告
+  </p>
+</div>
+
+<!-- Slide 2: 排盘功能 + 实机截图 -->
+<div class="slide" id="s1">
+  <div class="section-title">古 法 排 盘</div>
+  <div class="two-col">
+    <div class="text-col">
+      <p>公历 / 农历双模式<br>精确到时辰分钟<br>智能时区校正<br>1900—2100 年<br>寿星万年历数据<br>每一步都可追溯复核</p>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <img src="promo_screenshots/01_paipan.png" alt="排盘输入">
+    </div>
+  </div>
+</div>
+
+<!-- Slide 3: 四柱分析 + 实机截图 -->
+<div class="slide" id="s2">
+  <div class="section-title">专 业 分 析</div>
+  <div class="two-col">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <img src="promo_screenshots/02_result_top.png" alt="四柱盘面">
+    </div>
+    <div class="text-col">
+      <p>四柱盘面 · 大运流年<br>五行能量 · 纳音神煞<br>性格特质 · 事业参考<br>情感分析 · 流年建议<br>六大维度逐层深入</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 4: AI助手 + 科技感 -->
+<div class="slide" id="s3">
+  <div class="section-title">AI 易 学 助 手</div>
+  <div class="two-col">
+    <div class="text-col">
+      <p>融合传统子平法<br>与盲派体系<br>引据古籍经典<br>DeepSeek 驱动<br>白话 / 专业双模式<br>前 2 次免费体验</p>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <img src="promo_screenshots/03_result_pro.png" alt="专业解读">
+    </div>
+  </div>
+  <div class="feat-row" style="margin-top:30px">
+    <div class="feat-item"><div class="feat-icon">&#x1f4ca;</div><div class="feat-label">格局判定</div><div class="feat-sub">透干取格算法</div></div>
+    <div class="feat-item"><div class="feat-icon">&#x1f300;</div><div class="feat-label">五行量化</div><div class="feat-sub">调候评分体系</div></div>
+    <div class="feat-item"><div class="feat-icon">&#x1f4a1;</div><div class="feat-label">喜用忌神</div><div class="feat-sub">扶抑通关顺势</div></div>
+  </div>
+</div>
+
+<!-- Slide 5: 结尾CTA -->
+<div class="slide" id="s4">
+  <div class="main-title" style="font-size:56px">知 时</div>
+  <div class="sub-title">知天时 · 见自己</div>
+  <div class="cta-box">
+    <div class="cta-text">即刻开启你的易学探索之旅</div>
+    <div class="cta-sub">前 2 次 AI 体验免费 · 仅供文化娱乐参考</div>
+  </div>
+  <div class="data-ring" style="margin-top:60px"><div class="ring-label">知</div></div>
+</div>
+
+<div class="disclaimer">※ 本内容仅供传统文化学习参考与娱乐交流，不构成任何决策建议</div>
+
+<script>
+(function(){
+  var slides=document.querySelectorAll('.slide');
+  var current=0, total=slides.length;
+  var durations=[4000,6000,7000,6000,4000]; // 配配音时长
+  var elapsed=0, totalTime=durations.reduce(function(a,b){return a+b},0);
+
+  function next(){
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    current=(current+1)%total;
+    slides[current].classList.remove('exit');
+    slides[current].classList.add('active');
+    setTimeout(function(){
+      var prev=(current-1+total)%total;
+      slides[prev].classList.remove('exit');
+    },1200);
+    elapsed+=durations[current];
+    if(current<total-1) setTimeout(next,durations[current]);
+  }
+  setTimeout(next,durations[0]);
+})();
+</script>
+</body>
+</html>
