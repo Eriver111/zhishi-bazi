@@ -88,7 +88,7 @@
     html += '<div class="ai-drawer-handle"></div>';
     html += '<div class="ai-drawer-header">';
     html += '<span class="ai-drawer-title">知时先生</span>';
-    html += '<button class="ai-mode-toggle" id="aiModeToggle" onclick="window._aiToggleMode()" title="切换专业/白话模式" style="font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--bd2);background:none;color:var(--tx2);cursor:pointer;letter-spacing:1px">白话</button>';
+    html += '<button class="ai-mode-toggle" id="aiModeToggle" onclick="window._aiToggleMode()" title="切换专业/白话模式">白话</button>';
     html += '<span class="ai-drawer-credits" id="aiCreditsLabel">未激活</span>';
     html += '<button class="ai-drawer-close" onclick="window._aiClose()">✕</button>';
     html += '</div>';
@@ -206,11 +206,8 @@
     var btn = document.getElementById('aiModeToggle');
     if (btn) {
       btn.textContent = AI.mode === 'simple' ? '白话' : '专业';
-      btn.style.color = AI.mode === 'simple' ? 'var(--tx2)' : 'var(--gold-l)';
-      btn.style.borderColor = AI.mode === 'simple' ? 'var(--bd2)' : 'var(--gold)';
+      btn.className = 'ai-mode-toggle ' + (AI.mode === 'simple' ? 'simple' : 'pro');
     }
-    var msg = AI.mode === 'simple' ? '已切换为白话模式——用大白话跟你聊命理' : '已切换为专业模式——深入引用经典、术语详解';
-    addMessage('ai', msg);
   }
 
   // ===== 发送消息 =====

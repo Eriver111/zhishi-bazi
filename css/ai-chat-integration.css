@@ -151,6 +151,30 @@
   color: var(--gold-l);
   font-size: 15px;
 }
+/* 模式切换按钮 */
+.ai-mode-toggle {
+  padding: 4px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--bd2);
+  background: none;
+  color: var(--tx2);
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  font-family: inherit;
+  transition: all .25s;
+  white-space: nowrap;
+}
+.ai-mode-toggle:hover { background: rgba(255,255,255,.06); }
+.ai-mode-toggle.pro {
+  color: var(--gold-l);
+  border-color: var(--gold);
+  background: rgba(201,168,76,.08);
+}
+.ai-mode-toggle.simple {
+  color: var(--tx2);
+  border-color: var(--bd2);
+}
 .ai-drawer-close {
   width: 32px;
   height: 32px;
@@ -384,6 +408,7 @@
     right: 18px;
     font-size: 13px;
   }
+  .ai-mode-toggle { padding: 3px 10px; font-size: 11px; }
   .ai-drawer {
     height: 62vh;
     max-height: 520px;
