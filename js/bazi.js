@@ -3038,112 +3038,133 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
  * 格局判断 — 以月令地支十神定格局
  * 返回格局名 + 白话解读
  */
+/**
+ * 格局判定 — 《子平真诠》透干取格法
+ * "八字用神，专求月令。以月令地支所藏之干，透出天干者为格。"
+ *
+ * 规则：
+ * 1. 取月支藏干（本气→中气→余气），依次检查是否透出在年/月/日/时任意天干
+ * 2. 第一个透出的藏干对应的十神即为格局
+ * 3. 若都不透，取本气对应的十神
+ */
 function getPattern(bazi) {
-  var ssZhi = (bazi.month.shiShen && bazi.month.shiShen.zhi) || '';
-  var ssGan = (bazi.month.shiShen && bazi.month.shiShen.gan) || '';
-  var dmWx = WU_XING[bazi.day.gan];
+  var dayGan = bazi.day.gan;
+  var dmWx = WU_XING[dayGan];
   var mWx = DI_ZHI_WU_XING[bazi.month.zhi];
   var mGan = bazi.month.gan;
   var mZhi = bazi.month.zhi;
 
-  // ---- 分类标记 ----
-  var zhiGuanSha = ssZhi === '正官' || ssZhi === '七杀';
-  var zhiYin    = ssZhi === '正印' || ssZhi === '偏印';
-  var zhiCai    = ssZhi === '正财' || ssZhi === '偏财';
-  var zhiShiShang = ssZhi === '食神' || ssZhi === '伤官';
-  var ganYin    = ssGan === '正印' || ssGan === '偏印';
-  var ganGuanSha = ssGan === '正官' || ssGan === '七杀';
-  var ganCai    = ssGan === '正财' || ssGan === '偏财';
-  var ganShiShen = ssGan === '食神' || ssGan === '伤官';
-  var ganShi    = ssGan === '食神'; // 食神单独标记（制杀专用）
-  var ganShang  = ssGan === '伤官'; // 伤官单独标记（配印专用）
+  // 月支藏干（本气→中气→余气）
+  var cangGan = getCangGan(mZhi);
+  // 四柱所有天干
+  var allGan = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
 
-  var combined = null;
-
-  // ① 官印相生 / 杀印相生 — 月支官杀 + 月干印星
-  if (zhiGuanSha && ganYin) {
-    var nm = ssZhi === '七杀' ? '杀印相生格' : '官印相生格';
-    combined = {
-      name: nm, type: '官杀化印',
-      desc: '月令' + ssZhi + '当权，月干' + ssGan + '透出——官(杀)生印，印生身，化煞为权，贵气流通。'
-        + '《子平真诠》云："有官有印，无破作廊庙之材。"'
-    };
-  }
-
-  // ② 食神制杀 — 月支七杀 + 月干食神
-  if (ssZhi === '七杀' && ganShi) {
-    combined = {
-      name: '食神制杀格', type: '食制杀',
-      desc: '月令七杀当权，月干食神透出制之——以智慧谋略驾驭压力，化敌为友。'
-        + '《滴天髓》云："食神制杀，英雄独压万人。"此格多出将帅、管理之才。'
-    };
-  }
-
-  // ③ 伤官配印 — 月支伤官 + 月干印星
-  if (ssZhi === '伤官' && ganYin) {
-    combined = {
-      name: '伤官配印格', type: '伤官配印',
-      desc: '月令伤官当权，月干印星透出制之——才华有约束，锋芒内敛化为智慧。'
-        + '"伤官配印，文贵之命"——此格多出文人学者、策划型人才。'
-    };
-  }
-
-  // ④ 食神生财 / 伤官生财 — 月支食伤 + 月干财星
-  if (zhiShiShang && ganCai) {
-    var sn = ssZhi === '食神' ? '食神生财格' : '伤官生财格';
-    combined = {
-      name: sn, type: '食伤生财',
-      desc: '月令' + ssZhi + '当权，月干' + ssGan + '透出——食伤生财，才华变现。技艺致富，商才卓越。'
-    };
-  }
-
-  // ⑤ 财生官 — 月支财星 + 月干官杀
-  if (zhiCai && ganGuanSha) {
-    combined = {
-      name: '财生官格', type: '财生官',
-      desc: '月令财星当权，月干' + ssGan + '透出——财生官，官护财，富贵双全。"财官双美，富贵根基。"'
-    };
-  }
-
-  // ⑥ 印赖官生 — 月支印星 + 月干官杀
-  if (zhiYin && ganGuanSha) {
-    combined = {
-      name: '印赖官生格', type: '官生印',
-      desc: '月令印星当权，月干' + ssGan + '透出——官来生印，印来生身，贵气内敛。学识渊博，有贵人提携。'
-    };
-  }
-
-  if (combined) {
-    return {
-      name: combined.name, desc: combined.desc, type: combined.type,
-      monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
-      monthShiShenZhi: ssZhi, monthShiShenGan: ssGan
-    };
-  }
-
-  // ---- 单一格局（月支十神匹配不到或与月干无联动） ----
+  // 单格局描述
   var PATTERNS = {
-    '正官': { name: '正官格', desc: '月令正官当权，为人正直有责任心。"官以任能，贵乎清正。"——《子平真诠》', type: '官杀' },
-    '七杀': { name: '七杀格', desc: '月令七杀当权，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。', type: '官杀' },
-    '正财': { name: '正财格', desc: '月令正财当权，务实稳健善理财。财宜食伤来生、官星来护。', type: '财' },
-    '偏财': { name: '偏财格', desc: '月令偏财当权，慷慨大方，商业嗅觉敏锐，适合投资经营。', type: '财' },
-    '正印': { name: '正印格', desc: '月令正印当权，温厚善良学识渊博。印喜官杀来生，忌财星破印。', type: '印' },
-    '偏印': { name: '偏印格', desc: '月令偏印当权，思维独特善钻研。枭神需财星制化，否则孤僻多思。', type: '印' },
-    '食神': { name: '食神格', desc: '月令食神当权，温和聪慧有才华。"食神有气胜财官。"——《渊海子平》', type: '食伤' },
-    '伤官': { name: '伤官格', desc: '月令伤官当权，聪明机敏创造力强。伤官需印制或生财化解锋芒。', type: '食伤' },
-    '建禄': { name: '建禄格', desc: '日主得月令禄位，自身强旺。禄喜财官——身强方能担财官。', type: '比劫' },
-    '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》', type: '比劫' }
+    '正官': { name: '正官格', desc: '月令透官，为人正直有责任心。"官以任能，贵乎清正。"——《子平真诠》' },
+    '七杀': { name: '七杀格', desc: '月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。' },
+    '正财': { name: '正财格', desc: '月令透财，务实稳健善理财。财宜食伤来生、官星来护。' },
+    '偏财': { name: '偏财格', desc: '月令透财，慷慨大方，商业嗅觉敏锐，适合投资经营。' },
+    '正印': { name: '正印格', desc: '月令透印，温厚善良学识渊博。印喜官杀来生，忌财星破印。' },
+    '偏印': { name: '偏印格', desc: '月令透枭，思维独特善钻研。枭神需财星制化，否则孤僻多思。' },
+    '食神': { name: '食神格', desc: '月令透食，温和聪慧有才华。"食神有气胜财官。"——《渊海子平》' },
+    '伤官': { name: '伤官格', desc: '月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。' },
+    '建禄': { name: '建禄格', desc: '日主得月令禄位，自身强旺。禄喜财官——身强方能担财官。' },
+    '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》' }
   };
-  var p = PATTERNS[ssZhi];
-  if (!p) {
-    if (dmWx === mWx) p = { name: '建禄格', desc: '月令为日主禄位（同五行），自身强旺。', type: '比劫' };
-    else {
-      var SHENGWO = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-      if (SHENGWO[dmWx] === mWx) p = { name: '印绶格', desc: '月令生扶日主，印星当令，学识型人才。', type: '印' };
-      else p = { name: '杂格', desc: '格局不显，需结合天干透出与地支合局综合判断，灵活取用。', type: '杂' };
+
+  // 按本气→中气→余气顺序，找第一个在天干中出现的藏干
+  // 第一轮：精确匹配
+  var matchedSS = '';
+  var matchedGan = '';
+  var matchedPillar = '';
+  var pillarNames = ['年','月','日','时'];
+
+  for (var ci = 0; ci < cangGan.length; ci++) {
+    var cg = cangGan[ci];
+    for (var gi = 0; gi < allGan.length; gi++) {
+      if (allGan[gi] === cg) {
+        matchedSS = getShiShen(dayGan, cg);
+        matchedGan = cg;
+        matchedPillar = pillarNames[gi] + '柱';
+        break;
+      }
+    }
+    if (matchedSS) break;
+  }
+
+  // 第二轮：若精确匹配失败，找同五行但不同干（如卯藏乙不透但年透甲）
+  if (!matchedSS) {
+    for (var ci = 0; ci < cangGan.length; ci++) {
+      var cg = cangGan[ci];
+      var cgWx = WU_XING[cg];
+      for (var gi = 0; gi < allGan.length; gi++) {
+        var agWx = WU_XING[allGan[gi]];
+        if (agWx === cgWx && allGan[gi] !== cg) {
+          matchedSS = getShiShen(dayGan, allGan[gi]);
+          matchedGan = allGan[gi];
+          matchedPillar = pillarNames[gi] + '柱(同' + cgWx + '透' + allGan[gi] + ')';
+          break;
+        }
+      }
+      if (matchedSS) break;
     }
   }
-  return { name: p.name, desc: p.desc, type: p.type, monthWx: mWx, monthZhi: mZhi, monthGan: mGan, monthShiShenZhi: ssZhi, monthShiShenGan: ssGan };
+
+  // 若透出，取对应的十神为格；否则取月支本气十神
+  var ss = matchedSS || ((bazi.month.shiShen && bazi.month.shiShen.zhi) || '');
+
+  // ---- 同柱复合格局检测（月干+月支搭配） ----
+  var ssGan = (bazi.month.shiShen && bazi.month.shiShen.gan) || '';
+  var ssZhi = (bazi.month.shiShen && bazi.month.shiShen.zhi) || '';
+  var compound = null;
+
+  // 官印相生 / 杀印相生：月干印 + 月支官杀（同一柱）
+  if ((ssGan === '正印' || ssGan === '偏印') && (ssZhi === '正官' || ssZhi === '七杀')) {
+    compound = ssZhi === '七杀' ? '杀印相生格' : '官印相生格';
+  }
+  // 财生官：月干官杀 + 月支财星
+  if ((ssGan === '正官' || ssGan === '七杀') && (ssZhi === '正财' || ssZhi === '偏财')) {
+    compound = '财生官格';
+  }
+  // 食神生财：月干财 + 月支食神
+  if ((ssGan === '正财' || ssGan === '偏财') && ssZhi === '食神') {
+    compound = '食神生财格';
+  }
+
+  if (compound) {
+    var cd = PATTERNS[ss] || { name: ss, desc: '' };
+    return {
+      name: compound,
+      desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cd.desc,
+      type: '同柱复合',
+      monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
+      source: '月柱' + mGan + mZhi + '：' + ssGan + '(' + mGan + ') + ' + ssZhi + '(' + mZhi + ')'
+    };
+  }
+
+  var p = PATTERNS[ss];
+
+  // 未匹配到标准格局时，用五行关系兜底
+  if (!p) {
+    if (dmWx === mWx) p = { name: '建禄格', desc: '月令为日主禄位（同五行），自身强旺。' };
+    else {
+      var SHENGWO = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
+      if (SHENGWO[dmWx] === mWx) p = { name: '印绶格', desc: '月令生扶日主，印星当令，学识型人才。' };
+      else p = { name: '杂格', desc: '格局不显，需结合天干透出与地支合局综合判断。' };
+    }
+  }
+
+  var source = matchedSS
+    ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
+    : '月支' + mZhi + '（' + ss + '）';
+
+  return {
+    name: p.name, desc: p.desc,
+    type: matchedSS ? '透干取格' : '月令取格',
+    monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
+    source: source
+  };
 }
 
 /**
@@ -3190,37 +3211,26 @@ function getYongJi(bazi) {
     reasoning = '日主中和（' + dmStr.score + '分），元气均衡。需结合大运流年走势灵活取用——行运偏强则取克泄耗为用，行运偏弱则取生扶为用。';
   }
 
-  // 格局微调（根据格局类型与日主旺衰关系）
+  // 格局微调
   var pattern = getPattern(bazi);
-  var pt = pattern.type;
+  var patternName = pattern.name || '';
+  // 根据格局名判断类型（简化匹配）
+  var isGuanSha = patternName.indexOf('官') >= 0 || patternName.indexOf('杀') >= 0;
+  var isCai     = patternName.indexOf('财') >= 0;
+  var isYin     = patternName.indexOf('印') >= 0 || patternName.indexOf('枭') >= 0;
+  var isShiShang = patternName.indexOf('食') >= 0 || patternName.indexOf('伤') >= 0;
 
-  // 官杀类格局 + 忌官杀 → 需印化
-  if ((pt === '官杀' || pt === '财生官') && jiShen.indexOf(KE_WO) >= 0) {
-    reasoning += ' 注意：月令官杀当权且为忌神——"官多变鬼"，需印星转化官杀之气方为上策。';
+  if (isGuanSha && jiShen.indexOf(KE_WO) >= 0) {
+    reasoning += ' 月令官杀当权但为忌神——"官多变鬼"，需印星转化方为上策。';
   }
-  // 官印相生/杀印相生/印赖官生 — 官杀已被印星转化，身弱也不怕
-  if (pt === '官杀化印' || pt === '官生印') {
-    if (jiShen.indexOf(KE_WO) >= 0) {
-      reasoning += ' 好在格局为官(杀)印相生——月干印星已将官杀之气转化生身，即使官杀为忌也能化煞为权，转压力为动力。';
-    } else {
-      reasoning += ' 格局官(杀)印相生，官来生印、印来生身，贵气流通，仕途学业皆有助力。';
-    }
+  if (isCai && jiShen.indexOf(WO_KE) >= 0) {
+    reasoning += ' 月令财星当权但日主弱不担财——"富屋贫人"之象，宜先扶身再求财。';
   }
-  // 食神制杀 — 格局自带化解
-  if (pt === '食制杀') {
-    reasoning += ' 格局食神制杀——以智慧谋略驾驭压力，变阻力为助力。"食神制杀，英雄独压万人。"';
+  if (isYin && jiShen.indexOf(SHENG_WO) < 0) {
+    reasoning += ' 月令印星当权为喜——印来生身，贵人运佳，宜求学深造。';
   }
-  // 伤官配印 — 才华有约束
-  if (pt === '伤官配印') {
-    reasoning += ' 格局伤官配印——才华有约束有方向，锋芒内敛化为智慧，宜学术、策划、创作类发展。';
-  }
-  // 财类格局 + 忌财 → 富屋贫人
-  if ((pt === '财' || pt === '食伤生财' || pt === '财生官') && jiShen.indexOf(WO_KE) >= 0) {
-    reasoning += ' 注意：命局财星为忌神——"富屋贫人"之象，日主弱难担财。宜先扶身再求财，不可贪多冒进。';
-  }
-  // 食伤生财 + 忌食伤 → 泄气太过
-  if (pt === '食伤生财' && jiShen.indexOf(WO_SHENG) >= 0) {
-    reasoning += ' 注意：食伤泄气又生财，对身弱者双重消耗。需印星制食伤、扶日主，方能平衡。';
+  if (isShiShang && jiShen.indexOf(WO_SHENG) >= 0) {
+    reasoning += ' 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。';
   }
 
   return {
