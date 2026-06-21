@@ -86,30 +86,32 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 
 <div data-composition-id="main" data-start="0" data-width="1080" data-height="1920" style="width:1080px;height:1920px;overflow:hidden;position:relative">
 
-<!-- S0 Hook 0-8s : 复刻网站星空+品牌 -->
-<div id="s0" class="clip" data-start="0" data-duration="8" data-track-index="0">
-  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-    <!-- 三层光圈 -->
-    <div class="ring" id="s0-r1" style="width:250px;height:250px;border-color:rgba(201,168,76,.08)"></div>
-    <div class="ring-inner" id="s0-r2" style="width:400px;height:400px;border-color:rgba(201,168,76,.05)"></div>
-    <div class="ring" id="s0-r3" style="width:550px;height:550px;border-color:rgba(80,160,200,.05)"></div>
-    <!-- 品牌 -->
-    <div class="brand" id="s0-brand" style="opacity:0">知 时</div>
-    <div class="tagline" style="margin-top:30px;opacity:0" id="s0-tag">知天时 · 见自己</div>
-    <!-- 大金句卡 -->
-    <div class="quote-card" style="margin-top:50px;opacity:0" id="s0-quote">
-      <div class="quote-text">何知其人吉，用神有气而已矣</div>
+<!-- S0 天眼加载 0-6s -->
+<div id="s0" class="clip" data-start="0" data-duration="6" data-track-index="0">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);opacity:0" id="s0-ring1"></div>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);opacity:0" id="s0-ring2"></div>
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none" id="s0-particles"></div>
+    <svg viewBox="0 0 100 60" style="width:180px;height:108px;position:relative;z-index:1">
+      <defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" filter="url(#eyeGlow)" id="s0-eye-path" stroke-dasharray="150" stroke-dashoffset="150"/>
+      <circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0" id="s0-pupil"/>
+      <circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0" id="s0-pupil-ring"/>
+    </svg>
+    <div style="color:#e8cf70;margin-top:20px;font-size:20px;letter-spacing:6px;position:relative;z-index:1;opacity:0" id="s0-eye-text1">知 时 命 理</div>
+    <div style="color:rgba(180,160,140,.35);margin-top:12px;font-size:16px;letter-spacing:8px;position:relative;z-index:1;opacity:0" id="s0-eye-text2">天 眼 观 命</div>
+  </div>
+</div>
+<!-- S0b 品牌过渡 6-10s -->
+<div id="s0b" class="clip" data-start="6" data-duration="4" data-track-index="1">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%)">
+    <div class="brand" id="s0b-brand" style="opacity:0">知 时</div>
+    <div class="tagline" style="margin-top:24px;opacity:0" id="s0b-tag">知天时 · 见自己</div>
+    <div class="quote-card" style="margin-top:40px;opacity:0" id="s0b-quote">
+      <div class="quote-text" style="font-size:34px">何知其人吉，用神有气而已矣</div>
       <div class="quote-source">——《滴天髓》</div>
     </div>
-    <!-- 漂浮命理术语 -->
-    <div style="position:absolute;inset:0;opacity:0;pointer-events:none;z-index:2" id="s0-float"></div>
-    <!-- 古籍流动字幕 -->
-    <div style="position:absolute;bottom:200px;left:0;right:0;overflow:hidden;opacity:0" id="s0-scroll">
-      <div id="s0-scroll-inner" style="display:flex;gap:40px;white-space:nowrap;font-size:24px;color:rgba(201,168,76,.25);letter-spacing:6px;font-family:'STKaiti','KaiTi',serif">
-        《滴天髓》·《三命通会》·《子平真诠》·《穷通宝鉴》·《渊海子平》·《周易》·《梅花易数》·《果老星宗》·《神峰通考》·《千里命稿》·《滴天髓》·《三命通会》·《子平真诠》·《穷通宝鉴》·《渊海子平》
-      </div>
-    </div>
-    <div class="sub" style="margin-top:40px;opacity:0" id="s0-sub">AI + 算法 × 千年易学智慧</div>
+    <div class="sub" style="margin-top:30px;opacity:0" id="s0b-sub">AI + 传统易学 + 算法</div>
   </div>
 </div>
 
@@ -271,94 +273,94 @@ html,body{width:1080px;height:1920px;font-family:'PingFang SC','STKaiti','KaiTi'
 
 window.__timelines = window.__timelines || {};
 var tl = window.__timelines["main"] = gsap.timeline({paused:true});
-
 function inOut(id,s,d){tl.set('#'+id,{opacity:1},s);tl.set('#'+id,{opacity:0},s+d-.3)}
 
-// ====== S0: Hook 0-8s ======
-inOut("s0",0,8);
-tl.fromTo("#s0-r1",{opacity:0,scale:.3},{opacity:1,scale:1,duration:1.2,ease:"power2.out"},.2);
-tl.fromTo("#s0-r2",{opacity:0,scale:.3},{opacity:1,scale:1,duration:1.5},.4);
-tl.fromTo("#s0-r3",{opacity:0,scale:.3},{opacity:1,scale:1,duration:1.8},.6);
-tl.fromTo("#s0-brand",{opacity:0,y:60},{opacity:1,y:0,duration:1.2,ease:"power3.out"},1);
-tl.fromTo("#s0-tag",{opacity:0},{opacity:1,duration:.8},2.2);
-tl.fromTo("#s0-quote",{opacity:0,y:30,scale:.9},{opacity:1,y:0,scale:1,duration:1,ease:"power2.out"},2.8);
-// 漂浮术语粒子
-var terms=['甲木','乙木','丙火','丁火','戊土','己土','庚金','辛金','壬水','癸水','正官','七杀','正印','偏印','食神','伤官','正财','偏财','比肩','劫财','长生','帝旺','临官','冠带','天乙贵人','文昌','禄神','桃花','驿马','空亡','子平','盲派','滴天髓','三命通会','渊海子平'];
-var fc=document.getElementById('s0-float');
-tl.set('#s0-float',{opacity:1},1);
-for(var i=0;i<25;i++){
-  var f=document.createElement('span');
-  f.textContent=terms[i % terms.length];
-  f.id='s0f'+i;
-  f.style.cssText='position:absolute;font-size:'+(18+(i%2?20:28))+'px;color:rgba(201,168,76,'+(.08+(i%3)*.04)+');font-family:STKaiti,KaiTi,serif;letter-spacing:3px;white-space:nowrap;left:'+(5+(i*4)%85)+'%;top:'+(10+(i*7)%80)+'%';
-  fc.appendChild(f);
-  tl.fromTo('#s0f'+i,{opacity:0,y:-30},{opacity:0.6,y:20+Math.random()*40,x:(Math.random()-.5)*60,duration:6+Math.random()*4,ease:'power1.inOut'},1+Math.random()*2);
-  tl.to('#s0f'+i,{opacity:0,duration:.8},7);
+// S0 天眼 0-6s
+inOut("s0",0,6);
+tl.fromTo("#s0-ring1",{opacity:0,scale:.5},{opacity:.8,scale:1.5,duration:2.5,ease:"power2.out"},.2);
+tl.fromTo("#s0-ring2",{opacity:0,scale:.5},{opacity:.6,scale:1.8,duration:3},.4);
+tl.to("#s0-eye-path",{strokeDashoffset:0,duration:1.2,ease:"power2.in"},.3);
+tl.to("#s0-pupil",{opacity:1,duration:.5},1.3);
+tl.to("#s0-pupil-ring",{opacity:.7,duration:.4},1.5);
+tl.to("#s0-pupil-ring",{opacity:0,attr:{r:30},duration:.7},1.8);
+tl.to("#s0-eye-text1",{opacity:1,duration:.6},1.6);
+tl.to("#s0-eye-text2",{opacity:1,duration:.6},1.9);
+// 粒子
+for(var i=0;i<15;i++){
+  var p=document.createElement('div');p.id='s0p'+i;
+  p.style.cssText='position:absolute;width:2px;height:2px;background:rgba(201,168,76,.4);border-radius:50%;left:'+(25+Math.random()*50)+'%;top:'+(25+Math.random()*50)+'%';
+  document.getElementById('s0-particles').appendChild(p);
+  tl.fromTo('#s0p'+i,{opacity:0,scale:0},{opacity:.7,scale:3,duration:2},.4+Math.random()*1.2);
+  tl.to('#s0p'+i,{opacity:0,duration:.5},3);
 }
-tl.fromTo("#s0-scroll",{opacity:0},{opacity:1,duration:1},3.5);
-tl.fromTo("#s0-scroll-inner",{x:0},{x:-2000,duration:60,ease:"linear"},3.5);
-tl.fromTo("#s0-sub",{opacity:0},{opacity:1,duration:.8},4);
 
-// ====== S1: Input 8-18s ======
-inOut("s1",8,10);
-tl.fromTo("#s1-quote",{opacity:0,y:-20},{opacity:1,y:0,duration:.8},8.2);
-tl.fromTo("#s1-phone",{opacity:0,x:-100,scale:.8},{opacity:1,x:0,scale:1,duration:1.2,ease:"power2.out"},8.3);
-tl.fromTo("#s1-title",{opacity:0,x:50},{opacity:1,x:0,duration:.6},8.6);
-tl.fromTo("#s1-desc",{opacity:0,y:20},{opacity:1,y:0,duration:.6},9);
-tl.fromTo("#s1-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.15,duration:.4},9.5);
+// S0b 品牌 6-10s
+inOut("s0b",6,4);
+tl.fromTo("#s0b-brand",{opacity:0,y:30},{opacity:1,y:0,duration:.8,ease:"power2.out"},6.2);
+tl.fromTo("#s0b-tag",{opacity:0},{opacity:1,duration:.6},6.8);
+tl.fromTo("#s0b-quote",{opacity:0,scale:.9},{opacity:1,scale:1,duration:.8},7.2);
+tl.fromTo("#s0b-sub",{opacity:0},{opacity:1,duration:.6},8);
 
-// ====== S2: Sizhu 18-28s ======
-inOut("s2",18,10);
-tl.fromTo("#s2-quote",{opacity:0,y:20},{opacity:1,y:0,duration:.8},18.2);
-tl.fromTo("#s2-phone",{opacity:0,x:100,scale:.8},{opacity:1,x:0,scale:1,duration:1.2},18.3);
-tl.fromTo("#s2-title",{opacity:0,x:-50},{opacity:1,x:0,duration:.6},18.6);
-tl.fromTo("#s2-desc",{opacity:0,y:20},{opacity:1,y:0,duration:.6},19);
-tl.fromTo("#s2-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.15,duration:.4},19.5);
+// S1 10-20s
+inOut("s1",10,10);
+tl.fromTo("#s1-quote",{opacity:0,y:-20},{opacity:1,y:0,duration:.8},10.2);
+tl.fromTo("#s1-phone",{opacity:0,x:-100,scale:.8},{opacity:1,x:0,scale:1,duration:1.2,ease:"power2.out"},10.3);
+tl.fromTo("#s1-title",{opacity:0,x:50},{opacity:1,x:0,duration:.6},10.6);
+tl.fromTo("#s1-desc",{opacity:0,y:20},{opacity:1,y:0,duration:.6},11);
+tl.fromTo("#s1-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.15,duration:.4},11.5);
 
-// ====== S3: Score 28-38s ======
-inOut("s3",28,10);
-tl.fromTo("#s3-quote",{opacity:0},{opacity:1,duration:.8},28.2);
-tl.fromTo("#s3-title",{opacity:0},{opacity:1,duration:.5},28.4);
+// S2 20-30s
+inOut("s2",20,10);
+tl.fromTo("#s2-quote",{opacity:0,y:20},{opacity:1,y:0,duration:.8},20.2);
+tl.fromTo("#s2-phone",{opacity:0,x:100,scale:.8},{opacity:1,x:0,scale:1,duration:1.2},20.3);
+tl.fromTo("#s2-title",{opacity:0,x:-50},{opacity:1,x:0,duration:.6},20.6);
+tl.fromTo("#s2-desc",{opacity:0,y:20},{opacity:1,y:0,duration:.6},21);
+tl.fromTo("#s2-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.15,duration:.4},21.5);
+
+// S3 30-40s
+inOut("s3",30,10);
+tl.fromTo("#s3-quote",{opacity:0},{opacity:1,duration:.8},30.2);
+tl.fromTo("#s3-title",{opacity:0},{opacity:1,duration:.5},30.4);
 var w=[66,40,33,16];
 document.querySelectorAll('.s3f').forEach(function(el,i){
-  tl.to(el,{width:w[i]+"%",duration:1,ease:"power2.out"},28.6+i*.5);
+  tl.to(el,{width:w[i]+"%",duration:1,ease:"power2.out"},30.6+i*.5);
 });
-tl.fromTo("#s3-result",{opacity:0,scale:.3},{opacity:1,scale:1,duration:.8,ease:"back.out(2)"},31);
-tl.fromTo("#s3-phone",{opacity:0,x:100,scale:.8},{opacity:1,x:0,scale:1,duration:1},28.4);
-tl.fromTo("#s3-wx .data-point",{opacity:0,x:-20},{opacity:1,x:0,stagger:.15,duration:.5},31.5);
+tl.fromTo("#s3-result",{opacity:0,scale:.3},{opacity:1,scale:1,duration:.8,ease:"back.out(2)"},33);
+tl.fromTo("#s3-phone",{opacity:0,x:100,scale:.8},{opacity:1,x:0,scale:1,duration:1},30.4);
+tl.fromTo("#s3-wx .data-point",{opacity:0,x:-20},{opacity:1,x:0,stagger:.15,duration:.5},33.5);
 
-// ====== S4: Pattern 38-48s ======
-inOut("s4",38,10);
-tl.fromTo("#s4-quote",{opacity:0,y:20},{opacity:1,y:0,duration:.8},38.2);
-tl.fromTo("#s4-phone",{opacity:0,x:-100,scale:.8},{opacity:1,x:0,scale:1,duration:1},38.3);
-tl.fromTo("#s4-title",{opacity:0,x:50},{opacity:1,x:0,duration:.6},38.6);
-tl.fromTo("#s4-pattern",{opacity:0,y:40,scale:.4},{opacity:1,y:0,scale:1,duration:.8,ease:"back.out(2)"},39);
-tl.fromTo("#s4-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.2,duration:.5,ease:"back.out(2)"},39.5);
-tl.fromTo("#s4-desc",{opacity:0},{opacity:1,duration:.5},40.5);
+// S4 40-50s
+inOut("s4",40,10);
+tl.fromTo("#s4-quote",{opacity:0,y:20},{opacity:1,y:0,duration:.8},40.2);
+tl.fromTo("#s4-phone",{opacity:0,x:-100,scale:.8},{opacity:1,x:0,scale:1,duration:1},40.3);
+tl.fromTo("#s4-title",{opacity:0,x:50},{opacity:1,x:0,duration:.6},40.6);
+tl.fromTo("#s4-pattern",{opacity:0,y:40,scale:.4},{opacity:1,y:0,scale:1,duration:.8,ease:"back.out(2)"},41);
+tl.fromTo("#s4-tags .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.2,duration:.5,ease:"back.out(2)"},41.5);
+tl.fromTo("#s4-desc",{opacity:0},{opacity:1,duration:.5},42.5);
 
-// ====== S5: AI 48-58s ======
-inOut("s5",48,10);
-tl.fromTo("#s5-quote",{opacity:0},{opacity:1,duration:.8},48.2);
-tl.fromTo("#s5-title",{opacity:0},{opacity:1,duration:.5},48.4);
-tl.fromTo("#s5-q",{opacity:0,x:-50},{opacity:1,x:0,duration:.6},48.9);
-tl.fromTo("#s5-a",{opacity:0,x:50},{opacity:1,x:0,duration:.6},49.9);
-tl.fromTo("#s5-modes .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.2,duration:.4},51);
-tl.fromTo("#s5-phone",{opacity:0,x:100,scale:.8},{opacity:1,x:0,scale:1,duration:1},48.4);
+// S5 50-60s
+inOut("s5",50,10);
+tl.fromTo("#s5-quote",{opacity:0},{opacity:1,duration:.8},50.2);
+tl.fromTo("#s5-title",{opacity:0},{opacity:1,duration:.5},50.4);
+tl.fromTo("#s5-q",{opacity:0,x:-50},{opacity:1,x:0,duration:.6},50.9);
+tl.fromTo("#s5-a",{opacity:0,x:50},{opacity:1,x:0,duration:.6},51.9);
+tl.fromTo("#s5-modes .tag",{opacity:0,scale:0},{opacity:1,scale:1,stagger:.2,duration:.4},53);
+tl.fromTo("#s5-phone",{opacity:0,x:100,scale:.8},{opacity:1,x:0,scale:1,duration:1},50.4);
 
-// ====== S6: Features 58-68s ======
-inOut("s6",58,10);
-tl.fromTo("#s6-quote",{opacity:0},{opacity:1,duration:.8},58.2);
-tl.fromTo("#s6-title",{opacity:0},{opacity:1,duration:.5},58.4);
-tl.fromTo("#s6-grid .feat-card",{opacity:0,scale:0,y:50},{opacity:1,scale:1,y:0,stagger:.08,duration:.6,ease:"back.out(2)"},58.8);
+// S6 60-70s
+inOut("s6",60,10);
+tl.fromTo("#s6-quote",{opacity:0},{opacity:1,duration:.8},60.2);
+tl.fromTo("#s6-title",{opacity:0},{opacity:1,duration:.5},60.4);
+tl.fromTo("#s6-grid .feat-card",{opacity:0,scale:0,y:50},{opacity:1,scale:1,y:0,stagger:.08,duration:.6,ease:"back.out(2)"},60.8);
 
-// ====== S7: Ending 68-78s ======
-inOut("s7",68,10);
-tl.fromTo("#s7-r1",{opacity:0,scale:.5},{opacity:1,scale:1,duration:1.2},68.2);
-tl.fromTo("#s7-r2",{opacity:0,scale:.5},{opacity:1,scale:1,duration:1.5},68.4);
-tl.fromTo("#s7-brand",{opacity:0,y:40},{opacity:1,y:0,duration:1.2,ease:"power3.out"},68.5);
-tl.fromTo("#s7-tag",{opacity:0},{opacity:1,duration:.8},69.5);
-tl.fromTo("#s7-quote",{opacity:0,y:20,scale:.9},{opacity:1,y:0,scale:1,duration:1},70);
-tl.fromTo("#s7-sub",{opacity:0},{opacity:1,duration:.8},71.5);
+// S7 70-80s
+inOut("s7",70,10);
+tl.fromTo("#s7-r1",{opacity:0,scale:.5},{opacity:1,scale:1,duration:1.2},70.2);
+tl.fromTo("#s7-r2",{opacity:0,scale:.5},{opacity:1,scale:1,duration:1.5},70.4);
+tl.fromTo("#s7-brand",{opacity:0,y:40},{opacity:1,y:0,duration:1.2,ease:"power3.out"},70.5);
+tl.fromTo("#s7-tag",{opacity:0},{opacity:1,duration:.8},71.5);
+tl.fromTo("#s7-quote",{opacity:0,y:20,scale:.9},{opacity:1,y:0,scale:1,duration:1},72);
+tl.fromTo("#s7-sub",{opacity:0},{opacity:1,duration:.8},73.5);
 </script>
 </body>
 </html>
