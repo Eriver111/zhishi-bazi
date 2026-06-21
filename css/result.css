@@ -1744,6 +1744,16 @@
     .share-btn { font-size: 12px; padding: 6px 12px; }
     /* 付费遮罩按钮 */
     .paywall-btn { width: 100%; max-width: 280px; font-size: 14px; }
+    /* 付费遮罩间距 */
+    .paywall-card { padding: 28px 16px 32px; }
+    .paywall-card-title { font-size: 18px; margin-bottom: 12px; }
+    .paywall-card-sub { margin-bottom: 8px; }
+    .paywall-price { margin-bottom: 18px; }
+    .paywall-overlay { align-items: flex-start; padding-top: 12vh; }
+    /* 各板块更多呼吸感 */
+    .section-drawer { margin-bottom: 28px; }
+    .drawer-toggle { padding: 16px 14px; }
+    .drawer-body { padding: 0 12px; }
   }
 
   /* 超小屏 (<380px) 进一步压缩 */
