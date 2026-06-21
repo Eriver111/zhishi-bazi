@@ -162,47 +162,40 @@
     // 初始状态：显示免费
     updateFreeDisplay();
 
-    // FAB 拖拽逻辑：短点(<200ms 不移动)=toggle，长拖=移动
+    // FAB：桌面直接点开，手机短点打开/长拖移动
     (function(){
       var fab = document.getElementById('aiFab');
       if (!fab) return;
+      // 桌面：click 即 toggle
+      fab.addEventListener('click', function(e) { toggle(); });
+      // 手机：触摸拖拽
       var startX, startY, startLeft, startTop, moved = false, pressed = false, startTime;
-      function onStart(e) {
-        if (e.target !== fab && !fab.contains(e.target)) return;
-        e.preventDefault();
+      fab.addEventListener('touchstart', function(e) {
         pressed = true; moved = false;
-        var p = e.touches ? e.touches[0] : e;
+        var p = e.touches[0];
         startX = p.clientX; startY = p.clientY;
         startTime = Date.now();
         var r = fab.getBoundingClientRect();
         startLeft = r.left; startTop = r.top;
         fab.style.transition = 'none';
-      }
-      function onMove(e) {
+      }, {passive: false});
+      fab.addEventListener('touchmove', function(e) {
         if (!pressed) return;
-        var p = e.touches ? e.touches[0] : e;
+        var p = e.touches[0];
         var dx = p.clientX - startX, dy = p.clientY - startY;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) { moved = true; e.preventDefault(); }
         if (moved) {
           fab.style.left = (startLeft + dx) + 'px';
           fab.style.top = (startTop + dy) + 'px';
           fab.style.right = 'auto'; fab.style.bottom = 'auto';
         }
-      }
-      function onEnd(e) {
+      }, {passive: false});
+      fab.addEventListener('touchend', function(e) {
         if (!pressed) return;
         pressed = false;
         fab.style.transition = '';
-        if (!moved && Date.now() - startTime < 300) {
-          toggle();
-        }
-      }
-      fab.addEventListener('touchstart', onStart, {passive: false});
-      fab.addEventListener('touchmove', onMove, {passive: false});
-      fab.addEventListener('touchend', onEnd);
-      fab.addEventListener('mousedown', onStart);
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onEnd);
+        if (!moved && Date.now() - startTime < 400) { toggle(); }
+      });
     })();
   }
 
