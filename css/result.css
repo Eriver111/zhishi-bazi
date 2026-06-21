@@ -1235,8 +1235,9 @@
    专业解读抽屉（含子区）
    ============================ */
 .section-pro .drawer-body { padding: 8px 16px 16px; }
-.pro-sub { margin-bottom: 12px; }
+.pro-sub { margin-bottom: 12px; overflow: hidden; }
 .pro-sub:last-child { margin-bottom: 0; }
+.pro-sub > * { max-width: 100%; word-break: break-word; overflow-wrap: break-word; }
 
 .pro-sub-title {
     font-size: 13px; color: var(--gold);

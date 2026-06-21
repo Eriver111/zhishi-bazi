@@ -1879,8 +1879,10 @@ function calcDayMasterStrength(bazi) {
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
   if (dayZhiWx === dgWx)          score += 12; // 日支同五行（自坐强根）
-  else if (SHENGWO[dgWx] === dayZhiWx) score += 8;  // 日支生日主
-  else if (KEWO[dgWx] === dayZhiWx)   score -= 10; // 日支克日主
+  else if (SHENGWO[dgWx] === dayZhiWx) score += 8;  // 日支生日主（印星）
+  else if (KEWO[dgWx] === dayZhiWx)   score -= 10; // 日支克日主（官杀攻身）
+  else if (WOKE[dgWx] === dayZhiWx)   score -= 6;  // 日主克日支（我克为财，耗力）
+  else if (WOSHENG[dgWx] === dayZhiWx) score -= 7;  // 日主生日支（我生为泄，泄气）
 
   // ---------- ③ 得势：各柱天干比劫/印星 vs 克泄耗 ----------
   ['year','month','day','hour'].forEach(function(pos) {
@@ -3030,6 +3032,279 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
     };
 }
 
+// ==================== v3.1 AI 上下文增强 ====================
+
+/**
+ * 格局判断 — 以月令地支十神定格局
+ * 返回格局名 + 白话解读
+ */
+function getPattern(bazi) {
+  var ssZhi = (bazi.month.shiShen && bazi.month.shiShen.zhi) || '';
+  var ssGan = (bazi.month.shiShen && bazi.month.shiShen.gan) || '';
+  var dmWx = WU_XING[bazi.day.gan];
+  var mWx = DI_ZHI_WU_XING[bazi.month.zhi];
+  var mGan = bazi.month.gan;
+  var mZhi = bazi.month.zhi;
+
+  // ---- 分类标记 ----
+  var zhiGuanSha = ssZhi === '正官' || ssZhi === '七杀';
+  var zhiYin    = ssZhi === '正印' || ssZhi === '偏印';
+  var zhiCai    = ssZhi === '正财' || ssZhi === '偏财';
+  var zhiShiShang = ssZhi === '食神' || ssZhi === '伤官';
+  var ganYin    = ssGan === '正印' || ssGan === '偏印';
+  var ganGuanSha = ssGan === '正官' || ssGan === '七杀';
+  var ganCai    = ssGan === '正财' || ssGan === '偏财';
+  var ganShiShen = ssGan === '食神' || ssGan === '伤官';
+  var ganShi    = ssGan === '食神'; // 食神单独标记（制杀专用）
+  var ganShang  = ssGan === '伤官'; // 伤官单独标记（配印专用）
+
+  var combined = null;
+
+  // ① 官印相生 / 杀印相生 — 月支官杀 + 月干印星
+  if (zhiGuanSha && ganYin) {
+    var nm = ssZhi === '七杀' ? '杀印相生格' : '官印相生格';
+    combined = {
+      name: nm, type: '官杀化印',
+      desc: '月令' + ssZhi + '当权，月干' + ssGan + '透出——官(杀)生印，印生身，化煞为权，贵气流通。'
+        + '《子平真诠》云："有官有印，无破作廊庙之材。"'
+    };
+  }
+
+  // ② 食神制杀 — 月支七杀 + 月干食神
+  if (ssZhi === '七杀' && ganShi) {
+    combined = {
+      name: '食神制杀格', type: '食制杀',
+      desc: '月令七杀当权，月干食神透出制之——以智慧谋略驾驭压力，化敌为友。'
+        + '《滴天髓》云："食神制杀，英雄独压万人。"此格多出将帅、管理之才。'
+    };
+  }
+
+  // ③ 伤官配印 — 月支伤官 + 月干印星
+  if (ssZhi === '伤官' && ganYin) {
+    combined = {
+      name: '伤官配印格', type: '伤官配印',
+      desc: '月令伤官当权，月干印星透出制之——才华有约束，锋芒内敛化为智慧。'
+        + '"伤官配印，文贵之命"——此格多出文人学者、策划型人才。'
+    };
+  }
+
+  // ④ 食神生财 / 伤官生财 — 月支食伤 + 月干财星
+  if (zhiShiShang && ganCai) {
+    var sn = ssZhi === '食神' ? '食神生财格' : '伤官生财格';
+    combined = {
+      name: sn, type: '食伤生财',
+      desc: '月令' + ssZhi + '当权，月干' + ssGan + '透出——食伤生财，才华变现。技艺致富，商才卓越。'
+    };
+  }
+
+  // ⑤ 财生官 — 月支财星 + 月干官杀
+  if (zhiCai && ganGuanSha) {
+    combined = {
+      name: '财生官格', type: '财生官',
+      desc: '月令财星当权，月干' + ssGan + '透出——财生官，官护财，富贵双全。"财官双美，富贵根基。"'
+    };
+  }
+
+  // ⑥ 印赖官生 — 月支印星 + 月干官杀
+  if (zhiYin && ganGuanSha) {
+    combined = {
+      name: '印赖官生格', type: '官生印',
+      desc: '月令印星当权，月干' + ssGan + '透出——官来生印，印来生身，贵气内敛。学识渊博，有贵人提携。'
+    };
+  }
+
+  if (combined) {
+    return {
+      name: combined.name, desc: combined.desc, type: combined.type,
+      monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
+      monthShiShenZhi: ssZhi, monthShiShenGan: ssGan
+    };
+  }
+
+  // ---- 单一格局（月支十神匹配不到或与月干无联动） ----
+  var PATTERNS = {
+    '正官': { name: '正官格', desc: '月令正官当权，为人正直有责任心。"官以任能，贵乎清正。"——《子平真诠》', type: '官杀' },
+    '七杀': { name: '七杀格', desc: '月令七杀当权，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。', type: '官杀' },
+    '正财': { name: '正财格', desc: '月令正财当权，务实稳健善理财。财宜食伤来生、官星来护。', type: '财' },
+    '偏财': { name: '偏财格', desc: '月令偏财当权，慷慨大方，商业嗅觉敏锐，适合投资经营。', type: '财' },
+    '正印': { name: '正印格', desc: '月令正印当权，温厚善良学识渊博。印喜官杀来生，忌财星破印。', type: '印' },
+    '偏印': { name: '偏印格', desc: '月令偏印当权，思维独特善钻研。枭神需财星制化，否则孤僻多思。', type: '印' },
+    '食神': { name: '食神格', desc: '月令食神当权，温和聪慧有才华。"食神有气胜财官。"——《渊海子平》', type: '食伤' },
+    '伤官': { name: '伤官格', desc: '月令伤官当权，聪明机敏创造力强。伤官需印制或生财化解锋芒。', type: '食伤' },
+    '建禄': { name: '建禄格', desc: '日主得月令禄位，自身强旺。禄喜财官——身强方能担财官。', type: '比劫' },
+    '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》', type: '比劫' }
+  };
+  var p = PATTERNS[ssZhi];
+  if (!p) {
+    if (dmWx === mWx) p = { name: '建禄格', desc: '月令为日主禄位（同五行），自身强旺。', type: '比劫' };
+    else {
+      var SHENGWO = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
+      if (SHENGWO[dmWx] === mWx) p = { name: '印绶格', desc: '月令生扶日主，印星当令，学识型人才。', type: '印' };
+      else p = { name: '杂格', desc: '格局不显，需结合天干透出与地支合局综合判断，灵活取用。', type: '杂' };
+    }
+  }
+  return { name: p.name, desc: p.desc, type: p.type, monthWx: mWx, monthZhi: mZhi, monthGan: mGan, monthShiShenZhi: ssZhi, monthShiShenGan: ssGan };
+}
+
+/**
+ * 喜用忌神判定 — 基于日主旺衰 + 格局
+ * 返回喜神/用神/忌神的五行元素列表和推理
+ */
+function getYongJi(bazi) {
+  var dmStr = calcDayMasterStrength(bazi);
+  var dmLevel = dmStr.level; // 极强/偏强/中和/偏弱/极弱
+  var dmWx = WU_XING[bazi.day.gan];
+  var WX = ['木','火','土','金','水'];
+
+  // 五行关系表（以日主为中心）
+  var di = WX.indexOf(dmWx);
+  var WO_SHENG = WX[(di + 1) % 5];   // 食伤（我生）
+  var WO_KE   = WX[(di + 2) % 5];   // 财星（我克）
+  var KE_WO   = WX[(di + 3) % 5];   // 官杀（克我）
+  var SHENG_WO = WX[(di + 4) % 5];  // 印星（生我）
+  var TONG    = dmWx;                // 比劫（同我）
+
+  var xiShen = [], yongShen = [], jiShen = [], reasoning = '';
+
+  if (dmLevel === '极强' || dmLevel === '偏强') {
+    // 身强 — 喜克泄耗（官杀/食伤/财星）
+    xiShen  = [KE_WO, WO_SHENG, WO_KE];
+    yongShen = [KE_WO, WO_SHENG]; // 官杀制身、食伤泄秀为用
+    jiShen  = [SHENG_WO, TONG];    // 忌印比生扶
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），遵循子平法"旺则宜克宜泄"原则。'
+      + '喜：' + xiShen.join('、') + '来克泄耗，平衡过旺之气。'
+      + '忌：' + jiShen.join('、') + '再来生扶，过犹不及。';
+  } else if (dmLevel === '极弱' || dmLevel === '偏弱') {
+    // 身弱 — 喜生扶（印星/比劫）
+    xiShen  = [SHENG_WO, TONG];
+    yongShen = [SHENG_WO];         // 印星生身为首选用神
+    jiShen  = [KE_WO, WO_SHENG, WO_KE]; // 忌克泄耗
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），遵循子平法"弱则宜生宜扶"原则。'
+      + '喜：' + xiShen.join('、') + '来生扶，补足元气。'
+      + '忌：' + jiShen.join('、') + '再来克泄耗，元气更伤。';
+  } else {
+    // 中和
+    xiShen = [SHENG_WO, KE_WO];
+    yongShen = [];
+    jiShen = [];
+    reasoning = '日主中和（' + dmStr.score + '分），元气均衡。需结合大运流年走势灵活取用——行运偏强则取克泄耗为用，行运偏弱则取生扶为用。';
+  }
+
+  // 格局微调（根据格局类型与日主旺衰关系）
+  var pattern = getPattern(bazi);
+  var pt = pattern.type;
+
+  // 官杀类格局 + 忌官杀 → 需印化
+  if ((pt === '官杀' || pt === '财生官') && jiShen.indexOf(KE_WO) >= 0) {
+    reasoning += ' 注意：月令官杀当权且为忌神——"官多变鬼"，需印星转化官杀之气方为上策。';
+  }
+  // 官印相生/杀印相生/印赖官生 — 官杀已被印星转化，身弱也不怕
+  if (pt === '官杀化印' || pt === '官生印') {
+    if (jiShen.indexOf(KE_WO) >= 0) {
+      reasoning += ' 好在格局为官(杀)印相生——月干印星已将官杀之气转化生身，即使官杀为忌也能化煞为权，转压力为动力。';
+    } else {
+      reasoning += ' 格局官(杀)印相生，官来生印、印来生身，贵气流通，仕途学业皆有助力。';
+    }
+  }
+  // 食神制杀 — 格局自带化解
+  if (pt === '食制杀') {
+    reasoning += ' 格局食神制杀——以智慧谋略驾驭压力，变阻力为助力。"食神制杀，英雄独压万人。"';
+  }
+  // 伤官配印 — 才华有约束
+  if (pt === '伤官配印') {
+    reasoning += ' 格局伤官配印——才华有约束有方向，锋芒内敛化为智慧，宜学术、策划、创作类发展。';
+  }
+  // 财类格局 + 忌财 → 富屋贫人
+  if ((pt === '财' || pt === '食伤生财' || pt === '财生官') && jiShen.indexOf(WO_KE) >= 0) {
+    reasoning += ' 注意：命局财星为忌神——"富屋贫人"之象，日主弱难担财。宜先扶身再求财，不可贪多冒进。';
+  }
+  // 食伤生财 + 忌食伤 → 泄气太过
+  if (pt === '食伤生财' && jiShen.indexOf(WO_SHENG) >= 0) {
+    reasoning += ' 注意：食伤泄气又生财，对身弱者双重消耗。需印星制食伤、扶日主，方能平衡。';
+  }
+
+  return {
+    dayMasterLevel: dmLevel,
+    dayMasterScore: dmStr.score,
+    xiShen: xiShen,           // 喜神（有利的五行）
+    yongShen: yongShen,       // 用神（最关键的五行）
+    jiShen: jiShen,           // 忌神（不利的五行）
+    reasoning: reasoning
+  };
+}
+
+/**
+ * 四柱生克关系 — 分析相邻柱天干地支的相生相克
+ */
+function getPillarRelations(bazi) {
+  var WX_MAP = WU_XING;
+  var sg = { '木':'火','火':'土','土':'金','金':'水','水':'木' }; // 相生
+  var ke = { '木':'土','土':'水','水':'火','火':'金','金':'木' }; // 相克
+  var CHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+
+  var pos = ['year','month','day','hour'];
+  var names = ['年柱','月柱','日柱','时柱'];
+  var relations = [];
+
+  for (var i = 0; i < 3; i++) {
+    var p1 = bazi[pos[i]], p2 = bazi[pos[i + 1]];
+    var g1w = WX_MAP[p1.gan], g2w = WX_MAP[p2.gan];
+    var z1w = DI_ZHI_WU_XING[p1.zhi], z2w = DI_ZHI_WU_XING[p2.zhi];
+
+    var rel = { from: names[i], to: names[i + 1], gan: '', zhi: '', details: [] };
+
+    // 天干关系
+    if (sg[g1w] === g2w) { rel.gan = '生'; rel.details.push(names[i] + '天干' + p1.gan + '(' + g1w + ') 生 ' + names[i + 1] + '天干' + p2.gan + '(' + g2w + ')'); }
+    else if (sg[g2w] === g1w) { rel.gan = '被生'; rel.details.push(names[i + 1] + '天干' + p2.gan + '(' + g2w + ') 生 ' + names[i] + '天干' + p1.gan + '(' + g1w + ')'); }
+    else if (ke[g1w] === g2w) { rel.gan = '克'; rel.details.push(names[i] + '天干' + p1.gan + '(' + g1w + ') 克 ' + names[i + 1] + '天干' + p2.gan + '(' + g2w + ')'); }
+    else if (ke[g2w] === g1w) { rel.gan = '被克'; rel.details.push(names[i + 1] + '天干' + p2.gan + '(' + g2w + ') 克 ' + names[i] + '天干' + p1.gan + '(' + g1w + ')'); }
+    else rel.gan = '—';
+
+    // 地支关系
+    if (sg[z1w] === z2w) { rel.zhi = '生'; rel.details.push(names[i] + '地支' + p1.zhi + '(' + z1w + ') 生 ' + names[i + 1] + '地支' + p2.zhi + '(' + z2w + ')'); }
+    else if (sg[z2w] === z1w) { rel.zhi = '被生'; rel.details.push(names[i + 1] + '地支' + p2.zhi + '(' + z2w + ') 生 ' + names[i] + '地支' + p1.zhi + '(' + z1w + ')'); }
+    else if (ke[z1w] === z2w) { rel.zhi = '克'; rel.details.push(names[i] + '地支' + p1.zhi + '(' + z1w + ') 克 ' + names[i + 1] + '地支' + p2.zhi + '(' + z2w + ')'); }
+    else if (ke[z2w] === z1w) { rel.zhi = '被克'; rel.details.push(names[i + 1] + '地支' + p2.zhi + '(' + z2w + ') 克 ' + names[i] + '地支' + p1.zhi + '(' + z1w + ')'); }
+    else if (CHONG[p1.zhi] === p2.zhi) { rel.zhi = '冲'; rel.details.push(names[i] + '地支' + p1.zhi + ' 与 ' + names[i + 1] + '地支' + p2.zhi + ' 六冲——主变动冲突'); }
+    else rel.zhi = '—';
+
+    relations.push(rel);
+  }
+
+  return relations;
+}
+
+/**
+ * 四柱地支内部冲合刑害
+ * 分析年月日时四柱地支之间的六冲/六合/三刑/六害关系
+ */
+function getBranchRelations(bazi) {
+  var pos = ['year','month','day','hour'];
+  var names = ['年柱','月柱','日柱','时柱'];
+  var branches = pos.map(function(p) { return bazi[p].zhi; });
+
+  var CHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+  var HE = { '子丑':1,'丑子':1,'寅亥':1,'亥寅':1,'卯戌':1,'戌卯':1,'辰酉':1,'酉辰':1,'巳申':1,'申巳':1,'午未':1,'未午':1 };
+  var XING = { '寅巳':1,'巳寅':1,'巳申':1,'申巳':1,'寅申':1,'申寅':1, '丑戌':1,'戌丑':1,'戌未':1,'未戌':1,'丑未':1,'未丑':1, '子卯':1,'卯子':1 };
+  var HAI = { '子未':1,'未子':1,'丑午':1,'午丑':1,'寅巳':1,'巳寅':1,'卯辰':1,'辰卯':1,'申亥':1,'亥申':1,'酉戌':1,'戌酉':1 };
+
+  var result = [];
+  for (var i = 0; i < 4; i++) {
+    for (var j = i + 1; j < 4; j++) {
+      var b1 = branches[i], b2 = branches[j];
+      var rels = [];
+      if (CHONG[b1] === b2) rels.push({ type: '六冲', detail: names[i] + '地支' + b1 + ' 冲 ' + names[j] + '地支' + b2 + '——变动冲突分离之象' });
+      if (HE[b1 + b2]) rels.push({ type: '六合', detail: names[i] + '地支' + b1 + ' 合 ' + names[j] + '地支' + b2 + '——和谐合作吸引之象' });
+      if (XING[b1 + b2]) rels.push({ type: '相刑', detail: names[i] + '地支' + b1 + ' 刑 ' + names[j] + '地支' + b2 });
+      if (HAI[b1 + b2]) rels.push({ type: '六害', detail: names[i] + '地支' + b1 + ' 害 ' + names[j] + '地支' + b2 + '——暗中不利貌合神离' });
+      if (rels.length > 0) {
+        result.push({ from: names[i], to: names[j], branch1: b1, branch2: b2, relations: rels });
+      }
+    }
+  }
+  return result;
+}
+
 window.BaZiCalculator = {
     calculate: calculateBaZi,
     calculateDaYun: calculateDaYun,
@@ -3048,6 +3323,10 @@ window.BaZiCalculator = {
     calculateSpouseAge: calculateSpouseAge,
     analyzeParents: analyzeParents,
     calcDayMasterStrength: calcDayMasterStrength,
+    getPattern: getPattern,
+    getYongJi: getYongJi,
+    getPillarRelations: getPillarRelations,
+    getBranchRelations: getBranchRelations,
     analyzeCharacter: analyzeCharacter,
     analyzeWealth: analyzeWealth,
     analyzeFortune: analyzeFortune,

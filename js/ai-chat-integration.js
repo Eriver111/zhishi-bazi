@@ -79,14 +79,14 @@
   function injectUI() {
     var html = '';
 
-    html += '<div id="aiFab" class="ai-fab" onclick="window._aiToggle()" title="AI 命理咨询">AI';
+    html += '<div id="aiFab" class="ai-fab" title="知时先生">AI';
     html += '<span class="ai-fab-badge" id="aiFabBadge"></span></div>';
     html += '<div class="ai-drawer-backdrop" id="aiBackdrop" onclick="window._aiClose()"></div>';
 
     html += '<div class="ai-drawer" id="aiDrawer">';
     html += '<div class="ai-drawer-handle"></div>';
     html += '<div class="ai-drawer-header">';
-    html += '<span class="ai-drawer-title">🏮 AI 命理师</span>';
+    html += '<span class="ai-drawer-title">🏮 知时先生</span>';
     html += '<span class="ai-drawer-credits" id="aiCreditsLabel">未激活</span>';
     html += '<button class="ai-drawer-close" onclick="window._aiClose()">✕</button>';
     html += '</div>';
@@ -95,16 +95,15 @@
     html += '<div class="chat-messages-wrap" id="aiMessages">';
     html += '<div class="chat-empty-wrap" id="aiEmpty">';
     html += '<div class="empty-icon">🏮</div>';
-    html += '<h4>知时 AI 命理师</h4>';
+    html += '<h4>知时先生</h4>';
     html += '<p id="aiEmptyDesc">首次体验免费，可提问 2 次</p>';
     html += '<code id="aiEmptyCode">免费体验中 · 无需付费</code>';
     html += '</div></div>';
 
-    // 购买条（合并选项）
+    // 分享/购买条（免费耗尽时显示分享，已购买用户显示积分信息）
     html += '<div class="chat-buy-bar" id="aiBuyBar" style="display:none;flex-wrap:wrap;gap:8px;justify-content:center">';
-    html += '<button class="buy-btn" onclick="window._aiBuy(\'credit_pack\')" style="font-size:12px">💎 ¥9.9 买10次</button>';
-    html += '<button class="buy-btn" onclick="window._aiBuy(\'monthly\')" style="font-size:12px">👑 ¥29.9 包月30天</button>';
-    html += '<button class="buy-btn" onclick="window._aiBuy(this.dataset.mode)" data-mode="credit_20" style="font-size:11px">🚀 ¥14.9/20次</button><button class="buy-btn" onclick="window._aiBuy(this.dataset.mode)" data-mode="monthly" style="font-size:11px">👑 ¥29.9/月</button><span class="buy-hint" style="width:100%;text-align:center">按需选择 · 月会员无限畅聊</span>';
+    html += '<button class="buy-btn" id="aiShareBtn" onclick="window._aiShare()" style="font-size:13px;background:linear-gradient(135deg,#4CAF50,#2d8a4a);color:#fff">分享给好友 · 得1次提问</button>';
+    html += '<span class="buy-hint" id="aiBuyHint" style="width:100%;text-align:center;font-size:11px">如需多次提问，请前往 <a href="pricing.html" style="color:var(--gold)">积分方案</a> 购买次数包或会员</span>';
     html += '</div>';
 
     // 我的兑换码（激活后显示）
@@ -162,6 +161,49 @@
 
     // 初始状态：显示免费
     updateFreeDisplay();
+
+    // FAB 拖拽逻辑：短点(<200ms 不移动)=toggle，长拖=移动
+    (function(){
+      var fab = document.getElementById('aiFab');
+      if (!fab) return;
+      var startX, startY, startLeft, startTop, moved = false, pressed = false, startTime;
+      function onStart(e) {
+        if (e.target !== fab && !fab.contains(e.target)) return;
+        e.preventDefault();
+        pressed = true; moved = false;
+        var p = e.touches ? e.touches[0] : e;
+        startX = p.clientX; startY = p.clientY;
+        startTime = Date.now();
+        var r = fab.getBoundingClientRect();
+        startLeft = r.left; startTop = r.top;
+        fab.style.transition = 'none';
+      }
+      function onMove(e) {
+        if (!pressed) return;
+        var p = e.touches ? e.touches[0] : e;
+        var dx = p.clientX - startX, dy = p.clientY - startY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+        if (moved) {
+          fab.style.left = (startLeft + dx) + 'px';
+          fab.style.top = (startTop + dy) + 'px';
+          fab.style.right = 'auto'; fab.style.bottom = 'auto';
+        }
+      }
+      function onEnd(e) {
+        if (!pressed) return;
+        pressed = false;
+        fab.style.transition = '';
+        if (!moved && Date.now() - startTime < 300) {
+          toggle();
+        }
+      }
+      fab.addEventListener('touchstart', onStart, {passive: false});
+      fab.addEventListener('touchmove', onMove, {passive: false});
+      fab.addEventListener('touchend', onEnd);
+      fab.addEventListener('mousedown', onStart);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+    })();
   }
 
   // ===== 抽屉控制 =====
@@ -176,7 +218,7 @@
     if (!text) return;
 
     if (AI.credits <= 0 && !AI.isMonthly && AI.freeRemaining <= 0) {
-      if ($buyBar) $buyBar.style.display = 'flex';
+      showBuyBar(); // 显示分享按钮
       return;
     }
 
@@ -384,16 +426,42 @@
       if ($buyBar) $buyBar.style.display = 'none';
       return;
     }
-    if (AI.freeRemaining > 0) {
-      if ($buyBar) $buyBar.style.display = 'flex'; // 显示购买选项
+    // 免费用尽且无积分 → 显示分享按钮
+    if (AI.freeRemaining <= 0 && AI.credits <= 0) {
+      if ($buyBar) $buyBar.style.display = 'flex';
+      if ($inputWrap) $inputWrap.style.display = 'flex';
+      if ($input) $input.disabled = true;
+      if ($sendBtn) $sendBtn.disabled = true;
+      // 隐藏购买提示，显示分享按钮
+      var shareBtn = document.getElementById('aiShareBtn');
+      if (shareBtn) shareBtn.style.display = 'inline-block';
+      var hint = document.getElementById('aiBuyHint');
+      if (hint) hint.style.display = 'block';
       return;
     }
-    if (AI.credits <= 0) {
-      if ($buyBar) $buyBar.style.display = 'flex';
-      if ($inputWrap && AI.code) $inputWrap.style.display = 'flex';
-      if ($input && AI.code) $input.disabled = true;
-    }
+    // 有免费或有积分 → 隐藏分享条
+    if ($buyBar) $buyBar.style.display = 'none';
   }
+
+  // 分享得次数
+  window._aiShare = function() {
+    var shareUrl = window.location.href.split('?')[0] + '?ref=' + (AI.code || AI.freeId || 'share');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).then(function() {
+        alert('分享链接已复制！\n\n好友通过此链接访问后，你将获得 1 次额外提问机会。\n\n链接：' + shareUrl);
+      });
+    } else {
+      prompt('复制此链接分享给好友，他们访问后你将获得 1 次额外提问：', shareUrl);
+    }
+    // 调用后端记录分享
+    try {
+      fetch('/api/referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: AI.code || '', freeId: AI.freeId, action: 'share' })
+      }).catch(function(){});
+    } catch(e) {}
+  };
 
   function updateSendBtn() {
     if ($sendBtn) {
@@ -416,26 +484,92 @@
       if (_params.clock !== undefined) data.birthInfo.clock = _params.clock;
     }
     if (typeof _bazi !== 'undefined' && _bazi) {
+      var dayGan = _bazi.day && _bazi.day.gan ? _bazi.day.gan : '';
       data.fourPillars = {};
       ['year','month','day','hour'].forEach(function(pos) {
         var p = _bazi[pos]; if (!p) return;
-        data.fourPillars[pos] = { gan: p.gan, zhi: p.zhi, ganWX: p.wuXing ? p.wuXing.gan : '', zhiWX: p.wuXing ? p.wuXing.zhi : '', shiShenGan: p.shiShen ? p.shiShen.gan : '', shiShenZhi: p.shiShen ? p.shiShen.zhi : '', nayin: _bazi.naYin || '', cangGan: (p.cangGan || []).map(function(cg) { return { gan: cg }; }) };
+        // v3.2: 藏干带十神
+        var cgWithSS = (p.cangGan || []).map(function(cg) {
+          var ss = '';
+          if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getShiShen && dayGan) {
+            try { ss = BaZiCalculator.getShiShen(dayGan, cg); } catch(e) {}
+          }
+          return { gan: cg, shiShen: ss };
+        });
+        data.fourPillars[pos] = { gan: p.gan, zhi: p.zhi, ganWX: p.wuXing ? p.wuXing.gan : '', zhiWX: p.wuXing ? p.wuXing.zhi : '', shiShenGan: p.shiShen ? p.shiShen.gan : '', shiShenZhi: p.shiShen ? p.shiShen.zhi : '', nayin: p.nayin || '', cangGan: cgWithSS };
       });
       if (_bazi.wuXingCount) data.wuXingCount = _bazi.wuXingCount;
       if (_bazi.day && _bazi.day.gan) {
         data.dayMaster = { gan: _bazi.day.gan, wuXing: _bazi.day.wuXing ? _bazi.day.wuXing.gan : '' };
         data.dayMaster.yinYang = ['甲','丙','戊','庚','壬'].indexOf(_bazi.day.gan) >= 0 ? '阳' : '阴';
       }
-      if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calcDayMasterStrength) {
-        try { data.dayMasterStrength = BaZiCalculator.calcDayMasterStrength(_bazi); } catch(e) {}
+      if (typeof BaZiCalculator !== 'undefined') {
+        if (BaZiCalculator.calcDayMasterStrength) {
+          try { data.dayMasterStrength = BaZiCalculator.calcDayMasterStrength(_bazi); } catch(e) {}
+        }
+        // v3.1: 格局
+        if (BaZiCalculator.getPattern) {
+          try { data.pattern = BaZiCalculator.getPattern(_bazi); } catch(e) {}
+        }
+        // v3.1: 喜用忌神
+        if (BaZiCalculator.getYongJi) {
+          try { data.yongJi = BaZiCalculator.getYongJi(_bazi); } catch(e) {}
+        }
+        // v3.1: 四柱生克
+        if (BaZiCalculator.getPillarRelations) {
+          try { data.pillarRelations = BaZiCalculator.getPillarRelations(_bazi); } catch(e) {}
+        }
+        // v3.2: 地支内部冲合刑害
+        if (BaZiCalculator.getBranchRelations) {
+          try { data.branchRelations = BaZiCalculator.getBranchRelations(_bazi); } catch(e) {}
+        }
       }
     }
+    // 大运
     if (typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list) {
       data.daYun = { direction: _daYunData.isForward ? '顺行' : '逆行', startAge: _daYunData.qiYunAge, cycles: _daYunData.list.map(function(dy) { return { gan: dy.gan, zhi: dy.zhi, displayAge: dy.displayAge, startYear: dy.startYear, endYear: dy.endYear }; }) };
-      if (typeof _currentDaYunIndex !== 'undefined') data.currentDaYunIndex = _currentDaYunIndex;
+      // v3.2: 当前大运详情
+      if (typeof _currentDaYunIndex !== 'undefined' && _currentDaYunIndex >= 0) {
+        var cd = _daYunData.list[_currentDaYunIndex];
+        if (cd && _bazi && _bazi.day) {
+          try {
+            data.currentDaYun = {
+              gan: cd.gan, zhi: cd.zhi,
+              startYear: cd.startYear, endYear: cd.endYear,
+              displayAge: cd.displayAge,
+              shiShen: typeof BaZiCalculator !== 'undefined' ? BaZiCalculator.getShiShen(_bazi.day.gan, cd.gan) : ''
+            };
+          } catch(e) {}
+        }
+      }
     }
-    data.currentYear = new Date().getFullYear();
-    if (typeof _nativeShenSha !== 'undefined' && _nativeShenSha) data.shenSha = _nativeShenSha.map(function(s) { return { name: s.name || s }; });
+    // v3.2: 当前流年详情
+    var thisYear = new Date().getFullYear();
+    data.currentYear = thisYear;
+    if (typeof BaZiCalculator !== 'undefined' && typeof _daYunData !== 'undefined' && _daYunData.list && typeof _currentDaYunIndex !== 'undefined' && _currentDaYunIndex >= 0) {
+      try {
+        var cd = _daYunData.list[_currentDaYunIndex];
+        var dayGanRef = _bazi && _bazi.day ? _bazi.day.gan : '';
+        if (cd && dayGanRef) {
+          var liuNianList = BaZiCalculator.calculateLiuNian(cd, dayGanRef);
+          if (liuNianList) {
+            var ln = null;
+            // find current year or closest
+            for (var i = 0; i < liuNianList.length; i++) {
+              if (liuNianList[i].year === thisYear) { ln = liuNianList[i]; break; }
+            }
+            if (!ln && liuNianList.length > 0) ln = liuNianList[0]; // fallback
+            if (ln) {
+              data.currentLiuNian = {
+                year: ln.year, gan: ln.gan, zhi: ln.zhi,
+                shiShen: ln.shiShen || (typeof BaZiCalculator !== 'undefined' ? BaZiCalculator.getShiShen(dayGanRef, ln.gan) : '')
+              };
+            }
+          }
+        }
+      } catch(e) {}
+    }
+    if (typeof _nativeShenSha !== 'undefined' && _nativeShenSha) data.shenSha = _nativeShenSha.map(function(s) { return { name: s.name || s, type: s.type || '', desc: s.desc || '' }; });
     return data;
   }
 
@@ -455,7 +589,7 @@
 
   function addGreeting() {
     var cd = buildChartData();
-    var g = '🧧 **AI 命理师已就绪**\n\n';
+    var g = '🧧 **知时先生已就绪**\n\n';
     if (cd && cd.dayMaster) { g += '你的日主为**' + cd.dayMaster.gan + '**' + (cd.dayMaster.wuXing ? '（' + cd.dayMaster.wuXing + '）' : '') + (cd.dayMasterStrength ? '，命局**' + cd.dayMasterStrength + '**' : '') + '。\n\n可以问我任何命理问题：\n• 我的喜用神是什么？\n• 财运事业如何？\n• 今年运势怎么样？\n• 婚姻感情如何？'; }
     else { g += '你可以问我任何八字命理问题。'; }
     if (AI.isMonthly) g = '👑 **会员已激活**\n\n' + g;

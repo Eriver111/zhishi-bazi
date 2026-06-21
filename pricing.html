@@ -57,7 +57,7 @@
         <li>完整排盘数据注入</li>
         <li>兑换码永久有效</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-outline-pricing">¥4.9 体验</a>
+      <button class="pricing-btn btn-outline-pricing" onclick="buyCredits('credit_3',4.9,'AI体验包·3次')">¥4.9 购买</button>
     </div>
 
     <div class="pricing-card featured">
@@ -71,7 +71,7 @@
         <li>八字命盘上下文</li>
         <li>兑换码永久有效</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-gold-pricing">¥9.9 体验</a>
+      <button class="pricing-btn btn-gold-pricing" onclick="buyCredits('credit_10',9.9,'AI进阶包·10次')">¥9.9 购买</button>
     </div>
 
     <div class="pricing-card">
@@ -85,7 +85,7 @@
         <li>单次仅 ¥0.75</li>
         <li>兑换码永久有效</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-outline-pricing">¥14.9 体验</a>
+      <button class="pricing-btn btn-outline-pricing" onclick="buyCredits('credit_20',14.9,'AI专业包·20次')">¥14.9 购买</button>
     </div>
 
     <div class="pricing-card">
@@ -99,7 +99,7 @@
         <li>新功能优先体验</li>
         <li>支持随时续费</li>
       </ul>
-      <a href="/paipan" class="pricing-btn btn-gold-pricing">¥29.9 开通</a>
+      <button class="pricing-btn btn-gold-pricing" onclick="buyCredits('monthly',29.9,'AI会员·30天')">¥29.9 开通</button>
     </div>
 
     
@@ -110,6 +110,183 @@
 <script src="js/mo-xing-he.js"></script>
 <script src="js/bg-animation.js"></script>
 <script>MoXingHe.start('mxhCanvas')</script>
+
+<!-- 支付逻辑：与 paywall.js 统一 -->
+<script>
+var _pollTimer = null;
+var _currentOrderId = null;
+
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+}
+
+function injectQrModal() {
+  if (document.getElementById('creditQrModal')) return;
+  var m = document.createElement('div');
+  m.id = 'creditQrModal';
+  m.style.cssText = 'display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);align-items:center;justify-content:center';
+  m.innerHTML = '<div style="background:var(--card,#0d1525);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative">'
+    + '<button onclick="closeQrModal()" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button>'
+    + '<h3 style="color:var(--gold-l);margin-bottom:8px" id="qrModalTitle">扫码支付</h3>'
+    + '<div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div>'
+    + '<p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后将自动发放积分，请勿关闭页面</p>'
+    + '<p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p>'
+    + '<button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px;background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--bd)" onclick="checkManualPayment()">我已付过款，刷新状态</button>'
+    + '</div>';
+  document.body.appendChild(m);
+}
+
+function closeQrModal() {
+  var m = document.getElementById('creditQrModal');
+  if (m) m.style.display = 'none';
+}
+
+function stopPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+function buyCredits(mode, amount, name) {
+  injectQrModal();
+  var modal = document.getElementById('creditQrModal');
+  if (modal) modal.style.display = 'flex';
+  var title = document.getElementById('qrModalTitle');
+  if (title) title.textContent = '扫码 ' + name + ' ' + amount + ' 元';
+  var status = document.getElementById('qrStatus');
+  if (status) status.textContent = '正在连接支付...';
+  var retry = document.getElementById('qrRetryBtn');
+  if (retry) retry.style.display = 'none';
+
+  fetch('/api/create-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: mode, amount: amount, name: name, money: amount })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.error) {
+      if (status) status.textContent = '创建订单失败: ' + d.error;
+      if (retry) retry.style.display = 'block';
+      return;
+    }
+    _currentOrderId = d.out_trade_no;
+    localStorage.setItem('credit_ord', d.out_trade_no);
+
+    if (isMobile() && d.pay_url) {
+      if (status) status.textContent = '正在跳转支付...';
+      setTimeout(function() { window.location.href = d.pay_url; }, 500);
+    } else {
+      var container = document.getElementById('qrContainer');
+      // zpayz 返回的 qrcode/pay_url 是支付宝链接（非图片），统一用 QuickChart 生成二维码图片
+      var payUrl = d.pay_url || d.qrcode || '';
+      var qrSrc = '';
+      if (payUrl) {
+        qrSrc = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(payUrl);
+      }
+      // 兜底
+      if (!qrSrc) {
+        qrSrc = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(
+          'https://zpayz.cn/mapi.php?pid=2026060400293274&out_trade_no=' + d.out_trade_no
+        );
+      }
+      if (container) {
+        container.innerHTML = '<img src="' + qrSrc + '" style="width:200px;height:200px;border-radius:8px" onerror="this.innerHTML=\'<p style=color:#333;padding:20px>二维码加载失败<br><small>请点击下方按钮重试</small></p>\'">';
+      }
+      if (status) status.textContent = '请扫码支付 ' + amount + ' 元';
+    }
+    startPolling(d.out_trade_no);
+  })
+  .catch(function(e) {
+    if (status) status.textContent = '网络错误，请重试';
+    if (retry) retry.style.display = 'block';
+  });
+}
+
+function startPolling(orderId) {
+  stopPolling();
+  var n = 0;
+  var status = document.getElementById('qrStatus');
+  _pollTimer = setInterval(function() {
+    n++;
+    if (n > 180) {
+      stopPolling();
+      if (status) status.textContent = '支付超时，请点击下方按钮刷新';
+      var retry = document.getElementById('qrRetryBtn');
+      if (retry) retry.style.display = 'block';
+      return;
+    }
+    if (status && n % 5 === 0) status.textContent = '等待支付... (' + Math.floor(n * 2) + 's)';
+
+    fetch('/api/check-order?out_trade_no=' + encodeURIComponent(orderId))
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.paid || d.status === 'paid') {
+          stopPolling();
+          localStorage.removeItem('credit_ord');
+          onPaySuccess(d);
+        }
+      })
+      .catch(function() {});
+  }, 2000);
+}
+
+function onPaySuccess(data) {
+  var modal = document.getElementById('creditQrModal');
+  if (modal) modal.style.display = 'none';
+
+  // 显示成功提示
+  var existing = document.querySelector('.credit-success-toast');
+  if (existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.className = 'credit-success-toast';
+  toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20000;background:var(--card,#0d1525);border:1px solid var(--gold);border-radius:16px;padding:32px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)';
+  var codeText = data.code ? '<div style="font-size:14px;color:var(--tx2);margin-top:8px">兑换码：<b style="color:var(--gold-l);letter-spacing:2px">' + data.code + '</b></div>' : '';
+  toast.innerHTML = ''
+    + '<div style="font-size:22px;color:var(--gold-l);letter-spacing:3px;font-weight:700;margin-bottom:6px">购买成功</div>'
+    + '<div style="color:var(--tx2);font-size:14px;line-height:1.8">积分已发放到账户</div>'
+    + codeText
+    + '<div style="color:var(--tx3);font-size:12px;margin-top:8px">请前往排盘页面开始使用</div>'
+    + '<a href="paipan.html" style="display:inline-block;margin-top:16px;padding:10px 32px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border-radius:25px;text-decoration:none;font-weight:700;letter-spacing:2px;font-size:14px">开始使用</a>'
+    + '<button onclick="this.parentElement.remove()" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer">关闭</button>';
+  document.body.appendChild(toast);
+}
+
+function checkManualPayment() {
+  var oid = _currentOrderId || localStorage.getItem('credit_ord');
+  if (!oid) {
+    var status = document.getElementById('qrStatus');
+    if (status) status.textContent = '未找到订单，请重新创建';
+    return;
+  }
+  var status = document.getElementById('qrStatus');
+  if (status) status.textContent = '正在查询支付状态...';
+  fetch('/api/check-order?out_trade_no=' + encodeURIComponent(oid))
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.paid || d.status === 'paid') {
+        stopPolling();
+        localStorage.removeItem('credit_ord');
+        onPaySuccess(d);
+      } else {
+        if (status) status.textContent = '暂未查到支付记录，请确认已付款';
+      }
+    })
+    .catch(function() {
+      if (status) status.textContent = '网络错误，请重试';
+    });
+}
+
+// 页面恢复：如果之前有未完成的订单，继续轮询
+(function() {
+  var oid = localStorage.getItem('credit_ord');
+  if (oid) {
+    _currentOrderId = oid;
+    injectQrModal();
+    var modal = document.getElementById('creditQrModal');
+    if (modal) modal.style.display = 'flex';
+    startPolling(oid);
+  }
+})();
+</script>
 </body>
 </html>
 <!-- deploy 1781972040 -->

@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
     const body = req.body || {};
     const { year, month, day, hour, gender, amount, hash, description, money, name, mode } = body;
 
-    // ---- v3.0 AI 付费模式（次数包 + 月会员） ----
+    // ---- v3.0 AI 付费模式（次数包 + 月会员）----
     if (mode === 'credit_pack' || mode === 'monthly' || mode === 'ai-chat' || mode === 'credit_3' || mode === 'credit_10' || mode === 'credit_20') {
       const pricing = PRICING[mode] || PRICING.ai_chat;
       const payAmount = pricing.amount;
@@ -53,13 +53,53 @@ module.exports = async function handler(req, res) {
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';
 
-      const payUrl = PAY_URL + '?' + Object.keys(payParams)
-        .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k]))
-        .join('&');
+      const formBody = Object.keys(payParams).map(k =>
+        encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k])
+      ).join('&');
 
-      return res.status(200).json({
-        pay_url: payUrl, out_trade_no: orderId, amount: payAmount, mode: mode, status: 'pending'
-      });
+      // POST 到 zpayz 获取真实支付宝链接和二维码
+      try {
+        const payResp = await fetch(PAY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody
+        });
+        const text = await payResp.text();
+        let zdata;
+        try { zdata = JSON.parse(text); } catch (e) {
+          // zpayz 不可达时 falling back 到 GET URL + QuickChart QR
+          const fallbackUrl = PAY_URL + '?' + formBody;
+          const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
+          return res.status(200).json({
+            out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+            amount: payAmount, mode: mode, status: 'pending'
+          });
+        }
+        if (zdata.code !== 1) {
+          return res.status(502).json({ error: zdata.msg || '支付下单失败' });
+        }
+        // zpayz 返回的二维码/支付链接，如果都为空则用 GET URL fallback
+        var realPayUrl = zdata.payurl || zdata.qrcode || '';
+        var realQr = zdata.qrcode || zdata.payurl || '';
+        if (!realPayUrl && !realQr) {
+          const fallbackUrl = PAY_URL + '?' + formBody;
+          realPayUrl = fallbackUrl;
+          realQr = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
+        }
+        return res.status(200).json({
+          out_trade_no: orderId,
+          pay_url: realPayUrl, qrcode: realQr,
+          amount: payAmount, mode: mode, status: 'pending'
+        });
+      } catch (e) {
+        // 网络错误也 falling back
+        const fallbackUrl = PAY_URL + '?' + formBody;
+        const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
+        return res.status(200).json({
+          out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+          amount: payAmount, mode: mode, status: 'pending'
+        });
+      }
     }
 
     // ---- 旧版报告支付（POST zpayz 获取真实支付宝链接） ----

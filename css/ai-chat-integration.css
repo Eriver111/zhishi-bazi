@@ -385,8 +385,8 @@
     font-size: 13px;
   }
   .ai-drawer {
-    height: 55vh;
-    max-height: none;
+    height: 62vh;
+    max-height: 520px;
     border-radius: 14px 14px 0 0;
   }
   .ai-drawer .chat-messages-wrap {
