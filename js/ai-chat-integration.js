@@ -165,14 +165,15 @@
     // 初始状态：显示免费
     updateFreeDisplay();
 
-    // FAB 点击打开（拖拽后续再加）
+    // FAB 点击跳转到独立AI对话页
     var fab = document.getElementById('aiFab');
     if (fab) {
       fab.addEventListener('click', function(e) {
-        console.log('[AI] FAB clicked! target:', e.target.tagName, e.target.id);
-        toggle();
+        // 保存排盘数据供AI页使用
+        var cd = buildChartData();
+        if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
+        window.location.href = 'ai-chat.html';
       });
-      console.log('[AI] FAB click listener attached to', fab.id);
     } else {
       console.error('[AI] FAB element not found!');
     }
