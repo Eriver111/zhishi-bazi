@@ -3132,8 +3132,7 @@ function getPattern(bazi) {
     '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》' }
   };
 
-  // 按本气→中气→余气顺序，找第一个在天干中出现的藏干
-  // 第一轮：精确匹配
+  // 按本气→中气→余气顺序，每个藏干先精确匹配再同五行
   var matchedSS = '';
   var matchedGan = '';
   var matchedPillar = '';
@@ -3141,6 +3140,8 @@ function getPattern(bazi) {
 
   for (var ci = 0; ci < cangGan.length; ci++) {
     var cg = cangGan[ci];
+    var cgWx = WU_XING[cg];
+    // 先精确匹配
     for (var gi = 0; gi < allGan.length; gi++) {
       if (allGan[gi] === cg) {
         matchedSS = getShiShen(dayGan, cg);
@@ -3149,25 +3150,18 @@ function getPattern(bazi) {
         break;
       }
     }
-    if (matchedSS) break;
-  }
-
-  // 第二轮：若精确匹配失败，找同五行但不同干（如卯藏乙不透但年透甲）
-  if (!matchedSS) {
-    for (var ci = 0; ci < cangGan.length; ci++) {
-      var cg = cangGan[ci];
-      var cgWx = WU_XING[cg];
+    // 精确未匹配则同五行匹配
+    if (!matchedSS) {
       for (var gi = 0; gi < allGan.length; gi++) {
-        var agWx = WU_XING[allGan[gi]];
-        if (agWx === cgWx && allGan[gi] !== cg) {
-          matchedSS = getShiShen(dayGan, allGan[gi]);
+        if (WU_XING[allGan[gi]] === cgWx && allGan[gi] !== cg) {
+          matchedSS = getShiShen(dayGan, cg);
           matchedGan = allGan[gi];
           matchedPillar = pillarNames[gi] + '柱(同' + cgWx + '透' + allGan[gi] + ')';
           break;
         }
       }
-      if (matchedSS) break;
     }
+    if (matchedSS) break;
   }
 
   // 若透出，取对应的十神为格；否则取月支本气十神
@@ -3482,8 +3476,8 @@ function getCongGe(bazi) {
       source: '从旺/从强'
     };
   }
-  // 从杀：日主极弱(<35)且官杀极旺(≥其他两倍)
-  if ((level === '极弱' || level === '偏弱') && kePower >= 6 && kePower >= dgPower * 2) {
+  // 从杀：日主弱(极弱/偏弱/score<40)且官杀极旺(≥6且≥日主2倍)
+  if ((level === '极弱' || level === '偏弱' || score < 40) && kePower >= 6 && kePower >= dgPower * 2) {
     return {
       isCong: true, name: '从杀格',
       desc: '日主弱极，官杀成势，不得不从。"弃命从杀，杀旺为贵。"喜财官杀顺势，忌印比破格。',
@@ -3491,8 +3485,8 @@ function getCongGe(bazi) {
       source: '弃命从杀'
     };
   }
-  // 从财：日主极弱且财星极旺
-  if ((level === '极弱' || level === '偏弱') && caiPower >= 6 && caiPower >= dgPower * 2) {
+  // 从财：日主弱且财星极旺
+  if ((level === '极弱' || level === '偏弱' || score < 40) && caiPower >= 6 && caiPower >= dgPower * 2) {
     return {
       isCong: true, name: '从财格',
       desc: '日主弱极，财星成势，弃命从财。"从财格成，富压一方。"喜食伤财官顺势，忌印比破格。',
@@ -3500,13 +3494,24 @@ function getCongGe(bazi) {
       source: '弃命从财'
     };
   }
-  // 从儿：日主极弱且食伤极旺
-  if ((level === '极弱' || level === '偏弱') && shiPower >= 6 && shiPower >= dgPower * 2) {
+  // 从儿：日主弱且食伤极旺
+  if ((level === '极弱' || level === '偏弱' || score < 40) && shiPower >= 6 && shiPower >= dgPower * 2) {
     return {
       isCong: true, name: '从儿格',
       desc: '日主弱极，食伤成势，弃命从儿。"从儿格，不论身强弱，只要我生者成势即可。"喜食伤财顺势，忌印星破格。',
       xiOverride: [WOSHENG, WOKE], jiOverride: [SHENGWO],
       source: '弃命从儿'
+    };
+  }
+  // 从势格（假从）：日主极弱(<40分)，克泄耗总量远超生扶，且无一五行独大
+  var keXieHaoTotal = kePower + caiPower + shiPower;
+  var shengFuTotal = dgPower + yinPower;
+  if (score < 40 && keXieHaoTotal >= shengFuTotal * 2) {
+    return {
+      isCong: true, name: '假从势格',
+      desc: '日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。',
+      xiOverride: [KEWO, WOKE, WOSHENG], jiOverride: [SHENGWO, dgWx],
+      source: '弃命从势'
     };
   }
   return { isCong: false };
