@@ -115,6 +115,7 @@
 <script>
 var _pollTimer = null;
 var _currentOrderId = null;
+var _reqId = 0; // 请求序列号，防止竞态
 
 function isMobile() {
   return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
@@ -146,11 +147,14 @@ function stopPolling() {
 }
 
 function buyCredits(mode, amount, name) {
-  // 强制清空旧状态，防止多订单互相干扰
+  // 防止重复点击
+  var allBtns = document.querySelectorAll('.pricing-btn');
+  allBtns.forEach(function(b) { b.disabled = true; });
+
+  // 强制清空旧状态
   stopPolling();
   _currentOrderId = null;
   localStorage.removeItem('credit_ord');
-  // 重置 QR 容器为加载状态
   var container = document.getElementById('qrContainer');
   if (container) container.innerHTML = '生成二维码中...';
 
@@ -164,6 +168,7 @@ function buyCredits(mode, amount, name) {
   var retry = document.getElementById('qrRetryBtn');
   if (retry) retry.style.display = 'none';
 
+  var myReqId = ++_reqId; // 递增序列号
   fetch('/api/create-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -171,9 +176,11 @@ function buyCredits(mode, amount, name) {
   })
   .then(function(r) { return r.json(); })
   .then(function(d) {
+    if (myReqId !== _reqId) { allBtns.forEach(function(b) { b.disabled = false; }); return; }
     if (d.error) {
       if (status) status.textContent = '创建订单失败: ' + d.error;
       if (retry) retry.style.display = 'block';
+      allBtns.forEach(function(b) { b.disabled = false; });
       return;
     }
     _currentOrderId = d.out_trade_no;
@@ -206,6 +213,7 @@ function buyCredits(mode, amount, name) {
   .catch(function(e) {
     if (status) status.textContent = '网络错误，请重试';
     if (retry) retry.style.display = 'block';
+    allBtns.forEach(function(b) { b.disabled = false; });
   });
 }
 
@@ -239,6 +247,8 @@ function onPaySuccess(data) {
   stopPolling();
   _currentOrderId = null;
   localStorage.removeItem('credit_ord');
+  var allBtns = document.querySelectorAll('.pricing-btn');
+  allBtns.forEach(function(b) { b.disabled = false; });
   var modal = document.getElementById('creditQrModal');
   if (modal) modal.style.display = 'none';
 

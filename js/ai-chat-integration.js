@@ -186,7 +186,21 @@
     if ($backdrop) $backdrop.classList.add('open');
     AI.drawerOpen = true;
     if ($input) $input.focus();
+    // 验证月度会员是否过期（每小时一次）
+    if (AI.isMonthly && AI.code && Date.now() - _lastMonthlyCheck > 3600000) {
+      _lastMonthlyCheck = Date.now();
+      fetch('/api/credits?code=' + encodeURIComponent(AI.code)).then(function(r){return r.json()}).then(function(d){
+        if (!d.subscription_active && d.credits !== -1) {
+          AI.isMonthly = false; AI.credits = d.credits || 0;
+          localStorage.setItem('ai_chat_type','credits');
+          updateCreditsDisplay(AI.credits);
+          alert('月度会员已过期，剩余 ' + AI.credits + ' 次');
+          showBuyBar();
+        }
+      }).catch(function(){});
+    }
   }
+  var _lastMonthlyCheck = 0;
   function close() {
     if (!$drawer) return;
     $drawer.classList.remove('open');
