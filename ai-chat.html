@@ -56,6 +56,33 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 </style>
 </head>
 <body>
+<!-- 加载动画 -->
+<div id="splash" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0a0f18 0%,#060a10 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s">
+  <!-- 五行图闪金光 -->
+  <div id="sp-wx" style="text-align:center;opacity:0;transition:opacity .5s">
+    <div style="font-size:60px;animation:spGlow 1s ease-in-out infinite">⭐</div>
+    <div style="color:#e8cf70;font-size:16px;letter-spacing:3px;margin-top:8px">五行图分析中</div>
+  </div>
+  <!-- 金色眼睛看书 -->
+  <div id="sp-eye" style="text-align:center;opacity:0;transition:opacity .5s;position:absolute">
+    <div style="font-size:60px">👁️</div>
+    <div style="color:#e8cf70;font-size:16px;letter-spacing:3px;margin-top:8px">盲派算法分析中</div>
+  </div>
+  <!-- 格局旋转 -->
+  <div id="sp-pattern" style="text-align:center;opacity:0;transition:opacity .5s;position:absolute">
+    <div style="position:relative;width:160px;height:160px;margin:0 auto">
+      <span style="position:absolute;top:0;left:50%;transform:translateX(-50%);color:#e8cf70;font-size:18px;font-weight:700">身强</span>
+      <span style="position:absolute;top:50%;right:0;transform:translateY(-50%);color:#e8cf70;font-size:18px;font-weight:700">身弱</span>
+      <span style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);color:#e8cf70;font-size:18px;font-weight:700">格局</span>
+      <span style="position:absolute;top:50%;left:0;transform:translateY(-50%);color:#e8cf70;font-size:18px;font-weight:700">用神</span>
+    </div>
+    <div style="color:#e8cf70;font-size:16px;letter-spacing:3px;margin-top:16px">子平派分析中</div>
+  </div>
+  <style>
+    @keyframes spGlow{0%,100%{filter:drop-shadow(0 0 10px #c9a84c)}50%{filter:drop-shadow(0 0 30px #f0e0a0)}}
+  </style>
+</div>
+
 <div class="page">
   <!-- 顶栏 -->
   <div class="topbar">
@@ -93,6 +120,24 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 
 <script>
 var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:''};
+
+// 加载动画编排
+(function runSplash(){
+  var wx=document.getElementById('sp-wx'), eye=document.getElementById('sp-eye'), pt=document.getElementById('sp-pattern'), splash=document.getElementById('splash');
+  if(!splash) return;
+  // 1. 五行图 0-1.2s
+  setTimeout(function(){wx.style.opacity='1'},100);
+  setTimeout(function(){wx.style.opacity='0'},1300);
+  // 2. 盲派眼睛 1.3-2.5s
+  setTimeout(function(){eye.style.opacity='1'},1400);
+  setTimeout(function(){eye.style.opacity='0'},2600);
+  // 3. 子平派格局旋转 2.6-3.8s
+  setTimeout(function(){pt.style.opacity='1'},2700);
+  setTimeout(function(){pt.style.opacity='0'},3800);
+  // 4. 隐藏splash
+  setTimeout(function(){splash.style.opacity='0'},3900);
+  setTimeout(function(){splash.remove()},4500);
+})();
 
 (function init(){
   AI.freeId=localStorage.getItem('ai_free_id')||('f_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8));
