@@ -49,38 +49,22 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 .share-bar button{padding:8px 20px;border-radius:16px;border:none;background:linear-gradient(135deg,#4CAF50,#2d8a4a);color:#fff;font-size:13px;cursor:pointer;letter-spacing:1px;font-family:inherit}
 .share-bar .hint{display:block;font-size:11px;color:var(--tx3);margin-top:4px}
 .share-bar .hint a{color:var(--gold)}
-.typing{display:flex;gap:4px;padding:12px 16px}
-.typing span{width:6px;height:6px;border-radius:50%;background:rgba(201,168,76,.4);animation:typing 1s infinite}
-.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
-@keyframes typing{0%,100%{opacity:.2}50%{opacity:1}}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
 </style>
 </head>
 <body>
-<!-- 加载动画 -->
-<div id="splash" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0a0f18 0%,#060a10 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s">
-  <!-- 五行图闪金光 -->
-  <div id="sp-wx" style="text-align:center;opacity:0;transition:opacity .5s">
-    <div style="font-size:60px;animation:spGlow 1s ease-in-out infinite">⭐</div>
-    <div style="color:#e8cf70;font-size:16px;letter-spacing:3px;margin-top:8px">五行图分析中</div>
-  </div>
-  <!-- 金色眼睛看书 -->
-  <div id="sp-eye" style="text-align:center;opacity:0;transition:opacity .5s;position:absolute">
-    <div style="font-size:60px">👁️</div>
-    <div style="color:#e8cf70;font-size:16px;letter-spacing:3px;margin-top:8px">盲派算法分析中</div>
-  </div>
-  <!-- 格局旋转 -->
-  <div id="sp-pattern" style="text-align:center;opacity:0;transition:opacity .5s;position:absolute">
-    <div style="position:relative;width:160px;height:160px;margin:0 auto">
-      <span style="position:absolute;top:0;left:50%;transform:translateX(-50%);color:#e8cf70;font-size:18px;font-weight:700">身强</span>
-      <span style="position:absolute;top:50%;right:0;transform:translateY(-50%);color:#e8cf70;font-size:18px;font-weight:700">身弱</span>
-      <span style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);color:#e8cf70;font-size:18px;font-weight:700">格局</span>
-      <span style="position:absolute;top:50%;left:0;transform:translateY(-50%);color:#e8cf70;font-size:18px;font-weight:700">用神</span>
-    </div>
-    <div style="color:#e8cf70;font-size:16px;letter-spacing:3px;margin-top:16px">子平派分析中</div>
-  </div>
-  <style>
-    @keyframes spGlow{0%,100%{filter:drop-shadow(0 0 10px #c9a84c)}50%{filter:drop-shadow(0 0 30px #f0e0a0)}}
-  </style>
+<!-- 页面加载：天眼动画 -->
+<div id="eyeSplash" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .5s">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 2s ease-out infinite"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 2s ease-out .4s infinite"></div>
+  <svg viewBox="0 0 100 60" style="width:160px;height:96px;position:relative;z-index:1">
+    <defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150" filter="url(#eyeGlow)" id="eyePath"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1s" fill="freeze"/></path>
+    <circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".3s" begin=".8s" fill="freeze"/></circle>
+    <circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0"><animate attributeName="opacity" from=".6" to="0" dur=".6s" begin="1.1s" fill="freeze"/><animate attributeName="r" from="8" to="25" dur=".6s" begin="1.1s" fill="freeze"/></circle>
+  </svg>
+  <div style="color:#e8cf70;margin-top:16px;font-size:15px;letter-spacing:5px;position:relative;z-index:1">知 时 先 生</div>
+  <style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
 </div>
 
 <div class="page">
@@ -121,23 +105,27 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 <script>
 var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:''};
 
-// 加载动画编排
-(function runSplash(){
-  var wx=document.getElementById('sp-wx'), eye=document.getElementById('sp-eye'), pt=document.getElementById('sp-pattern'), splash=document.getElementById('splash');
-  if(!splash) return;
-  // 1. 五行图 0-1.2s
-  setTimeout(function(){wx.style.opacity='1'},100);
-  setTimeout(function(){wx.style.opacity='0'},1300);
-  // 2. 盲派眼睛 1.3-2.5s
-  setTimeout(function(){eye.style.opacity='1'},1400);
-  setTimeout(function(){eye.style.opacity='0'},2600);
-  // 3. 子平派格局旋转 2.6-3.8s
-  setTimeout(function(){pt.style.opacity='1'},2700);
-  setTimeout(function(){pt.style.opacity='0'},3800);
-  // 4. 隐藏splash
-  setTimeout(function(){splash.style.opacity='0'},3900);
-  setTimeout(function(){splash.remove()},4500);
-})();
+// 天眼加载
+setTimeout(function(){var e=document.getElementById('eyeSplash');if(e){e.style.opacity='0';setTimeout(function(){e.remove()},500)}},2500);
+
+// AI思考时显示三步分析动画
+var _thinkTimer=null;
+var _thinkSteps=['五行图分析中','盲派算法分析中','子平派分析中'];
+var _thinkIcons=['⭐','👁️','🔮'];
+function showThinking(){
+  var d=document.createElement('div');d.className='msg ai';d.id='thinking';
+  var step=0;
+  function cycle(){
+    d.querySelector('.bubble').innerHTML=_thinkIcons[step]+' <span style=color:#e8cf70>'+_thinkSteps[step]+'</span>';
+    step=(step+1)%3;
+  }
+  d.innerHTML='<div class="avatar">师</div><div class="bubble" style="animation:pulse 1s infinite">⭐ 五行图分析中</div>';
+  document.getElementById('messages').appendChild(d);
+  document.getElementById('messages').scrollTop=99999;
+  _thinkTimer=setInterval(cycle,900);
+  cycle();
+}
+function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById('thinking');if(t)t.remove()}
 
 (function init(){
   AI.freeId=localStorage.getItem('ai_free_id')||('f_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8));
@@ -180,14 +168,6 @@ function addMsg(role,text){
   document.getElementById('messages').scrollTop=99999;
 }
 
-function showTyping(){
-  var d=document.createElement('div');d.className='typing';d.id='typing';
-  d.innerHTML='<span></span><span></span><span></span>';
-  document.getElementById('messages').appendChild(d);
-  document.getElementById('messages').scrollTop=99999;
-}
-function hideTyping(){var t=document.getElementById('typing');if(t)t.remove()}
-
 function toggleMode(){
   AI.mode=AI.mode==='simple'?'pro':'simple';
   var btn=document.getElementById('modeBtn');
@@ -200,7 +180,7 @@ function send(){
   var inp=document.getElementById('input');var text=inp.value.trim();if(!text)return;
   if(AI.freeRemaining<=0&&AI.credits<=0&&!AI.isMonthly){document.getElementById('shareBar').style.display='block';return}
   inp.value='';AI.isWaiting=true;document.getElementById('sendBtn').disabled=true;
-  addMsg('user',text);showTyping();
+  addMsg('user',text);showThinking();
 
   var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
   // 附加上次从结果页保存的排盘数据
@@ -210,13 +190,13 @@ function send(){
 
   fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
   .then(function(r){return r.json()}).then(function(d){
-    hideTyping();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
+    hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
     addMsg('ai',d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}
     if(d.is_monthly){AI.isMonthly=true;updateCreditsUI()}
-  }).catch(function(e){hideTyping();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','网络错误，请重试')});
+  }).catch(function(e){hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','网络错误，请重试')});
 }
 
 function redeem(){
