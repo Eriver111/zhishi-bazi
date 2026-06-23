@@ -14,21 +14,33 @@ module.exports = async function handler(req, res) {
   // ---- 批量生成推广兑换码（需密钥鉴权）----
   if (req.method === 'POST') {
     try {
-      const { credits, action, key, batch, prefix } = req.body || {};
+      const { credits, action, key, batch, prefix, type } = req.body || {};
       if (action === 'generate') {
-        // 鉴权
         const ADMIN_KEY = process.env.ADMIN_KEY || 'zhishi-admin-2026';
         if (key !== ADMIN_KEY) {
           return res.status(403).json({ error: '密钥错误，无权生成兑换码' });
         }
-        const count = parseInt(credits) || 3;
-        const batchSize = Math.min(parseInt(batch) || 1, 100); // 最多一次生成 100 个
-        const codePrefix = prefix || ''; // 推广码不带 TEST 前缀
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         const crypto = require('crypto');
-        const { insertCredits } = require('../lib/supabase.js');
-        const codes = [];
+        const { insertCredits, activateMonthly } = require('../lib/supabase.js');
+        const batchSize = Math.min(parseInt(batch) || 1, 100);
+        const codePrefix = prefix || '';
         const codeLen = 8;
+        const codes = [];
+        // 月度会员
+        if (type === 'monthly') {
+          const days = parseInt(credits) || 30;
+          for (let j = 0; j < batchSize; j++) {
+            const bytes = crypto.randomBytes(codeLen);
+            let code = codePrefix;
+            for (let i = 0; i < codeLen; i++) code += chars[bytes[i] % chars.length];
+            await activateMonthly(code, 'admin_monthly_' + Date.now().toString(36) + '_' + j, days);
+            codes.push({ code, type: 'monthly', days });
+          }
+          return res.status(200).json({ generated: codes.length, codes, message: '已生成 ' + codes.length + ' 个' + days + '天月度会员码' });
+        }
+        // 次数包
+        const count = parseInt(credits) || 3;
         for (let j = 0; j < batchSize; j++) {
           const bytes = crypto.randomBytes(codeLen);
           let code = codePrefix;
