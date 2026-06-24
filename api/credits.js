@@ -34,7 +34,10 @@ module.exports = async function handler(req, res) {
             const bytes = crypto.randomBytes(codeLen);
             let code = codePrefix;
             for (let i = 0; i < codeLen; i++) code += chars[bytes[i] % chars.length];
-            await activateMonthly(code, 'admin_monthly_' + Date.now().toString(36) + '_' + j, days);
+            const result = await activateMonthly(code, 'admin_monthly_' + Date.now().toString(36) + '_' + j, days);
+            if (!result) {
+              return res.status(500).json({ error: '写入月度会员失败，请检查 Supabase user_subscriptions 表。码:' + code });
+            }
             codes.push({ code, type: 'monthly', days });
           }
           return res.status(200).json({ generated: codes.length, codes, message: '已生成 ' + codes.length + ' 个' + days + '天月度会员码' });
@@ -45,7 +48,10 @@ module.exports = async function handler(req, res) {
           const bytes = crypto.randomBytes(codeLen);
           let code = codePrefix;
           for (let i = 0; i < codeLen; i++) code += chars[bytes[i] % chars.length];
-          await insertCredits(code, 'admin_' + Date.now().toString(36) + '_' + j, count);
+          const result = await insertCredits(code, 'admin_' + Date.now().toString(36) + '_' + j, count);
+          if (!result) {
+            return res.status(500).json({ error: '写入数据库失败，请检查 Supabase 连接和表结构。码:' + code });
+          }
           codes.push({ code, credits: count });
         }
         return res.status(200).json({
