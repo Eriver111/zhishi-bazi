@@ -8,8 +8,8 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--ink,#080c14);color:var(--tx,#e2dcc8)}
-.page{display:flex;flex-direction:column;height:100%;max-width:800px;margin:0 auto;position:relative}
+html,body{height:100%;height:100dvh;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--ink,#080c14);color:var(--tx,#e2dcc8)}
+.page{display:flex;flex-direction:column;height:100%;height:100dvh;max-width:800px;margin:0 auto;position:relative}
 /* 顶栏 */
 .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bd,rgba(201,168,76,.1));background:var(--ink);flex-shrink:0}
 .topbar .back{color:var(--tx2);text-decoration:none;font-size:20px;padding:4px 8px}
@@ -35,7 +35,7 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 .empty-state h3{color:var(--gold-l);font-size:18px;letter-spacing:3px}
 .empty-state p{font-size:13px;text-align:center;line-height:1.8}
 /* 底部栏 */
-.bottombar{flex-shrink:0;border-top:1px solid var(--bd);background:var(--ink);padding:8px 12px 12px}
+.bottombar{flex-shrink:0;border-top:1px solid var(--bd);background:var(--ink);padding:8px 12px max(12px,env(safe-area-inset-bottom))}
 .redeem-row{display:flex;gap:8px;margin-bottom:8px}
 .redeem-row input{flex:1;padding:8px 12px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:10px;color:var(--tx);font-size:13px;font-family:monospace;letter-spacing:2px;text-align:center;outline:none}
 .redeem-row input:focus{border-color:var(--gold)}
