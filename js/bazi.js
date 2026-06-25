@@ -3039,7 +3039,7 @@ var CITY_LNG = {
     '信阳':114.1,'驻马店':114.0,'周口':114.6,'许昌':113.8,'平顶山':113.3,
     '安阳':114.4,'新乡':113.9,'焦作':113.2,'濮阳':115.0,'漯河':114.0,
     '三门峡':111.2,'鹤壁':114.3,
-    '宜昌':111.3,'襄阳':112.1,'荆州':112.2,'十堰':110.8,'黄石':115.1,
+    '宜昌':111.3,'武汉':114.3,'襄阳':112.1,'荆州':112.2,'十堰':110.8,'黄石':115.1,
     '鄂州':114.9,'荆门':112.2,'孝感':113.9,'黄冈':114.9,'咸宁':114.3,
     '随州':113.4,'恩施':109.5,
     '衡阳':112.6,'株洲':113.1,'湘潭':112.9,'岳阳':113.1,'常德':111.7,
@@ -3082,7 +3082,14 @@ var BEIJING_LNG = 120;
  */
 function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
     // 优先城市经度，其次省份经度，最后默认北京 120°
-    var lng = (CITY_LNG && CITY_LNG[province]) || PROVINCE_LNG[province] || BEIJING_LNG;
+    // 兼容「湖北省」「湖北」「襄阳市」等多种写法（去掉末尾省/市后缀再试）
+    var place = province || '';
+    var lng = (CITY_LNG && CITY_LNG[place]) || PROVINCE_LNG[place] || null;
+    if (!lng && (place.endsWith('省')||place.endsWith('市'))) {
+      var stripped = place.slice(0,-1);
+      lng = (CITY_LNG && CITY_LNG[stripped]) || PROVINCE_LNG[stripped] || null;
+    }
+    if (!lng) lng = BEIJING_LNG;
 
     // 1. 经度差：每差1度 = 4分钟
     var lngOffsetMin = (lng - BEIJING_LNG) * 4;
