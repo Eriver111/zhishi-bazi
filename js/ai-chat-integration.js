@@ -631,13 +631,16 @@
   // ===== 兑换码 =====
   function redeemCode() {
     var inp = document.getElementById('aiRedeemInput'); var cd = (inp && inp.value || '').trim(); if (!cd) { alert('请输入兑换码'); return; }
+    // 防重复：本地检查
+    var usedCodes = JSON.parse(localStorage.getItem('ai_used_codes') || '[]');
+    if (usedCodes.indexOf(cd) >= 0) { alert('此兑换码已使用过'); return; }
     fetch('/api/credits?code=' + encodeURIComponent(cd)).then(function(r) { return r.json(); }).then(function(d) {
       if (d.error) { alert(d.error); return; }
+      // 服务端检查：total_used>0 说明已被使用
+      if (d.total_used > 0) { alert('此兑换码已被使用'); return; }
       if (d.credits > 0) {
-        var totalCredits = AI.credits + d.credits; // 叠加而非覆盖
+        var totalCredits = AI.credits + d.credits;
         AI.code = cd; AI.credits = totalCredits;
-        // 存储所有兑换过的码，下次恢复时累加
-        var usedCodes = JSON.parse(localStorage.getItem('ai_used_codes') || '[]');
         if (usedCodes.indexOf(cd) < 0) usedCodes.push(cd);
         localStorage.setItem('ai_used_codes', JSON.stringify(usedCodes));
         localStorage.setItem('ai_chat_code', cd);
