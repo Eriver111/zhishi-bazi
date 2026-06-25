@@ -3467,8 +3467,10 @@ function getCongGe(bazi) {
 
   var level = ds.level, score = ds.score;
 
-  // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱
-  if (level === '极强' && kePower <= 1 && shiPower <= 1) {
+  // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱，且日支不能有克泄耗（日支坐克星则破格）
+  var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
+  var dayZhiIsKeXie = (KEWO === dayZhiGuanXi || WOSHENG === dayZhiGuanXi || WOKE === dayZhiGuanXi);
+  if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie) {
     return {
       isCong: true, name: '从强格',
       desc: '日主极强，局中无克泄耗，一气专旺，顺势而行。喜印比生扶，忌克泄耗破格。',
