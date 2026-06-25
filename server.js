@@ -3,7 +3,7 @@ const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0)process.env[t.slice(0,i).trim()]=t.slice(i+1).trim()}})}catch(_){}
 const s=http.createServer(async(req,res)=>{
 res.setHeader('Access-Control-Allow-Origin','*');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}
-let c=200;res.status=x=>{c=x;return res};res.json=d=>{res.writeHead(c,{'Content-Type':'application/json'});res.end(JSON.stringify(d))};
+let c=200;res.status=x=>{c=x;return res};res.json=d=>{res.writeHead(c,{'Content-Type':'application/json'});res.end(JSON.stringify(d))};res.send=d=>{res.writeHead(c,{'Content-Type':'text/plain'});res.end(String(d))};
 // Get original URL from Vercel rewrite header
 const origUrl=req.headers['x-original-url']||req.headers['x-now-route']||req.url||'';
 let pn=(origUrl.split('?')[0]||'/').replace(/^\/server\.js/,'')||'/';
