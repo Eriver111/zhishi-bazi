@@ -256,6 +256,12 @@ module.exports = async function handler(req, res) {
 async function callAI(question, chartData, bazi, history, mode) {
   const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
 
+  // 当前时间锚定
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonth = now.getMonth() + 1;
+  messages.push({ role: 'system', content: `当前时间：${thisYear}年${thisMonth}月。分析流年/流月运势时必须以此为基准，不要使用其他年份。` });
+
   // 模式指令
   if (mode === 'simple') {
     messages.push({ role: 'system', content: '本轮使用**白话模式**。用日常口语回答，不引经典原文，术语后附括号解释，每段不超过3句，语气轻松自然，像朋友聊天。' });
