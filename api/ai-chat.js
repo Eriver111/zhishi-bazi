@@ -256,11 +256,25 @@ module.exports = async function handler(req, res) {
 async function callAI(question, chartData, bazi, history, mode) {
   const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
 
-  // 当前时间锚定
+  // 当前时间锚定（含流年流月干支）
   const now = new Date();
   const thisYear = now.getFullYear();
   const thisMonth = now.getMonth() + 1;
-  messages.push({ role: 'system', content: `当前时间：${thisYear}年${thisMonth}月。分析流年/流月运势时必须以此为基准，不要使用其他年份。` });
+  const thisDay = now.getDate();
+  // 节气月份判定（简化：以节气日期为界）
+  const jieQiMonth = getJieQiMonth(thisMonth, thisDay);
+  // 年干五虎遁定月干
+  const yearGanIdx = (thisYear - 4) % 10;
+  const yearGan = '甲乙丙丁戊己庚辛壬癸'[yearGanIdx];
+  // 五虎遁：甲己之年丙作首(丙=2), 乙庚戊为头(戊=4), 丙辛庚为头(庚=6), 丁壬壬为头(壬=8), 戊癸甲为头(甲=0)
+  const wuHuStart = { '甲':2,'己':2,'乙':4,'庚':4,'丙':6,'辛':6,'丁':8,'壬':8,'戊':0,'癸':0 };
+  const startGan = wuHuStart[yearGan] || 0;
+  const monthGanIdx = (startGan + jieQiMonth) % 10;
+  const monthZhiIdx = (jieQiMonth + 1) % 12; // 寅=0→地支序0, 但公式中寅月jieQiMonth=0
+  const GAN = '甲乙丙丁戊己庚辛壬癸';
+  const ZHI = '寅卯辰巳午未申酉戌亥子丑';
+  const liuYueGZ = GAN[monthGanIdx] + ZHI[jieQiMonth];
+  messages.push({ role: 'system', content: `当前时间：${thisYear}年${thisMonth}月${thisDay}日。${thisYear}年为${yearGan}${ZHI[(thisYear-4)%12]}年，当前流月为${liuYueGZ}月（节气月${ZHI[jieQiMonth]}月）。分析流年/流月运势时必须以此为基准。` });
 
   // 模式指令
   if (mode === 'simple') {
@@ -537,6 +551,39 @@ function getServerFingerprint(req) {
           || '0.0.0.0';
   const ua = (req.headers['user-agent'] || '').slice(0, 200);
   return 'sfp_' + crypto.createHash('sha256').update(ip + '|' + ua).digest('hex').slice(0, 24);
+}
+
+/**
+ * 节气月判定：返回地支索引(0=寅...11=丑)
+ * 日期为公历，节气日期用近似值（精确到±1天，够用了）
+ */
+function getJieQiMonth(month, day) {
+  const jieQi = [
+    { m:2, d:4,  zhi:0 },  // 立春→寅月
+    { m:3, d:6,  zhi:1 },  // 惊蛰→卯月
+    { m:4, d:5,  zhi:2 },  // 清明→辰月
+    { m:5, d:5,  zhi:3 },  // 立夏→巳月
+    { m:6, d:5,  zhi:4 },  // 芒种→午月
+    { m:7, d:7,  zhi:5 },  // 小暑→未月
+    { m:8, d:7,  zhi:6 },  // 立秋→申月
+    { m:9, d:7,  zhi:7 },  // 白露→酉月
+    { m:10,d:8,  zhi:8 },  // 寒露→戌月
+    { m:11,d:7,  zhi:9 },  // 立冬→亥月
+    { m:12,d:7,  zhi:10 }, // 大雪→子月
+    { m:1, d:5,  zhi:11 }, // 小寒→丑月
+  ];
+  // 从第一个节气开始，找当前日期之后最近的那个节气，前一个就是当前月
+  let currentZhi = 11; // 默认丑月(1月1日~立春前)
+  for (let i = 0; i < jieQi.length; i++) {
+    const jq = jieQi[i];
+    if (month < jq.m || (month === jq.m && day < jq.d)) {
+      // 还没到这个节气 → 属于前一个节气月
+      currentZhi = i === 0 ? 11 : jieQi[i - 1].zhi;
+      return currentZhi;
+    }
+  }
+  // 晚于所有节气 → 属于最后一个节气月
+  return jieQi[jieQi.length - 1].zhi;
 }
 
 function generateMockReply(question, chartData, bazi) {
