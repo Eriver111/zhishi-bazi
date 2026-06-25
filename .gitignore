@@ -5,3 +5,4 @@ node_modules
 .vercel
 system-commandline-sentinel-files/
 .claude/
+ai-chat-dev.html

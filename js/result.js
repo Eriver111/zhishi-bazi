@@ -1103,7 +1103,7 @@ function renderSolarTime(year, month, day, birthHour) {
     // 优先使用已计算好的 solarInfo（含经度+均时差调整）
     var solarInfo = (_bazi && _bazi.solarInfo) || null;
     if (!solarInfo) {
-        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, _params.prov || '', year, month, day);
+        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, _params.city || _params.dist || _params.prov || '', year, month, day);
     }
 
     // 用 solarMinutes 直接取真太阳时间
@@ -1147,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var solarInfo = null;
     if (_params.prov) {
         solarInfo = window.BaZiCalculator.getTrueSolarHour(
-            _params.hour, _params.prov, _params.year, _params.month, _params.day, _params.minute, _params.clock
+            _params.hour, _params.city || _params.dist || _params.prov, _params.year, _params.month, _params.day, _params.minute, _params.clock
         );
         _params.hour = solarInfo.hourIndex;
         // 也更新 clock 为真太阳时钟点，确保年柱/月柱的节气比较使用真太阳时
