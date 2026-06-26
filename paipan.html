@@ -937,13 +937,11 @@ body.has-mobile-nav{padding-bottom:60px}
           <div class="field">
             <label>出生时间</label>
             <div style="display:flex;gap:8px;align-items:center">
-              <select id="sHour" required style="flex:2"><option value="">时辰</option></select>
+              <select id="sHour" required style="flex:1"><option value="">时辰</option></select>
               <span style="color:var(--tx3);font-size:12px">:</span>
-              <span id="sMinuteVal" style="color:var(--gold-l);font-size:14px;font-weight:700;min-width:26px;text-align:center">0</span>
-              <span style="color:var(--tx3);font-size:11px">分</span>
+              <select id="sMinute" style="flex:1"><option value="">分</option></select>
             </div>
-            <input type="range" id="sMinute" min="0" max="59" value="0" style="width:100%;margin-top:4px;accent-color:var(--gold)" oninput="document.getElementById('sMinuteVal').textContent=this.value">
-            <span class="minute-hint">用于真太阳时校正，可不调</span>
+            <span class="minute-hint">用于真太阳时校正，可不选</span>
           </div>
         </div>
         <div class="row">

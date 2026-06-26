@@ -25,6 +25,11 @@ function initSolarSelects() {
   for (var m = 1; m <= 12; m++) {
     var o = document.createElement('option'); o.value = m; o.textContent = m + '月'; mS.appendChild(o);
   }
+  // 分钟选项
+  var minS = document.getElementById('sMinute');
+  if (minS) for (var i = 0; i < 60; i++) {
+    var o = document.createElement('option'); o.value = i; o.textContent = String(i).padStart(2,'0') + '分'; minS.appendChild(o);
+  }
 }
 
 function initHourSelects() {
