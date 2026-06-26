@@ -3326,7 +3326,7 @@ function getYongJi(bazi) {
     xiShen = cong.xiOverride;
     jiShen = cong.jiOverride;
     yongShen = xiShen.slice(0, 1);
-    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。'
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。⚠️注意：从格判定的喜忌与普通扶抑法相反。举例：木为食伤（泄气），正常身弱忌泄，但此命已弃命从势，故木反为喜。'
       + '喜：' + xiShen.join('、') + '来顺势助旺。'
       + '忌：' + jiShen.join('、') + '来逆势破格。';
     return {
