@@ -95,6 +95,8 @@ function render(data) {
 
 
 
+    // 滴天髓日主解析
+    renderRiZhuJieXi(bazi.day.gan);
     // 真太阳时
     renderSolarTime(_params.year, _params.month, _params.day, _params.hour);
 
