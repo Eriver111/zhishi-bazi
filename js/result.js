@@ -1144,10 +1144,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // --- 真太阳时纠正（根据出生地省份经度调整时辰）---
+    // --- 真太阳时纠正（默认开启，solar=0 时跳过）---
     var originalHour = _params.hour;
     var solarInfo = null;
-    if (_params.prov) {
+    if (_params.prov && _params.solar !== '0') {
         solarInfo = window.BaZiCalculator.getTrueSolarHour(
             _params.hour, _params.city || _params.dist || _params.prov, _params.year, _params.month, _params.day, _params.minute, _params.clock
         );

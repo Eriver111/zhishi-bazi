@@ -351,6 +351,9 @@ function handleSubmit(e) {
   // 子时换日
   var zishi = document.getElementById('zishiHuanri');
   if (zishi && zishi.checked) params.set('zishi', '1');
+  // 真太阳时开关（默认开启，不勾时传0）
+  var solarEl = document.getElementById('solarEnabled');
+  if (solarEl && !solarEl.checked) params.set('solar', '0');
 
   setTimeout(function() {
     window.location.href = 'result?' + params.toString();

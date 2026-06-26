@@ -945,9 +945,15 @@ body.has-mobile-nav{padding-bottom:60px}
           </div>
         </div>
         <div class="row">
-          <div class="field" style="display:flex;align-items:center;gap:6px">
-            <input type="checkbox" id="zishiHuanri" name="zishiHuanri" value="1" style="width:16px;height:16px">
-            <label for="zishiHuanri" style="font-size:12px;color:var(--tx2);cursor:pointer;margin:0">子时换日（23点后算次日）</label>
+          <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
+              <input type="checkbox" id="zishiHuanri" value="1" style="width:16px;height:16px">
+              子时换日
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
+              <input type="checkbox" id="solarEnabled" checked value="1" style="width:16px;height:16px">
+              真太阳时
+            </label>
           </div>
         </div>
       </div>
