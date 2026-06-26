@@ -343,6 +343,9 @@ function handleSubmit(e) {
   if (prov) params.set('prov', prov);
   if (city) params.set('city', city);
   if (dist) params.set('dist', dist);
+  // 子时换日
+  var zishi = document.getElementById('zishiHuanri');
+  if (zishi && zishi.checked) params.set('zishi', '1');
 
   setTimeout(function() {
     window.location.href = 'result?' + params.toString();

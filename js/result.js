@@ -1158,6 +1158,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 子时换日：子时出生者可选择按次日的日柱计算
+    if (_params.zishi === '1' && _params.hour === 0) {
+        var nextDay = new Date(_params.year, _params.month - 1, _params.day + 1);
+        _params.year = nextDay.getFullYear();
+        _params.month = nextDay.getMonth() + 1;
+        _params.day = nextDay.getDate();
+    }
+
     const bazi = window.BaZiCalculator.calculate(
         _params.year, _params.month, _params.day, _params.hour, _params.gender, _params.clock || 0
     );
