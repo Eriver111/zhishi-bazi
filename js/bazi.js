@@ -1971,7 +1971,16 @@ function calcDayMasterStrength(bazi) {
   else if (score >= 35) { level = '偏弱'; label = '元气偏柔'; }
   else                  { level = '极弱'; label = '元气清秀'; }
 
-  return { level: level, label: label, score: score };
+  // 动态话术：根据得令得地得势生成具体描述
+  var detail = '';
+  if (level === '极强' || level === '偏强') {
+    detail = '综合评定身' + level + '（' + score + '分）。命局中帮扶力量较强，日主底气充足。';
+  } else if (level === '中和') {
+    detail = '综合评定中和（' + score + '分）。命局五行相对均衡，日主不偏不倚。';
+  } else {
+    detail = '综合评定身' + level + '（' + score + '分）。命局中克泄耗力量偏重，日主需印比扶助。';
+  }
+  return { level: level, label: label, score: score, detail: detail };
 }
 
 // ==================== 父母关系分析（强化版） ====================
