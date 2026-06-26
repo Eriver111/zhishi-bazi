@@ -935,15 +935,19 @@ body.has-mobile-nav{padding-bottom:60px}
             <select id="sDay" required><option value="">选择日期</option></select>
           </div>
           <div class="field">
-            <label>时辰（精确到点）</label>
-            <select id="sHour" required><option value="">选择时辰</option></select>
+            <label>出生时间</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="sHour" required style="flex:2"><option value="">时辰</option></select>
+              <span style="color:var(--tx3);font-size:12px">:</span>
+              <input type="number" id="sMinute" min="0" max="59" placeholder="分" class="minute-inp" style="flex:1;text-align:center">
+            </div>
+            <span class="minute-hint">用于真太阳时校正，可不填分</span>
           </div>
         </div>
         <div class="row">
-          <div class="field">
-            <label>精确分钟</label>
-            <input type="number" id="sMinute" min="0" max="59" placeholder="如 30" class="minute-inp">
-            <span class="minute-hint">用于真太阳时校正，可不填</span>
+          <div class="field" style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="zishiHuanri" name="zishiHuanri" value="1" style="width:16px;height:16px">
+            <label for="zishiHuanri" style="font-size:12px;color:var(--tx2);cursor:pointer;margin:0">子时换日（23点后算次日）</label>
           </div>
         </div>
       </div>
@@ -968,15 +972,12 @@ body.has-mobile-nav{padding-bottom:60px}
             <label>时辰（精确到点）</label>
             <select id="lHour" required><option value="">选择时辰</option></select>
           </div>
-        </div>
-        <div class="row">
           <div class="field">
             <label>精确分钟</label>
             <input type="number" id="lMinute" min="0" max="59" placeholder="如 30" class="minute-inp">
             <span class="minute-hint">用于真太阳时校正，可不填</span>
           </div>
         </div>
-        <div class="lunar-preview" id="lunarPreview"></div>
       </div>
 
       <div class="row">
@@ -985,12 +986,6 @@ body.has-mobile-nav{padding-bottom:60px}
           <div class="radio-group">
             <label class="radio"><input type="radio" name="gender" value="male" required> <span>乾造 · 男</span></label>
             <label class="radio"><input type="radio" name="gender" value="female"> <span>坤造 · 女</span></label>
-          </div>
-        </div>
-        <div class="row">
-          <div class="field" style="display:flex;align-items:center;gap:8px">
-            <input type="checkbox" id="zishiHuanri" name="zishiHuanri" value="1" style="width:18px;height:18px">
-            <label for="zishiHuanri" style="font-size:13px;color:var(--tx2);cursor:pointer;margin:0">子时换日（23点后算次日）</label>
           </div>
         </div>
       </div>
