@@ -2226,9 +2226,8 @@ function analyzeCharacter(bazi) {
     var DAY = bazi.day.gan;
     var WX = WU_XING[DAY];
     var yy = (["甲","丙","戊","庚","壬"].indexOf(DAY)>=0) ? "阳" : "阴";
-    if (window._GAN_CHARACTERS && window._GAN_CHARACTERS[DAY]) {
-        return "日主"+DAY+"（"+WX+"·"+yy+"）\n\n"+window._GAN_CHARACTERS[DAY];
-    }
+    // 硬编码模板作为基础，叠加动态分析
+    var baseChar = (window._GAN_CHARACTERS && window._GAN_CHARACTERS[DAY]) ? window._GAN_CHARACTERS[DAY] : '';
     // fallback to old data
     const ganNature = {
         '甲': {
@@ -2334,7 +2333,7 @@ function analyzeCharacter(bazi) {
         nature: nature,
         topSS: topSSNames,
         topSSDetail: top3.map(t => ({ name: t[0], count: t[1], trait: ssTraits[t[0]] || '' })),
-        composite: composite,
+        composite: baseChar ? (baseChar + '\n\n' + composite) : composite,
         strengths: nature.positive,
         weaknesses: nature.negative
     };
