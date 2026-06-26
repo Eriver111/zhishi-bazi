@@ -185,6 +185,8 @@ function send(){
   var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
   // 附加上次从结果页保存的排盘数据
   try { var cd=localStorage.getItem('ai_chart_data'); if(cd) body.chartData=JSON.parse(cd); } catch(ex) {}
+  // 无排盘数据时提醒
+  if(!body.chartData){ addMsg('ai','⚠️ 未检测到排盘数据。建议先通过<a href=\"paipan.html\">八字排盘</a>获取完整命盘，再向我提问，分析会更精准。'); return; }
   if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}
   else{body.code=AI.code}
 
