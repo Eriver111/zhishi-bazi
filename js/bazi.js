@@ -483,9 +483,12 @@ function calculateBaZi(year, month, day, hour, gender, clock) {
     };
     
     // 藏干（已在上面计算）
-    // 纳音
-    const naYin = getNaYin(yearPillar.ganIndex, yearPillar.zhiIndex);
-    
+    // 纳音（四柱各自计算）
+    var naYinYear = getNaYin(yearPillar.ganIndex, yearPillar.zhiIndex);
+    var naYinMonth = getNaYin(monthPillar.ganIndex, monthPillar.zhiIndex);
+    var naYinDay = getNaYin(dayPillar.ganIndex, dayPillar.zhiIndex);
+    var naYinHour = getNaYin(hourPillar.ganIndex, hourPillar.zhiIndex);
+
     // 五行统计
     const wuXingCount = countWuXing(
         yearPillar, monthPillar, dayPillar, hourPillar
@@ -496,39 +499,31 @@ function calculateBaZi(year, month, day, hour, gender, clock) {
             ...yearPillar,
             shiShen: yearShiShen,
             cangGan: yearCangGan,
-            wuXing: {
-                gan: WU_XING[yearPillar.gan],
-                zhi: DI_ZHI_WU_XING[yearPillar.zhi]
-            }
+            nayin: naYinYear,
+            wuXing: { gan: WU_XING[yearPillar.gan], zhi: DI_ZHI_WU_XING[yearPillar.zhi] }
         },
         month: {
             ...monthPillar,
             shiShen: monthShiShen,
             cangGan: monthCangGan,
-            wuXing: {
-                gan: WU_XING[monthPillar.gan],
-                zhi: DI_ZHI_WU_XING[monthPillar.zhi]
-            }
+            nayin: naYinMonth,
+            wuXing: { gan: WU_XING[monthPillar.gan], zhi: DI_ZHI_WU_XING[monthPillar.zhi] }
         },
         day: {
             ...dayPillar,
             shiShen: dayShiShen,
             cangGan: dayCangGan,
-            wuXing: {
-                gan: WU_XING[dayPillar.gan],
-                zhi: DI_ZHI_WU_XING[dayPillar.zhi]
-            }
+            nayin: naYinDay,
+            wuXing: { gan: WU_XING[dayPillar.gan], zhi: DI_ZHI_WU_XING[dayPillar.zhi] }
         },
         hour: {
             ...hourPillar,
             shiShen: hourShiShen,
             cangGan: hourCangGan,
-            wuXing: {
-                gan: WU_XING[hourPillar.gan],
-                zhi: DI_ZHI_WU_XING[hourPillar.zhi]
-            }
+            nayin: naYinHour,
+            wuXing: { gan: WU_XING[hourPillar.gan], zhi: DI_ZHI_WU_XING[hourPillar.zhi] }
         },
-        naYin: naYin,
+        naYin: naYinYear,
         wuXingCount: wuXingCount,
         gender: gender,
         birthDate: {
