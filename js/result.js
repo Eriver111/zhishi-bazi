@@ -28,7 +28,9 @@ function getUrlParams() {
         gender: p.get('gender'),
         prov: p.get('prov') || '',
         minute: parseInt(p.get('minute')) || 0,
-        clock: parseInt(p.get('clock')) || 0
+        clock: parseInt(p.get('clock')) || 0,
+        solar: p.get('solar') || '',
+        zishi: p.get('zishi') || ''
     };
 }
 

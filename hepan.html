@@ -881,6 +881,20 @@ body.has-mobile-nav{padding-bottom:60px}
       </div>
 
       <div class="row">
+        <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
+            <input type="checkbox" id="zishiHuanri-p1" value="1" style="width:16px;height:16px">
+            子时换日
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
+            <input type="checkbox" id="solarEnabled-p1" checked value="1" style="width:16px;height:16px">
+            真太阳时
+          </label>
+          <span style="font-size:10px;color:var(--tx3)">默认：子时换日关 · 真太阳时开</span>
+        </div>
+      </div>
+
+      <div class="row">
         <div class="field">
           <label>性别</label>
           <div class="radio-group">
@@ -987,6 +1001,20 @@ body.has-mobile-nav{padding-bottom:60px}
           </div>
         </div>
         <div class="lunar-preview" id="lunarPreview-p2"></div>
+      </div>
+
+      <div class="row">
+        <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
+            <input type="checkbox" id="zishiHuanri-p2" value="1" style="width:16px;height:16px">
+            子时换日
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
+            <input type="checkbox" id="solarEnabled-p2" checked value="1" style="width:16px;height:16px">
+            真太阳时
+          </label>
+          <span style="font-size:10px;color:var(--tx3)">默认：子时换日关 · 真太阳时开</span>
+        </div>
       </div>
 
       <div class="row">
@@ -1578,10 +1606,17 @@ function collectPersonFormData(pid) {
     return null;
   }
 
+  // 子时换日 + 真太阳时
+  var zishiEl = document.getElementById('zishiHuanri-' + pid);
+  var solarEl = document.getElementById('solarEnabled-' + pid);
+  var zishi = zishiEl && zishiEl.checked ? 1 : 0;
+  var solar = solarEl && !solarEl.checked ? 0 : 1; // 默认开启，不勾时传0
+
   return {
     year: year, month: month, day: day, hour: hour,
     clock: clock, minute: minute, gender: gender,
-    prov: prov, city: city, dist: dist, cal: calMode
+    prov: prov, city: city, dist: dist, cal: calMode,
+    zishi: zishi, solar: solar
   };
 }
 
@@ -1597,6 +1632,8 @@ function appendPersonParams(params, prefix, data) {
   params.set(prefix + 'city', data.city);
   params.set(prefix + 'dist', data.dist);
   params.set(prefix + 'cal', data.cal);
+  if (data.zishi) params.set(prefix + 'zishi', '1');
+  if (!data.solar) params.set(prefix + 'solar', '0');
 }
 </script>
 
