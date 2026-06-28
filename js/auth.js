@@ -527,34 +527,38 @@ if (document.readyState === 'loading') {
     window._pwaInstall = e;
   });
 
-  // 注入页面底部「添加到主屏幕」入口（用户主动点击才触发）
+  // 注入页面底部「添加到主屏幕」入口
   function injectPwaEntry() {
-    var existed = document.getElementById('pwa-footer-link');
-    if (existed) return;
-    var footer = document.querySelector('.footer') || document.querySelector('footer') || document.body.lastElementChild;
-    if (!footer) return setTimeout(injectPwaEntry, 500);
-    var div = document.createElement('div');
-    div.id = 'pwa-footer-link';
-    div.style.cssText = 'text-align:center;padding:8px 0 16px;font-size:11px;color:var(--tx3);cursor:pointer;letter-spacing:1px;opacity:.5;transition:opacity .3s';
-    div.innerHTML = '📱 添加到主屏幕';
-    div.title = '将知时添加到手机桌面，像 App 一样使用';
-    div.onmouseenter = function(){ this.style.opacity = '1'; };
-    div.onmouseleave = function(){ this.style.opacity = '.5'; };
-    div.onclick = function() {
-      if (window._pwaInstall) {
-        window._pwaInstall.prompt();
-        div.textContent = '✅ 已触发安装';
-      } else {
-        // iOS Safari 等不支持原生安装的，给教程
-        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          alert('📱 添加到主屏幕\n\n1. 点击底部中间的「分享」按钮\n2. 滑动找到「添加到主屏幕」\n3. 点击「添加」');
-        } else {
-          alert('📱 添加到主屏幕\n\n点击浏览器菜单 → 添加到主屏幕\n即可像 App 一样使用知时');
-        }
-      }
-    };
-    footer.parentNode.insertBefore(div, footer.nextSibling);
+    try {
+      var existed = document.getElementById('pwa-footer-link');
+      if (existed) return;
+      var footer = document.querySelector('.footer') || document.querySelector('footer');
+      if (!footer) return; // 找不到就不注入了
+      var div = document.createElement('div');
+      div.id = 'pwa-footer-link';
+      div.style.cssText = 'text-align:center;padding:8px 0 16px;font-size:11px;color:var(--tx3);cursor:pointer;letter-spacing:1px;opacity:.5;transition:opacity .3s';
+      div.innerHTML = '📱 添加到主屏幕';
+      div.title = '将知时添加到手机桌面，像 App 一样使用';
+      div.onmouseenter = function(){ this.style.opacity = '1'; };
+      div.onmouseleave = function(){ this.style.opacity = '.5'; };
+      div.onclick = function() {
+        try {
+          if (window._pwaInstall) {
+            window._pwaInstall.prompt();
+            div.textContent = '✅ 已触发安装';
+          } else {
+            var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+              alert('📱 添加到主屏幕\n\n1. 点击底部中间的「分享」按钮\n2. 滑动找到「添加到主屏幕」\n3. 点击「添加」');
+            } else {
+              alert('📱 添加到主屏幕\n\n点击浏览器菜单 → 添加到主屏幕\n即可像 App 一样使用知时');
+            }
+          }
+        } catch(x) {}
+      };
+      footer.parentNode.insertBefore(div, footer.nextSibling);
+    } catch(x) {}
   }
-  setTimeout(injectPwaEntry, 1500);
+  if (document.readyState === 'complete') { setTimeout(injectPwaEntry, 1500); }
+  else { window.addEventListener('load', function(){ setTimeout(injectPwaEntry, 1500); }); }
 })();
