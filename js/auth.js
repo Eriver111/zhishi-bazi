@@ -272,13 +272,17 @@ var Auth = (function () {
         '</div></div>';
     }
 
+    var pwToggle = '<span onclick="var p=document.getElementById(\'authPassword\');var t=p.type===\'password\'?\'text\':\'password\';p.type=t;this.textContent=t===\'password\'?\'👁\':\'🙈\'" style="position:absolute;right:12px;top:34px;cursor:pointer;font-size:18px;user-select:none" title="显示密码">👁</span>';
+    var cpwToggle = isLogin ? '' : '<span onclick="var p=document.getElementById(\'authPassword2\');var t=p.type===\'password\'?\'text\':\'password\';p.type=t;this.textContent=t===\'password\'?\'👁\':\'🙈\'" style="position:absolute;right:12px;top:34px;cursor:pointer;font-size:18px;user-select:none" title="显示密码">👁</span>';
+
     overlay.innerHTML =
       '<div class="auth-modal">' +
       '<button class="auth-close" onclick="Auth.closeModal()">&times;</button>' +
       '<div class="auth-title">' + title + '</div>' +
       '<div class="auth-subtitle">' + subtitle + '</div>' +
       '<div class="auth-field"><label>邮箱</label><input type="email" id="authEmail" placeholder="请输入邮箱"></div>' +
-      '<div class="auth-field"><label>密码</label><input type="password" id="authPassword" placeholder="至少6位"></div>' +
+      '<div class="auth-field" style="position:relative"><label>密码</label><input type="password" id="authPassword" placeholder="至少6位">' + pwToggle + '</div>' +
+      (isLogin ? '' : '<div class="auth-field" style="position:relative"><label>确认密码</label><input type="password" id="authPassword2" placeholder="再次输入密码">' + cpwToggle + '</div>') +
       (isLogin ? '' : '<div class="auth-field"><label>手机号（选填，用于找回）</label><input type="tel" id="authPhone" placeholder="如 13812345678"></div>') +
       codeHTML +
       '<div class="auth-error" id="authError"></div>' +
@@ -332,6 +336,8 @@ var Auth = (function () {
   function doSubmit() {
     var email = document.getElementById('authEmail').value.trim();
     var password = document.getElementById('authPassword').value;
+    var pw2El = document.getElementById('authPassword2');
+    var password2 = pw2El ? pw2El.value : '';
     var phoneEl = document.getElementById('authPhone');
     var phone = phoneEl ? phoneEl.value.trim() : '';
     var codeEl = document.getElementById('authCode');
@@ -341,6 +347,7 @@ var Auth = (function () {
 
     if (!email || !password) { showErr(errEl, '请填写邮箱和密码'); return; }
     if (password.length < 6) { showErr(errEl, '密码至少 6 位'); return; }
+    if (_currentMode === 'register' && password !== password2) { showErr(errEl, '两次密码不一致'); return; }
     if (_currentMode === 'register' && !code) { showErr(errEl, '请输入邮箱验证码'); return; }
 
     btn.disabled = true;

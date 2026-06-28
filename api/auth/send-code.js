@@ -56,12 +56,13 @@ module.exports = async function handler(req, res) {
     try {
       await sendCode(email, code);
     } catch (e) {
-      console.error('邮件发送失败:', e.message);
+      console.error('DM发送失败:', e.body || e.message || e);
       // 降级：阿里云挂了的话，开发模式下直接返回验证码
       if (process.env.NODE_ENV === 'development' || !process.env.ALI_AK_ID) {
         return res.status(200).json({ success: true, dev_code: code });
       }
-      return res.status(500).json({ error: '邮件发送失败，请稍后再试' });
+      var errMsg = e.body && e.body.Message ? '邮件发送失败：' + e.body.Message : '邮件发送失败，请检查发信地址是否已审核通过';
+      return res.status(500).json({ error: errMsg });
     }
 
     return res.status(200).json({ success: true });
