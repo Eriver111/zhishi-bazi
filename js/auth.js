@@ -550,4 +550,3 @@ if (document.readyState === 'loading') {
   }
   setTimeout(injectPwaEntry, 1500);
 })();
-}
