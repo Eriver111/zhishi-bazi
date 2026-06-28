@@ -102,9 +102,10 @@ function buildHuangli(y, m, d) {
   var dayZhiIdx = (y*5 + d + (m > 2 ? 6 - Math.floor(m/2) : 0)) % 12;
   var dayG = TG[dayGanIdx], dayZ = DZ[dayZhiIdx];
   var gzStr = dayG + dayZ;
-  var yGan = TG[(y-4)%10], yZhi = DZ[(y-4)%12];
+  var yGanIdx = (y-4)%10, yZhiIdx = (y-4)%12;
+  var yGan = TG[yGanIdx], yZhi = DZ[yZhiIdx];
   var monZhi = DZ[(m-1)%12];
-  var monGan = TG[(y%10)*2 + (m-1) % 10];
+  var monGan = TG[(yGanIdx * 2 + m) % 10];
   var weekDays = ['日','一','二','三','四','五','六'];
   var wd = '星期' + weekDays[new Date(y,m-1,d).getDay()];
 
