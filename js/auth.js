@@ -165,33 +165,66 @@ var Auth = (function () {
 
   // ============ UI：导航栏用户区 ============
   function injectNavUser() {
+    // 桌面导航
     var nav = document.getElementById('zhishi-nav');
     if (!nav) return setTimeout(injectNavUser, 200);
-    if (document.getElementById('nav-user-area')) return;
-    var div = document.createElement('div');
-    div.id = 'nav-user-area';
-    div.className = 'nav-user';
-    div.innerHTML =
-      '<button class="btn-auth primary" id="btn-auth-register" onclick="Auth.showModal(\'register\')">注册</button>' +
-      '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
-    nav.appendChild(div);
+    if (!document.getElementById('nav-user-area')) {
+      var div = document.createElement('div');
+      div.id = 'nav-user-area';
+      div.className = 'nav-user';
+      div.innerHTML =
+        '<button class="btn-auth primary" id="btn-auth-register" onclick="Auth.showModal(\'register\')">注册</button>' +
+        '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
+      nav.appendChild(div);
+    }
+
+    // 移动端底部导航
+    var mobileNav = document.getElementById('zhishi-mobile-nav');
+    if (mobileNav && !document.getElementById('mobile-nav-auth')) {
+      var mdiv = document.createElement('div');
+      mdiv.id = 'mobile-nav-auth';
+      mdiv.style.cssText = 'display:flex;align-items:center;gap:6px';
+      mdiv.innerHTML =
+        '<a href="#" onclick="Auth.showModal(\'register\');return false" style="color:var(--gold-l)">注册</a>' +
+        '<a href="#" onclick="Auth.showModal(\'login\');return false">登录</a>';
+      mobileNav.appendChild(mdiv);
+    }
   }
 
   function updateNavUI() {
+    // 桌面导航
     var area = document.getElementById('nav-user-area');
-    if (!area) return;
-    if (isLoggedIn()) {
-      var initial = (_user && _user.email) ? _user.email.charAt(0).toUpperCase() : 'U';
-      area.innerHTML =
-        '<div class="user-info" onclick="Auth.showProfile()">' +
-        '<div class="user-avatar">' + initial + '</div>' +
-        '<span>' + ((_user && _user.email) ? _user.email.split('@')[0] : '用户') + '</span>' +
-        '</div>' +
-        '<button class="btn-auth" onclick="Auth.logout()">退出</button>';
-    } else {
-      area.innerHTML =
-        '<button class="btn-auth primary" id="btn-auth-register" onclick="Auth.showModal(\'register\')">注册</button>' +
-        '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
+    if (area) {
+      if (isLoggedIn()) {
+        var initial = (_user && _user.email) ? _user.email.charAt(0).toUpperCase() : 'U';
+        area.innerHTML =
+          '<div class="user-info" onclick="Auth.showProfile()">' +
+          '<div class="user-avatar">' + initial + '</div>' +
+          '<span>' + ((_user && _user.email) ? _user.email.split('@')[0] : '用户') + '</span>' +
+          '</div>' +
+          '<button class="btn-auth" onclick="Auth.logout()">退出</button>';
+      } else {
+        area.innerHTML =
+          '<button class="btn-auth primary" id="btn-auth-register" onclick="Auth.showModal(\'register\')">注册</button>' +
+          '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
+      }
+    }
+
+    // 移动端导航
+    var marea = document.getElementById('mobile-nav-auth');
+    if (marea) {
+      if (isLoggedIn()) {
+        var minitial = (_user && _user.email) ? _user.email.charAt(0).toUpperCase() : 'U';
+        marea.innerHTML =
+          '<a href="#" onclick="Auth.showProfile();return false" style="display:flex;align-items:center;gap:4px">' +
+          '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ink)">' + minitial + '</span>' +
+          '<span style="font-size:11px">' + ((_user && _user.email) ? _user.email.split('@')[0] : '我') + '</span>' +
+          '</a>';
+      } else {
+        marea.innerHTML =
+          '<a href="#" onclick="Auth.showModal(\'register\');return false" style="color:var(--gold-l)">注册</a>' +
+          '<a href="#" onclick="Auth.showModal(\'login\');return false">登录</a>';
+      }
     }
   }
 
