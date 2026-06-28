@@ -132,9 +132,9 @@
   gap:6px;align-items:center;
 }
 
-/* ---- 移动端适配 ---- */
-@media(max-width:768px){
-  /* 桌面导航隐藏用户区，移动端用顶部右上角 */
+/* ---- 移动端 / 平板适配 ---- */
+@media(max-width:1024px){
+  /* 桌面导航隐藏用户区，改用顶部右上角 */
   #nav-user-area { display:none !important; }
   .mobile-top-auth { display:flex; }
 
