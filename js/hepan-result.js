@@ -620,45 +620,104 @@
     var dateStr = new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric'});
     var relLabel = RELATION_LABELS[rel] || '合盘分析';
 
-    var css = '*{margin:0;padding:0;box-sizing:border-box}'
-    + 'body{max-width:800px;margin:0 auto;font-family:"Source Han Serif SC","PingFang SC","Microsoft YaHei",serif;color:#e0d8c8;background:#0f0f18;padding:0}'
-    + '.cover{text-align:center;padding:80px 30px 60px;background:linear-gradient(180deg,#151520 0%,#0f0f18 100%);position:relative;border-bottom:1px solid rgba(201,168,76,.08)}'
-    + '.cover .brand{font-size:60px;color:#e0c860;letter-spacing:20px;font-weight:900;margin-bottom:12px}'
-    + '.cover .tagline{font-size:20px;color:#a89858;letter-spacing:10px;margin-bottom:40px}'
-    + '.cover .info{display:inline-block;padding:16px 32px;border:1px solid rgba(201,168,76,.12);border-radius:12px;color:#b0a080;font-size:15px;letter-spacing:2px;line-height:2}'
-    + '.section{margin:0;padding:0 30px}'
-    + '.section-title{font-size:20px;color:#d8be58;text-align:center;margin:36px 0 20px;letter-spacing:5px;font-weight:700}'
-    + '.section-body{color:#b0a090;font-size:13px;line-height:1.9;padding:8px 0}'
-    + '.score-ring{display:inline-block;width:80px;height:80px;border-radius:50%;border:3px solid #e8cf70;line-height:80px;text-align:center;margin-bottom:8px}'
-    + '.score-num{font-size:32px;font-weight:900;color:#e8cf70}'
-    + '.bazi-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}'
-    + '.bazi-cell{text-align:center;padding:8px 10px;border:1px solid rgba(201,168,76,.1);border-radius:6px;min-width:60px}'
-    + '.bazi-cell .gan{font-size:22px;font-weight:700;color:#e0d8c8}'
-    + '.bazi-cell .zhi{font-size:16px;color:#c0b090}'
-    + '.bazi-cell .label{font-size:10px;color:#7a7a80;margin-bottom:4px}'
-    + '.dgs-row{display:flex;align-items:center;gap:12px;margin:12px 0;justify-content:center}'
-    + '.dgs-card{flex:1;text-align:center;padding:12px;border:1px solid rgba(201,168,76,.08);border-radius:8px}'
-    + '.dgs-card .name{font-size:14px;color:#c9a84c;margin-bottom:6px}'
-    + '.dgs-card .gan{font-size:20px;color:#e0d8c8;font-weight:700}'
-    + '.dgs-vs{font-size:16px;color:rgba(201,168,76,.3);font-weight:700}'
-    + '.cross-item{padding:8px 12px;border-left:3px solid rgba(201,168,76,.2);margin:6px 0;font-size:13px}'
+    var css = ''
+    // 基础
+    + '*{margin:0;padding:0;box-sizing:border-box}'
+    + 'html{font-size:15px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{max-width:820px;margin:0 auto;font-family:"Source Han Serif SC","Noto Serif SC","PingFang SC","Songti SC","SimSun",serif;color:#d5cebb;background:#0d0f18;padding:0;line-height:1.8;orphans:3;widows:3}'
+
+    // 封面
+    + '.cover{text-align:center;padding:90px 30px 70px;background:linear-gradient(180deg,#111320 0%,#0d0f18 100%);position:relative;border-bottom:1px solid rgba(201,168,76,.1);page-break-after:always}'
+    + '.cover::before{content:"";position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;border-radius:50%;border:1px solid rgba(201,168,76,.08);background:radial-gradient(circle,rgba(201,168,76,.02) 0%,transparent 70%)}'
+    + '.cover .brand{font-size:64px;color:#d4b850;letter-spacing:24px;font-weight:900;margin-bottom:14px;position:relative}'
+    + '.cover .tagline{font-size:18px;color:#a09060;letter-spacing:12px;margin-bottom:50px;position:relative}'
+    + '.cover .cover-divider{width:60px;height:1px;margin:0 auto 40px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.3),transparent)}'
+    + '.cover .info{display:inline-block;padding:20px 36px;border:1px solid rgba(201,168,76,.15);border-radius:14px;color:#a89878;font-size:15px;letter-spacing:2px;line-height:2.2;position:relative;background:rgba(201,168,76,.02)}'
+    + '.cover .info strong{color:#d8c060;font-weight:600}'
+
+    // 区块
+    + '.section{margin:0;padding:0 36px;page-break-inside:avoid}'
+    + '.section.break-before{page-break-before:always}'
+    + '.section-title{font-size:20px;color:#d0b850;text-align:center;margin:40px 0 22px;letter-spacing:6px;font-weight:700;page-break-after:avoid}'
+    + '.section-title::after{content:"";display:block;width:50px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.25),transparent);margin:12px auto 0}'
+    + '.section-body{color:#b0a090;font-size:14px;line-height:2.0;padding:8px 0}'
+    + '.section-body b,.section-body strong{color:#d8be58}'
+
+    // 评分环
+    + '.score-ring{display:inline-block;width:90px;height:90px;border-radius:50%;border:3px solid #d4b850;line-height:90px;text-align:center;margin-bottom:10px;background:rgba(201,168,76,.05)}'
+    + '.score-num{font-size:36px;font-weight:900;color:#d4b850}'
+    + '.score-label{font-size:16px;color:#c9a84c;margin-top:8px;letter-spacing:2px}'
+
+    // 八字
+    + '.bazi-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0}'
+    + '.bazi-cell{text-align:center;padding:10px 12px;border:1px solid rgba(201,168,76,.12);border-radius:8px;min-width:62px;page-break-inside:avoid}'
+    + '.bazi-cell .gan{font-size:24px;font-weight:700;color:#e0d8c8}'
+    + '.bazi-cell .zhi{font-size:16px;color:#b8a888}'
+    + '.bazi-cell .label{font-size:10px;color:#7a7880;margin-bottom:4px;letter-spacing:2px}'
+
+    // 日干对比
+    + '.dgs-row{display:flex;align-items:center;gap:16px;margin:14px 0;justify-content:center}'
+    + '.dgs-card{flex:1;max-width:200px;text-align:center;padding:16px 12px;border:1px solid rgba(201,168,76,.1);border-radius:10px;background:rgba(255,255,255,.01);page-break-inside:avoid}'
+    + '.dgs-card .name{font-size:15px;color:#c9a84c;margin-bottom:8px;letter-spacing:2px}'
+    + '.dgs-card .gan{font-size:22px;color:#e0d8c8;font-weight:700}'
+    + '.dgs-vs{font-size:18px;color:rgba(201,168,76,.35);font-weight:700}'
+
+    // 跨盘交互
+    + '.cross-item{padding:10px 14px;border-left:3px solid rgba(201,168,76,.2);margin:8px 0;font-size:13px;page-break-inside:avoid}'
     + '.cross-item.he{border-left-color:#7ec87e}.cross-item.sheng{border-left-color:#5b9bd5}.cross-item.chong{border-left-color:#e06055}.cross-item.ke{border-left-color:#d4a843}'
-    + '.advice-row{display:flex;gap:8px;margin:8px 0}'
-    + '.advice-card{flex:1;padding:10px;border:1px solid rgba(201,168,76,.08);border-radius:6px;font-size:12px}'
-    + '.advice-card .yr{font-size:13px;color:#c9a84c;margin-bottom:4px}'
-    + '.dd-row{display:flex;gap:12px;margin:12px 0}'
-    + '.dd-col{flex:1}.dd-col h4{font-size:14px;margin-bottom:6px}'
+    + '.cross-item b{color:#d0b850}'
+
+    // 年度建议
+    + '.advice-row{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap}'
+    + '.advice-card{flex:1;min-width:140px;padding:12px;border:1px solid rgba(201,168,76,.1);border-radius:8px;font-size:12px;page-break-inside:avoid}'
+    + '.advice-card .yr{font-size:14px;color:#c9a84c;margin-bottom:6px;font-weight:600;letter-spacing:1px}'
+
+    // 宜忌
+    + '.dd-row{display:flex;gap:14px;margin:14px 0;page-break-inside:avoid}'
+    + '.dd-col{flex:1}.dd-col h4{font-size:15px;margin-bottom:8px;letter-spacing:3px}'
     + '.dd-col .do{color:#7ec87e}.dd-col .dont{color:#e06055}'
-    + '.dd-col li{font-size:12px;line-height:1.8;margin:2px 0}'
-    + '.footer{text-align:center;padding:40px 30px;border-top:1px solid rgba(255,255,255,.04);margin-top:40px;color:#5a5a60;font-size:12px;line-height:2}'
+    + '.dd-col li{font-size:13px;line-height:2.0;margin:3px 0}'
+
+    // 页脚
+    + '.footer{text-align:center;padding:50px 36px 40px;border-top:1px solid rgba(255,255,255,.04);margin-top:50px;color:#5a5860;font-size:12px;line-height:2.2;letter-spacing:1px}'
+    + '.footer .footer-brand{font-size:15px;color:#a09060;letter-spacing:6px;font-weight:600}'
+
+    // 操作栏
     + '.no-print{text-align:center;padding:16px 0}'
-    + '.no-print button{display:inline-block;margin:0 10px;padding:12px 28px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);color:#e0c860;font-size:15px;font-weight:600;border-radius:8px;cursor:pointer;letter-spacing:3px;font-family:inherit}'
-    + '@media print{body{background:#fff!important;color:#222!important}'
-    + '.section-title,.cover .brand{color:#8a7030!important}'
-    + '.section-body,.bazi-cell .zhi,.bazi-cell .gan{color:#333!important}'
+    + '.no-print .toolbar{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}'
+    + '.no-print button{display:inline-flex;align-items:center;gap:6px;margin:0;padding:12px 28px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);color:#d8c060;font-size:15px;font-weight:600;border-radius:10px;cursor:pointer;letter-spacing:3px;font-family:inherit;transition:all .2s}'
+    + '.no-print button:hover{background:rgba(201,168,76,.18);transform:translateY(-1px)}'
+
+    // 打印
+    + '@media print{'
+    + 'html,body{background:#fff!important;color:#222!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:14px}'
+    + '.cover{background:#fafaf5!important;padding:60px 0 50px;border-bottom:2px solid #d8c060!important;page-break-after:always}'
+    + '.cover::before{display:none}'
+    + '.cover .brand{color:#8a7030!important}'
+    + '.cover .tagline,.cover .info{color:#6a6050!important}'
+    + '.section{padding:0!important}'
+    + '.section-title{color:#8a7030!important;font-size:18px!important;page-break-after:avoid}'
+    + '.section-title::after{background:rgba(180,150,60,.3)!important}'
+    + '.section-body{color:#333!important}'
+    + '.section-body b,.section-body strong{color:#6a5020!important}'
+    + '.bazi-cell{border-color:#e0d8c8!important}'
+    + '.bazi-cell .gan,.bazi-cell .zhi{color:#444!important}'
+    + '.bazi-cell .label{color:#999!important}'
+    + '.dgs-card{background:#fafaf5!important;border-color:#e0d8c8!important}'
+    + '.dgs-card .gan,.dgs-card .name{color:#444!important}'
     + '.cross-item{color:#333!important}'
+    + '.advice-card{border-color:#e0d8c8!important;color:#444!important}'
+    + '.advice-card .yr{color:#8a7030!important}'
+    + '.dd-col li{color:#444!important}'
+    + '.footer{color:#8a8a80!important;border-top-color:#e0e0d8!important}'
+    + '.footer .footer-brand{color:#a09060!important}'
     + '.no-print{display:none!important}'
-    + '@page{size:A4;margin:15mm}}';
+    + '@page{size:A4;margin:16mm 14mm 18mm 14mm;'
+    +   '@top-center{content:"知时 · 合盘分析报告";font-size:9px;color:#b0a090;font-family:"Source Han Serif SC",serif}'
+    +   '@bottom-center{content:"— " counter(page) " —";font-size:9px;color:#b0a090;font-family:"Source Han Serif SC",serif}'
+    + '}'
+    + '@page:first{@top-center{content:none}}'
+    + '}';
 
     // Build bazi cells HTML
     function baziRow(person, label){
@@ -697,32 +756,51 @@
     +'<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
     +'<title>知时 · 合盘 · '+relLabel+'</title>\n'
     +'<style>'+css+'</style>\n</head>\n<body>\n'
-    +'<div class="no-print" style="position:sticky;top:0;background:rgba(15,15,24,.95);padding:12px 0;z-index:99;border-bottom:1px solid rgba(255,255,255,.04)">'
-    +'<button onclick="window.print()">🖨 保存为 PDF</button>'
-    +'<button onclick="history.back()">← 返回</button>'
+
+    // 操作栏
+    +'<div class="no-print">'
+    +'<div class="toolbar">'
+    +'<button onclick="window.print()">📄 保存为 PDF</button>'
+    +'<button onclick="window.close()">✕ 关闭页面</button>'
+    +'</div>'
+    +'<p style="color:#8a8070;font-size:12px;margin-top:8px;letter-spacing:1px">点击「保存为 PDF」→ 目标另存为 PDF → 保存</p>'
     +'</div>\n'
+
+    // 封面
     +'<div class="cover">\n'
     +'<div class="brand">知 时</div>\n'
     +'<div class="tagline">'+relLabel+'</div>\n'
+    +'<div class="cover-divider"></div>\n'
     +'<div class="info">\n'
     +p1.name+' · '+gender1+' &nbsp;&nbsp;✦&nbsp;&nbsp; '+p2.name+' · '+gender2+'<br>\n'
-    +'分析日期：'+dateStr+'\n'
+    +'<span style="font-size:12px;color:#8a8070">分析日期：'+dateStr+'</span>\n'
     +'</div>\n</div>\n'
-    +'<div class="section"><div class="section-title">综合缘分评分</div><div class="section-body" style="text-align:center"><div class="score-ring"><span class="score-num">'+r.score.total+'</span></div><div style="font-size:16px;color:#c9a84c;margin-top:6px">'+r.score.label+'</div></div></div>\n'
-    +'<div class="section"><div class="section-title">'+p1.name+' 八字</div>'+baziRow(p1,gender1)+'</div>\n'
+
+    // 各区块
+    +'<div class="section"><div class="section-title">综合缘分评分</div><div class="section-body" style="text-align:center"><div class="score-ring"><span class="score-num">'+r.score.total+'</span></div><div class="score-label">'+r.score.label+'</div></div></div>\n'
+    +'<div class="section break-before"><div class="section-title">'+p1.name+' 八字</div>'+baziRow(p1,gender1)+'</div>\n'
     +'<div class="section"><div class="section-title">'+p2.name+' 八字</div>'+baziRow(p2,gender2)+'</div>\n'
-    +'<div class="section"><div class="section-title">日干旺衰对比</div><div class="dgs-row"><div class="dgs-card"><div class="name">'+p1.name+'</div><div class="gan">'+p1.dayGan+'</div></div><div class="dgs-vs">VS</div><div class="dgs-card"><div class="name">'+p2.name+'</div><div class="gan">'+p2.dayGan+'</div></div></div><div class="section-body">'+r.dayGanStrength.detail+'</div></div>\n'
+    +'<div class="section break-before"><div class="section-title">日干旺衰对比</div><div class="dgs-row"><div class="dgs-card"><div class="name">'+p1.name+'</div><div class="gan">'+p1.dayGan+'</div></div><div class="dgs-vs">VS</div><div class="dgs-card"><div class="name">'+p2.name+'</div><div class="gan">'+p2.dayGan+'</div></div></div><div class="section-body">'+(r.dayGanStrength?r.dayGanStrength.detail:'')+'</div></div>\n'
     +'<div class="section"><div class="section-title">双方命中相合与相克之处</div><div class="section-body">'+(crItems||'<p>无显著跨盘交互</p>')+'</div></div>\n'
     +'<div class="section"><div class="section-title">你们的相处密码</div><div class="section-body"><b>'+r.coreMode.title+'</b><br>'+r.coreMode.detail+'</div></div>\n'
-    +'<div class="section"><div class="section-title">未来三年关键节点</div><div class="advice-row">'+yrHtml+'</div></div>\n'
-    +'<div class="section"><div class="section-title">专属宜忌指南</div><div class="dd-row"><div class="dd-col"><h4 class="do">宜</h4><ul>'+doHtml+'</ul></div><div class="dd-col"><h4 class="dont">忌</h4><ul>'+dontHtml+'</ul></div></div></div>\n'
-    +'<div class="footer">知时 · 合盘分析报告<br>数据生成于 '+dateStr+'<br>本报告仅供娱乐交流参考</div>\n'
+    +'<div class="section break-before"><div class="section-title">未来三年关键节点</div><div class="advice-row">'+yrHtml+'</div></div>\n'
+    +'<div class="section"><div class="section-title">专属宜忌指南</div><div class="dd-row"><div class="dd-col"><h4 class="do">✅ 宜</h4><ul>'+doHtml+'</ul></div><div class="dd-col"><h4 class="dont">⚠️ 忌</h4><ul>'+dontHtml+'</ul></div></div></div>\n'
+
+    // 页脚
+    +'<div class="footer">'
+    +'<div class="footer-brand">知 时</div>'
+    +'<div>合盘分析报告 · 数据生成于 '+dateStr+'</div>'
+    +'<div>本报告仅供娱乐交流参考</div>'
+    +'</div>\n'
+
+    // 自动打印
+    +'<script>setTimeout(function(){window.print();},800);<\/script>\n'
     +'</body>\n</html>';
 
     var w=window.open('','_blank','width=900,height=700');
+    if(!w){alert('弹出窗口被拦截，请允许弹出窗口后重试。');return;}
     w.document.write(html);
     w.document.close();
-    setTimeout(function(){w.print();},600);
   }
 
   // 暴露 download 到全局

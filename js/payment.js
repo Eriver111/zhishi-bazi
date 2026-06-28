@@ -100,13 +100,41 @@ function handlePaymentSuccess(code, credits) {
 }
 
 /**
- * 显示兑换码模态框
+ * 显示兑换码模态框（动态创建 + 醒目警告）
  */
 function showCodeModal(code) {
+  // 如果弹窗 HTML 不存在，动态创建
+  if (!document.getElementById('modalCode')) {
+    var overlay = document.createElement('div');
+    overlay.id = 'modalCode';
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.85);align-items:center;justify-content:center';
+    overlay.innerHTML =
+      '<div style="background:linear-gradient(180deg,#111320 0%,#0d1525 100%);border:2px solid rgba(201,168,76,.3);border-radius:16px;padding:32px 28px 24px;text-align:center;max-width:400px;width:90%;position:relative;box-shadow:0 0 60px rgba(201,168,76,.15)">' +
+        '<button onclick="document.getElementById(\'modalCode\').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button>' +
+        '<div style="font-size:40px;margin-bottom:8px">🧧</div>' +
+        '<h3 id="modalCodeTitle" style="color:var(--gold-l);font-size:20px;font-weight:900;margin-bottom:4px;letter-spacing:2px">激活成功</h3>' +
+        '<p id="modalCodeDesc" style="color:var(--tx2);font-size:13px;margin-bottom:16px;line-height:1.6">你的兑换码（可用于恢复次数）：</p>' +
+        '<div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
+          '<span id="modalCodeValue" style="font-size:28px;font-weight:900;color:#e8d070;letter-spacing:4px;font-family:monospace;word-break:break-all">' + code + '</span>' +
+        '</div>' +
+        '<p style="color:#e07050;font-size:14px;font-weight:700;margin-bottom:16px;line-height:1.5">⚠️ 请立即截图或复制兑换码<br><span style="font-size:12px;color:#c99">关闭此窗口后将无法找回！</span></p>' +
+        '<div style="display:flex;gap:10px">' +
+          '<button onclick="(function(){var c=document.getElementById(\'modalCodeValue\').textContent;navigator.clipboard.writeText(c).then(function(){alert(\'✅ 兑换码已复制！\\n\\n请粘贴到安全的地方保存。\')})})()" style="flex:1;padding:14px 20px;font-size:16px;font-weight:700;background:linear-gradient(135deg,rgba(201,168,76,.2),rgba(201,168,76,.1));color:#e8d070;border:1px solid rgba(201,168,76,.4);border-radius:10px;cursor:pointer;letter-spacing:2px;font-family:inherit">📋 复制兑换码</button>' +
+          '<button onclick="document.getElementById(\'modalCode\').remove()" style="flex:1;padding:14px 20px;font-size:14px;font-weight:600;background:rgba(255,255,255,.04);color:var(--tx2);border:1px solid rgba(255,255,255,.1);border-radius:10px;cursor:pointer;letter-spacing:2px;font-family:inherit">我知道了</button>' +
+        '</div>' +
+      '</div>';
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
+    return;
+  }
+
+  // 已有 HTML（兼容旧版页面）
   document.getElementById('modalCodeValue').textContent = code;
   document.getElementById('modalCodeTitle').textContent = '🧧 激活成功';
-  document.getElementById('modalCodeDesc').textContent =
-    '你的兑换码（请妥善保管，可用于恢复次数）：';
+  document.getElementById('modalCodeDesc').textContent = '你的兑换码（可用于恢复次数）：';
   showModal('modalCode');
 }
 

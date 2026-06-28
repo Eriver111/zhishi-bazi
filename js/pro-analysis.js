@@ -143,37 +143,78 @@
 
 function renderPower(bazi){
     var c=document.getElementById('dayMasterPower');if(!c)return;
-    var g=bazi.day.gan,w=TG[g]||'?';
-    
-    // Manual calculation (more accurate than automated algorithm)
-    var dgWx=TG[g],mz=bazi.month.zhi,mWx=DZ[mz];
+    var dayGan=bazi.day.gan,dgWx=TG[dayGan]||'?';
+    var mz=bazi.month.zhi,mWx=DZ[mz];
+
+    // ---- 缺月名 + 月令描述 ----
+    var YUE_LING={子:'子月·冬水当令',丑:'丑月·冬土当令',寅:'寅月·春木当令',卯:'卯月·春木当令',
+                  辰:'辰月·春土当令',巳:'巳月·夏火当令',午:'午月·夏火当令',未:'未月·夏土当令',
+                  申:'申月·秋金当令',酉:'酉月·秋金当令',戌:'戌月·秋土当令',亥:'亥月·冬水当令'};
+
+    // ---- 子平法：得令·得地·得势 评分 ----
     var score=50;
-    // 得令
-    if(mWx===dgWx)score+=30;
-    else if(SG[mWx]===dgWx)score+=20;
-    else if(SG[dgWx]===mWx)score-=15;
-    else if(KE[mWx]===dgWx)score-=25;
-    // 得势
+    if(mWx===dgWx)score+=30;           // 得令：月令与日主同五行
+    else if(SG[mWx]===dgWx)score+=20;  // 月令生日主（印星当令）
+    else if(SG[dgWx]===mWx)score-=15;  // 日主生月令（泄气）
+    else if(KE[mWx]===dgWx)score-=25;  // 月令克日主（官杀当令）
+
+    // 得势：其他三柱与日主的关系
     ['year','month','hour'].forEach(function(p){
       var gw2=TG[bazi[p].gan];
-      if(gw2===dgWx)score+=6;
-      else if(SG[gw2]===dgWx)score+=4;
-      else if(KE[dgWx]===gw2)score-=4;
-      else if(SG[dgWx]===gw2)score-=3;
-      else if(KE[gw2]===dgWx)score-=5;
+      if(gw2===dgWx)score+=6;        // 比劫帮身
+      else if(SG[gw2]===dgWx)score+=4; // 印星生身
+      else if(KE[dgWx]===gw2)score-=4; // 官杀克身
+      else if(SG[dgWx]===gw2)score-=3; // 食伤泄气
+      else if(KE[gw2]===dgWx)score-=5; // 财星耗身
     });
-    // 藏干印星帮身
-    score+=8; // 申藏壬+丑藏癸共4处藏干印星
-    
+
+    // 藏干粗略修正（日支藏干有无印比）
+    try{
+      var cgList=typeof getCangGan==='function'?getCangGan(bazi.day.zhi):[];
+      cgList.forEach(function(cg){
+        if(TG[cg]===dgWx)score+=3;
+        else if(SG[TG[cg]]===dgWx)score+=2;
+      });
+    }catch(e){}
+
     var l=Math.max(10,Math.min(95,score));
     var lb=l>=65?'身强':l>=45?'中和':'身弱';
     var co=l>=65?'#e07050':l>=45?'#c9a84c':'#5b9fd4';
     var emoji=l>=65?'🔥':l>=45?'⚖️':'💧';
+
+    // ---- 动态批语 ----
     var detail='';
-    if(l<45)detail='乙木生于申月(秋金当令)，庚金正官克身，为"死令"。年干甲木劫财帮身、月干壬水正印生扶，但地支申申丑丑金土重重，木无强根。综合身偏弱，喜水木帮扶。';
-    else if(l<65)detail='日主中和，需结合大运流年判断走势。';
-    else detail='日主强旺，能担财官，运势较强。';
-    
+    var yl=YUE_LING[mz]||(mz+'月');
+    if(l<45){
+      // 身弱：说明月令关系 + 帮扶/克泄情况
+      var rel='';
+      if(mWx===dgWx)rel='月令与日主同气，本为得令，';
+      else if(SG[mWx]===dgWx)rel='月令正印生身，有根气，';
+      else if(SG[dgWx]===mWx)rel='月令为食伤泄身之地，';
+      else if(KE[mWx]===dgWx)rel='月令官杀克身，';
+      else rel='月令与日主五行相异，';
+      var xi='';
+      if(dgWx==='木')xi='水木';
+      else if(dgWx==='火')xi='木火';
+      else if(dgWx==='土')xi='火土';
+      else if(dgWx==='金')xi='土金';
+      else xi='金水';
+      detail=dayGan+dgWx+'日主生于'+yl+'。'+rel+'局中克泄耗力量偏重，综合评定身偏弱，喜'+xi+'帮扶。';
+    }else if(l<65){
+      detail='日主中和（'+l+'分），命局五行相对均衡，需结合大运流年灵活判断走势。';
+    }else{
+      detail=dayGan+dgWx+'日主生于'+yl+'，底气充足。综合评定身强（'+l+'分），能担财官，运势自主性较强。';
+    }
+
+    // ---- 动态滴天髓引文 ----
+    var dtQuote='';
+    if(typeof DITIANSUI!=='undefined'&&DITIANSUI[dayGan]){
+      var dt=DITIANSUI[dayGan];
+      dtQuote='📖 《滴天髓》："'+dt.shi+'"';
+    }else{
+      dtQuote='📖 《滴天髓》论'+dayGan+dayGan+'：参见滴天髓十天干章。';
+    }
+
     c.innerHTML=''+
       '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+emoji+'</span>'+
       '<div style="font-size:22px;font-weight:900;color:'+co+';margin:4px 0">'+lb+'（'+l+'分）</div></div>'+
@@ -181,7 +222,7 @@ function renderPower(bazi){
       '<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:'+l+'%;height:100%;background:linear-gradient(90deg,#5b9fd4,#c9a84c,#e07050);border-radius:3px"></div></div>'+
       '<span style="font-size:9px;color:var(--tx3)">强</span><span style="font-weight:700;color:'+co+';font-size:12px">'+l+'%</span></div>'+
       '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;font-size:10px;color:var(--tx2);line-height:1.5">'+detail+'</div>'+
-      '<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-style:italic">📖 《滴天髓》："乙木虽柔，刲羊解牛。"秋月之木，頼印劫为生。</div>';
+      '<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-style:italic">'+dtQuote+'</div>';
 }
 
 function renderPattern(bazi){

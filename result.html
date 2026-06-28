@@ -2759,12 +2759,14 @@ body.has-mobile-nav{padding-bottom:60px}
             <button class="share-btn" onclick="shareResult()" title="复制分享链接">🔗 分享报告</button>
         </header>
 
-        <!-- 付费后下载横幅 -->
-        <div class="download-banner" id="downloadBanner" style="display:none">
-            <div class="dl-banner-title">📋 你的专属分析报告</div>
+        <!-- 付费后下载横幅（金光闪烁） -->
+        <div class="download-banner" id="downloadBanner" style="display:none;animation:dlPulse 2s ease-in-out infinite">
+            <style>@keyframes dlPulse{0%,100%{box-shadow:0 0 20px rgba(201,168,76,.2)}50%{box-shadow:0 0 50px rgba(201,168,76,.6),0 0 80px rgba(201,168,76,.2)}}</style>
+            <div class="dl-banner-title" style="font-size:20px">报告已解锁</div>
+            <div class="dl-banner-sub" style="color:var(--tx2);font-size:13px;margin-bottom:12px">保存到本地，随时可查看</div>
             <div class="dl-banner-btns">
-                <button class="dl-btn dl-btn-pdf" onclick="openReportInNewTab()">🖨 保存为 PDF</button>
-                <button class="dl-btn dl-btn-html" onclick="downloadReport()">📥 下载 HTML 报告</button>
+                <button class="dl-btn dl-btn-pdf" onclick="openReportInNewTab()" style="flex:1;padding:14px;font-size:16px;font-weight:700;background:rgba(201,168,76,.15);color:var(--gold-l);border:2px solid var(--gold);border-radius:12px;cursor:pointer;letter-spacing:2px">📄 保存为 PDF</button>
+                <button class="dl-btn dl-btn-html" onclick="printReportNow()" style="flex:1;padding:14px;font-size:16px;font-weight:700;background:rgba(100,180,140,.12);color:#a0d8b0;border:2px solid rgba(100,180,140,.3);border-radius:12px;cursor:pointer;letter-spacing:2px">🖨 快速打印</button>
             </div>
         </div>
 

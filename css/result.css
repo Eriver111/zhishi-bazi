@@ -72,21 +72,22 @@
 
 /* ---- 报告下载横幅 ---- */
 .download-banner {
-  margin: 20px auto 0; max-width: 420px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(212,175,55,.08), rgba(212,175,55,.02));
-  border: 1px solid rgba(212,175,55,.2); border-radius: 12px;
+  margin: 20px auto 0; max-width: 460px;
+  padding: 24px 24px 20px;
+  background: linear-gradient(135deg, rgba(201,168,76,.1), rgba(201,168,76,.03));
+  border: 1px solid rgba(201,168,76,.25); border-radius: 14px;
   text-align: center;
   animation: bannerIn .4s ease-out;
 }
 @keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.dl-banner-title{font-size:17px;color:var(--gold);font-weight:700;letter-spacing:3px;margin-bottom:16px}
-.dl-banner-btns{display:flex;gap:10px}
-.dl-btn{flex:1;padding:14px 8px;font-size:15px;font-weight:700;font-family:inherit;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .25s;border:1px solid transparent}
-.dl-btn-pdf{background:rgba(100,180,140,.15);color:#a0d8b0;border-color:rgba(100,180,140,.3)}
-.dl-btn-pdf:hover{background:rgba(100,180,140,.25);transform:translateY(-1px)}
-.dl-btn-html{background:rgba(212,175,55,.12);color:var(--gold);border-color:rgba(212,175,55,.25)}
-.dl-btn-html:hover{background:rgba(212,175,55,.2);transform:translateY(-1px)}
+.dl-banner-title{font-size:18px;color:var(--gold-l);font-weight:700;letter-spacing:3px;margin-bottom:4px}
+.dl-banner-sub{color:var(--tx2);font-size:13px;margin-bottom:16px;letter-spacing:1px}
+.dl-banner-btns{display:flex;gap:10px;flex-wrap:wrap}
+.dl-btn{flex:1;min-width:120px;padding:14px 10px;font-size:15px;font-weight:700;font-family:inherit;border-radius:10px;cursor:pointer;letter-spacing:2px;transition:all .25s;border:2px solid transparent;white-space:nowrap}
+.dl-btn-pdf{background:rgba(201,168,76,.12);color:var(--gold-l);border-color:rgba(201,168,76,.3)}
+.dl-btn-pdf:hover{background:rgba(201,168,76,.22);transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,.15)}
+.dl-btn-html{background:rgba(91,127,165,.1);color:#8ab0d0;border-color:rgba(91,127,165,.25)}
+.dl-btn-html:hover{background:rgba(91,127,165,.18);transform:translateY(-1px);box-shadow:0 4px 20px rgba(91,127,165,.12)}
 
 /* ---- 抽屉式 Section ---- */
 .section-drawer {

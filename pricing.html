@@ -257,15 +257,18 @@ function onPaySuccess(data) {
   if (existing) existing.remove();
   var toast = document.createElement('div');
   toast.className = 'credit-success-toast';
-  toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20000;background:var(--card,#0d1525);border:1px solid var(--gold);border-radius:16px;padding:32px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)';
-  var codeText = data.code ? '<div style="font-size:15px;color:var(--tx2);margin-top:10px">兑换码</div><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px"><code style="background:rgba(201,168,76,.08);padding:10px 16px;border-radius:10px;font-size:18px;color:var(--gold-l);letter-spacing:3px;font-family:monospace;user-select:all">' + data.code + '</code><button onclick="var c=\'' + data.code + '\';if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){this.textContent=\'已复制\'}).catch(function(){prompt(\'手动复制:\',c)})}else{prompt(\'手动复制:\',c)};var t=this;setTimeout(function(){t.textContent=\'复制\'},2000)" style="padding:8px 16px;border:1px solid var(--gold);background:rgba(201,168,76,.1);color:var(--gold-l);border-radius:8px;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit">复制</button></div>' : '';
+  toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20000;background:var(--card,#0d1525);border:2px solid var(--gold);border-radius:16px;padding:32px 28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);max-width:420px;width:90%';
+  var codeText = data.code ? '<div style="font-size:14px;color:var(--tx2);margin-top:12px;margin-bottom:4px">你的兑换码</div><div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;margin:8px 0"><code style="font-size:22px;font-weight:900;color:#e8d070;letter-spacing:3px;font-family:monospace;user-select:all;word-break:break-all">' + data.code + '</code></div><button onclick="var c=\'' + data.code + '\';if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){var b=this;b.textContent=\'✅ 已复制\';b.style.background=\'rgba(76,175,80,.2)\';b.style.borderColor=\'#4CAF50\'}.bind(this)).catch(function(){prompt(\'请手动复制:\',c)})}else{prompt(\'请手动复制:\',c)}" style="margin:4px 0 8px;padding:10px 24px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold-l);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:2px">📋 复制兑换码</button>' : '';
   toast.innerHTML = ''
-    + '<div style="font-size:22px;color:var(--gold-l);letter-spacing:3px;font-weight:700;margin-bottom:6px">购买成功</div>'
-    + '<div style="color:var(--tx2);font-size:14px;line-height:1.8">积分已发放到账户</div>'
+    + '<div style="font-size:40px;margin-bottom:4px">🧧</div>'
+    + '<div style="font-size:22px;color:var(--gold-l);letter-spacing:3px;font-weight:700;margin-bottom:4px">购买成功</div>'
+    + '<div style="color:var(--tx2);font-size:13px;line-height:1.8">积分已发放到账户</div>'
     + codeText
-    + '<div style="color:var(--tx3);font-size:12px;margin-top:12px">请前往排盘页面开始使用</div>'
-    + '<a href="paipan.html" style="display:inline-block;margin-top:16px;padding:10px 32px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border-radius:25px;text-decoration:none;font-weight:700;letter-spacing:2px;font-size:14px">开始使用</a>'
-    + '<button onclick="this.parentElement.remove()" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer">关闭</button>';
+    + '<p style="color:#e07050;font-size:14px;font-weight:700;margin:8px 0 4px;line-height:1.5">⚠️ 请立即截图或复制兑换码<br><span style="font-size:11px;color:#c99">关闭此窗口后将无法找回！<br>建议同时绑定手机号便于恢复</span></p>'
+    + '<div style="display:flex;gap:10px;margin-top:12px">'
+    + '<a href="paipan.html" style="flex:1;padding:12px 20px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border-radius:25px;text-decoration:none;font-weight:700;letter-spacing:2px;font-size:14px">开始使用</a>'
+    + '<button onclick="this.parentElement.parentElement.remove()" style="flex:1;padding:12px 20px;background:rgba(255,255,255,.04);color:var(--tx2);border:1px solid rgba(255,255,255,.1);border-radius:25px;font-size:13px;cursor:pointer;font-family:inherit">我知道了</button>'
+    + '</div>';
   document.body.appendChild(toast);
 }
 
