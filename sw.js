@@ -1,5 +1,5 @@
 // 知时 Service Worker — 离线缓存 + PWA
-const CACHE_NAME = 'zhishi-v1';
+const CACHE_NAME = 'zhishi-v2';
 
 self.addEventListener('install', function(e) {
   e.waitUntil(
