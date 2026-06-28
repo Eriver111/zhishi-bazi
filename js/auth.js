@@ -516,24 +516,11 @@ if (document.readyState === 'loading') {
   link.href = '/manifest.json';
   document.head.appendChild(link);
 
-  // 注册 Service Worker + 自动更新
+  // 注册 Service Worker（后台静默更新）
   if ('serviceWorker' in navigator) {
-    try {
-      navigator.serviceWorker.register('/sw.js').then(function(reg) {
-        // 检测到新版本时强制更新
-        reg.addEventListener('updatefound', function() {
-          var newWorker = reg.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', function() {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
-              }
-            });
-          }
-        });
-      });
-    } catch(e) {}
+    try { navigator.serviceWorker.register('/sw.js'); } catch(e) {}
+    // 检测更新并静默升级
+    navigator.serviceWorker.ready.then(function(reg) { reg.update(); });
   }
 
   // 保存原生安装事件
