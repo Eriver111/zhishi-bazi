@@ -62,21 +62,20 @@
   todayDate.textContent = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
 
   // 从保存的参数中计算日柱（用 bazi.js 精确算法）
-  function getDayPillar(params) {
+  function getDayPillar(params, retry) {
     var p = new URLSearchParams(params);
     var year = parseInt(p.get('year')), month = parseInt(p.get('month')), day = parseInt(p.get('day'));
     var hour = parseInt(p.get('hour')) || 0, gender = p.get('gender') || 'male', clock = parseInt(p.get('clock'));
     if (isNaN(clock)) clock = hour;
-    var minute = parseInt(p.get('minute')) || 0;
-    // 用 bazi.js 的 calculateBaZi 精确计算
-    try {
-      if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calculateBaZi) {
-        var bazi = BaZiCalculator.calculateBaZi(year, month, day, hour, gender, clock || 0);
-        if (bazi && bazi.day) return { dayGan: bazi.day.gan, dayZhi: bazi.day.zhi };
-      }
-    } catch(e) {}
-    // bazi.js 没加载，无法精确计算
-    console.warn('bazi.js未加载，无法计算日柱');
+    if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calculateBaZi) {
+      var bazi = BaZiCalculator.calculateBaZi(year, month, day, hour, gender, clock);
+      if (bazi && bazi.day) return { dayGan: bazi.day.gan, dayZhi: bazi.day.zhi };
+    }
+    // bazi.js 还没加载完，等一会重试
+    if (!retry) {
+      console.log('等待bazi.js加载...');
+      return { dayGan: '', dayZhi: '', _retry: true };
+    }
     return { dayGan: '', dayZhi: '' };
   }
 
@@ -103,14 +102,17 @@
     });
   }
 
-  window.loadFortune = function() {
+  window.loadFortune = function(retryCount) {
     content.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:16px">正在生成今日运势...</p></div>';
     Auth.getData('saved_charts').then(function(val) {
       var charts = [];
       try { charts = JSON.parse(val || '[]'); } catch(e) {}
       var idx = parseInt(chartPicker.value) || 0;
       var chart = charts[idx];
-      var dp = getDayPillar(chart.params);
+      var dp = getDayPillar(chart.params, retryCount);
+      if (dp._retry && (!retryCount || retryCount < 5)) {
+        return setTimeout(function(){ loadFortune((retryCount||0)+1); }, 600);
+      }
       fetch('/api/fortune', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
