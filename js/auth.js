@@ -178,16 +178,13 @@ var Auth = (function () {
       nav.appendChild(div);
     }
 
-    // 移动端底部导航
-    var mobileNav = document.getElementById('zhishi-mobile-nav');
-    if (mobileNav && !document.getElementById('mobile-nav-auth')) {
-      var mspan = document.createElement('span');
-      mspan.id = 'mobile-nav-auth';
-      mspan.style.cssText = 'display:contents';
-      mspan.innerHTML =
-        '<a href="#" onclick="Auth.showModal(\'register\');return false" class="m-auth-reg">注册</a>' +
-        '<a href="#" onclick="Auth.showModal(\'login\');return false" class="m-auth-login">登录</a>';
-      mobileNav.appendChild(mspan);
+    // 移动端：顶部导航右上角注入认证按钮
+    var mobileAuth = document.getElementById('mobile-top-auth');
+    if (!mobileAuth) {
+      var mAuth = document.createElement('span');
+      mAuth.id = 'mobile-top-auth';
+      mAuth.className = 'mobile-top-auth';
+      document.body.appendChild(mAuth);
     }
   }
 
@@ -211,16 +208,14 @@ var Auth = (function () {
       }
     }
 
-    // 移动端导航
-    var marea = document.getElementById('mobile-nav-auth');
+    // 移动端顶部右上角认证
+    var marea = document.getElementById('mobile-top-auth');
     if (marea) {
       if (isLoggedIn()) {
         var mn = ((_user && _user.email) ? _user.email.split('@')[0] : '我');
-        marea.innerHTML =
-          '<a href="#" onclick="Auth.showProfile();return false" class="m-auth-user">' + mn + '</a>';
+        marea.innerHTML = '<a href="#" onclick="Auth.showProfile();return false" style="color:var(--gold-l);font-size:12px;font-weight:600;text-decoration:none;letter-spacing:1px">' + mn + '</a>';
       } else {
-        marea.innerHTML =
-          '<a href="#" onclick="Auth.showModal(\'register\');return false" class="m-auth-reg">注册</a>';
+        marea.innerHTML = '<a href="#" onclick="Auth.showModal(\'login\');return false" style="color:var(--tx3);font-size:12px;font-weight:500;text-decoration:none;margin-right:4px">登录</a><a href="#" onclick="Auth.showModal(\'register\');return false" style="color:var(--gold-l);font-size:12px;font-weight:600;text-decoration:none">注册</a>';
       }
     }
   }
