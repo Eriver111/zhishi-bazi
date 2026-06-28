@@ -177,8 +177,19 @@ var Auth = (function () {
         '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
       nav.appendChild(div);
     }
-    // 桌面导航注入「我的档案」链接（仅登录后显示）
+    // 桌面导航注入「今日运势」+「我的档案」
     var navLinks = nav.querySelector('.nav-links');
+    if (navLinks && !document.getElementById('nav-fortune-link')) {
+      var flink = document.createElement('a');
+      flink.id = 'nav-fortune-link';
+      flink.href = '/fortune';
+      flink.style.cssText = 'color:var(--gold-l);font-size:13px;letter-spacing:1px';
+      flink.textContent = '运势';
+      // 插在积分前面
+      var cta = navLinks.querySelector('.nav-cta');
+      if (cta) navLinks.insertBefore(flink, cta);
+      else navLinks.appendChild(flink);
+    }
     if (navLinks && !document.getElementById('nav-profile-link')) {
       var plink = document.createElement('a');
       plink.id = 'nav-profile-link';
@@ -196,8 +207,18 @@ var Auth = (function () {
       mAuth.className = 'mobile-top-auth';
       document.body.appendChild(mAuth);
     }
-    // 移动端底部导航注入「我的档案」
+    // 移动端底部导航注入「运势」+「档案」
     var mNav = document.getElementById('zhishi-mobile-nav');
+    if (mNav && !document.getElementById('mnav-fortune-link')) {
+      var mflink = document.createElement('a');
+      mflink.id = 'mnav-fortune-link';
+      mflink.href = '/fortune';
+      mflink.textContent = '运势';
+      mflink.style.cssText = 'color:var(--gold-l)';
+      var mpricing = mNav.querySelector('a[href="/pricing"]');
+      if (mpricing) mNav.insertBefore(mflink, mpricing);
+      else mNav.appendChild(mflink);
+    }
     if (mNav && !document.getElementById('mnav-profile-link')) {
       var mplink = document.createElement('a');
       mplink.id = 'mnav-profile-link';

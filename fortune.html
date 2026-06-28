@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 今日运势</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/auth.css">
+<style>
+.fortune-page{max-width:640px;margin:80px auto 40px;padding:0 20px;animation:fadeIn .8s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.fortune-header{text-align:center;margin-bottom:32px}
+.fortune-header .brand{font-size:42px;font-weight:900;letter-spacing:16px;
+  background:linear-gradient(180deg,var(--gold-l),var(--gold),var(--gold-d));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.fortune-header .sub{font-size:13px;color:var(--tx3);letter-spacing:4px;margin-top:6px}
+.fortune-header .date{font-size:12px;color:var(--tx3);margin-top:4px;letter-spacing:2px}
+.chart-select{text-align:center;margin-bottom:24px}
+.chart-select select{background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:8px;color:var(--tx);padding:10px 16px;font-size:14px;font-family:inherit;cursor:pointer;min-width:200px}
+.fortune-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;margin-bottom:16px;position:relative;overflow:hidden;backdrop-filter:blur(16px)}
+.fortune-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),transparent)}
+.fortune-card .section-label{font-size:11px;color:var(--gold-l);letter-spacing:4px;margin-bottom:10px;font-weight:600}
+.fortune-card .overview{font-size:15px;color:var(--tx);line-height:2.2;margin-bottom:6px}
+.fortune-card .row{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
+.fortune-card .row .item{flex:1;min-width:140px;background:rgba(20,25,40,.4);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:16px;text-align:center}
+.item .icon{font-size:24px;margin-bottom:6px}
+.item .label{font-size:10px;color:var(--tx3);letter-spacing:2px;margin-bottom:4px}
+.item .text{font-size:13px;color:var(--tx2);line-height:1.8}
+.quote{text-align:center;padding:20px 16px;color:rgba(201,168,76,.3);font-size:12px;letter-spacing:3px;font-style:italic;line-height:2}
+.loading{text-align:center;padding:60px;color:var(--tx3)}
+.loading .spinner{display:inline-block;width:32px;height:32px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:60px 20px;color:var(--tx3)}
+.empty .icon{font-size:48px;margin-bottom:16px;opacity:.5}
+</style>
+</head>
+<body>
+<div class="fortune-page">
+  <div class="fortune-header">
+    <div class="brand">知 时</div>
+    <div class="sub">今日运势</div>
+    <div class="date" id="todayDate"></div>
+  </div>
+  <div class="chart-select" id="chartSelect" style="display:none">
+    <select id="chartPicker" onchange="loadFortune()"></select>
+  </div>
+  <div id="content"></div>
+  <div class="quote">「 知天时 · 见自己 」</div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+(function(){
+  var todayDate = document.getElementById('todayDate');
+  var content = document.getElementById('content');
+  var chartSelect = document.getElementById('chartSelect');
+  var chartPicker = document.getElementById('chartPicker');
+  var today = new Date();
+  todayDate.textContent = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
+
+  function render() {
+    if (typeof Auth === 'undefined') return setTimeout(render, 300);
+    Auth.ready(function() {
+      if (!Auth.isLoggedIn()) {
+        content.innerHTML = '<div class="empty"><div class="icon">🔐</div><p>登录后可查看专属今日运势</p><button class="btn" onclick="Auth.showModal(\'login\')" style="padding:12px 32px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;margin-top:16px">登录</button></div>';
+        return;
+      }
+      Auth.getData('saved_charts').then(function(val) {
+        var charts = [];
+        try { charts = JSON.parse(val || '[]'); } catch(e) {}
+        if (charts.length === 0) {
+          content.innerHTML = '<div class="empty"><div class="icon">📋</div><p>还没有保存的排盘</p><p style="font-size:11px;color:var(--tx3)">去排盘页面生成你的命盘，即可查看今日运势</p><a href="/paipan" style="display:inline-block;margin-top:12px;padding:10px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:25px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">去排盘</a></div>';
+          return;
+        }
+        // 放选择框
+        chartSelect.style.display = '';
+        chartPicker.innerHTML = charts.map(function(c, i) { return '<option value="'+i+'">'+c.label+'</option>'; }).join('');
+        loadFortune();
+      }).catch(function() {
+        content.innerHTML = '<div class="empty"><p>加载失败，请刷新重试</p></div>';
+      });
+    });
+  }
+
+  window.loadFortune = function() {
+    content.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:16px">正在生成今日运势...</p></div>';
+    Auth.getData('saved_charts').then(function(val) {
+      var charts = [];
+      try { charts = JSON.parse(val || '[]'); } catch(e) {}
+      var idx = parseInt(chartPicker.value) || 0;
+      var chart = charts[idx];
+      var p = new URLSearchParams(chart.params);
+      fetch('/api/fortune', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year: parseInt(p.get('year')), month: parseInt(p.get('month')), day: parseInt(p.get('day')),
+          dayGan: p.get('dayGan') || '', dayZhi: p.get('dayZhi') || '',
+          gender: p.get('gender') || 'male', label: chart.label
+        })
+      }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.error) { content.innerHTML = '<div class="empty"><p>'+d.error+'</p></div>'; return; }
+        content.innerHTML =
+          '<div class="fortune-card"><div class="section-label">✦ 整体运势</div><div class="overview">'+d.overview+'</div></div>' +
+          '<div class="fortune-card"><div class="row">' +
+          '<div class="item"><div class="icon">✅</div><div class="label">宜</div><div class="text">'+(d.suitable||'顺其自然')+'</div></div>' +
+          '<div class="item"><div class="icon">⚠️</div><div class="label">慎</div><div class="text">'+(d.caution||'保持平常心')+'</div></div>' +
+          '</div></div>' +
+          '<div class="fortune-card"><div class="section-label">📖 今日箴言</div><div class="overview" style="text-align:center;font-style:italic">'+(d.quote||'知天时，见自己。')+'</div></div>';
+      }).catch(function() {
+        content.innerHTML = '<div class="empty"><p>网络错误，请稍后重试</p></div>';
+      });
+    });
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
