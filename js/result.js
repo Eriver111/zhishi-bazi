@@ -1243,14 +1243,20 @@ document.addEventListener('DOMContentLoaded', function() {
           Auth.getData('saved_charts').then(function(existing){
             var charts = [];
             try { charts = JSON.parse(existing || '[]'); } catch(e){}
-            var dup = charts.some(function(c){ return c.params === paramStr; });
-            if (!dup) {
-              var label = _params.gender === 'male' ? '乾造' : '坤造';
-              label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
-              charts.unshift({ label: label, params: paramStr, dayGan: bazi.day.gan, dayZhi: bazi.day.zhi, saved_at: new Date().toISOString() });
-              if (charts.length > 20) charts = charts.slice(0, 20);
-              Auth.syncData('saved_charts', JSON.stringify(charts));
+            // 找到并更新已有条目，或新增
+            var found = charts.find(function(c){ return c.params === paramStr; });
+            var label = _params.gender === 'male' ? '乾造' : '坤造';
+            label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
+            var entry = { label: label, params: paramStr, dayGan: bazi.day.gan, dayZhi: bazi.day.zhi, saved_at: new Date().toISOString() };
+            if (found) {
+              // 更新已有条目，补充日柱数据
+              found.dayGan = entry.dayGan; found.dayZhi = entry.dayZhi;
+              found.saved_at = entry.saved_at; found.label = entry.label;
+            } else {
+              charts.unshift(entry);
             }
+            if (charts.length > 20) charts = charts.slice(0, 20);
+            Auth.syncData('saved_charts', JSON.stringify(charts));
           }).catch(function(){});
         } catch(e) {}
       });
