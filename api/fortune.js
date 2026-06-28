@@ -155,13 +155,12 @@ module.exports = async function handler(req, res) {
     for (var k in _cache) { if (!_cache[k]._date || _cache[k]._date !== todayKey) delete _cache[k]; }
     if (_cache[cacheKey]) return res.status(200).json({ huangli: huangli, fortune: _cache[cacheKey] });
 
-    var genderLabel = gender === 'male' ? '乾造' : '坤造';
-    var prompt = `你是"知时先生"，一位精通命理学的 AI。根据以下信息，为用户生成今日运势。语气从容温暖，有文化感，不超过200字。
+    var wx = WU_XING[dayGan] || '';
+    var prompt = `你是"知时"，用最简单的大白话给用户一句今日提醒。不超过80字，像朋友聊天一样。
 
-用户命盘：${chartLabel}（${genderLabel}），日主${dayGan}（${WU_XING[dayGan]||''}），日支${dayZhi}。
-今日：${huangli.date}，干支${huangli.dayGZ}，${huangli.term.cur}→${huangli.term.next}。
+用户是${dayGan}${wx}日主，今天是${huangli.dayGZ}日。
 
-请返回JSON：{"overview":"...","suitable":"...","caution":"...","quote":"..."}`;
+直接说今天适合做什么、注意什么，一句到位。返回JSON：{"tip":"简短大白话今日提醒"}`;
 
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
@@ -169,9 +168,9 @@ module.exports = async function handler(req, res) {
     });
     var aiData = await aiResp.json();
     var content = aiData.choices?.[0]?.message?.content || '';
-    var fortune;
-    try { fortune = JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || content); } catch(e) { fortune = { overview: content }; }
-    var output = { overview: fortune.overview||'', suitable: fortune.suitable||'', caution: fortune.caution||'', quote: fortune.quote||'知天时，见自己。', _date: todayKey, _cached: false };
+    var fortune = {};
+    try { fortune = JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || content); } catch(e) { fortune = { tip: content }; }
+    var output = { tip: fortune.tip || fortune.overview || content, _date: todayKey, _cached: false };
     _cache[cacheKey] = output;
     return res.status(200).json({ huangli: huangli, fortune: output });
   } catch (e) {

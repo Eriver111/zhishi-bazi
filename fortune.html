@@ -144,11 +144,9 @@
         html += '<div style="flex:1;background:rgba(200,100,100,.04);border:1px solid rgba(200,100,100,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#e07050;letter-spacing:2px;margin-bottom:4px">忌</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.ji.length ? h.ji.join('、') : '—') + '</div></div></div>';
         html += '</div>';
 
-        // 八字专属运势
-        if (f) {
-          html += '<div class="fortune-card"><div class="section-label">✦ 专属运势</div><div class="overview">' + f.overview + '</div></div>';
-          html += '<div class="fortune-card"><div class="row"><div class="item"><div class="label">宜</div><div class="text">' + (f.suitable || '顺其自然') + '</div></div><div class="item"><div class="label">慎</div><div class="text">' + (f.caution || '保持平常心') + '</div></div></div></div>';
-          html += '<div class="fortune-card"><div class="section-label">今日箴言</div><div class="overview" style="text-align:center;font-style:italic">' + (f.quote || '知天时，见自己。') + '</div></div>';
+        // 专属提醒
+        if (f && f.tip) {
+          html += '<div class="fortune-card" style="text-align:center"><div class="section-label">今日提醒</div><div class="overview" style="font-size:16px">' + f.tip + '</div></div>';
         }
         content.innerHTML = html;
       }).catch(function() {
