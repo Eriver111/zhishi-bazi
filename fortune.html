@@ -122,13 +122,22 @@
       }).then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.error) { content.innerHTML = '<div class="empty"><p>'+d.error+'</p></div>'; return; }
-        content.innerHTML =
-          '<div class="fortune-card"><div class="section-label">✦ 整体运势</div><div class="overview">'+d.overview+'</div></div>' +
-          '<div class="fortune-card"><div class="row">' +
-          '<div class="item"><div class="icon">✅</div><div class="label">宜</div><div class="text">'+(d.suitable||'顺其自然')+'</div></div>' +
-          '<div class="item"><div class="icon">⚠️</div><div class="label">慎</div><div class="text">'+(d.caution||'保持平常心')+'</div></div>' +
-          '</div></div>' +
-          '<div class="fortune-card"><div class="section-label">📖 今日箴言</div><div class="overview" style="text-align:center;font-style:italic">'+(d.quote||'知天时，见自己。')+'</div></div>';
+        var h = d.huangli, f = d.fortune;
+        var html = '';
+        // 黄历
+        html += '<div class="fortune-card"><div class="section-label">📅 ' + h.date + '</div>';
+        html += '<div style="display:flex;gap:10px;flex-wrap:wrap"><div class="item" style="flex:1;min-width:100px"><div class="label">干支</div><div class="text" style="font-size:20px;font-weight:700;color:var(--gold-l)">' + h.dayGanZhi + '</div></div>';
+        html += '<div class="item" style="flex:1;min-width:100px"><div class="label">月令</div><div class="text">' + h.monthZhi + '月 · ' + h.season + '</div></div></div>';
+        html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px"><div class="item" style="flex:1;min-width:80px"><div class="label">日运基调</div><div class="text">' + h.dayLabel + '</div></div>';
+        html += '<div class="item" style="flex:1;min-width:80px"><div class="label">幸运色</div><div class="text" style="color:var(--gold-l)">' + h.luckyColor + '</div></div>';
+        html += '<div class="item" style="flex:1;min-width:80px"><div class="label">幸运数字</div><div class="text" style="color:var(--gold-l);font-size:20px;font-weight:700">' + h.luckyNum + '</div></div></div></div>';
+        // 八字运势
+        if (f) {
+          html += '<div class="fortune-card"><div class="section-label">✦ 专属运势</div><div class="overview">' + f.overview + '</div></div>';
+          html += '<div class="fortune-card"><div class="row"><div class="item"><div class="label">宜</div><div class="text">' + (f.suitable || '顺其自然') + '</div></div><div class="item"><div class="label">慎</div><div class="text">' + (f.caution || '保持平常心') + '</div></div></div></div>';
+          html += '<div class="fortune-card"><div class="section-label">📖 今日箴言</div><div class="overview" style="text-align:center;font-style:italic">' + (f.quote || '知天时，见自己。') + '</div></div>';
+        }
+        content.innerHTML = html;
       }).catch(function() {
         content.innerHTML = '<div class="empty"><p>网络错误，请稍后重试</p></div>';
       });
