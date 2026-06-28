@@ -370,21 +370,31 @@ function handleSubmit(e) {
 // 登录用户：页面加载时恢复上次排盘参数
 (function restoreBaziParams() {
   if (typeof Auth === 'undefined') return setTimeout(restoreBaziParams, 500);
-  setTimeout(function() {
+  var attempts = 0;
+  function tryRestore() {
+    attempts++;
     if (!Auth.isLoggedIn()) return;
     Auth.getData('last_bazi_params').then(function(val) {
       if (!val) return;
       var p = new URLSearchParams(val);
+      var year = p.get('year'), month = p.get('month'), day = p.get('day');
+      if (!year || !month || !day) return;
       var setVal = function(id, value) { var el = document.getElementById(id); if (el && value) el.value = value; };
-      setVal('sYear', p.get('year'));
-      setVal('sMonth', p.get('month'));
-      setVal('sDay', p.get('day'));
-      setVal('sHour', p.get('hour'));
-      setVal('sMinute', p.get('minute'));
+      setVal('sYear', year);
+      setVal('sMonth', month);
+      setVal('sDay', day);
+      var hour = p.get('hour'); if (hour) setVal('sHour', hour);
+      var minute = p.get('minute'); if (minute) setVal('sMinute', minute);
       if (p.get('gender')) {
         var r = document.querySelector('input[name="gender"][value="' + p.get('gender') + '"]');
         if (r) r.checked = true;
       }
+      // 如果年份没填进去且没超过重试次数，说明 select 还没渲染完
+      var yearEl = document.getElementById('sYear');
+      if ((!yearEl || !yearEl.value) && attempts < 10) {
+        setTimeout(tryRestore, 500);
+      }
     }).catch(function(){});
-  }, 800);
+  }
+  setTimeout(tryRestore, 800);
 })();
