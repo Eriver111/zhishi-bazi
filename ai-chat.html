@@ -225,5 +225,6 @@ function doShare(){
   fetch('/api/referral',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code||'',freeId:AI.freeId,action:'share'})}).catch(function(){});
 }
 </script>
+<script src="js/auth.js"></script>
 </body>
 </html>
