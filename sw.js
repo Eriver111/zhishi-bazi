@@ -1,6 +1,6 @@
 // 知时 Service Worker — 离线缓存 + PWA
 // 策略：只缓存静态资源，HTML 走网络保证用户始终拿到最新版
-const CACHE_NAME = 'zhishi-v3';
+const CACHE_NAME = 'zhishi-v4';
 
 // 只缓存静态资源，不缓存 HTML 页面
 const STATIC_ASSETS = [
