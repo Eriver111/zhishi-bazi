@@ -82,6 +82,8 @@ function hunlock(){
   var pw=document.getElementById('hepanPaywall');if(pw)pw.remove();
   ['hp-drawer-4','hp-drawer-5','hp-drawer-6','hp-drawer-7'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hp-open')});
   var b=document.getElementById('downloadBanner');if(b)b.style.display='flex';
+  // 登录用户：同步合盘解锁状态到云端
+  if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{Auth.syncData('hepan_rpt',JSON.stringify({h:_hepanHash,e:Date.now()+365*86400000}));}catch(e){}}
 }
 
 function hautoRestore(){var oid=localStorage.getItem('hepan_ord');if(oid)hpoll(oid)}

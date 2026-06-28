@@ -701,7 +701,12 @@
   window._aiBindPhone=function(){var p=document.getElementById('aiPhoneInput').value.trim();if(!/^1d{10}$/.test(p)){alert('请输入正确手机号');return}if(!AI.code){alert('请先激活兑换码');return}var m=document.getElementById('aiBindMsg');if(m)m.textContent='绑定中...';fetch('/api/bind-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code,phone:p})}).then(function(r){return r.json()}).then(function(d){if(m)m.textContent=d.success?'✅ 已绑定':'❌ 失败';if(d.success)localStorage.setItem('ai_bound_phone',p)})};
   var _origPS=handlePaymentSuccess;handlePaymentSuccess=function(c,cr){_origPS(c,cr);showMyCode(c);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp}};
   var _origMS=handleMonthlySuccess;handleMonthlySuccess=function(c,e){_origMS(c,e);showMyCode(c)};
-  var _origRS=restoreSession;restoreSession=function(){var sc=localStorage.getItem('ai_chat_code');if(sc)showMyCode(sc);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp};_origRS()};
+  var _origRS=restoreSession;restoreSession=function(){var sc=localStorage.getItem('ai_chat_code');if(sc)showMyCode(sc);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp};_origRS();
+    // 登录用户：从服务端加载聊天历史
+    if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){Auth.getData().then(function(d){if(!d||!d.ai_chat_history)return;try{var msgs=JSON.parse(d.ai_chat_history);msgs.forEach(function(m){addMessage(m.role,m.content)})}catch(e){}}).catch(function(){})}
+  };
+  // 登录用户：发消息时同步到服务端
+  var _origAdd=addMessage;addMessage=function(role,content){_origAdd(role,content);if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{var msgs=AI.messages.slice(-20).map(function(m){return{role:m.role,content:m.content}});Auth.syncData('ai_chat_history',JSON.stringify(msgs));}catch(e){}}};
 
   // AI按钮拖动
   (function(){

@@ -115,6 +115,8 @@ function unlock(){
   if(wrap)wrap.querySelectorAll('.section-drawer').forEach(function(s){s.classList.add('drawer-open')});
   if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
   var b=document.getElementById('downloadBanner');if(b)b.style.display='flex';
+  // 登录用户：同步报告解锁状态到云端
+  if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{Auth.syncData('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}));}catch(e){}}
 }
 
 function autoRestore(){var oid=localStorage.getItem('rpt_ord');if(oid)startQRPoll(oid)}

@@ -355,7 +355,36 @@ function handleSubmit(e) {
   var solarEl = document.getElementById('solarEnabled');
   if (solarEl && !solarEl.checked) params.set('solar', '0');
 
+  // 登录用户：保存排盘参数到云端
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+    try { Auth.syncData('last_bazi_params', params.toString()); } catch(e) {}
+  }
+  // 本地也存一份（向后兼容）
+  try { localStorage.setItem('last_bazi_params', params.toString()); } catch(e) {}
+
   setTimeout(function() {
     window.location.href = 'result?' + params.toString();
   }, 600);
 }
+
+// 登录用户：页面加载时恢复上次排盘参数
+(function restoreBaziParams() {
+  if (typeof Auth === 'undefined') return setTimeout(restoreBaziParams, 500);
+  setTimeout(function() {
+    if (!Auth.isLoggedIn()) return;
+    Auth.getData('last_bazi_params').then(function(val) {
+      if (!val) return;
+      var p = new URLSearchParams(val);
+      var setVal = function(id, value) { var el = document.getElementById(id); if (el && value) el.value = value; };
+      setVal('sYear', p.get('year'));
+      setVal('sMonth', p.get('month'));
+      setVal('sDay', p.get('day'));
+      setVal('sHour', p.get('hour'));
+      setVal('sMinute', p.get('minute'));
+      if (p.get('gender')) {
+        var r = document.querySelector('input[name="gender"][value="' + p.get('gender') + '"]');
+        if (r) r.checked = true;
+      }
+    }).catch(function(){});
+  }, 800);
+})();
