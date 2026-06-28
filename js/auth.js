@@ -328,7 +328,6 @@ var Auth = (function () {
         showErr(err, '网络错误，请稍后重试');
       });
   }
-  }
 
   function doSubmit() {
     var email = document.getElementById('authEmail').value.trim();
