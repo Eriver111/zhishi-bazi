@@ -130,7 +130,7 @@
         if (f && f.tip) { html += '<div class="fortune-card"><div class="section-label">今日提醒</div><div class="overview">' + f.tip + '</div></div>'; }
         content.innerHTML = html;
       }).catch(function(){ content.innerHTML = '<div class="empty"><p>网络错误，请稍后重试</p></div>'; });
-    });
+    }).catch(function(){ content.innerHTML = '<div class="empty"><p>加载档案失败，请确认已登录并有排盘记录</p></div>'; });
   };
 
   render();

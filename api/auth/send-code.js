@@ -52,16 +52,12 @@ module.exports = async function handler(req, res) {
     var code = generateCode();
     _codes[email] = { code: code, ts: Date.now() };
 
-    // 尝试发送邮件
+    // 尝试发送邮件，失败时降级为直接显示验证码
     try {
       await sendCode(email, code);
     } catch (e) {
       console.error('DM发送失败:', e.message);
-      // 降级：未配 AK 时开发模式返回验证码
-      if (!process.env.ALI_AK_ID) {
-        return res.status(200).json({ success: true, dev_code: code });
-      }
-      return res.status(500).json({ error: e.message || '邮件发送失败' });
+      return res.status(200).json({ success: true, dev_code: code, dev_note: '邮件服务暂不可用，请使用下方验证码' });
     }
 
     return res.status(200).json({ success: true });
