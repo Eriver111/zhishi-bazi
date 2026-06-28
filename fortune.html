@@ -75,17 +75,8 @@
         if (bazi && bazi.day) return { dayGan: bazi.day.gan, dayZhi: bazi.day.zhi };
       }
     } catch(e) {}
-    // bazi.js 没加载时的兜底：用 lunar.js 转农历获取日柱
-    try {
-      if (typeof LunarCalendar !== 'undefined' && LunarCalendar.solarToLunar) {
-        var lr = LunarCalendar.solarToLunar(year, month, day);
-        if (lr && lr.dayGan !== undefined) {
-          var tg = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-          var dz = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-          return { dayGan: tg[lr.dayGan], dayZhi: dz[lr.dayZhi] };
-        }
-      }
-    } catch(e) {}
+    // bazi.js 没加载，无法精确计算
+    console.warn('bazi.js未加载，无法计算日柱');
     return { dayGan: '', dayZhi: '' };
   }
 
