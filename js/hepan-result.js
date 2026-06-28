@@ -106,6 +106,7 @@
     var dmWuxing = GAN_WUXING_MAP[bazi.day.gan] || '土';
 
     return {
+      _bazi: bazi,
       name: name,
       gender: gender,
       dayGan: bazi.day.gan,

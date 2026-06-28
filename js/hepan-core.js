@@ -470,7 +470,18 @@ function analyzeDayGanStrength(p1, p2) {
   };
 }
 
+// 使用 BaZiCalculator 统一算法
 function calcDayGanStrength(person) {
+  // 如果有完整 bazi 对象，直接用 BaZiCalculator
+  if (person._bazi && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calcDayMasterStrength) {
+    var result = BaZiCalculator.calcDayMasterStrength(person._bazi);
+    return { level: result.level, label: result.label, score: result.score };
+  }
+  // 回退到旧的合盘独立算法
+  return _legacyCalcDayGanStrength(person);
+}
+
+function _legacyCalcDayGanStrength(person) {
   var dg = person.dayGan;
   var dgWx = person.dmWuxing || HP_GWX[dg];
   var monthPillar = person.pillars[1]; // 月柱
