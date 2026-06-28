@@ -177,6 +177,16 @@ var Auth = (function () {
         '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
       nav.appendChild(div);
     }
+    // 桌面导航注入「我的档案」链接（仅登录后显示）
+    var navLinks = nav.querySelector('.nav-links');
+    if (navLinks && !document.getElementById('nav-profile-link')) {
+      var plink = document.createElement('a');
+      plink.id = 'nav-profile-link';
+      plink.href = '/profile';
+      plink.style.cssText = 'display:none;color:var(--gold-l);font-size:13px;letter-spacing:1px';
+      plink.textContent = '我的档案';
+      navLinks.appendChild(plink);
+    }
 
     // 移动端：顶部导航右上角注入认证按钮
     var mobileAuth = document.getElementById('mobile-top-auth');
@@ -185,6 +195,16 @@ var Auth = (function () {
       mAuth.id = 'mobile-top-auth';
       mAuth.className = 'mobile-top-auth';
       document.body.appendChild(mAuth);
+    }
+    // 移动端底部导航注入「我的档案」
+    var mNav = document.getElementById('zhishi-mobile-nav');
+    if (mNav && !document.getElementById('mnav-profile-link')) {
+      var mplink = document.createElement('a');
+      mplink.id = 'mnav-profile-link';
+      mplink.href = '/profile';
+      mplink.textContent = '档案';
+      mplink.style.cssText = 'display:none';
+      mNav.appendChild(mplink);
     }
   }
 
@@ -207,6 +227,12 @@ var Auth = (function () {
           '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
       }
     }
+
+    // 桌面导航：登录后显示「我的档案」
+    var plink = document.getElementById('nav-profile-link');
+    if (plink) plink.style.display = isLoggedIn() ? '' : 'none';
+    var mplink = document.getElementById('mnav-profile-link');
+    if (mplink) mplink.style.display = isLoggedIn() ? '' : 'none';
 
     // 移动端顶部右上角认证
     var marea = document.getElementById('mobile-top-auth');

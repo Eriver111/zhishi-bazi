@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 我的档案</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/auth.css">
+<style>
+.profile-page{max-width:600px;margin:80px auto 40px;padding:0 20px}
+.profile-page h1{text-align:center;font-size:24px;color:var(--gold-l);letter-spacing:6px;margin-bottom:6px}
+.profile-page .sub{text-align:center;font-size:12px;color:var(--tx3);margin-bottom:32px;letter-spacing:2px}
+.chart-card{
+  display:block;background:var(--card);border:1px solid var(--bd);border-radius:12px;
+  padding:18px 20px;margin-bottom:12px;text-decoration:none;transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.chart-card:hover{border-color:var(--bd2);transform:translateY(-1px)}
+.chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent)}
+.chart-card .label{font-size:15px;color:var(--tx);font-weight:600;margin-bottom:4px}
+.chart-card .meta{font-size:11px;color:var(--tx3);display:flex;justify-content:space-between}
+.chart-card .arrow{color:var(--gold);font-size:18px;position:absolute;right:20px;top:50%;transform:translateY(-50%)}
+.chart-card .del{position:absolute;right:12px;top:8px;background:none;border:none;color:var(--tx3);font-size:10px;cursor:pointer;opacity:0;transition:opacity .2s}
+.chart-card:hover .del{opacity:1}
+.empty-state{text-align:center;padding:60px 20px;color:var(--tx3)}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.5}
+.empty-state p{font-size:13px;line-height:2}
+.login-prompt{text-align:center;padding:60px 20px}
+.login-prompt .btn{padding:12px 32px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none}
+</style>
+</head>
+<body>
+<div class="profile-page">
+  <h1>我的档案</h1>
+  <div class="sub">已保存的排盘记录</div>
+  <div id="content"></div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+(function(){
+  var content = document.getElementById('content');
+
+  function render() {
+    if (typeof Auth === 'undefined') return setTimeout(render, 300);
+    if (!Auth.isLoggedIn()) {
+      content.innerHTML =
+        '<div class="login-prompt">' +
+        '<div class="empty-state"><div class="icon">🔐</div><p>登录后可查看已保存的排盘记录</p></div>' +
+        '<button class="btn" onclick="Auth.showModal(\'login\')">登录</button>' +
+        '</div>';
+      return;
+    }
+
+    Auth.getData('saved_charts').then(function(val) {
+      var charts = [];
+      try { charts = JSON.parse(val || '[]'); } catch(e) {}
+
+      if (charts.length === 0) {
+        content.innerHTML =
+          '<div class="empty-state">' +
+          '<div class="icon">📋</div>' +
+          '<p>还没有保存的排盘</p><p style="font-size:11px">排盘后自动保存到这里</p>' +
+          '<a href="/paipan" style="display:inline-block;margin-top:16px;padding:10px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:25px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">去排盘</a>' +
+          '</div>';
+        return;
+      }
+
+      var html = '';
+      charts.forEach(function(c, i) {
+        html +=
+          '<div class="chart-card" style="cursor:pointer" onclick="location.href=\'/result?' + c.params + '\'">' +
+          '<button class="del" onclick="event.stopPropagation();deleteChart(' + i + ')">删除</button>' +
+          '<div class="label">' + c.label + '</div>' +
+          '<div class="meta"><span>' + (c.saved_at ? c.saved_at.slice(0,10) : '') + '</span></div>' +
+          '<span class="arrow">→</span>' +
+          '</div>';
+      });
+      content.innerHTML = html;
+    }).catch(function() {
+      content.innerHTML = '<div class="empty-state"><p>加载失败，请刷新重试</p></div>';
+    });
+  }
+
+  window.deleteChart = function(i) {
+    if (!confirm('确定删除这条记录？')) return;
+    Auth.getData('saved_charts').then(function(val) {
+      var charts = [];
+      try { charts = JSON.parse(val || '[]'); } catch(e) {}
+      charts.splice(i, 1);
+      Auth.syncData('saved_charts', JSON.stringify(charts)).then(function() {
+        render();
+      });
+    });
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
