@@ -156,17 +156,15 @@ module.exports = async function handler(req, res) {
     if (_cache[cacheKey]) return res.status(200).json({ huangli: huangli, fortune: _cache[cacheKey] });
 
     var wx = WU_XING[dayGan] || '';
-    var prompt = `你是"知时"，一位懂命理的朋友。用大白话给用户写一段今日提醒，像聊天一样说，不要用任何专业术语和古文。
+    var prompt = `你是"知时"。用户的信息：八字${chartLabel}，日主是${dayGan}（五行属${wx}），日柱地支${dayZhi}。今天是${huangli.dayGZ}日。
 
-用户是${dayGan}${wx}日主，出生在${chartLabel}。今天是${huangli.dayGZ}日，${huangli.term.cur}节气。
+请用大白话给这位${dayGan}${wx}日主写一段今日运势提醒，像朋友聊天一样亲切，不要用任何专业术语、古文或引用。150字左右，温暖随性，不要半途截断。
 
-请根据${dayGan}和今天${huangli.dayGZ}的关系，说说今天整体感觉怎么样、适合做什么事、有什么地方要注意。150字左右，温暖随性。
-
-换成JSON：{"tip":"..."}`;
+直接返回JSON：{"tip":"写好的那段话"}`;
 
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
-      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:400, temperature:0.8 })
+      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:800, temperature:0.8 })
     });
     var aiData = await aiResp.json();
     var content = aiData.choices?.[0]?.message?.content || '';
