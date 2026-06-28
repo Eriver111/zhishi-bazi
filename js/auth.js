@@ -59,11 +59,11 @@ var Auth = (function () {
     }).then(function (r) { return r.json(); });
   }
 
-  function register(email, password, phone) {
+  function register(email, password, phone, code) {
     return fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: password, phone: phone || undefined })
+      body: JSON.stringify({ email: email, password: password, phone: phone || undefined, code: code || '' })
     }).then(function (r) { return r.json(); });
   }
 
@@ -250,6 +250,9 @@ var Auth = (function () {
     if (overlay) overlay.classList.remove('show');
   }
 
+  var _sendCooldown = 0;
+  var _sendTimer = null;
+
   function renderModal(overlay) {
     var isLogin = _currentMode === 'login';
     var title = isLogin ? '登录' : '注册';
@@ -259,6 +262,16 @@ var Auth = (function () {
       ? '还没有账户？<a onclick="Auth.showModal(\'register\')">立即注册</a>，送3次免费提问'
       : '已有账户？<a onclick="Auth.showModal(\'login\')">直接登录</a>';
 
+    var codeHTML = '';
+    if (!isLogin) {
+      codeHTML =
+        '<div class="auth-field"><label>邮箱验证码</label>' +
+        '<div style="display:flex;gap:10px">' +
+        '<input type="text" id="authCode" placeholder="6位验证码" maxlength="6" style="flex:1">' +
+        '<button id="authSendCode" onclick="Auth.sendCode()" style="white-space:nowrap;padding:10px 16px;font-size:12px;font-weight:600;background:rgba(201,168,76,.1);color:var(--gold-l);border:1px solid rgba(201,168,76,.25);border-radius:8px;cursor:pointer;font-family:inherit;min-width:90px">发送验证码</button>' +
+        '</div></div>';
+    }
+
     overlay.innerHTML =
       '<div class="auth-modal">' +
       '<button class="auth-close" onclick="Auth.closeModal()">&times;</button>' +
@@ -267,6 +280,7 @@ var Auth = (function () {
       '<div class="auth-field"><label>邮箱</label><input type="email" id="authEmail" placeholder="请输入邮箱"></div>' +
       '<div class="auth-field"><label>密码</label><input type="password" id="authPassword" placeholder="至少6位"></div>' +
       (isLogin ? '' : '<div class="auth-field"><label>手机号（选填，用于找回）</label><input type="tel" id="authPhone" placeholder="如 13812345678"></div>') +
+      codeHTML +
       '<div class="auth-error" id="authError"></div>' +
       (!isLogin ? '<div class="auth-bonus">🎁 注册即送 <strong>3 次</strong> 免费 AI 提问</div>' : '') +
       '<button class="auth-btn" id="authSubmitBtn" onclick="Auth.doSubmit()">' + btnText + '</button>' +
@@ -274,22 +288,67 @@ var Auth = (function () {
       '</div>';
   }
 
+  function sendCode() {
+    var email = document.getElementById('authEmail').value.trim();
+    var err = document.getElementById('authError');
+    var btn = document.getElementById('authSendCode');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showErr(err, '请先输入正确的邮箱地址'); return;
+    }
+    if (_sendCooldown > 0) return;
+    hideErr(err);
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+
+    fetch('/api/auth/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    }).then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) { showErr(err, d.error); btn.disabled = false; btn.textContent = '发送验证码'; return; }
+        if (d.dev_code) { document.getElementById('authCode').value = d.dev_code; }
+        _sendCooldown = 60;
+        btn.textContent = _sendCooldown + 's 后重发';
+        btn.style.opacity = '0.5';
+        _sendTimer = setInterval(function () {
+          _sendCooldown--;
+          if (_sendCooldown <= 0) {
+            clearInterval(_sendTimer);
+            btn.disabled = false;
+            btn.textContent = '发送验证码';
+            btn.style.opacity = '1';
+          } else {
+            btn.textContent = _sendCooldown + 's 后重发';
+          }
+        }, 1000);
+      }).catch(function () {
+        btn.disabled = false;
+        btn.textContent = '发送验证码';
+        showErr(err, '网络错误，请稍后重试');
+      });
+  }
+  }
+
   function doSubmit() {
     var email = document.getElementById('authEmail').value.trim();
     var password = document.getElementById('authPassword').value;
     var phoneEl = document.getElementById('authPhone');
     var phone = phoneEl ? phoneEl.value.trim() : '';
+    var codeEl = document.getElementById('authCode');
+    var code = codeEl ? codeEl.value.trim() : '';
     var errEl = document.getElementById('authError');
     var btn = document.getElementById('authSubmitBtn');
 
     if (!email || !password) { showErr(errEl, '请填写邮箱和密码'); return; }
     if (password.length < 6) { showErr(errEl, '密码至少 6 位'); return; }
+    if (_currentMode === 'register' && !code) { showErr(errEl, '请输入邮箱验证码'); return; }
 
     btn.disabled = true;
     btn.textContent = '处理中...';
     hideErr(errEl);
 
-    var promise = _currentMode === 'login' ? login(email, password) : register(email, password, phone || undefined);
+    var promise = _currentMode === 'login' ? login(email, password) : register(email, password, phone || undefined, code);
 
     promise.then(function (d) {
       if (d.error) {
@@ -372,6 +431,7 @@ var Auth = (function () {
     showModal: showModal,
     closeModal: closeModal,
     doSubmit: doSubmit,
+    sendCode: sendCode,
     showProfile: showProfile
   };
 })();

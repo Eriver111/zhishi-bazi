@@ -6,6 +6,7 @@
     "dev": "node server.js"
   },
   "dependencies": {
+    "@alicloud/dm20151123": "^1.10.2",
     "@supabase/supabase-js": "^2.39.0",
     "crypto-js": "^4.2.0",
     "playwright": "^1.61.0"
