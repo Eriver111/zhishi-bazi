@@ -13,13 +13,10 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { email, password, code, phone } = req.body || {};
+    const { email, password, code, phone, _verify_only } = req.body || {};
 
-    // 验证
-    if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
-    if (!code) return res.status(400).json({ error: '请输入邮箱验证码' });
+    if (!email || !code) return res.status(400).json({ error: '请填写邮箱和验证码' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: '邮箱格式不正确' });
-    if (password.length < 6) return res.status(400).json({ error: '密码至少 6 位' });
 
     // 开发模式：跳过验证码校验（用 dev_code）
     var isDev = process.env.NODE_ENV === 'development' || !process.env.ALI_AK_ID;
@@ -28,6 +25,15 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: '验证码错误或已过期，请重新获取' });
       }
     }
+
+    // 仅验证模式（从邮件链接点过来的）
+    if (_verify_only) {
+      return res.status(200).json({ verified: true });
+    }
+
+    // 完整注册校验
+    if (!password) return res.status(400).json({ error: '请设置密码' });
+    if (password.length < 6) return res.status(400).json({ error: '密码至少 6 位' });
 
     // 频率限制：同一 IP 每小时最多 5 次注册
     const clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 验证邮箱</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#080c14;--paper:#0d1525;--gold:#c9a84c;--gold-l:#e8cf70;--gold-d:#8a6d28;
+  --tx:#e2dcc8;--tx2:#a09888;--tx3:#8a8580;--bd:rgba(201,168,76,.1);
+}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{
+  font-family:'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;
+  background:var(--ink);color:var(--tx);min-height:100vh;overflow-x:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+/* 背景 */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 10%, rgba(201,168,76,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 70% 80%, rgba(91,127,165,.03) 0%, transparent 50%),
+    linear-gradient(180deg,var(--ink) 0%,#0a1020 50%,var(--paper) 100%);
+}
+.container{
+  position:relative;z-index:1;text-align:center;padding:40px 20px;max-width:440px;width:100%;
+  animation:fadeUp .8s ease-out;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+.brand{font-size:56px;font-weight:900;letter-spacing:22px;
+  background:linear-gradient(180deg,var(--gold-l) 0%,var(--gold) 50%,var(--gold-d) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 32px rgba(201,168,76,.2));margin-bottom:6px;
+}
+.tagline{font-size:14px;color:rgba(201,168,76,.4);letter-spacing:10px;margin-bottom:36px}
+
+/* 装饰线 */
+.divider{width:60px;height:1px;margin:0 auto 32px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.25),transparent);}
+
+/* 验证码区 */
+.code-box{
+  background:rgba(13,21,37,.6);border:2px solid rgba(201,168,76,.15);
+  border-radius:16px;padding:32px 20px;margin-bottom:24px;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
+}
+.code-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),transparent);
+}
+.code-label{font-size:11px;color:var(--tx3);letter-spacing:6px;margin-bottom:16px}
+.code-value{
+  font-size:48px;font-weight:900;color:var(--gold-l);letter-spacing:16px;
+  font-family:'Courier New',monospace;user-select:all;
+}
+.code-hint{font-size:11px;color:var(--tx3);margin-top:14px;line-height:1.6}
+
+/* 名言 */
+.verse{
+  margin-top:28px;color:rgba(201,168,76,.3);font-size:12px;
+  letter-spacing:3px;line-height:2.2;font-style:italic;
+}
+.verse span{color:rgba(201,168,76,.5);font-weight:600}
+
+/* 状态提示 */
+.status{font-size:13px;color:var(--tx2);margin-top:20px;display:none}
+.status.ok{color:#7ec87e;display:block}
+.status.err{color:#e07050;display:block}
+
+.btn{
+  display:inline-block;margin-top:24px;padding:14px 36px;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  color:var(--ink);border:none;border-radius:25px;
+  font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;
+  text-decoration:none;font-family:inherit;
+  box-shadow:0 4px 24px rgba(201,168,76,.15);transition:all .3s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.25)}
+.btn.dim{opacity:.4;pointer-events:none}
+
+@media(max-width:480px){
+  .brand{font-size:40px;letter-spacing:16px}
+  .code-value{font-size:36px;letter-spacing:10px}
+  .code-box{padding:24px 14px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand">知 时</div>
+  <div class="tagline">知 天 时 · 见 自 己</div>
+  <div class="divider"></div>
+
+  <div class="code-box">
+    <div class="code-label">验 证 码</div>
+    <div class="code-value" id="codeDisplay">----</div>
+    <div class="code-hint" id="hint">请将以上验证码输入注册弹窗<br>或点击下方按钮完成验证</div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <button class="btn" id="verifyBtn" onclick="doAutoVerify()">✨ 一键完成验证</button>
+
+  <div class="verse">
+    <span>「</span>天机不可尽泄<br>一码以证真身<span>」</span><br><br>
+    <span>「</span>日月星辰为证<br>天地四时为凭<span>」</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var p = new URLSearchParams(window.location.search);
+  var code = p.get('code') || '';
+  var email = p.get('email') || '';
+
+  var codeEl = document.getElementById('codeDisplay');
+  var hintEl = document.getElementById('hint');
+  var btn = document.getElementById('verifyBtn');
+  var status = document.getElementById('status');
+
+  if (code) {
+    codeEl.textContent = code;
+    hintEl.textContent = '验证码 5 分钟内有效，请勿转发给他人';
+  }
+
+  window.doAutoVerify = function() {
+    if (!code || !email) {
+      status.className = 'status err';
+      status.textContent = '链接不完整，请回到注册页面手动输入验证码';
+      return;
+    }
+    btn.className = 'btn dim';
+    btn.textContent = '验证中...';
+
+    fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, code: code, password: '', _verify_only: true })
+    }).then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.verified) {
+        status.className = 'status ok';
+        status.textContent = '✅ 邮箱验证成功！请返回注册页面继续设置密码';
+        btn.style.display = 'none';
+        codeEl.textContent = '✓';
+        hintEl.textContent = '该邮箱已验证通过，请回到注册弹窗完成最后一步';
+      } else {
+        status.className = 'status err';
+        status.textContent = '❌ ' + (d.error || '验证失败，可能验证码已过期');
+        btn.className = 'btn';
+        btn.textContent = '重新验证';
+      }
+    }).catch(function(){
+      status.className = 'status err';
+      status.textContent = '网络错误，请稍后重试';
+      btn.className = 'btn';
+      btn.textContent = '重新验证';
+    });
+  };
+})();
+</script>
+</body>
+</html>
