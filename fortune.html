@@ -49,6 +49,8 @@
   <div class="quote">「 知天时 · 见自己 」</div>
 </div>
 
+<script src="js/lunar.js"></script>
+<script src="js/bazi.js"></script>
 <script src="js/auth.js"></script>
 <script>
 (function(){
@@ -58,23 +60,13 @@
   var chartPicker = document.getElementById('chartPicker');
   var today = new Date();
   todayDate.textContent = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
+  var _baziReady = false;
 
-  // 从保存的参数中计算日柱（用 bazi.js 精确算法）
-  function getDayPillar(params, retry) {
-    var p = new URLSearchParams(params);
-    var year = parseInt(p.get('year')), month = parseInt(p.get('month')), day = parseInt(p.get('day'));
-    var hour = parseInt(p.get('hour')) || 0, gender = p.get('gender') || 'male', clock = parseInt(p.get('clock'));
-    if (isNaN(clock)) clock = hour;
-    if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calculateBaZi) {
-      var bazi = BaZiCalculator.calculateBaZi(year, month, day, hour, gender, clock);
-      if (bazi && bazi.day) return { dayGan: bazi.day.gan, dayZhi: bazi.day.zhi };
-    }
-    // bazi.js 还没加载完，等一会重试
-    if (!retry) {
-      console.log('等待bazi.js加载...');
-      return { dayGan: '', dayZhi: '', _retry: true };
-    }
-    return { dayGan: '', dayZhi: '' };
+  // 等 bazi.js 加载完
+  function waitForBazi(cb, n) {
+    if (typeof BaZiCalculator !== 'undefined') { _baziReady = true; cb(); return; }
+    if ((n||0) > 10) { cb(); return; }
+    setTimeout(function(){ waitForBazi(cb, (n||0)+1); }, 500);
   }
 
   function render() {
@@ -107,58 +99,48 @@
       try { charts = JSON.parse(val || '[]'); } catch(e) {}
       var idx = parseInt(chartPicker.value) || 0;
       var chart = charts[idx];
-      // 优先用档案里存的日柱
-      var dg = chart.dayGan || '', dz = chart.dayZhi || '';
-      console.log('Chart data:', JSON.stringify({label:chart.label,dayGan:dg,dayZhi:dz,hasParams:!!chart.params}).slice(0,200));
-      if (!dg && chart.params) {
-        var dp = getDayPillar(chart.params);
-        dg = dp.dayGan; dz = dp.dayZhi;
+      var params = chart.params;
+      var year = parseInt((params.match(/year=(\d+)/)||[])[1]) || 0;
+      var month = parseInt((params.match(/month=(\d+)/)||[])[1]) || 0;
+      var day = parseInt((params.match(/day=(\d+)/)||[])[1]) || 0;
+      var hour = parseInt((params.match(/hour=(\d+)/)||[])[1]) || 0;
+      var gender = (params.match(/gender=(\w+)/)||[])[1] || 'male';
+      var clock = parseInt((params.match(/clock=(\d+)/)||[])[1]) || hour;
+
+      function doFetch(dg, dz) {
+        fetch('/api/fortune', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ year: year, month: month, day: day, dayGan: dg, dayZhi: dz, gender: gender, label: chart.label })
+        }).then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d.error) { content.innerHTML = '<div class="empty"><p>'+d.error+'</p></div>'; return; }
+          var h = d.huangli, f = d.fortune;
+          var html = '';
+          html += '<div class="fortune-card"><div class="section-label">' + h.date + '</div>';
+          html += '<div style="text-align:center;margin-bottom:12px"><span style="font-size:28px;font-weight:900;color:var(--gold-l);letter-spacing:4px">' + h.dayGZ + '</span></div>';
+          html += '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--tx2);margin-bottom:10px"><span>年 ' + h.yearGZ + '</span><span style="color:var(--tx3)">|</span><span>月 ' + h.monthGZ + '</span></div>';
+          html += '<div style="font-size:12px;color:var(--tx2);line-height:2"><div><span style="color:var(--tx3)">节气</span> ' + h.term.cur + ' → ' + h.term.next + '（' + h.term.days + '天）</div>';
+          html += '<div><span style="color:var(--tx3)">纳音</span> ' + h.nayin + '</div><div><span style="color:var(--tx3)">星宿</span> ' + h.xiu + '</div><div><span style="color:var(--tx3)">建除</span> ' + h.jianchu + '</div><div><span style="color:var(--tx3)">冲煞</span> ' + h.chong + '</div>';
+          html += '<div style="font-size:10px;color:var(--tx3);margin-top:4px">' + h.pengzu + '</div></div>';
+          html += '<div style="display:flex;gap:12px;margin-top:12px"><div style="flex:1;background:rgba(100,180,120,.04);border:1px solid rgba(100,180,120,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#7ec87e;letter-spacing:2px;margin-bottom:4px">宜</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.yi.length ? h.yi.join('、') : '—') + '</div></div>';
+          html += '<div style="flex:1;background:rgba(200,100,100,.04);border:1px solid rgba(200,100,100,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#e07050;letter-spacing:2px;margin-bottom:4px">忌</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.ji.length ? h.ji.join('、') : '—') + '</div></div></div></div>';
+          if (f && f.tip) { html += '<div class="fortune-card"><div class="section-label">今日提醒</div><div class="overview">' + f.tip + '</div></div>'; }
+          content.innerHTML = html;
+        }).catch(function(){ content.innerHTML = '<div class="empty"><p>网络错误，请稍后重试</p></div>'; });
       }
-      if (!dg) { content.innerHTML = '<div class="empty"><p>日柱计算失败——档案缺少日柱数据，请重新去排盘页生成报告</p><a href="/paipan" style="color:var(--gold)">去排盘</a></div>'; return; }
-      fetch('/api/fortune', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          year: chart.params.match(/year=(\d+)/)?.[1] || '',
-          month: chart.params.match(/month=(\d+)/)?.[1] || '',
-          day: chart.params.match(/day=(\d+)/)?.[1] || '',
-          dayGan: dg, dayZhi: dz,
-          gender: (chart.params.match(/gender=(\w+)/)?.[1]) || 'male',
-          label: chart.label
-        })
-      }).then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.error) { content.innerHTML = '<div class="empty"><p>'+d.error+'</p></div>'; return; }
-        var h = d.huangli, f = d.fortune;
-        var html = '';
 
-        // 黄历主卡片
-        html += '<div class="fortune-card">';
-        html += '<div class="section-label">' + h.date + '</div>';
-        html += '<div style="text-align:center;margin-bottom:12px"><span style="font-size:28px;font-weight:900;color:var(--gold-l);letter-spacing:4px">' + h.dayGZ + '</span></div>';
-        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--tx2);margin-bottom:10px">';
-        html += '<span>年 ' + h.yearGZ + '</span><span style="color:var(--tx3)">|</span><span>月 ' + h.monthGZ + '</span></div>';
-        html += '<div style="font-size:12px;color:var(--tx2);line-height:2">';
-        html += '<div><span style="color:var(--tx3)">节气</span> ' + h.term.cur + ' → ' + h.term.next + '（' + h.term.days + '天）</div>';
-        html += '<div><span style="color:var(--tx3)">纳音</span> ' + h.nayin + '</div>';
-        html += '<div><span style="color:var(--tx3)">星宿</span> ' + h.xiu + '</div>';
-        html += '<div><span style="color:var(--tx3)">建除</span> ' + h.jianchu + '</div>';
-        html += '<div><span style="color:var(--tx3)">冲煞</span> ' + h.chong + '</div>';
-        html += '<div style="font-size:10px;color:var(--tx3);margin-top:4px">' + h.pengzu + '</div></div>';
-
-        // 宜忌
-        html += '<div style="display:flex;gap:12px;margin-top:12px"><div style="flex:1;background:rgba(100,180,120,.04);border:1px solid rgba(100,180,120,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#7ec87e;letter-spacing:2px;margin-bottom:4px">宜</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.yi.length ? h.yi.join('、') : '—') + '</div></div>';
-        html += '<div style="flex:1;background:rgba(200,100,100,.04);border:1px solid rgba(200,100,100,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#e07050;letter-spacing:2px;margin-bottom:4px">忌</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.ji.length ? h.ji.join('、') : '—') + '</div></div></div>';
-        html += '</div>';
-
-        // 专属运势
-        if (f && f.tip) {
-          html += '<div class="fortune-card"><div class="section-label">今日提醒</div><div class="overview">' + f.tip + '</div></div>';
-        }
-        content.innerHTML = html;
-      }).catch(function() {
-        content.innerHTML = '<div class="empty"><p>网络错误，请稍后重试</p></div>';
-      });
+      // 先从档案读，没有再等 bazi.js 算
+      if (chart.dayGan) {
+        doFetch(chart.dayGan, chart.dayZhi);
+      } else {
+        waitForBazi(function() {
+          if (typeof BaZiCalculator !== 'undefined') {
+            var bazi = BaZiCalculator.calculateBaZi(year, month, day, hour, gender, clock);
+            if (bazi && bazi.day) { doFetch(bazi.day.gan, bazi.day.zhi); return; }
+          }
+          content.innerHTML = '<div class="empty"><p>日柱计算失败，请重新排盘</p><a href="/paipan" style="color:var(--gold)">去排盘</a></div>';
+        });
+      }
     });
   };
 
