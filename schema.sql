@@ -49,6 +49,41 @@ CREATE TABLE IF NOT EXISTS chat_history (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ==================== v4.0 用户系统 ====================
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS users (
+  id          BIGSERIAL PRIMARY KEY,
+  email       VARCHAR(255) UNIQUE NOT NULL,
+  password    VARCHAR(255) NOT NULL,
+  phone       VARCHAR(11),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- 用户数据表（灵活的 key-value 存储）
+CREATE TABLE IF NOT EXISTS user_data (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     BIGINT NOT NULL REFERENCES users(id),
+  key         VARCHAR(64) NOT NULL,
+  value       TEXT NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, key)
+);
+CREATE INDEX IF NOT EXISTS idx_user_data_user ON user_data(user_id);
+
+-- 现有表增加 user_id 外键（可空，向后兼容）
+ALTER TABLE user_credits ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id);
+ALTER TABLE user_subscriptions ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id);
+ALTER TABLE free_credits_log ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id);
+ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id);
+ALTER TABLE phone_bindings ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id);
+
+CREATE INDEX IF NOT EXISTS idx_credits_user ON user_credits(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON user_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_credits_code ON user_credits(code);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_code ON user_subscriptions(code);

@@ -1,0 +1,127 @@
+/* ============================================
+   认证模块样式 — 登录/注册弹窗 · 迁移横幅 · 导航用户区
+   ============================================ */
+
+/* ---- 导航栏用户区 ---- */
+.nav-user {
+  display:flex;align-items:center;gap:10px;margin-left:auto;
+}
+.nav-user .btn-auth {
+  padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;
+  letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .25s;
+  background:transparent;border:1px solid var(--bd2);color:var(--gold-l);
+}
+.nav-user .btn-auth:hover { background:rgba(201,168,76,.1); }
+.nav-user .btn-auth.primary {
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  color:var(--ink);border:none;
+}
+.nav-user .user-info {
+  display:flex;align-items:center;gap:6px;
+  color:var(--tx2);font-size:12px;cursor:pointer;
+}
+.nav-user .user-info .user-avatar {
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:var(--ink);
+}
+
+/* ---- 遮罩层 ---- */
+.auth-overlay {
+  display:none;position:fixed;inset:0;z-index:10000;
+  background:rgba(0,0,0,.75);align-items:center;justify-content:center;
+  animation:fadeIn .25s ease;
+}
+.auth-overlay.show { display:flex; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* ---- 弹窗卡片 ---- */
+.auth-modal {
+  background:linear-gradient(180deg,#111320 0%,#0d1525 100%);
+  border:2px solid rgba(201,168,76,.15);border-radius:16px;
+  padding:32px 28px 24px;width:90%;max-width:400px;
+  box-shadow:0 0 80px rgba(0,0,0,.5);
+  position:relative;animation:slideUp .3s ease;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.auth-modal .auth-close {
+  position:absolute;top:12px;right:16px;
+  background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer;
+}
+.auth-modal .auth-title {
+  font-size:22px;color:var(--gold-l);text-align:center;
+  font-weight:900;letter-spacing:3px;margin-bottom:6px;
+}
+.auth-modal .auth-subtitle {
+  font-size:12px;color:var(--tx3);text-align:center;margin-bottom:24px;letter-spacing:1px;
+}
+.auth-modal .auth-field { margin-bottom:14px; }
+.auth-modal .auth-field label {
+  display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;letter-spacing:1px;
+}
+.auth-modal .auth-field input {
+  width:100%;padding:12px 14px;font-size:14px;font-family:inherit;
+  background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;color:var(--tx);outline:none;transition:border-color .25s;
+}
+.auth-modal .auth-field input:focus { border-color:var(--gold); }
+.auth-modal .auth-field input::placeholder { color:var(--tx3); }
+.auth-modal .auth-error {
+  color:#e07050;font-size:12px;margin-bottom:12px;display:none;text-align:center;
+}
+.auth-modal .auth-btn {
+  width:100%;padding:14px;font-size:16px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  color:var(--ink);border:none;border-radius:10px;
+  cursor:pointer;letter-spacing:2px;font-family:inherit;
+  transition:all .25s;margin-top:4px;
+}
+.auth-modal .auth-btn:hover { transform:translateY(-1px);box-shadow:0 4px 24px rgba(201,168,76,.2); }
+.auth-modal .auth-btn:disabled { opacity:.5;cursor:not-allowed;transform:none; }
+.auth-modal .auth-switch {
+  text-align:center;margin-top:16px;font-size:12px;color:var(--tx3);
+}
+.auth-modal .auth-switch a {
+  color:var(--gold);cursor:pointer;text-decoration:none;font-weight:600;
+}
+.auth-modal .auth-switch a:hover { text-decoration:underline; }
+.auth-modal .auth-bonus {
+  text-align:center;margin-top:8px;padding:8px 12px;
+  background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);
+  border-radius:8px;font-size:11px;color:var(--gold-l);
+}
+.auth-modal .auth-bonus strong { font-size:14px; }
+
+/* ---- 迁移横幅 ---- */
+.migrate-banner {
+  position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(90deg,rgba(201,168,76,.12),rgba(13,21,37,.98));
+  border-top:1px solid rgba(201,168,76,.2);
+  padding:14px 20px;display:none;align-items:center;justify-content:center;gap:12px;
+  flex-wrap:wrap;animation:slideUpBanner .4s ease;
+}
+@keyframes slideUpBanner { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.migrate-banner .banner-text {
+  color:var(--tx);font-size:13px;letter-spacing:1px;
+}
+.migrate-banner .banner-text strong { color:var(--gold-l); }
+.migrate-banner .banner-btn {
+  padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  color:var(--ink);border:none;
+}
+.migrate-banner .banner-dismiss {
+  background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;
+}
+
+/* ---- Toast ---- */
+.auth-toast {
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:20001;
+  background:var(--card);border:1px solid var(--gold);border-radius:10px;
+  padding:12px 24px;color:var(--gold-l);font-size:13px;letter-spacing:1px;
+  animation:toastIn .3s ease;
+}
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }

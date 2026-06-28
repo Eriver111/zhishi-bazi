@@ -7,7 +7,8 @@
  * 支持完整排盘数据注入（chartData）和简版信息（bazi）
  */
 
-const { deductCredit, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage } = require('../lib/supabase.js');
+const { deductCredit, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits } = require('../lib/supabase.js');
+const { requireAuth } = require('../lib/auth.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
@@ -150,9 +151,38 @@ module.exports = async function handler(req, res) {
     let credits = null;
     let monthlyActive = false;
 
-    // ---- 免费模式：前 N 次免费（双重校验：浏览器ID + 服务端指纹） ----
+    // ---- 登录用户：free_mode 使用 user_id 追踪 ----
+    var authUser = requireAuth(req);
+    var userId = authUser ? authUser.uid : null;
+
+    // ---- 免费模式：前 N 次免费 ----
     if (free_mode && free_id) {
-      // 服务端指纹：IP + UserAgent 哈希，用户清浏览器也绕不过
+      // 登录用户：按 user_id 追踪免费次数 + 注册奖励
+      if (userId) {
+        var freeInfo = await trackFreeUsageByUser(userId);
+        var maxFree = (parseInt(process.env.FREE_CREDITS_PER_DEVICE) || 2) + 3; // 基础2+注册奖励3
+        if (freeInfo.used < maxFree) {
+          await bumpFreeUsageByUser(userId);
+          await saveUserChatHistory(userId, 'user', question);
+
+          var freeReply = await callAI(question, chartData, bazi, history, mode);
+          await saveUserChatHistory(userId, 'assistant', freeReply);
+          return res.status(200).json({
+            reply: freeReply,
+            credits_left: -1,
+            free_remaining: maxFree - freeInfo.used - 1,
+            is_free: true,
+            is_auth: true
+          });
+        } else {
+          return res.status(403).json({
+            error: '免费次数已用完，请购买次数包或开通会员继续使用',
+            free_exhausted: true
+          });
+        }
+      }
+
+      // 未登录用户：旧逻辑（设备指纹追踪）
       const serverFingerprint = getServerFingerprint(req);
 
       // 同时查浏览器ID和服务端指纹，取已用次数最多的那个
@@ -205,6 +235,7 @@ module.exports = async function handler(req, res) {
 
     // 保存用户问题
     await saveChatHistory(code, 'user', question);
+    if (userId) await saveUserChatHistory(userId, 'user', question);
 
     // ---- 构建 AI 请求 ----
     const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
@@ -242,6 +273,7 @@ module.exports = async function handler(req, res) {
 
     // ---- 保存 AI 回答 ----
     await saveChatHistory(code, 'assistant', reply);
+    if (userId) await saveUserChatHistory(userId, 'assistant', reply);
 
     // 月度会员返回特殊标记，次数制返回剩余次数
     const creditsLeft = monthlyActive ? -1 : (credits ? credits.credits : 0);
