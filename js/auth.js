@@ -487,34 +487,41 @@ if (document.readyState === 'loading') {
     try { navigator.serviceWorker.register('/sw.js'); } catch(e) {}
   }
 
-  // 添加到主屏幕引导横幅（iOS Safari / 不支持 beforeinstallprompt 时显示）
-  if (window.matchMedia('(display-mode: standalone)').matches) return; // 已在独立模式
-  var dismissed = localStorage.getItem('pwa_dismissed');
-  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 86400000) return; // 7天内不再提示
-
-  setTimeout(function() {
-    var banner = document.createElement('div');
-    banner.id = 'pwa-banner';
-    banner.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:9998;background:rgba(13,21,37,.95);border:1px solid rgba(201,168,76,.2);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:380px;width:90%;animation:slideUpBanner .4s ease';
-    banner.innerHTML =
-      '<span style="font-size:28px">📱</span>' +
-      '<div style="flex:1"><div style="font-size:13px;color:var(--tx);font-weight:600;letter-spacing:1px">添加到主屏幕</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">随时查看命盘，无需打开浏览器</div></div>' +
-      '<button onclick="var b=document.getElementById(\'pwa-banner\');b.remove();localStorage.setItem(\'pwa_dismissed\',Date.now())" style="background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;padding:4px">&times;</button>';
-    document.body.appendChild(banner);
-  }, 3000);
-
-  // 原生 PWA 安装提示
+  // 保存原生安装事件
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     window._pwaInstall = e;
-    var banner = document.getElementById('pwa-banner');
-    if (banner) {
-      banner.innerHTML =
-        '<span style="font-size:28px">📱</span>' +
-        '<div style="flex:1"><div style="font-size:13px;color:var(--gold-l);font-weight:600;letter-spacing:1px">一键安装知时</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">像 App 一样流畅，无需下载</div></div>' +
-        '<button onclick="window._pwaInstall.prompt();var b=document.getElementById(\'pwa-banner\');b.remove()" style="padding:8px 16px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;white-space:nowrap">安装</button>' +
-        '<button onclick="var b=document.getElementById(\'pwa-banner\');b.remove();localStorage.setItem(\'pwa_dismissed\',Date.now())" style="background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;padding:4px">&times;</button>';
-    }
   });
+
+  // 注入页面底部「添加到主屏幕」入口（用户主动点击才触发）
+  function injectPwaEntry() {
+    var existed = document.getElementById('pwa-footer-link');
+    if (existed) return;
+    var footer = document.querySelector('.footer') || document.querySelector('footer') || document.body.lastElementChild;
+    if (!footer) return setTimeout(injectPwaEntry, 500);
+    var div = document.createElement('div');
+    div.id = 'pwa-footer-link';
+    div.style.cssText = 'text-align:center;padding:8px 0 16px;font-size:11px;color:var(--tx3);cursor:pointer;letter-spacing:1px;opacity:.5;transition:opacity .3s';
+    div.innerHTML = '📱 添加到主屏幕';
+    div.title = '将知时添加到手机桌面，像 App 一样使用';
+    div.onmouseenter = function(){ this.style.opacity = '1'; };
+    div.onmouseleave = function(){ this.style.opacity = '.5'; };
+    div.onclick = function() {
+      if (window._pwaInstall) {
+        window._pwaInstall.prompt();
+        div.textContent = '✅ 已触发安装';
+      } else {
+        // iOS Safari 等不支持原生安装的，给教程
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          alert('📱 添加到主屏幕\n\n1. 点击底部中间的「分享」按钮\n2. 滑动找到「添加到主屏幕」\n3. 点击「添加」');
+        } else {
+          alert('📱 添加到主屏幕\n\n点击浏览器菜单 → 添加到主屏幕\n即可像 App 一样使用知时');
+        }
+      }
+    };
+    footer.parentNode.insertBefore(div, footer.nextSibling);
+  }
+  setTimeout(injectPwaEntry, 1500);
 })();
 }
