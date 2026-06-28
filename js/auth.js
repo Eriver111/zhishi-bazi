@@ -489,7 +489,15 @@ var Auth = (function () {
     sendCode: sendCode,
     showProfile: showProfile,
     changePassword: changePassword,
-    showChangePwd: showChangePwd
+    showChangePwd: showChangePwd,
+    ready: function(cb) {
+      if (_inited && (_user || !_token)) { cb(); return; }
+      var check = function() {
+        if (_user || !_token) { cb(); return; }
+        setTimeout(check, 200);
+      };
+      setTimeout(check, 200);
+    }
   };
 })();
 

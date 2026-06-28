@@ -44,6 +44,7 @@
 
   function render() {
     if (typeof Auth === 'undefined') return setTimeout(render, 300);
+    Auth.ready(function() {
     if (!Auth.isLoggedIn()) {
       content.innerHTML =
         '<div class="login-prompt">' +
@@ -81,6 +82,7 @@
     }).catch(function() {
       content.innerHTML = '<div class="empty-state"><p>加载失败，请刷新重试</p></div>';
     });
+  });
   }
 
   window.deleteChart = function(i) {
