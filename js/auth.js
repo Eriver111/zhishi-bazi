@@ -294,11 +294,16 @@ var Auth = (function () {
 
   function sendCode() {
     var email = document.getElementById('authEmail').value.trim();
+    var password = document.getElementById('authPassword').value;
+    var pw2El = document.getElementById('authPassword2');
+    var password2 = pw2El ? pw2El.value : '';
     var err = document.getElementById('authError');
     var btn = document.getElementById('authSendCode');
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showErr(err, '请先输入正确的邮箱地址'); return;
     }
+    if (password.length < 6) { showErr(err, '密码至少 6 位'); return; }
+    if (password !== password2) { showErr(err, '两次密码不一致'); return; }
     if (_sendCooldown > 0) return;
     hideErr(err);
     btn.disabled = true;
