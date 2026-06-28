@@ -156,11 +156,13 @@ module.exports = async function handler(req, res) {
     if (_cache[cacheKey]) return res.status(200).json({ huangli: huangli, fortune: _cache[cacheKey] });
 
     var wx = WU_XING[dayGan] || '';
-    var prompt = `你是"知时"，用最简单的大白话给用户一句今日提醒。不超过80字，像朋友聊天一样。
+    var prompt = `你是"知时"，一位懂命理的朋友。用大白话给用户写一段今日提醒，像聊天一样说，不要用任何专业术语和古文。
 
-用户是${dayGan}${wx}日主，今天是${huangli.dayGZ}日。
+用户是${dayGan}${wx}日主，出生在${chartLabel}。今天是${huangli.dayGZ}日，${huangli.term.cur}节气。
 
-直接说今天适合做什么、注意什么，一句到位。返回JSON：{"tip":"简短大白话今日提醒"}`;
+请根据${dayGan}和今天${huangli.dayGZ}的关系，说说今天整体感觉怎么样、适合做什么事、有什么地方要注意。150字左右，温暖随性。
+
+换成JSON：{"tip":"..."}`;
 
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
