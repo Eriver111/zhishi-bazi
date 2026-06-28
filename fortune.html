@@ -49,8 +49,6 @@
   <div class="quote">「 知天时 · 见自己 」</div>
 </div>
 
-<script src="js/lunar.js"></script>
-<script src="js/bazi.js"></script>
 <script src="js/auth.js"></script>
 <script>
 (function(){
@@ -102,16 +100,19 @@
     });
   }
 
-  window.loadFortune = function(retryCount) {
+  window.loadFortune = function() {
     content.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:16px">正在生成今日运势...</p></div>';
     Auth.getData('saved_charts').then(function(val) {
       var charts = [];
       try { charts = JSON.parse(val || '[]'); } catch(e) {}
       var idx = parseInt(chartPicker.value) || 0;
       var chart = charts[idx];
-      var dp = getDayPillar(chart.params, retryCount);
-      if (dp._retry && (!retryCount || retryCount < 5)) {
-        return setTimeout(function(){ loadFortune((retryCount||0)+1); }, 600);
+      // 优先用档案里存的日柱，没有再现场算
+      var dg = chart.dayGan || '', dz = chart.dayZhi || '';
+      if (!dg) {
+        var dp = getDayPillar(chart.params);
+        dg = dp.dayGan; dz = dp.dayZhi;
+        if (!dg) { content.innerHTML = '<div class="empty"><p>日柱计算失败，请重新排盘保存</p><a href="/paipan" style="color:var(--gold)">去排盘</a></div>'; return; }
       }
       fetch('/api/fortune', {
         method: 'POST',
@@ -120,7 +121,7 @@
           year: chart.params.match(/year=(\d+)/)?.[1] || '',
           month: chart.params.match(/month=(\d+)/)?.[1] || '',
           day: chart.params.match(/day=(\d+)/)?.[1] || '',
-          dayGan: dp.dayGan, dayZhi: dp.dayZhi,
+          dayGan: dg, dayZhi: dz,
           gender: (chart.params.match(/gender=(\w+)/)?.[1]) || 'male',
           label: chart.label
         })

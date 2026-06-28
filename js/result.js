@@ -1198,7 +1198,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!dup) {
               var label = _params.gender === 'male' ? '乾造' : '坤造';
               label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
-              charts.unshift({ label: label, params: paramStr, saved_at: new Date().toISOString() });
+              // 同时保存日柱干支，运势页直接用
+              var dayG = '', dayZ = '';
+              try { if (typeof _bazi !== 'undefined' && _bazi.day) { dayG = _bazi.day.gan; dayZ = _bazi.day.zhi; } } catch(e) {}
+              charts.unshift({ label: label, params: paramStr, dayGan: dayG, dayZhi: dayZ, saved_at: new Date().toISOString() });
               if (charts.length > 20) charts = charts.slice(0, 20);
               Auth.syncData('saved_charts', JSON.stringify(charts));
             }
