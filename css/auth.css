@@ -126,10 +126,15 @@
 }
 @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
+/* ---- 移动端底部导航认证链接 ---- */
+.zhishi-mobile-nav .m-auth-reg { color:var(--gold-l) !important; font-weight:600; }
+.zhishi-mobile-nav .m-auth-login { color:var(--tx3); }
+.zhishi-mobile-nav .m-auth-user { color:var(--gold-l) !important; font-weight:600; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
 /* ---- 移动端适配 ---- */
 @media(max-width:768px){
   /* 桌面导航隐藏用户区（改用底部导航） */
-  .nav-user { display:none !important; }
+  #nav-user-area { display:none !important; }
 
   /* 弹窗缩小 */
   .auth-modal { padding:24px 18px 20px; }

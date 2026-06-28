@@ -181,13 +181,13 @@ var Auth = (function () {
     // 移动端底部导航
     var mobileNav = document.getElementById('zhishi-mobile-nav');
     if (mobileNav && !document.getElementById('mobile-nav-auth')) {
-      var mdiv = document.createElement('div');
-      mdiv.id = 'mobile-nav-auth';
-      mdiv.style.cssText = 'display:flex;align-items:center;gap:6px';
-      mdiv.innerHTML =
-        '<a href="#" onclick="Auth.showModal(\'register\');return false" style="color:var(--gold-l)">注册</a>' +
-        '<a href="#" onclick="Auth.showModal(\'login\');return false">登录</a>';
-      mobileNav.appendChild(mdiv);
+      var mspan = document.createElement('span');
+      mspan.id = 'mobile-nav-auth';
+      mspan.style.cssText = 'display:contents';
+      mspan.innerHTML =
+        '<a href="#" onclick="Auth.showModal(\'register\');return false" class="m-auth-reg">注册</a>' +
+        '<a href="#" onclick="Auth.showModal(\'login\');return false" class="m-auth-login">登录</a>';
+      mobileNav.appendChild(mspan);
     }
   }
 
@@ -215,16 +215,12 @@ var Auth = (function () {
     var marea = document.getElementById('mobile-nav-auth');
     if (marea) {
       if (isLoggedIn()) {
-        var minitial = (_user && _user.email) ? _user.email.charAt(0).toUpperCase() : 'U';
+        var mn = ((_user && _user.email) ? _user.email.split('@')[0] : '我');
         marea.innerHTML =
-          '<a href="#" onclick="Auth.showProfile();return false" style="display:flex;align-items:center;gap:4px">' +
-          '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ink)">' + minitial + '</span>' +
-          '<span style="font-size:11px">' + ((_user && _user.email) ? _user.email.split('@')[0] : '我') + '</span>' +
-          '</a>';
+          '<a href="#" onclick="Auth.showProfile();return false" class="m-auth-user">' + mn + '</a>';
       } else {
         marea.innerHTML =
-          '<a href="#" onclick="Auth.showModal(\'register\');return false" style="color:var(--gold-l)">注册</a>' +
-          '<a href="#" onclick="Auth.showModal(\'login\');return false">登录</a>';
+          '<a href="#" onclick="Auth.showModal(\'register\');return false" class="m-auth-reg">注册</a>';
       }
     }
   }
