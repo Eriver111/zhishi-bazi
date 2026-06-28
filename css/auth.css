@@ -4,27 +4,27 @@
 
 /* ---- 导航栏用户区 ---- */
 .nav-user {
-  display:flex;align-items:center;gap:10px;margin-left:auto;
+  display:flex;align-items:center;gap:8px;margin-left:auto;
 }
 .nav-user .btn-auth {
-  padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;
+  padding:5px 14px;border-radius:18px;font-size:11px;font-weight:600;
   letter-spacing:1px;cursor:pointer;font-family:inherit;transition:all .25s;
-  background:transparent;border:1px solid var(--bd2);color:var(--gold-l);
+  background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);color:var(--tx2);
 }
-.nav-user .btn-auth:hover { background:rgba(201,168,76,.1); }
+.nav-user .btn-auth:hover { background:rgba(201,168,76,.06);color:var(--gold-l);border-color:rgba(201,168,76,.25); }
 .nav-user .btn-auth.primary {
-  background:linear-gradient(135deg,var(--gold-d),var(--gold));
-  color:var(--ink);border:none;
+  background:rgba(201,168,76,.1);color:var(--gold-l);border-color:rgba(201,168,76,.2);
 }
+.nav-user .btn-auth.primary:hover { background:rgba(201,168,76,.18); }
 .nav-user .user-info {
   display:flex;align-items:center;gap:6px;
-  color:var(--tx2);font-size:12px;cursor:pointer;
+  color:var(--tx2);font-size:11px;cursor:pointer;
 }
 .nav-user .user-info .user-avatar {
-  width:28px;height:28px;border-radius:50%;
-  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(201,168,76,.15);color:var(--gold-l);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;color:var(--ink);
+  font-size:11px;font-weight:700;
 }
 
 /* ---- 遮罩层 ---- */
