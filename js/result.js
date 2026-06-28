@@ -1181,36 +1181,7 @@ function toggleDrawer(sectionId) {
 document.addEventListener('DOMContentLoaded', function() {
     _params = getUrlParams();
 
-    // 登录用户：保存排盘参数到云端
-    if (typeof Auth !== 'undefined') {
-      var doSave = function() {
-        if (!Auth.isLoggedIn()) return;
-        var paramStr = window.location.search.substring(1);
-        try { Auth.syncData('last_bazi_params', paramStr); } catch(e) {}
-        if (typeof iru === 'function' && iru()) {
-          try { Auth.syncData('bazi_rpt', JSON.stringify({h:typeof _baziHash!=='undefined'?_baziHash:'',e:Date.now()+365*86400000})); } catch(e) {}
-        }
-        try {
-          Auth.getData('saved_charts').then(function(existing){
-            var charts = [];
-            try { charts = JSON.parse(existing || '[]'); } catch(e){}
-            var dup = charts.some(function(c){ return c.params === paramStr; });
-            if (!dup) {
-              var label = _params.gender === 'male' ? '乾造' : '坤造';
-              label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
-              // 同时保存日柱干支，运势页直接用
-              var dayG = '', dayZ = '';
-              try { if (typeof _bazi !== 'undefined' && _bazi.day) { dayG = _bazi.day.gan; dayZ = _bazi.day.zhi; } } catch(e) {}
-              charts.unshift({ label: label, params: paramStr, dayGan: dayG, dayZhi: dayZ, saved_at: new Date().toISOString() });
-              if (charts.length > 20) charts = charts.slice(0, 20);
-              Auth.syncData('saved_charts', JSON.stringify(charts));
-            }
-          }).catch(function(){});
-        } catch(e) {}
-      };
-      if (Auth.isLoggedIn()) { doSave(); }
-      else { Auth.ready(doSave); }
-    }
+    // 登录用户：报告页不在这儿存档，见下方 _bazi 赋值后
 
     if (!_params.year || !_params.month || !_params.day || isNaN(_params.hour) || !_params.gender) {
         alert('参数错误，请重新输入');
@@ -1258,6 +1229,32 @@ document.addEventListener('DOMContentLoaded', function() {
     _daYunData = daYun;
     _dayGan = bazi.day.gan;
     _bazi = bazi;
+
+    // 登录用户：保存排盘参数 + 日柱到档案
+    if (typeof Auth !== 'undefined') {
+      Auth.ready(function() {
+        if (!Auth.isLoggedIn()) return;
+        var paramStr = window.location.search.substring(1);
+        try { Auth.syncData('last_bazi_params', paramStr); } catch(e) {}
+        if (typeof iru === 'function' && iru()) {
+          try { Auth.syncData('bazi_rpt', JSON.stringify({h:typeof _baziHash!=='undefined'?_baziHash:'',e:Date.now()+365*86400000})); } catch(e) {}
+        }
+        try {
+          Auth.getData('saved_charts').then(function(existing){
+            var charts = [];
+            try { charts = JSON.parse(existing || '[]'); } catch(e){}
+            var dup = charts.some(function(c){ return c.params === paramStr; });
+            if (!dup) {
+              var label = _params.gender === 'male' ? '乾造' : '坤造';
+              label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
+              charts.unshift({ label: label, params: paramStr, dayGan: bazi.day.gan, dayZhi: bazi.day.zhi, saved_at: new Date().toISOString() });
+              if (charts.length > 20) charts = charts.slice(0, 20);
+              Auth.syncData('saved_charts', JSON.stringify(charts));
+            }
+          }).catch(function(){});
+        } catch(e) {}
+      });
+    }
 
     render({ bazi, daYun, shenSha });
 });
