@@ -202,6 +202,7 @@ var Auth = (function () {
           '<div class="user-avatar">' + initial + '</div>' +
           '<span>' + ((_user && _user.email) ? _user.email.split('@')[0] : '用户') + '</span>' +
           '</div>' +
+          '<button class="btn-auth" onclick="Auth.showChangePwd()" title="修改密码" style="padding:6px 10px;font-size:14px">&#9881;</button>' +
           '<button class="btn-auth" onclick="Auth.logout()">退出</button>';
       } else {
         area.innerHTML =
@@ -397,6 +398,32 @@ var Auth = (function () {
     alert(msg);
   }
 
+  function changePassword(oldPwd, newPwd) {
+    return authFetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_password: oldPwd, new_password: newPwd })
+    }).then(function (r) { return r.json(); });
+  }
+
+  function showChangePwd() {
+    var overlay = document.createElement('div');
+    overlay.className = 'auth-overlay show';
+    overlay.style.cssText = 'display:flex;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.75);align-items:center;justify-content:center';
+    overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+    overlay.innerHTML =
+      '<div class="auth-modal" onclick="event.stopPropagation()">' +
+      '<button class="auth-close" onclick="this.parentElement.parentElement.remove()">&times;</button>' +
+      '<div class="auth-title">修改密码</div>' +
+      '<div class="auth-subtitle">为 ' + (_user ? _user.email : '') + ' 修改登录密码</div>' +
+      '<div class="auth-field"><label>旧密码</label><input type="password" id="chgOldPwd" placeholder="输入旧密码"></div>' +
+      '<div class="auth-field"><label>新密码</label><input type="password" id="chgNewPwd" placeholder="至少6位"></div>' +
+      '<div class="auth-error" id="chgErr"></div>' +
+      '<button class="auth-btn" id="chgBtn" onclick="var o=document.getElementById(\'chgOldPwd\').value;var n=document.getElementById(\'chgNewPwd\').value;var e=document.getElementById(\'chgErr\');var b=document.getElementById(\'chgBtn\');if(!o||!n){e.textContent=\'请填写完整\';e.style.display=\'block\';return}if(n.length<6){e.textContent=\'新密码至少6位\';e.style.display=\'block\';return}b.disabled=true;b.textContent=\'修改中...\';Auth.changePassword(o,n).then(function(d){if(d.error){e.textContent=d.error;e.style.display=\'block\';b.disabled=false;b.textContent=\'确认修改\'}else{e.style.color=\'#4f8\';e.textContent=\'密码修改成功\';e.style.display=\'block\';b.textContent=\'完成\';setTimeout(function(){overlay.remove()},1500)}}).catch(function(){e.textContent=\'网络错误\';e.style.display=\'block\';b.disabled=false;b.textContent=\'确认修改\'})">确认修改</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+
   // ============ UI：迁移横幅 ============
   function showBanner() {
     var banner = document.getElementById('migrateBanner');
@@ -443,7 +470,9 @@ var Auth = (function () {
     closeModal: closeModal,
     doSubmit: doSubmit,
     sendCode: sendCode,
-    showProfile: showProfile
+    showProfile: showProfile,
+    changePassword: changePassword,
+    showChangePwd: showChangePwd
   };
 })();
 
