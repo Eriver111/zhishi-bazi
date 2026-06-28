@@ -49,6 +49,7 @@
   <div class="quote">「 知天时 · 见自己 」</div>
 </div>
 
+<script src="js/lunar.js"></script>
 <script src="js/bazi.js"></script>
 <script src="js/auth.js"></script>
 <script>
@@ -60,21 +61,32 @@
   var today = new Date();
   todayDate.textContent = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
 
-  // 从保存的参数中计算日柱
+  // 从保存的参数中计算日柱（用 bazi.js 精确算法）
   function getDayPillar(params) {
     var p = new URLSearchParams(params);
     var year = parseInt(p.get('year')), month = parseInt(p.get('month')), day = parseInt(p.get('day'));
-    var hour = parseInt(p.get('hour')) || 0, gender = p.get('gender') || 'male', clock = parseInt(p.get('clock')) || hour;
+    var hour = parseInt(p.get('hour')) || 0, gender = p.get('gender') || 'male', clock = parseInt(p.get('clock'));
+    if (isNaN(clock)) clock = hour;
+    var minute = parseInt(p.get('minute')) || 0;
+    // 用 bazi.js 的 calculateBaZi 精确计算
     try {
-      var bazi = window.BaZiCalculator.calculateBaZi(year, month, day, hour, gender, clock || 0);
-      if (bazi && bazi.day) return { dayGan: bazi.day.gan, dayZhi: bazi.day.zhi };
+      if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calculateBaZi) {
+        var bazi = BaZiCalculator.calculateBaZi(year, month, day, hour, gender, clock || 0);
+        if (bazi && bazi.day) return { dayGan: bazi.day.gan, dayZhi: bazi.day.zhi };
+      }
     } catch(e) {}
-    // 回退：简单日柱近似
-    var baseG = Math.floor((year * 5 + Math.floor(year / 4) + 9 + day) % 10);
-    var baseZ = Math.floor((year + Math.floor(year / 4) + 9 + day) % 12);
-    var tg = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-    var dz = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-    return { dayGan: tg[baseG % 10], dayZhi: dz[baseZ % 12] };
+    // bazi.js 没加载时的兜底：用 lunar.js 转农历获取日柱
+    try {
+      if (typeof LunarCalendar !== 'undefined' && LunarCalendar.solarToLunar) {
+        var lr = LunarCalendar.solarToLunar(year, month, day);
+        if (lr && lr.dayGan !== undefined) {
+          var tg = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+          var dz = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+          return { dayGan: tg[lr.dayGan], dayZhi: dz[lr.dayZhi] };
+        }
+      }
+    } catch(e) {}
+    return { dayGan: '', dayZhi: '' };
   }
 
   function render() {
