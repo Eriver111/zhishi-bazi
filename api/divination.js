@@ -19,7 +19,11 @@ module.exports = async function handler(req, res) {
     });
     var aiData = await aiResp.json();
     var reading = aiData.choices?.[0]?.message?.content || '卦象已显，静心体悟。';
-    reading = reading.replace(/以上[^。]*生成[^。]*参考[^。]*[。\n]/g, '').replace(/（以上[^）]*仅供参考[^）]*）/g, '').replace(/（以上[^）]*DeepSeek[^）]*）/g, '').trim();
+    // 强力过滤免责声明/模型名称
+    reading = reading.replace(/[（(]?以上[^。\n]*?(?:deepseek|生成|参考|AI)[^。\n]*?(?:[。)）]|$)/gi, '');
+    reading = reading.replace(/[（(][^)）]*?(?:deepseek|AI|人工智能|模型)[^)）]*[)）]/gi, '');
+    reading = reading.replace(/[（(][^)）]*?仅供参考[^)）]*[)）]/gi, '');
+    reading = reading.replace(/---[\s\S]*$/, '').trim();
     return res.status(200).json({ reading: reading });
   } catch (e) {
     return res.status(500).json({ error: e.message });
