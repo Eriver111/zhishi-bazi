@@ -328,10 +328,13 @@ window.doAIReading=function(){
   for(var i=0;i<6;i++){ prompt+=zg.liuqin[i]+'在'+zg.liushen[i]+'('+zg.yaoDZ[i]+zg.yaoWX[i]+'); '; }
   prompt+='\n【第五步：综合断卦】根据以上信息，模仿这个格式解读："先看本卦世应在X变卦在X，说明XX。月建X，世爻居XX，本卦有XX来克说明XX。XX在XX说明XX。综合判断XX。"';
   prompt+='\n请直接用大白话输出分析，不要术语堆砌。JSON格式：{"reading":"完整解读"}';
-  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
+  var ctrl=new AbortController();
+  setTimeout(function(){ ctrl.abort(); }, 90000);
+  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt}),signal:ctrl.signal})
   .then(function(r){return r.json();}).then(function(d){
+    if(!d.reading||d.reading==='卦象已显，静心体悟。'){ res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text" style="text-align:center;color:var(--tx3)">AI解读超时，请稍后重试</div>'; return; }
     res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>';
-  }).catch(function(){ res.innerHTML='<div class="result-text" style="text-align:center;color:var(--tx3)">解读暂不可用</div>'; });
+  }).catch(function(){ res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text" style="text-align:center;color:var(--tx3)">解读超时，请稍后重试</div>'; });
 };
 </script>
 </body>
