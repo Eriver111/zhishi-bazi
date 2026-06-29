@@ -98,14 +98,17 @@ function getSolarTerm(month, day) {
 }
 
 function buildHuangli(y, m, d) {
-  var dayGanIdx = (y*7 + d) % 10;
-  var dayZhiIdx = (y*5 + d + (m > 2 ? 6 - Math.floor(m/2) : 0)) % 12;
-  var dayG = TG[dayGanIdx], dayZ = DZ[dayZhiIdx];
+  // 日柱用 UTC 精确计算（1900-01-01=甲戌, index=10）
+  var t = new Date(Date.UTC(y, m-1, d, 12, 0, 0));
+  var base = new Date(Date.UTC(1900, 0, 1, 12, 0, 0));
+  var days = Math.round((t - base) / 86400000);
+  var idx = ((10 + days) % 60 + 60) % 60;
+  var dayG = TG[idx % 10], dayZ = DZ[idx % 12];
   var gzStr = dayG + dayZ;
   var yGanIdx = (y-4)%10, yZhiIdx = (y-4)%12;
   var yGan = TG[yGanIdx], yZhi = DZ[yZhiIdx];
-  var monZhi = DZ[(m-1)%12];
-  var monGan = TG[(yGanIdx * 2 + m) % 10];
+  var monZhi = DZ[m%12];      // 月支：1丑2寅3卯...12子
+  var monGan = TG[(yGanIdx * 2 + (m%12||12)) % 10];
   var weekDays = ['日','一','二','三','四','五','六'];
   var wd = '星期' + weekDays[new Date(y,m-1,d).getDay()];
 
