@@ -300,12 +300,12 @@ function doAnalyze(){
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
-  res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
+  res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._chgDB=chgDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
   }catch(e){ res.innerHTML='<div class="empty"><p>装卦异常：'+e.message+'</p></div>'; }
 }
 
 window.doAIReading=function(){
-  var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, moving=res._movingLines;
+  var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, chgDB=res._chgDB, moving=res._movingLines;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
   // 构建专业断卦Prompt——锁定分析框架
