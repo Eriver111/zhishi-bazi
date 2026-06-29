@@ -82,6 +82,7 @@
 </div>
 
 <script src="js/yijing-db.js"></script>
+<script src="js/liuyao-core.js"></script>
 <script src="js/auth.js"></script>
 <script>
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
@@ -158,66 +159,60 @@ function showGuaReveal(gName,lines,callback){
 
 function doAnalyze(){
   var res=document.getElementById('result');
-  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在解卦...</p></div>';
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在装卦...</p></div>';
 
-  var origBin=lines.map(function(l){ return l?'1':'0'; }).join('');
-  var tri=['乾','兑','离','震','巽','坎','艮','坤'];
-  var upIdx=parseInt(origBin.slice(0,3),2);
-  var dnIdx=parseInt(origBin.slice(3,6),2);
-  var found=YIJING.find(function(g){ return g.upper===tri[upIdx]&&g.lower===tri[dnIdx]; });
-  var gName=found?found.name:(tri[upIdx]+'为'+tri[dnIdx]);
-  var movingLines=[];
-  var chgBin=origBin.split('');
-  lineTypes.forEach(function(lt,i){
-    if(lt.changing){ movingLines.push(i+1); chgBin[i]=chgBin[i]==='1'?'0':'1'; }
-  });
-  chgBin=chgBin.join('');
-  var cupIdx=parseInt(chgBin.slice(0,3),2);
-  var cdnIdx=parseInt(chgBin.slice(3,6),2);
-  var chgFound=YIJING.find(function(g){ return g.upper===tri[cupIdx]&&g.lower===tri[cdnIdx]; });
-  var chgName=chgFound?chgFound.name:(tri[cupIdx]+'为'+tri[cdnIdx]);
+  var today=new Date();
+  var dayGanIdx=(today.getFullYear()-4)%10;
+  var monthZhi=DZ[(today.getMonth()+1)%12]||'子';
 
-  var origDB=findGua(gName), chgDB=findGua(chgName);
-  var anchor='';
-  if(origDB){
-    anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
-    if(movingLines.length===1&&origDB.lines&&origDB.lines[movingLines[0]-1]) anchor+=' 动爻爻辞："'+origDB.lines[movingLines[0]-1]+'"';
+  // 用装卦引擎
+  var zg=LIUYAO.zhuangGua(lines, dayGanIdx, monthZhi);
+
+  // 变卦
+  var movingLines=[], chgLines=lines.slice();
+  lineTypes.forEach(function(lt,i){ if(lt.changing){ movingLines.push(i+1); chgLines[i]=chgLines[i]===0?1:0; } });
+  var chgZg=movingLines.length?LIUYAO.zhuangGua(chgLines, dayGanIdx, monthZhi):null;
+
+  var origDB=findGua(zg.guaName), chgDB=chgZg?findGua(chgZg.guaName):null;
+
+  // 全屏特效
+  showGuaReveal(zg.guaName,lines,function(){
+  // 装卦表格
+  var table='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:var(--gold-l);font-size:11px;letter-spacing:1px"><td>六神</td><td>干支</td><td>六亲</td><td>五行</td><td>本卦</td><td>变卦</td></tr>';
+  var DZ_VAL=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  for(var i=5;i>=0;i--){ // 从上往下显示
+    table+='<tr style="border-bottom:1px solid rgba(255,255,255,.03)">';
+    table+='<td style="color:var(--tx3);font-size:11px;padding:6px 4px">'+zg.liushen[i]+'</td>';
+    table+='<td style="padding:6px 4px">'+zg.yaoGan[i]+zg.yaoDZ[i]+zg.yaoWX[i]+'</td>';
+    table+='<td style="padding:6px 4px">'+zg.liuqin[i]+'</td>';
+    table+='<td style="padding:6px 4px;color:'+(zg.yaoWX[i]==='木'?'#6db86d':zg.yaoWX[i]==='火'?'#e07050':zg.yaoWX[i]==='土'?'#c9a84c':zg.yaoWX[i]==='金'?'#e8d5a3':'#5b9fd4')+'">'+zg.yaoWX[i]+'</td>';
+    table+='<td style="padding:6px 4px;font-family:monospace;font-size:16px">'+(lines[i]?'━━━━━':'━   ━')+'</td>';
+    var chgYao=''; if(movingLines.indexOf(i+1)>=0) chgYao=(chgLines[i]?'━━━━━':'━   ━');
+    table+='<td style="padding:6px 4px;font-family:monospace;font-size:14px;color:var(--gold-l)">'+chgYao+'</td>';
+    table+='</tr>';
   }
-  if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning;
+  table+='</table>';
 
-  // 全屏特效展示
-  showGuaReveal(gName,lines,function(){
-  // 特效结束显示免费卦象
-  res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div><div class="gua-yao">'+yaoStr(lines)+'</div>'+
-    (movingLines.length?'<div class="gua-desc">动爻：第'+movingLines.join('、')+'爻</div>':'')+
-    (!movingLines.length?'<div class="gua-desc">静卦，六爻皆不动</div>':'')+
-    (chgName!==gName?'<div class="arrow" style="text-align:center;font-size:20px;color:var(--gold);margin:10px 0">↓</div><div class="gua-name" style="font-size:20px">'+chgName+'</div><div class="gua-yao">'+yaoStr(chgBin.split('').map(Number))+'</div>':'')+
-    '</div>'+
-    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
-    '<button class="btn-submit" onclick="doAIReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
-    '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
+  res.innerHTML=table+
+    '<div style="text-align:center;margin-top:8px;font-size:11px;color:var(--tx3)">'+zg.guaName+'（'+zg.gong+'宫·'+zg.guaType+'·属'+zg.gongWX+'）<br>世爻：第'+zg.shiYao+'爻 | 应爻：第'+zg.yingYao+'爻 | 月建：'+zg.monthZhi+'月（'+zg.monthWX+'）</div>'+
+    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center">卦辞：'+origDB.judgment+'<br>'+origDB.meaning+'</div>':'')+
+    '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
+    '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
   });
-  res._gName=gName; res._chgName=chgName; res._origDB=origDB; res._chgDB=chgDB;
-  res._lines=lines; res._chgLines=chgBin.split('').map(Number); res._moving=movingLines; res._anchor=anchor;
+  res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
 }
 
 window.doAIReading=function(){
-  var res=document.getElementById('result');
-  var gName=res._gName, chgName=res._chgName, origDB=res._origDB, chgDB=res._chgDB;
-  var lines=res._lines, chgLines=res._chgLines, moving=res._moving, anchor=res._anchor;
-  var question=document.getElementById('question').value.trim();
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ if(typeof Auth!=='undefined')Auth.showModal('login'); else alert('请先登录'); return; }
+  var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, moving=res._movingLines;
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
-
-  var prompt='你是"知时先生"，精通六爻占卜。用户问："'+question+'"。本卦「'+gName+'」'+(moving.length?'，第'+moving.join('、')+'爻动':'静卦')+'，变卦「'+chgName+'」。请参考原文做专业解卦：\n\n参考原文：'+anchor+'\n\n按以下结构写300字：\n1. 卦象分析：本卦含义和态势\n2. 动爻解读：关键变化点\n3. 变卦启示：转机的方向\n4. 综合建议：结合用户问题给行动建议\n\n语气专业但不玄乎。JSON：{"reading":"完整解读"}';
+  var prompt='你是"知时先生"，精通六爻。请根据以下装卦信息做300字专业解读：本卦「'+zg.guaName+'」('+zg.gong+'宫·属'+zg.gongWX+')，世爻第'+zg.shiYao+'爻('+zg.liuqin[zg.shiYao-1]+')，应爻第'+zg.yingYao+'爻('+zg.liuqin[zg.yingYao-1]+')';
+  if(moving.length) prompt+='，动爻：第'+moving.join('、')+'爻。变卦「'+(chgZg?chgZg.guaName:'')+'」';
+  prompt+='。月建：'+zg.monthZhi+'月('+zg.monthWX+')。请分析世应用神关系、动爻趋势、月建生克、综合建议。返回JSON：{"reading":"回答"}';
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
   .then(function(r){return r.json();}).then(function(d){
-    var tip=d.reading||'解读生成中';
-    res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div><div class="gua-yao">'+yaoStr(lines)+'</div>'+
-      (chgName!==gName?'<div class="arrow" style="text-align:center;font-size:20px;color:var(--gold);margin:10px 0">↓</div><div class="gua-name" style="font-size:20px">'+chgName+'</div><div class="gua-yao">'+yaoStr(chgLines)+'</div>':'')+'</div>'+
-      (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'')+
-      '<div class="result-text">'+tip.replace(/\n/g,'<br>')+'</div></div>';
-  }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div></div><div class="result-text" style="text-align:center;color:var(--tx3)">解读暂不可用</div></div>';});
+    res.innerHTML=res.innerHTML.replace(/<div class="loading">[^<]*<\/div>/,'')+'<div class="result-text">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>';
+  }).catch(function(){ res.innerHTML='<div class="result-text" style="text-align:center;color:var(--tx3)">解读暂不可用</div>'; });
 };
 </script>
 </body>
