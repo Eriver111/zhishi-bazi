@@ -52,41 +52,29 @@
   <div id="result"></div>
 </div>
 
+<script src="js/yijing-db.js"></script>
 <script src="js/auth.js"></script>
 <script>
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
 var TG_ELEM=['天','泽','火','雷','风','水','山','地'];
-var TG_ATTR=['健','悦','丽','动','入','陷','止','顺'];
-
-var GUA64={
-  '111111':'乾为天','000000':'坤为地','010001':'水雷屯','100010':'山水蒙',
-  '010111':'水天需','111010':'天水讼','000010':'地水师','010000':'水地比',
-  '110111':'风天小畜','111011':'天泽履','111000':'地天泰','000111':'天地否',
-  '111101':'天火同人','101111':'火天大有','000100':'地山谦','001000':'雷地豫',
-  '011001':'泽雷随','100110':'山风蛊','000011':'地泽临','110000':'风地观',
-  '101001':'火雷噬嗑','100101':'山火贲','000001':'山地剥','100000':'山地复',
-  '111001':'天雷无妄','100111':'山天大畜','100001':'山雷颐','011110':'泽风大过',
-  '010010':'坎为水','101101':'离为火','011100':'泽山咸','001110':'雷风恒',
-  '001111':'天山遁','111100':'雷天大壮','101000':'火地晋','000101':'地火明夷',
-  '110101':'风火家人','101011':'火泽睽','010100':'水山蹇','001010':'雷水解',
-  '110001':'山泽损','100011':'风雷益','111110':'泽天夬','011111':'天风姤',
-  '000110':'泽地萃','011000':'地风升','010110':'泽水困','011010':'水风井',
-  '011101':'泽火革','101110':'火风鼎','001001':'震为雷','100100':'艮为山',
-  '110100':'风山渐','001011':'雷泽归妹','101100':'雷火丰','001101':'火山旅',
-  '110110':'巽为风','011011':'兑为泽','010011':'风水涣','110010':'水泽节',
-  '110011':'风泽中孚','001100':'雷山小过','010101':'水火既济','101010':'火水未济'
-};
 
 function yaoStr(yao) { return yao.map(function(y){ return y===1?'━━━':'━ ━'; }).join('<br>'); }
+
+// 从数据库查找卦
+function findGua(name) { return YIJING.find(function(g){ return g.name===name; }); }
 
 function getGua(n1,n2,n3){
   var up=n1%8||8, dn=n2%8||8, mv=n3%6||6;
   var upBin=(up-1).toString(2).padStart(3,'0');
   var dnBin=(dn-1).toString(2).padStart(3,'0');
-  var origBin=upBin+dnBin;
-  var gName=GUA64[origBin]||TG[up-1]+TG[dn-1];
+  // 从二进制推算卦名
+  var trigramNames=['乾','兑','离','震','巽','坎','艮','坤'];
+  var gName=trigramNames[up-1]+'为'+trigramNames[dn-1]; // fallback
+  // 用数据库精确查找
+  var found=YIJING.find(function(g){ return g.upper===trigramNames[up-1]&&g.lower===trigramNames[dn-1]; });
+  if(found){ gName=found.name; }
   // 动爻
-  var yao=origBin.split('').map(Number);
+  var yao=upBin.split('').map(Number).concat(dnBin.split('').map(Number));
   var yaoLine=mv-1;
   var chgBin=origBin.split('');
   chgBin[yaoLine]=chgBin[yaoLine]==='1'?'0':'1';
@@ -112,16 +100,28 @@ function doGua(){
   var n3=parseInt(document.getElementById('n3').value)||3;
   var g=getGua(n1,n2,n3);
   var res=document.getElementById('result');
-  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在解读卦象...</p></div>';
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在起卦解卦...</p></div>';
 
-  var prompt='你是"知时先生"。用户用梅花易数起卦：上卦'+g.orig.up+'('+g.orig.upElem+')，下卦'+g.orig.dn+'('+g.orig.dnElem+')，得「'+g.orig.name+'」，动爻在第'+g.line+'爻，变卦「'+g.change.name+'」。请用100字左右大白话给用户解卦，说说这个卦在当前问的事上意味着什么、有什么建议。不要用术语。换成JSON：{"reading":"解卦内容"}';
+  // 从数据库取卦辞和爻辞做锚点
+  var origDB=findGua(g.orig.name);
+  var chgDB=findGua(g.change.name);
+  var anchor='';
+  if(origDB){
+    anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
+    if(origDB.lines&&origDB.lines[g.line-1]) anchor+=' 动爻爻辞："'+origDB.lines[g.line-1]+'"';
+  }
+  if(chgDB){ anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning; }
+
+  var prompt='你是"知时先生"，精通易经。以下卦象信息是真实经典原文，请基于这些内容，用150字大白话帮用户解读。不要编造卦辞爻辞，可以说"卦辞提到...意思是..."然后展开。上卦'+g.orig.up+'('+g.orig.upElem+')下卦'+g.orig.dn+'('+g.orig.dnElem+')，本卦「'+g.orig.name+'」，第'+g.line+'爻动，变卦「'+g.change.name+'」。\n\n参考原文：'+anchor+'\n\n返回JSON：{"reading":"你的解读"}';
 
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
     .then(function(r){return r.json();})
     .then(function(d){
       var tip=d.reading||'卦已起，请静心领悟。';
       res.innerHTML=
-        '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div><div class="result">'+tip+'</div></div>';
+        '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
+        (origDB?'<div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.08);border-radius:8px;padding:12px;margin-bottom:12px;font-size:11px;color:var(--tx3);line-height:1.8"><b>卦辞</b> '+origDB.judgment+'</div>':'')+
+        '<div class="result">'+tip+'</div></div>';
     }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">卦已起，AI解读暂不可用</div></div>';});
 }
 </script>
