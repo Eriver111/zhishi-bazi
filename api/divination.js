@@ -4,7 +4,7 @@
  */
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat';
+const AI_MODEL = 'deepseek-chat'; // chat 已经够好——有64卦数据库锚定，模型只负责翻译
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
