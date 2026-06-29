@@ -129,6 +129,15 @@
         html += '<div style="font-size:12px;color:var(--tx2);line-height:2"><div><span style="color:var(--tx3)">节气</span> ' + h.term.cur + ' → ' + h.term.next + '（' + h.term.days + '天）</div>';
         html += '<div><span style="color:var(--tx3)">纳音</span> ' + h.nayin + '</div><div><span style="color:var(--tx3)">星宿</span> ' + h.xiu + '</div><div><span style="color:var(--tx3)">建除</span> ' + h.jianchu + '</div><div><span style="color:var(--tx3)">冲煞</span> ' + h.chong + '</div>';
         html += '<div style="font-size:10px;color:var(--tx3);margin-top:4px">' + h.pengzu + '</div></div>';
+        // 方向神煞
+        if (h.dirGods) {
+          html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">';
+          ['喜神','财神','福神','阳贵','阴贵'].forEach(function(k){
+            var ek={'喜神':'xishen','财神':'caishen','福神':'fushen','阳贵':'yanggui','阴贵':'yingui'};
+            var v=h.dirGods[ek[k]]; if(v) html+='<span style="font-size:10px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);border-radius:6px;padding:2px 8px;color:var(--tx2)">'+k+' '+v+'</span>';
+          });
+          html += '</div>';
+        }
         html += '<div style="display:flex;gap:12px;margin-top:12px"><div style="flex:1;background:rgba(100,180,120,.04);border:1px solid rgba(100,180,120,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#7ec87e;letter-spacing:2px;margin-bottom:4px">宜</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.yi.length ? h.yi.join('、') : '—') + '</div></div>';
         html += '<div style="flex:1;background:rgba(200,100,100,.04);border:1px solid rgba(200,100,100,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#e07050;letter-spacing:2px;margin-bottom:4px">忌</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.ji.length ? h.ji.join('、') : '—') + '</div></div></div></div>';
         if (f && f.tip) { html += '<div class="fortune-card"><div class="section-label">今日提醒</div><div class="overview">' + f.tip + '</div></div>'; }
