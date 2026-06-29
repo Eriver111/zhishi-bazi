@@ -158,5 +158,59 @@ var LIUYAO = (function(){
     };
   }
 
-  return { zhuangGua:zhuangGua };
+  // ============ 伏神查找：八纯卦六亲（以宫五行为准） ============
+  var PURE_GUA_QIN = {
+    乾:{kids:[1,1,0,3,2,0]},  // 0=父母,1=子孙,2=妻财,3=官鬼,4=兄弟 (index into ['父母','子孙','妻财','官鬼','兄弟'])
+    // kids order by六亲index: 0父母 1子孙 2妻财 3官鬼 4兄弟
+    // 乾宫金: 子水(子孙1) 寅木(妻财2) 辰土(父母0) 午火(官鬼3) 申金(兄弟4) 戌土(父母0)
+    // 艮宫土: 辰土(兄弟4) 午火(父母0) 申金(子孙1) 戌土(兄弟4) 子水(妻财2) 寅木(官鬼3)
+  };
+  // 八纯卦各爻的六亲，索引对应父/孙/财/官/兄
+  var CHUN_GUA = {
+    '乾为天':{qin:[1,2,0,3,4,0], dz:['子','寅','辰','午','申','戌'], gan:['甲','甲','甲','壬','壬','壬']},
+    '坎为水':{qin:[4,3,2,0,3,4], dz:['寅','辰','午','申','戌','子'], gan:['戊','戊','戊','戊','戊','戊']},
+    '艮为山':{qin:[4,0,1,4,2,3], dz:['辰','午','申','戌','子','寅'], gan:['丙','丙','丙','丙','丙','丙']},
+    '震为雷':{qin:[1,2,0,3,4,0], dz:['子','寅','辰','午','申','戌'], gan:['庚','庚','庚','庚','庚','庚']},
+    '巽为风':{qin:[4,3,2,0,3,4], dz:['丑','亥','酉','未','巳','卯'], gan:['辛','辛','辛','辛','辛','辛']},
+    '离为火':{qin:[4,3,2,0,3,4], dz:['卯','丑','亥','酉','未','巳'], gan:['己','己','己','己','己','己']},
+    '坤为地':{qin:[4,3,4,0,1,2], dz:['未','巳','卯','丑','亥','酉'], gan:['乙','乙','乙','癸','癸','癸']},
+    '兑为泽':{qin:[0,2,1,3,4,0], dz:['巳','卯','丑','亥','酉','未'], gan:['丁','丁','丁','丁','丁','丁']}
+  };
+  var QIN_NAMES=['父母','子孙','妻财','官鬼','兄弟'];
+
+  function getFuShen(guaName, liuqin){
+    var gong=GONG_GUA[guaName]?GONG_GUA[guaName].gong:null;
+    if(!gong) return [];
+    // 找该宫的八纯卦名
+    var pureKey=Object.keys(CHUN_GUA).find(function(k){ return k.indexOf(gong)===0; });
+    if(!pureKey) return [];
+    var pure=CHUN_GUA[pureKey];
+    var missing=[];
+    // 找缺失的六亲
+    QIN_NAMES.forEach(function(q){
+      if(liuqin.indexOf(q)<0) missing.push(q);
+    });
+    var result=[];
+    missing.forEach(function(q){
+      var qIdx=QIN_NAMES.indexOf(q);
+      // 在八纯卦中找这个六亲在哪几爻
+      for(var i=0;i<6;i++){
+        if(pure.qin[i]===qIdx){
+          var feiQin=liuqin[i]||'?';
+          var wx=DZ_WX[pure.dz[i]]||'?';
+          // 飞伏关系
+          var feiWX=DZ_WX[(liuqin[i]+'$').split('')[0]]||'土';
+          var sheng={'木':'火','火':'土','土':'金','金':'水','水':'木'};
+          var rel='';
+          if(sheng[wx]===feiWX||sheng[feiWX]===wx) rel='相生';
+          else if(wx===feiWX) rel='比和'; else rel='相克';
+          result.push({qin:q, ganZhi:pure.gan[i]+pure.dz[i], wx:wx, yaoIdx:i+1, feiQin:feiQin, rel:rel});
+          break;
+        }
+      }
+    });
+    return result;
+  }
+
+  return { zhuangGua:zhuangGua, getFuShen:getFuShen };
 })();

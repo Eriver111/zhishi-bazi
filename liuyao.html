@@ -249,16 +249,17 @@ function doAnalyze(){
   if(chgZg) header+=makeTable(chgZg,'变卦',chgLines,true);
   header+='</div>';
 
-  // 飞伏神：检查缺失的六亲
-  var allQin=['父母','兄弟','妻财','官鬼','子孙'];
-  var missing=[];
-  allQin.forEach(function(q){ if(zg.liuqin.indexOf(q)<0) missing.push(q); });
+  // 飞伏神
   var fushen='';
-  if(missing.length){
-    fushen='<div style="margin-top:10px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:11px;color:var(--tx2);line-height:2"><b style="color:var(--gold-l)">飞伏神 · 用神/六亲不上卦</b><br>';
-    missing.forEach(function(q){
-      var findInChg=chgZg?chgZg.liuqin.indexOf(q)>=0:false;
-      fushen+='<span style="color:#e8a040">'+q+'</span>不现于本卦'+(findInChg?'，变卦中出现':'')+'；';
+  var fData=LIUYAO.getFuShen?LIUYAO.getFuShen(zg.guaName,zg.liuqin):[];
+  if(fData.length){
+    fushen='<div style="margin-top:10px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:11px;color:var(--tx2);line-height:2.2"><b style="color:var(--gold-l)">飞伏神 · 用神/六亲不上卦</b><br>';
+    fData.forEach(function(f){
+      fushen+='第'+f.yaoIdx+'爻&nbsp; 伏神：<b style="color:var(--gold-l)">'+f.qin+'</b> '+f.ganZhi+f.wx+' &nbsp; 飞神：'+f.feiQin+' &nbsp; ';
+      var relText=''; if(f.rel==='相生') relText='飞伏相生，伏神得助易透'; else if(f.rel==='比和') relText='飞伏比和，伏神不弱'; else relText='飞伏相克，伏神受制难出';
+      fushen+='<span style="color:#e8a040">'+relText+'</span>';
+      if(xunKong.indexOf(f.ganZhi.charAt(1))>=0) fushen+='；<span style="color:#e07050">伏神旬空，乘隙而出</span>';
+      fushen+='<br>';
     });
     fushen+='</div>';
   }
