@@ -330,7 +330,7 @@ window.doAIReading=function(){
   prompt+='\n请直接用大白话输出分析，不要术语堆砌。JSON格式：{"reading":"完整解读"}';
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
   .then(function(r){return r.json();}).then(function(d){
-    res.innerHTML=res.innerHTML.replace(/<div class="loading">[^<]*<\/div>/,'')+'<div class="result-text">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>';
+    res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>';
   }).catch(function(){ res.innerHTML='<div class="result-text" style="text-align:center;color:var(--tx3)">解读暂不可用</div>'; });
 };
 </script>
