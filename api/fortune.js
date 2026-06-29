@@ -113,6 +113,7 @@ function buildHuangli(y, m, d) {
   var wd = '星期' + weekDays[new Date(y,m-1,d).getDay()];
 
   // 建除
+  var dayZhiIdx = idx % 12;  // 日支索引
   var jcIdx = (dayZhiIdx - (m-1) + 12) % 12;
   var jc = JIANCHU[jcIdx];
   var jcLuck = JIANCHU_LUCK[jc];
