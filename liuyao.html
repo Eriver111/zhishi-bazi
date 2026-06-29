@@ -327,7 +327,7 @@ window.doAIReading=function(){
   prompt+='\n【第四步：六神定位】各爻六神：';
   for(var i=0;i<6;i++){ prompt+=zg.liuqin[i]+'在'+zg.liushen[i]+'('+zg.yaoDZ[i]+zg.yaoWX[i]+'); '; }
   prompt+='\n【第五步：综合断卦】根据以上信息，模仿这个格式解读："先看本卦世应在X变卦在X，说明XX。月建X，世爻居XX，本卦有XX来克说明XX。XX在XX说明XX。综合判断XX。"';
-  prompt+='\n请直接用大白话输出分析，不要术语堆砌。JSON格式：{"reading":"完整解读"}';
+  prompt+='\n请用400字左右的通俗大白话解读，像朋友聊天一样，不要任何术语堆砌和古文引用。每步一句话带过别啰嗦，重点放在综合建议上。JSON格式：{"reading":"完整解读"}';
   var ctrl=new AbortController();
   setTimeout(function(){ ctrl.abort(); }, 90000);
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt}),signal:ctrl.signal})
