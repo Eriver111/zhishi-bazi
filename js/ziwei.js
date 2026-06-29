@@ -187,6 +187,50 @@ var ZIWEI_CALC = (function(){
         meaning:ZIWEI.palaces[i].meaning
       };
     });
+    // 三方四正分析
+    var triads = [
+      { name:'命财官线', palaces:['命宫','财帛','官禄'], meaning:'事业成就、社会地位、人生格局的核心轴线' },
+      { name:'兄疾田线', palaces:['兄弟','疾厄','田宅'], meaning:'家庭健康、手足房产、内在安全感' },
+      { name:'夫子友线', palaces:['夫妻','子女','交友'], meaning:'婚姻子息、人际关系、情感世界' },
+      { name:'迁福母线', palaces:['迁移','福德','父母'], meaning:'外出发展、精神福报、长辈庇荫' }
+    ];
+    var triadAnalysis=[];
+    triads.forEach(function(td){
+      var allStars=[], allMinors=[], allHua=[], palaces=[];
+      td.palaces.forEach(function(name){
+        var p=chart[name]; if(!p) return;
+        palaces.push(name);
+        p.stars.forEach(function(s){ if(allStars.indexOf(s)<0) allStars.push(s); });
+        p.minors.forEach(function(s){ if(allMinors.indexOf(s)<0) allMinors.push(s); });
+        p.hua.forEach(function(h){ if(allHua.indexOf(h)<0) allHua.push(h); });
+      });
+      var summary='';
+      if(allStars.length===0) summary='三合无主星，格局偏弱，需借对宫星曜来看；';
+      else{
+        var strong=allStars.filter(function(s){ return ['紫微','天府','太阳','武曲','天相','天梁'].indexOf(s)>=0; });
+        var weak=allStars.filter(function(s){ return ['巨门','廉贞','破军','贪狼'].indexOf(s)>=0; });
+        if(strong.length>=2) summary+='三方汇吉，'+strong.join('/')+'聚首，'+td.name+'有力；';
+        else if(weak.length>=2) summary+='三方暗星较多，'+td.name+'需留意波折；';
+        else summary+='三方平顺，'+td.name+'发展需自身努力；';
+      }
+      if(allHua.length) summary+='四化：'+allHua.map(function(h){var lb={lu:'禄',quan:'权',ke:'科',ji:'忌'};return lb[h]||h;}).join('')+'；';
+      triadAnalysis.push({name:td.name,palaces:palaces.join('·'),stars:allStars,minors:allMinors,hua:allHua,summary:summary,meaning:td.meaning});
+    });
+
+    // 四正（对宫）
+    var oppositions=[['命宫','迁移'],['兄弟','交友'],['夫妻','官禄'],['子女','田宅'],['财帛','福德'],['疾厄','父母']];
+    var oppAnalysis=[];
+    oppositions.forEach(function(pair){
+      var p1=chart[pair[0]], p2=chart[pair[1]];
+      var s1=p1.stars.join(''), s2=p2.stars.join('');
+      var oppSummary='';
+      if(!s1&&!s2) oppSummary='借对宫星曜来看';
+      else if(s1&&!s2) oppSummary=pair[0]+'星曜入'+pair[1];
+      else if(!s1&&s2) oppSummary=pair[1]+'星曜入'+pair[0];
+      else oppSummary='本对宫皆有星，格局稳固';
+      oppAnalysis.push({name:pair[0]+'←→'+pair[1],palace:p1,palace2:p2,summary:oppSummary});
+    });
+
     return {
       chart:chart,
       mingGong:mingPalace.name,
@@ -195,7 +239,9 @@ var ZIWEI_CALC = (function(){
       shenGong:ZIWEI.palaces[shenGongIdx] ? ZIWEI.palaces[shenGongIdx].name : '',
       wuxingJu:['金四局','木三局','水二局','火六局','土五局'][ju],
       sihua:sihua,
-      lunarMonth:lMonth, lunarDay:lDay
+      lunarMonth:lMonth, lunarDay:lDay,
+      triads:triadAnalysis,
+      oppositions:oppAnalysis
     };
   }
 
