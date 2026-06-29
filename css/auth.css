@@ -132,23 +132,23 @@
   gap:6px;align-items:center;
 }
 
+/* ---- 导航栏用户区始终显示 ---- */
+#nav-user-area { display:flex !important; }
+.mobile-top-auth { display:none !important; }
+
 /* ---- 移动端 / 平板适配 ---- */
 @media(max-width:1024px){
-  /* 桌面导航隐藏用户区，改用顶部右上角 */
-  #nav-user-area { display:none !important; }
-  .mobile-top-auth { display:flex; }
+  #nav-user-area { display:flex !important; }
+  .mobile-top-auth { display:none !important; }
 
-  /* 弹窗缩小 */
   .auth-modal { padding:24px 18px 20px; }
   .auth-modal .auth-title { font-size:18px; }
   .auth-modal .auth-field input { padding:10px 12px;font-size:13px; }
   .auth-modal .auth-btn { padding:12px;font-size:15px; }
 
-  /* 横幅适配 */
   .migrate-banner { padding:10px 14px;gap:8px; }
   .migrate-banner .banner-text { font-size:11px; }
   .migrate-banner .banner-btn { padding:6px 14px;font-size:12px; }
 
-  /* Toast 不遮挡导航 */
   .auth-toast { top:60px; }
 }
