@@ -204,7 +204,7 @@ function doAnalyze(){
   // 本卦表 + 变卦表，左右分栏
   var wxCol={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};
   function makeTable(z,name,lx,isRight){
-    var t='<div style="min-width:200px;flex:1"><table style="width:100%;border-collapse:collapse;font-size:13px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;overflow:hidden">';
+    var t='<div style="min-width:200px;flex:1;display:flex"><table style="width:100%;border-collapse:collapse;font-size:13px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;overflow:hidden;height:100%">';
     t+='<tr style="color:var(--gold-l);font-size:12px;letter-spacing:2px;background:rgba(201,168,76,.05)"><td>六神</td><td>六亲</td><td>干支</td><td>五行</td><td>旺</td><td>长生</td><td style="text-align:center">'+name+'</td></tr>';
     for(var i=5;i>=0;i--){
       var mvMark='',mvColor=''; if(isRight&&movingLines.indexOf(i+1)>=0){mvMark=' ◯';mvColor='color:#e8a040;font-weight:700';}
@@ -224,7 +224,7 @@ function doAnalyze(){
     return t;
   }
   // 卦头
-  header+='<div style="display:flex;gap:6px;align-items:flex-start">';
+  header+='<div style="display:flex;gap:6px;align-items:stretch">';
   header+=makeTable(zg,'本卦',lines,false);
   if(chgZg) header+=makeTable(chgZg,'变卦',chgLines,true);
   header+='</div>';
