@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
 
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
-      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:500, temperature:0.5 })
+      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:1000, temperature:0.5 })
     });
     var aiData = await aiResp.json();
     var reading = aiData.choices?.[0]?.message?.content || '卦象已显，静心体悟。';
