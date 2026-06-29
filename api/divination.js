@@ -4,7 +4,7 @@
  */
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
-const AI_MODEL = 'deepseek-chat'; // chat 已经够好——有64卦数据库锚定，模型只负责翻译
+const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat'; // 默认chat，可在.env覆盖
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,15 +15,15 @@ module.exports = async function handler(req, res) {
 
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
-      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:1000, temperature:0.5 })
+      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:1500, temperature:0.5 })
     });
     var aiData = await aiResp.json();
     var reading = aiData.choices?.[0]?.message?.content || '卦象已显，静心体悟。';
-    // 强力过滤免责声明/模型名称
-    reading = reading.replace(/[（(]?以上[^。\n]*?(?:deepseek|生成|参考|AI)[^。\n]*?(?:[。)）]|$)/gi, '');
-    reading = reading.replace(/[（(][^)）]*?(?:deepseek|AI|人工智能|模型)[^)）]*[)）]/gi, '');
-    reading = reading.replace(/[（(][^)）]*?仅供参考[^)）]*[)）]/gi, '');
+    // 简单过滤常见免责尾巴
+    reading = reading.replace(/（以上[^）]*）/g, '').replace(/\(以上[^)]*\)/g, '');
+    reading = reading.replace(/温馨提示[^。\n]*[。\n]/g, '');
     reading = reading.replace(/---[\s\S]*$/, '').trim();
+    if(!reading||reading.length<5) reading = '卦象已显，静心体悟。';
     return res.status(200).json({ reading: reading });
   } catch (e) {
     return res.status(500).json({ error: e.message });
