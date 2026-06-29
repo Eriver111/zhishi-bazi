@@ -192,8 +192,11 @@ var Auth = (function () {
           '<div class="user-avatar">' + initial + '</div>' +
           '<span>' + ((_user && _user.email) ? _user.email.split('@')[0] : '用户') + '</span>' +
           '</div>' +
+          '<span id="credit-badge" style="font-size:11px;color:var(--gold-l);background:rgba(201,168,76,.08);padding:3px 10px;border-radius:10px;cursor:pointer" onclick="location.href=\'/pricing\'">⋯ 分</span>' +
           '<button class="btn-auth" onclick="Auth.showChangePwd()" title="修改密码" style="padding:6px 10px;font-size:14px">&#9881;</button>' +
           '<button class="btn-auth" onclick="Auth.logout()">退出</button>';
+        // 异步加载积分
+        fetchCredits();
       } else {
         area.innerHTML =
           '<button class="btn-auth primary" id="btn-auth-register" onclick="Auth.showModal(\'register\')">注册</button>' +
@@ -434,6 +437,18 @@ var Auth = (function () {
   }
   function showErr(el, msg) { if (el) { el.textContent = msg; el.style.display = 'block'; } }
   function hideErr(el) { if (el) { el.style.display = 'none'; } }
+
+  function fetchCredits() {
+    if (!_token) return;
+    authFetch('/api/auth/profile').then(function(r){return r.json()}).then(function(d){
+      var badge = document.getElementById('credit-badge');
+      if (!badge) return;
+      if (d.error) { badge.textContent = '? 分'; return; }
+      var total = d.is_monthly ? '∞' : (d.credits || 0);
+      badge.textContent = '积分 ' + total;
+      badge.title = d.is_monthly ? '月度会员 · 无限次' : '剩余 ' + total + ' 次';
+    }).catch(function(){});
+  }
 
   // 暴露到全局
   return {
