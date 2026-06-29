@@ -164,6 +164,13 @@ var ZIWEI_CALC = (function(){
     var yearGan=TG[yearGanIdx];
     var sihua=ZIWEI.sihua[yearGan]||{};
 
+    // 命主(命宫地支→星)、身主(生年年支→星)
+    var MINGZHU_MAP={0:'贪狼',1:'巨门',2:'天机',3:'文曲',4:'廉贞',5:'武曲',6:'破军',7:'武曲',8:'廉贞',9:'文曲',10:'禄存',11:'巨门'};
+    var SHENZHU_MAP={0:'火星',1:'天相',2:'天梁',3:'天同',4:'文昌',5:'天机',6:'火星',7:'天相',8:'天梁',9:'天同',10:'文昌',11:'天机'};
+    var mingZhu=MINGZHU_MAP[DZ.indexOf(mingPalace.zhi)]||'';
+    var shenGongIdx=(mingPos + lMonth - 1) % 12;
+    var shenZhu=SHENZHU_MAP[yearZhiIdx]||'';
+
     // 组装结果
     var chart={};
     palaces.forEach(function(p,i){
@@ -183,6 +190,9 @@ var ZIWEI_CALC = (function(){
     return {
       chart:chart,
       mingGong:mingPalace.name,
+      mingZhu:mingZhu,
+      shenZhu:shenZhu,
+      shenGong:ZIWEI.palaces[shenGongIdx] ? ZIWEI.palaces[shenGongIdx].name : '',
       wuxingJu:['金四局','木三局','水二局','火六局','土五局'][ju],
       sihua:sihua,
       lunarMonth:lMonth, lunarDay:lDay

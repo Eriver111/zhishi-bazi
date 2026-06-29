@@ -83,7 +83,11 @@ function doZiwei(){
   try{ var zw=ZIWEI_CALC.calcZiwei(y,m,d,h,isMale); }catch(e){ res.innerHTML='<div class="loading">排盘失败：'+e.message+'</div>'; return; }
 
   var chart=zw.chart, order=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
-  var html='<div class="zw-info">命宫：<b style="color:var(--gold-l)">'+zw.mingGong+'</b> | '+zw.wuxingJu+'</div><div class="zw-chart">';
+  var html='<div class="zw-info">';
+  html+='命宫：<b style="color:var(--gold-l)">'+zw.mingGong+'</b> | '+zw.wuxingJu+' | ';
+  html+='命主：<b style="color:var(--gold-l)">'+zw.mingZhu+'</b> | 身主：<b style="color:var(--gold-l)">'+zw.shenZhu+'</b>';
+  if(zw.shenGong) html+=' | 身宫：'+zw.shenGong;
+  html+='</div><div class="zw-chart">';
   order.forEach(function(name){
     var p=chart[name]; var huaHTML='';
     if(p.hua.length) huaHTML='<div class="p-hua">'+p.hua.map(function(h){ var lb={'lu':'禄','quan':'权','ke':'科','ji':'忌'}; return lb[h]||h; }).join(' ')+'</div>';
