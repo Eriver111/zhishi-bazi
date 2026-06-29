@@ -150,6 +150,8 @@ window.unlockReading=function(){
         (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'')+
         '<div class="result" style="margin-top:16px;font-size:15px;line-height:2.2;color:var(--tx)">'+tip+'</div></div>';
     }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">解读暂不可用，请稍后重试</div></div>';});
+  window.doGua = doGua;
+  window.randomGua = randomGua;
 }
 </script>
 </body>
