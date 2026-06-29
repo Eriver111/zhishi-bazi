@@ -193,21 +193,28 @@ function doAnalyze(){
   header+=' &nbsp;|&nbsp; '+zg.gong+'宫 · 属'+zg.gongWX+' · '+zg.guaType;
   header+='<br>月建：'+zg.monthZhi+'月（'+zg.monthWX+'）&nbsp;|&nbsp; 世爻：第'+zg.shiYao+'爻 &nbsp;|&nbsp; 应爻：第'+zg.yingYao+'爻</div>';
 
-  // 装卦表
-  var table='<table style="width:100%;border-collapse:collapse;font-size:12px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;overflow:hidden"><tr style="color:var(--gold-l);font-size:11px;letter-spacing:1px;background:rgba(201,168,76,.05)"><td>六神</td><td>六亲</td><td>干支</td><td>五行</td><td>旺衰</td><td>长生</td><td style="text-align:center">本卦</td><td style="text-align:center">变卦</td></tr>';
+  // 装卦表：左半=本卦，右半=变卦
+  var table='<table style="width:100%;border-collapse:collapse;font-size:11px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;overflow:hidden">';
+  table+='<tr style="color:var(--gold-l);font-size:10px;letter-spacing:1px;background:rgba(201,168,76,.05)"><td>六神</td><td>六亲</td><td>干支</td><td>五行</td><td>旺</td><td>长</td><td style="text-align:center">本卦</td><td style="text-align:center">变卦</td><td>六亲</td><td>干支</td><td>五行</td><td>旺</td></tr>';
   for(var i=5;i>=0;i--){
     table+='<tr style="border-bottom:1px solid rgba(255,255,255,.02)">';
-    table+='<td style="color:var(--tx3);font-size:10px;padding:5px 3px">'+zg.liushen[i]+'</td>';
-    table+='<td style="padding:5px 3px;font-size:12px">'+zg.liuqin[i]+'</td>';
-    table+='<td style="padding:5px 3px;font-size:12px">'+zg.yaoGan[i]+zg.yaoDZ[i]+'</td>';
-    table+='<td style="padding:5px 3px;color:'+(zg.yaoWX[i]==='木'?'#6db86d':zg.yaoWX[i]==='火'?'#e07050':zg.yaoWX[i]==='土'?'#c9a84c':zg.yaoWX[i]==='金'?'#e8d5a3':'#5b9fd4')+'">'+zg.yaoWX[i]+'</td>';
-    table+='<td style="padding:5px 3px;font-size:11px">'+(zg.wangShuai?zg.wangShuai[i]:'')+'</td>';
-    table+='<td style="padding:5px 3px;font-size:11px;color:var(--tx3)">'+(zg.changSheng?zg.changSheng[i]:'')+'</td>';
-    var mvMark='', mvColor=''; if(movingLines.indexOf(i+1)>=0){ mvMark=' ◯'; mvColor='color:#e8a040;font-weight:700'; }
-    var shiMark='', yingMark=''; if(i+1===zg.shiYao) shiMark=' <span style="font-size:8px;color:var(--gold-l)">世</span>'; if(i+1===zg.yingYao) yingMark=' <span style="font-size:8px;color:#5b9fd4">应</span>';
-    table+='<td style="padding:5px 3px;font-family:monospace;font-size:15px;'+mvColor+'">'+(lines[i]?'━━━━━':'━   ━')+mvMark+shiMark+yingMark+'</td>';
-    var chgYao=chgZg?(chgLines[i]?'━━━━━':'━   ━'):'';
-    table+='<td style="padding:5px 3px;font-family:monospace;font-size:14px;color:'+(chgLines[i]!==lines[i]?'var(--gold-l)':'var(--tx3)')+'">'+chgYao+'</td>';
+    table+='<td style="color:var(--tx3);font-size:9px;padding:3px 2px">'+zg.liushen[i]+'</td>';
+    table+='<td style="padding:3px 2px">'+zg.liuqin[i]+'</td>';
+    table+='<td style="padding:3px 2px">'+zg.yaoGan[i]+zg.yaoDZ[i]+'</td>';
+    var wxCol={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};
+    table+='<td style="padding:3px 2px;color:'+(wxCol[zg.yaoWX[i]]||'#fff')+'">'+zg.yaoWX[i]+'</td>';
+    table+='<td style="padding:3px 2px;font-size:10px">'+(zg.wangShuai?zg.wangShuai[i]:'')+'</td>';
+    table+='<td style="padding:3px 2px;font-size:10px;color:var(--tx3)">'+(zg.changSheng?zg.changSheng[i]:'')+'</td>';
+    var mvMark='',mvColor=''; if(movingLines.indexOf(i+1)>=0){mvMark=' ◯';mvColor='color:#e8a040;font-weight:700';}
+    var shiMark='',yingMark=''; if(i+1===zg.shiYao) shiMark=' <span style="font-size:7px;color:var(--gold-l)">世</span>'; if(i+1===zg.yingYao) yingMark=' <span style="font-size:7px;color:#5b9fd4">应</span>';
+    table+='<td style="padding:3px 2px;font-family:monospace;font-size:14px;'+mvColor+'">'+(lines[i]?'━━━━':'━  ━')+mvMark+shiMark+yingMark+'</td>';
+    // 变卦
+    var chgYao=chgZg?(chgLines[i]?'━━━━':'━  ━'):'';
+    table+='<td style="padding:3px 2px;font-family:monospace;font-size:12px;color:'+(chgLines[i]!==lines[i]?'var(--gold-l)':'var(--tx3)')+'">'+chgYao+'</td>';
+    table+='<td style="padding:3px 2px;color:var(--tx2)">'+(chgZg?chgZg.liuqin[i]:'')+'</td>';
+    table+='<td style="padding:3px 2px;color:var(--tx2)">'+(chgZg?chgZg.yaoGan[i]+chgZg.yaoDZ[i]:'')+'</td>';
+    table+='<td style="padding:3px 2px;color:'+(chgZg?wxCol[chgZg.yaoWX[i]]||'var(--tx2)':'var(--tx2)')+'">'+(chgZg?chgZg.yaoWX[i]:'')+'</td>';
+    table+='<td style="padding:3px 2px;font-size:10px;color:var(--tx2)">'+(chgZg?chgZg.wangShuai[i]:'')+'</td>';
     table+='</tr>';
   }
   table+='</table>';
