@@ -111,10 +111,14 @@
       var dp = chart.dayGan ? {dayGan:chart.dayGan,dayZhi:chart.dayZhi} : getDayPillar(params);
       if (!dp.dayGan) { content.innerHTML = '<div class="empty"><p>无法计算日柱</p><a href="/paipan" style="color:var(--gold)">去排盘</a></div>'; return; }
 
+      // 带超时的 fetch
+      var controller = new AbortController();
+      var timeout = setTimeout(function(){ controller.abort(); }, 30000);
       fetch('/api/fortune', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ year: year, month: month, day: day, dayGan: dp.dayGan, dayZhi: dp.dayZhi, gender: gender, label: chart.label })
-      }).then(function(r){ return r.json(); })
+        body: JSON.stringify({ year: year, month: month, day: day, dayGan: dp.dayGan, dayZhi: dp.dayZhi, gender: gender, label: chart.label }),
+        signal: controller.signal
+      }).then(function(r){ clearTimeout(timeout); return r.json(); })
       .then(function(d){
         if (d.error) { content.innerHTML = '<div class="empty"><p>'+d.error+'</p></div>'; return; }
         var h = d.huangli, f = d.fortune;
