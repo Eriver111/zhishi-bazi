@@ -275,7 +275,7 @@ function doAnalyze(){
   shenSha='<div style="margin-top:10px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:11px;color:var(--tx2);text-align:center"><b style="color:var(--gold-l)">神煞</b>&nbsp;';
   shenSha+='驿马：'+ym+' &nbsp;|&nbsp; 桃花：'+taohua[ym?Object.keys(yima).find(function(k){return yima[k]===ym})||'申子辰':'申子辰']+' &nbsp;|&nbsp;';
   shenSha+='干禄：'+(ganlu[dayGan]||'')+' &nbsp;|&nbsp; 贵人：'+(guiren[dayGan]||'')+'</div>';
-  res.innerHTML=header+table+fushen+dongHua+shenSha+
+  res.innerHTML=header+fushen+dongHua+shenSha+
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
