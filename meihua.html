@@ -114,7 +114,7 @@ function showGuaReveal(gName,yao,cb){
   var h=''; for(var i=0;i<6;i++){ h+='<div class="reveal-yao" style="color:'+(yao[i]?'var(--gold-l)':'var(--tx2)')+'">'+(yao[i]?'━━━━━':'━   ━')+'</div>'; }
   o.innerHTML=h+'<div class="reveal-name">'+gName+'</div><div class="reveal-sub">卦 象 已 显</div>';
   document.body.appendChild(o);
-  setTimeout(function(){ o.classList.add('fadeOut'); setTimeout(function(){ o.remove(); if(cb)cb(); },800); },2000);
+  setTimeout(function(){ o.classList.add('fadeOut'); setTimeout(function(){ o.remove(); if(cb)cb(); },800); },4000);
 }
 
 function doGua(){

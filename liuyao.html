@@ -153,7 +153,7 @@ function showGuaReveal(gName,lines,callback){
     function draw(){ctx.clearRect(0,0,c.width,c.height);for(var i=0;i<particles.length;i++){var p=particles[i];p.x+=p.vx;p.y+=p.vy;p.a-=.005;if(p.a<=0){p.x=Math.random()*c.width;p.y=Math.random()*c.height;p.a=1}ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fillStyle='rgba(201,168,76,'+p.a+')';ctx.fill()}if(overlay.parentNode)requestAnimationFrame(draw)}
     draw();
   },100);
-  setTimeout(function(){ overlay.classList.add('fadeOut'); setTimeout(function(){ overlay.remove(); if(callback)callback(); },800); },2200);
+  setTimeout(function(){ overlay.classList.add('fadeOut'); setTimeout(function(){ overlay.remove(); if(callback)callback(); },800); },4200);
 }
 
 function doAnalyze(){
