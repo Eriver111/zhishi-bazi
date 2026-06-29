@@ -309,7 +309,14 @@ window.doAIReading=function(){
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
   // 构建专业断卦Prompt——锁定分析框架
-  var prompt='你是"知时先生"，精通六爻断卦。请严格按照以下框架分析，写300字：\n\n';
+  // 数据库锚点——AI只能基于这些原文解读
+  var dbAnchor='';
+  if(origDB) dbAnchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；彖传："'+(origDB.tuan||'')+'"，解读：'+origDB.meaning+'。';
+  if(chgDB) dbAnchor+='变卦《'+chgDB.name+'》：卦辞曰"'+chgDB.judgment+'"；解读：'+chgDB.meaning+'。';
+
+  var prompt='你是"知时先生"，精通六爻断卦。以下爻辞卦辞来自权威《周易》原文，你必须基于这些原文进行解读，不得编造。\n\n';
+  prompt+='【必读经典原文】'+dbAnchor+'\n\n';
+  prompt+='请严格按照以下框架分析，写300字：\n\n';
   prompt+='【第一步：世应进退】本卦世爻在第'+zg.shiYao+'爻，变卦世爻在'+(chgZg?chgZg.shiYao:'无')+'爻。对比判断事的进退方向。\n';
   prompt+='【第二步：世爻状态】世爻为'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'('+zg.yaoWX[zg.shiYao-1]+')，月建'+zg.monthZhi+'月('+zg.monthWX+')，世爻处'+zg.wangShuai[zg.shiYao-1]+'态。判断世爻自身的强弱吉凶。\n';
   // 查官鬼是否克世爻
