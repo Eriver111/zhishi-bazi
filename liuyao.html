@@ -174,8 +174,6 @@ function doAnalyze(){
 
   var origDB=findGua(zg.guaName), chgDB=chgZg?findGua(chgZg.guaName):null;
 
-  // 全屏特效
-  showGuaReveal(zg.guaName,lines,function(){
   // 装卦表格
   var table='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:var(--gold-l);font-size:11px;letter-spacing:1px"><td>六神</td><td>干支</td><td>六亲</td><td>五行</td><td>本卦</td><td>变卦</td></tr>';
   var DZ_VAL=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -197,7 +195,6 @@ function doAnalyze(){
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center">卦辞：'+origDB.judgment+'<br>'+origDB.meaning+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
-  });
   res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
 }
 
