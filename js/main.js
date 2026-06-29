@@ -382,6 +382,8 @@ function handleSubmit(e) {
       var setVal = function(id, value) { var el = document.getElementById(id); if (el && value) el.value = value; };
       setVal('sYear', year);
       setVal('sMonth', month);
+      // 触发生日选项更新
+      if (typeof updateSolarDays === 'function') { try { updateSolarDays(); } catch(e) {} }
       setVal('sDay', day);
       var hour = p.get('hour'); if (hour) setVal('sHour', hour);
       var minute = p.get('minute'); if (minute) setVal('sMinute', minute);
