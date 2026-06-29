@@ -181,12 +181,31 @@ function doAnalyze(){
 
   // 干支表头
   var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  var nY=today.getFullYear(), nM=today.getMonth()+1, nD=today.getDate();
+  var nY=today.getFullYear(), nM=today.getMonth()+1, nD=today.getDate(), nH=today.getHours();
   var yGIdx=(nY-4)%10, yZIdx=(nY-4)%12;
   var mGIdx=(yGIdx*2+nM)%10, mZIdx=nM%12;
-  var dGIdx=zg.yaoGan?0:0; // 日干从装卦引擎的日干参数来
-  var hDZ=zg.monthZhi; // 时辰用月建参考
+  // 日干支（UTC精确）
+  var tUTC=new Date(Date.UTC(nY,nM-1,nD,12,0,0)), baseUTC=new Date(Date.UTC(1900,0,1,12,0,0));
+  var dDays=Math.round((tUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
+  var dG=TG[dIdx%10], dZ=DZ[dIdx%12];
+  // 时干支
+  var hDZIdx=(nH%24)<23?Math.floor((nH+1)/2)%12:0;
+  var hGIdx=(dIdx%10*2+hDZIdx)%10;
+  var hG=TG[hGIdx], hZ=DZ[hDZIdx];
   var yearGZ=TG[yGIdx]+DZ[yZIdx], monthGZ=TG[mGIdx%10]+DZ[mZIdx];
+  // 月破（月建对冲的地支）
+  var yuePo=DZ[(DZ.indexOf(zg.monthZhi)+6)%12];
+  var timeInfo='<div style="background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:8px;font-size:12px;color:var(--tx2);text-align:center;line-height:2">';
+  timeInfo+='年 <b style="color:var(--gold-l)">'+yearGZ+'</b> &nbsp; 月 <b style="color:var(--gold-l)">'+monthGZ+'</b> &nbsp; 日 <b style="color:var(--gold-l)">'+dG+dZ+'</b> &nbsp; 时 <b style="color:var(--gold-l)">'+hG+hZ+'</b>';
+  // 旬空
+  var XUN_KONG={'甲子':['戌','亥'],'甲戌':['申','酉'],'甲申':['午','未'],'甲午':['辰','巳'],'甲辰':['寅','卯'],'甲寅':['子','丑']};
+  var xunHead={'甲子':0,'甲戌':10,'甲申':20,'甲午':30,'甲辰':40,'甲寅':50};
+  var dGIdx2=dIdx%10, xunStart=Math.floor(dIdx/10)*10, xunKey='';
+  for(var k in xunHead){if(xunHead[k]===xunStart){xunKey=k;break;}}
+  var xunKong=xunKey?XUN_KONG[xunKey]:['?','?'];
+  timeInfo+=' &nbsp;|&nbsp; 月建：'+zg.monthZhi+'月（'+zg.monthWX+'）&nbsp; 月破：<span style="color:#e07050">'+yuePo+'</span>';
+  timeInfo+=' &nbsp;|&nbsp; 旬空：<span style="color:var(--gold-l)">'+xunKong[0]+xunKong[1]+'</span>';
+  timeInfo+='</div>';
 
   var header='<div style="background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px;font-size:12px;line-height:2;color:var(--tx2)">';
   // 上下卦说明
@@ -275,7 +294,7 @@ function doAnalyze(){
   shenSha='<div style="margin-top:10px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:11px;color:var(--tx2);text-align:center"><b style="color:var(--gold-l)">神煞</b>&nbsp;';
   shenSha+='驿马：'+ym+' &nbsp;|&nbsp; 桃花：'+taohua[ym?Object.keys(yima).find(function(k){return yima[k]===ym})||'申子辰':'申子辰']+' &nbsp;|&nbsp;';
   shenSha+='干禄：'+(ganlu[dayGan]||'')+' &nbsp;|&nbsp; 贵人：'+(guiren[dayGan]||'')+'</div>';
-  res.innerHTML=header+fushen+dongHua+shenSha+
+  res.innerHTML=timeInfo+header+fushen+dongHua+shenSha+
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
