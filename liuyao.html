@@ -160,12 +160,16 @@ function doAnalyze(){
   var res=document.getElementById('result');
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在装卦...</p></div>';
 
+  // 安全检查
+  if(typeof LIUYAO==='undefined'){ res.innerHTML='<div class="empty"><p>装卦引擎未加载，请刷新页面</p></div>'; return; }
+
   var today=new Date();
   var dayGanIdx=(today.getFullYear()-4)%10;
   var monthZhi=DZ[(today.getMonth()+1)%12]||'子';
 
-  // 用装卦引擎
+  try{
   var zg=LIUYAO.zhuangGua(lines, dayGanIdx, monthZhi);
+  }catch(e){ res.innerHTML='<div class="empty"><p>装卦出错：'+e.message+'</p></div>'; return; }
 
   // 变卦
   var movingLines=[], chgLines=lines.slice();
@@ -222,10 +226,12 @@ function doAnalyze(){
     dongHua+='</div>';
   }
 
+  try{
   res.innerHTML=header+table+dongHua+
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
+  }catch(e){ res.innerHTML='<div class="empty"><p>渲染出错：'+e.message+'</p></div>'; }
   res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
 }
 
