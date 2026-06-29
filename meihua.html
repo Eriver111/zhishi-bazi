@@ -61,30 +61,28 @@
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
 var TG_ELEM=['天','泽','火','雷','风','水','山','地'];
 
-function yaoStr(yao) { return yao.map(function(y){ return y===1?'━━━':'━ ━'; }).join('<br>'); }
-
-// 从数据库查找卦
-function findGua(name) { return YIJING.find(function(g){ return g.name===name; }); }
+function yaoStr(y){ return y.map(function(v){ return v===1?'━━━':'━ ━'; }).join('<br>'); }
+function findGua(name){ return YIJING.find(function(g){ return g.name===name; }); }
 
 function getGua(n1,n2,n3){
   var up=n1%8||8, dn=n2%8||8, mv=n3%6||6;
   var upBin=(up-1).toString(2).padStart(3,'0');
   var dnBin=(dn-1).toString(2).padStart(3,'0');
-  // 从二进制推算卦名
-  var trigramNames=['乾','兑','离','震','巽','坎','艮','坤'];
-  var gName=trigramNames[up-1]+'为'+trigramNames[dn-1]; // fallback
-  // 用数据库精确查找
-  var found=YIJING.find(function(g){ return g.upper===trigramNames[up-1]&&g.lower===trigramNames[dn-1]; });
-  if(found){ gName=found.name; }
-  // 动爻
+  var origBin=upBin+dnBin;
+  var tri=['乾','兑','离','震','巽','坎','艮','坤'];
+  var gName=tri[up-1]+'为'+tri[dn-1];
+  var found=YIJING.find(function(g){ return g.upper===tri[up-1]&&g.lower===tri[dn-1]; });
+  if(found) gName=found.name;
   var yao=upBin.split('').map(Number).concat(dnBin.split('').map(Number));
-  var yaoLine=mv-1;
-  var chgBin=origBin.split('');
-  chgBin[yaoLine]=chgBin[yaoLine]==='1'?'0':'1';
-  chgBin=chgBin.join('');
-  var chgName=GUA64[chgBin]||'变卦';
+  var chgBin=origBin.split(''); chgBin[mv-1]=chgBin[mv-1]==='1'?'0':'1'; chgBin=chgBin.join('');
+  var chgFound=YIJING.find(function(g){
+    var bu=(g.upper===tri[parseInt(chgBin.slice(0,3),2)]||tri.indexOf(g.upper)===parseInt(chgBin.slice(0,3),2));
+    var bd=(g.lower===tri[parseInt(chgBin.slice(3,6),2)]||tri.indexOf(g.lower)===parseInt(chgBin.slice(3,6),2));
+    return bu&&bd;
+  });
+  var chgName=chgFound?chgFound.name:(tri[parseInt(chgBin.slice(0,3),2)]+'为'+tri[parseInt(chgBin.slice(3,6),2)]);
   return {
-    orig:{name:gName,yao:yao,up:TG[up-1],dn:TG[dn-1],upElem:TG_ELEM[up-1],dnElem:TG_ELEM[dn-1]},
+    orig:{name:gName,yao:yao,up:tri[up-1],dn:tri[dn-1],upElem:TG_ELEM[up-1],dnElem:TG_ELEM[dn-1]},
     change:{name:chgName,yao:chgBin.split('').map(Number)},
     moving:mv,line:mv
   };
@@ -104,9 +102,6 @@ function doGua(){
   var question=document.getElementById('question').value.trim();
   var g=getGua(n1,n2,n3);
   var res=document.getElementById('result');
-  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在起卦解卦...</p></div>';
-
-  // 从数据库取卦辞和爻辞做锚点
   var origDB=findGua(g.orig.name);
   var chgDB=findGua(g.change.name);
   var anchor='';
@@ -114,45 +109,33 @@ function doGua(){
     anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
     if(origDB.lines&&origDB.lines[g.line-1]) anchor+=' 动爻爻辞："'+origDB.lines[g.line-1]+'"';
   }
-  if(chgDB){ anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning; }
-
-  // 显示免费部分：卦象 + 卦辞
+  if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning;
+  res._g=g; res._anchor=anchor; res._origDB=origDB;
   res.innerHTML=
     '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
-    '<button class="btn-submit" onclick="unlockReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
+    '<button class="btn-submit" onclick="window.unlockReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
-
-  // 存起来等一下用
-  res._g=g; res._anchor=''; res._origDB=origDB; res._chgDB=chgDB;
-  if(origDB){
-    res._anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
-    if(origDB.lines&&origDB.lines[g.line-1]) res._anchor+=' 动爻爻辞："'+origDB.lines[g.line-1]+'"';
-  }
-  if(chgDB){ res._anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning; }
 }
 
 window.unlockReading=function(){
   var res=document.getElementById('result');
   var g=res._g, anchor=res._anchor, origDB=res._origDB;
   var question=document.getElementById('question').value.trim();
-  if(!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ if(typeof Auth!=='undefined')Auth.showModal('login'); else alert('请先登录'); return; }
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
-
   var prompt='你是"知时先生"，精通易经。'+(question?'用户问："'+question+'"。':'')+'请基于经典原文，用150字大白话结合用户的问题解读卦象。上卦'+g.orig.up+'('+g.orig.upElem+')下卦'+g.orig.dn+'('+g.orig.dnElem+')，本卦「'+g.orig.name+'」，第'+g.line+'爻动，变卦「'+g.change.name+'」。\n\n参考原文：'+anchor+'\n\n返回JSON：{"reading":"你的解读"}';
-
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      var tip=d.reading||'解读生成中，请稍后刷新查看。';
-      res.innerHTML=
-        '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
-        (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'')+
-        '<div class="result" style="margin-top:16px;font-size:15px;line-height:2.2;color:var(--tx)">'+tip+'</div></div>';
-    }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">解读暂不可用，请稍后重试</div></div>';});
-  window.doGua = doGua;
-  window.randomGua = randomGua;
-}
+  .then(function(r){return r.json();}).then(function(d){
+    var tip=d.reading||'解读生成中，请稍后刷新查看。';
+    res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
+    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'')+
+    '<div class="result" style="margin-top:16px;font-size:15px;line-height:2.2;color:var(--tx)">'+tip+'</div></div>';
+  }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">解读暂不可用，请稍后重试</div></div>';});
+};
+
+window.doGua=doGua;
+window.randomGua=randomGua;
 </script>
 </body>
 </html>
