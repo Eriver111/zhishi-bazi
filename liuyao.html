@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 六爻占卜</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/auth.css">
+<style>
+.liuyao-page{max-width:600px;margin:80px auto 40px;padding:0 20px;animation:fadeIn .8s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.page-title{text-align:center;font-size:24px;color:var(--gold-l);letter-spacing:6px;margin-bottom:6px}
+.page-sub{text-align:center;font-size:12px;color:var(--tx3);margin-bottom:32px;letter-spacing:2px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),transparent)}
+.card h3{font-size:14px;color:var(--gold-l);letter-spacing:3px;margin-bottom:16px;text-align:center}
+.btn-submit{display:block;margin:20px auto 0;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(201,168,76,.2)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.coin-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.coin-row .label{width:80px;font-size:12px;color:var(--tx3);text-align:right}
+.coin-row .result{flex:1;font-size:16px;color:var(--tx);font-family:monospace;letter-spacing:3px}
+.coin-row .yao-type{font-size:11px;color:var(--gold-l);min-width:60px}
+.hexagram{text-align:center;padding:20px 0}
+.hexagram .gua-name{font-size:28px;color:var(--gold-l);font-weight:900;letter-spacing:6px;margin-bottom:4px}
+.hexagram .gua-yao{font-size:24px;color:var(--tx2);font-family:monospace;line-height:1.8;margin:8px 0}
+.loading{text-align:center;padding:40px;color:var(--tx3)}
+.loading .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-text{font-size:14px;color:var(--tx);line-height:2.2;padding:8px 0}
+</style>
+</head>
+<body>
+<div class="liuyao-page">
+  <div class="page-title">六爻占卜</div>
+  <div class="page-sub">诚心默念所问之事 · 掷钱六次以成卦</div>
+
+  <div class="card" id="tossCard">
+    <h3>第 <span id="tossNum">1</span> / 6 次掷钱</h3>
+    <div style="text-align:center;font-size:36px;margin:16px 0" id="coinDisplay">🪙🪙🪙</div>
+    <input type="text" id="question" placeholder="心中默念所问之事..." style="width:100%;padding:12px 16px;font-size:14px;font-family:inherit;background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;color:var(--tx);outline:none;margin-bottom:12px">
+    <button class="btn-submit" onclick="doToss()" id="tossBtn">摇卦</button>
+    <div id="tossLog"></div>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script src="js/yijing-db.js"></script>
+<script src="js/auth.js"></script>
+<script>
+var TG=['乾','兑','离','震','巽','坎','艮','坤'];
+var TG_ELEM=['天','泽','火','雷','风','水','山','地'];
+var COIN_FACES=['⚊ ⚊ ⚊','⚋ ⚊ ⚊','⚋ ⚋ ⚊','⚋ ⚋ ⚋'];
+var tossCount=0, lines=[], lineTypes=[];
+
+function yaoStr(y){ return y.map(function(v){ return v===1?'━━━':'━ ━'; }).join('<br>'); }
+
+function doToss(){
+  var question=document.getElementById('question').value.trim();
+  if(!question){ alert('请先默念所问之事，输入到上方框中'); return; }
+  if(tossCount>=6) return;
+
+  // 模拟三枚铜钱
+  var coins=[];
+  for(var i=0;i<3;i++) coins.push(Math.random()<0.5?1:0);
+  var heads=coins.filter(function(c){ return c===1; }).length;
+  // 3头=老阳(9), 2头=少阴(8), 1头=少阳(7), 0头=老阴(6)
+  var type, yang, changing;
+  if(heads===3){ type='⚊ 老阳'; yang=true; changing=true; }
+  else if(heads===2){ type='⚋ 少阴'; yang=false; changing=false; }
+  else if(heads===1){ type='⚊ 少阳'; yang=true; changing=false; }
+  else { type='⚋ 老阴'; yang=false; changing=true; }
+
+  lines.push(yang?1:0);
+  lineTypes.push({yang:yang,changing:changing,type:type});
+  tossCount++;
+
+  var coinDisplay=['🪙','🪙','🪙'].map(function(_,i){ return coins[i]?'⚊':'⚋'; }).join('');
+  document.getElementById('coinDisplay').textContent=coinDisplay;
+
+  var log=document.getElementById('tossLog');
+  log.innerHTML+='<div class="coin-row"><span class="label">第'+tossCount+'次</span><span class="result">'+coinDisplay+'</span><span class="yao-type">'+type+(changing?' → 变':'')+'</span></div>';
+
+  if(tossCount<6){
+    document.getElementById('tossNum').textContent=tossCount+1;
+    document.getElementById('tossBtn').textContent='再摇一次（'+tossCount+'/6）';
+  } else {
+    document.getElementById('tossBtn').disabled=true;
+    document.getElementById('tossBtn').textContent='卦已成';
+    doAnalyze();
+  }
+}
+
+function findGua(name){ return YIJING.find(function(g){ return g.name===name; }); }
+
+function doAnalyze(){
+  var res=document.getElementById('result');
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在解卦...</p></div>';
+
+  var origBin=lines.map(function(l){ return l?'1':'0'; }).join('');
+  var tri=['乾','兑','离','震','巽','坎','艮','坤'];
+  var upIdx=parseInt(origBin.slice(0,3),2);
+  var dnIdx=parseInt(origBin.slice(3,6),2);
+  var found=YIJING.find(function(g){ return g.upper===tri[upIdx]&&g.lower===tri[dnIdx]; });
+  var gName=found?found.name:(tri[upIdx]+'为'+tri[dnIdx]);
+  var movingLines=[];
+  var chgBin=origBin.split('');
+  lineTypes.forEach(function(lt,i){
+    if(lt.changing){ movingLines.push(i+1); chgBin[i]=chgBin[i]==='1'?'0':'1'; }
+  });
+  chgBin=chgBin.join('');
+  var cupIdx=parseInt(chgBin.slice(0,3),2);
+  var cdnIdx=parseInt(chgBin.slice(3,6),2);
+  var chgFound=YIJING.find(function(g){ return g.upper===tri[cupIdx]&&g.lower===tri[cdnIdx]; });
+  var chgName=chgFound?chgFound.name:(tri[cupIdx]+'为'+tri[cdnIdx]);
+
+  var origDB=findGua(gName), chgDB=findGua(chgName);
+  var anchor='';
+  if(origDB){
+    anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
+    if(movingLines.length===1&&origDB.lines&&origDB.lines[movingLines[0]-1]) anchor+=' 动爻爻辞："'+origDB.lines[movingLines[0]-1]+'"';
+  }
+  if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning;
+
+  // 显示免费卦象
+  res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div><div class="gua-yao">'+yaoStr(lines)+'</div>'+
+    (movingLines.length?'<div class="gua-desc">动爻：第'+movingLines.join('、')+'爻</div>':'')+
+    (!movingLines.length?'<div class="gua-desc">静卦，六爻皆不动</div>':'')+
+    (chgName!==gName?'<div class="arrow" style="text-align:center;font-size:20px;color:var(--gold);margin:10px 0">↓</div><div class="gua-name" style="font-size:20px">'+chgName+'</div><div class="gua-yao">'+yaoStr(chgBin.split('').map(Number))+'</div>':'')+
+    '</div>'+
+    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
+    '<button class="btn-submit" onclick="doAIReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
+    '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
+  res._gName=gName; res._chgName=chgName; res._origDB=origDB; res._chgDB=chgDB;
+  res._lines=lines; res._chgLines=chgBin.split('').map(Number); res._moving=movingLines; res._anchor=anchor;
+}
+
+window.doAIReading=function(){
+  var res=document.getElementById('result');
+  var gName=res._gName, chgName=res._chgName, origDB=res._origDB, chgDB=res._chgDB;
+  var lines=res._lines, chgLines=res._chgLines, moving=res._moving, anchor=res._anchor;
+  var question=document.getElementById('question').value.trim();
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ if(typeof Auth!=='undefined')Auth.showModal('login'); else alert('请先登录'); return; }
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
+
+  var prompt='你是"知时先生"，精通六爻占卜。用户问："'+question+'"。本卦「'+gName+'」'+(moving.length?'，第'+moving.join('、')+'爻动':'静卦')+'，变卦「'+chgName+'」。请参考原文做专业解卦：\n\n参考原文：'+anchor+'\n\n按以下结构写300字：\n1. 卦象分析：本卦含义和态势\n2. 动爻解读：关键变化点\n3. 变卦启示：转机的方向\n4. 综合建议：结合用户问题给行动建议\n\n语气专业但不玄乎。JSON：{"reading":"完整解读"}';
+  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
+  .then(function(r){return r.json();}).then(function(d){
+    var tip=d.reading||'解读生成中';
+    res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div><div class="gua-yao">'+yaoStr(lines)+'</div>'+
+      (chgName!==gName?'<div class="arrow" style="text-align:center;font-size:20px;color:var(--gold);margin:10px 0">↓</div><div class="gua-name" style="font-size:20px">'+chgName+'</div><div class="gua-yao">'+yaoStr(chgLines)+'</div>':'')+'</div>'+
+      (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'')+
+      '<div class="result-text">'+tip.replace(/\n/g,'<br>')+'</div></div>';
+  }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div></div><div class="result-text" style="text-align:center;color:var(--tx3)">解读暂不可用</div></div>';});
+};
+</script>
+</body>
+</html>
