@@ -155,5 +155,5 @@ var LIUYAO = (function(){
     };
   }
 
-  return { zhuangGua:zhuangGua, DZ:DZ, DZ_IDX:DZ_IDX };
+  return { zhuangGua:zhuangGua };
 })();
