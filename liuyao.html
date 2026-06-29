@@ -206,11 +206,25 @@ function doAnalyze(){
     var mvMark='', mvColor=''; if(movingLines.indexOf(i+1)>=0){ mvMark=' ◯'; mvColor='color:#e8a040;font-weight:700'; }
     var shiMark='', yingMark=''; if(i+1===zg.shiYao) shiMark=' <span style="font-size:8px;color:var(--gold-l)">世</span>'; if(i+1===zg.yingYao) yingMark=' <span style="font-size:8px;color:#5b9fd4">应</span>';
     table+='<td style="padding:5px 3px;font-family:monospace;font-size:15px;'+mvColor+'">'+(lines[i]?'━━━━━':'━   ━')+mvMark+shiMark+yingMark+'</td>';
-    var chgYao=chgZg&&chgLines[i]!==lines[i]?(chgLines[i]?'━━━━━':'━   ━'):'';
-    table+='<td style="padding:5px 3px;font-family:monospace;font-size:14px;color:var(--gold-l)">'+chgYao+'</td>';
+    var chgYao=chgZg?(chgLines[i]?'━━━━━':'━   ━'):'';
+    table+='<td style="padding:5px 3px;font-family:monospace;font-size:14px;color:'+(chgLines[i]!==lines[i]?'var(--gold-l)':'var(--tx3)')+'">'+chgYao+'</td>';
     table+='</tr>';
   }
   table+='</table>';
+
+  // 飞伏神：检查缺失的六亲
+  var allQin=['父母','兄弟','妻财','官鬼','子孙'];
+  var missing=[];
+  allQin.forEach(function(q){ if(zg.liuqin.indexOf(q)<0) missing.push(q); });
+  var fushen='';
+  if(missing.length){
+    fushen='<div style="margin-top:10px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:11px;color:var(--tx2);line-height:2"><b style="color:var(--gold-l)">飞伏神 · 用神/六亲不上卦</b><br>';
+    missing.forEach(function(q){
+      var findInChg=chgZg?chgZg.liuqin.indexOf(q)>=0:false;
+      fushen+='<span style="color:#e8a040">'+q+'</span>不现于本卦'+(findInChg?'，变卦中出现':'')+'；';
+    });
+    fushen+='</div>';
+  }
 
   // 动爻化象
   var dongHua='';
@@ -228,11 +242,12 @@ function doAnalyze(){
   }
 
   try{
-  res.innerHTML=header+table+dongHua+
+  // (rendering done below)
+  }catch(e){ res.innerHTML='<div class="empty"><p>渲染出错：'+e.message+'</p></div>'; return; }
+  res.innerHTML=header+table+fushen+dongHua+
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
-  }catch(e){ res.innerHTML='<div class="empty"><p>渲染出错：'+e.message+'</p></div>'; return; }
   res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
   }catch(e){ res.innerHTML='<div class="empty"><p>装卦异常：'+e.message+'</p></div>'; }
 }
