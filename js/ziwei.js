@@ -37,43 +37,48 @@ var ZIWEI_CALC = (function(){
     });
   }
 
-  // ============ 3. 定五行局 ============
-  function getWuxingJu(mingGanIdx, mingZhiIdx){
-    // 纳音五行局：命宫天干+地支→五行局
-    var nayinMap=[
-      [2,2,1,1,0,0,4,4,3,3], // 甲乙
-      [0,4,2,1,3,0,4,3,1,2], // 丙丁
-      [3,0,4,2,1,3,0,4,2,1], // 戊己
-      [1,3,0,4,2,1,3,0,4,2], // 庚辛
-      [4,2,1,3,0,4,2,1,3,0]  // 壬癸
-    ];
-    var row=nayinMap[mingGanIdx];
-    if(!row) return 2;
-    var ju=row[mingZhiIdx%10];
-    return ju!==undefined?ju:2;
-    // 0=金四局,1=木三局,2=水二局,3=火六局,4=土五局
+  // ============ 3. 定五行局（纳音五行） ============
+  // 60甲子纳音表
+  var NAYIN_60 = {
+    '甲子':'金','乙丑':'金','丙寅':'火','丁卯':'火','戊辰':'木','己巳':'木',
+    '庚午':'土','辛未':'土','壬申':'金','癸酉':'金','甲戌':'火','乙亥':'火',
+    '丙子':'水','丁丑':'水','戊寅':'土','己卯':'土','庚辰':'金','辛巳':'金',
+    '壬午':'木','癸未':'木','甲申':'水','乙酉':'水','丙戌':'土','丁亥':'土',
+    '戊子':'火','己丑':'火','庚寅':'木','辛卯':'木','壬辰':'水','癸巳':'水',
+    '甲午':'金','乙未':'金','丙申':'火','丁酉':'火','戊戌':'木','己亥':'木',
+    '庚子':'土','辛丑':'土','壬寅':'金','癸卯':'金','甲辰':'火','乙巳':'火',
+    '丙午':'水','丁未':'水','戊申':'土','己酉':'土','庚戌':'金','辛亥':'金',
+    '壬子':'木','癸丑':'木','甲寅':'水','乙卯':'水','丙辰':'土','丁巳':'土',
+    '戊午':'火','己未':'火','庚申':'木','辛酉':'木','壬戌':'水','癸亥':'水'
+  };
+  var WX_JU = { '金':0,'木':1,'水':2,'火':3,'土':4 };
+  var JU_NUM=[4,3,2,6,5]; // 金4局,木3局,水2局,火6局,土5局
+
+  function getWuxingJu(mingGan, mingZhi){
+    var key=mingGan+mingZhi;
+    var wx=NAYIN_60[key]||'水';
+    return WX_JU[wx]!==undefined ? WX_JU[wx] : 2;
   }
 
   // 五行局→局数
   var JU_NUM=[4,3,2,6,5]; // 金4,木3,水2,火6,土5
 
-  // ============ 4. 安紫微星 ============
+  // ============ 4. 安紫微星（标准查表法） ============
+  // 紫微星位置表：五行局×农历日→地支index
+  var ZIWEI_TABLE = {
+    '水':[2,1,0,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0],
+    '木':[1,0,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11],
+    '金':[0,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10],
+    '火':[3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0],
+    '土':[2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0]
+  };
+  var JU_WUXING=['金','木','水','火','土']; // ju 0=金,1=木,2=水,3=火,4=土
+
   function anZiwei(lunarDay, ju){
-    var juNum=JU_NUM[ju]||2;
-    var quotient=Math.floor(lunarDay / juNum);
-    var remainder=lunarDay % juNum;
-    if(remainder===0) remainder=juNum;
-    var baseTable=[
-      [1,2,3,4,5,6,7,8,9,10,11,0], // 奇数日
-      [3,4,6,9,10,1,2,3,4,6,9,10]  // 余数(1-偶数日对应)
-    ];
-    // 简化：直接算紫微星在哪个地支位置
-    var offset;
-    if(remainder%2===1) offset=[0,1,0,2,3,1][remainder-1]||0;  // 奇数余
-    else offset=[0,0,3,0,1,0][remainder-1]||0; // 偶数余
-    if(remainder===0) offset=[0,0,0,2,0,1][juNum-1]||0;
-    var ziweiPos=(2 - offset + quotient - 1 + 12) % 12; // 从寅宫(2)起
-    return ziweiPos;
+    var wx=JU_WUXING[ju]||'水';
+    var table=ZIWEI_TABLE[wx];
+    if(!table||lunarDay<1||lunarDay>table.length) return 2; // 默认寅宫
+    return table[lunarDay-1];
   }
 
   // ============ 5. 安十四主星 ============
@@ -144,9 +149,7 @@ var ZIWEI_CALC = (function(){
     // 命宫天干地支
     var mingPalace=palaces[0];
     var mingGan=palaceGans[0];
-    var mingGanIdx=TG.indexOf(mingGan);
-    var mingZhiIdx=DZ.indexOf(mingPalace.zhi);
-    var ju=getWuxingJu(mingGanIdx, mingZhiIdx);
+    var ju=getWuxingJu(mingGan, mingPalace.zhi);
     var ziweiPos=anZiwei(lDay, ju);
     var starPos=anStars(ziweiPos);
     var minorPos=anMinorStars(yearZhiIdx, lMonth, hour);
