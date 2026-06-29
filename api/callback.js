@@ -1,7 +1,6 @@
 /**
- * /api/callback  - zpayz 支付成功异步回调
- * 验证签名 → 写入 Supabase → 返回 success
- * v3.0: 支持 credit_pack_ (10次), monthly_ (30天会员), aichat_ (5次)
+ * /api/callback - zpayz 支付成功回调
+ * 验证签名→写入Supabase→关联登录用户
  */
 const crypto = require('crypto');
 const { insertCredits, activateMonthly } = require('../lib/supabase.js');
@@ -13,52 +12,47 @@ module.exports = async function handler(req, res) {
     const params = req.method === 'POST' ? (req.body || {}) : (req.query || {});
     if (!params.sign) return res.status(200).send('no sign');
 
-    // 验签
     const signVal = params.sign;
     const rest = { ...params };
     delete rest.sign; delete rest.sign_type;
     const sorted = Object.keys(rest).sort();
     const str = sorted.map(k => k + '=' + rest[k]).join('&');
     const expected = crypto.createHash('md5').update(str + PAY_KEY).digest('hex');
-
     if (expected !== signVal) return res.status(200).send('sign error');
 
-    // ---- 判断订单类型并写入 ----
     const outTradeNo = params.out_trade_no || '';
+    const userId = params.uid ? parseInt(params.uid) : null;
 
-    if (outTradeNo.startsWith('credit3_')) { const code = generateCode(); await insertCredits(code, outTradeNo, 3); }
-  else if (outTradeNo.startsWith('credit10_')) { const code = generateCode(); await insertCredits(code, outTradeNo, 10); }
-  else if (outTradeNo.startsWith('credit20_')) { const code = generateCode(); await insertCredits(code, outTradeNo, 20); }
-  else if (outTradeNo.startsWith('monthly_')) {
-      // 月度会员：30 天有效期
+    if (outTradeNo.startsWith('credit3_')) { const code = generateCode(); await doInsert(code, outTradeNo, 3, userId); }
+    else if (outTradeNo.startsWith('credit10_')) { const code = generateCode(); await doInsert(code, outTradeNo, 10, userId); }
+    else if (outTradeNo.startsWith('credit20_')) { const code = generateCode(); await doInsert(code, outTradeNo, 20, userId); }
+    else if (outTradeNo.startsWith('monthly_')) {
       const code = generateCode();
       await activateMonthly(code, outTradeNo);
-      console.log('✅ 月会员已激活:', outTradeNo, '→ 兑换码:', code);
+      if (userId) { try { var db = require('../lib/supabase.js').getSupabase(); if(db) await db.from('user_subscriptions').update({user_id:userId}).eq('code',code).is('user_id',null); } catch(e){} }
     } else if (outTradeNo.startsWith('credit_')) {
-      // 次数包：10 次提问
-      const code = generateCode();
-      await insertCredits(code, outTradeNo, 10);
-      console.log('✅ 次数包已激活(10次):', outTradeNo, '→ 兑换码:', code);
+      const code = generateCode(); await doInsert(code, outTradeNo, 10, userId);
     } else if (outTradeNo.startsWith('aichat_')) {
-      // 旧版：5 次提问
-      const code = generateCode();
-      await insertCredits(code, outTradeNo, 5);
-      console.log('✅ AI旧版已激活(5次):', outTradeNo, '→ 兑换码:', code);
+      const code = generateCode(); await doInsert(code, outTradeNo, 5, userId);
     }
-
     return res.status(200).send('success');
-  } catch (e) {
-    console.error('回调处理异常:', e);
-    return res.status(200).send('success');
-  }
+  } catch (e) { return res.status(200).send('success'); }
 };
+
+async function doInsert(code, oid, count, userId) {
+  await insertCredits(code, oid, count);
+  if (userId) {
+    try {
+      var db = require('../lib/supabase.js').getSupabase();
+      if (db) { await db.from('user_credits').update({user_id:userId}).eq('code',code).is('user_id',null); }
+    } catch(e) {}
+  }
+}
 
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = crypto.randomBytes(8);
   let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars[bytes[i] % chars.length];
-  }
+  for (let i = 0; i < 8; i++) code += chars[bytes[i] % chars.length];
   return code;
 }

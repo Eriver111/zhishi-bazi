@@ -33,7 +33,7 @@
 <body>
 <div class="profile-page">
   <h1>我的档案</h1>
-  <div class="sub">已保存的排盘记录</div>
+  <div class="sub">积分 · 记录 · 排盘</div>
   <div id="content"></div>
 </div>
 
@@ -48,41 +48,61 @@
     if (!Auth.isLoggedIn()) {
       content.innerHTML =
         '<div class="login-prompt">' +
-        '<div class="empty-state"><div class="icon">🔐</div><p>登录后可查看已保存的排盘记录</p></div>' +
+        '<div class="empty-state"><div class="icon">🔐</div><p>登录后可查看积分余额和排盘记录</p></div>' +
         '<button class="btn" onclick="Auth.showModal(\'login\')">登录</button>' +
         '</div>';
       return;
     }
 
-    Auth.getData('saved_charts').then(function(val) {
-      var charts = [];
-      try { charts = JSON.parse(val || '[]'); } catch(e) {}
+    // 先显示加载状态
+    content.innerHTML = '<div style="text-align:center;padding:20px"><div class="loading-spinner" style="display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite"></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
 
-      if (charts.length === 0) {
-        content.innerHTML =
-          '<div class="empty-state">' +
-          '<div class="icon">📋</div>' +
-          '<p>还没有保存的排盘</p><p style="font-size:11px">排盘后自动保存到这里</p>' +
-          '<a href="/paipan" style="display:inline-block;margin-top:16px;padding:10px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:25px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">去排盘</a>' +
-          '</div>';
-        return;
-      }
+    // 并行加载积分+排盘
+    var p1 = fetch('/api/auth/profile', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } }).then(function(r){return r.json()});
+    var p2 = Auth.getData('saved_charts');
+
+    Promise.all([p1, p2]).then(function(results){
+      var profile = results[0];
+      var charts = [];
+      try { charts = JSON.parse(results[1] || '[]'); } catch(e) {}
 
       var html = '';
-      charts.forEach(function(c, i) {
-        html +=
-          '<div class="chart-card" style="cursor:pointer" onclick="location.href=\'/result?' + c.params + '\'">' +
-          '<button class="del" onclick="event.stopPropagation();deleteChart(' + i + ')">删除</button>' +
-          '<div class="label">' + c.label + '</div>' +
-          '<div class="meta"><span>' + (c.saved_at ? c.saved_at.slice(0,10) : '') + '</span></div>' +
-          '<span class="arrow">→</span>' +
-          '</div>';
-      });
+      // 积分卡片
+      if (!profile.error) {
+        html += '<div class="chart-card" style="margin-bottom:16px">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div><div style="font-size:11px;color:var(--tx3);letter-spacing:2px">积分余额</div>';
+        html += '<div style="font-size:28px;font-weight:900;color:var(--gold-l)">' + (profile.is_monthly ? '∞' : (profile.credits||0)) + '</div>';
+        html += '<div style="font-size:11px;color:var(--tx2)">' + (profile.is_monthly ? '月度会员 · '+(profile.monthly_expires||'').slice(0,10)+'到期' : '剩余次数') + '</div></div>';
+        html += '<a href="/pricing" class="btn" style="text-decoration:none;padding:8px 16px;font-size:12px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:20px;font-weight:600;letter-spacing:1px">购买</a>';
+        html += '</div></div>';
+
+        // 购买记录
+        if (profile.history && profile.history.length) {
+          html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-bottom:8px">购买记录</h3>';
+          profile.history.forEach(function(h){
+            html += '<div style="display:flex;justify-content:space-between;padding:8px 12px;margin-bottom:4px;background:rgba(255,255,255,.01);border-radius:8px;font-size:12px">';
+            html += '<span><b style="color:var(--gold-l)">'+h.type+'</b> '+h.detail+'</span>';
+            html += '<span style="color:var(--tx3)">'+(h.date||'').slice(0,10)+'</span></div>';
+          });
+        }
+      }
+
+      // 排盘记录
+      html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">排盘记录</h3>';
+      if (charts.length === 0) {
+        html += '<div class="empty-state" style="padding:30px"><p style="font-size:12px">还没有排盘记录</p></div>';
+      } else {
+        charts.forEach(function(c, i) {
+          html += '<div class="chart-card" style="cursor:pointer" onclick="location.href=\'/result?' + c.params + '\'">' +
+            '<button class="del" onclick="event.stopPropagation();deleteChart(' + i + ')">删除</button>' +
+            '<div class="label">' + c.label + '</div>' +
+            '<div class="meta"><span>' + (c.saved_at ? c.saved_at.slice(0,10) : '') + '</span></div>' +
+            '<span class="arrow">→</span></div>';
+        });
+      }
       content.innerHTML = html;
-    }).catch(function() {
-      content.innerHTML = '<div class="empty-state"><p>加载失败，请刷新重试</p></div>';
-    });
-  });
+    }).catch(function(){ content.innerHTML = '<div class="empty-state"><p>加载失败，请刷新</p></div>'; });
   }
 
   window.deleteChart = function(i) {

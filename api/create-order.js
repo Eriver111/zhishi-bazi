@@ -28,7 +28,17 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = req.body || {};
-    const { year, month, day, hour, gender, amount, hash, description, money, name, mode } = body;
+    const { year, month, day, hour, gender, amount, hash, description, money, name, mode, token } = body;
+
+    // 解析登录token获取user_id，购买后积分直接到账
+    var userId = null;
+    if (token) {
+      try {
+        const { verifyToken } = require('../lib/auth.js');
+        var payload = verifyToken(token);
+        if (payload && payload.uid) userId = payload.uid;
+      } catch(e) {}
+    }
 
     // ---- v3.0 AI 付费模式（次数包 + 月会员）----
     if (mode === 'credit_pack' || mode === 'monthly' || mode === 'ai-chat' || mode === 'credit_3' || mode === 'credit_10' || mode === 'credit_20') {
@@ -47,7 +57,7 @@ module.exports = async function handler(req, res) {
 
       const payParams = {
         pid: PAY_PID, type: 'alipay',
-        out_trade_no: orderId, notify_url: SITE + '/api/callback',
+        out_trade_no: orderId, notify_url: SITE + '/api/callback' + (userId ? '?uid='+userId : ''),
         return_url: returnUrl, name: payName, money: String(payAmount)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);

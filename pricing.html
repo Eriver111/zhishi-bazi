@@ -166,10 +166,13 @@ function buyCredits(mode, amount, name) {
   if (retry) retry.style.display = 'none';
 
   var myReqId = ++_reqId; // 递增序列号
+  var body = { mode: mode, amount: amount, name: name, money: amount };
+  // 登录用户：带上token，购买后积分直接到账
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) { body.token = Auth.getToken(); }
   fetch('/api/create-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode: mode, amount: amount, name: name, money: amount })
+    body: JSON.stringify(body)
   })
   .then(function(r) { return r.json(); })
   .then(function(d) {
