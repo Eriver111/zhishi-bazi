@@ -131,7 +131,7 @@ function doZiwei(){
     var h=''; if(p.hua.length) h='<div class="p-hua">'+p.hua.map(function(hh){ var lb={'lu':'禄','quan':'权','ke':'科','ji':'忌'}; return lb[hh]||hh; }).join(' ')+'</div>';
     html+='<div class="zw-palace'+(isMing?' ming':'')+'" style="grid-area:'+gridArea[zhi]+'"><div class="p-name">'+p._name+'</div><div class="p-ganzhi">'+p.ganZhi+'</div><div class="p-stars">'+(p.stars.length?p.stars.join(' '):'—')+'</div><div class="p-minor">'+(p.minors.length?p.minors.join(' '):'')+'</div>'+h+'</div>';
   });
-  html+='<div class="zw-center"><div class="center-text">紫 微</div><div style="font-size:10px;color:var(--tx3);margin-top:4px">'+zw.wuxingJu+'</div></div></div>';
+  html+='<div class="zw-center"><div class="center-text">命<br>宫</div><div style="font-size:10px;color:var(--tx3);margin-top:4px">'+zw.wuxingJu+'</div><div style="font-size:8px;color:var(--tx3)">'+zw.mingZhu+'</div></div></div>';
   html+='<button class="btn-sub" onclick="doAIReading()" style="margin-top:16px">积分解锁 AI 解读</button>';
   html+='<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排盘免费 · AI解读消耗1次积分</p>';
   res.innerHTML=html;
