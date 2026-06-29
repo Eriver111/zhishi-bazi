@@ -130,16 +130,30 @@ var LIUYAO = (function(){
     var liushen=[];
     for(var i=0;i<6;i++){ liushen.push(LIUSHEN_ORDER[(startShen + i) % 6]); }
 
-    // 月建生克
-    var monthWX=DZ_WX[monthZhi]||'土';
+    // 月建生克 & 旺衰（月令 vs 爻五行）
+    var WANG_SHUAI={木:{春:'旺',夏:'休',季:'囚',秋:'死',冬:'相'},火:{春:'相',夏:'旺',季:'休',秋:'囚',冬:'死'},土:{春:'死',夏:'相',季:'旺',秋:'休',冬:'囚'},金:{春:'囚',夏:'死',季:'相',秋:'旺',冬:'休'},水:{春:'休',夏:'囚',季:'死',秋:'相',冬:'旺'}};
+    var SEASON={'寅':'春','卯':'春','辰':'季','巳':'夏','午':'夏','未':'季','申':'秋','酉':'秋','戌':'季','亥':'冬','子':'冬','丑':'季'};
+    var season=SEASON[monthZhi]||'季';
+    var wangShuai=[];
+    for(var i=0;i<6;i++){ wangShuai.push(WANG_SHUAI[yaowx[i]][season]||'平'); }
+
+    // 十二长生：月支是"旺"，爻支顺排十二宫
+    var CHANG_SHENG=['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
+    var DZ_IDX={子:0,丑:1,寅:2,卯:3,辰:4,巳:5,午:6,未:7,申:8,酉:9,戌:10,亥:11};
+    var changSheng=[];
+    for(var i=0;i<6;i++){
+      var offset=(DZ_IDX[yaoDZ[i]] - DZ_IDX[monthZhi] + 12) % 12;
+      changSheng.push(CHANG_SHENG[offset]);
+    }
 
     return {
       guaName:gName, gong:guaInfo.gong, gongWX:gongWX, guaType:guaInfo.type,
       shiYao:shiYao, yingYao:yingYao,
       yaoDZ:yaoDZ, yaoGan:yaoGan, yaoWX:yaowx, liuqin:liuqin, liushen:liushen,
-      monthZhi:monthZhi, monthWX:monthWX
+      monthZhi:monthZhi, monthWX:monthWX,
+      wangShuai:wangShuai, changSheng:changSheng
     };
   }
 
-  return { zhuangGua:zhuangGua };
+  return { zhuangGua:zhuangGua, DZ:DZ, DZ_IDX:DZ_IDX };
 })();
