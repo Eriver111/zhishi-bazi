@@ -229,6 +229,7 @@ function doAnalyze(){
       var mvMark='',mvColor=''; if(isRight&&movingLines.indexOf(i+1)>=0){mvMark=' ◯';mvColor='color:#e8a040;font-weight:700';}
       var shiMark=''; if(i+1===z.shiYao) shiMark='<span style="font-size:7px;color:var(--gold-l)">世</span>';
       var yingMark=''; if(i+1===z.yingYao) yingMark='<span style="font-size:7px;color:#5b9fd4">应</span>';
+      var kongMark=''; if(xunKong.indexOf(z.yaoDZ[i])>=0) kongMark='<span style="font-size:7px;color:#e07050">空</span>';
       t+='<tr style="border-bottom:1px solid rgba(255,255,255,.02)">';
       t+='<td style="color:var(--tx3);font-size:11px;padding:5px 3px">'+z.liushen[i]+'</td>';
       t+='<td style="padding:5px 3px;font-size:13px">'+z.liuqin[i]+'</td>';
@@ -236,7 +237,7 @@ function doAnalyze(){
       t+='<td style="padding:5px 3px;color:'+(wxCol[z.yaoWX[i]]||'#fff')+'">'+z.yaoWX[i]+'</td>';
       t+='<td style="padding:5px 3px;font-size:11px">'+(z.wangShuai?z.wangShuai[i]:'')+'</td>';
       t+='<td style="padding:5px 3px;font-size:11px;color:var(--tx3)">'+(z.changSheng?z.changSheng[i]:'')+'</td>';
-      t+='<td style="padding:5px 3px;font-family:monospace;font-size:15px;'+mvColor+'">'+(lx[i]?'━━━━━':'━   ━')+mvMark+shiMark+yingMark+'</td>';
+      t+='<td style="padding:5px 3px;font-family:monospace;font-size:15px;'+mvColor+'">'+(lx[i]?'━━━━━':'━   ━')+mvMark+kongMark+shiMark+yingMark+'</td>';
       t+='</tr>';
     }
     t+='</table></div>';
