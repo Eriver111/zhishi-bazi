@@ -41,6 +41,23 @@
 .loading .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .result-text{font-size:14px;color:var(--tx);line-height:2.2;padding:8px 0}
+/* 全屏卦象特效 */
+.gua-reveal{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn .3s}
+.gua-reveal.fadeOut{animation:fadeOut .8s forwards}
+@keyframes fadeOut{to{opacity:0;pointer-events:none}}
+.gua-reveal .reveal-yao{font-size:36px;opacity:0;animation:revealLine .5s forwards;transition:text-shadow .3s}
+@keyframes revealLine{from{opacity:0;transform:scale(.5);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+.gua-reveal .reveal-yao:nth-child(1){animation-delay:.1s}
+.gua-reveal .reveal-yao:nth-child(2){animation-delay:.3s}
+.gua-reveal .reveal-yao:nth-child(3){animation-delay:.5s}
+.gua-reveal .reveal-yao:nth-child(4){animation-delay:.7s}
+.gua-reveal .reveal-yao:nth-child(5){animation-delay:.9s}
+.gua-reveal .reveal-yao:nth-child(6){animation-delay:1.1s}
+.gua-reveal .reveal-name{font-size:32px;color:var(--gold-l);font-weight:900;letter-spacing:8px;opacity:0;animation:revealLine .5s 1.4s forwards;margin-top:16px}
+.gua-reveal .reveal-sub{font-size:12px;color:var(--tx3);letter-spacing:4px;opacity:0;animation:revealLine .5s 1.7s forwards;margin-top:8px}
+.gua-reveal .particles{position:absolute;inset:0;pointer-events:none}
+.gua-reveal .particle{position:absolute;width:2px;height:2px;background:var(--gold);border-radius:50%;animation:float 2s ease-out forwards}
+@keyframes float{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}}
 </style>
 </head>
 <body>
@@ -122,6 +139,23 @@ function doToss(){
 
 function findGua(name){ return YIJING.find(function(g){ return g.name===name; }); }
 
+function showGuaReveal(gName,lines,callback){
+  var overlay=document.createElement('div'); overlay.className='gua-reveal';
+  var yaoHTML=''; for(var i=0;i<6;i++) yaoHTML+='<div class="reveal-yao" style="color:'+(lines[i]?'var(--gold-l)':'var(--tx2)')+'">'+(lines[i]?'━━━━━':'━   ━')+'</div>';
+  overlay.innerHTML='<canvas class="particles" id="pCanvas"></canvas>'+yaoHTML+'<div class="reveal-name">'+gName+'</div><div class="reveal-sub">卦 象 已 显</div>';
+  document.body.appendChild(overlay);
+  // 粒子效果
+  setTimeout(function(){
+    var c=document.getElementById('pCanvas'); if(!c) return;
+    c.width=window.innerWidth; c.height=window.innerHeight;
+    var ctx=c.getContext('2d'),particles=[];
+    for(var i=0;i<30;i++) particles.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,a:1});
+    function draw(){ctx.clearRect(0,0,c.width,c.height);for(var i=0;i<particles.length;i++){var p=particles[i];p.x+=p.vx;p.y+=p.vy;p.a-=.005;if(p.a<=0){p.x=Math.random()*c.width;p.y=Math.random()*c.height;p.a=1}ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fillStyle='rgba(201,168,76,'+p.a+')';ctx.fill()}if(overlay.parentNode)requestAnimationFrame(draw)}
+    draw();
+  },100);
+  setTimeout(function(){ overlay.classList.add('fadeOut'); setTimeout(function(){ overlay.remove(); if(callback)callback(); },800); },2200);
+}
+
 function doAnalyze(){
   var res=document.getElementById('result');
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在解卦...</p></div>';
@@ -151,7 +185,9 @@ function doAnalyze(){
   }
   if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning;
 
-  // 显示免费卦象
+  // 全屏特效展示
+  showGuaReveal(gName,lines,function(){
+  // 特效结束显示免费卦象
   res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+gName+'</div><div class="gua-yao">'+yaoStr(lines)+'</div>'+
     (movingLines.length?'<div class="gua-desc">动爻：第'+movingLines.join('、')+'爻</div>':'')+
     (!movingLines.length?'<div class="gua-desc">静卦，六爻皆不动</div>':'')+
@@ -160,6 +196,7 @@ function doAnalyze(){
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
+  });
   res._gName=gName; res._chgName=chgName; res._origDB=origDB; res._chgDB=chgDB;
   res._lines=lines; res._chgLines=chgBin.split('').map(Number); res._moving=movingLines; res._anchor=anchor;
 }

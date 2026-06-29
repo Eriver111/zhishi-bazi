@@ -31,6 +31,20 @@
 .loading{text-align:center;padding:40px;color:var(--tx3)}
 .loading .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* 全屏卦象特效 */
+.gua-reveal{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn .3s}
+.gua-reveal.fadeOut{animation:fadeOut .8s forwards}
+@keyframes fadeOut{to{opacity:0;pointer-events:none}}
+.gua-reveal .reveal-yao{font-size:36px;opacity:0;animation:revealLine .5s forwards}
+@keyframes revealLine{from{opacity:0;transform:scale(.5);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+.gua-reveal .reveal-yao:nth-child(1){animation-delay:.1s}
+.gua-reveal .reveal-yao:nth-child(2){animation-delay:.3s}
+.gua-reveal .reveal-yao:nth-child(3){animation-delay:.5s}
+.gua-reveal .reveal-yao:nth-child(4){animation-delay:.7s}
+.gua-reveal .reveal-yao:nth-child(5){animation-delay:.9s}
+.gua-reveal .reveal-yao:nth-child(6){animation-delay:1.1s}
+.gua-reveal .reveal-name{font-size:32px;color:var(--gold-l);font-weight:900;letter-spacing:8px;opacity:0;animation:revealLine .5s 1.4s forwards;margin-top:16px}
+.gua-reveal .reveal-sub{font-size:12px;color:var(--tx3);letter-spacing:4px;opacity:0;animation:revealLine .5s 1.7s forwards;margin-top:8px}
 </style>
 </head>
 <body>
@@ -95,6 +109,14 @@ function randomGua(){
   doGua();
 }
 
+function showGuaReveal(gName,yao,cb){
+  var o=document.createElement('div'); o.className='gua-reveal';
+  var h=''; for(var i=0;i<6;i++){ h+='<div class="reveal-yao" style="color:'+(yao[i]?'var(--gold-l)':'var(--tx2)')+'">'+(yao[i]?'━━━━━':'━   ━')+'</div>'; }
+  o.innerHTML=h+'<div class="reveal-name">'+gName+'</div><div class="reveal-sub">卦 象 已 显</div>';
+  document.body.appendChild(o);
+  setTimeout(function(){ o.classList.add('fadeOut'); setTimeout(function(){ o.remove(); if(cb)cb(); },800); },2000);
+}
+
 function doGua(){
   var n1=parseInt(document.getElementById('n1').value)||1;
   var n2=parseInt(document.getElementById('n2').value)||2;
@@ -111,11 +133,13 @@ function doGua(){
   }
   if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning;
   res._g=g; res._anchor=anchor; res._origDB=origDB;
+  showGuaReveal(g.orig.name,g.orig.yao,function(){
   res.innerHTML=
     '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
     '<button class="btn-submit" onclick="window.unlockReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
+  });
 }
 
 window.unlockReading=function(){
