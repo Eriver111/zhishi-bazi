@@ -203,28 +203,28 @@ function doAnalyze(){
 
   // 本卦表 + 变卦表，左右分栏
   var wxCol={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};
-  function makeTable(z,name,type,lx,isRight){
-    var t='<div style="flex:1;min-width:280px"><table style="width:100%;border-collapse:collapse;font-size:11px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;overflow:hidden">';
-    t+='<tr style="color:var(--gold-l);font-size:10px;letter-spacing:1px;background:rgba(201,168,76,.05)"><td>六神</td><td>亲</td><td>干支</td><td>行</td><td>旺</td><td>长</td><td style="text-align:center">'+name+'</td></tr>';
+  function makeTable(z,name,lx,isRight){
+    var t='<div style="min-width:200px;flex:1"><table style="width:100%;border-collapse:collapse;font-size:13px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;overflow:hidden">';
+    t+='<tr style="color:var(--gold-l);font-size:12px;letter-spacing:2px;background:rgba(201,168,76,.05)"><td>六神</td><td>六亲</td><td>干支</td><td>五行</td><td>旺</td><td>长生</td><td style="text-align:center">'+name+'</td></tr>';
     for(var i=5;i>=0;i--){
       var mvMark='',mvColor=''; if(isRight&&movingLines.indexOf(i+1)>=0){mvMark=' ◯';mvColor='color:#e8a040;font-weight:700';}
       var shiMark=''; if(i+1===z.shiYao) shiMark='<span style="font-size:7px;color:var(--gold-l)">世</span>';
       var yingMark=''; if(i+1===z.yingYao) yingMark='<span style="font-size:7px;color:#5b9fd4">应</span>';
       t+='<tr style="border-bottom:1px solid rgba(255,255,255,.02)">';
-      t+='<td style="color:var(--tx3);font-size:9px;padding:3px 2px">'+z.liushen[i]+'</td>';
-      t+='<td style="padding:3px 2px">'+z.liuqin[i]+'</td>';
-      t+='<td style="padding:3px 2px">'+z.yaoGan[i]+z.yaoDZ[i]+'</td>';
-      t+='<td style="padding:3px 2px;color:'+(wxCol[z.yaoWX[i]]||'#fff')+'">'+z.yaoWX[i]+'</td>';
-      t+='<td style="padding:3px 2px;font-size:10px">'+(z.wangShuai?z.wangShuai[i]:'')+'</td>';
-      t+='<td style="padding:3px 2px;font-size:10px;color:var(--tx3)">'+(z.changSheng?z.changSheng[i]:'')+'</td>';
-      t+='<td style="padding:3px 2px;font-family:monospace;font-size:13px;'+mvColor+'">'+(lx[i]?'━━━━':'━  ━')+mvMark+shiMark+yingMark+'</td>';
+      t+='<td style="color:var(--tx3);font-size:11px;padding:5px 3px">'+z.liushen[i]+'</td>';
+      t+='<td style="padding:5px 3px;font-size:13px">'+z.liuqin[i]+'</td>';
+      t+='<td style="padding:5px 3px;font-size:12px">'+z.yaoGan[i]+z.yaoDZ[i]+'</td>';
+      t+='<td style="padding:5px 3px;color:'+(wxCol[z.yaoWX[i]]||'#fff')+'">'+z.yaoWX[i]+'</td>';
+      t+='<td style="padding:5px 3px;font-size:11px">'+(z.wangShuai?z.wangShuai[i]:'')+'</td>';
+      t+='<td style="padding:5px 3px;font-size:11px;color:var(--tx3)">'+(z.changSheng?z.changSheng[i]:'')+'</td>';
+      t+='<td style="padding:5px 3px;font-family:monospace;font-size:15px;'+mvColor+'">'+(lx[i]?'━━━━━':'━   ━')+mvMark+shiMark+yingMark+'</td>';
       t+='</tr>';
     }
     t+='</table></div>';
     return t;
   }
   // 卦头
-  header+='<div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">';
+  header+='<div style="display:flex;gap:6px;align-items:flex-start">';
   header+=makeTable(zg,'本卦',lines,false);
   if(chgZg) header+=makeTable(chgZg,'变卦',chgLines,true);
   header+='</div>';
