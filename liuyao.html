@@ -22,6 +22,18 @@
 .coin-row .label{width:80px;font-size:12px;color:var(--tx3);text-align:right}
 .coin-row .result{flex:1;font-size:16px;color:var(--tx);font-family:monospace;letter-spacing:3px}
 .coin-row .yao-type{font-size:11px;color:var(--gold-l);min-width:60px}
+/* 铜钱动画 */
+.coin-stage{display:flex;justify-content:center;gap:28px;padding:20px 0}
+.coin{width:56px;height:56px;border-radius:50%;position:relative;cursor:default}
+.coin .face{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;backface-visibility:hidden;
+  background:linear-gradient(135deg,#a08050,#d4b868,#8a6d28);border:2px solid rgba(180,140,60,.5);
+  box-shadow:inset 0 0 16px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.5)}
+.coin .back{transform:rotateY(180deg)}
+.coin.flip{animation:coinFlip 1.2s ease-out}
+@keyframes coinFlip{0%{transform:rotateY(0)}20%{transform:rotateY(720deg)}40%{transform:rotateY(1440deg)}60%{transform:rotateY(2160deg)}80%{transform:rotateY(2880deg)}100%{transform:rotateY(3600deg)}}
+.coin.tails .face{background:linear-gradient(135deg,#6a6050,#8a8068,#5a5040)}
+.coin-result{text-align:center;font-size:13px;color:var(--gold-l);margin-top:8px;min-height:24px;letter-spacing:2px}
 .hexagram{text-align:center;padding:20px 0}
 .hexagram .gua-name{font-size:28px;color:var(--gold-l);font-weight:900;letter-spacing:6px;margin-bottom:4px}
 .hexagram .gua-yao{font-size:24px;color:var(--tx2);font-family:monospace;line-height:1.8;margin:8px 0}
@@ -38,7 +50,12 @@
 
   <div class="card" id="tossCard">
     <h3>第 <span id="tossNum">1</span> / 6 次掷钱</h3>
-    <div style="text-align:center;font-size:36px;margin:16px 0" id="coinDisplay">🪙🪙🪙</div>
+    <div class="coin-stage" id="coinStage">
+      <div class="coin" id="c0"><div class="face">—</div><div class="face back">- -</div></div>
+      <div class="coin" id="c1"><div class="face">—</div><div class="face back">- -</div></div>
+      <div class="coin" id="c2"><div class="face">—</div><div class="face back">- -</div></div>
+    </div>
+    <div class="coin-result" id="coinResult"></div>
     <input type="text" id="question" placeholder="心中默念所问之事..." style="width:100%;padding:12px 16px;font-size:14px;font-family:inherit;background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;color:var(--tx);outline:none;margin-bottom:12px">
     <button class="btn-submit" onclick="doToss()" id="tossBtn">摇卦</button>
     <div id="tossLog"></div>
@@ -59,38 +76,48 @@ function yaoStr(y){ return y.map(function(v){ return v===1?'━━━':'━ ━'
 
 function doToss(){
   var question=document.getElementById('question').value.trim();
-  if(!question){ alert('请先默念所问之事，输入到上方框中'); return; }
+  if(!question){ alert('请先默念所问之事'); return; }
   if(tossCount>=6) return;
 
-  // 模拟三枚铜钱
-  var coins=[];
-  for(var i=0;i<3;i++) coins.push(Math.random()<0.5?1:0);
-  var heads=coins.filter(function(c){ return c===1; }).length;
-  // 3头=老阳(9), 2头=少阴(8), 1头=少阳(7), 0头=老阴(6)
-  var type, yang, changing;
-  if(heads===3){ type='⚊ 老阳'; yang=true; changing=true; }
-  else if(heads===2){ type='⚋ 少阴'; yang=false; changing=false; }
-  else if(heads===1){ type='⚊ 少阳'; yang=true; changing=false; }
-  else { type='⚋ 老阴'; yang=false; changing=true; }
+  var btn=document.getElementById('tossBtn'); btn.disabled=true; btn.textContent='掷钱中...';
 
-  lines.push(yang?1:0);
-  lineTypes.push({yang:yang,changing:changing,type:type});
-  tossCount++;
+  // 启动三枚铜钱翻转动画
+  for(var i=0;i<3;i++){ var c=document.getElementById('c'+i); c.classList.remove('flip'); c.classList.remove('tails'); void c.offsetWidth; c.classList.add('flip'); }
 
-  var coinDisplay=['🪙','🪙','🪙'].map(function(_,i){ return coins[i]?'⚊':'⚋'; }).join('');
-  document.getElementById('coinDisplay').textContent=coinDisplay;
+  // 等动画结束揭晓结果
+  setTimeout(function(){
+    var coins=[];
+    for(var i=0;i<3;i++) coins.push(Math.random()<0.5?1:0);
+    var heads=coins.filter(function(c){ return c===1; }).length;
+    var type,yang,changing,label;
+    if(heads===3){ type='老阳 ○'; yang=true; changing=true; label='三正为阳，极则变阴'; }
+    else if(heads===2){ type='少阴 ⚋'; yang=false; changing=false; label='一负二正，阴爻安静'; }
+    else if(heads===1){ type='少阳 ⚊'; yang=true; changing=false; label='一正二负，阳爻安静'; }
+    else { type='老阴 ×'; yang=false; changing=true; label='三负为阴，极则变阳'; }
 
-  var log=document.getElementById('tossLog');
-  log.innerHTML+='<div class="coin-row"><span class="label">第'+tossCount+'次</span><span class="result">'+coinDisplay+'</span><span class="yao-type">'+type+(changing?' → 变':'')+'</span></div>';
+    for(var i=0;i<3;i++){
+      var c=document.getElementById('c'+i);
+      c.classList.remove('flip');
+      if(!coins[i]) c.classList.add('tails');
+    }
+    document.getElementById('coinResult').textContent=label+' — '+type;
 
-  if(tossCount<6){
-    document.getElementById('tossNum').textContent=tossCount+1;
-    document.getElementById('tossBtn').textContent='再摇一次（'+tossCount+'/6）';
-  } else {
-    document.getElementById('tossBtn').disabled=true;
-    document.getElementById('tossBtn').textContent='卦已成';
-    doAnalyze();
-  }
+    lines.push(yang?1:0);
+    lineTypes.push({yang:yang,changing:changing,type:type});
+    tossCount++;
+
+    var log=document.getElementById('tossLog');
+    log.innerHTML+='<div class="coin-row"><span class="label">第'+tossCount+'爻</span><span class="result">'+(yang?'━━━':'━ ━')+(changing?' ◯':'')+'</span><span class="yao-type">'+type+'</span></div>';
+
+    if(tossCount<6){
+      document.getElementById('tossNum').textContent=tossCount+1;
+      btn.textContent='摇卦（'+tossCount+'/6）';
+      btn.disabled=false;
+    } else {
+      btn.textContent='卦已成';
+      doAnalyze();
+    }
+  },1300);
 }
 
 function findGua(name){ return YIJING.find(function(g){ return g.name===name; }); }
