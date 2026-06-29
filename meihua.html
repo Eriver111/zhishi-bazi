@@ -116,17 +116,40 @@ function doGua(){
   }
   if(chgDB){ anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning; }
 
-  var prompt='你是"知时先生"，精通易经。'+(question?'用户问："'+question+'"。':'')+'请基于经典原文，用150字大白话结合用户的问题解读卦象。上卦'+g.orig.up+'('+g.orig.upElem+')下卦'+g.orig.dn+'('+g.orig.dnElem+')，本卦「'+g.orig.name+'」，第'+g.line+'爻动，变卦「'+g.change.name+'」。\n\n参考原文：'+anchor+'\n\n返回JSON：{"reading":"你的解读"}';
+  // 显示免费部分：卦象 + 卦辞
+  res.innerHTML=
+    '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
+    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
+    '<button class="btn-submit" onclick="unlockReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
+    '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
+
+  // 存起来等一下用
+  res._g=g; res._anchor=''; res._origDB=origDB; res._chgDB=chgDB;
+  if(origDB){
+    res._anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
+    if(origDB.lines&&origDB.lines[g.line-1]) res._anchor+=' 动爻爻辞："'+origDB.lines[g.line-1]+'"';
+  }
+  if(chgDB){ res._anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning; }
+}
+
+window.unlockReading=function(){
+  var res=document.getElementById('result');
+  var g=res._g, anchor=res._anchor, origDB=res._origDB;
+  var question=document.getElementById('question').value.trim();
+  if(!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
+
+  var prompt='你是"知时先生"，精通易经。'+(question?'用户问："'+question+'"。':'')+'请基于经典原文，用150字大白话结合用户的问题解读卦象。上卦'+g.orig.up+'('+g.orig.upElem+')下卦'+g.orig.dn+'('+g.orig.dnElem+')，本卦「'+g.orig.name+'」，第'+g.line+'爻动，变卦「'+g.change.name+'」。\n\n参考原文：'+anchor+'\n\n返回JSON：{"reading":"你的解读"}';\n\n参考原文：'+anchor+'\n\n返回JSON：{"reading":"你的解读"}';
 
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
     .then(function(r){return r.json();})
     .then(function(d){
-      var tip=d.reading||'卦已起，请静心领悟。';
+      var tip=d.reading||'解读生成中，请稍后刷新查看。';
       res.innerHTML=
         '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
-        (origDB?'<div style="background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.08);border-radius:8px;padding:12px;margin-bottom:12px;font-size:11px;color:var(--tx3);line-height:1.8"><b>卦辞</b> '+origDB.judgment+'</div>':'')+
-        '<div class="result">'+tip+'</div></div>';
-    }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">卦已起，AI解读暂不可用</div></div>';});
+        (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'')+
+        '<div class="result" style="margin-top:16px;font-size:15px;line-height:2.2;color:var(--tx)">'+tip+'</div></div>';
+    }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">解读暂不可用，请稍后重试</div></div>';});
 }
 </script>
 </body>
