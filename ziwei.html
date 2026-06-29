@@ -49,6 +49,7 @@
     </div>
     <div class="row">
       <div class="field"><label>性别</label><select id="zwGender"><option value="male">男</option><option value="female">女</option></select></div>
+      <div class="field"><label>省份（真太阳时）</label><select id="zwProv"><option value="北京">北京</option><option value="河北" selected>河北</option><option value="上海">上海</option><option value="广东">广东</option><option value="四川">四川</option><option value="新疆">新疆</option></select></div>
     </div>
     <button class="btn-sub" onclick="doZiwei()">开始排盘</button>
   </div>
@@ -78,9 +79,28 @@ function doZiwei(){
   var d=parseInt(document.getElementById('zwDay').value);
   var h=parseInt(document.getElementById('zwHour').value);
   var isMale=document.getElementById('zwGender').value==='male';
+  var prov=document.getElementById('zwProv').value;
   var res=document.getElementById('result');
 
-  try{ var zw=ZIWEI_CALC.calcZiwei(y,m,d,h,isMale); }catch(e){ res.innerHTML='<div class="loading">排盘失败：'+e.message+'</div>'; return; }
+  // 真太阳时修正（各省会经度简表）
+  var LNG={'北京':116.4,'河北':114.5,'上海':121.5,'广东':113.3,'四川':104.1,'新疆':87.6};
+  var lng=LNG[prov]||116.4;
+  var offsetMin=Math.round((120-lng)*4); // 北京时→地方时
+  // 时差修正
+  var t=new Date(y,m-1,d);
+  var doy=Math.floor((t-new Date(y,0,0))/86400000);
+  var b=360/365*(doy-81);
+  var eot=9.87*Math.sin(2*b*Math.PI/180)-7.53*Math.cos(b*Math.PI/180)-1.5*Math.sin(b*Math.PI/180);
+  var totalMin=(h*60)+(offsetMin+Math.round(eot));
+  if(totalMin<0) totalMin+=1440;
+  if(totalMin>=1440) totalMin-=1440;
+  var trueHour=Math.floor(totalMin/60);
+  if(trueHour>=24) trueHour-=24; if(trueHour<0) trueHour+=24;
+  // 时支：23-1子,1-3丑,3-5寅...
+  var hourDZ=[0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11];
+  var correctedH=hourDZ[trueHour];
+
+  try{ var zw=ZIWEI_CALC.calcZiwei(y,m,d,correctedH,isMale); }catch(e){ res.innerHTML='<div class="loading">排盘失败：'+e.message+'</div>'; return; }
 
   var chart=zw.chart, order=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
   var html='<div class="zw-info">';
