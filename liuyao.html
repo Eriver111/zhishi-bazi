@@ -192,9 +192,13 @@ function doAnalyze(){
   // 上下卦说明
   var triNames={'111':'乾(天)','110':'兑(泽)','101':'离(火)','100':'震(雷)','011':'巽(风)','010':'坎(水)','001':'艮(山)','000':'坤(地)'};
   var upperKey=lines.slice(3,6).join(''), lowerKey=lines.slice(0,3).join('');
-  header+='<b style="color:var(--gold-l)">'+zg.guaName+'</b>';
-  if(chgZg) header+=' → <b style="color:var(--gold-l)">'+chgZg.guaName+'</b>';
+  header+='<b style="color:var(--gold-l);font-size:16px">'+zg.guaName+'</b>';
   header+='<br>'+zg.gong+'宫 · 属'+zg.gongWX+' · 上'+(triNames[upperKey]||'?')+' | 下'+(triNames[lowerKey]||'?')+' · '+zg.guaType+'卦';
+  if(chgZg){
+    var chgUpper=chgLines.slice(3,6).join(''),chgLower=chgLines.slice(0,3).join('');
+    header+='<br><span style="color:var(--gold);font-size:20px">→</span><br><b style="color:var(--gold-l);font-size:16px">'+chgZg.guaName+'</b>';
+    header+='<br>'+chgZg.gong+'宫 · 属'+chgZg.gongWX+' · 上'+(triNames[chgUpper]||'?')+' | 下'+(triNames[chgLower]||'?')+' · '+chgZg.guaType+'卦';
+  }
   header+='<br>月建：'+zg.monthZhi+'月（'+zg.monthWX+'）&nbsp;|&nbsp; 世爻：第'+zg.shiYao+'爻 &nbsp;|&nbsp; 应爻：第'+zg.yingYao+'爻</div>';
 
   // 装卦表：左半=本卦，右半=变卦
