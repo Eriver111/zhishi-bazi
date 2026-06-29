@@ -165,60 +165,19 @@ var Auth = (function () {
 
   // ============ UI：导航栏用户区 ============
   function injectNavUser() {
-    // 桌面导航
     var nav = document.getElementById('zhishi-nav');
     if (!nav) return setTimeout(injectNavUser, 200);
     if (!document.getElementById('nav-user-area')) {
       var div = document.createElement('div');
       div.id = 'nav-user-area';
       div.className = 'nav-user';
-      div.innerHTML =
-        '<button class="btn-auth primary" id="btn-auth-register" onclick="Auth.showModal(\'register\')">注册</button>' +
-        '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
+      div.innerHTML = '<button class="btn-auth primary" onclick="Auth.showModal(\'register\')">注册</button><button class="btn-auth" onclick="Auth.showModal(\'login\')">登录</button>';
       nav.appendChild(div);
     }
-    // 桌面导航注入「运势」+「占卜」+「档案」
-    var navLinks = nav.querySelector('.nav-links');
-    if (navLinks && !document.getElementById('nav-fortune-link')) {
-      var cta = navLinks.querySelector('.nav-cta');
-      var fl = document.createElement('a'); fl.id='nav-fortune-link'; fl.href='/fortune'; fl.style.cssText='color:var(--gold-l);font-size:13px;letter-spacing:1px'; fl.textContent='运势';
-      if (cta) navLinks.insertBefore(fl, cta); else navLinks.appendChild(fl);
-      var ml = document.createElement('a'); ml.id='nav-meihua-link'; ml.href='/meihua'; ml.style.cssText='color:var(--gold-l);font-size:13px;letter-spacing:1px'; ml.textContent='占卜';
-      if (cta) navLinks.insertBefore(ml, cta); else navLinks.appendChild(ml);
-    }
-    if (navLinks && !document.getElementById('nav-profile-link')) {
-      var plink = document.createElement('a');
-      plink.id = 'nav-profile-link';
-      plink.href = '/profile';
-      plink.style.cssText = 'display:none;color:var(--gold-l);font-size:13px;letter-spacing:1px';
-      plink.textContent = '我的档案';
-      navLinks.appendChild(plink);
-    }
-
-    // 移动端：顶部导航右上角注入认证按钮
-    var mobileAuth = document.getElementById('mobile-top-auth');
-    if (!mobileAuth) {
-      var mAuth = document.createElement('span');
-      mAuth.id = 'mobile-top-auth';
-      mAuth.className = 'mobile-top-auth';
-      document.body.appendChild(mAuth);
-    }
-    // 移动端底部导航注入「运势」+「占卜」+「档案」
-    var mNav = document.getElementById('zhishi-mobile-nav');
-    if (mNav && !document.getElementById('mnav-fortune-link')) {
-      var mp = mNav.querySelector('a[href="/pricing"]');
-      var mf = document.createElement('a'); mf.id='mnav-fortune-link'; mf.href='/fortune'; mf.textContent='运势'; mf.style.cssText='color:var(--gold-l)';
-      if (mp) mNav.insertBefore(mf, mp); else mNav.appendChild(mf);
-      var mm = document.createElement('a'); mm.id='mnav-meihua-link'; mm.href='/meihua'; mm.textContent='占卜'; mm.style.cssText='color:var(--gold-l)';
-      if (mp) mNav.insertBefore(mm, mp); else mNav.appendChild(mm);
-    }
-    if (mNav && !document.getElementById('mnav-profile-link')) {
-      var mplink = document.createElement('a');
-      mplink.id = 'mnav-profile-link';
-      mplink.href = '/profile';
-      mplink.textContent = '档案';
-      mplink.style.cssText = 'display:none';
-      mNav.appendChild(mplink);
+    // 移动端顶部右上角认证
+    if (!document.getElementById('mobile-top-auth')) {
+      var m = document.createElement('span'); m.id='mobile-top-auth'; m.className='mobile-top-auth';
+      document.body.appendChild(m);
     }
   }
 
@@ -241,12 +200,6 @@ var Auth = (function () {
           '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
       }
     }
-
-    // 桌面导航：登录后显示「我的档案」
-    var plink = document.getElementById('nav-profile-link');
-    if (plink) plink.style.display = isLoggedIn() ? '' : 'none';
-    var mplink = document.getElementById('mnav-profile-link');
-    if (mplink) mplink.style.display = isLoggedIn() ? '' : 'none';
 
     // 移动端顶部右上角认证
     var marea = document.getElementById('mobile-top-auth');
