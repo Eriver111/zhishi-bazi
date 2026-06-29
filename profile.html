@@ -28,6 +28,8 @@
 .empty-state p{font-size:13px;line-height:2}
 .login-prompt{text-align:center;padding:60px 20px}
 .login-prompt .btn{padding:12px 32px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 </style>
 </head>
 <body>
@@ -55,7 +57,7 @@
     }
 
     // 先显示加载状态
-    content.innerHTML = '<div style="text-align:center;padding:20px"><div class="loading-spinner" style="display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite"></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    content.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
 
     // 并行加载积分+排盘
     var p1 = fetch('/api/auth/profile', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } }).then(function(r){return r.json()});
