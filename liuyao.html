@@ -251,7 +251,21 @@ function doAnalyze(){
   try{
   // (rendering done below)
   }catch(e){ res.innerHTML='<div class="empty"><p>渲染出错：'+e.message+'</p></div>'; return; }
-  res.innerHTML=header+table+fushen+dongHua+
+  // 神煞
+  var dayGan=TG[(today.getFullYear()-4)%10]; // 日干
+  var t=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+  var base=new Date(1900,0,1); var days=Math.round((t-base)/86400000);
+  var idx=((10+days)%60+60)%60; var dayG=DZ[idx%10],dayZ=DZ[idx%12]; // 日干支
+  var yima={申子辰:'寅',寅午戌:'申',亥卯未:'巳',巳酉丑:'亥'};
+  var taohua={申子辰:'酉',寅午戌:'卯',亥卯未:'子',巳酉丑:'午'};
+  var ganlu={甲:'寅',乙:'卯',丙:'巳',丁:'午',戊:'巳',己:'午',庚:'申',辛:'酉',壬:'亥',癸:'子'};
+  var guiren={甲:'丑未',乙:'子申',丙:'亥酉',丁:'亥酉',戊:'丑未',己:'子申',庚:'丑未',辛:'午寅',壬:'卯巳',癸:'卯巳'};
+  var shenSha='';
+  var ym=yima['申子辰']; if(DZ.indexOf(dayZ)<6&&DZ.indexOf(dayZ)>=3)ym=yima['寅午戌']; else if(DZ.indexOf(dayZ)<9&&DZ.indexOf(dayZ)>=6)ym=yima['巳酉丑']; else if(DZ.indexOf(dayZ)>=9||DZ.indexOf(dayZ)==0||DZ.indexOf(dayZ)==1)ym=yima['亥卯未'];
+  shenSha='<div style="margin-top:10px;background:rgba(13,21,37,.6);border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:11px;color:var(--tx2);text-align:center"><b style="color:var(--gold-l)">神煞</b>&nbsp;';
+  shenSha+='驿马：'+ym+' &nbsp;|&nbsp; 桃花：'+taohua[ym?Object.keys(yima).find(function(k){return yima[k]===ym})||'申子辰':'申子辰']+' &nbsp;|&nbsp;';
+  shenSha+='干禄：'+(ganlu[dayGan]||'')+' &nbsp;|&nbsp; 贵人：'+(guiren[dayGan]||'')+'</div>';
+  res.innerHTML=header+table+fushen+dongHua+shenSha+
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
