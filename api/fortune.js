@@ -185,9 +185,13 @@ module.exports = async function handler(req, res) {
     });
     var aiData = await aiResp.json();
     var content = aiData.choices?.[0]?.message?.content || '';
+    // 去除可能的免责声明
+    content = content.replace(/以上[^。]*生成[^。]*参考[^。]*[\n。]/g, '').replace(/以上[^。]*由[^。]*生成[^。]*/g, '').replace(/(本文|此内容|以上内容)[^。]*免责[^。]*[。\n]/g, '').replace(/\n*---\n.*$/s, '').replace(/（以上[^）]*）/, '').trim();
     var fortune = {};
     try { fortune = JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || content); } catch(e) { fortune = { tip: content }; }
-    var output = { tip: fortune.tip || fortune.overview || content, _date: todayKey, _cached: false };
+    var tip = fortune.tip || fortune.overview || content;
+    tip = tip.replace(/以上[^。]*生成[^。]*参考[^。]*[。\n]/g, '').replace(/（以上[^）]*仅供参考[^）]*）/g, '').trim();
+    var output = { tip: tip, _date: todayKey, _cached: false };
     _cache[cacheKey] = output;
     return res.status(200).json({ huangli: huangli, fortune: output });
   } catch (e) {
