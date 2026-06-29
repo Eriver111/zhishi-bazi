@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 梅花易数</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/auth.css">
+<style>
+.meihua-page{max-width:600px;margin:80px auto 40px;padding:0 20px;animation:fadeIn .8s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.page-title{text-align:center;font-size:24px;color:var(--gold-l);letter-spacing:6px;margin-bottom:6px}
+.page-sub{text-align:center;font-size:12px;color:var(--tx3);margin-bottom:32px;letter-spacing:2px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.2),transparent)}
+.card h3{font-size:14px;color:var(--gold-l);letter-spacing:3px;margin-bottom:16px;text-align:center}
+.num-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.num-row input{width:70px;padding:14px 8px;text-align:center;font-size:20px;font-weight:700;background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;color:var(--gold-l);font-family:inherit;outline:none}
+.num-row input:focus{border-color:var(--gold);box-shadow:0 0 20px rgba(201,168,76,.1)}
+.num-row .num-label{font-size:10px;color:var(--tx3);text-align:center}
+.btn-submit{display:block;margin:20px auto 0;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(201,168,76,.2)}
+.btn-random{display:block;margin:8px auto 0;padding:8px 20px;font-size:12px;background:transparent;border:1px solid var(--bd2);color:var(--tx2);border-radius:20px;cursor:pointer;font-family:inherit;letter-spacing:1px}
+.hexagram{text-align:center;padding:20px 0}
+.hexagram .gua-name{font-size:28px;color:var(--gold-l);font-weight:900;letter-spacing:6px;margin-bottom:4px}
+.hexagram .gua-yao{font-size:24px;color:var(--tx2);font-family:monospace;line-height:1.8;margin:8px 0}
+.hexagram .gua-desc{font-size:12px;color:var(--tx3);line-height:1.8}
+.hexagram .arrow{font-size:28px;color:var(--gold);margin:10px 0}
+.result{font-size:14px;color:var(--tx);line-height:2.2;padding:8px 0}
+.loading{text-align:center;padding:40px;color:var(--tx3)}
+.loading .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="meihua-page">
+  <div class="page-title">梅花易数</div>
+  <div class="page-sub">以数起卦 · AI 解卦 · 问事占卜</div>
+
+  <div class="card">
+    <h3>输入三个数字起卦</h3>
+    <div class="num-row">
+      <div><div class="num-label">上卦数</div><input type="number" id="n1" min="1" max="99" value="" placeholder="1"></div>
+      <div><div class="num-label">下卦数</div><input type="number" id="n2" min="1" max="99" value="" placeholder="2"></div>
+      <div><div class="num-label">动爻数</div><input type="number" id="n3" min="1" max="99" value="" placeholder="3"></div>
+    </div>
+    <button class="btn-submit" onclick="doGua()">起卦</button>
+    <button class="btn-random" onclick="randomGua()">随机起卦</button>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+var TG=['乾','兑','离','震','巽','坎','艮','坤'];
+var TG_ELEM=['天','泽','火','雷','风','水','山','地'];
+var TG_ATTR=['健','悦','丽','动','入','陷','止','顺'];
+
+var GUA64={
+  '111111':'乾为天','000000':'坤为地','010001':'水雷屯','100010':'山水蒙',
+  '010111':'水天需','111010':'天水讼','000010':'地水师','010000':'水地比',
+  '110111':'风天小畜','111011':'天泽履','111000':'地天泰','000111':'天地否',
+  '111101':'天火同人','101111':'火天大有','000100':'地山谦','001000':'雷地豫',
+  '011001':'泽雷随','100110':'山风蛊','000011':'地泽临','110000':'风地观',
+  '101001':'火雷噬嗑','100101':'山火贲','000001':'山地剥','100000':'山地复',
+  '111001':'天雷无妄','100111':'山天大畜','100001':'山雷颐','011110':'泽风大过',
+  '010010':'坎为水','101101':'离为火','011100':'泽山咸','001110':'雷风恒',
+  '001111':'天山遁','111100':'雷天大壮','101000':'火地晋','000101':'地火明夷',
+  '110101':'风火家人','101011':'火泽睽','010100':'水山蹇','001010':'雷水解',
+  '110001':'山泽损','100011':'风雷益','111110':'泽天夬','011111':'天风姤',
+  '000110':'泽地萃','011000':'地风升','010110':'泽水困','011010':'水风井',
+  '011101':'泽火革','101110':'火风鼎','001001':'震为雷','100100':'艮为山',
+  '110100':'风山渐','001011':'雷泽归妹','101100':'雷火丰','001101':'火山旅',
+  '110110':'巽为风','011011':'兑为泽','010011':'风水涣','110010':'水泽节',
+  '110011':'风泽中孚','001100':'雷山小过','010101':'水火既济','101010':'火水未济'
+};
+
+function yaoStr(yao) { return yao.map(function(y){ return y===1?'━━━':'━ ━'; }).join('<br>'); }
+
+function getGua(n1,n2,n3){
+  var up=n1%8||8, dn=n2%8||8, mv=n3%6||6;
+  var upBin=(up-1).toString(2).padStart(3,'0');
+  var dnBin=(dn-1).toString(2).padStart(3,'0');
+  var origBin=upBin+dnBin;
+  var gName=GUA64[origBin]||TG[up-1]+TG[dn-1];
+  // 动爻
+  var yao=origBin.split('').map(Number);
+  var yaoLine=mv-1;
+  var chgBin=origBin.split('');
+  chgBin[yaoLine]=chgBin[yaoLine]==='1'?'0':'1';
+  chgBin=chgBin.join('');
+  var chgName=GUA64[chgBin]||'变卦';
+  return {
+    orig:{name:gName,yao:yao,up:TG[up-1],dn:TG[dn-1],upElem:TG_ELEM[up-1],dnElem:TG_ELEM[dn-1]},
+    change:{name:chgName,yao:chgBin.split('').map(Number)},
+    moving:mv,line:mv
+  };
+}
+
+function randomGua(){
+  document.getElementById('n1').value=Math.floor(Math.random()*99)+1;
+  document.getElementById('n2').value=Math.floor(Math.random()*99)+1;
+  document.getElementById('n3').value=Math.floor(Math.random()*99)+1;
+  doGua();
+}
+
+function doGua(){
+  var n1=parseInt(document.getElementById('n1').value)||1;
+  var n2=parseInt(document.getElementById('n2').value)||2;
+  var n3=parseInt(document.getElementById('n3').value)||3;
+  var g=getGua(n1,n2,n3);
+  var res=document.getElementById('result');
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在解读卦象...</p></div>';
+
+  var prompt='你是"知时先生"。用户用梅花易数起卦：上卦'+g.orig.up+'('+g.orig.upElem+')，下卦'+g.orig.dn+'('+g.orig.dnElem+')，得「'+g.orig.name+'」，动爻在第'+g.line+'爻，变卦「'+g.change.name+'」。请用100字左右大白话给用户解卦，说说这个卦在当前问的事上意味着什么、有什么建议。不要用术语。换成JSON：{"reading":"解卦内容"}';
+
+  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var tip=d.reading||'卦已起，请静心领悟。';
+      res.innerHTML=
+        '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div><div class="result">'+tip+'</div></div>';
+    }).catch(function(){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:var(--tx3)">卦已起，AI解读暂不可用</div></div>';});
+}
+</script>
+</body>
+</html>

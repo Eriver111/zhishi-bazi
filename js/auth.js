@@ -177,18 +177,14 @@ var Auth = (function () {
         '<button class="btn-auth" id="btn-auth-login" onclick="Auth.showModal(\'login\')">登录</button>';
       nav.appendChild(div);
     }
-    // 桌面导航注入「今日运势」+「我的档案」
+    // 桌面导航注入「运势」+「占卜」+「档案」
     var navLinks = nav.querySelector('.nav-links');
     if (navLinks && !document.getElementById('nav-fortune-link')) {
-      var flink = document.createElement('a');
-      flink.id = 'nav-fortune-link';
-      flink.href = '/fortune';
-      flink.style.cssText = 'color:var(--gold-l);font-size:13px;letter-spacing:1px';
-      flink.textContent = '运势';
-      // 插在积分前面
       var cta = navLinks.querySelector('.nav-cta');
-      if (cta) navLinks.insertBefore(flink, cta);
-      else navLinks.appendChild(flink);
+      var fl = document.createElement('a'); fl.id='nav-fortune-link'; fl.href='/fortune'; fl.style.cssText='color:var(--gold-l);font-size:13px;letter-spacing:1px'; fl.textContent='运势';
+      if (cta) navLinks.insertBefore(fl, cta); else navLinks.appendChild(fl);
+      var ml = document.createElement('a'); ml.id='nav-meihua-link'; ml.href='/meihua'; ml.style.cssText='color:var(--gold-l);font-size:13px;letter-spacing:1px'; ml.textContent='占卜';
+      if (cta) navLinks.insertBefore(ml, cta); else navLinks.appendChild(ml);
     }
     if (navLinks && !document.getElementById('nav-profile-link')) {
       var plink = document.createElement('a');
@@ -207,17 +203,14 @@ var Auth = (function () {
       mAuth.className = 'mobile-top-auth';
       document.body.appendChild(mAuth);
     }
-    // 移动端底部导航注入「运势」+「档案」
+    // 移动端底部导航注入「运势」+「占卜」+「档案」
     var mNav = document.getElementById('zhishi-mobile-nav');
     if (mNav && !document.getElementById('mnav-fortune-link')) {
-      var mflink = document.createElement('a');
-      mflink.id = 'mnav-fortune-link';
-      mflink.href = '/fortune';
-      mflink.textContent = '运势';
-      mflink.style.cssText = 'color:var(--gold-l)';
-      var mpricing = mNav.querySelector('a[href="/pricing"]');
-      if (mpricing) mNav.insertBefore(mflink, mpricing);
-      else mNav.appendChild(mflink);
+      var mp = mNav.querySelector('a[href="/pricing"]');
+      var mf = document.createElement('a'); mf.id='mnav-fortune-link'; mf.href='/fortune'; mf.textContent='运势'; mf.style.cssText='color:var(--gold-l)';
+      if (mp) mNav.insertBefore(mf, mp); else mNav.appendChild(mf);
+      var mm = document.createElement('a'); mm.id='mnav-meihua-link'; mm.href='/meihua'; mm.textContent='占卜'; mm.style.cssText='color:var(--gold-l)';
+      if (mp) mNav.insertBefore(mm, mp); else mNav.appendChild(mm);
     }
     if (mNav && !document.getElementById('mnav-profile-link')) {
       var mplink = document.createElement('a');
