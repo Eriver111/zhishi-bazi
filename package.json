@@ -8,6 +8,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "crypto-js": "^4.2.0",
+    "iztro": "^2.5.8",
     "playwright": "^1.61.0"
   }
 }
