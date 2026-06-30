@@ -35,7 +35,7 @@ var h=+document.getElementById('zwH').value,min=+document.getElementById('zwMin'
 var prov=document.getElementById('zwProv').value,city=document.getElementById('zwCity').value,dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender'),isMale=true;
 for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
-if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整');return;}
+if(isNaN(y)||isNaN(m)||isNaN(d)||h===''||h===undefined||isNaN(h)){alert('请填写完整出生信息');return;}
 
 var ts=getTrueSolar(h,min,prov,city,dist,y,m,d);
 var ti=ts.dzIdx,gender=isMale?'male':'female';
@@ -60,7 +60,7 @@ var p=b2p[zhi];if(!p)return;
 var isMing=zhi===mingZhi,isShen=zhi===shenZhi;
 var cell=document.createElement('div');
 cell.className='palace'+(isMing?' ming':'')+(isShen?' shen':'');
-console.log('cell:',p.name,zhi,'-> gridRow:',rc[zhi]);
+
 var parts=rc[zhi].split('/');
 cell.style.gridRow=parts[0];cell.style.gridColumn=parts[1];
 cell.setAttribute('data-zhi',zhi);
