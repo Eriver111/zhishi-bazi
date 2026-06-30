@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>iztro test</title>
+<style>
+.grid{display:grid;grid-template-columns:1fr 0.55fr 0.55fr 1fr;gap:3px;width:860px;aspect-ratio:1;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1)}
+.palace{background:rgba(13,21,37,.82);border:1px solid rgba(255,255,255,.03);padding:8px;font-size:11px;color:#ccc;position:relative}
+.palace.ming{border-color:gold}
+</style></head><body style="background:#080c14;color:#fff;display:flex;justify-content:center;padding:40px">
+<div class="grid" id="g"></div>
+<script src="js/iztro.min.js"></script>
+<script>
+var zw=iztro.astro.bySolar('2004-8-14',1,'male',true,'zh-CN');
+console.log('palaces:',zw.palaces.length);
+
+var order=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
+var gridArea={'巳':'c12','午':'c11','未':'c10','申':'c9','辰':'c1','酉':'c8','卯':'c2','戌':'c7','寅':'c3','丑':'c4','子':'c5','亥':'c6'};
+var map={};
+zw.palaces.forEach(function(p){map[p.earthlyBranch]=p;});
+
+var g=document.getElementById('g');
+order.forEach(function(zhi){
+var p=map[zhi];if(!p){console.log('missing:',zhi);return;}
+var isMing=zhi===zw.earthlyBranchOfSoulPalace;
+var cell=document.createElement('div');
+cell.className='palace'+(isMing?' ming':'');
+cell.style.gridArea=gridArea[zhi];
+cell.textContent=p.name+' '+p.heavenlyStem+p.earthlyBranch;
+g.appendChild(cell);
+});
+console.log('Done');
+</script></body></html>
