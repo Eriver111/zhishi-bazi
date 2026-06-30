@@ -282,7 +282,7 @@ var ZIWEI_CALC = (function(){
     // 劫煞华盖天德龙德单独加入杂星(有亮度)
     for(var zz=0;zz<12;zz++){
       var jq=jqByZhi[DZ[zz]], sq=sqByZhi[DZ[zz]];
-      if(jq==="劫煞"||jq==="华盖")zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([jq]);
+      if(jq==="劫煞")zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([jq]);
       if(sq==="天德"||sq==="龙德")zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([sq]);
     }
 
