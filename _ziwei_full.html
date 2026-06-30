@@ -7,7 +7,7 @@ h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:22px;margin:
 .info{text-align:center;font-size:15px;color:var(--tx3);margin-bottom:12px;line-height:1.8}
 .info b{color:#e8cf70}
 
-.grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:3px;width:100%;aspect-ratio:1;max-width:860px;margin:0 auto;background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:4px;padding:3px}
+.grid{display:grid;grid-template-columns:1fr 0.55fr 0.55fr 1fr;grid-template-rows:repeat(4,1fr);gap:3px;width:100%;aspect-ratio:1;max-width:860px;margin:0 auto;background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:4px;padding:3px}
 .palace{background:var(--card);border:1px solid rgba(91,127,165,.08);position:relative;overflow:hidden}
 .palace.ming{border-color:rgba(201,168,76,.35);box-shadow:inset 0 0 20px rgba(201,168,76,.04)}
 .palace.shen{border-color:rgba(91,159,212,.25);background:rgba(91,159,212,.03)}
@@ -44,11 +44,17 @@ h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:22px;margin:
 .triad-card .t-name{font-size:15px;color:#e8cf70;letter-spacing:2px;margin-bottom:4px;font-weight:700}
 .triad-card .t-palaces{font-size:15px;color:var(--tx3);margin-bottom:6px}
 .triad-card .t-summary{font-size:15px;color:var(--tx2);line-height:1.7}
+
+.svg-overlay{position:absolute;inset:0;pointer-events:none;z-index:10}
+.svg-overlay line{stroke:rgba(201,168,76,.4);stroke-width:2;stroke-dasharray:6 3}
+.svg-overlay line.opp{stroke:rgba(91,159,212,.4);stroke-dasharray:3 3}
+.palace.hl{border-color:rgba(201,168,76,.6)!important;box-shadow:0 0 20px rgba(201,168,76,.2)!important}
+.palace.hl2{border-color:rgba(91,159,212,.4)!important;box-shadow:0 0 15px rgba(91,159,212,.12)!important}
 </style></head><body>
 <div class="wrap">
 <h2>紫微斗数 · 三合盘</h2>
 <div class="info" id="infoBar"></div>
-<div class="grid" id="zwGrid"></div>
+<div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
 <div class="triad-grid" id="triads"></div>
 </div>
 
@@ -62,7 +68,13 @@ var chart=zw.chart;
 document.getElementById('infoBar').innerHTML='命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b> | 阳男 | 甲申年六月廿九丑时';
 
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-var gridZhiOrder=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
+// 动态地支→网格位置映射（根据命宫位置计算）
+var mingZhi=chart['命宫'].zhi;
+var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+var mingIdx=DZ.indexOf(mingZhi);
+// 固定网格位置对应的地支偏移（从命宫推算）
+var gridPositions={c12:(mingIdx+11)%12, c11:mingIdx, c10:(mingIdx+1)%12, c9:(mingIdx+2)%12, c1:(mingIdx+10)%12, c8:(mingIdx+3)%12, c2:(mingIdx+9)%12, c7:(mingIdx+4)%12, c3:(mingIdx+8)%12, c4:(mingIdx+7)%12, c5:(mingIdx+6)%12, c6:(mingIdx+5)%12};
+
 var palaceOrder=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
 var zhiToPalace={};
 palaceOrder.forEach(function(name){ zhiToPalace[chart[name].zhi]=chart[name];zhiToPalace[chart[name].zhi]._name=name; });
@@ -71,7 +83,10 @@ var starColor={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a
 var brightLabel=['','庙','旺','得','平','不','陷'];
 var grid=document.getElementById('zwGrid');
 
-gridZhiOrder.forEach(function(zhi){
+// 使用动态gridPositions映射
+Object.keys(gridPositions).forEach(function(gridKey){
+  var zhiIdx=gridPositions[gridKey];
+  var zhi=DZ[zhiIdx];
   var p=zhiToPalace[zhi]; if(!p) return;
   var isMing=p._name==='命宫',isShen=p._name===zw.shenGong;
   var cls='palace'+(isMing?' ming':'')+(isShen?' shen':'');
@@ -125,14 +140,85 @@ gridZhiOrder.forEach(function(zhi){
     '<div class="bot-l">'+blArr.map(function(x){return '<span>'+x+'</span>';}).join('')+'</div>'+
     '<div class="bot-r"><span class="zs">'+(p.changSheng||'')+'</span><span class="gz">'+gz.charAt(0)+'</span><span class="gz">'+gz.charAt(1)+'</span></div>'+
     '<div class="pname">'+p._name+'</div>';
+  cell.addEventListener('click',function(){showTriLinks(zhi,p._name);});
   grid.appendChild(cell);
 });
+
+// === 三方四正连线 ===
+var DZ_=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+var triadsGroup={0:[0,4,8],1:[1,5,9],2:[2,6,10],3:[3,7,11]}; // 地支三合组
+
+function showTriLinks(zhi,palName){
+  var allCells=document.querySelectorAll('.palace');
+  allCells.forEach(function(el){el.classList.remove('hl','hl2');});
+
+  // Highlight all三合+对宫 cells
+  var zhiIdx=DZ_.indexOf(zhi);
+  var oppIdx=(zhiIdx+6)%12;
+  var triadGroup=triadsGroup[zhiIdx%4];
+  var oppGroup=triadsGroup[oppIdx%4];
+
+  allCells.forEach(function(el){
+    var cellZhi=el.dataset.zhi;
+    if(!cellZhi)return;
+    var ci=DZ_.indexOf(cellZhi);
+    if(ci===zhiIdx)el.classList.add('hl');
+    else if(ci===oppIdx||triadGroup.indexOf(ci)>=0)el.classList.add('hl');
+    else if(oppGroup.indexOf(ci)>=0)el.classList.add('hl2');
+  });
+
+  // Draw lines
+  drawTriLines(zhiIdx,triadGroup,oppIdx);
+}
+
+function drawTriLines(center,triad,opp){
+  var svg=document.getElementById('svgLines');
+  var grid=document.getElementById('zwGrid');
+  var gr=grid.getBoundingClientRect();
+
+  // Get center positions of all relevant cells
+  function centerPos(zhi){
+    var el=document.querySelector('.palace[data-zhi="'+DZ_[zhi]+'"]');
+    if(!el)return null;
+    var r=el.getBoundingClientRect();
+    return {x:r.left+r.width/2-gr.left, y:r.top+r.height/2-gr.top};
+  }
+
+  svg.setAttribute('viewBox','0 0 '+gr.width+' '+gr.height);
+  svg.style.width=gr.width+'px';
+  svg.style.height=gr.height+'px';
+
+  var html='';
+  var cp=centerPos(center);
+  if(!cp)return;
+
+  // Lines to三合 partners
+  triad.forEach(function(t){
+    if(t===center)return;
+    var tp=centerPos(t);
+    if(tp) html+='<line x1="'+cp.x+'" y1="'+cp.y+'" x2="'+tp.x+'" y2="'+tp.y+'"/>';
+  });
+  // Line to对宫
+  var op=centerPos(opp);
+  if(op) html+='<line class="opp" x1="'+cp.x+'" y1="'+cp.y+'" x2="'+op.x+'" y2="'+op.y+'"/>';
+
+  svg.innerHTML=html;
+}
+
+// Set data-zhi attributes after grid renders
+setTimeout(function(){
+  var cells=document.querySelectorAll('.palace');
+  var gridOrder=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
+  cells.forEach(function(el,i){
+    if(i<gridOrder.length)el.dataset.zhi=gridOrder[i];
+  });
+},100);
 
 // 中央
 var center=document.createElement('div');center.className='center-cell';
 center.style.cssText='grid-area:2/2/4/4';
 center.innerHTML=
-  '<div class="c-title">'+zw.wuxingJu.replace('局','')+'<br>局</div>'+
+  '<div class="c-title">'+zw.wuxingJu.replace('局','')+'<br>局</div>'+'<div class="c-info" style="font-size:9px">真太阳时 1:53</div>'+'<div class="c-info" style="font-size:9px">钟表 2:16 丑时</div>'+'<div class="c-info" style="font-size:10px">真太阳时 '+zw.trueSolar+'</div>'+'<div class="c-info" style="font-size:10px">钟表 '+zw.clockTime+'</div>'+
   '<div class="c-info">命主 '+zw.mingZhu+'</div>'+
   '<div class="c-info">身主 '+zw.shenZhu+'</div>'+
   '<div class="c-info" style="color:#e8cf70;font-size:15px;margin-top:2px">身宫 '+zw.shenGong+'</div>';

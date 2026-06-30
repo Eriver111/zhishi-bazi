@@ -300,6 +300,8 @@ var ZIWEI_CALC = (function(){
     var mingZhu=MINGZHU_MAP[DZ.indexOf(mingPalace.zhi)]||'';
     var shenGongZhiIdx=(2 + (lMonth-1) + hour) % 12; var shenGongZhi=DZ[shenGongZhiIdx]; var shenGongName=""; for(var i=0;i<palaces.length;i++){if(palaces[i].zhi===shenGongZhi){shenGongName=palaces[i].name;break;}}
     var shenZhu=SHENZHU_MAP[yearZhiIdx]||'';
+    var ziDouZhi=DZ[(2+(lMonth-1)+hour)%12];
+    var trueSolarTimeStr=(trueSolarH<10?"0":"")+trueSolarH+":"+(trueSolarM<10?"0":"")+trueSolarM;
 
     // 组装结果
     var chart={};
@@ -402,6 +404,7 @@ var ZIWEI_CALC = (function(){
       mingZhu:mingZhu,
       shenZhu:shenZhu,
       shenGong:shenGongName,
+      ziDou:ziDouZhi,
       wuxingJu:['金四局','木三局','水二局','火六局','土五局'][ju],
       sihua:sihua,
       lunarMonth:lMonth, lunarDay:lDay,
