@@ -78,22 +78,22 @@
 .gua-arrow span{font-size:20px;color:var(--gold);opacity:.7}
 
 /* ====== 折叠详情 ====== */
-.detail-toggle{text-align:center;padding:8px;cursor:pointer;color:var(--tx3);font-size:11px;letter-spacing:2px;user-select:none;transition:color .2s}
+.detail-toggle{text-align:center;padding:10px;cursor:pointer;color:var(--tx3);font-size:13px;letter-spacing:2px;user-select:none;transition:color .2s}
 .detail-toggle:hover{color:var(--gold-l)}
 .detail-panel{max-height:0;overflow:hidden;transition:max-height .5s ease}
-.detail-panel.open{max-height:2000px}
+.detail-panel.open{max-height:3000px}
 
 /* ====== 详情内表格 ====== */
-.detail-table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
-.detail-table td,.detail-table th{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.03);text-align:center}
-.detail-table th{color:var(--gold-l);font-size:10px;letter-spacing:1px;background:rgba(201,168,76,.04);font-weight:400}
+.detail-table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+.detail-table td,.detail-table th{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.03);text-align:center}
+.detail-table th{color:var(--gold-l);font-size:12px;letter-spacing:1px;background:rgba(201,168,76,.04);font-weight:400}
 .detail-table .shi-mark{color:var(--gold-l);font-weight:700}
 .detail-table .ying-mark{color:#5b9fd4;font-weight:700}
 .detail-table .kong-mark{color:#e07050}
 .detail-table .dong-mark{color:#e8a040;font-weight:700}
-.info-row{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11px;color:var(--tx2);line-height:2}
+.info-row{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--tx2);line-height:2}
 .info-row b{color:var(--gold-l);font-weight:400}
-.info-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;margin:2px}
+.info-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:12px;margin:2px}
 .info-tag.gold{background:rgba(201,168,76,.06);color:var(--gold-l);border:1px solid rgba(201,168,76,.1)}
 .info-tag.red{background:rgba(224,112,80,.06);color:#e07050;border:1px solid rgba(224,112,80,.1)}
 .info-tag.blue{background:rgba(91,159,212,.06);color:#5b9fd4;border:1px solid rgba(91,159,212,.1)}
@@ -302,7 +302,7 @@ function doAnalyze(){
     hero+='<div class="yao-row">';
     if(isYang) hero+='<div class="yao-bar yang'+(isChanging?' changing':'')+'"></div>';
     else { hero+='<div class="yao-bar yin-l'+(isChanging?' changing':'')+'"></div><div class="yao-bar yin-r'+(isChanging?' changing':'')+'"></div>'; }
-    hero+='<span style="font-size:10px;color:'+(wxCol[zg.yaoWX[yi]]||'#fff')+';min-width:16px;text-align:center">'+zg.yaoWX[yi]+'</span>';
+    hero+='<span style="font-size:12px;color:'+(wxCol[zg.yaoWX[yi]]||'#fff')+';min-width:16px;text-align:center">'+zg.yaoWX[yi]+'</span>';
     if(yi+1===zg.shiYao) hero+='<span class="yao-badge shi">世</span>';
     else if(yi+1===zg.yingYao) hero+='<span class="yao-badge ying">应</span>';
     else hero+='<span style="min-width:28px"></span>';
@@ -322,7 +322,7 @@ function doAnalyze(){
       hero+='<div class="yao-row">';
       if(isYang2) hero+='<div class="yao-bar yang'+(wasChanging?' changing':'')+'"></div>';
       else { hero+='<div class="yao-bar yin-l'+(wasChanging?' changing':'')+'"></div><div class="yao-bar yin-r'+(wasChanging?' changing':'')+'"></div>'; }
-      hero+='<span style="font-size:10px;color:'+(wxCol[(chgZg.yaoWX||zg.yaoWX)[yi2]]||'#fff')+';min-width:16px;text-align:center">'+(chgZg.yaoWX?chgZg.yaoWX[yi2]:'')+'</span>';
+      hero+='<span style="font-size:12px;color:'+(wxCol[(chgZg.yaoWX||zg.yaoWX)[yi2]]||'#fff')+';min-width:16px;text-align:center">'+(chgZg.yaoWX?chgZg.yaoWX[yi2]:'')+'</span>';
       hero+='<span style="min-width:28px"></span>';
       if(wasChanging) hero+='<span class="yao-badge dong">◯</span>';
       hero+='</div>';
@@ -360,11 +360,11 @@ function doAnalyze(){
       var ym=''; if(i+1===z.yingYao) ym='<span class="ying-mark">应</span>';
       var km=''; if(xunKong.indexOf(z.yaoDZ[i])>=0) km='<span class="kong-mark">空</span>';
       t+='<tr>';
-      t+='<td style="font-size:10px;color:var(--tx3)">'+z.liushen[i]+'</td>';
-      t+='<td>'+z.liuqin[i]+'</td>';
-      t+='<td style="font-size:11px">'+z.yaoGan[i]+z.yaoDZ[i]+'</td>';
-      t+='<td style="color:'+(wxCol[z.yaoWX[i]]||'#fff')+'">'+z.yaoWX[i]+'</td>';
-      t+='<td style="font-size:10px">'+(z.wangShuai?z.wangShuai[i]:'')+'</td>';
+      t+='<td style="font-size:12px;color:var(--tx3)">'+z.liushen[i]+'</td>';
+      t+='<td style="font-size:14px">'+z.liuqin[i]+'</td>';
+      t+='<td style="font-size:13px">'+z.yaoGan[i]+z.yaoDZ[i]+'</td>';
+      t+='<td style="font-size:14px;color:'+(wxCol[z.yaoWX[i]]||'#fff')+'">'+z.yaoWX[i]+'</td>';
+      t+='<td style="font-size:12px">'+(z.wangShuai?z.wangShuai[i]:'')+'</td>';
       t+='<td class="'+mc+'" style="font-family:monospace;font-size:14px">'+(lx[i]?'━━━':'━ ━')+mv+km+sm+ym+'</td>';
       t+='</tr>';
     }
