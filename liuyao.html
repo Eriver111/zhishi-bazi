@@ -359,6 +359,9 @@ window.doAIReading=function(){
   readingDiv.innerHTML='<div class="loading"><div class="spinner"></div><p>知时先生正在解卦...</p><p style="font-size:11px;color:var(--tx3);margin-top:4px">深度分析中，预计30秒完成</p></div>';
   var btnArea=document.getElementById('aiBtnArea'); if(btnArea) btnArea.style.display='none';
 
+  // 获取用户实际问题
+  var userQuestion=document.getElementById('question').value.trim()||'未填写具体问题';
+
   var dbAnchor='';
   if(origDB) dbAnchor+='本卦《'+origDB.name+'》卦辞曰"'+origDB.judgment+'"；彖传："'+(origDB.tuan||'')+'"，解读：'+origDB.meaning+'。\n';
   if(chgDB) dbAnchor+='变卦《'+chgDB.name+'》卦辞曰"'+chgDB.judgment+'"；解读：'+chgDB.meaning+'。\n';
@@ -383,12 +386,16 @@ window.doAIReading=function(){
     });
   }
 
-  var prompt='你是"知时先生"，精通六爻断卦。以下爻辞卦辞来自权威《周易》原文，你必须基于这些原文进行解读，不得编造。\n\n';
+  var monthMap={寅:'正月',卯:'二月',辰:'三月',巳:'四月',午:'五月',未:'六月',申:'七月',酉:'八月',戌:'九月',亥:'十月',子:'十一月',丑:'十二月'};
+
+  var prompt='';
+  prompt+='【用户的问题】'+userQuestion+'\n\n';
   prompt+='【必读经典原文】\n'+dbAnchor+'\n';
   prompt+='【卦象结构】\n';
   prompt+='本卦：'+zg.guaName+'（'+zg.gong+'宫·属'+zg.gongWX+'·'+zg.guaType+'卦）\n';
   prompt+='变卦：'+(chgZg?chgZg.guaName+'（'+chgZg.gong+'宫·属'+chgZg.gongWX+'·'+chgZg.guaType+'卦）':'无动爻，无变卦')+'\n';
-  prompt+='月建：'+zg.monthZhi+'月（五行属'+zg.monthWX+'）\n';
+  prompt+='月建：'+zg.monthZhi+'月（五行属'+zg.monthWX+'）'+(monthMap[zg.monthZhi]?'即农历'+monthMap[zg.monthZhi]:'')+'\n';
+  prompt+='日辰：'+dG+dZ+'日\n';
   prompt+='世爻位置：第'+zg.shiYao+'爻  应爻位置：第'+zg.yingYao+'爻\n\n';
   prompt+='【六爻逐层数据】（初爻→上爻）\n';
   for(var i=0;i<6;i++){
@@ -399,14 +406,12 @@ window.doAIReading=function(){
     prompt+=mvMark+'\n';
   }
   prompt+='\n'+dongYaoDetail+'\n';
-  prompt+='请写一篇600-800字的深度解读，通俗白话聊天口吻。必须严格按照五步框架，每步至少写100字，决不允许跳过或合并步骤：\n\n';
-  prompt+='【第一步：世应总览】（至少100字）本卦世爻第'+zg.shiYao+'爻'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'，应爻第'+zg.yingYao+'爻'+zg.liuqin[zg.yingYao-1]+zg.yaoGan[zg.yingYao-1]+zg.yaoDZ[zg.yingYao-1]+'。结合月建'+zg.monthZhi+'月('+zg.monthWX+')，详细分析世应生克关系和时令影响——谁旺谁衰？谁克谁？这决定了事情的走向。\n';
-  prompt+='【第二步：世爻深度剖析】（至少120字）世爻是这一卦的核心——代表你自己。世爻'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'，五行属'+zg.yaoWX[zg.shiYao-1]+'，坐'+zg.liushen[zg.shiYao-1]+'，月建下为'+zg.wangShuai[zg.shiYao-1]+'，长生位在'+zg.changSheng[zg.shiYao-1]+'。重点分析：世爻是否得月建生扶？是否有爻来克/生？六神加临带来什么象意？世爻自身的强弱决定了你能扛多大的事。\n';
-  prompt+='【第三步：动爻逐一分析】（至少150字）逐一分析每个动爻：哪一爻动？动爻的六亲是什么？变前变后的干支五行各是什么？化象关系（回头生/回头克/泄气/比和）意味着什么？这个动爻对世爻是帮还是克？必须把每个动爻的干支、五行、化象关系都掰开说清楚，不能一句话带过。\n';
-  prompt+='【第四步：六神全局取象】（至少100字）六爻配六神从上到下依次为：'+zg.liushen[5]+'、'+zg.liushen[4]+'、'+zg.liushen[3]+'、'+zg.liushen[2]+'、'+zg.liushen[1]+'、'+zg.liushen[0]+'。重点取象：世爻临'+zg.liushen[zg.shiYao-1]+'意味着什么？应爻临'+zg.liushen[zg.yingYao-1]+'又是什么象？动爻临哪些神？把六神+六亲的组合讲出来（如"青龙临妻财主喜财""玄武临兄弟主暗中有小人"等），不能只列名字不释义。\n';
-  prompt+='【第五步：综合断卦+行动建议】（至少150字）把前四步串起来给出完整判断：问卦人当前面临什么局势？核心转机在哪里？最大风险在哪里？然后给出3-4条具体的、可操作的建议——必须有时限（如"午月火旺，建议7月中旬前行动"）和依据（如"因为世爻酉金得变爻辰土回头生，坚持就有转机"），不能说空话套话。\n\n';
-  prompt+='硬性铁律：1) 五步缺一不可，每步必须达到最低字数；2) 每一步必须说出具体的干支、五行、六神全名——说"世爻兄弟丑土得午月火生"，不能说"世爻得助"；3) 开头先给一句总结论再展开；4) 纯文本回复，不要用JSON、markdown或任何格式标记。';
-
+  prompt+='请针对用户的问题"'+userQuestion+'"写一篇600-800字的断卦解读。要求：\n\n';
+  prompt+='【核心结论】开头2-3句话直接回答——能成还是不能成？好还是坏？大概什么时候？不许含糊其辞。\n\n';
+  prompt+='【卦象解读】根据问题锁定用神（问财运看妻财、问事业看官鬼、问感情看妻财/官鬼+应爻、问健康看子孙/官鬼），用具体爻数据说话——"世爻兄弟寅木得月建子水生"这种。分析世爻强弱、用神状态、动爻影响，每段不超过4行。\n\n';
+  prompt+='【时间窗口】这是最重要的部分！用地支对应农历月份给出具体时间——寅=正月、卯=二月、辰=三月、巳=四月、午=五月、未=六月、申=七月、酉=八月、戌=九月、亥=十月、子=十一月、丑=十二月。指出哪几个农历月是好的窗口期，哪几个月要避开。月建是当前'+zg.monthZhi+'月('+monthMap[zg.monthZhi]+')，当前时间背景已经明确。\n\n';
+  prompt+='【行动建议】3-4条具体可操作的建议，每条带卦象依据。必须有时限——比如"农历七月申月之前不要做决定，因为世爻被午月火克"而不是"建议耐心等待"。\n\n';
+  prompt+='硬性铁律：1) 必须直接回答用户的问题，不许用"有可能""也不一定"这种废话；2) 必须给农历时间窗口；3) 必须用具体干支五行六神名称，不许用笼统话；4) 纯文本回复，不要markdown不要JSON。';
   var token=Auth.getToken();
   var headers={'Content-Type':'application/json'};
   if(token) headers['Authorization']='Bearer '+token;
