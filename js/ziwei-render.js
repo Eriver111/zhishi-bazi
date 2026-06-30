@@ -4,14 +4,14 @@ function pad(n){return(n<10?'0':'')+n;}
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 
-(function(){
+(function(){try{
 // Province/city/district init only (other fields are now number inputs)
 var bj=new Date(Date.now()+8*60*60*1000);
 var ps=Object.keys(REGION_DATA),pSel=document.getElementById('zwProv'),cSel=document.getElementById('zwCity'),dSel=document.getElementById('zwDist');
 ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});function upCity(){cSel.innerHTML='';dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});upDist();}
 function upDist(){dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;var dists=cities[cSel.value];if(!dists)return;dists.forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d;dSel.appendChild(o);});}
 pSel.addEventListener('change',upCity);cSel.addEventListener('change',upDist);upCity();
-})();
+}catch(e){console.log("init error:",e);}})();
 
 function getTrueSolar(ch,m,prov,city,dist,y,mo,d){
 var lng=PROV_LNG[prov]||116.4;
