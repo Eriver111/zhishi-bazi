@@ -21,7 +21,20 @@
 @media(max-width:820px){
   .split-layout{flex-direction:column}
   .split-left{flex:auto;position:static}
-  .liuyao-page{max-width:600px}
+  .liuyao-page{max-width:100%;margin:60px auto 30px;padding:0 12px}
+  .page-title{font-size:20px}
+  /* 爻线缩小 */
+  .yao-bar.yang{width:120px}
+  .yao-bar.yin-l,.yao-bar.yin-r{width:50px}
+  .yao-lines{max-width:200px}
+  /* 表格竖排 */
+  .detail-table{font-size:12px!important}
+  .detail-table td,.detail-table th{padding:6px 3px!important;font-size:11px!important}
+  /* 本变卦上下堆叠 */
+  .tables-row{flex-direction:column!important}
+  .coin-stage{gap:16px}
+  .coin{width:44px;height:44px}
+  .coin .face{font-size:18px}
 }
 
 /* ====== 北京时间 ====== */
@@ -78,7 +91,7 @@
 .gua-arrow span{font-size:20px;color:var(--gold);opacity:.7}
 
 /* ====== 折叠详情 ====== */
-.detail-toggle{text-align:center;padding:10px;cursor:pointer;color:var(--tx3);font-size:13px;letter-spacing:2px;user-select:none;transition:color .2s}
+.detail-toggle{text-align:center;padding:10px;cursor:pointer;color:var(--tx3);font-size:13px;letter-spacing:2px;-webkit-user-select:none;user-select:none;transition:color .2s}
 .detail-toggle:hover{color:var(--gold-l)}
 .detail-panel{max-height:0;overflow:hidden;transition:max-height .5s ease}
 .detail-panel.open{max-height:3000px}
@@ -371,7 +384,7 @@ function doAnalyze(){
     t+='</table></div>';
     return t;
   }
-  detail+='<div style="display:flex;gap:6px;margin-top:10px">';
+  detail+='<div class="tables-row" style="display:flex;gap:6px;margin-top:10px">';
   detail+=makeTable(zg,'本卦',lines,false);
   if(chgZg) detail+=makeTable(chgZg,'变卦',chgLines,true);
   detail+='</div>';
