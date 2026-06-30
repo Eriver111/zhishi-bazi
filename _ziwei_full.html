@@ -50,11 +50,17 @@ h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:22px;margin:
 .svg-overlay line.opp{stroke:rgba(91,159,212,.4);stroke-dasharray:3 3}
 .palace.hl{border-color:rgba(201,168,76,.6)!important;box-shadow:0 0 20px rgba(201,168,76,.2)!important}
 .palace.hl2{border-color:rgba(91,159,212,.4)!important;box-shadow:0 0 15px rgba(91,159,212,.12)!important}
+
+.svg-overlay{position:absolute;inset:0;pointer-events:none;z-index:10}
+.svg-overlay line{stroke:rgba(201,168,76,.4);stroke-width:2;stroke-dasharray:6 3}
+.svg-overlay line.opp{stroke:rgba(91,159,212,.4);stroke-dasharray:3 3}
+.palace.hl{border-color:rgba(201,168,76,.6)!important;box-shadow:0 0 20px rgba(201,168,76,.2)!important}
+.palace.hl2{border-color:rgba(91,159,212,.4)!important;box-shadow:0 0 15px rgba(91,159,212,.12)!important}
 </style></head><body>
 <div class="wrap">
 <h2>紫微斗数 · 三合盘</h2>
 <div class="info" id="infoBar"></div>
-<div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
+<div style="position:relative"><div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div><svg class="svg-overlay" id="svgLines"></svg></div>
 <div class="triad-grid" id="triads"></div>
 </div>
 
