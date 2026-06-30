@@ -84,9 +84,9 @@
   <div id="aiReading"></div>
 </div>
 
-<script src="js/liuyao-core.js?v=3"></script>
-<script src="js/yijing-db.js?v=3"></script>
-<script src="js/auth.js?v=3"></script>
+<script src="js/liuyao-core.js?v=4"></script>
+<script src="js/yijing-db.js?v=4"></script>
+<script src="js/auth.js?v=4"></script>
 <script>
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -320,7 +320,7 @@ window.doAIReading=function(){
     readingDiv=document.createElement('div'); readingDiv.id='aiReading';
     res.parentNode.appendChild(readingDiv);
   }
-  readingDiv.innerHTML='<div class="loading"><div class="spinner"></div><p>知时先生正在解卦...</p><p style="font-size:11px;color:var(--tx3);margin-top:4px">排盘数据已发送，请稍候</p></div>';
+  readingDiv.innerHTML='<div class="loading"><div class="spinner"></div><p>知时先生正在解卦...</p><p style="font-size:11px;color:var(--tx3);margin-top:4px">深度分析中，预计30秒完成</p></div>';
   var btnArea=document.getElementById('aiBtnArea'); if(btnArea) btnArea.style.display='none';
 
   // 数据库锚点——AI只能基于这些原文解读
@@ -365,13 +365,13 @@ window.doAIReading=function(){
     prompt+=mvMark+'\n';
   }
   prompt+='\n'+dongYaoDetail+'\n';
-  prompt+='请按以下框架写一篇约400字的解读，通俗白话，像朋友聊天：\n\n';
-  prompt+='【第一步：世应判断】分析世爻和应爻的位置与关系，说明事情的整体方向。\n';
-  prompt+='【第二步：世爻自身状态】世爻为'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'（五行'+zg.yaoWX[zg.shiYao-1]+'），月建'+zg.monthZhi+'月（'+zg.monthWX+'），当前处于'+zg.wangShuai[zg.shiYao-1]+'状态。\n';
-  prompt+='【第三步：动爻分析】动爻是事态变化的关键节点，逐一分析每个动爻的化象（化回头生/克/泄/比和）。\n';
-  prompt+='【第四步：六神取象】结合各爻六神定位具体事象。\n';
-  prompt+='【第五步：综合断卦】把以上分析串起来，给出具体的时间节点、注意事项和2-3条行动建议。\n\n';
-  prompt+='硬性要求：每一步分析必须说出实际的干支、五行、六神名称。不能说笼统的"世爻得助"，必须说"世爻兄弟丑土得午月火生"。不能说"有官鬼来克"，必须说"二爻官鬼卯木克世爻丑土"。纯文本回复，不用JSON。';
+  prompt+='请写一篇600-800字的深度解读，通俗白话聊天口吻。必须严格按照五步框架，每步至少写100字，决不允许跳过或合并步骤：\n\n';
+  prompt+='【第一步：世应总览】（至少100字）本卦世爻第'+zg.shiYao+'爻'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'，应爻第'+zg.yingYao+'爻'+zg.liuqin[zg.yingYao-1]+zg.yaoGan[zg.yingYao-1]+zg.yaoDZ[zg.yingYao-1]+'。结合月建'+zg.monthZhi+'月('+zg.monthWX+')，详细分析世应生克关系和时令影响——谁旺谁衰？谁克谁？这决定了事情的走向。\n';
+  prompt+='【第二步：世爻深度剖析】（至少120字）世爻是这一卦的核心——代表你自己。世爻'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'，五行属'+zg.yaoWX[zg.shiYao-1]+'，坐'+zg.liushen[zg.shiYao-1]+'，月建下为'+zg.wangShuai[zg.shiYao-1]+'，长生位在'+zg.changSheng[zg.shiYao-1]+'。重点分析：世爻是否得月建生扶？是否有爻来克/生？六神加临带来什么象意？世爻自身的强弱决定了你能扛多大的事。\n';
+  prompt+='【第三步：动爻逐一分析】（至少150字）逐一分析每个动爻：哪一爻动？动爻的六亲是什么？变前变后的干支五行各是什么？化象关系（回头生/回头克/泄气/比和）意味着什么？这个动爻对世爻是帮还是克？必须把每个动爻的干支、五行、化象关系都掰开说清楚，不能一句话带过。\n';
+  prompt+='【第四步：六神全局取象】（至少100字）六爻配六神从上到下依次为：'+zg.liushen[5]+'、'+zg.liushen[4]+'、'+zg.liushen[3]+'、'+zg.liushen[2]+'、'+zg.liushen[1]+'、'+zg.liushen[0]+'。重点取象：世爻临'+zg.liushen[zg.shiYao-1]+'意味着什么？应爻临'+zg.liushen[zg.yingYao-1]+'又是什么象？动爻临哪些神？把六神+六亲的组合讲出来（如"青龙临妻财主喜财""玄武临兄弟主暗中有小人"等），不能只列名字不释义。\n';
+  prompt+='【第五步：综合断卦+行动建议】（至少150字）把前四步串起来给出完整判断：问卦人当前面临什么局势？核心转机在哪里？最大风险在哪里？然后给出3-4条具体的、可操作的建议——必须有时限（如"午月火旺，建议7月中旬前行动"）和依据（如"因为世爻酉金得变爻辰土回头生，坚持就有转机"），不能说空话套话。\n\n';
+  prompt+='硬性铁律：1) 五步缺一不可，每步必须达到最低字数；2) 每一步必须说出具体的干支、五行、六神全名——说"世爻兄弟丑土得午月火生"，不能说"世爻得助"；3) 开头先给一句总结论再展开；4) 纯文本回复，不要用JSON、markdown或任何格式标记。';
 
   var token=Auth.getToken();
   var headers={'Content-Type':'application/json'};
