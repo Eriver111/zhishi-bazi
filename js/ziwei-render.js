@@ -130,7 +130,7 @@ if(!sh)sh='<span class=\"s\" style=\"color:#555\">—</span>';
 var blArr=[p.boshi12||'',p.jiangqian12||'',p.suiqian12||''].filter(Boolean);
 
 // 大限 from stage or horoscope
-var dx=p.stage&&p.stage.range?p.stage.range[0]+'~'+p.stage.range[1]:'';
+var dx=p.decadal&&p.decadal.range?p.decadal.range[0]+'~'+p.decadal.range[1]:'';
 
 // 小限 from ages
 var xx=(p.ages||[]).slice(0,12).filter(function(a){return a<=60;}).join(',');
