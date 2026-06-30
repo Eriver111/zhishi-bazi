@@ -87,7 +87,7 @@ gridZhiOrder.forEach(function(zhi){
   if(p.minors.length){ sh+=p.minors.map(function(m){
     var bTable=ZIWEI.minorBright[m];
     var bLevel=bTable?bTable[['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'].indexOf(p.zhi)]:0;
-    var bl=bLevel<5?brightLabel[bLevel]:'';
+    var bl=bLevel>0?brightLabel[bLevel]:'';
     return '<span class="s" style="color:#9098a0;font-size:10px">'+m+(bl?'<sup class="b" style="color:'+(bLevel<=2?'#e04040':bLevel===3?'#e8a040':'#888')+'">'+bl+'</sup>':'')+'</span>';
   }).join('');}
   // 四化
@@ -97,7 +97,7 @@ gridZhiOrder.forEach(function(zhi){
   if(p.zaXing&&p.zaXing.length){ sh+=p.zaXing.map(function(zx){
     var zTable=ZIWEI.zaBright[zx];
     var zLevel=zTable?zTable[['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'].indexOf(p.zhi)]:0;
-    var zl=zLevel<5?brightLabel[zLevel]:'';
+    var zl=zLevel>0?brightLabel[zLevel]:'';
     return '<span class="s" style="color:#6a6570;font-size:10px">'+zx+(zl?'<sup class="b" style="color:'+(zLevel<=2?'#e04040':zLevel===3?'#e8a040':'#888')+'">'+zl+'</sup>':'')+'</span>';
   }).join('');}
   if(!sh) sh='<span class="s" style="color:#555">—</span>';
