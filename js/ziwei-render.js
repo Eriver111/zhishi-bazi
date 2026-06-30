@@ -6,13 +6,12 @@ var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 
 (function(){
 var s=document.getElementById('zwH');
-for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement('option');o.value=i;o.textContent=i+'点 ('+DZ[dzIdx]+'时)';if(i===8)o.selected=true;s.appendChild(o);}
+for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement('option');o.value=i;o.textContent=i+'点 ('+DZ[dzIdx]+'时)';s.appendChild(o);}
 var bj=new Date(Date.now()+8*60*60*1000);
-function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement('option');o.value=i;o.textContent=i;if(i===cur)o.selected=true;s.appendChild(o);}}
+function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement('option');o.value=i;o.textContent=i;s.appendChild(o);}}
 fill('zwY',1960,bj.getUTCFullYear(),2000);fill('zwM',1,12,bj.getUTCMonth()+1);fill('zwD',1,31,bj.getUTCDate());
 var ps=Object.keys(REGION_DATA),pSel=document.getElementById('zwProv'),cSel=document.getElementById('zwCity'),dSel=document.getElementById('zwDist');
-ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});pSel.value='广东';
-function upCity(){cSel.innerHTML='';dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});upDist();}
+ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});function upCity(){cSel.innerHTML='';dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});upDist();}
 function upDist(){dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;var dists=cities[cSel.value];if(!dists)return;dists.forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d;dSel.appendChild(o);});}
 pSel.addEventListener('change',upCity);cSel.addEventListener('change',upDist);upCity();
 })();

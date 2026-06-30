@@ -70,18 +70,18 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .loading{text-align:center;padding:40px;color:var(--tx3)}
 .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:820px){.app{padding:30px 12px 50px}.header h1{font-size:32px;letter-spacing:14px}.grid{max-width:100%;aspect-ratio:auto;min-height:360px}.triad-grid{grid-template-columns:1fr}}
+@media(max-width:820px){.app{padding:20px 10px 40px}.header h1{font-size:28px;letter-spacing:10px}.tagline{font-size:12px}.row{flex-wrap:wrap;gap:6px;margin-bottom:10px}.field{min-width:60px}.field select{font-size:13px;padding:10px 28px 10px 8px}.minute-inp{font-size:13px;padding:10px 8px}.card{padding:16px 14px;margin-bottom:10px}.card-title{font-size:13px;margin-bottom:14px}.submit{font-size:15px;letter-spacing:6px;padding:14px}.grid{max-width:100%;aspect-ratio:auto;min-height:340px;grid-template-columns:1fr 0.5fr 0.5fr 1fr;gap:2px;padding:2px}.stars{font-size:10px;left:2px;top:2px}.stars .s.major{font-size:12px}.mid .row1,.mid .row2{font-size:8px}.mid .daxian{font-size:9px}.bot-l{font-size:8px;left:2px;bottom:2px}.bot-r{font-size:9px;right:3px;bottom:2px}.bot-r .gz{font-size:11px}.pname{font-size:10px}.triad-grid{grid-template-columns:1fr}.center-cell .c-title{font-size:13px}.center-cell .c-info{font-size:9px}}
 </style></head><body>
 <div class="app">
 <div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">紫 微 斗 数 · 三 合 盘</div></div>
 
 <div class="card" style="width:100%;max-width:960px;padding:20px 24px">
       <div class="card-title">出 生 信 息</div>
-      <div class="row"><div class="field"><label>年份</label><select id="zwY"></select></div><div class="field"><label>月份</label><select id="zwM"></select></div><div class="field"><label>日期</label><select id="zwD"></select></div></div>
-      <div class="row two"><div class="field"><label>时辰</label><select id="zwH"></select></div><div class="field"><label>分钟</label><input type="number" class="minute-inp" id="zwMin" value="0" min="0" max="59" placeholder="0"></div></div>
+      <div class="row"><div class="field"><label>年份</label><select id="zwY"><option value="">年份</option></select></div><div class="field"><label>月份</label><select id="zwM"><option value="">月份</option></select></div><div class="field"><label>日期</label><select id="zwD"><option value="">日期</option></select></div></div>
+      <div class="row two"><div class="field"><label>时辰</label><select id="zwH"><option value="">时辰</option></select></div><div class="field"><label>分钟</label><input type="number" class="minute-inp" id="zwMin" value="0" min="0" max="59" placeholder="0"></div></div>
       <div class="row"><div class="field"><label>性别</label><div class="radio-group"><label class="radio"><input type="radio" name="zwGender" value="male" checked><span>男</span></label><label class="radio"><input type="radio" name="zwGender" value="female"><span>女</span></label></div></div></div>
-      <div class="row two"><div class="field"><label>省份</label><select id="zwProv"></select></div><div class="field"><label>城市</label><select id="zwCity"></select></div></div>
-      <div class="row"><div class="field"><label>区县</label><select id="zwDist"></select></div></div>
+      <div class="row two"><div class="field"><label>省份</label><select id="zwProv"><option value="">省份</option></select></div><div class="field"><label>城市</label><select id="zwCity"><option value="">城市</option></select></div></div>
+      <div class="row"><div class="field"><label>区县</label><select id="zwDist"><option value="">区县</option></select></div></div>
       <button class="submit" onclick="doPaipan()">开 始 排 盘</button>
     </div>
   </div>
