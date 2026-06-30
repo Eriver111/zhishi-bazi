@@ -74,25 +74,18 @@ var chart=zw.chart;
 document.getElementById('infoBar').innerHTML='命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b> | 阳男 | 甲申年六月廿九丑时';
 
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-// 动态地支→网格位置映射（根据命宫位置计算）
-var mingZhi=chart['命宫'].zhi;
-var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-var mingIdx=DZ.indexOf(mingZhi);
-// 固定网格位置对应的地支偏移（从命宫推算）
-var gridPositions={c12:(mingIdx+11)%12, c11:mingIdx, c10:(mingIdx+1)%12, c9:(mingIdx+2)%12, c1:(mingIdx+10)%12, c8:(mingIdx+3)%12, c2:(mingIdx+9)%12, c7:(mingIdx+4)%12, c3:(mingIdx+8)%12, c4:(mingIdx+7)%12, c5:(mingIdx+6)%12, c6:(mingIdx+5)%12};
+var gridZhiOrder=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
 
 var palaceOrder=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
 var zhiToPalace={};
 palaceOrder.forEach(function(name){ zhiToPalace[chart[name].zhi]=chart[name];zhiToPalace[chart[name].zhi]._name=name; });
 
+var gridArea={'巳':'c12','午':'c11','未':'c10','申':'c9','辰':'c1','酉':'c8','卯':'c2','戌':'c7','寅':'c3','丑':'c4','子':'c5','亥':'c6'};
 var starColor={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a3',天相:'#5b9fd4',天梁:'#6db86d',七杀:'#e07050',破军:'#e07050',贪狼:'#e8a040',巨门:'#5b9fd4',廉贞:'#e07050',天同:'#6db86d',太阴:'#5b9fd4',天机:'#6db86d'};
 var brightLabel=['','庙','旺','得','平','不','陷'];
 var grid=document.getElementById('zwGrid');
 
-// 使用动态gridPositions映射
-Object.keys(gridPositions).forEach(function(gridKey){
-  var zhiIdx=gridPositions[gridKey];
-  var zhi=DZ[zhiIdx];
+gridZhiOrder.forEach(function(zhi){
   var p=zhiToPalace[zhi]; if(!p) return;
   var isMing=p._name==='命宫',isShen=p._name===zw.shenGong;
   var cls='palace'+(isMing?' ming':'')+(isShen?' shen':'');
@@ -134,7 +127,7 @@ Object.keys(gridPositions).forEach(function(gridKey){
   // 左下：博士 + 将前 + 岁前
   var blArr=[p.boShi||'',p.jiangQian||'',p.suiQian||''].filter(Boolean);
 
-  var cell=document.createElement('div');cell.className=cls;
+  var cell=document.createElement('div');cell.style.gridArea=gridArea[zhi];cell.className=cls;
   var gz=(p.gan||'')+p.zhi;
   cell.innerHTML=
     '<div class="stars">'+sh+'</div>'+
@@ -147,8 +140,23 @@ Object.keys(gridPositions).forEach(function(gridKey){
     '<div class="bot-r"><span class="zs">'+(p.changSheng||'')+'</span><span class="gz">'+gz.charAt(0)+'</span><span class="gz">'+gz.charAt(1)+'</span></div>'+
     '<div class="pname">'+p._name+'</div>';
   cell.addEventListener('click',function(){showTriLinks(zhi,p._name);});
+  cell.addEventListener('click',function(){showTriLinks(zhi,p._name);});
   grid.appendChild(cell);
 });
+
+// Central cell
+var center=document.createElement('div');center.className='center-cell';
+center.style.cssText='grid-area:2/2/4/4';
+center.innerHTML=
+  '<div class="c-title">'+zw.wuxingJu.replace('局','')+'<br>局</div>'+
+  '<div class="c-info" style="font-size:9px">2004年8月14日 丑时</div>'+
+  '<div class="c-info" style="font-size:9px">农历 甲申年六月廿九</div>'+
+  '<div class="c-info" style="font-size:9px">真太阳时 1:53 · 钟表 2:16</div>'+
+  '<div class="c-info">命主 '+zw.mingZhu+'</div>'+
+  '<div class="c-info">身主 '+zw.shenZhu+'</div>'+
+  '<div class="c-info" style="color:#e8cf70;font-size:10px;margin-top:2px">身宫 '+zw.shenGong+'</div>'+
+  '<div class="c-info" style="font-size:9px">子斗 '+zw.ziDou+'</div>';
+grid.appendChild(center);
 
 // === 三方四正连线 ===
 var DZ_=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
