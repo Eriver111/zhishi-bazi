@@ -31,7 +31,8 @@ return{dzIdx:DZ_IDX[th],th:th,tm:tm2};
 
 function doPaipan(){
 var y=+document.getElementById('zwY').value,m=+document.getElementById('zwM').value,d=+document.getElementById('zwD').value;
-var h=+document.getElementById('zwH').value,min=+document.getElementById('zwMin').value||0;
+var hRaw=document.getElementById('zwH').value;if(hRaw===''){alert('请选择时辰');return;}
+var h=+hRaw,min=+document.getElementById('zwMin').value||0;
 var prov=document.getElementById('zwProv').value,city=document.getElementById('zwCity').value,dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender'),isMale=true;
 for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
