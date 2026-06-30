@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>紫微宫格测试</title>
+<style>
+:root{--ink:#080c14;--card:rgba(13,21,37,.95);--gold:#c9a84c;--tx:#e2dcc8;--tx2:#b0a090;--tx3:#7a7570;--bd:rgba(201,168,76,.2)}
+body{background:var(--ink);color:var(--tx);font-family:'PingFang SC','Microsoft YaHei',sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+.palace{width:200px;height:240px;background:var(--card);border:1px solid var(--bd);border-radius:3px;position:relative;padding:8px;box-sizing:border-box}
+.palace.ming{border-color:rgba(201,168,76,.35);box-shadow:0 0 10px rgba(201,168,76,.04)}
+
+/* ===== 左边：星曜竖排 vertical-rl，贴近左边 ===== */
+.stars{position:absolute;left:2px;top:4px;bottom:4px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:2px 0;writing-mode:vertical-rl;text-orientation:upright;font-size:11px;color:#d0c8b0;line-height:1.3}
+.stars .s{letter-spacing:1px}
+.stars .s.major{font-size:14px;font-weight:600;color:#e0d0b0}
+.stars .s .b{font-size:7px}
+.stars .s .b.miao{color:#e04040}.stars .s .b.wang{color:#e07050}.stars .s .b.ping{color:#888}
+
+/* ===== 底左：竖排 ===== */
+.bot-l{position:absolute;left:6px;bottom:8px;display:flex;flex-direction:column;align-items:flex-start;line-height:1.5;font-size:8px;color:#7a7570;letter-spacing:.5px}
+
+/* ===== 底右：绝/己/巳 竖排 ===== */
+.bot-r{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;align-items:flex-end;gap:0;font-size:12px;color:var(--tx2);line-height:1.4}
+.bot-r .gz{font-size:14px;color:var(--gold);font-weight:700;letter-spacing:3px}
+
+/* ===== 中部 ===== */
+.mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);display:flex;flex-direction:column;align-items:center;gap:4px;writing-mode:horizontal-tb}
+.mid .row1,.mid .row2{display:flex;align-items:center;gap:5px;font-size:9px;color:#8a8580;writing-mode:horizontal-tb}
+.mid .row2{font-size:8px;color:#6a6570}
+.mid .ln-label,.mid .xx-label{font-size:9px;color:#b0a898;font-weight:600;letter-spacing:1px;margin-right:2px}
+.mid .xx-label{font-size:8px;color:#9a9590}
+.mid .daxian{font-size:9px;color:#8a8580;margin-top:2px;letter-spacing:1px}
+
+/* ===== 宫名 ===== */
+.pname{position:absolute;bottom:8px;left:50%;transform:translateX(15%);font-size:10px;color:var(--gold);letter-spacing:3px;font-weight:600}
+</style></head><body>
+
+<div class="palace ming">
+
+  <!-- 左边贴边：星曜竖排 vertical-rl -->
+  <div class="stars">
+    <span class="s major">天机<sup class="b ping">平</sup></span>
+    <span class="s">文曲<sup class="b miao">庙</sup></span>
+    <span class="s">右弼<sup class="b ping">平</sup></span>
+    <span class="s">天厨</span>
+    <span class="s">劫煞</span>
+    <span class="s">天德<sup class="b wang">旺</sup></span>
+  </div>
+
+  <!-- 中部 -->
+  <div class="mid">
+    <div class="row1">
+      <span class="ln-label">流年</span>
+      <span>10,</span><span>22,</span><span>34,</span><span>46,</span><span>58</span>
+    </div>
+    <div class="row2">
+      <span class="xx-label">小限</span>
+      <span>8,</span><span>20,</span><span>32,</span><span>44,</span><span>56</span>
+    </div>
+    <div class="daxian">115 ~ 124</div>
+  </div>
+
+  <!-- 左下：竖排 -->
+  <div class="bot-l">
+    <span>小 耗</span>
+    <span>劫 煞</span>
+    <span>天 德</span>
+  </div>
+
+  <!-- 右下：绝/己/巳 竖排 -->
+  <div class="bot-r">
+    <span>绝</span>
+    <span class="gz">己</span>
+    <span class="gz">巳</span>
+  </div>
+
+  <!-- 宫名 -->
+  <div class="pname">兄 弟</div>
+
+</div>
+
+</body></html>

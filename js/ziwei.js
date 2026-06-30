@@ -242,7 +242,7 @@ var ZIWEI_CALC = (function(){
     // 旬空：甲申旬空午未 → yearGanIdx 0→午(6)
     var xkMap={0:6,1:9,2:0,3:3,4:6,5:9,6:0,7:3,8:6,9:9};
     zaByZhi[DZ[xkMap[yearGanIdx]||6]]=(zaByZhi[DZ[xkMap[yearGanIdx]||6]]||[]).concat(['旬空']);
-    // 天厨：亥起逆数到月 (11-(lMonth-1)+12)%12
+    // 天厨：亥起逆数到月 (lMonth-1)%12
     zaByZhi[DZ[(11-(lMonth-1)+12)%12]]=(zaByZhi[DZ[(11-(lMonth-1)+12)%12]]||[]).concat(['天厨']);
     // 天官：年干+7
     zaByZhi[DZ[(7+yearGanIdx)%12]]=(zaByZhi[DZ[(7+yearGanIdx)%12]]||[]).concat(['天官']);
@@ -259,7 +259,51 @@ var ZIWEI_CALC = (function(){
     // 天空：时+8
     zaByZhi[DZ[(hour+8)%12]]=(zaByZhi[DZ[(hour+8)%12]]||[]).concat(['天空']);
     // 破碎：时+11
-    zaByZhi[DZ[(hour+11)%12]]=(zaByZhi[DZ[(hour+11)%12]]||[]).concat(['破碎']);
+    zaByZhi[DZ[(hour+8)%12]]=(zaByZhi[DZ[(hour+8)%12]]||[]).concat(['破碎']);
+
+    // 天巫：月+2
+    zaByZhi[DZ[(lMonth+2)%12]]=(zaByZhi[DZ[(lMonth+2)%12]]||[]).concat(['天巫']);
+    // 台辅：月+1
+    zaByZhi[DZ[(lMonth+1)%12]]=(zaByZhi[DZ[(lMonth+1)%12]]||[]).concat(['台辅']);
+    // 封诰：月+9
+    zaByZhi[DZ[(lMonth+9)%12]]=(zaByZhi[DZ[(lMonth+9)%12]]||[]).concat(['封诰']);
+    // 三台：月+7
+    zaByZhi[DZ[(lMonth+7)%12]]=(zaByZhi[DZ[(lMonth+7)%12]]||[]).concat(['三台']);
+    // 八座：月+7
+    zaByZhi[DZ[(lMonth+7)%12]]=(zaByZhi[DZ[(lMonth+7)%12]]||[]).concat(['八座']);
+    // 龙池：月+6
+    zaByZhi[DZ[(lMonth+6)%12]]=(zaByZhi[DZ[(lMonth+6)%12]]||[]).concat(['龙池']);
+    // 恩光：月+6
+    zaByZhi[DZ[(lMonth+6)%12]]=(zaByZhi[DZ[(lMonth+6)%12]]||[]).concat(['恩光']);
+    // 天月：月+9
+    zaByZhi[DZ[(lMonth+9)%12]]=(zaByZhi[DZ[(lMonth+9)%12]]||[]).concat(['天月']);
+    // 解神：时+11
+    zaByZhi[DZ[(hour+11)%12]]=(zaByZhi[DZ[(hour+11)%12]]||[]).concat(['解神']);
+    // 年解：命宫+8
+    zaByZhi[DZ[(mingPos+8)%12]]=(zaByZhi[DZ[(mingPos+8)%12]]||[]).concat(['年解']);
+    // 天才：年支+6
+    zaByZhi[DZ[(yearZhiIdx+6)%12]]=(zaByZhi[DZ[(yearZhiIdx+6)%12]]||[]).concat(['天才']);
+    // 天寿：年支+8
+    zaByZhi[DZ[(yearZhiIdx+8)%12]]=(zaByZhi[DZ[(yearZhiIdx+8)%12]]||[]).concat(['天寿']);
+    // 天伤：年支+3
+    zaByZhi[DZ[(yearZhiIdx+3)%12]]=(zaByZhi[DZ[(yearZhiIdx+3)%12]]||[]).concat(['天伤']);
+    // 天使：年支+5
+    zaByZhi[DZ[(yearZhiIdx+5)%12]]=(zaByZhi[DZ[(yearZhiIdx+5)%12]]||[]).concat(['天使']);
+    // 月德：年支+5
+    zaByZhi[DZ[(yearZhiIdx+5)%12]]=(zaByZhi[DZ[(yearZhiIdx+5)%12]]||[]).concat(['月德']);
+    // 大耗：年支+7
+    zaByZhi[DZ[(yearZhiIdx+7)%12]]=(zaByZhi[DZ[(yearZhiIdx+7)%12]]||[]).concat(['大耗']);
+    // 蜚廉：年支+8
+    zaByZhi[DZ[(yearZhiIdx+8)%12]]=(zaByZhi[DZ[(yearZhiIdx+8)%12]]||[]).concat(['蜚廉']);
+    // 阴煞：年支+8
+    zaByZhi[DZ[(yearZhiIdx+8)%12]]=(zaByZhi[DZ[(yearZhiIdx+8)%12]]||[]).concat(['阴煞']);
+    // 副截：年支+1
+    zaByZhi[DZ[(yearZhiIdx+1)%12]]=(zaByZhi[DZ[(yearZhiIdx+1)%12]]||[]).concat(['副截']);
+    // 副旬：年干+月+1
+    zaByZhi[DZ[(yearGanIdx+lMonth+1)%12]]=(zaByZhi[DZ[(yearGanIdx+lMonth+1)%12]]||[]).concat(['副旬']);
+    // 寡宿：查表 [子丑寅卯辰巳午未申酉戌亥]
+    var gsTab=[10,1,4,5,7,1,10,1,7,5,7,1];
+    zaByZhi[DZ[gsTab[yearZhiIdx]]]=(zaByZhi[DZ[gsTab[yearZhiIdx]]]||[]).concat(['寡宿']);
 
     // 流年：从年支起1岁，每年顺行一宫
     var liuNianByZhi={};

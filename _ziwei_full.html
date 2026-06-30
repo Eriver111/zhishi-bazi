@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>紫微三合盘 · 完整数据</title>
+<style>
+:root{--ink:#080c14;--card:rgba(13,21,37,.95);--gold:#c9a84c;--tx:#e2dcc8;--tx2:#b0a090;--tx3:#7a7570;--bd:rgba(201,168,76,.2)}
+body{background:var(--ink);color:var(--tx);font-family:'PingFang SC','Microsoft YaHei',sans-serif;display:flex;justify-content:center;min-height:100vh;margin:0;padding:20px}
+.wrap{max-width:820px;width:100%}
+h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:18px;margin:0 0 12px}
+.info{text-align:center;font-size:11px;color:var(--tx3);margin-bottom:12px;line-height:1.8}
+.info b{color:#e8cf70}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:3px;width:100%;aspect-ratio:1;max-width:780px;margin:0 auto;background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:4px;padding:3px}
+.palace{background:var(--card);border:1px solid rgba(91,127,165,.08);position:relative;overflow:hidden}
+.palace.ming{border-color:rgba(201,168,76,.35);box-shadow:inset 0 0 20px rgba(201,168,76,.04)}
+.palace.shen{border-color:rgba(91,159,212,.25);background:rgba(91,159,212,.03)}
+
+.stars{position:absolute;left:3px;top:4px;bottom:4px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:0;writing-mode:vertical-rl;text-orientation:upright;font-size:10px;color:#d0c8b0;line-height:1.15;max-width:55%}
+.stars .s{letter-spacing:1px;white-space:nowrap}
+.stars .s.major{font-size:13px;font-weight:600;color:#e0d0b0}
+.stars .s .b{font-size:6px}
+
+.mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;writing-mode:horizontal-tb}
+.mid .row1,.mid .row2{display:flex;align-items:center;gap:2px;font-size:9px;color:#8a8580}
+.mid .row2{font-size:8px;color:#6a6570}
+.mid .ln-label,.mid .xx-label{font-size:8px;color:#b0a898;font-weight:600;margin-right:1px}
+.mid .xx-label{font-size:7px;color:#9a9590}
+.mid .daxian{font-size:9px;color:#8a8580;margin-top:1px}
+
+.bot-l{position:absolute;left:4px;bottom:4px;display:flex;flex-direction:column;align-items:flex-start;line-height:1.3;font-size:7px;color:#7a7570;writing-mode:horizontal-tb;gap:1px}
+
+.bot-r{position:absolute;right:6px;bottom:4px;display:flex;flex-direction:column;align-items:flex-end;line-height:1.3;font-size:10px;color:var(--tx2)}
+.bot-r .zs{font-size:10px;color:var(--tx2)}
+.bot-r .gz{font-size:12px;color:var(--gold);font-weight:700;letter-spacing:1px}
+
+.pname{position:absolute;bottom:5px;left:50%;transform:translateX(20%);font-size:10px;color:var(--gold);letter-spacing:2px;font-weight:600}
+
+.center-cell{background:var(--card);border:1px solid rgba(201,168,76,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.8}
+.center-cell .c-title{font-size:15px;color:#e8cf70;font-weight:700;letter-spacing:4px}
+.center-cell .c-info{font-size:9px;color:var(--tx3)}
+
+.triad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.triad-card{background:rgba(13,21,37,.6);border:1px solid rgba(91,127,165,.08);border-radius:10px;padding:14px}
+.triad-card .t-name{font-size:13px;color:#e8cf70;letter-spacing:2px;margin-bottom:4px;font-weight:700}
+.triad-card .t-palaces{font-size:10px;color:var(--tx3);margin-bottom:6px}
+.triad-card .t-summary{font-size:12px;color:var(--tx2);line-height:1.7}
+</style></head><body>
+<div class="wrap">
+<h2>紫微斗数 · 三合盘</h2>
+<div class="info" id="infoBar"></div>
+<div class="grid" id="zwGrid"></div>
+<div class="triad-grid" id="triads"></div>
+</div>
+
+<script src="js/lunar.js"></script>
+<script src="js/ziwei-db.js"></script>
+<script src="js/ziwei.js"></script>
+<script>
+(function(){
+var zw=ZIWEI_CALC.calcZiwei(2004,8,14,1,true);
+var chart=zw.chart;
+document.getElementById('infoBar').innerHTML='命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b> | 阳男 | 甲申年六月廿九丑时';
+
+var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+var gridZhiOrder=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
+var palaceOrder=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
+var zhiToPalace={};
+palaceOrder.forEach(function(name){ zhiToPalace[chart[name].zhi]=chart[name];zhiToPalace[chart[name].zhi]._name=name; });
+
+var starColor={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a3',天相:'#5b9fd4',天梁:'#6db86d',七杀:'#e07050',破军:'#e07050',贪狼:'#e8a040',巨门:'#5b9fd4',廉贞:'#e07050',天同:'#6db86d',太阴:'#5b9fd4',天机:'#6db86d'};
+var brightLabel=['','庙','旺','利','平','陷'];
+var grid=document.getElementById('zwGrid');
+
+gridZhiOrder.forEach(function(zhi){
+  var p=zhiToPalace[zhi]; if(!p) return;
+  var isMing=p._name==='命宫',isShen=p._name===zw.shenGong;
+  var cls='palace'+(isMing?' ming':'')+(isShen?' shen':'');
+
+  // 星曜左列：主星+辅星+杂星 竖排
+  var sh='';
+  if(p.starInfo&&p.starInfo.length){
+    sh+=p.starInfo.map(function(si,i){
+      var bl=si.bright<5?brightLabel[si.bright]:'';
+      var clr=starColor[si.name]||'#d0c8b0';
+      return '<span class="s'+(i===0?' major':'')+'" style="color:'+clr+'">'+si.name+(bl?'<sup class="b" style="color:'+(si.bright<=2?'#e04040':si.bright===3?'#e8a040':'#888')+'">'+bl+'</sup>':'')+'</span>';
+    }).join('');
+  }
+  // 辅星
+  if(p.minors.length){ sh+=p.minors.map(function(m){return '<span class="s" style="color:#9098a0;font-size:9px">'+m+'</span>';}).join('');}
+  // 四化
+  if(p.hua.length){ var lb={lu:'禄',quan:'权',ke:'科',ji:'忌'}; sh+='<span class="s" style="color:#e8a040">'+p.hua.map(function(h){return lb[h]||h;}).join('')+'</span>'; }
+  // 杂星
+  if(p.zaXing&&p.zaXing.length){ sh+=p.zaXing.map(function(zx){return '<span class="s" style="color:#6a6570;font-size:8px">'+zx+'</span>';}).join('');}
+  if(!sh) sh='<span class="s" style="color:#555">—</span>';
+
+  // 左下：博士 + 将前 + 岁前
+  var blArr=[p.boShi||'',p.jiangQian||'',p.suiQian||''].filter(Boolean);
+
+  var cell=document.createElement('div');cell.className=cls;
+  var gz=(p.gan||'')+p.zhi;
+  cell.innerHTML=
+    '<div class="stars">'+sh+'</div>'+
+    '<div class="mid">'+
+      '<div class="row1"><span class="ln-label">流年</span>'+(p.liuNian||'').split(',').map(function(n){return '<span>'+n+'</span>';}).join('')+'</div>'+
+      '<div class="row2"><span class="xx-label">小限</span>'+(p.xiaoXian||'').split(',').map(function(n){return '<span>'+n+'</span>';}).join('')+'</div>'+
+      '<div class="daxian">'+(p.daXian||'')+'</div>'+
+    '</div>'+
+    '<div class="bot-l">'+blArr.map(function(x){return '<span>'+x+'</span>';}).join('')+'</div>'+
+    '<div class="bot-r"><span class="zs">'+(p.changSheng||'')+'</span><span class="gz">'+gz.charAt(0)+'</span><span class="gz">'+gz.charAt(1)+'</span></div>'+
+    '<div class="pname">'+p._name+'</div>';
+  grid.appendChild(cell);
+});
+
+// 中央
+var center=document.createElement('div');center.className='center-cell';
+center.style.cssText='grid-area:2/2/4/4';
+center.innerHTML=
+  '<div class="c-title">'+zw.wuxingJu.replace('局','')+'<br>局</div>'+
+  '<div class="c-info">命主 '+zw.mingZhu+'</div>'+
+  '<div class="c-info">身主 '+zw.shenZhu+'</div>'+
+  '<div class="c-info" style="color:#e8cf70;font-size:10px;margin-top:2px">身宫 '+zw.shenGong+'</div>';
+grid.appendChild(center);
+
+// 三方四正
+var td=document.getElementById('triads');
+zw.triads.forEach(function(t){
+  var card=document.createElement('div');card.className='triad-card';
+  card.innerHTML='<div class="t-name">'+t.name+'</div><div class="t-palaces">'+t.palaces+'</div><div class="t-summary">'+t.summary+'</div>';
+  td.appendChild(card);
+});
+})();
+</script>
+</body></html>
