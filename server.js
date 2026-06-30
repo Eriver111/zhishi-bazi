@@ -1,6 +1,30 @@
 const http=require('http');const fs=require('fs');const path=require('path');
+const execSync=require('child_process').execSync;
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json'};
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0)process.env[t.slice(0,i).trim()]=t.slice(i+1).trim()}})}catch(_){}
+const DEPLOY_SECRET=process.env.DEPLOY_SECRET||'zhishi-deploy-2026';
+
+// 自动部署：每分钟检查一次 GitHub 是否有新 commit，有则 git pull
+var _lastPull=Date.now();
+function autoPull(){
+  try{
+    var dir=__dirname;
+    // 获取远程最新 commit hash
+    var remote=execSync('git ls-remote origin -h refs/heads/main',{cwd:dir,timeout:8000}).toString().trim().split('\t')[0];
+    var local=execSync('git rev-parse HEAD',{cwd:dir,timeout:5000}).toString().trim();
+    if(remote && local && remote!==local){
+      console.log('[autoPull] 检测到更新 '+local.slice(0,7)+' → '+remote.slice(0,7));
+      var out=execSync('git pull origin main 2>&1',{cwd:dir,timeout:30000}).toString();
+      console.log('[autoPull] git pull: '+out.trim());
+      _lastPull=Date.now();
+      return true;
+    }
+  }catch(e){ console.error('[autoPull] 失败: '+e.message); }
+  return false;
+}
+// 启动后 10 秒做首次检查，之后每 60 秒检查
+setTimeout(function(){ autoPull(); setInterval(autoPull,60000); },10000);
+
 const s=http.createServer(async(req,res)=>{
 res.setHeader('Access-Control-Allow-Origin','*');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}
 let c=200, _sent=false;res.status=x=>{c=x;return res};
