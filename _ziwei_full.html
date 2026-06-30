@@ -12,7 +12,7 @@ h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:22px;margin:
 .palace.ming{border-color:rgba(201,168,76,.35);box-shadow:inset 0 0 20px rgba(201,168,76,.04)}
 .palace.shen{border-color:rgba(91,159,212,.25);background:rgba(91,159,212,.03)}
 
-.stars{position:absolute;left:3px;top:4px;bottom:4px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:0;writing-mode:vertical-rl;text-orientation:upright;font-size:14px;color:#d0c8b0;line-height:1.2;max-width:70%}
+.stars{position:absolute;left:3px;top:4px;bottom:4px;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:0;writing-mode:vertical-rl;text-orientation:upright;font-size:14px;color:#d0c8b0;line-height:1.2;max-width:85%}
 .stars .s{letter-spacing:1px;white-space:nowrap}
 .stars .s.major{font-size:16px;font-weight:600;color:#e0d0b0}
 .stars .s .b{font-size:9px}
@@ -68,7 +68,7 @@ var zhiToPalace={};
 palaceOrder.forEach(function(name){ zhiToPalace[chart[name].zhi]=chart[name];zhiToPalace[chart[name].zhi]._name=name; });
 
 var starColor={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a3',天相:'#5b9fd4',天梁:'#6db86d',七杀:'#e07050',破军:'#e07050',贪狼:'#e8a040',巨门:'#5b9fd4',廉贞:'#e07050',天同:'#6db86d',太阴:'#5b9fd4',天机:'#6db86d'};
-var brightLabel=['','庙','旺','利','平','不','陷'];
+var brightLabel=['','庙','旺','得','平','不','陷'];
 var grid=document.getElementById('zwGrid');
 
 gridZhiOrder.forEach(function(zhi){
