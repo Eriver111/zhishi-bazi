@@ -49,6 +49,28 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .triad-card .t-name{font-size:14px;color:var(--gold-l);letter-spacing:2px;margin-bottom:4px;font-weight:700}
 .triad-card .t-palaces{font-size:11px;color:var(--tx3);margin-bottom:6px}
 .triad-card .t-summary{font-size:13px;color:var(--tx2);line-height:1.7}
+/* paipan-style form */
+.main-layout{width:100%;display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}
+.side-panel{display:flex;flex-direction:column;gap:20px}
+.main-area{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card-title{font-size:14px;color:var(--gold-l);letter-spacing:6px;font-weight:600;margin-bottom:20px;text-align:center}
+.row{display:flex;gap:12px;margin-bottom:14px}
+.row.two .field{flex:1}
+.field{flex:1;min-width:0}
+.field label{display:block;font-size:10px;color:var(--mist);letter-spacing:3px;margin-bottom:6px;font-weight:500}
+.field select{width:100%;padding:12px 34px 12px 12px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center}
+.field select:focus{outline:none;border-color:var(--gold)}
+.minute-inp{width:100%;padding:12px 14px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:8px;text-align:center;letter-spacing:2px}
+.minute-inp:focus{outline:none;border-color:var(--gold)}
+.radio-group{display:flex;gap:6px}
+.radio{flex:1;display:flex;align-items:center;justify-content:center;padding:11px 6px;background:rgba(20,20,36,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist)}
+.radio:hover{border-color:rgba(255,255,255,.1)}
+.radio input{display:none}
+.radio:has(input:checked){border-color:var(--gold);background:rgba(201,168,76,.08);color:var(--gold-l);box-shadow:0 0 24px var(--gold-glow)}
+.submit{width:100%;padding:16px;margin-top:12px;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:10px;color:var(--ink);background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));background-size:200% 100%;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 24px rgba(201,168,76,.2);animation:shimmer 3s ease-in-out infinite;transition:all .4s}
+.submit:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.3)}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@media(max-width:820px){.main-layout{grid-template-columns:1fr}}
 .loading{text-align:center;padding:40px;color:var(--tx3)}
 .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -57,16 +79,24 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 <div class="app">
 <div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">紫 微 斗 数 · 三 合 盘</div></div>
 
-<div class="card" style="padding:14px 20px;text-align:center;width:100%;max-width:860px">
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;justify-content:center">
-<div><label style="font-size:10px;color:var(--tx3);display:block">年</label><input id="zwY" type="number" placeholder="2004" min="1900" max="2100" style="width:65px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:10px;color:var(--tx3);display:block">月</label><input id="zwM" type="number" placeholder="8" min="1" max="12" style="width:50px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:10px;color:var(--tx3);display:block">日</label><input id="zwD" type="number" placeholder="14" min="1" max="31" style="width:50px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:10px;color:var(--tx3);display:block">时</label><select id="zwH" style="width:80px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit"></select></div>
-<div><label style="font-size:10px;color:var(--tx3);display:block">分</label><input id="zwMin" type="number" placeholder="0" min="0" max="59" style="width:45px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:10px;color:var(--tx3);display:block">性别</label><select id="zwG" style="width:55px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit"><option value="male">男</option><option value="female">女</option></select></div>
-<button onclick="doPaipan()" style="padding:9px 18px;font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:8px;cursor:pointer;letter-spacing:4px;font-family:inherit">排 盘</button>
-</div></div>
+<!-- 主布局 -->
+<div class="main-layout">
+  <div class="side-panel">
+    <div class="card" style="padding:28px 24px">
+      <div class="card-title">出 生 信 息</div>
+      <div class="row"><div class="field"><label>年份</label><select id="zwY"></select></div><div class="field"><label>月份</label><select id="zwM"></select></div><div class="field"><label>日期</label><select id="zwD"></select></div></div>
+      <div class="row two"><div class="field"><label>时辰</label><select id="zwH"></select></div><div class="field"><label>分钟</label><input type="number" class="minute-inp" id="zwMin" value="0" min="0" max="59" placeholder="0"></div></div>
+      <div class="row"><div class="field"><label>性别</label><div class="radio-group"><label class="radio"><input type="radio" name="zwGender" value="male" checked><span>男</span></label><label class="radio"><input type="radio" name="zwGender" value="female"><span>女</span></label></div></div></div>
+      <div class="row two"><div class="field"><label>省份</label><select id="zwProv"></select></div><div class="field"><label>城市</label><select id="zwCity"></select></div></div>
+      <button class="submit" onclick="doPaipan()">开 始 排 盘</button>
+    </div>
+  </div>
+  <div class="main-area">
+    <div class="info" id="infoBar">请填写出生信息后点击排盘</div>
+    <div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
+    <div class="triad-grid" id="triads"></div>
+  </div>
+</div>
 
 <div class="info" id="infoBar">请填写出生信息后点击排盘</div>
 <div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
@@ -74,14 +104,46 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 </div>
 
 <script src="js/lunar.js?v=99"></script>
+<script src="js/region.js?v=99"></script>
 <script src="js/ziwei-db.js?v=99"></script>
 <script src="js/ziwei.js?v=99"></script>
 <script>
+var PROV_LNG={'北京':116.4,'天津':117.2,'河北':114.5,'山西':112.5,'内蒙古':111.7,'辽宁':123.4,'吉林':125.3,'黑龙江':126.6,'上海':121.5,'江苏':118.8,'浙江':120.2,'安徽':117.3,'福建':119.3,'江西':115.9,'山东':117.0,'河南':113.7,'湖北':114.3,'湖南':113.0,'广东':113.3,'广西':108.3,'海南':110.3,'重庆':106.5,'四川':104.1,'贵州':106.7,'云南':102.7,'西藏':91.1,'陕西':108.9,'甘肃':103.7,'青海':101.8,'宁夏':106.3,'新疆':87.6,'香港':114.2,'澳门':113.5,'台湾':121.5};
+
+// init selects
 (function(){
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 var s=document.getElementById('zwH');
 for(var i=0;i<12;i++){var o=document.createElement('option');o.value=i;o.textContent=DZ[i]+'时('+(i*2)+'-'+(i*2+2)+'点)';s.appendChild(o);}
+
+var bj=new Date(Date.now()+8*60*60*1000);
+function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement('option');o.value=i;o.textContent=i;if(i===cur)o.selected=true;s.appendChild(o);}}
+fill('zwY',1960,bj.getUTCFullYear(),2000);
+fill('zwM',1,12,bj.getUTCMonth()+1);
+fill('zwD',1,31,bj.getUTCDate());
+
+// province/city
+var ps=Object.keys(REGION_DATA);
+var pSel=document.getElementById('zwProv'),cSel=document.getElementById('zwCity');
+ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});
+pSel.value='广东';
+function upCity(){cSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});}
+pSel.addEventListener('change',upCity);upCity();
 })();
+
+function getTrueSolarHour(h,minute,prov,year,month,day){
+var lng=PROV_LNG[prov]||116.4;
+var offsetMin=Math.round((120-lng)*4);
+var t=new Date(year,month-1,day);
+var doy=Math.floor((t-new Date(year,0,0))/86400000);
+var b=360/365*(doy-81);
+var eot=9.87*Math.sin(2*b*Math.PI/180)-7.53*Math.cos(b*Math.PI/180)-1.5*Math.sin(b*Math.PI/180);
+var totalMin=(h*60)+minute+offsetMin+Math.round(eot);
+while(totalMin<0)totalMin+=1440;totalMin%=1440;
+var trueHour=Math.floor(totalMin/60)%24;
+var DZ_IDX=[0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11];
+return DZ_IDX[trueHour];
+}
 
 function doPaipan(){
 var y=parseInt(document.getElementById('zwY').value);
@@ -89,7 +151,10 @@ var m=parseInt(document.getElementById('zwM').value);
 var d=parseInt(document.getElementById('zwD').value);
 var h=parseInt(document.getElementById('zwH').value);
 var min=parseInt(document.getElementById('zwMin').value)||0;
-var isMale=document.getElementById('zwG').value==='male';
+var prov=document.getElementById('zwProv').value;
+var gEls=document.getElementsByName('zwGender');
+var isMale=true;for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
+var correctedH=getTrueSolarHour(h,min,prov,y,m,d);
 if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整出生信息');return;}
 document.getElementById('zwGrid').innerHTML='';
 document.getElementById('svgLines').innerHTML='';
@@ -97,7 +162,7 @@ document.getElementById('triads').innerHTML='';
 document.getElementById('infoBar').innerHTML='<div class="loading"><div class="spinner"></div><p>排盘中...</p></div>';
 setTimeout(function(){
 try{
-var zw=ZIWEI_CALC.calcZiwei(y,m,d,h,isMale);
+var zw=ZIWEI_CALC.calcZiwei(y,m,d,correctedH,isMale);
 zw._birthYear=y;zw._birthMonth=m;zw._birthDay=d;zw._birthHour=h;zw._birthMin=min;zw._isMale=isMale;
 renderChart(zw);
 }catch(e){document.getElementById('infoBar').innerHTML='<p style="color:#e07050">排盘失败: '+e.message+'</p>';}
