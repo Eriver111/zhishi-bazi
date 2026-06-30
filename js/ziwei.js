@@ -343,10 +343,11 @@ var ZIWEI_CALC = (function(){
     var goForward=(isYangGan&&isMale)||(!isYangGan&&!isMale);
     var daxian=[];
     for(var di=0;di<12;di++){
-      var palaceIdx=(mingPos + (goForward?di:-di) + 12)%12;
-      var palName=ZIWEI.palaces[di].name;
+      var zhiIdx=(mingPos + (goForward?di:-di) + 12)%12;
+      var palName='';
+      for(var pi=0;pi<palaces.length;pi++){ if(palaces[pi].idx===zhiIdx){ palName=palaces[pi].name; break; } }
       var age=startAge+di*10;
-      daxian.push({name:palName, zhi:DZ[palaceIdx], ageRange:age+'~'+(age+9)});
+      daxian.push({name:palName, zhi:DZ[zhiIdx], ageRange:age+'~'+(age+9)});
       if(chart[palName]) chart[palName].daXian=age+'~'+(age+9);
     }
     // 三方四正分析
