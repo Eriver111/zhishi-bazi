@@ -36,6 +36,8 @@ if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>
 
 var ts=getTrueSolar(h,min,prov,city,dist,y,m,d);
 var ti=ts.dzIdx,gender=isMale?"male":"female";
+console.log("DEBUG timeIndex="+ti+" trueSolar="+ts.th+":"+ts.tm+" dzIdx="+ts.dzIdx);
+console.log("first palace:",zi.palaces[0].name,zi.palaces[0].earthlyBranch);
 var zi=iztro.astro.bySolar(y+"-"+m+"-"+d,ti,gender,true,"zh-CN");
 
 var b2p={};zi.palaces.forEach(function(p){b2p[p.earthlyBranch]=p;});
