@@ -88,6 +88,13 @@
   <div class="page-title">六爻占卜</div>
   <div class="page-sub">诚心默念所问之事 · 掷钱六次以成卦</div>
 
+  <!-- 北京时间挂钟 -->
+  <div id="bj-clock" style="text-align:center;margin-bottom:20px;padding:10px 16px;background:rgba(13,21,37,.5);border:1px solid rgba(201,168,76,.12);border-radius:10px;display:inline-block;width:100%;box-sizing:border-box">
+    <span style="font-size:11px;color:var(--tx3);letter-spacing:2px;margin-right:8px">北京时间</span>
+    <span id="bj-time" style="font-size:18px;color:var(--gold-l);font-weight:700;font-family:monospace;letter-spacing:2px">--:--:--</span>
+    <span id="bj-date" style="font-size:11px;color:var(--tx2);margin-left:10px;letter-spacing:1px">----年--月--日 周-</span>
+  </div>
+
   <div class="split-layout">
     <!-- ====== 左栏：摇卦区 ====== -->
     <div class="split-left">
@@ -191,6 +198,27 @@ function doToss(){
   },700);
 }
 
+// 北京时间工具函数（永远以UTC+8为准）
+function getBeijingTime(){
+  var now=new Date();
+  var bjOffset=8*60; // UTC+8 分钟
+  var localOffset=now.getTimezoneOffset();
+  var bjMs=now.getTime()+(bjOffset+localOffset)*60000;
+  return new Date(bjMs);
+}
+
+function updateBeijingClock(){
+  var bt=getBeijingTime();
+  var h=bt.getUTCHours(), m=bt.getUTCMinutes(), s=bt.getUTCSeconds();
+  var el=document.getElementById('bj-time');
+  if(el) el.textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  var days=['日','一','二','三','四','五','六'];
+  var de=document.getElementById('bj-date');
+  if(de) de.textContent=bt.getUTCFullYear()+'年'+(bt.getUTCMonth()+1)+'月'+bt.getUTCDate()+'日 周'+days[bt.getUTCDay()];
+}
+setInterval(updateBeijingClock, 1000);
+updateBeijingClock();
+
 function findGua(name){ return YIJING.find(function(g){ return g.name===name; }); }
 
 function showGuaReveal(gName,lines,callback){
@@ -218,12 +246,11 @@ function doAnalyze(){
   if(typeof LIUYAO==='undefined'){ res.innerHTML='<div class="card"><p style="text-align:center;color:#e07050">引擎未加载</p></div>'; return; }
   if(typeof YIJING==='undefined'){ res.innerHTML='<div class="card"><p style="text-align:center;color:#e07050">数据库未加载</p></div>'; return; }
 
-  var today=new Date();
-  // 日干支（UTC精确，用于六神排盘）
-  var tUTC=new Date(Date.UTC(nY,nM-1,nD,12,0,0)), baseUTC=new Date(Date.UTC(1900,0,1,12,0,0));
-  var dDays=Math.round((tUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
+  // 日干支（复用上方 today=getBeijingTime() 的结果）
+  var noonUTC=Date.UTC(nY,nM-1,nD,12,0,0), baseUTC=Date.UTC(1900,0,1,12,0,0);
+  var dDays=Math.round((noonUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
   var dayGanIdx=dIdx%10;
-  var monthZhi=DZ[(today.getMonth()+1)%12]||'子';
+  var monthZhi=DZ[(today.getUTCMonth()+1)%12]||'子';
 
   try{
   var zg=LIUYAO.zhuangGua(lines, dayGanIdx, monthZhi);
@@ -236,7 +263,7 @@ function doAnalyze(){
   var origDB=findGua(zg.guaName), chgDB=chgZg?findGua(chgZg.guaName):null;
 
   var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  var nY=today.getFullYear(), nM=today.getMonth()+1, nD=today.getDate(), nH=today.getHours();
+  var nY=today.getUTCFullYear(), nM=today.getUTCMonth()+1, nD=today.getUTCDate(), nH=today.getUTCHours();
   var yGIdx=(nY-4)%10, yZIdx=(nY-4)%12;
   var mGIdx=(yGIdx*2+nM)%10, mZIdx=nM%12;
   var tUTC=new Date(Date.UTC(nY,nM-1,nD,12,0,0)), baseUTC=new Date(Date.UTC(1900,0,1,12,0,0));
@@ -354,10 +381,12 @@ window.doAIReading=function(){
   var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, chgDB=res._chgDB, moving=res._movingLines;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
 
-  // 计算日辰（dG dZ 用于 prompt 中的日辰信息）
-  var today=new Date();
-  var nY=today.getFullYear(), nM=today.getMonth()+1, nD=today.getDate();
-  var dG=TG[dIdx%10], dZ=DZ[dIdx%12]; // 复用上方日辰
+  // 计算日辰（北京时间，用于 prompt 中的日辰信息）
+  var today=getBeijingTime();
+  var nY=today.getUTCFullYear(), nM=today.getUTCMonth()+1, nD=today.getUTCDate();
+  var noonUTC=Date.UTC(nY,nM-1,nD,12,0,0), baseUTC=Date.UTC(1900,0,1,12,0,0);
+  var dDays=Math.round((noonUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
+  var dG=TG[dIdx%10], dZ=DZ[dIdx%12];
 
   var readingDiv=document.getElementById('aiReading');
   if(!readingDiv){
