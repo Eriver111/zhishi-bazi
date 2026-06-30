@@ -59,8 +59,22 @@ h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:22px;margin:
 </style></head><body>
 <div class="wrap">
 <h2>紫微斗数 · 三合盘</h2>
+
+<!-- 输入表单 -->
+<div class="card" id="formCard" style="margin-bottom:16px;padding:18px 24px">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;justify-content:center">
+    <div class="field"><label>年</label><input id="zwY" type="number" value="2004" min="1900" max="2100" style="width:70px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px"></div>
+    <div class="field"><label>月</label><input id="zwM" type="number" value="8" min="1" max="12" style="width:55px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px"></div>
+    <div class="field"><label>日</label><input id="zwD" type="number" value="14" min="1" max="31" style="width:55px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px"></div>
+    <div class="field"><label>时</label><select id="zwH" style="width:80px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);font-size:14px"></select></div>
+    <div class="field"><label>分</label><input id="zwMin" type="number" value="16" min="0" max="59" style="width:55px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);text-align:center;font-size:14px"></div>
+    <div class="field"><label>性别</label><select id="zwG" style="width:60px;padding:8px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:6px;color:var(--tx);font-size:14px"><option value="male">男</option><option value="female">女</option></select></div>
+    <button onclick="doPaipan()" style="padding:9px 20px;font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:8px;cursor:pointer;letter-spacing:4px">排 盘</button>
+  </div>
+</div>
+
 <div class="info" id="infoBar"></div>
-<div style="position:relative"><div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div><svg class="svg-overlay" id="svgLines"></svg></div>
+<div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
 <div class="triad-grid" id="triads"></div>
 </div>
 
@@ -68,8 +82,46 @@ h2{text-align:center;color:var(--gold);letter-spacing:6px;font-size:22px;margin:
 <script src="js/ziwei-db.js?v=99"></script>
 <script src="js/ziwei.js?v=99"></script>
 <script>
+// 初始化时辰下拉
 (function(){
-var zw=ZIWEI_CALC.calcZiwei(2004,8,14,1,true);
+  var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var sel=document.getElementById('zwH');
+  for(var i=0;i<12;i++){ var o=document.createElement('option');o.value=i;o.textContent=DZ[i]+'时('+(i*2)+'-'+(i*2+2)+'点)';if(i===1)o.selected=true;sel.appendChild(o); }
+})();
+
+function doPaipan(){
+  var y=parseInt(document.getElementById('zwY').value);
+  var m=parseInt(document.getElementById('zwM').value);
+  var d=parseInt(document.getElementById('zwD').value);
+  var h=parseInt(document.getElementById('zwH').value);
+  var min=parseInt(document.getElementById('zwMin').value)||0;
+  var isMale=document.getElementById('zwG').value==='male';
+
+  // Clear previous
+  document.getElementById('zwGrid').innerHTML='';
+  document.getElementById('svgLines').innerHTML='';
+  document.getElementById('triads').innerHTML='';
+  document.getElementById('infoBar').innerHTML='<div class=\"loading\"><div class=\"spinner\"></div><p>排盘中...</p></div>';
+
+  setTimeout(function(){
+  try{
+  var zw=ZIWEI_CALC.calcZiwei(y,m,d,h,isMale);
+  renderChart(zw);
+  }catch(e){
+    document.getElementById('infoBar').innerHTML='<p style=\"color:#e07050\">排盘失败: '+e.message+'</p>';
+  }
+  },50);
+}
+
+// 初始加载
+setTimeout(function(){ doPaipan(); },100);
+
+function renderChart(zw){
+  var chart=zw.chart;
+  document.getElementById('infoBar').innerHTML='命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b>'+(zw.isMale!==false?' | 阳男':' | 阴女');
+
+(function(){
+var zw2=zw, chart2=chart;
 var chart=zw.chart;
 document.getElementById('infoBar').innerHTML='命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b> | 阳男 | 甲申年六月廿九丑时';
 
@@ -245,6 +297,7 @@ zw.triads.forEach(function(t){
   card.innerHTML='<div class="t-name">'+t.name+'</div><div class="t-palaces">'+t.palaces+'</div><div class="t-summary">'+t.summary+'</div>';
   td.appendChild(card);
 });
-})();
+})(); // end renderChart IIFE
+}
 </script>
 </body></html>
