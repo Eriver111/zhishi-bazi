@@ -8,7 +8,7 @@ const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat';
 
 const { requireAuth } = require('../lib/auth.js');
-const { deductCredit, isMonthlyActive, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');
+const { deductCredit, isMonthlyActive, isMonthlyActiveByUserId, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');
 
 const DIVINATION_SYSTEM = `你是"知时先生"，一位精通周易六爻与梅花易数的 AI 占卜师。你深研《周易》经文、十翼（彖传、象传、系辞）、京房纳甲体系，以及宋代邵雍《梅花易数》。
 
@@ -82,13 +82,14 @@ module.exports = async function handler(req, res) {
     }
     var userId = authUser.uid;
 
-    // 积分检查：免费次数（3次）→ 付费积分
+    // 积分检查：月度会员 → 免费次数（3次）→ 付费积分
+    var monthlyActive = await isMonthlyActiveByUserId(userId);
     var freeInfo = await trackFreeUsageByUser(userId);
-    var maxFree = 3; // 占卜免费 3 次
+    var maxFree = 3;
     var freeUsed = false;
-    var creditOk = freeInfo.used < maxFree;
+    var creditOk = !!monthlyActive || freeInfo.used < maxFree;
 
-    // 免费次数用完，检查付费积分
+    // 不是会员且免费次数用完，检查付费积分
     if (!creditOk) {
       var totalCredits = await getUserCredits(userId);
       if (totalCredits > 0) creditOk = true;
@@ -101,8 +102,10 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // 扣减：优先免费次数，其次付费积分
-    if (freeInfo.used < maxFree) {
+    // 扣减：月度会员不扣 → 免费次数 → 付费积分
+    if (monthlyActive) {
+      freeUsed = false; // 月度会员不限次
+    } else if (freeInfo.used < maxFree) {
       await bumpFreeUsageByUser(userId);
       freeUsed = true;
     } else {
@@ -175,7 +178,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       reading: reading,
       creditsLeft: remainingCredits,
-      freeUsed: freeUsed
+      freeUsed: freeUsed,
+      isMonthly: !!monthlyActive
     });
 
   } catch (e) {
