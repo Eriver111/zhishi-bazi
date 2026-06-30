@@ -278,6 +278,14 @@ var ZIWEI_CALC = (function(){
     zaByZhi[DZ[(mingPos+8)%12]]=(zaByZhi[DZ[(mingPos+8)%12]]||[]).concat(['年解']);
 
 
+
+    // 将前/岁前也加入星列（有亮度标注）
+    for(var zz=0;zz<12;zz++){
+      if(jqByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([jqByZhi[DZ[zz]]]);
+      if(sqByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([sqByZhi[DZ[zz]]]);
+      if(boshiByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([boshiByZhi[DZ[zz]]]);
+    }
+
     // 流年：从年支起1岁，每年顺行一宫
     var liuNianByZhi={};
     for(var li=0;li<12;li++){
