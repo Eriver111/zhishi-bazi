@@ -200,6 +200,7 @@ var center=document.createElement('div');center.className='center-cell';
 center.style.cssText='grid-area:2/2/4/4';
 var DZ2=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 var TG2=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+function pad2(n){return(n<10?"0":"")+n;}
 var lunar=LunarCalendar.solarToLunar(zw._birthYear,zw._birthMonth,zw._birthDay);
 var lGan=TG2[(zw._birthYear-4)%10], lZhi=DZ2[(zw._birthYear-4)%12];
 var clockH=zw._birthHour, clockM=zw._birthMin||0;
@@ -216,7 +217,7 @@ center.innerHTML=
   '<div class="c-title">'+zw.wuxingJu.replace('局','')+'<br>局</div>'+
   '<div class="c-info" style="font-size:9px">'+zw._birthYear+'年'+zw._birthMonth+'月'+zw._birthDay+'日 '+DZ2[zw._birthHour]+'时</div>'+
   '<div class="c-info" style="font-size:9px">农历 '+lGan+lZhi+'年'+lunar.lMonth+'月'+lunar.lDay+'日</div>'+
-  '<div class="c-info" style="font-size:9px">真太阳时 '+(trueH<10?\"0\":\"\")+trueH+':'+(trueM<10?\"0\":\"\")+trueM+' · 钟表 '+clockH+':'+(clockM<10?\"0\":\"\")+clockM+'</div>'+
+  '<div class="c-info" style="font-size:9px">真太阳时 '+pad2(trueH)+':'+pad2(trueM)+' · 钟表 '+clockH+':'+pad2(clockM)+'</div>'+
   '<div class="c-info">命主 '+zw.mingZhu+'</div>'+
   '<div class="c-info">身主 '+zw.shenZhu+'</div>'+
   '<div class="c-info" style="color:#e8cf70;font-size:10px;margin-top:2px">身宫 '+zw.shenGong+'</div>'+
