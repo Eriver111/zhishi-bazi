@@ -1893,15 +1893,29 @@ function calcDayMasterStrength(bazi) {
     else if (WOKE[dgWx] === gwx)   score -= 5;  // 财星（耗）
   });
 
-  // ---------- ④ 地支藏干辅助 ----------
+  // ---------- ④ 地支藏干辅助（正负双向，藏干权重约为天干一半） ----------
   ['year','month','day','hour'].forEach(function(pos) {
     var cg = getCangGan(bazi[pos].zhi);
     cg.forEach(function(g) {
       var gwx = WU_XING[g];
-      if (gwx === dgWx)            score += 3; // 藏干比肩
-      else if (SHENGWO[dgWx] === gwx) score += 2; // 藏干印星
+      if (gwx === dgWx)            score += 3;  // 藏干比肩（通根）
+      else if (SHENGWO[dgWx] === gwx) score += 2;  // 藏干印星
+      else if (KEWO[dgWx] === gwx)   score -= 2;  // 藏干官杀（半权）
+      else if (WOSHENG[dgWx] === gwx) score -= 1;  // 藏干食伤（半权）
+      else if (WOKE[dgWx] === gwx)   score -= 2;  // 藏干财星（半权）
     });
   });
+  // 藏干克泄耗过多时的额外惩罚
+  var cgKeCount = 0;
+  ['year','month','day','hour'].forEach(function(pos) {
+    var cg = getCangGan(bazi[pos].zhi);
+    cg.forEach(function(g) {
+      var gwx = WU_XING[g];
+      if (KEWO[dgWx] === gwx || WOSHENG[dgWx] === gwx || WOKE[dgWx] === gwx) cgKeCount++;
+    });
+  });
+  if (cgKeCount >= 6) score -= 5;  // 藏干克泄耗过半，暗箭难防
+  else if (cgKeCount >= 4) score -= 2;
 
   // ---------- ⑤ 五行过耗修正（日主克月令时，月令五行过旺则日主被反耗） ----------
   // 统计月令五行在盘面中的出现次数（天干+地支）
@@ -1960,10 +1974,10 @@ function calcDayMasterStrength(bazi) {
 
   // ---------- ⑥ 分级输出 ----------
   var level, label;
-  if (score >= 85)      { level = '极强'; label = '元气充沛'; }
-  else if (score >= 65) { level = '偏强'; label = '元气较足'; }
-  else if (score >= 45) { level = '中和'; label = '元气均衡'; }
-  else if (score >= 35) { level = '偏弱'; label = '元气偏柔'; }
+  if (score >= 80)      { level = '极强'; label = '元气充沛'; }
+  else if (score >= 60) { level = '偏强'; label = '元气较足'; }
+  else if (score >= 40) { level = '中和'; label = '元气均衡'; }
+  else if (score >= 30) { level = '偏弱'; label = '元气偏柔'; }
   else                  { level = '极弱'; label = '元气清秀'; }
 
   // 动态话术：根据得令得地得势生成具体描述
