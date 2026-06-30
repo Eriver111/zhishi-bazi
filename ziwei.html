@@ -131,7 +131,7 @@ var CITY_LNG={
 (function(){
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 var s=document.getElementById('zwH');
-for(var i=0;i<12;i++){var o=document.createElement('option');o.value=i;o.textContent=DZ[i]+'时('+(i*2)+'-'+(i*2+2)+'点)';s.appendChild(o);}
+for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement('option');o.value=i;o.textContent=i+'点 ('+DZ[dzIdx]+'时)';if(i===8)o.selected=true;s.appendChild(o);}
 
 var bj=new Date(Date.now()+8*60*60*1000);
 function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement('option');o.value=i;o.textContent=i;if(i===cur)o.selected=true;s.appendChild(o);}}
@@ -149,9 +149,8 @@ function upDist(){dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!citie
 pSel.addEventListener('change',upCity);cSel.addEventListener('change',upDist);upCity();
 })();
 
-function getTrueSolarHour(h,minute,prov,city,dist,year,month,day){
+function getTrueSolarHour(clockH,minute,prov,city,dist,year,month,day){
 var lng=PROV_LNG[prov]||116.4;
-// City-level precision
 if(city&&CITY_LNG[city]){lng=CITY_LNG[city][dist]||CITY_LNG[city][Object.keys(CITY_LNG[city])[0]]||lng;}
 else if(city){var cl=Object.values(CITY_LNG).find(function(v){return v[city]!==undefined;});if(cl)lng=cl[city];}
 var offsetMin=Math.round((120-lng)*4);
@@ -159,11 +158,12 @@ var t=new Date(year,month-1,day);
 var doy=Math.floor((t-new Date(year,0,0))/86400000);
 var b=360/365*(doy-81);
 var eot=9.87*Math.sin(2*b*Math.PI/180)-7.53*Math.cos(b*Math.PI/180)-1.5*Math.sin(b*Math.PI/180);
-var totalMin=(h*60)+minute+offsetMin+Math.round(eot);
+var totalMin=(clockH*60)+minute+offsetMin+Math.round(eot);
 while(totalMin<0)totalMin+=1440;totalMin%=1440;
-var trueHour=Math.floor(totalMin/60)%24;
+var trueClockH=Math.floor(totalMin/60)%24;
+var trueClockM=totalMin%60;
 var DZ_IDX=[0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11];
-return DZ_IDX[trueHour];
+return {dzIdx:DZ_IDX[trueClockH], trueClockH:trueClockH, trueClockM:trueClockM};
 }
 
 function doPaipan(){
@@ -177,7 +177,8 @@ var city=document.getElementById('zwCity').value;
 var dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender');
 var isMale=true;for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
-var correctedH=getTrueSolarHour(h,min,prov,city,dist,y,m,d);
+var ts=getTrueSolarHour(h,min,prov,city,dist,y,m,d);
+var correctedH=ts.dzIdx;
 if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整出生信息');return;}
 document.getElementById('zwGrid').innerHTML='';
 document.getElementById('svgLines').innerHTML='';
@@ -186,7 +187,8 @@ document.getElementById('infoBar').innerHTML='<div class="loading"><div class="s
 setTimeout(function(){
 try{
 var zw=ZIWEI_CALC.calcZiwei(y,m,d,correctedH,isMale);
-zw._birthYear=y;zw._birthMonth=m;zw._birthDay=d;zw._birthHour=h;zw._birthMin=min;zw._isMale=isMale;
+zw._birthYear=y;zw._birthMonth=m;zw._birthDay=d;zw._birthHour=correctedH;zw._birthMin=min;zw._isMale=isMale;
+zw._clockHour=h;zw._clockMin=min;zw._trueSolarH=ts.trueClockH;zw._trueSolarM=ts.trueClockM;
 renderChart(zw);
 }catch(e){document.getElementById('infoBar').innerHTML='<p style="color:#e07050">排盘失败: '+e.message+'</p>';}
 },50);
@@ -200,14 +202,8 @@ var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
 var TG2=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 var lunar=LunarCalendar.solarToLunar(zw._birthYear,zw._birthMonth,zw._birthDay);
 function pad2(n){return(n<10?'0':'')+n;}
-var clockH=zw._birthHour,clockM=zw._birthMin||0;
-var t=new Date(zw._birthYear,zw._birthMonth-1,zw._birthDay);
-var doy=Math.floor((t-new Date(zw._birthYear,0,0))/86400000);
-var b=360/365*(doy-81);
-var eot=9.87*Math.sin(2*b*Math.PI/180)-7.53*Math.cos(b*Math.PI/180)-1.5*Math.sin(b*Math.PI/180);
-var totalMin=clockH*60+clockM+Math.round(eot);
-while(totalMin<0)totalMin+=1440;totalMin%=1440;
-var trueH=Math.floor(totalMin/60)%24,trueM=totalMin%60;
+var clockH=zw._clockHour||0,clockM=zw._clockMin||0;
+var trueH=zw._trueSolarH||0,trueM=zw._trueSolarM||0;
 
 var gridZhiOrder=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
 var palaceOrder=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
