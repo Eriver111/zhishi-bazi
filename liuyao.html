@@ -351,6 +351,13 @@ window.doAIReading=function(){
   var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, chgDB=res._chgDB, moving=res._movingLines;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
 
+  // 计算日辰（dG dZ 用于 prompt 中的日辰信息）
+  var today=new Date();
+  var nY=today.getFullYear(), nM=today.getMonth()+1, nD=today.getDate();
+  var tUTC=new Date(Date.UTC(nY,nM-1,nD,12,0,0)), baseUTC=new Date(Date.UTC(1900,0,1,12,0,0));
+  var dDays=Math.round((tUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
+  var dG=TG[dIdx%10], dZ=DZ[dIdx%12];
+
   var readingDiv=document.getElementById('aiReading');
   if(!readingDiv){
     readingDiv=document.createElement('div'); readingDiv.id='aiReading';
