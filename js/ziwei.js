@@ -167,6 +167,18 @@ var ZIWEI_CALC = (function(){
     var yearGan=TG[yearGanIdx];
     var sihua=ZIWEI.sihua[yearGan]||{};
 
+    // 长生十二神：五行局定起点(金巳木亥水申火寅土申)，阳男阴女顺行/阴男阳女逆行
+    var CHANG_SHENG=['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
+    var csStart={0:5,1:11,2:8,3:2,4:8};
+    var csBegin=csStart[ju]||8;
+    var isYG='甲丙戊庚壬'.indexOf(TG[yearGanIdx])>=0;
+    var csForward=(isYG&&isMale)||(!isYG&&!isMale);
+    var changShengByZhi={};
+    for(var ci=0;ci<12;ci++){
+      var zhiIdx=(csBegin + (csForward?ci:-ci) + 12) % 12;
+      changShengByZhi[DZ[zhiIdx]]=CHANG_SHENG[ci];
+    }
+
     // 命主(命宫地支→星)、身主(生年年支→星)
     var MINGZHU_MAP={0:'贪狼',1:'巨门',2:'天机',3:'文曲',4:'廉贞',5:'武曲',6:'破军',7:'武曲',8:'廉贞',9:'文曲',10:'禄存',11:'巨门'};
     var SHENZHU_MAP={0:'火星',1:'天相',2:'天梁',3:'天同',4:'文昌',5:'天机',6:'火星',7:'天相',8:'天梁',9:'天同',10:'文昌',11:'天机'};
@@ -194,6 +206,7 @@ var ZIWEI_CALC = (function(){
       chart[p.name]={
         ganZhi:gz, zhi:p.zhi, gan:palaceGans[i],
         stars:stars, starInfo:starInfo, minors:minors, hua:hua,
+        changSheng:changShengByZhi[p.zhi]||'',
         meaning:ZIWEI.palaces[i].meaning
       };
     });
