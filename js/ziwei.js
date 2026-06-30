@@ -301,7 +301,6 @@ var ZIWEI_CALC = (function(){
     var shenGongZhiIdx=(2 + (lMonth-1) + hour) % 12; var shenGongZhi=DZ[shenGongZhiIdx]; var shenGongName=""; for(var i=0;i<palaces.length;i++){if(palaces[i].zhi===shenGongZhi){shenGongName=palaces[i].name;break;}}
     var shenZhu=SHENZHU_MAP[yearZhiIdx]||'';
     var ziDouZhi=DZ[(2+(lMonth-1)+hour)%12];
-    var trueSolarTimeStr=(trueSolarH<10?"0":"")+trueSolarH+":"+(trueSolarM<10?"0":"")+trueSolarM;
 
     // 组装结果
     var chart={};
