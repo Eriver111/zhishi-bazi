@@ -276,12 +276,6 @@ var ZIWEI_CALC = (function(){
 
     // ====== 特殊 ======
     zaByZhi[DZ[(mingPos+8)%12]]=(zaByZhi[DZ[(mingPos+8)%12]]||[]).concat(['年解']);
-    // 劫煞/天德/龙德从将前/岁前注入
-    // (将前劫煞: jqByZhi, 岁前天德/龙德: sqByZhi — 也在 zaByZhi 放一份)
-    for(var zz=0;zz<12;zz++){
-      if(jqByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([jqByZhi[DZ[zz]]]);
-      if(sqByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([sqByZhi[DZ[zz]]]);
-    }
 
 
     // 流年：从年支起1岁，每年顺行一宫
