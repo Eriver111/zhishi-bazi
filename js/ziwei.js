@@ -11,8 +11,8 @@ var ZIWEI_CALC = (function(){
   function anMingGong(lunarMonth, birthHour){
     // 从寅宫起正月，逆数到出生月，再从该宫顺数到出生时辰
     var yinPos=2; // 寅在DZ中index=2
-    var pos=(yinPos - (lunarMonth-1) + 12) % 12;
-    pos=(pos + birthHour) % 12;
+    var pos=(yinPos + (lunarMonth-1)) % 12;
+    pos=(pos - birthHour + 12) % 12;
     return pos; // 命宫所在地支index
   }
 
@@ -30,7 +30,7 @@ var ZIWEI_CALC = (function(){
   function getPalaceGan(yearGanIdx, palaces){
     // 寅宫天干 = (yearGanIdx * 2 + 1) % 10
     var yinIdx=2;
-    var yinGan=(yearGanIdx * 2 + 1) % 10;
+    var yinGan=(yearGanIdx * 2 + 2) % 10;
     return palaces.map(function(p){
       var offset=(p.idx - yinIdx + 12) % 12;
       return TG[(yinGan + offset) % 10];
@@ -66,11 +66,11 @@ var ZIWEI_CALC = (function(){
   // ============ 4. 安紫微星（标准查表法） ============
   // 紫微星位置表：五行局×农历日→地支index
   var ZIWEI_TABLE = {
-    '水':[2,1,0,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0],
-    '木':[1,0,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11],
-    '金':[0,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10],
-    '火':[3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0],
-    '土':[2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0,11,10,9,8,7,6,5,4,3,2,1,0]
+    '水':[2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7],
+    '木':[1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6],
+    '金':[0,1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5],
+    '火':[3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7,8],
+    '土':[2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7,8,9,10,11,0,1,2,3,4,5,6,7]
   };
   var JU_WUXING=['金','木','水','火','土']; // ju 0=金,1=木,2=水,3=火,4=土
 
@@ -94,7 +94,7 @@ var ZIWEI_CALC = (function(){
       if(k!==' ') positions[k]=pos;
     }
     // 天府在紫微的对称位
-    var tianfuPos=(4 - (ziweiPos - 2) + 12) % 12;
+    var tianfuPos=(4 - ziweiPos + 12) % 12; // 天府=寅+寅-紫微
     positions['天府']=tianfuPos;
     var tfOffsets={ '太阴':1,'贪狼':2,'巨门':3,'天相':4,'天梁':5,'七杀':6,'破军':10 };
     for(var k in tfOffsets){
@@ -168,7 +168,7 @@ var ZIWEI_CALC = (function(){
     var MINGZHU_MAP={0:'贪狼',1:'巨门',2:'天机',3:'文曲',4:'廉贞',5:'武曲',6:'破军',7:'武曲',8:'廉贞',9:'文曲',10:'禄存',11:'巨门'};
     var SHENZHU_MAP={0:'火星',1:'天相',2:'天梁',3:'天同',4:'文昌',5:'天机',6:'火星',7:'天相',8:'天梁',9:'天同',10:'文昌',11:'天机'};
     var mingZhu=MINGZHU_MAP[DZ.indexOf(mingPalace.zhi)]||'';
-    var shenGongIdx=(mingPos + lMonth - 1) % 12;
+    var shenGongZhiIdx=(2 + (lMonth-1) + hour) % 12; var shenGongZhi=DZ[shenGongZhiIdx]; var shenGongName=""; for(var i=0;i<palaces.length;i++){if(palaces[i].zhi===shenGongZhi){shenGongName=palaces[i].name;break;}}
     var shenZhu=SHENZHU_MAP[yearZhiIdx]||'';
 
     // 组装结果
@@ -257,7 +257,7 @@ var ZIWEI_CALC = (function(){
       mingGong:mingPalace.name,
       mingZhu:mingZhu,
       shenZhu:shenZhu,
-      shenGong:ZIWEI.palaces[shenGongIdx] ? ZIWEI.palaces[shenGongIdx].name : '',
+      shenGong:shenGongName,
       wuxingJu:['金四局','木三局','水二局','火六局','土五局'][ju],
       sihua:sihua,
       lunarMonth:lMonth, lunarDay:lDay,
