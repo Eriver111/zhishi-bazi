@@ -179,6 +179,17 @@ var ZIWEI_CALC = (function(){
       changShengByZhi[DZ[zhiIdx]]=CHANG_SHENG[ci];
     }
 
+    // 博士十二神：从禄存宫起博士，顺行
+    var BOSHI=['博士','力士','青龙','小耗','将军','奏书','飞廉','喜神','病符','大耗','伏兵','官符'];
+    var luCunPos=minorPos['禄存'];
+    var boshiByZhi={};
+    for(var bi=0;bi<12;bi++){ boshiByZhi[DZ[(luCunPos+bi)%12]]=BOSHI[bi]; }
+
+    // 将前十二神：将星在子(0)，顺行
+    var JIANGQIAN=['将星','攀鞍','岁驿','息神','华盖','劫煞','灾煞','天煞','指背','咸池','月煞','亡神'];
+    var jqByZhi={};
+    for(var ji=0;ji<12;ji++){ jqByZhi[DZ[(0+ji)%12]]=JIANGQIAN[ji]; }
+
     // 命主(命宫地支→星)、身主(生年年支→星)
     var MINGZHU_MAP={0:'贪狼',1:'巨门',2:'天机',3:'文曲',4:'廉贞',5:'武曲',6:'破军',7:'武曲',8:'廉贞',9:'文曲',10:'禄存',11:'巨门'};
     var SHENZHU_MAP={0:'火星',1:'天相',2:'天梁',3:'天同',4:'文昌',5:'天机',6:'火星',7:'天相',8:'天梁',9:'天同',10:'文昌',11:'天机'};
@@ -207,6 +218,8 @@ var ZIWEI_CALC = (function(){
         ganZhi:gz, zhi:p.zhi, gan:palaceGans[i],
         stars:stars, starInfo:starInfo, minors:minors, hua:hua,
         changSheng:changShengByZhi[p.zhi]||'',
+        boShi:boshiByZhi[p.zhi]||'',
+        jiangQian:jqByZhi[p.zhi]||'',
         meaning:ZIWEI.palaces[i].meaning
       };
     });
