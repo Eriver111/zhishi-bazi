@@ -27,13 +27,13 @@ return{dzIdx:DZ_IDX[th],th:th,tm:tm2};
 }
 
 function doPaipan(){
-var y=+document.getElementById('zwY').value,m=+document.getElementById('zwM').value,d=+document.getElementById('zwD').value;
-var h=+document.getElementById('zwH').value,min=+document.getElementById('zwMin').value||0;
-if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整出生信息');return;}
+var y=parseInt(document.getElementById('zwY').value,m=+document.getElementById('zwM').value,d=+document.getElementById('zwD').value;
+var h=parseInt(document.getElementById('zwH').value,min=+document.getElementById('zwMin').value||0;
+if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert('请填写完整出生信息');return;}
 var prov=document.getElementById('zwProv').value,city=document.getElementById('zwCity').value,dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender'),isMale=true;
 for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
-if(isNaN(y)||isNaN(m)||isNaN(d)||h===''||h===undefined||isNaN(h)){alert('请填写完整出生信息');return;}
+if(isNaN(y)||isNaN(m)||isNaN(d)||h===''||h===undefined||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert('请填写完整出生信息');return;}
 
 var ts=getTrueSolar(h,min,prov,city,dist,y,m,d);
 var ti=ts.dzIdx,gender=isMale?'male':'female';
