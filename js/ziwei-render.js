@@ -38,7 +38,7 @@ var ts=getTrueSolar(h,min,prov,city,dist,y,m,d);
 var ti=ts.dzIdx,gender=isMale?"male":"female";
 console.log("DEBUG timeIndex="+ti+" trueSolar="+ts.th+":"+ts.tm+" dzIdx="+ts.dzIdx);
 console.log("first palace:",zi.palaces[0].name,zi.palaces[0].earthlyBranch);
-var zi=iztro.astro.bySolar(y+"-"+m+"-"+d,ti,gender,true,"zh-CN");
+var zi=(window.iztro||iztro).astro.bySolar(y+"-"+m+"-"+d,ti,gender,true,"zh-CN");
 
 var b2p={};zi.palaces.forEach(function(p){b2p[p.earthlyBranch]=p;});
 var mingZhi=zi.earthlyBranchOfSoulPalace,shenZhi=zi.earthlyBranchOfBodyPalace;
