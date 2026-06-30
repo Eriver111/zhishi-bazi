@@ -283,7 +283,7 @@ var ZIWEI_CALC = (function(){
     for(var zz=0;zz<12;zz++){
       if(jqByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([jqByZhi[DZ[zz]]]);
       if(sqByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([sqByZhi[DZ[zz]]]);
-      if(boshiByZhi[DZ[zz]])zaByZhi[DZ[zz]]=(zaByZhi[DZ[zz]]||[]).concat([boshiByZhi[DZ[zz]]]);
+      
     }
 
     // 流年：从年支起1岁，每年顺行一宫
