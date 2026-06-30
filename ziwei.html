@@ -104,10 +104,8 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 <div class="triad-grid" id="triads"></div>
 </div>
 
-<script src="js/lunar.js?v=99"></script>
 <script src="js/region.js?v=99"></script>
-<script src="js/ziwei-db.js?v=99"></script>
-<script src="js/ziwei.js?v=99"></script>
+<script src="https://cdn.jsdelivr.net/npm/iztro/dist/iztro.min.js"></script>
 <script>
 var PROV_LNG={'北京':116.4,'天津':117.2,'河北':114.5,'山西':112.5,'内蒙古':111.7,'辽宁':123.4,'吉林':125.3,'黑龙江':126.6,'上海':121.5,'江苏':118.8,'浙江':120.2,'安徽':117.3,'福建':119.3,'江西':115.9,'山东':117.0,'河南':113.7,'湖北':114.3,'湖南':113.0,'广东':113.3,'广西':108.3,'海南':110.3,'重庆':106.5,'四川':104.1,'贵州':106.7,'云南':102.7,'西藏':91.1,'陕西':108.9,'甘肃':103.7,'青海':101.8,'宁夏':106.3,'新疆':87.6,'香港':114.2,'澳门':113.5,'台湾':121.5};
 // 城市级经度（精确到区县）
@@ -178,7 +176,7 @@ var dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender');
 var isMale=true;for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
 var ts=getTrueSolarHour(h,min,prov,city,dist,y,m,d);
-var correctedH=ts.dzIdx;
+var timeIndex=ts.dzIdx;
 if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整出生信息');return;}
 document.getElementById('zwGrid').innerHTML='';
 document.getElementById('svgLines').innerHTML='';
@@ -186,8 +184,10 @@ document.getElementById('triads').innerHTML='';
 document.getElementById('infoBar').innerHTML='<div class="loading"><div class="spinner"></div><p>排盘中...</p></div>';
 setTimeout(function(){
 try{
-var zw=ZIWEI_CALC.calcZiwei(y,m,d,correctedH,isMale);
-zw._birthYear=y;zw._birthMonth=m;zw._birthDay=d;zw._birthHour=correctedH;zw._birthMin=min;zw._isMale=isMale;
+var gender=isMale?"male":"female";
+var solarDate=y+"-"+m+"-"+d;
+var zw=iztro.astro.bySolar(solarDate,timeIndex,gender,true,"zh-CN");
+zw._birthYear=y;zw._birthMonth=m;zw._birthDay=d;zw._birthHour=timeIndex;zw._birthMin=min;zw._isMale=isMale;
 zw._clockHour=h;zw._clockMin=min;zw._trueSolarH=ts.trueClockH;zw._trueSolarM=ts.trueClockM;
 renderChart(zw);
 }catch(e){document.getElementById('infoBar').innerHTML='<p style="color:#e07050">排盘失败: '+e.message+'</p>';}
