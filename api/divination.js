@@ -120,8 +120,8 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: DIVINATION_SYSTEM },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 3000,
-        temperature: 0.6
+        max_tokens: 1500,
+        temperature: 0.3
       })
     });
 
