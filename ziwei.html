@@ -88,6 +88,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="row two"><div class="field"><label>时辰</label><select id="zwH"></select></div><div class="field"><label>分钟</label><input type="number" class="minute-inp" id="zwMin" value="0" min="0" max="59" placeholder="0"></div></div>
       <div class="row"><div class="field"><label>性别</label><div class="radio-group"><label class="radio"><input type="radio" name="zwGender" value="male" checked><span>男</span></label><label class="radio"><input type="radio" name="zwGender" value="female"><span>女</span></label></div></div></div>
       <div class="row two"><div class="field"><label>省份</label><select id="zwProv"></select></div><div class="field"><label>城市</label><select id="zwCity"></select></div></div>
+      <div class="row"><div class="field"><label>区县</label><select id="zwDist"></select></div></div>
       <button class="submit" onclick="doPaipan()">开 始 排 盘</button>
     </div>
   </div>
@@ -109,6 +110,22 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 <script src="js/ziwei.js?v=99"></script>
 <script>
 var PROV_LNG={'北京':116.4,'天津':117.2,'河北':114.5,'山西':112.5,'内蒙古':111.7,'辽宁':123.4,'吉林':125.3,'黑龙江':126.6,'上海':121.5,'江苏':118.8,'浙江':120.2,'安徽':117.3,'福建':119.3,'江西':115.9,'山东':117.0,'河南':113.7,'湖北':114.3,'湖南':113.0,'广东':113.3,'广西':108.3,'海南':110.3,'重庆':106.5,'四川':104.1,'贵州':106.7,'云南':102.7,'西藏':91.1,'陕西':108.9,'甘肃':103.7,'青海':101.8,'宁夏':106.3,'新疆':87.6,'香港':114.2,'澳门':113.5,'台湾':121.5};
+// 城市级经度（精确到区县）
+var CITY_LNG={
+'北京':{'东城':116.42,'西城':116.37,'朝阳':116.44,'海淀':116.30,'丰台':116.29,'石景山':116.23,'通州':116.66,'大兴':116.34,'顺义':116.65,'昌平':116.23,'房山':116.14,'门头沟':116.10,'平谷':117.12,'怀柔':116.63,'密云':116.85,'延庆':115.98},
+'上海':{'黄浦':121.49,'徐汇':121.44,'长宁':121.42,'静安':121.45,'普陀':121.40,'虹口':121.49,'杨浦':121.53,'浦东':121.55,'闵行':121.38,'宝山':121.49,'嘉定':121.27,'金山':121.34,'松江':121.23,'青浦':121.12,'奉贤':121.47,'崇明':121.40},
+'天津':{'和平':117.20,'河东':117.23,'河西':117.22,'南开':117.16,'河北':117.20,'红桥':117.15,'滨海':117.65,'东丽':117.31,'西青':117.01,'津南':117.39,'北辰':117.14,'武清':117.05,'宝坻':117.31,'宁河':117.83,'静海':116.93,'蓟州':117.41},
+'重庆':{'渝中':106.57,'江北':106.58,'沙坪坝':106.46,'九龙坡':106.48,'南岸':106.57,'大渡口':106.48,'北碚':106.40,'渝北':106.63,'巴南':106.52,'万州':108.38,'涪陵':107.40,'黔江':108.77,'长寿':107.08,'江津':106.26,'合川':106.28,'永川':105.93,'南川':107.10,'綦江':106.65,'大足':105.72,'璧山':106.23,'铜梁':106.06,'潼南':105.84,'荣昌':105.61,'开州':108.39,'梁平':107.80,'武隆':107.76,'城口':108.67,'丰都':107.73,'垫江':107.35,'忠县':108.04,'云阳':108.70,'奉节':109.46,'巫山':109.88,'巫溪':109.63,'石柱':108.11,'秀山':109.01,'酉阳':108.77,'彭水':108.17},
+'广州':{'越秀':113.27,'海珠':113.32,'荔湾':113.24,'天河':113.36,'白云':113.27,'黄埔':113.46,'南沙':113.53,'番禺':113.36,'花都':113.22,'增城':113.83,'从化':113.59},
+'深圳':{'罗湖':114.13,'福田':114.05,'南山':113.93,'宝安':113.88,'龙岗':114.25,'盐田':114.24,'光明':113.94,'坪山':114.35,'龙华':114.03},
+'成都':{'锦江':104.08,'青羊':104.06,'金牛':104.05,'武侯':104.05,'成华':104.10,'龙泉驿':104.27,'青白江':104.25,'新都':104.16,'温江':103.84,'双流':103.92,'郫都':103.90,'新津':103.81,'简阳':104.55,'都江堰':103.62,'彭州':103.94,'邛崃':103.46,'崇州':103.67,'金堂':104.41,'大邑':103.52,'蒲江':103.51},
+'杭州':{'上城':120.17,'拱墅':120.15,'西湖':120.13,'滨江':120.21,'萧山':120.26,'余杭':120.30,'富阳':119.96,'临安':119.72,'桐庐':119.69,'淳安':119.04,'建德':119.28},
+'武汉':{'江岸':114.31,'江汉':114.27,'硚口':114.22,'汉阳':114.27,'武昌':114.32,'青山':114.39,'洪山':114.34,'东西湖':114.14,'汉南':114.08,'蔡甸':114.03,'江夏':114.32,'黄陂':114.38,'新洲':114.80},
+'南京':{'玄武':118.80,'秦淮':118.79,'建邺':118.73,'鼓楼':118.77,'浦口':118.63,'栖霞':118.88,'雨花台':118.78,'江宁':118.84,'六合':118.85,'溧水':119.03,'高淳':118.88},
+'西安':{'新城':108.96,'碑林':108.94,'莲湖':108.92,'灞桥':109.07,'未央':108.95,'雁塔':108.93,'阎良':109.23,'临潼':109.22,'长安':108.94,'高陵':109.09,'鄠邑':108.61,'蓝田':109.32,'周至':108.22},
+'苏州':{'姑苏':120.62,'虎丘':120.57,'吴中':120.63,'相城':120.64,'吴江':120.65,'常熟':120.75,'张家港':120.56,'昆山':120.98,'太仓':121.11},
+'保定':{'竞秀':115.46,'莲池':115.52,'满城':115.32,'清苑':115.49,'徐水':115.66,'涿州':115.98,'定州':114.99,'安国':115.33,'高碑店':115.87,'涞水':115.71,'阜平':114.20,'定兴':115.77,'唐县':114.98,'高阳':115.78,'容城':115.87,'涞源':114.69,'望都':115.15,'安新':115.94,'易县':115.50,'曲阳':114.70,'蠡县':115.58,'顺平':115.14,'博野':115.46,'雄县':116.11}
+};
 
 // init selects
 (function(){
@@ -122,17 +139,21 @@ fill('zwY',1960,bj.getUTCFullYear(),2000);
 fill('zwM',1,12,bj.getUTCMonth()+1);
 fill('zwD',1,31,bj.getUTCDate());
 
-// province/city
+// province/city/district
 var ps=Object.keys(REGION_DATA);
-var pSel=document.getElementById('zwProv'),cSel=document.getElementById('zwCity');
+var pSel=document.getElementById('zwProv'),cSel=document.getElementById('zwCity'),dSel=document.getElementById('zwDist');
 ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});
 pSel.value='广东';
-function upCity(){cSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});}
-pSel.addEventListener('change',upCity);upCity();
+function upCity(){cSel.innerHTML='';dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});upDist();}
+function upDist(){dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;var dists=cities[cSel.value];if(!dists)return;dists.forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d;dSel.appendChild(o);});}
+pSel.addEventListener('change',upCity);cSel.addEventListener('change',upDist);upCity();
 })();
 
-function getTrueSolarHour(h,minute,prov,year,month,day){
+function getTrueSolarHour(h,minute,prov,city,dist,year,month,day){
 var lng=PROV_LNG[prov]||116.4;
+// City-level precision
+if(city&&CITY_LNG[city]){lng=CITY_LNG[city][dist]||CITY_LNG[city][Object.keys(CITY_LNG[city])[0]]||lng;}
+else if(city){var cl=Object.values(CITY_LNG).find(function(v){return v[city]!==undefined;});if(cl)lng=cl[city];}
 var offsetMin=Math.round((120-lng)*4);
 var t=new Date(year,month-1,day);
 var doy=Math.floor((t-new Date(year,0,0))/86400000);
@@ -152,9 +173,11 @@ var d=parseInt(document.getElementById('zwD').value);
 var h=parseInt(document.getElementById('zwH').value);
 var min=parseInt(document.getElementById('zwMin').value)||0;
 var prov=document.getElementById('zwProv').value;
+var city=document.getElementById('zwCity').value;
+var dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender');
 var isMale=true;for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
-var correctedH=getTrueSolarHour(h,min,prov,y,m,d);
+var correctedH=getTrueSolarHour(h,min,prov,city,dist,y,m,d);
 if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整出生信息');return;}
 document.getElementById('zwGrid').innerHTML='';
 document.getElementById('svgLines').innerHTML='';
