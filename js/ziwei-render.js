@@ -60,6 +60,7 @@ var p=b2p[zhi];if(!p)return;
 var isMing=zhi===mingZhi,isShen=zhi===shenZhi;
 var cell=document.createElement('div');
 cell.className='palace'+(isMing?' ming':'')+(isShen?' shen':'');
+console.log('cell:',p.name,zhi,'-> gridRow:',rc[zhi]);
 var parts=rc[zhi].split('/');
 cell.style.gridRow=parts[0];cell.style.gridColumn=parts[1];
 cell.setAttribute('data-zhi',zhi);
