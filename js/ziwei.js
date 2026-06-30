@@ -212,27 +212,33 @@ var ZIWEI_CALC = (function(){
       sqByZhi[DZ[sZhi]]=sName;
     }
 
-    // 杂星：天姚(从亥起子时顺数)
-    var tianYaoByZhi={};
-    for(var tyi=0;tyi<12;tyi++){ tianYaoByZhi[DZ[(10+tyi)%12]]=tyi; }
-    // 杂星：天刑(从酉起正月顺数)
-    var tianXingByZhi={};
-    for(var txi=0;txi<12;txi++){ tianXingByZhi[DZ[(9+txi)%12]]=txi; }
-    // 杂星：天哭(从午起子时逆数)
-    var tianKuByZhi={};
-    for(var tki=0;tki<12;tki++){ tianKuByZhi[DZ[(6-tki+12)%12]]=tki; }
-    // 杂星：天虚(从午起子时顺数)
-    var tianXuByZhi={};
-    for(var tui=0;tui<12;tui++){ tianXuByZhi[DZ[(6+tui)%12]]=tui; }
-    // 杂星：红鸾(从卯起子年顺数)
-    var hongLuanByZhi={};
-    for(var hli=0;hli<12;hli++){ hongLuanByZhi[DZ[(3+hli)%12]]=hli; }
-    // 天喜：红鸾对宫
-    var tianXiByZhi={};
-    for(var tsi=0;tsi<12;tsi++){ tianXiByZhi[DZ[(9+tsi)%12]]=tsi; } // 红鸾+6
+
     // 咸池：年支三合局桃花
     var xcMap={0:9,1:2,2:5,3:0,4:9,5:2,6:5,7:0,8:9,9:2,10:5,11:0}; // 申子辰酉,巳酉丑午...
     var xcZhiIdx=xcMap[yearZhiIdx]||9;
+
+    // 杂星注入映射
+    var zaByZhi={};
+
+    // 天姚：年支+10
+    zaByZhi[DZ[(yearZhiIdx+10)%12]]=(zaByZhi[DZ[(yearZhiIdx+10)%12]]||[]).concat(['天姚']);
+    // 红鸾：[3,2,1,0,11,10,9,8,7,6,5,4] 卯起子年逆
+    var hlMap=[3,2,1,0,11,10,9,8,7,6,5,4];
+    var hlZhi=hlMap[yearZhiIdx];
+    zaByZhi[DZ[hlZhi]]=(zaByZhi[DZ[hlZhi]]||[]).concat(['红鸾']);
+    // 天喜：红鸾对宫
+    zaByZhi[DZ[(hlZhi+6)%12]]=(zaByZhi[DZ[(hlZhi+6)%12]]||[]).concat(['天喜']);
+    // 天刑：酉(9)+月-1
+    zaByZhi[DZ[(9+lMonth-1)%12]]=(zaByZhi[DZ[(9+lMonth-1)%12]]||[]).concat(['天刑']);
+    // 天哭：年支+2
+    zaByZhi[DZ[(yearZhiIdx+2)%12]]=(zaByZhi[DZ[(yearZhiIdx+2)%12]]||[]).concat(['天哭']);
+    // 天虚：年支+6
+    zaByZhi[DZ[(yearZhiIdx+6)%12]]=(zaByZhi[DZ[(yearZhiIdx+6)%12]]||[]).concat(['天虚']);
+    // 华盖：年支三合墓库
+    var hgMap={0:4,8:4,4:4, 2:6,6:6,10:6, 5:10,9:10,1:10, 11:0,3:0,7:0};
+    zaByZhi[DZ[hgMap[yearZhiIdx]||4]]=(zaByZhi[DZ[hgMap[yearZhiIdx]||4]]||[]).concat(['华盖']);
+    // 咸池
+    zaByZhi[DZ[xcZhiIdx]]=(zaByZhi[DZ[xcZhiIdx]]||[]).concat(['咸池']);
 
     // 流年：从年支起1岁，每年顺行一宫
     var liuNianByZhi={};
@@ -279,47 +285,7 @@ var ZIWEI_CALC = (function(){
         meaning:ZIWEI.palaces[i].meaning
       };
     });
-    // 杂星注入：合并到对应宫位
-    var zaByZhi={};
-    // 天姚在时支对应的宫
-    if(tianYaoByZhi[hour]!==undefined){
-      var tYaoZhi=DZ[tianYaoByZhi[hour]];
-      if(!zaByZhi[tYaoZhi])zaByZhi[tYaoZhi]=[];
-      zaByZhi[tYaoZhi].push('天姚');
-    }
-    // 天刑在月支对应的宫
-    if(tianXingByZhi[lMonth-1]!==undefined){
-      if(!zaByZhi[DZ[tianXingByZhi[lMonth-1]]])zaByZhi[DZ[tianXingByZhi[lMonth-1]]]=[];
-      zaByZhi[DZ[tianXingByZhi[lMonth-1]]].push('天刑');
-    }
-    // 天哭在时支对应
-    if(tianKuByZhi[hour]!==undefined){
-      if(!zaByZhi[DZ[tianKuByZhi[hour]]])zaByZhi[DZ[tianKuByZhi[hour]]]=[];
-      zaByZhi[DZ[tianKuByZhi[hour]]].push('天哭');
-    }
-    // 天虚
-    if(tianXuByZhi[hour]!==undefined){
-      if(!zaByZhi[DZ[tianXuByZhi[hour]]])zaByZhi[DZ[tianXuByZhi[hour]]]=[];
-      zaByZhi[DZ[tianXuByZhi[hour]]].push('天虚');
-    }
-    // 红鸾
-    if(hongLuanByZhi[yearZhiIdx]!==undefined){
-      if(!zaByZhi[DZ[hongLuanByZhi[yearZhiIdx]]])zaByZhi[DZ[hongLuanByZhi[yearZhiIdx]]]=[];
-      zaByZhi[DZ[hongLuanByZhi[yearZhiIdx]]].push('红鸾');
-    }
-    // 天喜(红鸾对宫)
-    var txZhi=(hongLuanByZhi[yearZhiIdx]+6)%12;
-    if(!zaByZhi[DZ[txZhi]])zaByZhi[DZ[txZhi]]=[];
-    zaByZhi[DZ[txZhi]].push('天喜');
-    // 咸池
-    if(!zaByZhi[DZ[xcZhiIdx]])zaByZhi[DZ[xcZhiIdx]]=[];
-    zaByZhi[DZ[xcZhiIdx]].push('咸池');
-    // 华盖(年支三合墓库)
-    var hgMap={0:4,8:4,4:4, 2:6,6:6,10:6, 5:10,9:10,1:10, 11:0,3:0,7:0};
-    var hgZhi=hgMap[yearZhiIdx]!==undefined?hgMap[yearZhiIdx]:4;
-    if(!zaByZhi[DZ[hgZhi]])zaByZhi[DZ[hgZhi]]=[];
-    zaByZhi[DZ[hgZhi]].push('华盖');
-
+    // 注入杂星到各宫
     // 注入到每个宫位
     palaces.forEach(function(p){
       chart[p.name].zaXing=zaByZhi[p.zhi]||[];
