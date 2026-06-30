@@ -190,6 +190,17 @@ var ZIWEI_CALC = (function(){
     var jqByZhi={};
     for(var ji=0;ji<12;ji++){ jqByZhi[DZ[(0+ji)%12]]=JIANGQIAN[ji]; }
 
+    // 小限：男命从戌(10)起1岁顺行，女命从辰(4)起1岁逆行
+    var xxStart=isMale?10:4;
+    var xxForward=isMale;
+    var xiaoXianByZhi={};
+    for(var xi=0;xi<12;xi++){
+      var xxAges=[];
+      for(var xa=1+xi;xa<=60;xa+=12){ xxAges.push(xa); }
+      var xxZhiIdx=(xxStart + (xxForward?xi:-xi) + 12) % 12;
+      xiaoXianByZhi[DZ[xxZhiIdx]]=xxAges.join(',');
+    }
+
     // 流年：从年支起1岁，每年顺行一宫
     var liuNianByZhi={};
     for(var li=0;li<12;li++){
@@ -229,6 +240,7 @@ var ZIWEI_CALC = (function(){
         boShi:boshiByZhi[p.zhi]||'',
         jiangQian:jqByZhi[p.zhi]||'',
         liuNian:liuNianByZhi[p.zhi]||'',
+        xiaoXian:xiaoXianByZhi[p.zhi]||'',
         meaning:ZIWEI.palaces[i].meaning
       };
     });
