@@ -106,35 +106,38 @@ var ZIWEI_CALC = (function(){
   // ============ 6. 安辅星 ============
   function anMinorStars(yearGanIdx, yearZhiIdx, lunarMonth, birthHour){
     var pos={};
-    // 文昌: 子时=戌(10), 丑=亥(11), 寅=子(0)...
-    var wenPos=birthHour; if(wenPos===0) wenPos=12;
-    pos['文昌']=(wenPos + 10) % 12;
-    // 文曲: 子时=辰(4)
-    pos['文曲']=(birthHour + 4) % 12;
-    // 左辅: 正月起辰(4)
-    pos['左辅']=(lunarMonth + 3) % 12;
-    // 右弼: 正月起戌(10)
-    pos['右弼']=(lunarMonth + 9) % 12;
-    // 天魁天钺: 按年干
-    var kuiMap={0:1,1:0,2:11,3:11,4:1,5:0,6:7,7:6,8:3,9:3}; // 甲丑乙子...etc
+    // 文昌：从戌(10)起子时，逆数到时
+    pos['文昌']=(10 - birthHour + 12) % 12;
+    // 文曲：从辰(4)起子时，顺数到时
+    pos['文曲']=(4 + birthHour) % 12;
+    // 左辅：正月起辰(4)，顺数到月
+    pos['左辅']=(4 + lunarMonth - 1) % 12;
+    // 右弼：正月起戌(10)，逆数到月
+    pos['右弼']=(10 - (lunarMonth - 1) + 12) % 12;
+    // 天魁天钺：按年干
+    var kuiMap={0:1,1:0,2:11,3:11,4:1,5:0,6:7,7:6,8:3,9:3};
     var yueMap={0:7,1:0,2:0,3:11,4:7,5:6,6:1,7:0,8:9,9:9};
     pos['天魁']=kuiMap[yearGanIdx]!==undefined?kuiMap[yearGanIdx]:0;
     pos['天钺']=yueMap[yearGanIdx]!==undefined?yueMap[yearGanIdx]:6;
-    // 禄存: 按年干
+    // 禄存：按年干
     var lcMap={0:2,1:3,2:5,3:6,4:5,5:6,6:8,7:9,8:11,9:0};
     pos['禄存']=lcMap[yearGanIdx]!==undefined?lcMap[yearGanIdx]:2;
-    // 擎羊在禄存前一位, 陀罗在禄存后一位
+    // 擎羊在禄存前一位，陀罗在禄存后一位
     pos['擎羊']=(pos['禄存']+1)%12;
     pos['陀罗']=(pos['禄存']+11)%12;
-    // 火星铃星: 按年支+时
-    pos['火星']=(yearZhiIdx+birthHour)%12;
-    pos['铃星']=(yearZhiIdx+birthHour+6)%12;
-    // 天马: 按年支
+    // 火星：按年支分组起子时顺数（申子辰从寅，寅午戌从巳，巳酉丑从申，亥卯未从亥）
+    var huoStart={0:2,8:2,4:2, 2:5,6:5,10:5, 5:8,9:8,1:8, 11:11,3:11,7:11};
+    pos['火星']=((huoStart[yearZhiIdx]||2) + birthHour) % 12;
+    // 铃星：按年支分组起子时顺数（申子辰从戌，寅午戌从巳，巳酉丑从申，亥卯未从亥）
+    var lingStart={0:10,8:10,4:10, 2:5,6:5,10:5, 5:8,9:8,1:8, 11:11,3:11,7:11};
+    pos['铃星']=((lingStart[yearZhiIdx]||10) + birthHour) % 12;
+    // 天马：按年支
     var tmMap={0:2,1:11,2:8,3:5,4:2,5:11,6:8,7:5,8:2,9:11,10:8,11:5};
     pos['天马']=tmMap[yearZhiIdx]||2;
-    // 地空地劫: 按生时
-    pos['地空']=(birthHour*2)%12;
-    pos['地劫']=(birthHour*2+6)%12;
+    // 地空：从亥(11)起子时，逆数到时
+    pos['地空']=(11 - birthHour + 12) % 12;
+    // 地劫：从亥(11)起子时，顺数到时
+    pos['地劫']=(11 + birthHour) % 12;
     return pos;
   }
 
