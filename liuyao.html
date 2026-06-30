@@ -198,23 +198,19 @@ function doToss(){
   },700);
 }
 
-// 北京时间工具函数（永远以UTC+8为准）
+// 北京时间工具函数（永远以UTC+8为准，无视本地时区）
 function getBeijingTime(){
-  var now=new Date();
-  var bjOffset=8*60; // UTC+8 分钟
-  var localOffset=now.getTimezoneOffset();
-  var bjMs=now.getTime()+(bjOffset+localOffset)*60000;
-  return new Date(bjMs);
+  return new Date(Date.now()+8*60*60*1000); // UTC时间+8小时
 }
 
 function updateBeijingClock(){
-  var bt=getBeijingTime();
-  var h=bt.getUTCHours(), m=bt.getUTCMinutes(), s=bt.getUTCSeconds();
+  var bj=getBeijingTime();
+  var h=bj.getUTCHours(), m=bj.getUTCMinutes(), s=bj.getUTCSeconds();
   var el=document.getElementById('bj-time');
   if(el) el.textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
   var days=['日','一','二','三','四','五','六'];
   var de=document.getElementById('bj-date');
-  if(de) de.textContent=bt.getUTCFullYear()+'年'+(bt.getUTCMonth()+1)+'月'+bt.getUTCDate()+'日 周'+days[bt.getUTCDay()];
+  if(de) de.textContent=bj.getUTCFullYear()+'年'+(bj.getUTCMonth()+1)+'月'+bj.getUTCDate()+'日 周'+days[bj.getUTCDay()];
 }
 setInterval(updateBeijingClock, 1000);
 updateBeijingClock();
