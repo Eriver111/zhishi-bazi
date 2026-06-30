@@ -8,33 +8,70 @@
 <link rel="stylesheet" href="css/landing.css">
 <link rel="stylesheet" href="css/auth.css">
 <style>
-.zw-page{max-width:800px;margin:80px auto 40px;padding:0 16px;animation:fadeIn .8s}
+/* ====== 页面 ====== */
+.zw-page{max-width:700px;margin:80px auto 40px;padding:0 16px;animation:fadeIn .8s}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.zw-title{text-align:center;font-size:24px;color:var(--gold-l);letter-spacing:6px;margin-bottom:6px}
-.zw-sub{text-align:center;font-size:12px;color:var(--tx3);margin-bottom:24px;letter-spacing:2px}
-.zw-form{max-width:440px;margin:0 auto 24px}
+.zw-title{text-align:center;font-size:24px;color:var(--gold-l);letter-spacing:6px;margin-bottom:4px}
+.zw-sub{text-align:center;font-size:12px;color:var(--tx3);margin-bottom:16px;letter-spacing:2px}
+
+/* ====== 时钟 ====== */
+.bj-clock{text-align:center;margin-bottom:18px;padding:8px 16px;background:rgba(13,21,37,.4);border:1px solid rgba(201,168,76,.08);border-radius:8px;font-size:11px;color:var(--tx3)}
+.bj-clock .time{color:var(--gold-l);font-weight:700;font-family:monospace;font-size:15px;margin:0 6px}
+
+/* ====== 表单 ====== */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:16px;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent)}
 .zw-form .row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-.zw-form .field{flex:1;min-width:100px}
-.zw-form label{font-size:10px;color:var(--tx3);letter-spacing:2px;display:block;margin-bottom:4px}
-.zw-form select,.zw-form input{width:100%;padding:10px;font-size:13px;font-family:inherit;background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:8px;color:var(--tx);outline:none}
-.zw-form select:focus{border-color:var(--gold)}
-.btn-sub{display:block;margin:16px auto 0;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit}
-.zw-chart{display:grid;grid-template-areas:'c12 c11 c10 c9''c1 center center c8''c2 center center c7''c3 c4 c5 c6';grid-template-columns:1fr 1.5fr 1.5fr 1fr;grid-template-rows:1fr 1.5fr 1.5fr 1fr;gap:2px;max-width:520px;margin:0 auto;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.1);border-radius:14px;padding:2px;overflow:hidden;aspect-ratio:1}
-.zw-palace{background:rgba(13,21,37,.8);padding:4px;text-align:center;display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(255,255,255,.03);min-height:0;overflow:hidden}
-.zw-palace .p-name{font-size:10px;color:var(--gold-l);letter-spacing:2px;margin-bottom:2px}
-.zw-palace .p-stars{font-size:11px;color:var(--tx);line-height:1.3;font-weight:600}
-.zw-palace .p-minor{font-size:8px;color:var(--tx3);line-height:1.2}
-.zw-palace .p-ganzhi{font-size:8px;color:var(--tx3);margin-bottom:1px}
-.zw-palace .p-hua{font-size:7px;color:#e8a040;margin-top:1px}
+.zw-form .field{flex:1;min-width:80px}
+.zw-form label{font-size:11px;color:var(--tx3);letter-spacing:2px;display:block;margin-bottom:5px}
+.zw-form select,.zw-form input{width:100%;padding:11px 10px;font-size:14px;font-family:inherit;background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;color:var(--tx);outline:none;box-sizing:border-box}
+.zw-form select:focus,.zw-form input:focus{border-color:var(--gold)}
+.btn-sub{display:block;margin:16px auto 0;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:all .2s}
+.btn-sub:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(201,168,76,.2)}
+
+/* ====== 命盘Grid ====== */
+.zw-chart{display:grid;grid-template-areas:'c12 c11 c10 c9''c1 center center c8''c2 center center c7''c3 c4 c5 c6';grid-template-columns:1fr 1.8fr 1.8fr 1fr;grid-template-rows:1fr 1.5fr 1.5fr 1fr;gap:2px;max-width:560px;margin:0 auto;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.1);border-radius:14px;padding:2px;aspect-ratio:1}
+.zw-palace{background:rgba(13,21,37,.8);padding:6px 4px;text-align:center;display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(255,255,255,.02);min-height:0;overflow:hidden}
+.zw-palace .p-name{font-size:11px;color:var(--gold-l);letter-spacing:2px;margin-bottom:2px;font-weight:700}
+.zw-palace .p-ganzhi{font-size:9px;color:var(--tx3);margin-bottom:1px}
+.zw-palace .p-stars{font-size:13px;color:var(--tx);line-height:1.4;font-weight:600}
+.zw-palace .p-minor{font-size:9px;color:var(--tx3);line-height:1.3;margin-top:1px}
+.zw-palace .p-hua{font-size:8px;color:#e8a040;margin-top:1px;letter-spacing:1px}
 .zw-palace.ming{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2)}
+.zw-palace.shen{border-color:rgba(91,159,212,.2);background:rgba(91,159,212,.04)}
 .zw-center{grid-area:center;background:rgba(13,21,37,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(201,168,76,.08)}
-.zw-center .center-text{font-size:16px;color:var(--gold-l);font-weight:700;letter-spacing:4px}
-.zw-info{text-align:center;font-size:12px;color:var(--tx2);margin:16px 0;letter-spacing:1px}
-.reading{font-size:14px;color:var(--tx);line-height:2.2;padding:16px;background:var(--card);border:1px solid var(--bd);border-radius:12px;margin-top:16px}
+.zw-center .center-text{font-size:18px;color:var(--gold-l);font-weight:700;letter-spacing:4px}
+
+/* ====== 信息卡片 ====== */
+.zw-info{text-align:center;font-size:13px;color:var(--tx2);margin:14px 0;line-height:2.2}
+.zw-info b{color:var(--gold-l)}
+.zw-section{margin-top:12px}
+.zw-section h3{font-size:13px;color:var(--tx3);letter-spacing:2px;margin-bottom:10px;text-align:center}
+
+/* ====== 三方四正 ====== */
+.triad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.triad-card{background:rgba(13,21,37,.6);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px}
+.triad-card .t-name{font-size:13px;color:var(--gold-l);letter-spacing:2px;margin-bottom:4px;font-weight:700}
+.triad-card .t-palaces{font-size:10px;color:var(--tx3);margin-bottom:6px}
+.triad-card .t-summary{font-size:12px;color:var(--tx2);line-height:1.8}
+
+/* ====== 通用 ====== */
 .loading{text-align:center;padding:40px;color:var(--tx3)}
 .spinner{display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:600px){.zw-chart{grid-template-columns:1fr 1fr 1fr}.zw-palace{min-height:60px;padding:6px 4px}}
+.reading{font-size:14px;color:var(--tx);line-height:2.2;padding:20px 24px;background:var(--card);border:1px solid var(--bd);border-radius:16px;margin-top:16px}
+
+@media(max-width:600px){
+  .zw-page{margin:60px auto 30px;padding:0 10px}
+  .zw-chart{grid-template-columns:1fr 1.5fr 1.5fr 1fr;max-width:100%;aspect-ratio:auto;min-height:380px}
+  .zw-palace{padding:5px 2px}
+  .zw-palace .p-name{font-size:9px}
+  .zw-palace .p-stars{font-size:11px}
+  .zw-palace .p-minor{font-size:8px}
+  .triad-grid{grid-template-columns:1fr}
+  .zw-form .row{gap:6px}
+  .zw-form .field{min-width:60px}
+}
 </style>
 </head>
 <body>
@@ -42,23 +79,23 @@
   <div class="zw-title">紫微斗数</div>
   <div class="zw-sub">星曜布列 · 十二宫 · 四化飞星</div>
 
-  <div class="zw-form" id="formArea">
+  <!-- 北京时间 -->
+  <div class="bj-clock">北京时间 <span class="time" id="bj-time">--:--:--</span> <span id="bj-date">----年--月--日</span></div>
+
+  <div class="card zw-form" id="formArea">
     <div class="row">
-      <div class="field"><label>年份</label><select id="zwYear"></select></div>
+      <div class="field"><label>出生年份</label><select id="zwYear"></select></div>
       <div class="field"><label>月份</label><select id="zwMonth"></select></div>
       <div class="field"><label>日期</label><select id="zwDay"></select></div>
     </div>
-    <div class="row two">
-      <div class="field"><label>时辰</label><select id="zwHour"></select></div>
-      <div class="field"><label>分钟</label><input type="number" id="zwMinute" value="0" min="0" max="59" style="width:100%;padding:9px 8px;font-size:14px;font-family:inherit;background:rgba(20,20,36,.6);border:1px solid rgba(201,168,76,.15);border-radius:8px;color:var(--tx);outline:none;text-align:center"></div>
-    </div>
     <div class="row">
+      <div class="field"><label>时辰</label><select id="zwHour"></select></div>
+      <div class="field"><label>分钟</label><input type="number" id="zwMinute" value="0" min="0" max="59"></div>
       <div class="field"><label>性别</label><select id="zwGender"><option value="male">男</option><option value="female">女</option></select></div>
     </div>
     <div class="row">
       <div class="field"><label>省</label><select id="zwProv"></select></div>
       <div class="field"><label>市</label><select id="zwCity"></select></div>
-      <div class="field"><label>区</label><select id="zwDist"></select></div>
     </div>
     <button class="btn-sub" onclick="doZiwei()">开始排盘</button>
   </div>
@@ -70,31 +107,34 @@
 <script src="js/region.js"></script>
 <script src="js/ziwei-db.js"></script>
 <script src="js/ziwei.js"></script>
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=2"></script>
 <script>
 var PROV_LNG={'北京':116.4,'天津':117.2,'河北':114.5,'山西':112.5,'内蒙古':111.7,'辽宁':123.4,'吉林':125.3,'黑龙江':126.6,'上海':121.5,'江苏':118.8,'浙江':120.2,'安徽':117.3,'福建':119.3,'江西':115.9,'山东':117.0,'河南':113.7,'湖北':114.3,'湖南':113.0,'广东':113.3,'广西':108.3,'海南':110.3,'重庆':106.5,'四川':104.1,'贵州':106.7,'云南':102.7,'西藏':91.1,'陕西':108.9,'甘肃':103.7,'青海':101.8,'宁夏':106.3,'新疆':87.6,'香港':114.2,'澳门':113.5,'台湾':121.5};
 
+// 北京时间
+function getBeijingTime(){ return new Date(Date.now()+8*60*60*1000); }
+function updateClock(){
+  var bj=getBeijingTime();
+  var el=document.getElementById('bj-time'); if(el) el.textContent=('0'+bj.getUTCHours()).slice(-2)+':'+('0'+bj.getUTCMinutes()).slice(-2)+':'+('0'+bj.getUTCSeconds()).slice(-2);
+  var de=document.getElementById('bj-date'); if(de) de.textContent=bj.getUTCFullYear()+'年'+(bj.getUTCMonth()+1)+'月'+bj.getUTCDate()+'日';
+}
+setInterval(updateClock,1000);updateClock();
+
 (function(){
-  var now=new Date();
-  function fillSelect(id,from,to,cur){ var s=document.getElementById(id); for(var i=from;i<=to;i++){ var o=document.createElement('option'); o.value=i; o.textContent=i; if(i===cur)o.selected=true; s.appendChild(o); } }
-  fillSelect('zwYear',1960,2026,2000);
-  fillSelect('zwMonth',1,12,6);
-  fillSelect('zwDay',1,31,15);
+  var bj=getBeijingTime();
+  function fill(id,from,to,cur){ var s=document.getElementById(id); for(var i=from;i<=to;i++){ var o=document.createElement('option'); o.value=i; o.textContent=i; if(i===cur)o.selected=true; s.appendChild(o); } }
+  fill('zwYear',1960,bj.getUTCFullYear(),2000);
+  fill('zwMonth',1,12,bj.getUTCMonth()+1);
+  fill('zwDay',1,31,bj.getUTCDate());
   var hSel=document.getElementById('zwHour');
   var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
   for(var i=0;i<12;i++){ var o=document.createElement('option'); o.value=i; o.textContent=DZ[i]+'时（'+(i*2)+'-'+(i*2+2)+'点）'; if(i===6)o.selected=true; hSel.appendChild(o); }
-  // 初始化省市区
-  function initRegion(){
-    var ps=Object.keys(REGION_DATA);
-    var pSel=document.getElementById('zwProv'), cSel=document.getElementById('zwCity'), dSel=document.getElementById('zwDist');
-    ps.forEach(function(p){ var o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
-    pSel.value='河北省';
-    function upCity(){ cSel.innerHTML=''; var cities=REGION_DATA[pSel.value]; if(!cities) return; Object.keys(cities).forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); }); upDist(); }
-    function upDist(){ dSel.innerHTML=''; var cities=REGION_DATA[pSel.value]; if(!cities) return; var dists=cities[cSel.value]; if(!dists) return; dists.forEach(function(d){ var o=document.createElement('option'); o.value=d; o.textContent=d; dSel.appendChild(o); }); }
-    pSel.addEventListener('change',upCity); cSel.addEventListener('change',upDist);
-    upCity();
-  }
-  initRegion();
+  var ps=Object.keys(REGION_DATA);
+  var pSel=document.getElementById('zwProv'), cSel=document.getElementById('zwCity');
+  ps.forEach(function(p){ var o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+  pSel.value='广东省';
+  function upCity(){ cSel.innerHTML=''; var cities=REGION_DATA[pSel.value]; if(!cities) return; Object.keys(cities).forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent=c; cSel.appendChild(o); }); }
+  pSel.addEventListener('change',upCity); upCity();
 })();
 
 function getTrueSolarHour(h,minute,prov,year,month,day){
@@ -121,12 +161,13 @@ function doZiwei(){
   var isMale=document.getElementById('zwGender').value==='male';
   var prov=document.getElementById('zwProv').value;
   var res=document.getElementById('result');
+  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在排盘...</p></div>';
   var correctedH=getTrueSolarHour(h,minute,prov,y,m,d);
 
-  try{ var zw=ZIWEI_CALC.calcZiwei(y,m,d,correctedH,isMale); }catch(e){ res.innerHTML='<div class="loading">排盘失败：'+e.message+'</div>'; return; }
+  try{ var zw=ZIWEI_CALC.calcZiwei(y,m,d,correctedH,isMale); }
+  catch(e){ res.innerHTML='<div class="card"><p style="text-align:center;color:#e07050">排盘失败：'+e.message+'</p></div>'; return; }
 
   var chart=zw.chart;
-  // 地支→宫名→区域映射（传统方形布局）
   var dzPalaces=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
   var palaceByZhi={};
   ['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'].forEach(function(name){
@@ -134,45 +175,81 @@ function doZiwei(){
     palaceByZhi[chart[name].zhi]._name=name;
   });
   var gridArea={'巳':'c12','午':'c11','未':'c10','申':'c9','辰':'c1','酉':'c8','卯':'c2','戌':'c7','寅':'c3','丑':'c4','子':'c5','亥':'c6'};
-  var html='<div class="zw-info">命宫：<b style="color:var(--gold-l)">'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 命主：<b style="color:var(--gold-l)">'+zw.mingZhu+'</b> | 身主：<b style="color:var(--gold-l)">'+zw.shenZhu+'</b></div><div class="zw-chart">';
+
+  // 星曜颜色
+  var starColor={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a3',天相:'#5b9fd4',天梁:'#6db86d',七杀:'#e07050',破军:'#e07050',贪狼:'#e8a040',巨门:'#5b9fd4',廉贞:'#e07050',天同:'#6db86d',太阴:'#5b9fd4',天机:'#6db86d'};
+
+  var html='<div class="card zw-info">命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b></div>';
+  html+='<div class="zw-chart">';
   dzPalaces.forEach(function(zhi){
     var p=palaceByZhi[zhi]; if(!p) return;
-    var isMing=p._name==='命宫';
-    var h=''; if(p.hua.length) h='<div class="p-hua">'+p.hua.map(function(hh){ var lb={'lu':'禄','quan':'权','ke':'科','ji':'忌'}; return lb[hh]||hh; }).join(' ')+'</div>';
-    html+='<div class="zw-palace'+(isMing?' ming':'')+'" style="grid-area:'+gridArea[zhi]+'"><div class="p-name">'+p._name+'</div><div class="p-ganzhi">'+p.ganZhi+'</div><div class="p-stars">'+(p.stars.length?p.stars.join(' '):'—')+'</div><div class="p-minor">'+(p.minors.length?p.minors.join(' '):'')+'</div>'+h+'</div>';
+    var isMing=p._name==='命宫', isShen=p._name===zw.shenGong;
+    var cls='zw-palace'+(isMing?' ming':'')+(isShen?' shen':'');
+    var h=''; if(p.hua.length) h='<div class="p-hua">'+p.hua.map(function(hh){ var lb={lu:'禄',quan:'权',ke:'科',ji:'忌'}; return lb[hh]||hh; }).join(' ')+'</div>';
+    var starsHTML='';
+    if(p.stars.length){
+      starsHTML=p.stars.map(function(s){ return '<span style="color:'+(starColor[s]||'var(--tx)')+'">'+s+'</span>'; }).join(' ');
+    } else starsHTML='<span style="color:var(--tx3)">—</span>';
+    html+='<div class="'+cls+'" style="grid-area:'+gridArea[zhi]+'"><div class="p-name">'+p._name+'</div><div class="p-ganzhi">'+p.ganZhi+'</div><div class="p-stars">'+starsHTML+'</div><div class="p-minor">'+(p.minors.length?p.minors.join(' · '):'')+'</div>'+h+'</div>';
   });
-  html+='<div class="zw-center"><div class="center-text">命<br>宫</div><div style="font-size:10px;color:var(--tx3);margin-top:4px">'+zw.wuxingJu+'</div><div style="font-size:8px;color:var(--tx3)">'+zw.mingZhu+'</div></div></div>';
-  html+='<div style="margin-top:20px"><h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-bottom:10px;text-align:center">三方四正</h3><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  html+='<div class="zw-center"><div class="center-text">命<br>宫</div><div style="font-size:11px;color:var(--tx3);margin-top:4px">'+zw.wuxingJu+'</div></div></div>';
+
+  // 三方四正
+  html+='<div class="zw-section"><h3>三方四正</h3><div class="triad-grid">';
   zw.triads.forEach(function(td){
-    html+='<div style="flex:1;min-width:180px;background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.1);border-radius:10px;padding:12px"><div style="font-size:11px;color:var(--gold-l);letter-spacing:2px;margin-bottom:6px">'+td.name+'</div><div style="font-size:10px;color:var(--tx3);margin-bottom:6px">'+td.palaces+'</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">'+td.summary+'</div></div>';
+    html+='<div class="triad-card"><div class="t-name">'+td.name+'</div><div class="t-palaces">'+td.palaces+'</div><div class="t-summary">'+td.summary+'</div></div>';
   });
   html+='</div></div>';
-  html+='<button class="btn-sub" onclick="doAIReading()" style="margin-top:16px">积分解锁 AI 解读</button>';
-  html+='<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排盘免费 · AI解读消耗1次积分</p>';
+
+  html+='<div style="text-align:center;margin-top:16px">';
+  html+='<button class="btn-sub" onclick="doAIReading()" id="aiBtn">积分解锁 AI 解读</button>';
+  html+='<p style="font-size:11px;color:var(--tx3);margin-top:6px">排盘免费 · AI解读消耗1次积分</p></div>';
   res.innerHTML=html;
   res._zw=zw; res._chart=chart;
 }
 
 window.doAIReading=function(){
-  var res=document.getElementById('result'); if(!res._zw) return;
+  var res=document.getElementById('result'); var zw=res._zw; if(!zw) return;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
-  res.innerHTML=res.innerHTML.replace(/<button.*?btn-sub.*?<\/button>/,'').replace(/<p.*?排盘免费.*?<\/p>/,'');
-  res.innerHTML+='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
+  var btn=document.getElementById('aiBtn'); if(btn){ btn.style.display='none'; btn.nextElementSibling&&(btn.nextElementSibling.style.display='none'); }
+  res.innerHTML+='<div class="loading" id="aiLoading"><div class="spinner"></div><p>知时先生正在解读命盘...</p><p style="font-size:11px;color:var(--tx3);margin-top:4px">预计15秒</p></div>';
 
-  var zw=res._zw;
-  var prompt='你是"知时先生"，精通紫微斗数。请根据以下命盘，用300字左右做专业解读。命主命宫在'+zw.mingGong+'，五行局为'+zw.wuxingJu+'，十二宫详情如下：\n';
   var order=['命宫','兄弟','夫妻','子女','财帛','疾厄','迁移','交友','官禄','田宅','福德','父母'];
+  var chartData='';
   order.forEach(function(name){
     var p=res._chart[name];
-    prompt+=name+'('+p.ganZhi+'): '+(p.stars.length?p.stars.join('、'):'无主星')+(p.minors.length?'，辅星:'+p.minors.join('、'):'')+(p.hua.length?'，四化:'+p.hua.join(','):'')+'；';
+    chartData+=name+'（'+p.ganZhi+'）：主星 '+(p.stars.length?p.stars.join('、'):'无主星')+(p.minors.length?'，辅星 '+p.minors.join('、'):'')+(p.hua.length?'，四化 '+p.hua.map(function(hh){var lb={lu:'禄',quan:'权',ke:'科',ji:'忌'};return lb[hh]||hh;}).join(''):'')+'；\n';
   });
-  prompt+='\n请分析：1.命宫格局 2.事业财运 3.感情婚姻 4.整体建议。语气专业但不玄乎。返回JSON：{"reading":"完整解读"}';
 
-  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
-  .then(function(r){return r.json()}).then(function(d){
-    var tip=d.reading||'解读生成中';
-    res.innerHTML=res.innerHTML.replace(/<div class="loading">.*?<\/div>/,'')+'<div class="reading">'+tip.replace(/\n/g,'<br>')+'</div>';
-  }).catch(function(){ res.innerHTML+='<div class="reading" style="text-align:center;color:var(--tx3)">解读暂不可用</div>'; });
+  var prompt='你是"知时先生"，精通紫微斗数。请根据以下命盘做专业解读。\n\n';
+  prompt+='命主命宫在'+zw.mingGong+'，五行局为'+zw.wuxingJu+'，身宫在'+(zw.shenGong||'命宫')+'，命主'+zw.mingZhu+'，身主'+zw.shenZhu+'。\n\n';
+  prompt+='【十二宫详情】\n'+chartData+'\n';
+  prompt+='请按以下结构回复（300-400字，通俗白话）：\n';
+  prompt+='1. 命宫格局：命宫主星是什么？坐什么宫位？整体格局强弱？性格特点？\n';
+  prompt+='2. 事业财运：看官禄宫+财帛宫+命宫三方。适合什么行业？财运如何？\n';
+  prompt+='3. 感情婚姻：看夫妻宫+交友宫。配偶类型？感情走势？\n';
+  prompt+='4. 核心建议：根据命盘最突出的特点，给2-3条人生建议。\n';
+  prompt+='要求：说出具体星曜名称和宫位，不说笼统话。纯文本回复。';
+
+  var token=Auth.getToken(), headers={'Content-Type':'application/json'};
+  if(token) headers['Authorization']='Bearer '+token;
+  var ctrl=new AbortController();
+  setTimeout(function(){ ctrl.abort(); }, 120000);
+
+  fetch('/api/divination',{method:'POST',headers:headers,body:JSON.stringify({prompt:prompt,divType:'ziwei'}),signal:ctrl.signal})
+  .then(function(r){return r.json();}).then(function(d){
+    var ld=document.getElementById('aiLoading'); if(ld) ld.remove();
+    if(d.error){
+      if(d.needLogin){ Auth.showModal('login'); return; }
+      if(d.creditExhausted){ res.innerHTML+='<div class="card" style="text-align:center;padding:20px"><p style="color:#e07050;margin-bottom:12px">积分不足</p><button class="btn-sub" onclick="location.href=\'/pricing\'" style="margin:0 auto">去购买积分</button></div>'; return; }
+      res.innerHTML+='<div class="card" style="text-align:center;padding:20px"><p style="color:#e07050">解读失败：'+d.error+'</p><button class="btn-sub" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重试</button></div>'; return;
+    }
+    if(!d.reading||d.reading.length<10){ res.innerHTML+='<div class="card" style="text-align:center;padding:20px"><p style="color:var(--tx3)">解读超时</p><button class="btn-sub" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重试</button></div>'; return; }
+    res.innerHTML+='<div class="reading"><h3 style="font-size:14px;color:var(--gold-l);letter-spacing:2px;margin-bottom:12px;text-align:center">知时先生解读</h3>'+(d.reading||'').replace(/\n/g,'<br>')+'</div>';
+  }).catch(function(e){
+    var ld=document.getElementById('aiLoading'); if(ld) ld.remove();
+    res.innerHTML+='<div class="card" style="text-align:center;padding:20px"><p style="color:#e8a040">'+(e.name==='AbortError'?'请求超时':'网络异常')+'</p><button class="btn-sub" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重试</button></div>';
+  });
 };
 </script>
 </body>
