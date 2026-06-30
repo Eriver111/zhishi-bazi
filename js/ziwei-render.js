@@ -5,11 +5,8 @@ var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
 var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 
 (function(){
-var s=document.getElementById('zwH');
-for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement('option');o.value=i;o.textContent=i+'点 ('+DZ[dzIdx]+'时)';s.appendChild(o);}
+// Province/city/district init only (other fields are now number inputs)
 var bj=new Date(Date.now()+8*60*60*1000);
-function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement('option');o.value=i;o.textContent=i;s.appendChild(o);}}
-fill('zwY',1960,bj.getUTCFullYear(),2000);fill('zwM',1,12,bj.getUTCMonth()+1);fill('zwD',1,31,bj.getUTCDate());
 var ps=Object.keys(REGION_DATA),pSel=document.getElementById('zwProv'),cSel=document.getElementById('zwCity'),dSel=document.getElementById('zwDist');
 ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;pSel.appendChild(o);});function upCity(){cSel.innerHTML='';dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;Object.keys(cities).forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});upDist();}
 function upDist(){dSel.innerHTML='';var cities=REGION_DATA[pSel.value];if(!cities)return;var dists=cities[cSel.value];if(!dists)return;dists.forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d;dSel.appendChild(o);});}
@@ -31,8 +28,8 @@ return{dzIdx:DZ_IDX[th],th:th,tm:tm2};
 
 function doPaipan(){
 var y=+document.getElementById('zwY').value,m=+document.getElementById('zwM').value,d=+document.getElementById('zwD').value;
-var hRaw=document.getElementById('zwH').value;if(hRaw===''){alert('请选择时辰');return;}
-var h=+hRaw,min=+document.getElementById('zwMin').value||0;
+var h=+document.getElementById('zwH').value,min=+document.getElementById('zwMin').value||0;
+if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)){alert('请填写完整出生信息');return;}
 var prov=document.getElementById('zwProv').value,city=document.getElementById('zwCity').value,dist=document.getElementById('zwDist').value;
 var gEls=document.getElementsByName('zwGender'),isMale=true;
 for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
