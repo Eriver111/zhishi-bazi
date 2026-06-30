@@ -27,76 +27,21 @@ return{dzIdx:DZ_IDX[th],th:th,tm:tm2};
 }
 
 function doPaipan(){
-var y=parseInt(document.getElementById('zwY').value,m=+document.getElementById('zwM').value,d=+document.getElementById('zwD').value;
-var h=parseInt(document.getElementById('zwH').value,min=+document.getElementById('zwMin').value||0;
-if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert('请填写完整出生信息');return;}
-var prov=document.getElementById('zwProv').value,city=document.getElementById('zwCity').value,dist=document.getElementById('zwDist').value;
-var gEls=document.getElementsByName('zwGender'),isMale=true;
-for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==='male';}
-if(isNaN(y)||isNaN(m)||isNaN(d)||h===''||h===undefined||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert('请填写完整出生信息');return;}
+var y=parseInt(document.getElementById("zwY").value),m=parseInt(document.getElementById("zwM").value),d=parseInt(document.getElementById("zwD").value);
+var h=parseInt(document.getElementById("zwH").value),min=parseInt(document.getElementById("zwMin").value)||0;
+var prov=document.getElementById("zwProv").value,city=document.getElementById("zwCity").value,dist=document.getElementById("zwDist").value;
+var gEls=document.getElementsByName("zwGender"),isMale=true;
+for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==="male";}
+if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert("请填写完整出生信息");return;}
 
 var ts=getTrueSolar(h,min,prov,city,dist,y,m,d);
-var ti=ts.dzIdx,gender=isMale?'male':'female';
-var zi=iztro.astro.bySolar(y+'-'+m+'-'+d,ti,gender,true,'zh-CN');
+var ti=ts.dzIdx,gender=isMale?"male":"female";
+var zi=iztro.astro.bySolar(y+"-"+m+"-"+d,ti,gender,true,"zh-CN");
 
-// Build map
 var b2p={};zi.palaces.forEach(function(p){b2p[p.earthlyBranch]=p;});
 var mingZhi=zi.earthlyBranchOfSoulPalace,shenZhi=zi.earthlyBranchOfBodyPalace;
-var mingPal=b2p[mingZhi]?b2p[mingZhi].name:'',shenPal=b2p[shenZhi]?b2p[shenZhi].name:'';
-document.getElementById('infoBar').innerHTML='命宫：<b>'+mingPal+'</b> | '+zi.fiveElementsClass+' | 身宫：<b>'+shenPal+'</b> | 命主：<b>'+zi.soul+'</b> | 身主：<b>'+zi.body+'</b>'+(isMale?' | 阳男':' | 阴女');
-
-// Render 12 palaces
-var order=['巳','午','未','申','辰','酉','卯','戌','寅','丑','子','亥'];
-var rc={'巳':'1/1','午':'1/2','未':'1/3','申':'1/4','辰':'2/1','酉':'2/4','卯':'3/1','戌':'3/4','寅':'4/1','丑':'4/2','子':'4/3','亥':'4/4'};
-var sc={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a3',天相:'#5b9fd4',天梁:'#6db86d',七杀:'#e07050',破军:'#e07050',贪狼:'#e8a040',巨门:'#5b9fd4',廉贞:'#e07050',天同:'#6db86d',太阴:'#5b9fd4',天机:'#6db86d'};
-var grid=document.getElementById('zwGrid');grid.innerHTML='';
-document.getElementById('svgLines').innerHTML='';
-document.getElementById('triads').innerHTML='';
-
-order.forEach(function(zhi){
-var p=b2p[zhi];if(!p)return;
-var isMing=zhi===mingZhi,isShen=zhi===shenZhi;
-var cell=document.createElement('div');
-cell.className='palace'+(isMing?' ming':'')+(isShen?' shen':'');
-
-var parts=rc[zhi].split('/');
-cell.style.gridRow=parts[0];cell.style.gridColumn=parts[1];
-cell.setAttribute('data-zhi',zhi);
-
-// Star HTML
-var sh='',hl='';
-(p.majorStars||[]).forEach(function(s,i){
-if(s.mutagen&&['禄','权','科','忌'].indexOf(s.mutagen)>=0)hl+=s.mutagen;
-var c=sc[s.name]||'#d0c8b0',bl=s.brightness||'';
-var bt=bl?'<sup class=\"b\" style=\"color:'+(['庙','旺'].indexOf(bl)>=0?'#e04040':bl==='得'?'#e8a040':'#888')+'\">'+bl+'</sup>':'';
-sh+='<span class=\"s'+(i===0?' major':'')+'\" style=\"color:'+c+'\">'+s.name+bt+(i===0&&hl?'<br>'+hl:'')+'</span>';
-});
-(p.minorStars||[]).forEach(function(s){
-var bl=s.brightness||'',bt=bl?'<sup class=\"b\" style=\"color:#888\">'+bl+'</sup>':'';
-sh+='<span class=\"s\" style=\"color:#9098a0;font-size:11px\">'+s.name+bt+'</span>';
-});
-(p.adjectiveStars||[]).forEach(function(s){
-sh+='<span class=\"s\" style=\"color:#6a6570;font-size:11px\">'+s.name+'</span>';
-});
-if(!sh)sh='<span class=\"s\" style=\"color:#555\">—</span>';
-
-var bl=[p.boshi12||'',p.jiangqian12||'',p.suiqian12||''].filter(Boolean);
-var dx=p.decadal&&p.decadal.range?p.decadal.range[0]+'~'+p.decadal.range[1]:'';
-var xx=(p.ages||[]).slice(0,8).filter(function(a){return a<=60;}).join(',');
-var gz=p.heavenlyStem+p.earthlyBranch;
-
-cell.innerHTML='<div class=\"stars\">'+sh+'</div><div class=\"mid\"><div class=\"row2\"><span class=\"xx-label\">小限</span>'+xx.split(',').map(function(n){return '<span>'+n+'</span>';}).join('')+'</div><div class=\"daxian\">'+dx+'</div></div><div class=\"bot-l\">'+bl.map(function(x){return '<span>'+x+'</span>';}).join('')+'</div><div class=\"bot-r\"><span class=\"zs\">'+(p.changsheng12||'')+'</span><span class=\"gz\">'+gz.charAt(0)+'</span><span class=\"gz\">'+gz.charAt(1)+'</span></div><div class=\"pname\">'+p.name+'</div>';
-cell.addEventListener('click',function(){showTriLinks(zhi,p.name);});
-grid.appendChild(cell);
-});
-
-// Center
-var center=document.createElement('div');center.className='center-cell';
-center.style.gridRow='2/4';center.style.gridColumn='2/4';
-var yGan=TG[(y-4)%10],yZhi=DZ[(y-4)%12];
-center.innerHTML='<div class=\"c-title\">'+zi.fiveElementsClass.replace('局','')+'<br>局</div><div class=\"c-info\" style=\"font-size:9px\">'+y+'年'+m+'月'+d+'日 '+DZ[ti]+'时</div><div class=\"c-info\" style=\"font-size:9px\">农历 '+yGan+yZhi+'年</div><div class=\"c-info\" style=\"font-size:9px\">真太阳时 '+pad(ts.th)+':'+pad(ts.tm)+' · 钟表 '+h+':'+pad(min)+'</div><div class=\"c-info\">命主 '+zi.soul+'</div><div class=\"c-info\">身主 '+zi.body+'</div><div class=\"c-info\" style=\"color:var(--gold-l);font-size:10px;margin-top:2px\">身宫 '+shenPal+'</div>';
-grid.appendChild(center);
-
+var mingPal=b2p[mingZhi]?b2p[mingZhi].name:"",shenPal=b2p[shenZhi]?b2p[shenZhi].name:"";
+document.getElementById("infoBar").innerHTML="命宫：<b>"+mingPal+"</b> | "+zi.fiveElementsClass+" | 身宫：<b>"+shenPal+"</b> | 命主：<b>"+zi.soul+"</b> | 身主：<b>"+zi.body+"</b>"+(isMale?" | 阳男":" | 阴女");
 // Triads
 var td=document.getElementById('triads');
 [{name:'命财官线',p:'命宫 · 财帛 · 官禄',s:'事业成就与人生格局的核心轴线'},{name:'兄疾田线',p:'兄弟 · 疾厄 · 田宅',s:'家庭健康与内在安全感的根基'},{name:'夫子友线',p:'夫妻 · 子女 · 仆役',s:'婚姻子息与人际关系的情感世界'},{name:'迁福母线',p:'迁移 · 福德 · 父母',s:'外出发展与精神福报的外在支持'}].forEach(function(t){
