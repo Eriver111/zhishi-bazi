@@ -145,7 +145,12 @@ ln=ln.replace(/,$/,'');
 
 // Build cell
 var cell=document.createElement('div');cell.className=cls;
-cell.style.gridArea=gridArea[zhi];
+
+var rc={'c12':'1/1','c11':'1/2','c10':'1/3','c9':'1/4','c1':'2/1','c8':'2/4','c2':'3/1','c7':'3/4','c3':'4/1','c4':'4/2','c5':'4/3','c6':'4/4'};
+var parts=rc[gridArea[zhi]].split('/');
+cell.style.gridRow=parts[0];
+cell.style.gridColumn=parts[1];
+
 cell.setAttribute('data-zhi',zhi);
 var gz=p.heavenlyStem+p.earthlyBranch;
 cell.innerHTML='<div class=\"stars\">'+sh+'</div><div class=\"mid\"><div class=\"row1\"><span class=\"ln-label\">流年</span>'+ln.split(',').map(function(n){return '<span>'+n+'</span>';}).join('')+'</div><div class=\"row2\"><span class=\"xx-label\">小限</span>'+xx.split(',').map(function(n){return '<span>'+n+'</span>';}).join('')+'</div><div class=\"daxian\">'+dx+'</div></div><div class=\"bot-l\">'+blArr.map(function(x){return '<span>'+x+'</span>';}).join('')+'</div><div class=\"bot-r\"><span class=\"zs\">'+(p.changsheng12||'')+'</span><span class=\"gz\">'+gz.charAt(0)+'</span><span class=\"gz\">'+gz.charAt(1)+'</span></div><div class=\"pname\">'+p.name+'</div>';
