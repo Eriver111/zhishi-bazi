@@ -78,17 +78,17 @@ body::before{
 .info-bar b{color:var(--gold-l)}
 
 /* === 命盘 Grid === */
-.zw-chart{display:grid;grid-template-areas:'c12 c11 c10 c9''c1 center center c8''c2 center center c7''c3 c4 c5 c6';grid-template-columns:1fr 1.5fr 1.5fr 1fr;grid-template-rows:1fr 1.4fr 1.4fr 1fr;gap:2px;max-width:520px;margin:0 auto;background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:12px;padding:2px;aspect-ratio:1}
-.zw-palace{background:rgba(13,21,37,.8);padding:6px 4px;text-align:center;display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(255,255,255,.02);min-height:0;overflow:hidden}
-.zw-palace .p-name{font-size:11px;color:var(--gold-l);letter-spacing:2px;margin-bottom:2px;font-weight:700}
-.zw-palace .p-ganzhi{font-size:9px;color:var(--tx3);margin-bottom:1px}
-.zw-palace .p-stars{font-size:12px;color:var(--tx);line-height:1.4;font-weight:600}
-.zw-palace .p-minor{font-size:9px;color:var(--tx3);line-height:1.3;margin-top:1px}
-.zw-palace .p-hua{font-size:8px;color:#e8a040;margin-top:1px;letter-spacing:1px}
-.zw-palace.ming{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2)}
-.zw-palace.shen{border-color:rgba(91,159,212,.2);background:rgba(91,159,212,.04)}
+.zw-chart{display:grid;grid-template-areas:'c12 c11 c10 c9''c1 center center c8''c2 center center c7''c3 c4 c5 c6';grid-template-columns:1fr 1.5fr 1.5fr 1fr;grid-template-rows:1fr 1.4fr 1.4fr 1fr;gap:2px;max-width:560px;margin:0 auto;background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:12px;padding:2px;aspect-ratio:1}
+.zw-palace{background:rgba(13,21,37,.8);padding:5px 3px;text-align:center;display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(255,255,255,.02);min-height:0;overflow:hidden;gap:1px}
+.zw-palace .p-name{font-size:10px;color:var(--gold-l);letter-spacing:2px;font-weight:700;line-height:1.2}
+.zw-palace .p-ganzhi{font-size:8px;color:var(--tx3);line-height:1.2}
+.zw-palace .p-stars{font-size:11px;color:var(--tx);line-height:1.3;font-weight:600}
+.zw-palace .p-minor{font-size:8px;color:var(--tx3);line-height:1.2}
+.zw-palace .p-hua{font-size:9px;color:#e8a040;letter-spacing:1px}
+.zw-palace.ming{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.25)}
+.zw-palace.shen{border-color:rgba(91,159,212,.25);background:rgba(91,159,212,.06)}
 .zw-center{grid-area:center;background:rgba(13,21,37,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(201,168,76,.06)}
-.zw-center .center-text{font-size:18px;color:var(--gold-l);font-weight:700;letter-spacing:4px}
+.zw-center .center-text{font-size:16px;color:var(--gold-l);font-weight:700;letter-spacing:4px;line-height:1.5}
 
 /* === 三方四正 === */
 .triad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
@@ -240,19 +240,33 @@ function doZiwei(){
   });
   var gridArea={'巳':'c12','午':'c11','未':'c10','申':'c9','辰':'c1','酉':'c8','卯':'c2','戌':'c7','寅':'c3','丑':'c4','子':'c5','亥':'c6'};
   var starColor={紫微:'#e8d5a3',天府:'#e8d5a3',太阳:'#e07050',武曲:'#e8d5a3',天相:'#5b9fd4',天梁:'#6db86d',七杀:'#e07050',破军:'#e07050',贪狼:'#e8a040',巨门:'#5b9fd4',廉贞:'#e07050',天同:'#6db86d',太阴:'#5b9fd4',天机:'#6db86d'};
+  var brightColor={1:'#e07050',2:'#e07050',3:'#e8a040',4:'var(--tx3)',5:'var(--tx3)'};
 
-  var html='<div class="card"><div class="card-title">命 盘</div>';
+  var html='<div class="card"><div class="card-title">紫 微 命 盘</div>';
   html+='<div class="info-bar">命宫：<b>'+zw.mingGong+'</b> | '+zw.wuxingJu+' | 身宫：<b>'+(zw.shenGong||'—')+'</b> | 命主：<b>'+zw.mingZhu+'</b> | 身主：<b>'+zw.shenZhu+'</b></div>';
   html+='<div class="zw-chart">';
   dzPalaces.forEach(function(zhi){
     var p=palaceByZhi[zhi]; if(!p) return;
     var isMing=p._name==='命宫', isShen=p._name===zw.shenGong;
     var cls='zw-palace'+(isMing?' ming':'')+(isShen?' shen':'');
-    var h=''; if(p.hua.length) h='<div class="p-hua">'+p.hua.map(function(hh){ var lb={lu:'禄',quan:'权',ke:'科',ji:'忌'}; return lb[hh]||hh; }).join(' ')+'</div>';
-    var starsHTML=p.stars.length?p.stars.map(function(s){ return '<span style="color:'+(starColor[s]||'var(--tx)')+'">'+s+'</span>'; }).join(' '):'<span style="color:var(--tx3)">—</span>';
-    html+='<div class="'+cls+'" style="grid-area:'+gridArea[zhi]+'"><div class="p-name">'+p._name+'</div><div class="p-ganzhi">'+p.ganZhi+'</div><div class="p-stars">'+starsHTML+'</div><div class="p-minor">'+(p.minors.length?p.minors.join(' · '):'')+'</div>'+h+'</div>';
+    var sf=''; if(p.hua.length) sf='<span class="p-hua" style="font-size:10px">'+p.hua.map(function(hh){ var lb={lu:'禄',quan:'权',ke:'科',ji:'忌'}; return lb[hh]||hh; }).join('')+'</span>';
+    // 主星+亮度
+    var sh='';
+    if(p.starInfo&&p.starInfo.length){
+      sh=p.starInfo.map(function(si){
+        var bl=si.bright<5?ZIWEI.brightnessLabel[si.bright]:'';
+        return '<span style="color:'+(starColor[si.name]||'var(--tx)')+'">'+si.name+'</span>'+(bl?'<sup style="font-size:7px;color:'+brightColor[si.bright]+'">'+bl+'</sup>':'');
+      }).join(' ');
+    } else if(p.stars.length){
+      sh='<span style="color:var(--tx3)">'+p.stars.join(' ')+'</span>';
+    } else {
+      sh='<span style="color:var(--tx3);opacity:.5">—</span>';
+    }
+    // 大限
+    var dx=p.daXian||'';
+    html+='<div class="'+cls+'" style="grid-area:'+gridArea[zhi]+'"><div class="p-name">'+p._name+'</div><div class="p-ganzhi">'+p.ganZhi+(dx?'<span style="font-size:7px;color:var(--star);margin-left:3px">'+dx+'</span>':'')+'</div><div class="p-stars">'+sh+sf+'</div><div class="p-minor">'+(p.minors.length?p.minors.join(' · '):'')+'</div></div>';
   });
-  html+='<div class="zw-center"><div class="center-text">命<br>宫</div><div style="font-size:11px;color:var(--tx3);margin-top:4px">'+zw.wuxingJu+'</div></div></div>';
+  html+='<div class="zw-center"><div class="center-text">'+zw.wuxingJu.replace('局','')+'<br>局</div><div style="font-size:9px;color:var(--tx3);margin-top:3px">命主'+zw.mingZhu+'</div><div style="font-size:9px;color:var(--tx3)">身主'+zw.shenZhu+'</div></div></div>';
 
   // 三方四正
   html+='<div class="triad-grid">';

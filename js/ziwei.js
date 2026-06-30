@@ -173,20 +173,41 @@ var ZIWEI_CALC = (function(){
 
     // 组装结果
     var chart={};
+    var starBright={};
     palaces.forEach(function(p,i){
       var gz=palaceGans[i]+p.zhi;
-      var stars=[];
+      var stars=[], starInfo=[];
       for(var s in starPos){ if(starPos[s]===p.idx) stars.push(s); }
+      // 星曜亮度
+      stars.forEach(function(s){
+        var bTable=ZIWEI.brightness[s];
+        var bLevel=bTable?bTable[DZ.indexOf(p.zhi)]:4;
+        starInfo.push({name:s, bright:bLevel, label:ZIWEI.brightnessLabel[bLevel]||''});
+      });
       var minors=[];
       for(var s in minorPos){ if(minorPos[s]===p.idx) minors.push(s); }
       var hua=[];
       for(var h in sihua){ if(stars.indexOf(sihua[h])>=0) hua.push(h); }
       chart[p.name]={
         ganZhi:gz, zhi:p.zhi, gan:palaceGans[i],
-        stars:stars, minors:minors, hua:hua,
+        stars:stars, starInfo:starInfo, minors:minors, hua:hua,
         meaning:ZIWEI.palaces[i].meaning
       };
     });
+    // 大限：从命宫起，阳男阴女顺行/阴男阳女逆行
+    var wuxingJuNum=[4,3,2,6,5]; // 金4木3水2火6土5
+    var startAge=wuxingJuNum[ju];
+    var tianGan=TG[yearGanIdx];
+    var isYangGan='甲丙戊庚壬'.indexOf(tianGan)>=0;
+    var goForward=(isYangGan&&isMale)||(!isYangGan&&!isMale);
+    var daxian=[];
+    for(var di=0;di<12;di++){
+      var palaceIdx=(mingPos + (goForward?di:-di) + 12)%12;
+      var palName=ZIWEI.palaces[di].name;
+      var age=startAge+di*10;
+      daxian.push({name:palName, zhi:DZ[palaceIdx], ageRange:age+'~'+(age+9)});
+      if(chart[palName]) chart[palName].daXian=age+'~'+(age+9);
+    }
     // 三方四正分析
     var triads = [
       { name:'命财官线', palaces:['命宫','财帛','官禄'], meaning:'事业成就、社会地位、人生格局的核心轴线' },
@@ -241,7 +262,8 @@ var ZIWEI_CALC = (function(){
       sihua:sihua,
       lunarMonth:lMonth, lunarDay:lDay,
       triads:triadAnalysis,
-      oppositions:oppAnalysis
+      oppositions:oppAnalysis,
+      daxian:daxian
     };
   }
 
