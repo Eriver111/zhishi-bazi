@@ -219,7 +219,10 @@ function doAnalyze(){
   if(typeof YIJING==='undefined'){ res.innerHTML='<div class="card"><p style="text-align:center;color:#e07050">数据库未加载</p></div>'; return; }
 
   var today=new Date();
-  var dayGanIdx=(today.getFullYear()-4)%10;
+  // 日干支（UTC精确，用于六神排盘）
+  var tUTC=new Date(Date.UTC(nY,nM-1,nD,12,0,0)), baseUTC=new Date(Date.UTC(1900,0,1,12,0,0));
+  var dDays=Math.round((tUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
+  var dayGanIdx=dIdx%10;
   var monthZhi=DZ[(today.getMonth()+1)%12]||'子';
 
   try{
@@ -354,9 +357,7 @@ window.doAIReading=function(){
   // 计算日辰（dG dZ 用于 prompt 中的日辰信息）
   var today=new Date();
   var nY=today.getFullYear(), nM=today.getMonth()+1, nD=today.getDate();
-  var tUTC=new Date(Date.UTC(nY,nM-1,nD,12,0,0)), baseUTC=new Date(Date.UTC(1900,0,1,12,0,0));
-  var dDays=Math.round((tUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
-  var dG=TG[dIdx%10], dZ=DZ[dIdx%12];
+  var dG=TG[dIdx%10], dZ=DZ[dIdx%12]; // 复用上方日辰
 
   var readingDiv=document.getElementById('aiReading');
   if(!readingDiv){
