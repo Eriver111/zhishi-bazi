@@ -18,6 +18,8 @@
 .btn-submit{display:block;margin:20px auto 0;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit}
 .btn-submit:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(201,168,76,.2)}
 .btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-outline{display:inline-block;padding:10px 24px;font-size:13px;font-weight:600;background:transparent;color:var(--gold-l);border:1px solid rgba(201,168,76,.3);border-radius:20px;cursor:pointer;letter-spacing:1px;font-family:inherit;margin:4px}
+.btn-outline:hover{background:rgba(201,168,76,.06)}
 .coin-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03)}
 .coin-row .label{width:80px;font-size:12px;color:var(--tx3);text-align:right}
 .coin-row .result{flex:1;font-size:16px;color:var(--tx);font-family:monospace;letter-spacing:3px}
@@ -79,11 +81,12 @@
   </div>
 
   <div id="result"></div>
+  <div id="aiReading"></div>
 </div>
 
-<script src="js/liuyao-core.js?v=2"></script>
-<script src="js/yijing-db.js?v=2"></script>
-<script src="js/auth.js?v=2"></script>
+<script src="js/liuyao-core.js?v=3"></script>
+<script src="js/yijing-db.js?v=3"></script>
+<script src="js/auth.js?v=3"></script>
 <script>
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
 var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -159,6 +162,8 @@ function showGuaReveal(gName,lines,callback){
 function doAnalyze(){
   try{
   var res=document.getElementById('result');
+  // 清除旧的 AI 解读
+  var oldReading=document.getElementById('aiReading'); if(oldReading) oldReading.innerHTML='';
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在装卦...</p></div>';
 
   if(typeof LIUYAO==='undefined'){ res.innerHTML='<div class="empty"><p>引擎未加载</p></div>'; return; }
@@ -298,8 +303,10 @@ function doAnalyze(){
   shenSha+='干禄：'+(ganlu[dayGan]||'')+' &nbsp;|&nbsp; 贵人：'+(guiren[dayGan]||'')+'</div>';
   res.innerHTML=timeInfo+header+fushen+dongHua+shenSha+
     (origDB?'<div style="margin-top:8px;font-size:12px;line-height:1.8;text-align:center;color:var(--tx3)">卦辞：'+origDB.judgment+'</div>':'')+
+    '<div id="aiBtnArea" style="text-align:center">'+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:12px">积分解锁 AI 解读</button>'+
-    '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p>';
+    '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分（新用户免费3次）</p>'+
+    '</div>';
   res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._chgDB=chgDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
   }catch(e){ res.innerHTML='<div class="empty"><p>装卦异常：'+e.message+'</p></div>'; }
 }
@@ -307,34 +314,105 @@ function doAnalyze(){
 window.doAIReading=function(){
   var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, chgDB=res._chgDB, moving=res._movingLines;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
-  res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
-  // 构建专业断卦Prompt——锁定分析框架
+
+  var readingDiv=document.getElementById('aiReading');
+  if(!readingDiv){
+    readingDiv=document.createElement('div'); readingDiv.id='aiReading';
+    res.parentNode.appendChild(readingDiv);
+  }
+  readingDiv.innerHTML='<div class="loading"><div class="spinner"></div><p>知时先生正在解卦...</p><p style="font-size:11px;color:var(--tx3);margin-top:4px">排盘数据已发送，请稍候</p></div>';
+  var btnArea=document.getElementById('aiBtnArea'); if(btnArea) btnArea.style.display='none';
+
   // 数据库锚点——AI只能基于这些原文解读
   var dbAnchor='';
-  if(origDB) dbAnchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；彖传："'+(origDB.tuan||'')+'"，解读：'+origDB.meaning+'。';
-  if(chgDB) dbAnchor+='变卦《'+chgDB.name+'》：卦辞曰"'+chgDB.judgment+'"；解读：'+chgDB.meaning+'。';
+  if(origDB) dbAnchor+='本卦《'+origDB.name+'》卦辞曰"'+origDB.judgment+'"；彖传："'+(origDB.tuan||'')+'"，解读：'+origDB.meaning+'。\n';
+  if(chgDB) dbAnchor+='变卦《'+chgDB.name+'》卦辞曰"'+chgDB.judgment+'"；解读：'+chgDB.meaning+'。\n';
+
+  // 动爻化象关系（五行生克表）
+  var wxKe={'木':'土','土':'水','水':'火','火':'金','金':'木'};
+  var wxSheng={'木':'火','火':'土','土':'金','金':'水','水':'木'};
+  var dongYaoDetail='';
+  if(moving.length){
+    dongYaoDetail='动爻详情：\n';
+    moving.forEach(function(ml){
+      var o=zg.liuqin[ml-1]+' '+zg.yaoGan[ml-1]+zg.yaoDZ[ml-1]+'('+zg.yaoWX[ml-1]+')';
+      var c=chgZg?chgZg.liuqin[ml-1]+' '+chgZg.yaoGan[ml-1]+chgZg.yaoDZ[ml-1]+'('+chgZg.yaoWX[ml-1]+')':'?';
+      var bWX=zg.yaoWX[ml-1], cWX=chgZg?chgZg.yaoWX[ml-1]:'?';
+      var huaRel='';
+      if(bWX===cWX) huaRel='比和（平稳过渡）';
+      else if(wxSheng[bWX]===cWX) huaRel='化泄气（消耗自身）';
+      else if(wxSheng[cWX]===bWX) huaRel='化回头生（向好得助）';
+      else if(wxKe[bWX]===cWX) huaRel='化回头克（受阻不利）';
+      else if(wxKe[cWX]===bWX) huaRel='化出所克（可控）';
+      else huaRel='关系待定';
+      dongYaoDetail+='第'+ml+'爻动：'+o+' → '+c+' —— '+huaRel+'\n';
+    });
+  }
 
   var prompt='你是"知时先生"，精通六爻断卦。以下爻辞卦辞来自权威《周易》原文，你必须基于这些原文进行解读，不得编造。\n\n';
-  prompt+='【必读经典原文】'+dbAnchor+'\n\n';
-  prompt+='请严格按照以下框架分析，写300字：\n\n';
-  prompt+='【第一步：世应进退】本卦世爻在第'+zg.shiYao+'爻，变卦世爻在'+(chgZg?chgZg.shiYao:'无')+'爻。对比判断事的进退方向。\n';
-  prompt+='【第二步：世爻状态】世爻为'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'('+zg.yaoWX[zg.shiYao-1]+')，月建'+zg.monthZhi+'月('+zg.monthWX+')，世爻处'+zg.wangShuai[zg.shiYao-1]+'态。判断世爻自身的强弱吉凶。\n';
-  // 查官鬼是否克世爻
-  var guanGuiKe=false;
-  for(var i=0;i<6;i++){ if(zg.liuqin[i]==='官鬼'&&zg.yaoWX[i]==='火'&&zg.yaoWX[zg.shiYao-1]==='金') guanGuiKe=true; } // 简化判断
-  prompt+='【第三步：用神分析】';
-  if(moving.length){ moving.forEach(function(ml){ prompt+='第'+ml+'爻动：'+zg.liuqin[ml-1]+zg.yaoGan[ml-1]+zg.yaoDZ[ml-1]+'→'+(chgZg?chgZg.liuqin[ml-1]+chgZg.yaoGan[ml-1]+chgZg.yaoDZ[ml-1]:'?')+'；'; }); }
-  prompt+='\n【第四步：六神定位】各爻六神：';
-  for(var i=0;i<6;i++){ prompt+=zg.liuqin[i]+'在'+zg.liushen[i]+'('+zg.yaoDZ[i]+zg.yaoWX[i]+'); '; }
-  prompt+='\n【第五步：综合断卦】根据以上信息，模仿这个格式解读："先看本卦世应在X变卦在X，说明XX。月建X，世爻居XX，本卦有XX来克说明XX。XX在XX说明XX。综合判断XX。"';
-  prompt+='\n请用400字左右的通俗大白话解读，像朋友聊天一样，不要任何术语堆砌和古文引用。每步一句话带过别啰嗦，重点放在综合建议上。JSON格式：{"reading":"完整解读"}';
+  prompt+='【必读经典原文】\n'+dbAnchor+'\n';
+  prompt+='【卦象结构】\n';
+  prompt+='本卦：'+zg.guaName+'（'+zg.gong+'宫·属'+zg.gongWX+'·'+zg.guaType+'卦）\n';
+  prompt+='变卦：'+(chgZg?chgZg.guaName+'（'+chgZg.gong+'宫·属'+chgZg.gongWX+'·'+chgZg.guaType+'卦）':'无动爻，无变卦')+'\n';
+  prompt+='月建：'+zg.monthZhi+'月（五行属'+zg.monthWX+'）\n';
+  prompt+='世爻位置：第'+zg.shiYao+'爻  应爻位置：第'+zg.yingYao+'爻\n\n';
+  prompt+='【六爻逐层数据】（初爻→上爻）\n';
+  for(var i=0;i<6;i++){
+    var mvMark=moving.indexOf(i+1)>=0?' ★动爻':'';
+    prompt+='第'+(i+1)+'爻：'+zg.liuqin[i]+' '+zg.yaoGan[i]+zg.yaoDZ[i]+'('+zg.yaoWX[i]+') — 六神：'+zg.liushen[i]+' — 旺衰：'+zg.wangShuai[i]+' — 长生：'+zg.changSheng[i];
+    if(i+1===zg.shiYao) prompt+=' 【世爻】';
+    if(i+1===zg.yingYao) prompt+=' 【应爻】';
+    prompt+=mvMark+'\n';
+  }
+  prompt+='\n'+dongYaoDetail+'\n';
+  prompt+='请按以下框架写一篇约400字的解读，通俗白话，像朋友聊天：\n\n';
+  prompt+='【第一步：世应判断】分析世爻和应爻的位置与关系，说明事情的整体方向。\n';
+  prompt+='【第二步：世爻自身状态】世爻为'+zg.liuqin[zg.shiYao-1]+zg.yaoGan[zg.shiYao-1]+zg.yaoDZ[zg.shiYao-1]+'（五行'+zg.yaoWX[zg.shiYao-1]+'），月建'+zg.monthZhi+'月（'+zg.monthWX+'），当前处于'+zg.wangShuai[zg.shiYao-1]+'状态。\n';
+  prompt+='【第三步：动爻分析】动爻是事态变化的关键节点，逐一分析每个动爻的化象（化回头生/克/泄/比和）。\n';
+  prompt+='【第四步：六神取象】结合各爻六神定位具体事象。\n';
+  prompt+='【第五步：综合断卦】把以上分析串起来，给出具体的时间节点、注意事项和2-3条行动建议。\n\n';
+  prompt+='硬性要求：每一步分析必须说出实际的干支、五行、六神名称。不能说笼统的"世爻得助"，必须说"世爻兄弟丑土得午月火生"。不能说"有官鬼来克"，必须说"二爻官鬼卯木克世爻丑土"。纯文本回复，不用JSON。';
+
+  var token=Auth.getToken();
+  var headers={'Content-Type':'application/json'};
+  if(token) headers['Authorization']='Bearer '+token;
+
   var ctrl=new AbortController();
-  setTimeout(function(){ ctrl.abort(); }, 90000);
-  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt}),signal:ctrl.signal})
-  .then(function(r){return r.json();}).then(function(d){
-    if(!d.reading||d.reading==='卦象已显，静心体悟。'){ res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text" style="text-align:center;color:var(--tx3)">AI解读超时，请稍后重试</div>'; return; }
-    res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>';
-  }).catch(function(){ res.innerHTML=res.innerHTML.replace(/<div class="loading">[\s\S]*?<\/div>/,'')+'<div class="result-text" style="text-align:center;color:var(--tx3)">解读超时，请稍后重试</div>'; });
+  setTimeout(function(){ ctrl.abort(); }, 120000);
+
+  fetch('/api/divination',{
+    method:'POST',headers:headers,
+    body:JSON.stringify({prompt:prompt,divType:'liuyao'}),
+    signal:ctrl.signal
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.error){
+      if(d.needLogin){ Auth.showModal('login'); readingDiv.innerHTML=''; if(btnArea) btnArea.style.display=''; return; }
+      if(d.creditExhausted){
+        readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:12px">积分不足</p><p style="font-size:13px;color:var(--tx2);margin-bottom:16px">免费3次已用完，请购买次数包继续使用</p><button class="btn-submit" onclick="location.href=\'/pricing\'" style="margin:0 auto">去购买积分</button></div>';
+        return;
+      }
+      readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:8px">解读失败</p><p style="font-size:12px;color:var(--tx3);margin-bottom:16px">'+d.error+'</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>';
+      return;
+    }
+    if(!d.reading||d.reading.length<10){
+      readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:var(--tx3);margin-bottom:12px">解读超时，请稍后重试</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>';
+      return;
+    }
+    var creditTip='';
+    if(d.isMonthly) creditTip='<p style="text-align:center;font-size:11px;color:var(--gold-l);margin-top:12px">月度会员 · 无限解读</p>';
+    else if(d.freeUsed) creditTip='<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:12px">本次使用免费次数</p>';
+    else if(d.creditsLeft>=0) creditTip='<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:12px">剩余积分：'+d.creditsLeft+' 次</p>';
+
+    readingDiv.innerHTML='<div class="card" style="padding:20px 24px"><h3 style="margin-bottom:12px">知时先生解读</h3><div class="result-text" style="line-height:2.2;font-size:14px">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>'+creditTip+'</div>';
+  }).catch(function(e){
+    if(e.name==='AbortError'){
+      readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e8a040;margin-bottom:12px">解读请求超时</p><p style="font-size:12px;color:var(--tx3);margin-bottom:16px">AI 模型响应较慢，请稍后重试</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>';
+    } else {
+      readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:8px">网络异常</p><p style="font-size:12px;color:var(--tx3);margin-bottom:16px">请检查网络连接后重试</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>';
+    }
+  });
 };
 </script>
 </body>
