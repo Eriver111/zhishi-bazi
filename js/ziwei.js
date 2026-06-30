@@ -243,7 +243,7 @@ var ZIWEI_CALC = (function(){
     var xkMap={0:6,1:9,2:0,3:3,4:6,5:9,6:0,7:3,8:6,9:9};
     zaByZhi[DZ[xkMap[yearGanIdx]||6]]=(zaByZhi[DZ[xkMap[yearGanIdx]||6]]||[]).concat(['旬空']);
     // 天厨：亥起逆数到月 (lMonth-1)%12
-    zaByZhi[DZ[(11-(lMonth-1)+12)%12]]=(zaByZhi[DZ[(11-(lMonth-1)+12)%12]]||[]).concat(['天厨']);
+    zaByZhi[DZ[(lMonth-1)%12]]=(zaByZhi[DZ[(11-(lMonth-1)+12)%12]]||[]).concat(['天厨']);
     // 天官：年干+7
     zaByZhi[DZ[(7+yearGanIdx)%12]]=(zaByZhi[DZ[(7+yearGanIdx)%12]]||[]).concat(['天官']);
     // 天福：年干+月+3
