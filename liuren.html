@@ -200,7 +200,7 @@ function renderFull(d,y,m,d2,h,min,question,direction){
   hh+='</div>';
 
   // 4. 天地盘表格
-  var to=["申","酉","戌","亥","子","丑","寅","卯","辰","巳","午","未"];
+  var to=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
   hh+='<div class="card"><div class="card-title">天 地 盘 · 十 二 宫</div><div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:10px">外圈地盘 · 内层天盘 · 标天将</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center"><tr style="border-bottom:1px solid rgba(201,168,76,.15)"><td style="padding:6px;color:var(--tx3);font-size:10px;letter-spacing:2px">地盘宫</td>';
   to.forEach(function(z){hh+='<td style="padding:6px;font-weight:700;color:var(--gold)">'+z+'</td>';});
   hh+='</tr><tr style="border-bottom:1px solid rgba(255,255,255,.03)"><td style="padding:6px;color:var(--tx3);font-size:10px">天盘</td>';
