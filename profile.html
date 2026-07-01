@@ -85,7 +85,7 @@
         var myInviteCode='ZS'+String((Auth.getUser()&&Auth.getUser().id)||'0').padStart(6,'0');
         html+='<div style="margin-top:16px;padding:14px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:10px">';
         html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:10px;color:var(--tx3);letter-spacing:2px">我的邀请码</div><div style="font-size:20px;font-weight:700;color:var(--gold-l);letter-spacing:3px;font-family:monospace">'+myInviteCode+'</div></div><button onclick="navigator.clipboard.writeText(\''+myInviteCode+'\');var t=this;t.textContent=\'已复制\';setTimeout(function(){t.textContent=\'复制\'},2000)" style="padding:6px 12px;font-size:11px;background:rgba(201,168,76,.1);border:1px solid var(--bd2);color:var(--gold);border-radius:12px;cursor:pointer">复制</button></div>';
-        html+='<div style="font-size:10px;color:var(--tx3);margin-bottom:8px">分享邀请码给好友，对方输入后双方各得 1 次积分</div>';
+        html+='<div style="font-size:10px;color:var(--tx3);margin-bottom:8px">分享邀请码给好友，对方输入后双方各得 2 次积分</div>';
         html+='<div style="display:flex;gap:8px"><input id="inviteInput" placeholder="输入好友的邀请码" style="flex:1;padding:8px 12px;font-size:13px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--tx);font-family:inherit;outline:none"><button onclick="redeemInvite()" style="padding:8px 16px;font-size:13px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap">兑换</button></div>';
         html+='<div id="inviteMsg" style="margin-top:6px;font-size:11px"></div></div>';
 

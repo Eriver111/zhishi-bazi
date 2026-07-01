@@ -35,16 +35,16 @@ module.exports = async function handler(req, res) {
         // 给被邀请人（当前用户）加额度
         var { data: myData } = await db.from('free_credits_log').select('*').eq('identifier', myUid).single();
         if (myData && myData.used_count > 0) {
-          await db.from('free_credits_log').update({ used_count: myData.used_count - 1 }).eq('identifier', myUid);
+          await db.from('free_credits_log').update({ used_count: myData.used_count - 2 }).eq('identifier', myUid);
         }
 
         // 给邀请人加额度
         var { data: refData } = await db.from('free_credits_log').select('*').eq('identifier', inviteCode).single();
         if (refData && refData.used_count > 0) {
-          await db.from('free_credits_log').update({ used_count: refData.used_count - 1 }).eq('identifier', inviteCode);
+          await db.from('free_credits_log').update({ used_count: refData.used_count - 2 }).eq('identifier', inviteCode);
         }
 
-        return res.status(200).json({ success: true, message: '邀请码兑换成功！你和邀请人各获得 1 次积分。' });
+        return res.status(200).json({ success: true, message: '邀请码兑换成功！你和邀请人各获得 2 次积分。' });
       }
       return res.status(200).json({ success: true, message: '兑换成功（离线模式）' });
     } catch(e) {
@@ -72,7 +72,7 @@ module.exports = async function handler(req, res) {
       await db.from('free_credits_log').insert({ identifier: key, used_count: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
       const { data: refData } = await db.from('free_credits_log').select('*').eq('identifier', ref).single();
       if (refData && refData.used_count > 0) {
-        await db.from('free_credits_log').update({ used_count: refData.used_count - 1, updated_at: new Date().toISOString() }).eq('identifier', ref);
+        await db.from('free_credits_log').update({ used_count: refData.used_count - 2, updated_at: new Date().toISOString() }).eq('identifier', ref);
       }
     }
     return res.status(200).json({ success: true, message: '分享成功，已获得1次额外提问机会！' });
