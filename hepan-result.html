@@ -3216,7 +3216,7 @@ body::before{
 </style>
 
 <style>/* 桌面导航 */
-
+.zhishi-nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(8,12,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);height:50px}
 .nav-brand{font-size:20px;font-weight:900;color:var(--gold-l);letter-spacing:4px;text-decoration:none}
 .nav-links{display:flex;gap:20px;align-items:center}
 .nav-links a{color:var(--tx2);text-decoration:none;font-size:14px;letter-spacing:1px;transition:color .2s;padding:6px 12px;border-radius:6px}
@@ -3225,12 +3225,24 @@ body::before{
 .nav-links .nav-cta:hover{color:#1a1a1a;box-shadow:0 0 20px var(--gold-glow)}
 
 /* 手机底部导航 */
-
+.zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:#080c14;backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
 .zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;padding:4px 12px}
 .zhishi-mobile-nav a:active{color:var(--gold-l)}
 
 /* 页面留出导航空间 */
-body.inset:0;z-index:0;width:100%;height:100%;pointer-events:none"></canvas>
+body.has-nav{padding-top:50px}
+body.has-mobile-nav{padding-bottom:60px}
+
+@media(max-width:1024px){
+  .zhishi-nav .nav-links{display:none}
+  .zhishi-mobile-nav{display:flex}
+  body.has-mobile-nav{padding-bottom:60px}
+  .zhishi-nav{justify-content:center;padding:8px 16px;height:44px}
+}
+</style></head>
+<body>
+
+<canvas id="mxhCanvas" style="position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none"></canvas>
 
 <div class="hp-result-container" style="position:relative;z-index:1;max-width:960px;margin:0 auto;padding:20px 16px 60px;background:var(--ink)">
 
@@ -3341,7 +3353,20 @@ function submitFeedback() {
 
 <script>(function(){
   var navHTML = `
-
+<div id="zhishi-nav" class="zhishi-nav">
+  <a href="/" class="nav-brand">知时</a>
+  <div class="nav-links">
+    <a href="/">首页</a>
+    <a href="/paipan">排盘</a>
+    <a href="/hepan">合盘</a>
+    <a href="/fortune">运势</a>
+    <a href="/meihua">梅花</a>
+    <a href="/liuyao">六爻</a>
+    <a href="/ziwei">紫微</a>
+    <a href="/liuren">大六壬</a>
+    <a href="/pricing" class="nav-cta">积分</a>
+  </div>
+</div>
 <div id="zhishi-mobile-nav" class="zhishi-mobile-nav">
   <a href="/">首页</a>
   <a href="/paipan">排盘</a>
@@ -3354,7 +3379,7 @@ function submitFeedback() {
   <a href="/ai-chat">AI</a>
 </div>
 `;
-  document.body.classList.add("document.body.insertAdjacentHTML('afterbegin', navHTML);
+  document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
 </script>
 <script>
@@ -3390,8 +3415,7 @@ function submitFeedback() {
       localStorage.setItem('hpo2',d.out_trade_no);
       // 手机直接跳转，电脑显示二维码
       if(isMobile&&d.pay_url){window.location.href=d.pay_url}
-      else if(d.pay_url){var qr='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);var w=window.open('','_blank','width=400,height=500');if(w){w.document.write('<html><head><title>扫码支付 ¥13.9</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;background:#0d1525;color:#e2dcc8}img{border-radius:12px;border:2px solid #c9a84c}</style></head><body>
-<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(13,21,37,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">大六壬</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a></div></div><h3>📱 扫码支付 ¥13.9</h3><img src="'+qr+'" style="width:220px;height:220px"><p style="margin-top:12px;color:#989080">支付后自动解锁，请勿关闭页面</p></body></html>');w.document.close()}}
+      else if(d.pay_url){var qr='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);var w=window.open('','_blank','width=400,height=500');if(w){w.document.write('<html><head><title>扫码支付 ¥13.9</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;background:#0d1525;color:#e2dcc8}img{border-radius:12px;border:2px solid #c9a84c}</style></head><body><h3>📱 扫码支付 ¥13.9</h3><img src="'+qr+'" style="width:220px;height:220px"><p style="margin-top:12px;color:#989080">支付后自动解锁，请勿关闭页面</p></body></html>');w.document.close()}}
       pollHP(d.out_trade_no);
     }).catch(function(){alert('网络错误，请重试')});
   }

@@ -566,7 +566,7 @@ body::before{
 </style>
 <!-- debug removed -->
 <style>/* 桌面导航 */
-
+.zhishi-nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(8,12,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);height:50px}
 .nav-brand{font-size:20px;font-weight:900;color:var(--gold-l);letter-spacing:4px;text-decoration:none}
 .nav-links{display:flex;gap:20px;align-items:center}
 .nav-links a{color:var(--tx2);text-decoration:none;font-size:14px;letter-spacing:1px;transition:color .2s;padding:6px 12px;border-radius:6px}
@@ -575,12 +575,23 @@ body::before{
 .nav-links .nav-cta:hover{color:#1a1a1a;box-shadow:0 0 20px var(--gold-glow)}
 
 /* 手机底部导航 */
-
+.zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:rgba(8,12,20,.92);backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
 .zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;padding:4px 12px}
 .zhishi-mobile-nav a:active{color:var(--gold-l)}
 
 /* 页面留出导航空间 */
-body.inset:0;z-index:99999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
+body.has-nav{padding-top:50px}
+body.has-mobile-nav{padding-bottom:60px}
+
+@media(max-width:1024px){
+  .zhishi-nav .nav-links{display:none}
+  .zhishi-mobile-nav{display:flex}
+  body.has-mobile-nav{padding-bottom:60px}
+  .zhishi-nav{justify-content:center;padding:8px 16px;height:44px}
+}
+</style></head>
+<body>
+<div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
 <style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
@@ -618,37 +629,22 @@ body.inset:0;z-index:99999;background:radial-gradient(ellipse at center,#0d1525 
   </section>
 
   <!-- ====== Features ====== -->
-  <section class="features" style="grid-template-columns:repeat(3,1fr)">
-    <a href="/paipan" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#a0c8e8">☰</div>
+  <section class="features">
+    <div class="feat-card">
+      <div class="feat-icon" style="color:#a0c8e8">&#x231A;</div>
       <h3>八字排盘</h3>
-      <p>公历农历双输入 · 真太阳时校正<br>十神旺衰 · 大运流年 · 纳音神煞</p>
-    </a>
-    <a href="/ziwei" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e8cf70">⭐</div>
-      <h3>紫微斗数</h3>
-      <p>三合飞星四化 · 十二宫精断<br>十四主星 · 辅星杂曜 · 格局论断</p>
-    </a>
-    <a href="/liuren" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#5b9fd4">◎</div>
-      <h3>大六壬</h3>
-      <p>月将加时 · 天地盘转 · 四课三传<br>九宗门起课 · 十二天将神煞</p>
-    </a>
-    <a href="/liuyao" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e07050">⚊</div>
-      <h3>六爻占卜</h3>
-      <p>掷钱起卦 · 六爻装卦<br>世应用神 · 动变生克 · 月建日辰</p>
-    </a>
-    <a href="/meihua" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#6db86d">🌸</div>
-      <h3>梅花易数</h3>
-      <p>以数起卦 · 万物类象<br>本卦变卦 · 互卦综卦 · AI 解卦</p>
-    </a>
-    <a href="/hepan" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e8c8a0">♡</div>
+      <p>公历 / 农历双模式输入<br>精确到时辰分钟，真太阳时校正<br>纳音神煞，十神旺衰，一目了然</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="color:#e8c8a0">&#x2661;</div>
       <h3>合盘缘分</h3>
-      <p>双人八字深度合盘<br>五行互补 · 相处模式 · 关键节点</p>
-    </a>
+      <p>双人八字深度合盘分析<br>五行互补、日柱契合、相处模式<br>未来三年关键节点推演</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="color:#a0d8c8">&#x25C6;</div>
+      <h3>AI 命理师</h3>
+      <p>DeepSeek 大模型深度推演<br>子平八字 + 盲派理论融合<br>前2次免费 · 月会员无限畅聊</p>
+    </div>
   </section>
 
   <!-- ====== Trust ====== -->
@@ -1285,7 +1281,20 @@ var MoXingHe = (function(){
 
 <script>(function(){
   var navHTML = `
-
+<div id="zhishi-nav" class="zhishi-nav">
+  <a href="/" class="nav-brand">知时</a>
+  <div class="nav-links">
+    <a href="/">首页</a>
+    <a href="/paipan">排盘</a>
+    <a href="/hepan">合盘</a>
+    <a href="/fortune">运势</a>
+    <a href="/meihua">梅花</a>
+    <a href="/liuyao">六爻</a>
+    <a href="/ziwei">紫微</a>
+    <a href="/liuren">大六壬</a>
+    <a href="/pricing" class="nav-cta">积分</a>
+  </div>
+</div>
 <div id="zhishi-mobile-nav" class="zhishi-mobile-nav">
   <a href="/">首页</a>
   <a href="/paipan">排盘</a>
@@ -1298,7 +1307,7 @@ var MoXingHe = (function(){
   <a href="/pricing">积分</a>
 </div>
 `;
-  document.body.classList.add("document.body.insertAdjacentHTML('afterbegin', navHTML);
+  document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
 })();
 </script>
 <script>
