@@ -566,31 +566,32 @@ body::before{
 </style>
 <!-- debug removed -->
 <style>/* 桌面导航 */
-.zhishi-nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(8,12,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);height:50px}
-.nav-brand{font-size:20px;font-weight:900;color:var(--gold-l);letter-spacing:4px;text-decoration:none}
-.nav-links{display:flex;gap:20px;align-items:center}
-.nav-links a{color:var(--tx2);text-decoration:none;font-size:14px;letter-spacing:1px;transition:color .2s;padding:6px 12px;border-radius:6px}
-.nav-links a:hover{color:var(--gold-l)}
-.nav-links .nav-cta{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;font-weight:700;border-radius:16px;padding:6px 16px;animation:shimmer 3s infinite;background-size:200% 100%}
+
+
+
+
+
+.nav-links 
 .nav-links .nav-cta:hover{color:#1a1a1a;box-shadow:0 0 20px var(--gold-glow)}
 
 /* 手机底部导航 */
-.zhishi-mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;background:rgba(8,12,20,.92);backdrop-filter:blur(12px);border-top:1px solid var(--bd);justify-content:space-around;padding:8px 0 12px}
+
 .zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;padding:4px 12px}
 .zhishi-mobile-nav a:active{color:var(--gold-l)}
 
 /* 页面留出导航空间 */
-body.has-nav{padding-top:50px}
+
 body.has-mobile-nav{padding-bottom:60px}
 
 @media(max-width:1024px){
-  .zhishi-nav .nav-links{display:none}
-  .zhishi-mobile-nav{display:flex}
+  .zhishi-nav 
+  
   body.has-mobile-nav{padding-bottom:60px}
-  .zhishi-nav{justify-content:center;padding:8px 16px;height:44px}
+  
 }
 </style></head>
 <body>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(13,21,37,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a></div></div>
 <div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
@@ -1273,57 +1274,7 @@ var MoXingHe = (function(){
 
 <script>setTimeout(function(){var o=document.getElementById("eyeOverlay");if(o){o.style.opacity="0";o.style.visibility="hidden";setTimeout(function(){o.remove()},600)}},2500)</script>
 
-<script>
-(function(){
-  var c=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸','子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥','金','木','水','火','土','正官','七杀','正印','偏印','正财','偏财','食神','伤官','比肩','劫财','天乙','文昌','桃花','驿马','华盖','羊刃','魁罡','太极','学堂','天德','月德','将星','禄神'];
-  var box=document.getElementById('eyeParticles');
-  if(!box)return;
-  for(var i=0;i<40;i++){
-    var s=document.createElement('span');
-    s.textContent=c[Math.floor(Math.random()*c.length)];
-    var x=20+Math.random()*60,y=20+Math.random()*60;
-    var dx=(50-x)*(.5+Math.random()*.5),dy=(50-y)*(.5+Math.random()*.5);
-    s.style.cssText='position:absolute;font-size:'+(10+Math.random()*16)+'px;color:rgba(201,168,76,'+(.2+Math.random()*.5)+');left:'+x+'%;top:'+y+'%;animation:suckIn '+(2+Math.random()*2.5)+'s ease-in '+(Math.random()*2)+'s both;letter-spacing:2px;font-weight:bold';
-    s.setAttribute('data-dx',dx);s.setAttribute('data-dy',dy);
-    box.appendChild(s);
-  }
-  var st=document.createElement('style');
-  st.textContent='@keyframes suckIn{0%{opacity:0;transform:translate(0,0) scale(.5)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px)) scale(0)}}';
-  document.head.appendChild(st);
-})();
-</script>
 
-<script>(function(){
-  var navHTML = `
-<div id="zhishi-nav" class="zhishi-nav">
-  <a href="/" class="nav-brand">知时</a>
-  <div class="nav-links">
-    <a href="/">首页</a>
-    <a href="/paipan">排盘</a>
-    <a href="/hepan">合盘</a>
-    <a href="/fortune">运势</a>
-    <a href="/meihua">梅花</a>
-    <a href="/liuyao">六爻</a>
-    <a href="/ziwei">紫微</a>
-    <a href="/liuren">大六壬</a>
-    <a href="/pricing" class="nav-cta">积分</a>
-  </div>
-</div>
-<div id="zhishi-mobile-nav" class="zhishi-mobile-nav">
-  <a href="/">首页</a>
-  <a href="/paipan">排盘</a>
-  <a href="/hepan">合盘</a>
-  <a href="/fortune">运势</a>
-  <a href="/meihua">梅花</a>
-    <a href="/liuyao">六爻</a>
-    <a href="/ziwei">紫微</a>
-    <a href="/liuren">大六壬</a>
-  <a href="/pricing">积分</a>
-</div>
-`;
-  document.body.classList.add("has-nav","has-mobile-nav");document.body.insertAdjacentHTML('afterbegin', navHTML);
-})();
-</script>
 <script>
 (function(){
   var m=location.search.match(/ref=([^&]+)/);
