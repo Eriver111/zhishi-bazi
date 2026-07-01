@@ -200,13 +200,14 @@ function renderFull(d,y,m,d2,h,min,question,direction){
   hh+='</div>';
 
   // 4. 天地盘表格
-  var to=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+  var to=["酉","戌","亥","子","丑","寅","卯","辰","巳","午","未","申"];
+var GOD_SHORT={贵人:'貴',腾蛇:'蛇',朱雀:'雀',六合:'合',勾陈:'勾',青龙:'龍',天空:'空',白虎:'虎',太常:'常',玄武:'玄',太阴:'陰',天后:'后'};
   hh+='<div class="card"><div class="card-title">天 地 盘 · 十 二 宫</div><div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:10px">外圈地盘 · 内层天盘 · 标天将</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center"><tr style="border-bottom:1px solid rgba(201,168,76,.15)"><td style="padding:6px;color:var(--tx3);font-size:10px;letter-spacing:2px">地盘宫</td>';
   to.forEach(function(z){hh+='<td style="padding:6px;font-weight:700;color:var(--gold)">'+z+'</td>';});
   hh+='</tr><tr style="border-bottom:1px solid rgba(255,255,255,.03)"><td style="padding:6px;color:var(--tx3);font-size:10px">天盘</td>';
   to.forEach(function(z){var t=d.tianDiPan.tianPan[z]||'';hh+='<td style="padding:8px 6px;color:#5b9fd4;font-weight:600;font-size:15px">'+t+'</td>';});
   hh+='</tr><tr><td style="padding:6px;color:var(--tx3);font-size:10px">天将</td>';
-  to.forEach(function(z){hh+='<td style="padding:8px 6px;color:var(--tx2);font-size:14px">'+(d.tianDiPan.tianJiang[z]||'')+'</td>';});
+  to.forEach(function(z){hh+='<td style="padding:8px 6px;color:var(--tx2);font-size:14px">'+((GOD_SHORT[d.tianDiPan.tianJiang[z]]||d.tianDiPan.tianJiang[z]||'')+'</td>';});
   hh+='</tr></table></div></div>';
 
   // 沙盘（地盘→天盘→天将 12行排版）
@@ -221,7 +222,7 @@ function renderFull(d,y,m,d2,h,min,question,direction){
     var cls='sp-cell';if(di.kong.indexOf(zhi)>=0)cls+=' sp-kong';if(di.yima===zhi)cls+=' sp-ma';if(cg.indexOf(zhi)>=0)cls+=' sp-chuan';
     hh+='<div class="'+cls+'"><div class="sp-tags">';if(di.kong.indexOf(zhi)>=0)hh+='<span class="sp-tag kong">空</span>';if(di.yima===zhi)hh+='<span class="sp-tag ma">马</span>';hh+='</div>';
     hh+='<div class="sp-zhi">'+zhi+(dg?'<span class="sp-dun">'+dg+'</span>':'')+'</div>';
-    hh+='<div class="sp-tian">'+tian+'</div><div class="sp-god">'+god+'</div></div>';
+    hh+='<div class="sp-tian">'+tian+'</div><div class="sp-god">'+(GOD_SHORT[god]||god)+'</div></div>';
   });
   hh+='</div></div>';
 
