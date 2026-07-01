@@ -99,7 +99,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
   var ms=document.getElementById("lrMin");ms.innerHTML="";for(var i=0;i<60;i+=5){var o2=document.createElement("option");o2.value=i;o2.textContent=String(i).padStart(2,'0');if(i===0)o2.selected=true;ms.appendChild(o2);}
 })();
 function updateDirTags(){var tags=document.querySelectorAll('.lr-dir-tag');tags.forEach(function(t){t.classList.remove('active')});var sel=document.querySelector('input[name="lrDir"]:checked');if(sel){var label=sel.closest('.lr-dir-tag');if(label)label.classList.add('active');}}
-function toggleTimeInputs(){var checked=document.getElementById('lrNow').checked;['lrY','lrM','lrD','lrH','lrMin'].forEach(function(id){document.getElementById(id).disabled=checked;});if(checked){var now=new Date(Date.now()+8*60*60*1000);document.getElementById('lrY').value=now.getUTCFullYear();document.getElementById('lrM').value=now.getUTCMonth()+1;document.getElementById('lrD').value=now.getUTCDate();document.getElementById('lrH').value=now.getUTCHours();document.getElementById('lrMin').value='0';}}
+function toggleTimeInputs(){var checked=document.getElementById('lrNow').checked;['lrY','lrM','lrD','lrH','lrMin'].forEach(function(id){document.getElementById(id).disabled=checked;});if(checked){var now=new Date(Date.now()+8*60*60*1000);document.getElementById('lrY').value=now.getUTCFullYear();document.getElementById('lrM').value=now.getUTCMonth()+1;document.getElementById('lrD').value=now.getUTCDate();document.getElementById('lrH').value=now.getUTCHours();var cm=now.getUTCMinutes();document.getElementById('lrMin').value=Math.round(cm/5)*5;}}
 
 var ZHI=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
 var ZHI_WX={子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
@@ -153,7 +153,7 @@ function findPatterns(d){
 async function doLiuRen(){
   var useNow=document.getElementById("lrNow").checked;
   var y,m,d2,h,min;
-  if(useNow){var now=new Date(Date.now()+8*60*60*1000);y=now.getUTCFullYear();m=now.getUTCMonth()+1;d2=now.getUTCDate();h=now.getUTCHours();min=0;}
+  if(useNow){var now=new Date(Date.now()+8*60*60*1000);y=now.getUTCFullYear();m=now.getUTCMonth()+1;d2=now.getUTCDate();h=now.getUTCHours();min=Math.round(now.getUTCMinutes()/5)*5;}
   else{y=parseInt(document.getElementById("lrY").value);m=parseInt(document.getElementById("lrM").value);d2=parseInt(document.getElementById("lrD").value);h=parseInt(document.getElementById("lrH").value);min=parseInt(document.getElementById("lrMin").value)||0;}
   var question=document.getElementById("lrQ").value.trim();
   var dirEl=document.querySelector('input[name="lrDir"]:checked');var direction=dirEl?dirEl.value:'';
