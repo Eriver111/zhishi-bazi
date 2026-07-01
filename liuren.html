@@ -7,6 +7,13 @@ body{font-family:'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC'
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 30% 20%,rgba(91,127,165,.03) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 70% 70%,rgba(201,168,76,.02) 0%,transparent 50%)}
 .app{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:40px 20px 60px;display:flex;flex-direction:column;align-items:center;animation:fadeUp 1s ease-out}
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+/* nav */
+.zhishi-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(13,21,37,.9);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);width:100%}
+.zhishi-nav .nav-brand{font-size:20px;font-weight:900;letter-spacing:6px;color:var(--gold-l);text-decoration:none}
+.zhishi-nav .nav-links{display:flex;gap:6px;flex-wrap:wrap}
+.zhishi-nav .nav-links a{font-size:13px;color:var(--tx2);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .25s}
+.zhishi-nav .nav-links a:hover{color:var(--gold);background:rgba(201,168,76,.06)}
+.zhishi-nav .nav-cta{color:var(--gold)!important;border:1px solid var(--bd2)}
 .header{text-align:center;margin-bottom:24px;width:100%}
 .header-line{width:88px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);margin:0 auto 18px;opacity:.6}
 .header h1{font-size:48px;font-weight:900;letter-spacing:22px;background:linear-gradient(180deg,var(--gold-l),var(--gold),var(--gold-d));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 32px var(--gold-glow));margin-bottom:8px}
@@ -14,192 +21,360 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .tagline{font-size:14px;color:var(--mist);letter-spacing:8px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--radius);padding:22px 20px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 0 80px rgba(0,0,0,.5),0 0 0 1px rgba(201,168,76,.04) inset;position:relative;overflow:hidden;margin-bottom:14px;width:100%;max-width:960px}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent)}
-.card-title{font-size:14px;color:var(--gold-l);letter-spacing:6px;font-weight:600;margin-bottom:20px;text-align:center}
-.row{display:flex;gap:12px;margin-bottom:14px}
-.row.two .field{flex:1}
-.field{flex:1;min-width:0}
-.field label{display:block;font-size:10px;color:var(--mist);letter-spacing:3px;margin-bottom:6px;font-weight:500}
-.field select{width:100%;padding:12px 34px 12px 12px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-.field select:focus{outline:none;border-color:var(--gold)}
-.radio-group{display:flex;gap:6px}
-.radio{flex:1;display:flex;align-items:center;justify-content:center;padding:11px 6px;background:rgba(20,20,36,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist)}
-.radio:hover{border-color:rgba(255,255,255,.1)}
-.radio input{display:none}
-.radio:has(input:checked){border-color:var(--gold);background:rgba(201,168,76,.08);color:var(--gold-l);box-shadow:0 0 24px var(--gold-glow)}
-.submit{width:100%;padding:16px;margin-top:12px;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:10px;color:var(--ink);background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));background-size:200% 100%;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 24px rgba(201,168,76,.2);animation:shimmer 3s ease-in-out infinite;transition:all .4s}
+.card-title{font-size:15px;color:var(--gold-l);letter-spacing:6px;font-weight:700;margin-bottom:16px;text-align:center}
+.row{display:flex;gap:10px;margin-bottom:12px}
+.row .field{flex:1;min-width:0}
+.field label{display:block;font-size:10px;color:var(--mist);letter-spacing:3px;margin-bottom:5px;font-weight:500}
+.field select,.field input{width:100%;padding:11px 30px 11px 10px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer}
+.field select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.field select:focus,.field input:focus{outline:none;border-color:var(--gold)}
+.field input{padding:11px 12px}
+.submit{width:100%;padding:16px;margin-top:8px;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:10px;color:var(--ink);background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));background-size:200% 100%;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 24px rgba(201,168,76,.2);animation:shimmer 3s ease-in-out infinite;transition:all .4s}
 .submit:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.3)}
 @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.submit:disabled{opacity:.4;cursor:not-allowed;animation:none}
 
-/* 天地盘圆形 */
-.pan-wrap{width:100%;max-width:560px;margin:0 auto;position:relative}
-.pan-circle{position:relative;width:100%;padding-bottom:100%;border-radius:50%;border:2px solid rgba(201,168,76,.25);background:radial-gradient(circle,rgba(13,21,37,.9),rgba(8,12,20,.95));box-shadow:0 0 60px rgba(201,168,76,.08),0 0 0 12px rgba(201,168,76,.03);margin:0 auto}
-.pan-circle .ring2{position:absolute;top:8%;left:8%;width:84%;height:84%;border-radius:50%;border:1px solid rgba(201,168,76,.12)}
-.pan-circle .ring3{position:absolute;top:18%;left:18%;width:64%;height:64%;border-radius:50%;border:1px solid rgba(201,168,76,.08);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--gold-l);letter-spacing:4px;font-weight:700}
-.pan-pos{position:absolute;width:60px;text-align:center;transform:translate(-50%,-50%);font-size:12px;line-height:1.4}
-.pan-pos .dz{font-size:20px;font-weight:700;color:var(--gold);letter-spacing:2px}
-.pan-pos .tian{font-size:11px;color:#5b9fd4}
-.pan-pos .general{font-size:10px;color:var(--tx3)}
-.pan-pos .dungan{font-size:9px;color:#6a6570}
-/* 12个方位：子下午上 */
-.pan-zi{top:88%;left:50%}.pan-chou{top:80%;left:22%}.pan-yin{top:58%;left:8%}
-.pan-mao{top:30%;left:10%}.pan-chen{top:8%;left:22%}.pan-si{top:2%;left:50%}
-.pan-wu{top:8%;left:78%}.pan-wei{top:30%;left:90%}.pan-shen{top:58%;left:92%}
-.pan-you{top:80%;left:78%}.pan-xu{top:88%;left:50%}.pan-hai{top:80%;left:22%}
+/* Result section */
+.keti-hero{text-align:center;padding:24px 0}
+.keti-name{font-size:36px;font-weight:900;color:var(--gold-l);letter-spacing:12px;margin-bottom:8px}
+.keti-insight{font-size:15px;color:var(--tx2);max-width:600px;margin:0 auto;line-height:1.8}
+.keti-meta{display:flex;justify-content:center;gap:24px;margin-top:16px;flex-wrap:wrap;font-size:12px;color:var(--tx3)}
 
-/* 四课 */
-.sike-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;max-width:560px;margin:0 auto}
-.sike-cell{background:rgba(13,21,37,.6);border:1px solid rgba(91,127,165,.08);border-radius:8px;padding:10px 12px;text-align:center;font-size:14px}
-.sike-cell .sk-num{font-size:10px;color:var(--tx3);margin-bottom:4px}
-.sike-cell .sk-gz{font-size:18px;color:var(--gold);font-weight:700;letter-spacing:2px}
-.sike-cell .sk-god{font-size:12px;color:var(--tx2)}
+/* 四课矛盾 */
+.sike-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.sike-row-2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sike-block{border:1px solid rgba(91,127,165,.08);border-radius:10px;padding:12px 14px;text-align:center;background:rgba(13,21,37,.4)}
+.sike-block.conflict{border-color:rgba(244,67,54,.35);background:rgba(244,67,54,.04)}
+.sike-block .sk-label{font-size:10px;color:var(--tx3);margin-bottom:6px;letter-spacing:3px}
+.sike-block .sk-pair{font-size:22px;font-weight:700;color:var(--gold);letter-spacing:3px;margin-bottom:4px}
+.sike-block .sk-god{font-size:12px;color:var(--tx2)}
+.sike-block .sk-note{font-size:10px;color:var(--tx3);margin-top:4px}
+.conflict-tag{display:inline-block;padding:2px 8px;font-size:9px;background:rgba(244,67,54,.15);color:#F44336;border-radius:8px;letter-spacing:1px}
 
-/* 三传 */
-.sanchuan-row{display:flex;gap:8px;width:100%;max-width:560px;margin:0 auto}
-.sanchuan-cell{flex:1;background:rgba(13,21,37,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:14px 10px;text-align:center}
-.sanchuan-cell .sc-label{font-size:10px;color:var(--tx3);margin-bottom:6px;letter-spacing:2px}
-.sanchuan-cell .sc-zhi{font-size:28px;color:var(--gold-l);font-weight:700}
-.sanchuan-cell .sc-god{font-size:13px;color:var(--tx2)}
-.sanchuan-cell .sc-qin{font-size:12px;color:var(--gold)}
-.sanchuan-cell .sc-gan{font-size:11px;color:var(--tx3)}
+/* 天地盘 */
+.pan-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.pan-cell{background:rgba(13,21,37,.6);border:1px solid rgba(91,127,165,.05);border-radius:8px;padding:10px 6px;text-align:center;min-height:80px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.pan-cell .pc-zhi{font-size:24px;font-weight:700;color:var(--gold);letter-spacing:2px}
+.pan-cell .pc-tian{font-size:13px;color:#5b9fd4}
+.pan-cell .pc-god{font-size:11px;color:var(--tx3);margin-top:2px}
+.pan-cell .pc-dun{font-size:10px;color:#6a6570}
+.pan-cell .pc-jian{font-size:10px;color:var(--mist)}
+.pan-cell .pc-tags{position:absolute;top:4px;right:4px;display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.pan-cell .pc-tag{font-size:8px;padding:1px 4px;border-radius:4px;letter-spacing:1px}
+.pc-tag.kong{background:rgba(244,67,54,.12);color:#F44336}
+.pc-tag.ma{background:rgba(33,150,243,.12);color:#2196F3}
+.center-pan{grid-column:2/4;grid-row:2/4;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(13,21,37,.8);border:2px solid var(--bd);border-radius:50%;margin:4px;min-height:auto;aspect-ratio:1}
+.center-pan .cp-yj{font-size:32px;font-weight:900;color:var(--gold-l);letter-spacing:4px}
+.center-pan .cp-label{font-size:10px;color:var(--tx3);letter-spacing:2px;margin-top:4px}
 
-/* 课体 */
-.keti-badge{display:inline-block;padding:4px 16px;font-size:16px;font-weight:700;color:var(--gold);border:1px solid var(--bd2);border-radius:20px;letter-spacing:4px;margin:0 auto}
+/* 格局 */
+.pattern-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pattern-tag{padding:6px 14px;font-size:12px;font-weight:600;letter-spacing:2px;border:1px solid var(--bd2);border-radius:16px;color:var(--gold);background:rgba(201,168,76,.04)}
 
-/* 神煞 */
-.shensha-list{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.shensha-tag{padding:4px 10px;font-size:11px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);border-radius:12px;color:var(--tx2);white-space:nowrap}
-.shensha-tag .ss-name{color:var(--gold);font-weight:600;margin-right:4px}
+/* 神煞落位 */
+.ss-table{width:100%;font-size:12px}
+.ss-table tr{border-bottom:1px solid rgba(255,255,255,.03)}
+.ss-table td{padding:6px 8px;color:var(--tx2)}
+.ss-table .ss-zhi{color:var(--gold);font-weight:700;text-align:center;width:30px}
+.ss-table .ss-name{color:var(--gold-l);font-weight:600}
+.ss-table .ss-desc{font-size:10px;color:var(--tx3)}
 
-.info-row{text-align:center;font-size:12px;color:var(--tx3);line-height:2}
-.info-row b{color:var(--gold-l)}
+/* 速读 */
+.speed-read{font-size:14px;color:var(--tx2);line-height:2;text-align:justify;padding:8px 0}
+.speed-read .sr-highlight{color:var(--gold-l);font-weight:600}
 
 @media(max-width:820px){
-  .app{padding:20px 10px 40px}.header h1{font-size:28px;letter-spacing:10px}.tagline{font-size:12px}
-  .row{flex-wrap:wrap;gap:6px;margin-bottom:10px}.field{min-width:60px}.field select{font-size:13px;padding:10px 28px 10px 8px}
-  .card{padding:16px 14px;margin-bottom:10px}.submit{font-size:15px;letter-spacing:6px;padding:14px}
-  .pan-pos{width:44px}.pan-pos .dz{font-size:16px}.pan-pos .tian{font-size:9px}.pan-pos .general{font-size:8px}
-  .sanchan-row{gap:4px}.sanchan-cell{padding:10px 6px}.sanchan-cell .sc-zhi{font-size:22px}
-  .pan-zi{top:86%}.pan-chou{top:76%;left:20%}.pan-yin{top:54%;left:6%}.pan-mao{top:26%;left:8%}.pan-chen{top:4%;left:20%}.pan-si{top:0;left:50%}.pan-wu{top:4%;left:80%}.pan-wei{top:26%;left:92%}.pan-shen{top:54%;left:94%}.pan-you{top:76%;left:80%}.pan-xu{top:86%}.pan-hai{top:76%;left:20%}
+  .app{padding:16px 8px 40px}.header h1{font-size:28px;letter-spacing:10px}
+  .row{flex-wrap:wrap;gap:6px}.row .field{min-width:60px}
+  .card{padding:14px 12px;margin-bottom:10px}.submit{font-size:15px;letter-spacing:6px;padding:14px}
+  .keti-name{font-size:26px;letter-spacing:8px}
+  .pan-cell{padding:8px 4px;min-height:60px}.pan-cell .pc-zhi{font-size:18px}.pan-cell .pc-tian{font-size:11px}
+  .center-pan .cp-yj{font-size:24px}
 }
-
-.zhishi-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(13,21,37,.9);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}.zhishi-nav .nav-brand{font-size:20px;font-weight:900;letter-spacing:6px;color:var(--gold-l);text-decoration:none}.zhishi-nav .nav-links{display:flex;gap:6px;flex-wrap:wrap}.zhishi-nav .nav-links a{font-size:13px;color:var(--tx2);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .25s}.zhishi-nav .nav-links a:hover{color:var(--gold);background:rgba(201,168,76,.06)}.zhishi-nav .nav-cta{color:var(--gold)!important;border:1px solid var(--bd2)}@media(max-width:640px){.zhishi-nav .nav-links a{font-size:11px;padding:4px 6px}}</style></head><body>
+</style></head><body>
 <div id="zhishi-nav" class="zhishi-nav"><a href="/" class="nav-brand">知时</a><div class="nav-links"><a href="/">首页</a><a href="/paipan">排盘</a><a href="/hepan">合盘</a><a href="/fortune">运势</a><a href="/meihua">梅花</a><a href="/liuyao">六爻</a><a href="/ziwei">紫微</a><a href="/liuren">大六壬</a><a href="/pricing" class="nav-cta">积分</a></div></div>
 <div class="app">
 <div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">大 六 壬 · 起 课 占 断</div></div>
 
 <div class="card" style="padding:20px 24px">
-  <div class="card-title">占 课 时 间</div>
-  <p style="text-align:center;font-size:11px;color:var(--tx3);margin:-10px 0 14px">大六壬以当下时辰起课占卜，默认当前时间。也可选择特定时刻回溯。</p>
-  <div class="row"><div class="field"><label>年份</label><select id="lrY"></select></div><div class="field"><label>月份</label><select id="lrM"></select></div><div class="field"><label>日期</label><select id="lrD"></select></div></div>
-  <div class="row two"><div class="field"><label>时辰（占时）</label><select id="lrH"></select></div><div class="field"><label>分钟</label><select id="lrMin"></select></div></div>
+  <div class="card-title">所 参 之 事</div>
+  <div class="row"><div class="field" style="flex:3"><input id="lrQ" type="text" placeholder="心中所想之事，如：事业、感情、财运、出行、寻人...（可选）" style="text-align:center;letter-spacing:2px"></div></div>
+
+  <div class="card-title" style="margin-top:16px">起 课 时 刻</div>
+  <p style="text-align:center;font-size:11px;color:var(--tx3);margin:-10px 0 14px">月将加时，天地盘转。默认当下时辰起课，可自选时刻。</p>
+  <div class="row"><div class="field"><label>年</label><select id="lrY"></select></div><div class="field"><label>月</label><select id="lrM"></select></div><div class="field"><label>日</label><select id="lrD"></select></div><div class="field"><label>时</label><select id="lrH"></select></div><div class="field"><label>分</label><select id="lrMin"></select></div></div>
+
   <button class="submit" onclick="doLiuRen()" id="lrBtn">起 课 占 断</button>
 </div>
 
-<div class="info" id="lrInfo" style="margin-bottom:12px;text-align:center;font-size:13px;color:var(--tx3)">默认当前时间起课，可修改后重新占断</div>
-<div id="lrResult"></div>
+<div id="lrOutput"></div>
 </div>
 
+<script src="js/region.js?v=99"></script>
 <script>
 (function init(){
   var now=new Date(Date.now()+8*60*60*1000);
   var cy=now.getUTCFullYear(),cm=now.getUTCMonth()+1,cd=now.getUTCDate(),ch=now.getUTCHours();
   function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement("option");o.value=i;o.textContent=i;if(i===cur)o.selected=true;s.appendChild(o);}}
-  fill("lrY",1960,cy+10,cy);fill("lrM",1,12,cm);fill("lrD",1,31,cd);fill("lrMin",0,59,0);
+  fill("lrY",1960,cy+10,cy);fill("lrM",1,12,cm);fill("lrD",1,31,cd);
   var DZ=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
   var hs=document.getElementById("lrH");for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement("option");o.value=i;o.textContent=i+"点 ("+DZ[dzIdx]+"时)";if(i===ch)o.selected=true;hs.appendChild(o);}
+  var ms=document.getElementById("lrMin");ms.innerHTML="";for(var i=0;i<60;i+=5){var o2=document.createElement("option");o2.value=i;o2.textContent=String(i).padStart(2,'0');if(i===0)o2.selected=true;ms.appendChild(o2);}
 })();
 
-var ZHI_ORDER=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+var ZHI=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+var PAN_ORDER=["巳","午","未","申","辰",null,"酉","卯",null,"戌","寅","丑","子","亥"]; // 4x4 grid with center hole
 
-async function doLiuRen(){
-  var y=parseInt(document.getElementById("lrY").value),m=parseInt(document.getElementById("lrM").value),d=parseInt(document.getElementById("lrD").value);
-  var h=parseInt(document.getElementById("lrH").value),min=parseInt(document.getElementById("lrMin").value)||0;
-  if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert("请选择完整的占课时间");return;}
+var KETI_MEANING={
+  "元首":"一上克下，事由外起，以上制下。主事有头绪，领导或外界因素主导局面。",
+  "重审":"一下贼上，事需反复审核。宜仔细审视，不可冒进。暗藏逆袭之机。",
+  "知一":"多克取一，以日干阴阳定取舍。主事有分支，需择一而行，专注则成。",
+  "涉害":"同阴阳多克，取涉害最深者。主事涉多方，盘根错节，需深度介入才能化解。",
+  "遥克":"无上下克，取遥克为用。主事出意料之外，远方或间接因素影响大局。",
+  "昴星":"四课无克，取昴星为用。虎视眈眈，事有隐伏之机，需静观其变。",
+  "别责":"四课不全，取别责为用。主资源不足，需另辟蹊径，借力而行。",
+  "八专":"干支同位，专而不分。主事态胶着，难以分割，需打破僵局。",
+  "伏吟":"天地盘同，静而不动。主事态停滞，宜守不宜攻，等待时机。",
+  "返吟":"天地盘冲，动而不安。主反复变动，计划赶不上变化，需随机应变。"
+};
 
-  var info=document.getElementById("lrInfo");
-  info.innerHTML='<div style="text-align:center;padding:20px"><div style="display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite"></div><p style="margin-top:8px;color:var(--tx3)">起课中...</p></div>';
-
-  try{
-    var resp=await fetch('/api/liuren',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:y,month:m,day:d,hour:h,minute:min})});
-    if(!resp.ok){info.innerHTML='起课失败：'+resp.status;return;}
-    var data=await resp.json();
-    if(data.error){info.innerHTML=data.error;return;}
-    renderLiuRen(data,y,m,d,h,min);
-  }catch(e){info.innerHTML='请求失败：'+e.message;}
+function getKeTiInsight(name,d){
+  var base=KETI_MEANING[name]||(name+'课，需结合具体格局分析。');
+  // 补充三传信息
+  var sc=d.sanChuan,extra='';
+  if(sc&&sc.keTi){
+    if(sc.chuChuan&&sc.chuChuan[2])extra+=' 初传'+sc.chuChuan[0]+'为'+sc.chuChuan[2]+'，';
+    if(sc.zhongChuan&&sc.zhongChuan[2])extra+='中传'+sc.zhongChuan[0]+'为'+sc.zhongChuan[2]+'，';
+    if(sc.moChuan&&sc.moChuan[2])extra+='末传'+sc.moChuan[0]+'为'+sc.moChuan[2]+'。';
+  }
+  return base+extra;
 }
 
-function posClass(zhi){return 'pan-'+zhi;}
+// 找四课中的矛盾点：干支上的克关系
+function findConflict(d){
+  var sk=d.siKe,conflicts=[];
+  var GAN=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  var ZHI_WX={子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
+  var GAN_WX={甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};
+  var WX_KE={木:'土',土:'水',水:'火',火:'金',金:'木'}; // 克的关系
 
-function renderLiuRen(d,y,m,d2,h,min){
-  document.getElementById("lrInfo").innerHTML='<div class="info-row">'+d.dateInfo.date+' | <b>'+d.dateInfo.bazi+'</b> | 月将：<b>'+d.dateInfo.yuejiang+'</b> | 空亡：<b>'+d.dateInfo.kong.join('、')+'</b> | 驿马：<b>'+d.dateInfo.yima+'</b></div>';
-
-  var html='';
-
-  // 天地盘
-  html+='<div class="card" style="text-align:center"><div class="card-title">天 地 盘</div>';
-  html+='<div class="pan-wrap"><div class="pan-circle"><div class="ring2"></div><div class="ring3">'+d.dateInfo.yuejiang+'<br><span style="font-size:10px;color:var(--tx3);letter-spacing:2px">月将</span></div>';
-  ZHI_ORDER.forEach(function(zhi){
-    var tian=d.tianDiPan.tianPan[zhi]||'';
-    var general=d.tianDiPan.tianJiang[zhi]||'';
-    var dg=d.dunGan[zhi]||'';
-    html+='<div class="pan-pos '+posClass(zhi)+'">';
-    html+='<div class="dz">'+zhi+'</div>';
-    if(tian!==zhi)html+='<div class="tian">'+tian+'</div>';
-    if(general)html+='<div class="general">'+general+'</div>';
-    if(dg)html+='<div class="dungan">'+dg+'</div>';
-    html+='</div>';
-  });
-  html+='</div></div></div>';
-
-  // 课体 + 贵人
-  var sc=d.sanChuan||{};
-  html+='<div class="card" style="text-align:center"><div class="card-title">课 体</div>';
-  html+='<div class="keti-badge">'+(sc.keTi||'')+'</div>';
-  if(d.yinYangGuiRen){
-    html+='<div style="margin-top:10px;font-size:12px;color:var(--tx3)">';
-    html+='阳贵：'+d.yinYangGuiRen.yangGuiRen+' | 阴贵：'+d.yinYangGuiRen.yinGuiRen;
-    html+='</div>';
-  }
-  html+='</div>';
-
-  // 四课
-  var sk=d.siKe||{};
-  html+='<div class="card"><div class="card-title">四 课</div><div class="sike-grid">';
   for(var i=1;i<=4;i++){
-    var k='ke'+i;var kv=sk[k]||[];
-    html+='<div class="sike-cell"><div class="sk-num">第'+i+'课</div>';
-    html+='<div class="sk-gz">'+(kv[0]||'')+'</div>';
-    html+='<div class="sk-god">'+(kv[1]||'')+'</div></div>';
+    var k='ke'+i,kv=sk[k];if(!kv||!kv[0])continue;
+    var gz=kv[0]; // like "酉乙"
+    if(gz.length>=2){
+      var zhi=ZHI_WX[gz[0]]||'',gan=GAN_WX[gz[1]]||'';
+      if(zhi&&gan&&WX_KE[zhi]===gan)conflicts.push({ke:i,gz:gz,type:'下克上',detail:'支'+gz[0]+'克干'+gz[1]});
+      if(zhi&&gan&&WX_KE[gan]===zhi)conflicts.push({ke:i,gz:gz,type:'上克下',detail:'干'+gz[1]+'克支'+gz[0]});
+    }
   }
-  html+='</div></div>';
+  return conflicts;
+}
 
-  // 三传
-  html+='<div class="card"><div class="card-title">三 传</div><div class="sanchuan-row">';
-  ['chuChuan','zhongChuan','moChuan'].forEach(function(key,i){
-    var tr=sc[key]||[];
-    var labels=['初传','中传','末传'];
-    html+='<div class="sanchuan-cell"><div class="sc-label">'+labels[i]+'</div>';
-    html+='<div class="sc-zhi">'+(tr[0]||'')+'</div>';
-    html+='<div class="sc-god">'+(tr[1]||'')+'</div>';
-    html+='<div class="sc-qin">'+(tr[2]||'')+'</div>';
-    html+='<div class="sc-gan">'+(tr[3]?tr[3]+'遁':'')+'</div>';
-    html+='</div>';
+// 识别关键格局
+function findPatterns(d){
+  var pats=[],sc=d.sanChuan||{},sk=d.siKe||{};
+  var chuan=[];if(sc.chuChuan)chuan.push(sc.chuChuan[0]);if(sc.zhongChuan)chuan.push(sc.zhongChuan[0]);if(sc.moChuan)chuan.push(sc.moChuan[0]);
+
+  // 三传皆土 → 稼穑
+  var allTu=true;chuan.forEach(function(z){if('辰戌丑未'.indexOf(z)<0)allTu=false;});
+  if(allTu&&chuan.length===3)pats.push({name:'稼穑格',desc:'三传皆土，主迟缓积蓄。占事需耐心，不宜急进。利田宅农业。'});
+
+  // 三传午卯子 → 轩盖
+  var xg=['午','卯','子'];var isXG=true;chuan.forEach(function(z,i){if(z!==xg[i])isXG=false;});
+  if(isXG&&chuan.length===3)pats.push({name:'轩盖格',desc:'三传午卯子，主升迁远行。占前程大利，但占病则凶。'});
+
+  // 三传巳戌卯 → 铸印
+  var zy=['巳','戌','卯'];var isZY=true;chuan.forEach(function(z,i){if(z!==zy[i])isZY=false;});
+  if(isZY&&chuan.length===3)pats.push({name:'铸印格',desc:'三传巳戌卯，主功名印信。占考试求职大利，有得权之象。'});
+
+  // 回环：三传在四课上
+  var onKe=false;
+  for(var i=1;i<=4;i++){var k='ke'+i,kv=sk[k];if(kv&&kv[0]&&chuan.indexOf(kv[0][0])>=0)onKe=true;}
+  if(onKe&&chuan.length===3)pats.push({name:'回环',desc:'三传在四课上，事有反复循环之象。需耐心等待，不可强求。'});
+
+  // 进/退连茹
+  if(chuan.length===3){
+    var idxs=chuan.map(function(z){return ZHI.indexOf(z);});
+    if(idxs[1]===(idxs[0]+1)%12&&idxs[2]===(idxs[1]+1)%12)pats.push({name:'进连茹',desc:'三传顺连，事态向前推进，宜顺势而为。'});
+    if(idxs[1]===(idxs[0]+11)%12&&idxs[2]===(idxs[1]+11)%12)pats.push({name:'退连茹',desc:'三传逆连，事有倒退反复之象，宜守不宜进。'});
+  }
+
+  return pats;
+}
+
+// 神煞按地支分组
+function groupShenSha(d){
+  var byZhi={};ZHI.forEach(function(z){byZhi[z]=[];});
+  (d.shenSha||[]).forEach(function(ss){
+    if(ss.value&&byZhi[ss.value])byZhi[ss.value].push({name:ss.name,desc:ss.description||''});
   });
-  html+='</div></div>';
+  // 标记空亡
+  (d.dateInfo.kong||[]).forEach(function(z){if(byZhi[z])byZhi[z]._kong=true;});
+  // 标记驿马
+  if(d.dateInfo.yima&&byZhi[d.dateInfo.yima])byZhi[d.dateInfo.yima]._yima=true;
+  return byZhi;
+}
 
-  // 神煞
-  if(d.shenSha&&d.shenSha.length){
-    html+='<div class="card"><div class="card-title">神 煞</div><div class="shensha-list">';
-    d.shenSha.forEach(function(ss){
-      html+='<div class="shensha-tag"><span class="ss-name">'+ss.name+'</span>'+ss.value+'</div>';
-    });
-    html+='</div></div>';
+// 课盘速读
+function speedRead(d){
+  var lines=[],sc=d.sanChuan||{},di=d.dateInfo||{};
+  var keti=sc.keTi||'';
+  lines.push('此课为<b class="sr-highlight">'+keti+'课</b>，以「'+di.yuejiang+'」为月将，加于占时之上而成天地盘。');
+
+  var conflicts=findConflict(d);
+  if(conflicts.length)lines.push('四课中见<b class="sr-highlight">'+conflicts.length+'处克战</b>，矛盾集中在第'+conflicts.map(function(c){return c.ke;}).join('、')+'课，需重点关注。');
+
+  if(sc.chuChuan&&sc.zhongChuan&&sc.moChuan){
+    lines.push('三传为<b class="sr-highlight">'+sc.chuChuan[0]+'→'+sc.zhongChuan[0]+'→'+sc.moChuan[0]+'</b>，'+
+      '初传'+(sc.chuChuan[2]||'')+'主事发，中传'+(sc.zhongChuan[2]||'')+'主事中，末传'+(sc.moChuan[2]||'')+'主事果。');
   }
 
-  document.getElementById("lrResult").innerHTML=html;
+  var pats=findPatterns(d);
+  if(pats.length)lines.push('格局方面：'+pats.map(function(p){return '<b class="sr-highlight">'+p.name+'</b>'+p.desc;}).join(' '));
 
-  // 自动滚动到结果
-  setTimeout(function(){document.getElementById("lrResult").scrollIntoView({behavior:'smooth',block:'start'});},200);
+  if(di.kong&&di.kong.length)lines.push('空亡落于<b>'+di.kong.join('、')+'</b>，此二宫之事易落空，不宜强求。');
+  if(di.yima)lines.push('驿马在<b>'+di.yima+'</b>，主变动出行，逢此宫位之事易有动态变化。');
+
+  return lines.join('<br>');
+}
+
+// ==================== 主函数 ====================
+async function doLiuRen(){
+  var y=parseInt(document.getElementById("lrY").value),m=parseInt(document.getElementById("lrM").value),d2=parseInt(document.getElementById("lrD").value);
+  var h=parseInt(document.getElementById("lrH").value),min=parseInt(document.getElementById("lrMin").value)||0;
+  var question=document.getElementById("lrQ").value.trim();
+  if(isNaN(y)||isNaN(m)||isNaN(d2)||isNaN(h)||y<1900||m<1||m>12||d2<1||d2>31||h<0||h>23){alert("请选择完整的起课时刻");return;}
+
+  var out=document.getElementById("lrOutput");
+  var btn=document.getElementById("lrBtn");
+  btn.disabled=true;btn.textContent='起课中...';
+  out.innerHTML='<div style="text-align:center;padding:40px;color:var(--tx3)">月将加时，天地盘转…</div>';
+
+  try{
+    var resp=await fetch('/api/liuren',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:y,month:m,day:d2,hour:h,minute:min})});
+    if(!resp.ok){out.innerHTML='<div class="card"><div class="card-title">起课失败</div><p style="text-align:center;color:var(--tx3)">HTTP '+resp.status+'</p></div>';btn.disabled=false;btn.textContent='重 新 起 课';return;}
+    var d=await resp.json();
+    if(d.error){out.innerHTML='<div class="card"><div class="card-title">起课失败</div><p style="text-align:center;color:var(--tx3)">'+d.error+'</p></div>';btn.disabled=false;btn.textContent='重 新 起 课';return;}
+    renderFull(d,y,m,d2,h,min,question);
+  }catch(e){out.innerHTML='<div class="card"><div class="card-title">网络错误</div><p style="text-align:center;color:var(--tx3)">'+e.message+'</p></div>';btn.disabled=false;btn.textContent='重 新 起 课';}
+  btn.disabled=false;btn.textContent='起 课 占 断';
+}
+
+function renderFull(d,y,m,d2,h,min,question){
+  var sc=d.sanChuan||{},di=d.dateInfo||{},conflicts=findConflict(d),pats=findPatterns(d),ssByZhi=groupShenSha(d);
+  var hh='';
+
+  // ===== 页头信息 =====
+  hh+='<div class="info" style="text-align:center;font-size:12px;color:var(--tx3);margin-bottom:4px;line-height:2">';
+  hh+=di.date+' | 月将：<b>'+di.yuejiang+'</b> | 空亡：<b>'+di.kong.join('、')+'</b> | 驿马：<b>'+di.yima+'</b>';
+  if(question)hh+='<br>所参：<b style="color:var(--gold-l)">'+question.replace(/</g,'&lt;')+'</b>';
+  hh+='</div>';
+
+  // ===== 1. 课体题眼 =====
+  hh+='<div class="card"><div class="card-title">课 体 题 眼</div>';
+  hh+='<div class="keti-hero"><div class="keti-name">'+(sc.keTi||'')+'课</div>';
+  hh+='<div class="keti-insight">'+getKeTiInsight(sc.keTi||'',d)+'</div>';
+  hh+='<div class="keti-meta">';
+  if(d.yinYangGuiRen){
+    hh+='<span>阳贵：'+d.yinYangGuiRen.yangGuiRen+'</span><span>阴贵：'+d.yinYangGuiRen.yinGuiRen+'</span>';
+  }
+  hh+='</div></div></div>';
+
+  // ===== 2. 四课 · 矛盾爆发点 =====
+  hh+='<div class="card"><div class="card-title">四 课 · 矛 盾 爆 发 点</div>';
+  hh+='<div class="sike-row">';
+  for(var i=1;i<=2;i++){var kv=d.siKe['ke'+i]||[];hh+=sikeCell(i,kv,conflicts);}
+  hh+='</div><div class="sike-row-2">';
+  for(var i=3;i<=4;i++){var kv=d.siKe['ke'+i]||[];hh+=sikeCell(i,kv,conflicts);}
+  hh+='</div>';
+  if(conflicts.length){
+    hh+='<div style="margin-top:10px;padding:10px 14px;background:rgba(244,67,54,.04);border:1px solid rgba(244,67,54,.15);border-radius:8px;font-size:12px;color:var(--tx2)">';
+    hh+='<b style="color:#F44336">⚠ 矛盾点：</b>'+conflicts.map(function(c){return '第'+c.ke+'课'+c.detail+'（'+c.type+'）';}).join('；');
+    hh+='。克战之课主阻力与冲突，需结合三传看化解之机。</div>';
+  }
+  hh+='</div>';
+
+  // ===== 3. 三传 =====
+  hh+='<div class="card"><div class="card-title">三 传 · 事 态 演 进</div>';
+  hh+='<div style="display:flex;gap:8px">';
+  ['chuChuan','zhongChuan','moChuan'].forEach(function(key,i){
+    var tr=sc[key]||[],labels=['初传 · 事发','中传 · 事中','末传 · 事果'];
+    hh+='<div style="flex:1;text-align:center;padding:14px 8px;background:rgba(13,21,37,.6);border:1px solid rgba(201,168,76,.12);border-radius:10px">';
+    hh+='<div style="font-size:10px;color:var(--tx3);margin-bottom:6px;letter-spacing:2px">'+labels[i]+'</div>';
+    hh+='<div style="font-size:30px;font-weight:700;color:var(--gold-l)">'+(tr[0]||'')+'</div>';
+    hh+='<div style="font-size:12px;color:var(--tx2)">'+(tr[1]||'')+' · '+(tr[2]||'')+'</div>';
+    hh+='<div style="font-size:10px;color:var(--tx3)">'+(tr[3]?tr[3]+'遁':'')+'</div>';
+    hh+='</div>';
+  });
+  hh+='</div></div>';
+
+  // ===== 4. 天地盘12宫详情 =====
+  hh+='<div class="card"><div class="card-title">天 地 盘 · 十 二 宫 详 情</div>';
+  hh+='<div class="pan-grid">';
+  var gridOrder=["巳","午","未","申","辰","center1","酉","卯","center2","戌","寅","丑","子","亥"];
+  gridOrder.forEach(function(zhi){
+    if(zhi==='center1'){hh+='<div class="center-pan"><div class="cp-yj">'+di.yuejiang+'</div><div class="cp-label">月 将</div></div>';return;}
+    if(zhi==='center2'){hh+='<div class="center-pan"><div style="font-size:14px;color:var(--gold-l);letter-spacing:2px">'+di.kong.join('/')+'</div><div class="cp-label">空 亡</div></div>';return;}
+    var tian=d.tianDiPan.tianPan[zhi]||'',god=d.tianDiPan.tianJiang[zhi]||'',dg=d.dunGan[zhi]||'',jc=d.jianChu[zhi]||'';
+    var tags='';
+    if(di.kong.indexOf(zhi)>=0)tags+='<span class="pc-tag kong">空</span>';
+    if(di.yima===zhi)tags+='<span class="pc-tag ma">驿马</span>';
+    hh+='<div class="pan-cell"><div class="pc-tags">'+tags+'</div>';
+    hh+='<div class="pc-zhi">'+zhi+'</div>';
+    if(tian!==zhi)hh+='<div class="pc-tian">天盘 '+tian+'</div>';
+    if(god)hh+='<div class="pc-god">'+god+'</div>';
+    if(dg)hh+='<div class="pc-dun">'+dg+'遁</div>';
+    if(jc)hh+='<div class="pc-jian">'+jc+'</div>';
+    hh+='</div>';
+  });
+  hh+='</div></div>';
+
+  // ===== 5. 关键格局 =====
+  hh+='<div class="card"><div class="card-title">关 键 格 局</div>';
+  if(pats.length){
+    hh+='<div class="pattern-row">';
+    pats.forEach(function(p){hh+='<div class="pattern-tag" title="'+p.desc+'">'+p.name+'</div>';});
+    hh+='</div>';
+    hh+='<div style="margin-top:12px;font-size:13px;color:var(--tx2);line-height:1.8">';
+    pats.forEach(function(p){hh+='<p style="margin:4px 0"><b style="color:var(--gold-l)">'+p.name+'</b>：'+p.desc+'</p>';});
+    hh+='</div>';
+  } else {
+    hh+='<p style="text-align:center;color:var(--tx3);font-size:14px">未匹配到特殊格局，以课体三传常规解读为准</p>';
+  }
+  hh+='</div>';
+
+  // ===== 6. 神煞落位 =====
+  hh+='<div class="card"><div class="card-title">神 煞 落 位</div>';
+  hh+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">';
+  ZHI.forEach(function(z){
+    var sss=ssByZhi[z]||[],k=ssByZhi[z];var marks='';if(k._kong)marks+=' <span style="font-size:9px;color:#F44336">[空]</span>';if(k._yima)marks+=' <span style="font-size:9px;color:#2196F3">[驿马]</span>';
+    hh+='<div style="background:rgba(13,21,37,.4);border:1px solid rgba(255,255,255,.03);border-radius:8px;padding:8px 10px">';
+    hh+='<div style="font-size:18px;font-weight:700;color:var(--gold);margin-bottom:4px">'+z+marks+'</div>';
+    if(sss.length){
+      sss.slice(0,5).forEach(function(ss){hh+='<div style="font-size:10px;color:var(--tx2);margin:2px 0">'+ss.name+'</div>';});
+      if(sss.length>5)hh+='<div style="font-size:9px;color:var(--tx3)">+ 还有'+(sss.length-5)+'个...</div>';
+    } else {hh+='<div style="font-size:10px;color:var(--tx3)">—</div>';}
+    hh+='</div>';
+  });
+  hh+='</div></div>';
+
+  // ===== 7. 课盘速读 =====
+  hh+='<div class="card"><div class="card-title">课 盘 速 读</div>';
+  hh+='<div class="speed-read">'+speedRead(d)+'</div>';
+  hh+='<div style="margin-top:14px;padding:10px 14px;background:rgba(201,168,76,.06);border:1px dashed var(--bd2);border-radius:8px;text-align:center;cursor:pointer;font-size:13px;color:var(--gold);transition:all .25s" onclick="if(window._aiOpen)window._aiOpen();else window.open(\'/ai-chat?t=zw\',\'_blank\')">🤖 查看 AI 完整解读 →</div>';
+  hh+='</div>';
+
+  document.getElementById("lrOutput").innerHTML=hh;
+  setTimeout(function(){document.getElementById("lrOutput").scrollIntoView({behavior:'smooth',block:'start'});},200);
+}
+
+function sikeCell(i,kv,conflicts){
+  var isConflict=conflicts.some(function(c){return c.ke===i;});
+  var h='<div class="sike-block'+(isConflict?' conflict':'')+'">';
+  h+='<div class="sk-label">第'+i+'课'+(i<=2?'（日干）':'（日支）')+(isConflict?' <span class="conflict-tag">克战</span>':'')+'</div>';
+  h+='<div class="sk-pair">'+(kv[0]||'—')+'</div>';
+  h+='<div class="sk-god">'+(kv[1]||'')+'</div>';
+  h+='</div>';return h;
 }
 </script>
 </body></html>
