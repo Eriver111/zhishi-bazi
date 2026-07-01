@@ -1,4 +1,4 @@
-var PROV_LNG={"北京":116.4,"天津":117.2,"河北":114.5};function pad(n){return(n<10?"0":"")+n;}var DZ=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];var TG=["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];var sc={紫微:"#e8d5a3",天府:"#e8d5a3",太阳:"#e07050",武曲:"#e8d5a3",天相:"#5b9fd4",天梁:"#6db86d",七杀:"#e07050",破军:"#e07050",贪狼:"#e8a040",巨门:"#5b9fd4",廉贞:"#e07050",天同:"#6db86d",太阴:"#5b9fd4",天机:"#6db86d"};var tg={0:[0,4,8],1:[1,5,9],2:[2,6,10],3:[3,7,11]};
+var PROV_LNG={"北京市":116.4,"天津市":117.2,"上海市":121.5,"重庆市":106.5,"河北省":114.5,"山西省":112.5,"内蒙古":111.7,"辽宁省":123.4,"吉林省":125.3,"黑龙江省":126.6,"江苏省":118.8,"浙江省":120.2,"安徽省":117.3,"福建省":119.3,"江西省":115.9,"山东省":117.0,"河南省":113.7,"湖北省":114.3,"湖南省":113.0,"广东省":113.3,"广西":108.3,"海南省":110.3,"四川省":104.1,"贵州省":106.7,"云南省":102.7,"西藏":91.1,"陕西省":108.9,"甘肃省":103.8,"青海省":101.8,"宁夏":106.3,"新疆":87.6,"台湾省":121.5,"香港特别行政区":114.2,"澳门特别行政区":113.5};function pad(n){return(n<10?"0":"")+n;}var DZ=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];var TG=["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];var sc={紫微:"#e8d5a3",天府:"#e8d5a3",太阳:"#e07050",武曲:"#e8d5a3",天相:"#5b9fd4",天梁:"#6db86d",七杀:"#e07050",破军:"#e07050",贪狼:"#e8a040",巨门:"#5b9fd4",廉贞:"#e07050",天同:"#6db86d",太阴:"#5b9fd4",天机:"#6db86d"};var tg={0:[0,4,8],1:[1,5,9],2:[2,6,10],3:[3,7,11]};
 function getBright(starName,zhi,table){
   if(!table||!table[starName])return "";
   var idx=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"].indexOf(zhi);
@@ -24,7 +24,7 @@ var pSel=document.getElementById("zwProv"),cSel=document.getElementById("zwCity"
 function doPaipan(){
 var y=parseInt(document.getElementById("zwY").value),m=parseInt(document.getElementById("zwM").value),d=parseInt(document.getElementById("zwD").value);
 var h=parseInt(document.getElementById("zwH").value),min=parseInt(document.getElementById("zwMin").value)||0;
-var prov=document.getElementById("zwProv").value||"北京",city=document.getElementById("zwCity").value,dist=document.getElementById("zwDist").value;
+var prov=document.getElementById("zwProv").value||"北京市",city=document.getElementById("zwCity").value,dist=document.getElementById("zwDist").value;
 var gEls=document.getElementsByName("zwGender"),isMale=true;
 for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==="male";}
 if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert("请填写完整出生信息");return;}
