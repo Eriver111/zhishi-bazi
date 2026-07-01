@@ -96,7 +96,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
   fill("lrY",1960,cy+10,cy);fill("lrM",1,12,cm);fill("lrD",1,31,cd);
   var DZ=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
   var hs=document.getElementById("lrH");for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement("option");o.value=i;o.textContent=i+"点 ("+DZ[dzIdx]+"时)";if(i===ch)o.selected=true;hs.appendChild(o);}
-  var ms=document.getElementById("lrMin");ms.innerHTML="";for(var i=0;i<60;i+=5){var o2=document.createElement("option");o2.value=i;o2.textContent=String(i).padStart(2,'0');if(i===0)o2.selected=true;ms.appendChild(o2);}
+  var ms=document.getElementById("lrMin");ms.innerHTML="";var curMin=Math.round(now.getUTCMinutes()/5)*5;for(var i=0;i<60;i+=5){var o2=document.createElement("option");o2.value=i;o2.textContent=String(i).padStart(2,'0');if(i===curMin)o2.selected=true;ms.appendChild(o2);}
 })();
 function updateDirTags(){var tags=document.querySelectorAll('.lr-dir-tag');tags.forEach(function(t){t.classList.remove('active')});var sel=document.querySelector('input[name="lrDir"]:checked');if(sel){var label=sel.closest('.lr-dir-tag');if(label)label.classList.add('active');}}
 function toggleTimeInputs(){var checked=document.getElementById('lrNow').checked;['lrY','lrM','lrD','lrH','lrMin'].forEach(function(id){document.getElementById(id).disabled=checked;});if(checked){var now=new Date(Date.now()+8*60*60*1000);document.getElementById('lrY').value=now.getUTCFullYear();document.getElementById('lrM').value=now.getUTCMonth()+1;document.getElementById('lrD').value=now.getUTCDate();document.getElementById('lrH').value=now.getUTCHours();var cm=now.getUTCMinutes();document.getElementById('lrMin').value=Math.round(cm/5)*5;}}
