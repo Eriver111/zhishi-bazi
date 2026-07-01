@@ -34,7 +34,7 @@ var b2=360/365*(doy-81);
 var eot=9.87*Math.sin(2*b2*Math.PI/180)-7.53*Math.cos(b2*Math.PI/180)-1.5*Math.sin(b2*Math.PI/180);
 var tm=h*60+min-om+eot;while(tm<0)tm+=1440;tm%=1440;
 var th=Math.floor(tm/60)%24,tm2=Math.floor(tm%60);
-var DZ_IDX=[0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11];
+var DZ_IDX=[0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,0];
 var ti=DZ_IDX[th];
 document.getElementById("infoBar").innerHTML="<div class=loading><div class=spinner></div><p>排盘中...</p></div>";
 document.getElementById("zwGrid").innerHTML="";
