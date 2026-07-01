@@ -77,22 +77,16 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 
 <div class="card" style="width:100%;max-width:960px;padding:20px 24px">
       <div class="card-title">出 生 信 息</div>
-      <div class="row"><div class="field"><label>年份</label><input id="zwY" type="number" placeholder="年" min="1900" max="2100" class="minute-inp" style="width:100%"</div><div class="field"><label>月份</label><input id="zwM" type="number" placeholder="月" min="1" max="12" class="minute-inp" style="width:100%"</div><div class="field"><label>日期</label><input id="zwD" type="number" placeholder="日" min="1" max="31" class="minute-inp" style="width:100%"</div></div>
-      <div class="row two"><div class="field"><label>时辰</label><select id="zwH" class="minute-inp" style="width:100%"></select></div><div class="field"><label>分钟</label><input type="number" class="minute-inp" id="zwMin" value="0" min="0" max="59" placeholder="0"></div></div>
+      <div class="row"><div class="field"><label>年份</label><select id="zwY" class="minute-inp" style="width:100%"></select></div><div class="field"><label>月份</label><select id="zwM" class="minute-inp" style="width:100%"></select></div><div class="field"><label>日期</label><select id="zwD" class="minute-inp" style="width:100%"></select></div></div>
+      <div class="row two"><div class="field"><label>时辰</label><select id="zwH" class="minute-inp" style="width:100%"></select></div><div class="field"><label>分钟</label><select id="zwMin" class="minute-inp" style="width:100%"></select></div></div>
       <div class="row"><div class="field"><label>性别</label><div class="radio-group"><label class="radio"><input type="radio" name="zwGender" value="male" checked><span>男</span></label><label class="radio"><input type="radio" name="zwGender" value="female"><span>女</span></label></div></div></div>
       <div class="row two"><div class="field"><label>省份</label><select id="zwProv"><option value="">省份</option></select></div><div class="field"><label>城市</label><select id="zwCity"><option value="">城市</option></select></div></div>
       <div class="row"><div class="field"><label>区县</label><select id="zwDist"><option value="">区县</option></select></div></div>
       <button class="submit" onclick="doPaipan()">开 始 排 盘</button>
     </div>
-  </div>
-  </div>
 
 <div class="info" id="infoBar" style="margin-top:12px">请填写出生信息后点击排盘</div>
 <div style="position:relative;width:100%;max-width:960px;margin:0 auto"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
-<div class="triad-grid" id="triads"></div>
-
-<div class="info" id="infoBar">请填写出生信息后点击排盘</div>
-<div style="position:relative"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
 <div class="triad-grid" id="triads"></div>
 </div>
 
