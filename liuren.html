@@ -159,37 +159,39 @@ function renderFull(d,y,m,d2,h,min,question,direction){
   if(d.yinYangGuiRen)hh+='<div class="keti-meta"><span>阳贵：'+d.yinYangGuiRen.yangGuiRen+'</span><span>阴贵：'+d.yinYangGuiRen.yinGuiRen+'</span></div>';
   hh+='</div></div>';
 
-  // 2. 四课
-  var k1=d.siKe.ke1||[],k2=d.siKe.ke2||[],k3=d.siKe.ke3||[],k4=d.siKe.ke4||[];
-  hh+='<div class="card"><div class="card-title">四 课 · 矛 盾 爆 发 点</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:12px;letter-spacing:2px">贼 / 克 / 比 / 生 的关系决定取传</div>';
-  hh+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-  hh+='<div style="text-align:center"><div style="font-size:10px;color:var(--tx3);letter-spacing:3px;margin-bottom:8px">日 干</div><div style="margin-bottom:8px"><div style="font-size:14px;color:#5b9fd4;font-weight:600">'+(k1[0]||'')+'</div><div style="font-size:11px;color:var(--tx3)">'+(k1[1]||'')+'</div><div style="font-size:9px;color:var(--tx3);margin:2px 0">一课 · 干阳</div><div style="font-size:16px;margin:4px 0">'+getSiKeRel(k1[0]||'',k2[0]||'')+'</div><div style="font-size:14px;color:#5b9fd4;font-weight:600">'+(k2[0]||'')+'</div><div style="font-size:11px;color:var(--tx3)">'+(k2[1]||'')+'</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">二课 · 干阴</div></div></div>';
-  hh+='<div style="text-align:center"><div style="font-size:10px;color:var(--tx3);letter-spacing:3px;margin-bottom:8px">日 支</div><div style="margin-bottom:8px"><div style="font-size:14px;color:#5b9fd4;font-weight:600">'+(k3[0]||'')+'</div><div style="font-size:11px;color:var(--tx3)">'+(k3[1]||'')+'</div><div style="font-size:9px;color:var(--tx3);margin:2px 0">三课 · 支阳</div><div style="font-size:16px;margin:4px 0">'+getSiKeRel(k3[0]||'',k4[0]||'')+'</div><div style="font-size:14px;color:#5b9fd4;font-weight:600">'+(k4[0]||'')+'</div><div style="font-size:11px;color:var(--tx3)">'+(k4[1]||'')+'</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">四课 · 支阴</div></div></div></div>';
-  hh+='<div style="display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:10px;flex-wrap:wrap;color:var(--tx3)"><span><b style="color:#FF9800">贼</b>（下克上）= 内乱外侵</span><span><b style="color:#F44336">克</b>（上克下）= 正常压制</span><span><b style="color:#c9a84c">比</b> = 同气</span><span><b style="color:#4CAF50">生</b> = 助力</span></div>';
+  // 2. 四课（平铺四列——每课干支内判贼克比生）
+  var kk=[d.siKe.ke1||[],d.siKe.ke2||[],d.siKe.ke3||[],d.siKe.ke4||[]];
+  function gzRel(gz){if(!gz||gz.length<2)return'';var zhi=ZHI_WX[gz[0]]||'';var GAN_WX2={甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};var gan=GAN_WX2[gz[1]]||'';if(!zhi||!gan)return'';if(zhi===gan)return'<span style="color:#c9a84c">比</span>';if(WX_SK[zhi]===gan)return'<span style="color:#FF9800;font-weight:700">贼</span>';if(WX_SK[gan]===zhi)return'<span style="color:#F44336;font-weight:700">克</span>';return'<span style="color:#4CAF50">生</span>';}
+  hh+='<div class="card"><div class="card-title">四 课 · 矛 盾 爆 发 点</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:12px;letter-spacing:2px">每课干支自带贼克比生关系——九宗门据此取传</div>';
+  hh+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">';
+  var skN=['一课 · 干阳','二课 · 干阴','三课 · 支阳','四课 · 支阴'];
+  kk.forEach(function(kv,i){var gz=kv[0]||'',god=kv[1]||'';var rel=gzRel(gz);hh+='<div style="text-align:center;padding:12px 8px;background:rgba(13,21,37,.4);border-radius:10px;border:1px solid rgba(91,127,165,.08)"><div style="font-size:10px;color:var(--tx3);margin-bottom:6px;letter-spacing:1px">'+skN[i]+'</div><div style="font-size:20px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:2px">'+gz+'</div><div style="font-size:11px;color:var(--tx2)">'+god+'</div><div style="font-size:14px;margin-top:6px">'+rel+'</div></div>';});
+  hh+='</div>';
+  hh+='<div style="display:flex;justify-content:center;gap:16px;margin-top:10px;font-size:10px;flex-wrap:wrap;color:var(--tx3)"><span><b style="color:#FF9800">贼</b> 下克上·内乱外侵</span><span><b style="color:#F44336">克</b> 上克下·压制</span><span><b style="color:#c9a84c">比</b> 同气</span><span><b style="color:#4CAF50">生</b> 助力</span></div>';
   hh+='</div>';
 
   // 3. 三传
   var ck=['chuChuan','zhongChuan','moChuan'],cl=['初 传','中 传','末 传'],cs=['事 起 之 因','中 段 周 旋','归 结 之 果'];
   var cg=[];
-  hh+='<div class="card"><div class="card-title">三 传 · 事 之 始 中 末</div><div style="display:flex;flex-direction:column;align-items:center;gap:0;max-width:300px;margin:0 auto">';
-  ck.forEach(function(key,i){var tr=sc[key]||[],zhi=tr[0]||'',god=tr[1]||'',qin=tr[2]||'',dun=tr[3]||'';if(zhi)cg.push(zhi);var isLK=di.kong.indexOf(zhi)>=0;hh+='<div style="text-align:center;padding:12px 24px;background:rgba(13,21,37,.6);border:1px solid '+(isLK?'rgba(244,67,54,.25)':'rgba(201,168,76,.12)')+';border-radius:12px;width:100%"><div style="font-size:10px;color:var(--tx3);letter-spacing:3px;margin-bottom:2px">'+cl[i]+'</div><div style="font-size:9px;color:var(--tx3);margin-bottom:6px">'+cs[i]+'</div><div style="font-size:36px;font-weight:900;color:'+(isLK?'#F44336':'var(--gold-l)')+'">'+zhi+'</div><div style="font-size:13px;color:var(--tx2)">'+god+(qin?' · '+qin:'')+'</div><div style="font-size:11px;color:var(--tx3)">旬遁 '+dun+(isLK?' <span style="color:#F44336;font-weight:600">· 落 空</span>':'')+'</div></div>';if(i<2)hh+='<div style="font-size:20px;color:var(--gold);padding:4px 0">↓</div>';});
-  hh+='</div></div>';
+  hh+='<div class="card"><div class="card-title">三 传 · 沙 盘</div><div style="display:flex;gap:8px;margin-bottom:16px">';
+  ck.forEach(function(key,i){var tr=sc[key]||[],zhi=tr[0]||'',god=tr[1]||'',qin=tr[2]||'',dun=tr[3]||'';if(zhi)cg.push(zhi);var isLK=di.kong.indexOf(zhi)>=0;hh+='<div style="flex:1;text-align:center;padding:12px 6px;background:rgba(13,21,37,.6);border:1px solid '+(isLK?'rgba(244,67,54,.3)':'rgba(201,168,76,.15)')+';border-radius:10px"><div style="font-size:9px;color:var(--tx3);letter-spacing:2px">'+cl[i]+'</div><div style="font-size:10px;color:var(--tx3);margin:2px 0">'+cs[i]+'</div><div style="font-size:28px;font-weight:900;color:'+(isLK?'#F44336':'var(--gold-l)')+'">'+zhi+'</div><div style="font-size:11px;color:var(--tx2)">'+god+(qin?' · '+qin:'')+'</div><div style="font-size:10px;color:var(--tx3)">旬遁 '+dun+(isLK?' <span style="color:#F44336;font-weight:600">落空</span>':'')+'</div></div>';});
+  hh+='</div>';
 
   // 4. 天地盘表格
   var to=["申","酉","戌","亥","子","丑","寅","卯","辰","巳","午","未"];
   hh+='<div class="card"><div class="card-title">天 地 盘 · 十 二 宫</div><div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:10px">外圈地盘 · 内层天盘 · 标天将</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center"><tr style="border-bottom:1px solid rgba(201,168,76,.15)"><td style="padding:6px;color:var(--tx3);font-size:10px;letter-spacing:2px">地盘宫</td>';
   to.forEach(function(z){hh+='<td style="padding:6px;font-weight:700;color:var(--gold)">'+z+'</td>';});
   hh+='</tr><tr style="border-bottom:1px solid rgba(255,255,255,.03)"><td style="padding:6px;color:var(--tx3);font-size:10px">天盘</td>';
-  to.forEach(function(z){var t=d.tianDiPan.tianPan[z]||'';hh+='<td style="padding:6px;color:#5b9fd4;font-weight:600">'+(t!==z?t:'')+'</td>';});
+  to.forEach(function(z){var t=d.tianDiPan.tianPan[z]||'';hh+='<td style="padding:8px 6px;color:#5b9fd4;font-weight:600;font-size:15px">'+t+'</td>';});
   hh+='</tr><tr><td style="padding:6px;color:var(--tx3);font-size:10px">天将</td>';
-  to.forEach(function(z){hh+='<td style="padding:6px;color:var(--tx2)">'+(d.tianDiPan.tianJiang[z]||'')+'</td>';});
+  to.forEach(function(z){hh+='<td style="padding:8px 6px;color:var(--tx2);font-size:14px">'+(d.tianDiPan.tianJiang[z]||'')+'</td>';});
   hh+='</tr></table></div></div>';
 
-  // 5. 沙盘
+  // 沙盘（合并在三传卡内）
   var isDay=h>=6&&h<18;
-  hh+='<div class="card"><div class="card-title">沙 盘</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:10px;letter-spacing:1px">'+(isDay?'昼占':'夜占')+' · 月将 '+di.yuejiang+' · 日 '+di.bazi.split(' ')[2]+' · 时 '+di.bazi.split(' ')[3]+'</div>';
+  hh+='<div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:10px">'+(isDay?'昼占':'夜占')+' · 月将 '+di.yuejiang+' · 日 '+di.bazi.split(' ')[2]+' · 时 '+di.bazi.split(' ')[3]+'</div>';
   hh+='<div class="shapan-wrap"><div class="shapan-ring shapan-outer">';
-  ZHI.forEach(function(zhi){var tian=d.tianDiPan.tianPan[zhi]||'',god=d.tianDiPan.tianJiang[zhi]||'',dg=d.dunGan[zhi]||'';var extra='';if(di.kong.indexOf(zhi)>=0)extra+=' sp-kong';if(di.yima===zhi)extra+=' sp-ma';if(cg.indexOf(zhi)>=0)extra+=' sp-chuan';hh+='<div class="sp-pos sp-'+zhi+extra+'"><div class="sp-god">'+god+'</div><div class="sp-tian">'+(tian!==zhi?tian:'')+'</div><div class="sp-zhi">'+zhi+(dg?'<span class="sp-dun">'+dg+'</span>':'')+'</div></div>';});
+  ZHI.forEach(function(zhi){var tian=d.tianDiPan.tianPan[zhi]||'',god=d.tianDiPan.tianJiang[zhi]||'',dg=d.dunGan[zhi]||'';var extra='';if(di.kong.indexOf(zhi)>=0)extra+=' sp-kong';if(di.yima===zhi)extra+=' sp-ma';if(cg.indexOf(zhi)>=0)extra+=' sp-chuan';hh+='<div class="sp-pos sp-'+zhi+extra+'"><div class="sp-god">'+god+'</div><div class="sp-tian">'+tian+'</div><div class="sp-zhi">'+zhi+(dg?'<span class="sp-dun">'+dg+'</span>':'')+'</div></div>';});
   hh+='<div class="sp-center"><div style="font-size:20px;font-weight:700;color:var(--gold-l)">'+di.yuejiang+'</div><div style="font-size:9px;color:var(--tx3);letter-spacing:2px">月 将</div></div>';
   hh+='</div></div><div style="display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:10px"><span><span class="sp-dot" style="background:#F44336"></span>空亡</span><span><span class="sp-dot" style="background:#2196F3"></span>驿马</span><span><span class="sp-dot" style="background:var(--gold-l)"></span>三传落宫</span></div></div>';
 
@@ -200,7 +202,7 @@ function renderFull(d,y,m,d2,h,min,question,direction){
 
   // 7. 神煞落位（仅关键位置）
   hh+='<div class="card"><div class="card-title">神 煞 落 位</div><div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:12px">仅列落在三传 / 四课上神 / 干支寄宫的</div>';
-  var keySet=new Set();cg.forEach(function(z){keySet.add(z);});[k1,k2,k3,k4].forEach(function(kv){if(kv[0])keySet.add(kv[0][0]);});var bz=di.bazi.split(' ');if(bz[2]){keySet.add(bz[2][1]);}
+  var keySet=new Set();cg.forEach(function(z){keySet.add(z);});kk.forEach(function(kv){if(kv[0])keySet.add(kv[0][0]);});var bz=di.bazi.split(' ');if(bz[2]){keySet.add(bz[2][1]);}
   var shown=0;(d.shenSha||[]).forEach(function(ss){if(!ss.value||!keySet.has(ss.value))return;shown++;var tag='中',tc='#c9a84c';if(['天乙贵人','天德','月德','禄神','天医','文昌','天喜','龙德'].indexOf(ss.name)>=0){tag='吉';tc='#4CAF50';}if(['孤辰','寡宿','白虎','丧门','吊客','劫煞','大耗','岁破','病符'].indexOf(ss.name)>=0){tag='凶';tc='#F44336';}hh+='<div style="margin-bottom:6px;padding:8px 12px;background:rgba(13,21,37,.4);border-radius:8px;font-size:12px"><span style="display:inline-block;padding:1px 6px;font-size:9px;border-radius:6px;margin-right:8px;font-weight:600;color:'+tc+';background:rgba('+(tag==='吉'?'76,175,80':tag==='凶'?'244,67,54':'201,168,76')+',.12)">'+tag+'</span><b style="color:var(--gold-l)">'+ss.name+'</b><span style="color:var(--gold)"> 落 '+ss.value+'</span><div style="font-size:10px;color:var(--tx3);margin-top:2px">'+(ss.description||'')+'</div></div>';});
   if(!shown)hh+='<p style="text-align:center;color:var(--tx3)">关键位置未匹配到神煞</p>';
   hh+='</div>';
@@ -211,7 +213,7 @@ function renderFull(d,y,m,d2,h,min,question,direction){
   hh+='<div class="card"><div class="card-title">课 盘 速 读</div>';
   hh+='<div style="font-size:15px;font-weight:700;color:var(--gold-l);text-align:center;margin-bottom:16px;letter-spacing:2px">'+(kongChuan.length?'三传逢空 · 所谋之事尚难落实':'三传有气 · 事有可成之机')+'</div>';
   hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">大 局 基 调</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">本课取传为<b style="color:var(--gold-l)">「'+(sc.keTi||'')+'」</b>。三传走势：初传<b>'+cz[0]+'</b>（'+cq[0]+'）&rarr; 中传<b>'+cz[1]+'</b>（'+cq[1]+'）&rarr; 末传<b>'+cz[2]+'</b>（'+cq[2]+'）。</p></div>';
-  hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">焦 点 态 势</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">初传<b style="color:var(--gold-l)">「'+cz[0]+'」</b>为事之发端，六亲属<b>'+cq[0]+'</b>'+(sc.chuChuan&&sc.chuChuan[1]?'，乘天将<b>「'+sc.chuChuan[1]+'」</b>':'')+'。一课上神乘<b>'+(k1[1]||'')+'</b>，为本身状态的映射。</p></div>';
+  hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">焦 点 态 势</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">初传<b style="color:var(--gold-l)">「'+cz[0]+'」</b>为事之发端，六亲属<b>'+cq[0]+'</b>'+(sc.chuChuan&&sc.chuChuan[1]?'，乘天将<b>「'+sc.chuChuan[1]+'」</b>':'')+'。一课上神乘<b>'+(kk[0][1]||'')+'</b>，为本身状态的映射。</p></div>';
   var goodSS=[];(d.shenSha||[]).forEach(function(s){if(['天乙贵人','天德','月德','天医','禄神','文昌'].indexOf(s.name)>=0)goodSS.push(s.name+'('+s.value+')');});
   if(goodSS.length)hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">利 好 信 号</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">神煞层面'+goodSS.slice(0,5).map(function(s){return'<b style="color:#4CAF50">'+s+'</b>';}).join('、')+'等吉神加持。</p></div>';
   var badInfo=[];if(kongChuan.length)badInfo.push('课中出现<b style="color:#F44336">「三传值空」</b>——所谋之事易走过场，宜核对实质动作而非声势；尤忌「看似已成」。');
