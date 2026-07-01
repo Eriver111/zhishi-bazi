@@ -113,7 +113,7 @@
         });
       }
       content.innerHTML = html;
-    }).catch(function(){ content.innerHTML = '<div class="empty-state"><p>加载失败，请刷新</p></div>'; });
+    }).catch(function(e){ content.innerHTML = '<div class="empty-state"><p>加载失败：'+ (e&&e.message||'请确认已登录并刷新') +'</p><button class="btn" onclick="location.reload()" style="margin-top:12px">重新加载</button></div>'; });
   });
   }
 
