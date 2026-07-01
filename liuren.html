@@ -156,7 +156,7 @@ function renderFull(d,y,m,d2,h,min,question,direction){
 
   // 1. 课体题眼
   hh+='<div class="card"><div class="card-title">课 体 题 眼</div><div class="keti-hero"><div class="keti-name">'+(sc.keTi||'')+'课</div><div class="keti-insight">'+(KETI_MEANING[sc.keTi]||'')+'</div>';
-  if(d.yinYangGuiRen)hh+='<div class="keti-meta"><span>阳贵：'+d.yinYangGuiRen.yangGuiRen+'</span><span>阴贵：'+d.yinYangGuiRen.yinGuiRen+'</span></div>';
+  if(d.yinYangGuiRen){var yg='',ig='';var ygr=d.yinYangGuiRen.yangGuiRen;var igr=d.yinYangGuiRen.yinGuiRen;if(ygr){ZHI.forEach(function(z){if(ygr[z]==='贵人')yg=z;});}if(igr){ZHI.forEach(function(z){if(igr[z]==='贵人')ig=z;});}if(yg||ig)hh+='<div class="keti-meta"><span>阳贵：'+yg+'</span><span>阴贵：'+ig+'</span></div>';}
   hh+='</div></div>';
 
   // 2. 四课（平铺四列——每课干支内判贼克比生）
