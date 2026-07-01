@@ -38,17 +38,18 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .keti-name{font-size:36px;font-weight:900;color:var(--gold-l);letter-spacing:12px;margin-bottom:8px}
 .keti-insight{font-size:15px;color:var(--tx2);max-width:600px;margin:0 auto;line-height:1.8}
 .keti-meta{display:flex;justify-content:center;gap:24px;margin-top:16px;flex-wrap:wrap;font-size:12px;color:var(--tx3)}
-.shapan-wrap{position:relative;width:100%;max-width:500px;aspect-ratio:1;margin:0 auto;border-radius:50%;border:2px solid rgba(201,168,76,.2);background:radial-gradient(circle,rgba(13,21,37,.7),rgba(8,12,20,.95));box-shadow:0 0 80px rgba(201,168,76,.06)}
-.sp-pos{position:absolute;text-align:center;transform:translate(-50%,-50%);font-size:12px;line-height:1.3;padding:2px;border-radius:6px;transition:all .3s;width:56px}
-.sp-pos.sp-kong{background:rgba(244,67,54,.06);box-shadow:inset 0 0 12px rgba(244,67,54,.08)}
-.sp-pos.sp-ma{box-shadow:0 0 0 1px rgba(33,150,243,.3)}
-.sp-pos.sp-chuan{box-shadow:0 0 0 1px rgba(201,168,76,.4)}
-.sp-god{font-size:10px;color:var(--tx3)}.sp-tian{font-size:12px;color:#5b9fd4;font-weight:600}
-.sp-zhi{font-size:20px;font-weight:700;color:var(--gold);letter-spacing:1px}.sp-dun{font-size:9px;color:#6a6570;margin-left:2px}
-.sp-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
-.sp-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-.sp-zi{top:88%;left:50%}.sp-chou{top:82%;left:24%}.sp-yin{top:62%;left:10%}.sp-mao{top:35%;left:10%}.sp-chen{top:12%;left:24%}.sp-si{top:4%;left:50%}.sp-wu{top:12%;left:76%}.sp-wei{top:35%;left:90%}.sp-shen{top:62%;left:90%}.sp-you{top:82%;left:76%}.sp-xu{top:88%;left:50%}.sp-hai{top:82%;left:24%}
-@media(max-width:820px){.app{padding:16px 8px 40px}.header h1{font-size:28px;letter-spacing:10px}.row{flex-wrap:wrap;gap:6px}.row .field{min-width:60px}.card{padding:14px 12px;margin-bottom:10px}.submit{font-size:15px;letter-spacing:6px;padding:14px}.keti-name{font-size:26px;letter-spacing:8px}.sp-pos{width:50px}.sp-god{font-size:8px}.sp-tian{font-size:10px}.sp-zhi{font-size:16px}.sp-dun{font-size:7px}}
+.shapan-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;grid-template-rows:repeat(4,1fr);gap:2px;width:100%;max-width:520px;aspect-ratio:1;margin:0 auto;background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:4px;padding:2px}
+.sp-cell{background:rgba(13,21,37,.6);border:1px solid rgba(91,127,165,.05);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;position:relative;min-height:70px}
+.sp-cell.sp-kong{background:rgba(244,67,54,.04);border-color:rgba(244,67,54,.15)}
+.sp-cell.sp-chuan{border-color:rgba(201,168,76,.3)}
+.sp-cell.sp-ma{border-color:rgba(33,150,243,.25)}
+.sp-cell .sp-god{font-size:10px;color:var(--tx3)}.sp-cell .sp-tian{font-size:13px;color:#5b9fd4;font-weight:600}
+.sp-cell .sp-zhi{font-size:22px;font-weight:700;color:var(--gold);letter-spacing:1px}
+.sp-cell .sp-dun{font-size:9px;color:#6a6570}.sp-cell .sp-tags{position:absolute;top:3px;right:4px;display:flex;gap:2px;font-size:8px}
+.sp-tag{font-size:8px;padding:1px 4px;border-radius:3px}.sp-tag.kong{background:rgba(244,67,54,.15);color:#F44336}.sp-tag.ma{background:rgba(33,150,243,.12);color:#2196F3}
+.sp-center-cell{grid-row:2/4;grid-column:2/4;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(13,21,37,.8);border:1px solid rgba(201,168,76,.1);border-radius:8px}
+.sp-center-cell .cp-yj{font-size:28px;font-weight:900;color:var(--gold-l)}.sp-center-cell .cp-label{font-size:9px;color:var(--tx3);letter-spacing:2px}
+@media(max-width:820px){.app{padding:16px 8px 40px}.header h1{font-size:28px;letter-spacing:10px}.row{flex-wrap:wrap;gap:6px}.row .field{min-width:60px}.card{padding:14px 12px;margin-bottom:10px}.submit{font-size:15px;letter-spacing:6px;padding:14px}.keti-name{font-size:26px;letter-spacing:8px}.sp-cell{padding:4px 2px;min-height:50px}.sp-cell .sp-zhi{font-size:16px}.sp-cell .sp-tian{font-size:10px}.sp-cell .sp-god{font-size:8px}.sp-center-cell .cp-yj{font-size:20px}}
 </style></head><body>
 <div id="zhishi-nav" class="zhishi-nav"><a href="/" class="nav-brand">知时</a><div class="nav-links"><a href="/">首页</a><a href="/paipan">排盘</a><a href="/hepan">合盘</a><a href="/fortune">运势</a><a href="/meihua">梅花</a><a href="/liuyao">六爻</a><a href="/ziwei">紫微</a><a href="/liuren">大六壬</a><a href="/pricing" class="nav-cta">积分</a></div></div>
 <div class="app">
@@ -188,9 +189,17 @@ function renderFull(d,y,m,d2,h,min,question,direction){
   // 沙盘（地盘→天盘→天将 12行排版）
   var isDay=h>=6&&h<18;
   hh+='<div style="text-align:center;font-size:10px;color:var(--tx3);margin:8px 0">'+(isDay?'昼占':'夜占')+' · 月将 '+di.yuejiang+' · 日 '+di.bazi.split(' ')[2]+' · 时 '+di.bazi.split(' ')[3]+'</div>';
-  hh+='<div class="shapan-wrap">';
-  ZHI.forEach(function(zhi){var tian=d.tianDiPan.tianPan[zhi]||'',god=d.tianDiPan.tianJiang[zhi]||'',dg=d.dunGan[zhi]||'';var extra='';if(di.kong.indexOf(zhi)>=0)extra+=' sp-kong';if(di.yima===zhi)extra+=' sp-ma';if(cg.indexOf(zhi)>=0)extra+=' sp-chuan';hh+='<div class="sp-pos sp-'+zhi+extra+'"><div class="sp-god">'+god+'</div><div class="sp-tian">'+tian+'</div><div class="sp-zhi">'+zhi+(dg?'<span class="sp-dun">'+dg+'</span>':'')+'</div></div>';});
-  hh+='<div class="sp-center"><div style="font-size:20px;font-weight:700;color:var(--gold-l)">'+di.yuejiang+'</div><div style="font-size:9px;color:var(--tx3);letter-spacing:2px">月 将</div></div>';
+  hh+='<div class="shapan-grid">';
+  var gridOrder=['巳','午','未','申','辰','center','酉','卯','center','戌','寅','丑','子','亥'];
+  var usedCenter=false;
+  gridOrder.forEach(function(zhi){
+    if(zhi==='center'){if(!usedCenter){hh+='<div class="sp-center-cell"><div class="cp-yj">'+di.yuejiang+'</div><div class="cp-label">月 将</div><div style="font-size:9px;color:var(--tx3);margin-top:4px">日 '+di.bazi.split(' ')[2]+'</div><div style="font-size:9px;color:var(--tx3)">时 '+di.bazi.split(' ')[3]+'</div></div>';usedCenter=true;}return;}
+    var tian=d.tianDiPan.tianPan[zhi]||'',god=d.tianDiPan.tianJiang[zhi]||'',dg=d.dunGan[zhi]||'';
+    var cls='sp-cell';if(di.kong.indexOf(zhi)>=0)cls+=' sp-kong';if(di.yima===zhi)cls+=' sp-ma';if(cg.indexOf(zhi)>=0)cls+=' sp-chuan';
+    hh+='<div class="'+cls+'"><div class="sp-tags">';if(di.kong.indexOf(zhi)>=0)hh+='<span class="sp-tag kong">空</span>';if(di.yima===zhi)hh+='<span class="sp-tag ma">马</span>';hh+='</div>';
+    hh+='<div class="sp-zhi">'+zhi+(dg?'<span class="sp-dun">'+dg+'</span>':'')+'</div>';
+    hh+='<div class="sp-tian">'+tian+'</div><div class="sp-god">'+god+'</div></div>';
+  });
   hh+='</div></div>';
 
   // 6. 关键格局
