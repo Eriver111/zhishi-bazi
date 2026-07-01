@@ -4,6 +4,7 @@ window.switchZwMode=function(m){
   var ab=document.querySelector(".zw-mode-btn[onclick*='"+m+"']");if(ab)ab.classList.add("active");
   var ps=document.querySelectorAll(".palace");ps.forEach(function(p){p.classList.remove("hua-lu","hua-quan","hua-ke","hua-ji","hl","hl2")});
   document.getElementById("svgLines").innerHTML="";
+  var zas=document.querySelectorAll(".za");zas.forEach(function(z){z.style.display=(m==="sanhe")?"":"none"});
   if(m==="sihua"&&window._sihuaCol){
     var hc={禄:"hua-lu",权:"hua-quan",科:"hua-ke",忌:"hua-ji"};
     window._sihuaCol.forEach(function(sh){ps.forEach(function(el){var pn=el.querySelector(".pname");if(pn&&pn.textContent===sh.palace)el.classList.add(hc[sh.hua])})});
