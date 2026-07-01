@@ -400,7 +400,8 @@ module.exports = async function handler(req, res) {
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
 async function callAI(question, chartData, bazi, history, mode) {
-  const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
+  var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
+  const messages = [{ role: 'system', content: sysPrompt }];
 
   // 当前时间锚定（含流年流月干支）
   const now = new Date();
