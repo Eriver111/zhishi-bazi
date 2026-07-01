@@ -455,7 +455,7 @@ function buildSection(title,content,accentColor){
   aiHook.textContent='查看AI完整解读 →';
   aiHook.addEventListener('mouseenter',function(){this.style.background='rgba(201,168,76,.12)';this.style.color='var(--gold-l)';});
   aiHook.addEventListener('mouseleave',function(){this.style.background='rgba(201,168,76,.06)';this.style.color='var(--gold)';});
-  aiHook.addEventListener('click',function(){window.open('/ai-chat','_blank');});
+  aiHook.addEventListener('click',function(){window.open('/ai-chat?t=zw','_blank');});
 
   sec.appendChild(header);
   sec.appendChild(body);
