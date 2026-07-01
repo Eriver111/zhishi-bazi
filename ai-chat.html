@@ -135,6 +135,10 @@ function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById
   AI.freeRemaining=Math.max(0,2-used);
   updateCreditsUI();
 
+  // 检测紫微/八字模式，一次读取排盘数据到内存（避免被后续排盘覆盖）
+  AI.zwMode=false;try{var spInit=new URLSearchParams(window.location.search);AI.zwMode=spInit.get('t')==='zw'}catch(e){}
+  try{var raw=localStorage.getItem(AI.zwMode?'ai_ziwei_data':'ai_chart_data');if(raw)AI.chartData=JSON.parse(raw);}catch(e){}
+
   // 恢复会话
   var savedCode=localStorage.getItem('ai_chat_code');
   if(savedCode){
@@ -184,13 +188,12 @@ function send(){
   addMsg('user',text);showThinking();
 
   var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
-  // 检测紫微/八字模式
-  var zwMode=false;try{var sp2=new URLSearchParams(window.location.search);zwMode=sp2.get('t')==='zw'}catch(e){}
-  // 附加上次保存的排盘数据
-  try { var cd2=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data'); if(cd2) {body.chartData=JSON.parse(cd2);if(zwMode)body.mode='ziwei';} } catch(ex) {}
+  // 使用页面初始化时加载的排盘数据（内存变量，不会被新排盘覆盖）
+  if(AI.chartData){body.chartData=AI.chartData;}
+  if(AI.zwMode)body.mode='ziwei';
   // 无排盘数据时提醒
   if(!body.chartData){
-    if(zwMode){
+    if(AI.zwMode){
       addMsg('ai','⚠️ 未检测到紫微排盘数据。请先在<a href=\"ziwei.html\">紫微斗数排盘</a>页面完成排盘，再向我提问，分析会更精准。');
     } else {
       addMsg('ai','⚠️ 未检测到排盘数据。建议先通过<a href=\"paipan.html\">八字排盘</a>获取完整命盘，再向我提问，分析会更精准。');
