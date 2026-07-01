@@ -221,8 +221,7 @@
 
     // 3-10. 其余板块 → #hpSections
     var sectionsEl = document.getElementById('hpSections');
-    if (!sectionsEl) {
-      console.error('[hepan-result] 找不到 #hpSections');
+    if (!sectionsEl) {/* console.() */;
       return;
     }
     var html = '';

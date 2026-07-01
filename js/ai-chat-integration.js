@@ -174,15 +174,14 @@
         if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
         window.location.href = 'ai-chat.html';
       });
-    } else {
-      //console.('[AI] FAB element not found!');
+    } else {/* console.() */;
     }
   }
 
   // ===== 抽屉控制 =====
   function open() {
-    //console.('[AI] open() called, drawer:', !!$drawer, 'backdrop:', !!$backdrop);
-    if (!$drawer) { //console.('[AI] drawer element missing!'); return; }
+    console.log('[AI] open() called, drawer:', !!$drawer, 'backdrop:', !!$backdrop);
+    if (!$drawer) { console.error('[AI] drawer element missing!'); return; }
     $drawer.classList.add('open');
     if ($backdrop) $backdrop.classList.add('open');
     AI.drawerOpen = true;
@@ -211,9 +210,9 @@
   var _toggleDebounce = 0;
   function toggle() {
     var now = Date.now();
-    if (now - _toggleDebounce < 250) { //console.('[AI] toggle() debounced (too fast)'); return; }
+    if (now - _toggleDebounce < 250) { console.log('[AI] toggle() debounced (too fast)'); return; }
     _toggleDebounce = now;
-    //console.('[AI] toggle() called, drawerOpen:', AI.drawerOpen);
+    console.log('[AI] toggle() called, drawerOpen:', AI.drawerOpen);
     AI.drawerOpen ? close() : open();
   }
   function toggleMode() {
