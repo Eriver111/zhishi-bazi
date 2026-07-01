@@ -207,7 +207,7 @@ var GOD_SHORT={贵人:'貴',腾蛇:'蛇',朱雀:'雀',六合:'合',勾陈:'勾',
   hh+='</tr><tr style="border-bottom:1px solid rgba(255,255,255,.03)"><td style="padding:6px;color:var(--tx3);font-size:10px">天盘</td>';
   to.forEach(function(z){var t=d.tianDiPan.tianPan[z]||'';hh+='<td style="padding:8px 6px;color:#5b9fd4;font-weight:600;font-size:15px">'+t+'</td>';});
   hh+='</tr><tr><td style="padding:6px;color:var(--tx3);font-size:10px">天将</td>';
-  to.forEach(function(z){hh+='<td style="padding:8px 6px;color:var(--tx2);font-size:14px">'+((GOD_SHORT[d.tianDiPan.tianJiang[z]]||d.tianDiPan.tianJiang[z]||'')+'</td>';});
+  to.forEach(function(z){hh+='<td style="padding:8px 6px;color:var(--tx2);font-size:14px">'+(GOD_SHORT[d.tianDiPan.tianJiang[z]]||d.tianDiPan.tianJiang[z]||'')+'</td>';});
   hh+='</tr></table></div></div>';
 
   // 沙盘（地盘→天盘→天将 12行排版）
