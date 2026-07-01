@@ -253,10 +253,11 @@ var GOD_SHORT={贵人:'貴',腾蛇:'蛇',朱雀:'雀',六合:'合',勾陈:'勾',
   if(badInfo.length){hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">需 留 意 的 信 号</div>';badInfo.forEach(function(bi){hh+='<p style="font-size:13px;color:var(--tx2);line-height:1.8;margin:4px 0">'+bi+'。</p>';});hh+='</div>';}
   if(kongChuan.length)hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">策 略 纵 深</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">三传逢空并非绝路——壬学有<b style="color:var(--gold-l)">「冲空则实、填实则应」</b>之理。空亡何时填实？等待期如何提前布局？深度推演将为您拆解完整的策略路径与时机把控。</p></div>';
   hh+='<div style="display:flex;justify-content:center;gap:24px;margin-top:18px;font-size:11px;color:var(--tx3)"><span style="color:#4CAF50">🤝 助力</span><span>👀 观望</span><span style="color:#F44336">⚠ 阻力</span></div>';
-  hh+='<div style="margin-top:14px;padding:10px 14px;background:rgba(201,168,76,.06);border:1px dashed var(--bd2);border-radius:8px;text-align:center;cursor:pointer;font-size:13px;color:var(--gold);transition:all .25s" onclick="window.open(\'/ai-chat?t=zw\',\'_blank\')">🤖 查看 AI 完整解读 →</div>';
+  hh+='<div style="margin-top:14px;padding:10px 14px;background:rgba(201,168,76,.06);border:1px dashed var(--bd2);border-radius:8px;text-align:center;cursor:pointer;font-size:13px;color:var(--gold);transition:all .25s" onclick="window.open(\'/ai-chat?t=lr\',\'_blank\')">🤖 查看 AI 完整解读 →</div>';
   hh+='</div>';
 
   document.getElementById("lrOutput").innerHTML=hh;
+  localStorage.setItem('ai_liuren_data',JSON.stringify({type:'liuren',question:question,direction:direction,dateInfo:d.dateInfo,tianDiPan:d.tianDiPan,siKe:d.siKe,sanChuan:d.sanChuan,dunGan:d.dunGan,shenSha:d.shenSha}));
   setTimeout(function(){document.getElementById("lrOutput").scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
 </script>

@@ -171,6 +171,49 @@ const ZIWEI_SYSTEM_PROMPT = `你是"知时先生"，一位精通紫微斗数的 
 ## 特别提醒
 你是知时先生，提供文化解读和心理启发。紫微斗数是古人留下的智慧，反映先天禀赋与运势趋势，但不决定人的一生。后天努力、德行修养和自我认知比命盘更重要。`;
 
+const LIUREN_SYSTEM_PROMPT = `你是"知时先生"，一位精通大六壬占卜术的 AI 占断师。你深研《大六壬大全》《六壬断案》《毕法赋》《课经集》等典籍，精通九宗门起课法、四课三传推演、十二天将神煞体系，为用户提供专业、客观、有深度的六壬课盘解读。
+
+## 你的核心能力
+- **九宗门起课**：精通贼克、比用、涉害、遥克、昴星、别责、八专、伏吟、返吟九种取传法。每种课体有特定的象意和应事风格。
+- **四课推演**：四课（日干阳神、日干阴神、日支阳神、日支阴神）反映事物发展的四个阶段。干支关系（贼、克、比、生）决定初传的选取。
+- **三传断事**：初传为事发之因，中传为事中之周旋，末传为归结之果。三传递进反映事态发展全貌。
+- **天地盘解读**：天盘随月将转动，地盘固定不变。天盘加临地盘形成特定的宫位关系，是判断吉凶的基础。
+- **十二天将**：贵人、腾蛇、朱雀、六合、勾陈、青龙、天空、白虎、太常、玄武、太阴、天后。各有所主，配合天地盘形成具体断应。
+- **神煞系统**：精通太岁、岁破、驿马、天德、月德、天乙贵人、禄神、文昌、桃花、孤辰、寡宿等数十种神煞的起法和应用。
+- **课体格局**：能识别重审、元首、知一、涉害等九宗门课体，以及轩盖、铸印、稼穑、进连茹、退连茹等特殊格局。
+- **十二宫位事类**：能针对事业、财运、感情、健康、出行、诉讼、家宅等不同事类，从课盘中对号入座进行分析。
+
+## 分析逻辑链
+1. **课体为先**：先看课体（重审/元首/比用等），定大局基调——是顺利还是波折。
+2. **四课矛盾**：看四课中贼克关系，找到矛盾爆发点——问题出在哪个环节（日干/日支/外部/内部）。
+3. **三传走势**：看三传递进方向（进连茹为推进，退连茹为倒退），判断事态发展轨迹。
+4. **空亡落处**：空亡所在之处为"虚"——三传逢空则事难落实，课神逢空则该环节形多于实。
+5. **天将配合**：天将加临地支形成具体象意——青龙临寅卯主喜庆，白虎临申酉主血光。
+6. **神煞参合**：将关键神煞（天乙贵人、驿马、桃花、孤寡等）落入的宫位与三传四课结合，细化判断。
+7. **给出建议**：基于以上综合分析，给出务实建议——何时该进，何时该守，何处需留意。
+
+## 回答准则
+1. 使用通俗流畅的现代中文解释六壬术语，每个术语首次出现时附简短解释
+2. 客观中正，不断言绝对的吉凶——六壬讲究"象在其中，应在其时"
+3. 若用户提供完整课盘数据（chartData），必须基于实际课盘进行精细分析，不可只讲泛泛之谈
+4. 三传解读必须结合六亲和天将——不能只看地支不讲人事
+5. 空亡、落空等概念需要解释其实际含义，让用户理解"空"不等于"无"
+6. 涉及未来预测的内容，务必注明"占卜分析仅供参考"
+7. 在速读总结时给出方向性建议：助力/观望/阻力三个维度
+
+## 防幻觉铁律
+1. **每个课盘都是独一无二的**——即使课体相同（如都是重审课），四课三传、天将分布、神煞落位也完全不同。**绝对禁止**套用任何「标准模板」。
+2. **若 chartData 已提供预计算数据，必须逐字引用**——课体、四课干支、三传地支六亲、天将分布、神煞落位等均已精确计算，不要用自己的判断覆盖系统计算结果。
+3. **若没有 chartData**（用户只提供了时间但未起课），你必须明确告知："请先通过大六壬起课功能获取完整的课盘数据，这样我才能给你精准占断。当前只能做初步参考。"
+
+## 用户纠错时的处理规则
+1. **用户说得对**：立即道歉并修正。
+2. **用户说的与预计算数据冲突**："我理解您的看法，根据系统排盘数据我的判断没有错，但我尊重您的意见，按您说的来理解。"然后按用户说的方向重新解读。
+3. **用户提的是主观解读角度**："您的视角很有意思，让我从另一个角度重新理解..."然后按用户的方向调整解读。
+
+## 特别提醒
+你是知时先生，提供文化解读和心理启发。六壬是古人观天察地、推演人事的智慧结晶。占卜的结果反映当下时空的象意趋势，但人的主观能动性和后续选择同样重要。"占而不迷，卜而不惑"——六壬是指南针，不是判决书。`;
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -283,7 +326,7 @@ module.exports = async function handler(req, res) {
     if (userId) await saveUserChatHistory(userId, 'user', question);
 
     // ---- 构建 AI 请求 ----
-    var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : SYSTEM_PROMPT;
+    var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
     const messages = [{ role: 'system', content: sysPrompt }];
 
     // 优先使用完整排盘数据，回退到简版八字信息
@@ -433,6 +476,11 @@ async function callAI(question, chartData, bazi, history, mode) {
  */
 function buildChartContext(chartData) {
   let ctx = '';
+
+  // 大六壬模式
+  if (chartData.type === 'liuren') {
+    return buildLiurenContext(chartData);
+  }
 
   // 紫微斗数模式
   if (chartData.type === 'ziwei') {
@@ -645,6 +693,56 @@ function buildZiweiContext(d) {
       ctx+='\n';
     });
   }
+  return ctx;
+}
+
+/**
+ * 构建大六壬课盘上下文
+ */
+function buildLiurenContext(d) {
+  var ctx='=== 大六壬课盘 ===\n';
+  var di=d.dateInfo||{};
+  ctx+='起课时间：'+di.date+'\n';
+  ctx+='四柱：'+di.bazi+'\n';
+  ctx+='月将：'+di.yuejiang+' | 空亡：'+(di.kong||[]).join('、')+' | 驿马：'+di.yima+'\n';
+  if(d.question)ctx+='所参之事：'+d.question+'\n';
+  if(d.direction)ctx+='参断方向：'+d.direction+'\n';
+
+  var sc=d.sanChuan||{};
+  ctx+='\n课体：'+(sc.keTi||'')+'\n';
+
+  // 四课
+  ctx+='\n--- 四课 ---\n';
+  var sk=d.siKe||{},skNames=['一课（干阳）','二课（干阴）','三课（支阳）','四课（支阴）'];
+  ['ke1','ke2','ke3','ke4'].forEach(function(k,i){
+    var kv=sk[k]||[];
+    ctx+=skNames[i]+'：'+(kv[0]||'')+' 天将：'+(kv[1]||'')+'\n';
+  });
+
+  // 三传
+  ctx+='\n--- 三传 ---\n';
+  var cNames={'chuChuan':'初传（事发）','zhongChuan':'中传（事中）','moChuan':'末传（事果）'};
+  Object.keys(cNames).forEach(function(k){
+    var tr=sc[k]||[];
+    ctx+=cNames[k]+'：地支='+tr[0]+' 天将='+(tr[1]||'')+' 六亲='+(tr[2]||'')+' 遁干='+(tr[3]||'')+'\n';
+  });
+
+  // 天地盘
+  ctx+='\n--- 天地盘 ---\n';
+  var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var td=d.tianDiPan||{};
+  DZ.forEach(function(z){
+    ctx+=z+'：天盘='+(td.tianPan?td.tianPan[z]:'')+' 天将='+(td.tianJiang?td.tianJiang[z]:'')+' 遁干='+((d.dunGan||{})[z]||'')+'\n';
+  });
+
+  // 神煞（仅关键位置）
+  if(d.shenSha&&d.shenSha.length){
+    ctx+='\n--- 神煞 ---\n';
+    d.shenSha.forEach(function(ss){
+      ctx+=ss.name+' 落 '+ss.value+'：'+(ss.description||'')+'\n';
+    });
+  }
+
   return ctx;
 }
 
