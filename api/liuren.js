@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
 
     // 拼音→汉字映射（liuren-ts-lib 返回拼音 key）
     var PY2CN={zi:'子',chou:'丑',yin:'寅',mao:'卯',chen:'辰',si:'巳',wu:'午',wei:'未',shen:'申',you:'酉',xu:'戌',hai:'亥'};
-    function cnKeys(obj){if(!obj||typeof obj!=='object')return obj;var r={};Object.keys(obj).forEach(function(k){r[PY2CN[k]||k]=obj[k];});return r;}
+    function cnKeys(obj){if(!obj||typeof obj!=='object')return obj;if(Array.isArray(obj))return obj.map(cnKeys);var r={};Object.keys(obj).forEach(function(k){var nk=PY2CN[k]||k;var v=obj[k];r[nk]=(typeof v==='string')?(PY2CN[v]||v):v;});return r;}
 
     // 提取和格式化数据（key 转为中文）
     var out = {

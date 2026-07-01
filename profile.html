@@ -31,8 +31,10 @@
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 </style>
+.zhishi-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(13,21,37,.9);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);width:100%}.zhishi-nav .nav-brand{font-size:20px;font-weight:900;letter-spacing:6px;color:var(--gold-l);text-decoration:none}.zhishi-nav .nav-links{display:flex;gap:6px;flex-wrap:wrap}.zhishi-nav .nav-links a{font-size:13px;color:var(--tx2);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .25s}.zhishi-nav .nav-links a:hover{color:var(--gold);background:rgba(201,168,76,.06)}.zhishi-nav .nav-cta{color:var(--gold)!important;border:1px solid var(--bd2)}
 </head>
 <body>
+<div id="zhishi-nav" class="zhishi-nav"><a href="/" class="nav-brand">知时</a><div class="nav-links"><a href="/">首页</a><a href="/paipan">排盘</a><a href="/hepan">合盘</a><a href="/fortune">运势</a><a href="/meihua">梅花</a><a href="/liuyao">六爻</a><a href="/ziwei">紫微</a><a href="/liuren">大六壬</a><a href="/pricing" class="nav-cta">积分</a></div></div>
 <div class="profile-page">
   <h1>我的档案</h1>
   <div class="sub">积分 · 记录 · 排盘</div>
