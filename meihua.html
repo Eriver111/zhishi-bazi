@@ -153,7 +153,7 @@ window.unlockReading=function(){
   var qStr=question?'用户问："'+question+'"。':'';
   var prompt='你是"知时先生"，精通易经。'+qStr+'请基于以下经典原文，做一次完整的专业解卦。\n\n上卦'+g.orig.up+'('+g.orig.upElem+')下卦'+g.orig.dn+'('+g.orig.dnElem+')，本卦「'+g.orig.name+'」，第'+g.line+'爻动，变卦「'+g.change.name+'」。\n\n参考原文：'+anchor+'\n\n请按以下结构写300字左右的解读：\n1. 卦象分析：本卦的含义和整体态势\n2. 动爻解读：这一爻动意味着什么关键变化\n3. 变卦启示：变卦给这件事带来什么转机\n4. 综合建议：结合用户问题给出具体建议\n\n语气专业但不玄乎，让人感觉有深度又听得懂。返回JSON：{"analysis":"1.","yao_reading":"2.","change_insight":"3.","advice":"4."}';
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})})
-  .then(function(r){return r.json();}).then(function(d){
+  .then(function(r){return r.json();}).then(function(d){if(d.error){res.innerHTML='<div class="card"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:#e07050">'+d.error+'</div></div>';return;}
     var r=d.reading||'';
     var html='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'');
