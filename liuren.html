@@ -85,27 +85,28 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .zhishi-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(13,21,37,.9);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}.zhishi-nav .nav-brand{font-size:20px;font-weight:900;letter-spacing:6px;color:var(--gold-l);text-decoration:none}.zhishi-nav .nav-links{display:flex;gap:6px;flex-wrap:wrap}.zhishi-nav .nav-links a{font-size:13px;color:var(--tx2);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .25s}.zhishi-nav .nav-links a:hover{color:var(--gold);background:rgba(201,168,76,.06)}.zhishi-nav .nav-cta{color:var(--gold)!important;border:1px solid var(--bd2)}@media(max-width:640px){.zhishi-nav .nav-links a{font-size:11px;padding:4px 6px}}</style></head><body>
 <div id="zhishi-nav" class="zhishi-nav"><a href="/" class="nav-brand">知时</a><div class="nav-links"><a href="/">首页</a><a href="/paipan">排盘</a><a href="/hepan">合盘</a><a href="/fortune">运势</a><a href="/meihua">梅花</a><a href="/liuyao">六爻</a><a href="/ziwei">紫微</a><a href="/liuren">大六壬</a><a href="/pricing" class="nav-cta">积分</a></div></div>
 <div class="app">
-<div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">大 六 壬 · 天 地 盘</div></div>
+<div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">大 六 壬 · 起 课 占 断</div></div>
 
 <div class="card" style="padding:20px 24px">
-  <div class="card-title">出 生 信 息</div>
+  <div class="card-title">占 课 时 间</div>
+  <p style="text-align:center;font-size:11px;color:var(--tx3);margin:-10px 0 14px">大六壬以当下时辰起课占卜，默认当前时间。也可选择特定时刻回溯。</p>
   <div class="row"><div class="field"><label>年份</label><select id="lrY"></select></div><div class="field"><label>月份</label><select id="lrM"></select></div><div class="field"><label>日期</label><select id="lrD"></select></div></div>
-  <div class="row two"><div class="field"><label>时辰</label><select id="lrH"></select></div><div class="field"><label>分钟</label><select id="lrMin"></select></div></div>
-  <div class="row"><div class="field"><label>性别</label><div class="radio-group"><label class="radio"><input type="radio" name="lrGender" value="male" checked><span>男</span></label><label class="radio"><input type="radio" name="lrGender" value="female"><span>女</span></label></div></div></div>
-  <button class="submit" onclick="doLiuRen()" id="lrBtn">开 始 排 盘</button>
+  <div class="row two"><div class="field"><label>时辰（占时）</label><select id="lrH"></select></div><div class="field"><label>分钟</label><select id="lrMin"></select></div></div>
+  <button class="submit" onclick="doLiuRen()" id="lrBtn">起 课 占 断</button>
 </div>
 
-<div class="info" id="lrInfo" style="margin-bottom:12px;text-align:center;font-size:13px;color:var(--tx3)">请填写出生信息后点击排盘</div>
+<div class="info" id="lrInfo" style="margin-bottom:12px;text-align:center;font-size:13px;color:var(--tx3)">默认当前时间起课，可修改后重新占断</div>
 <div id="lrResult"></div>
 </div>
 
 <script>
 (function init(){
-  var bj=new Date(Date.now()+8*60*60*1000);
+  var now=new Date(Date.now()+8*60*60*1000);
+  var cy=now.getUTCFullYear(),cm=now.getUTCMonth()+1,cd=now.getUTCDate(),ch=now.getUTCHours();
   function fill(id,from,to,cur){var s=document.getElementById(id);for(var i=from;i<=to;i++){var o=document.createElement("option");o.value=i;o.textContent=i;if(i===cur)o.selected=true;s.appendChild(o);}}
-  fill("lrY",1960,bj.getUTCFullYear(),2000);fill("lrM",1,12,bj.getUTCMonth()+1);fill("lrD",1,31,bj.getUTCDate());fill("lrMin",0,59,0);
+  fill("lrY",1960,cy+10,cy);fill("lrM",1,12,cm);fill("lrD",1,31,cd);fill("lrMin",0,59,0);
   var DZ=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
-  var hs=document.getElementById("lrH");for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement("option");o.value=i;o.textContent=i+"点 ("+DZ[dzIdx]+"时)";if(i===2)o.selected=true;hs.appendChild(o);}
+  var hs=document.getElementById("lrH");for(var i=0;i<24;i++){var dzIdx=Math.floor(i/2)%12;var o=document.createElement("option");o.value=i;o.textContent=i+"点 ("+DZ[dzIdx]+"时)";if(i===ch)o.selected=true;hs.appendChild(o);}
 })();
 
 var ZHI_ORDER=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
@@ -113,25 +114,23 @@ var ZHI_ORDER=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌"
 async function doLiuRen(){
   var y=parseInt(document.getElementById("lrY").value),m=parseInt(document.getElementById("lrM").value),d=parseInt(document.getElementById("lrD").value);
   var h=parseInt(document.getElementById("lrH").value),min=parseInt(document.getElementById("lrMin").value)||0;
-  var gEls=document.getElementsByName("lrGender"),isMale=true;
-  for(var i=0;i<gEls.length;i++){if(gEls[i].checked)isMale=gEls[i].value==="male";}
-  if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert("请填写完整出生信息");return;}
+  if(isNaN(y)||isNaN(m)||isNaN(d)||isNaN(h)||y<1900||m<1||m>12||d<1||d>31||h<0||h>23){alert("请选择完整的占课时间");return;}
 
   var info=document.getElementById("lrInfo");
-  info.innerHTML='<div style="text-align:center;padding:20px"><div style="display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite"></div><p style="margin-top:8px;color:var(--tx3)">排盘中...</p></div>';
+  info.innerHTML='<div style="text-align:center;padding:20px"><div style="display:inline-block;width:28px;height:28px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite"></div><p style="margin-top:8px;color:var(--tx3)">起课中...</p></div>';
 
   try{
     var resp=await fetch('/api/liuren',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:y,month:m,day:d,hour:h,minute:min})});
-    if(!resp.ok){info.innerHTML='排盘失败：'+resp.status;return;}
+    if(!resp.ok){info.innerHTML='起课失败：'+resp.status;return;}
     var data=await resp.json();
     if(data.error){info.innerHTML=data.error;return;}
-    renderLiuRen(data,y,m,d,h,min,isMale);
+    renderLiuRen(data,y,m,d,h,min);
   }catch(e){info.innerHTML='请求失败：'+e.message;}
 }
 
 function posClass(zhi){return 'pan-'+zhi;}
 
-function renderLiuRen(d,y,m,d2,h,min,isMale){
+function renderLiuRen(d,y,m,d2,h,min){
   document.getElementById("lrInfo").innerHTML='<div class="info-row">'+d.dateInfo.date+' | <b>'+d.dateInfo.bazi+'</b> | 月将：<b>'+d.dateInfo.yuejiang+'</b> | 空亡：<b>'+d.dateInfo.kong.join('、')+'</b> | 驿马：<b>'+d.dateInfo.yima+'</b></div>';
 
   var html='';
