@@ -161,7 +161,7 @@ function renderFull(d,y,m,d2,h,min,question,direction){
 
   // 2. 四课（平铺四列——每课干支内判贼克比生）
   var kk=[d.siKe.ke1||[],d.siKe.ke2||[],d.siKe.ke3||[],d.siKe.ke4||[]];
-  function gzRel(gz){if(!gz||gz.length<2)return'';var w1=ZHI_WX[gz[0]]||'';var w2=ZHI_WX[gz[1]]||{甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[gz[1]]||'';if(!w1||!w2)return'';if(w1===w2)return'<span style="color:#c9a84c">比</span>';if(WX_SK[w1]===w2)return'<span style="color:#FF9800;font-weight:700">贼</span>';if(WX_SK[w2]===w1)return'<span style="color:#F44336;font-weight:700">克</span>';return'<span style="color:#4CAF50">生</span>';}
+  function gzRel(gz){if(!gz||gz.length<2)return'';var w1=ZHI_WX[gz[0]]||'';var w2=ZHI_WX[gz[1]]||{甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[gz[1]]||'';if(!w1||!w2)return'';if(w1===w2)return'<span style="color:#c9a84c">比</span>';if(WX_SK[w1]===w2)return'<span style="color:#F44336;font-weight:700">克</span>';if(WX_SK[w2]===w1)return'<span style="color:#FF9800;font-weight:700">贼</span>';return'<span style="color:#4CAF50">生</span>';}
   hh+='<div class="card"><div class="card-title">四 课 · 矛 盾 爆 发 点</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:12px;letter-spacing:2px">每课干支自带贼克比生关系——九宗门据此取传</div>';
   hh+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">';
   var skN=['一课 · 干阳','二课 · 干阴','三课 · 支阳','四课 · 支阴'];
