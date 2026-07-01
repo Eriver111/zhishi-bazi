@@ -1972,7 +1972,105 @@ function calcDayMasterStrength(bazi) {
     if (!hasWx('火')) score -= 3;       // 金无火炼，顽金不器
   }
 
-  // ---------- ⑥ 分级输出 ----------
+  // ---------- ⑦ 天干合化修正 ----------
+  // 五合：甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火
+  var GAN_HE = {'甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊'};
+  var GAN_HE_RES = {'甲己':'土','乙庚':'金','丙辛':'水','丁壬':'木','戊癸':'火'};
+  var adjPairs = [['year','month'],['month','day'],['day','hour']]; // 相邻柱天干
+  var heCount = 0;
+  adjPairs.forEach(function(pair) {
+    var g1 = bazi[pair[0]].gan, g2 = bazi[pair[1]].gan;
+    if (GAN_HE[g1] === g2) {
+      heCount++;
+      var key = (g1 < g2 ? g1 + g2 : g2 + g1); // 甲己 = 己甲
+      var heWx = GAN_HE_RES[key] || '';
+      if (heWx) {
+        if (heWx === dgWx) score += 4;         // 合化为日主五行 → 加强
+        else if (SHENGWO[dgWx] === heWx) score += 2; // 合化为印星 → 助力
+        else if (KEWO[dgWx] === heWx) score -= 3;    // 合化为官杀 → 压制
+        else if (WOSHENG[dgWx] === heWx) score -= 2; // 合化为食伤 → 泄气
+        else if (WOKE[dgWx] === heWx) score -= 2;    // 合化为财星 → 耗力
+      }
+    }
+  });
+
+  // ---------- ⑧ 地支合冲刑害修正 ----------
+  var adjZhi = [['year','month'],['month','day'],['day','hour']]; // 相邻柱地支
+  // 六冲：强烈的对抗关系，削弱双方
+  var CHONG = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
+  var chongMap = {}; CHONG.forEach(function(p){chongMap[p[0]]=p[1];chongMap[p[1]]=p[0];});
+  // 六害：暗中不利，减成
+  var HAI = [['子','未'],['丑','午'],['寅','巳'],['卯','辰'],['申','亥'],['酉','戌']];
+  var haiMap = {}; HAI.forEach(function(p){haiMap[p[0]]=p[1];haiMap[p[1]]=p[0];});
+  // 三刑：动荡不和
+  var XING = [['子','卯'],['寅','巳'],['巳','申'],['申','寅'],['丑','戌'],['戌','未'],['未','丑']];
+  var xingMap = {}; XING.forEach(function(p){xingMap[p[0]]=p[1];xingMap[p[1]]=p[0];});
+
+  // 地支六合：合化出新五行
+  var ZHI_HE = [['子','丑','土'],['寅','亥','木'],['卯','戌','火'],['辰','酉','金'],['巳','申','水'],['午','未','火']];
+  var zhiHeScore = {};
+  ZHI_HE.forEach(function(t){zhiHeScore[t[0]+t[1]]=t[2];zhiHeScore[t[1]+t[0]]=t[2];});
+
+  // 三合局
+  var SAN_HE = [['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
+  var allZhiArr = [bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi];
+
+  adjZhi.forEach(function(pair) {
+    var z1 = bazi[pair[0]].zhi, z2 = bazi[pair[1]].zhi;
+    var w1 = DI_ZHI_WU_XING[z1], w2 = DI_ZHI_WU_XING[z2];
+
+    // 六冲：相邻地支冲 → 根气动摇，减分
+    if (chongMap[z1] === z2) {
+      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 6;  // 日支被冲，根气受损
+      else score -= 3;  // 其他柱冲，动荡
+    }
+
+    // 六害：暗中不利
+    if (haiMap[z1] === z2) {
+      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 4;  // 日支被害
+      else score -= 2;
+    }
+
+    // 刑：不和
+    if (xingMap[z1] === z2) {
+      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 4;
+      else score -= 2;
+    }
+
+    // 地支合化：相邻地支合化出新五行
+    var heKey = z1 + z2;
+    if (zhiHeScore[heKey]) {
+      var heWx = zhiHeScore[heKey];
+      if (heWx === dgWx) score += 5;           // 合化为日主 → 强根
+      else if (SHENGWO[dgWx] === heWx) score += 3; // 合化为印 → 助力
+      else if (KEWO[dgWx] === heWx) score -= 4;    // 合化为官杀 → 压力
+      else if (WOSHENG[dgWx] === heWx) score -= 3; // 合化为食伤 → 泄气
+      else if (WOKE[dgWx] === heWx) score -= 3;    // 合化为财 → 耗力
+    }
+  });
+
+  // 三合局检测（需三字俱全）
+  SAN_HE.forEach(function(tri) {
+    var wx = tri[3];
+    var hasA = allZhiArr.indexOf(tri[0])>=0, hasB = allZhiArr.indexOf(tri[1])>=0, hasC = allZhiArr.indexOf(tri[2])>=0;
+    if (hasA && hasB && hasC) {
+      // 三合成局，力量极强
+      if (wx === dgWx) score += 8;           // 三合日主 → 极强根气
+      else if (SHENGWO[dgWx] === wx) score += 5; // 三合印局
+      else if (KEWO[dgWx] === wx) score -= 6;    // 三合官杀局
+      else if (WOSHENG[dgWx] === wx) score -= 5; // 三合食伤局
+      else if (WOKE[dgWx] === wx) score -= 5;    // 三合财局
+    }
+    // 半合（只含两支）→ 力量弱一些
+    var count = (hasA?1:0)+(hasB?1:0)+(hasC?1:0);
+    if (count === 2 && !(hasA&&hasB&&hasC)) {
+      if (wx === dgWx) score += 3;
+      else if (SHENGWO[dgWx] === wx) score += 2;
+      else if (KEWO[dgWx] === wx) score -= 2;
+    }
+  });
+
+  // ---------- ⑨ 分级输出 ----------
   var level, label;
   if (score >= 80)      { level = '极强'; label = '元气充沛'; }
   else if (score >= 60) { level = '偏强'; label = '元气较足'; }
