@@ -5,7 +5,7 @@
  */
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
+const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat';
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, isMonthlyActive, isMonthlyActiveByUserId, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');

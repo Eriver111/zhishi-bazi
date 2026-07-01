@@ -6,9 +6,9 @@
 const crypto = require('crypto');
 
 const PAY_URL = (process.env.PAY_API_URL || 'https://zpayz.cn/mapi.php').trim();
-const PAY_PID = (process.env.PAY_PID || '2026060400293274').trim();
-const PAY_KEY = (process.env.PAY_KEY || 'T9gQxrB1oCk0dcEBF0aKXVBGHDRWKzHO').trim();
-const TOKEN_SECRET = process.env.TOKEN_SECRET || 'knowbazi';
+const PAY_PID = process.env.PAY_PID; if(!PAY_PID) throw new Error('PAY_PID env required');
+const PAY_KEY = process.env.PAY_KEY; if(!PAY_KEY) throw new Error('PAY_KEY env required');
+const TOKEN_SECRET = process.env.TOKEN_SECRET || 'knowbazi-change-me';
 const SITE = (process.env.SITE_URL || 'https://zhishi.online').trim();
 
 // v3.0 定价

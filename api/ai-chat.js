@@ -833,7 +833,7 @@ function generateMockReply(question, chartData, bazi) {
     dayWX = chartData.fourPillars.day?.ganWX || '';
   }
   if (chartData && chartData.dayMasterStrength) {
-    dmStrength = chartData.dayMasterStrength;
+    dmStrength = (chartData.dayMasterStrength && chartData.dayMasterStrength.level) || '';
   }
 
   if (q.includes('喜用') || q.includes('用神') || q.includes('喜忌')) {

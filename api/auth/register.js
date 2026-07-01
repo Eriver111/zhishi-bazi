@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: '邮箱格式不正确' });
 
     // 开发模式：跳过验证码校验（用 dev_code）
-    var isDev = process.env.NODE_ENV === 'development' || !process.env.ALI_AK_ID;
+    var isDev = process.env.NODE_ENV === 'development';
     if (!isDev || code !== '888888') {
       if (!verifyCode(email, code)) {
         return res.status(400).json({ error: '验证码错误或已过期，请重新获取' });
