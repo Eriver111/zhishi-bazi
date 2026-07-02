@@ -103,9 +103,9 @@ function render(data) {
     renderSolarTime(_params.year, _params.month, _params.day, _params.hour);
 
     // 日主性格（大白话）
-    renderPillarAnalysis(bazi);
-    renderDayMasterPower(bazi);
-    renderPattern(bazi);
+    try{renderPillarAnalysis(bazi)}catch(e){console.log("pillarAnalysis error:",e)}
+    try{renderDayMasterPower(bazi)}catch(e){console.log("dayMasterPower error:",e)}
+    try{renderPattern(bazi)}catch(e){console.log("pattern error:",e)}
     try{renderYongJi(bazi)}catch(e){console.log("yongJi error:",e)}
     try{renderCharacter(bazi)}catch(e){console.log("character error:",e);document.getElementById("characterSection").innerHTML="<div class=drawer-body><p>性格数据加载中...</p></div>"}
     document.getElementById('characterSection').classList.add('drawer-open');
