@@ -188,6 +188,7 @@ function buyCredits(mode, amount, name) {
     }
     _currentOrderId = d.out_trade_no;
     localStorage.setItem('credit_ord', d.out_trade_no);
+    localStorage.setItem('credit_ord_ts', Date.now());
 
     if (isMobile() && d.pay_url) {
       if (status) status.textContent = '正在跳转支付...';
@@ -298,15 +299,22 @@ function checkManualPayment() {
     });
 }
 
-// 页面恢复：如果之前有未完成的订单，继续轮询
+// 页面恢复：只有 15 分钟内的未完成订单才恢复
 (function() {
   var oid = localStorage.getItem('credit_ord');
-  if (oid) {
-    _currentOrderId = oid;
-    injectQrModal();
-    var modal = document.getElementById('creditQrModal');
-    if (modal) modal.style.display = 'flex';
-    startPolling(oid);
+  var ts = localStorage.getItem('credit_ord_ts');
+  if (oid && ts) {
+    var elapsed = Date.now() - parseInt(ts);
+    if (elapsed < 15 * 60 * 1000) {
+      _currentOrderId = oid;
+      injectQrModal();
+      var modal = document.getElementById('creditQrModal');
+      if (modal) modal.style.display = 'flex';
+      startPolling(oid);
+    } else {
+      localStorage.removeItem('credit_ord');localStorage.removeItem('credit_ord_ts');
+      localStorage.removeItem('credit_ord_ts');
+    }
   }
 })();
 </script>
