@@ -84,7 +84,7 @@ module.exports = async function handler(req, res) {
     // 积分检查：月度会员 → 免费次数（3次）→ 付费积分
     var monthlyActive = await isMonthlyActiveByUserId(userId);
     var freeInfo = await trackFreeUsageByUser(userId);
-    var maxFree = 3;
+    var maxFree = (parseInt(process.env.FREE_CREDITS_PER_DEVICE) || 2) + 3; // 与 ai-chat 统一：基础2+注册奖励3=5
     var freeUsed = false;
     var creditOk = !!monthlyActive || freeInfo.used < maxFree;
 
