@@ -455,12 +455,17 @@ async function callAI(question, chartData, bazi, history, mode) {
     return generateMockReply(question, chartData, bazi) + '\n\n---\n※ ⚠ 当前为模拟模式，请配置 AI_API_KEY 环境变量以启用真实 AI 分析';
   }
 
-  // AI 调用（非流式，更稳定）
-  const aiResp = await fetch(AI_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
-    body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 2000, stream: false })
-  });
+  // AI 调用（非流式，25 秒超时——超时或空返回不扣次数）
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
+    var aiResp = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
+      body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 2000, stream: false }),
+      signal: controller.signal
+    });
+  } finally { clearTimeout(timeout); }
 
   if (!aiResp.ok) {
     const errText = await aiResp.text();
@@ -469,7 +474,8 @@ async function callAI(question, chartData, bazi, history, mode) {
 
   const aiData = await aiResp.json();
   const reply = aiData.choices?.[0]?.message?.content || '';
-  return reply || '抱歉，未能获取回答';
+  if (!reply || reply.length < 20) throw new Error('AI 返回内容为空或过短（未扣次数）');
+  return reply;
 }
 
 /**
