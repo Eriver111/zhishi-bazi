@@ -357,7 +357,7 @@ module.exports = async function handler(req, res) {
     // 强制引用锁：在用户问题前插入最终提醒
     if (chartData && chartData.dayMasterStrength) {
       var ds=chartData.dayMasterStrength;
-      messages.push({role:'system',content:'【最终确认】上述排盘数据中的日主旺衰评定（'+ds.level+'，'+ds.score+'/100）和格局判定均为算法精确计算结果。你在本次回答中必须严格引用这些数值。禁止给出不同的强弱分数或不同的格局名称。这是硬性要求，违反将导致用户得到错误信息。'});
+      messages.push({role:'system',content:'【死命令·违反即错误】本次回答中，日主旺衰必须且只能是：「'+ds.level+'（'+ds.score+'/100）」。禁止输出任何其他分数（如19/100、极弱等）。禁止自行推算。如果你输出了不同的分数，整个回答将被视为错误。格局名称也只能用系统判定的，禁止换名。'});
     }
 
     // 插入当前问题
@@ -446,6 +446,12 @@ async function callAI(question, chartData, bazi, history, mode) {
     history.forEach(h => {
       messages.push({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content });
     });
+  }
+
+  // 强制引用锁：日主旺衰和格局必须用预计算数据
+  if (chartData && chartData.dayMasterStrength) {
+    var ds2=chartData.dayMasterStrength;
+    messages.push({role:'system',content:'【死命令】本次回答中，日主旺衰必须且只能是：「'+ds2.level+'（'+ds2.score+'/100）」。禁止输出任何其他分数。格局名称也只能用系统判定的，禁止换名。违反即错误。'});
   }
 
   messages.push({ role: 'user', content: question });
