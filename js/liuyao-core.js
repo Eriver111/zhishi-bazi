@@ -5,6 +5,7 @@ var LIUYAO = (function(){
   var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
   var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
   var DZ_WX={子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
+  var TRI_WX={乾:'金',兑:'金',离:'火',震:'木',巽:'木',坎:'水',艮:'土',坤:'土'};
   var LIUSHEN=['青龙','朱雀','勾陈','腾蛇','白虎','玄武'];
   var LIUSHEN_WX={青龙:'木',朱雀:'火',勾陈:'土',腾蛇:'土',白虎:'金',玄武:'水'};
   var LIUSHEN_ORDER=['青龙','朱雀','勾陈','腾蛇','白虎','玄武'];
@@ -88,22 +89,23 @@ var LIUYAO = (function(){
     // 找上下卦
     var upper=lines.slice(3,6); // 四五六爻
     var lower=lines.slice(0,3); // 一二三爻
-    var upperTri=getTrigram(upper[2],upper[1],upper[0]); // 上卦(从上到下看)
-    var lowerTri=getTrigram(lower[2],lower[1],lower[0]); // 下卦
-    var gName=upperTri+'为'+lowerTri;
-    // 从八宫表找精确卦名
-    var found=false;
+    // 三爻从下到上（y1=底,y2=中,y3=顶）
+    var upperTri=getTrigram(upper[0],upper[1],upper[2]); // 四爻(底),五爻(中),上爻(顶)
+    var lowerTri=getTrigram(lower[0],lower[1],lower[2]); // 初爻(底),二爻(中),三爻(顶)
+    // 八卦→自然元素映射（GONG_GUA 键名用元素而非卦名）
+    var TRI_ELE={乾:'天',兑:'泽',离:'火',震:'雷',巽:'风',坎:'水',艮:'山',坤:'地'};
+    var uEle=TRI_ELE[upperTri]||upperTri,lEle=TRI_ELE[lowerTri]||lowerTri;
+    // 在八宫表中匹配（卦名首字=上卦元素，末字=下卦元素）
+    var gName=upperTri+'为'+lowerTri,found=false,guaInfo=null;
     for(var k in GONG_GUA){
-      // 简单匹配：首字相同
-      if(k.indexOf(upperTri)>=0 && k.indexOf(lowerTri)>=0){ gName=k; found=true; break; }
+      if(k.charAt(0)===uEle&&k.charAt(k.length-1)===lEle){gName=k;guaInfo=GONG_GUA[k];found=true;break;}
     }
-    if(!found){
-      for(var k in GONG_GUA){ if(k.split('为')[0]===upperTri&&k.split('为')[1]===lowerTri){ gName=k; break; } }
-    }
-    var guaInfo=GONG_GUA[gName] || {gong:upperTri,wx:'土',shi:3,type:'三世'};
+    if(!found){for(var k in GONG_GUA){// 八纯卦：键名如'乾为天'
+      if(k.indexOf(upperTri)>=0&&k.indexOf(lowerTri)>=0){gName=k;guaInfo=GONG_GUA[k];found=true;break;}}}
+    if(!found){guaInfo={gong:upperTri,wx:TRI_WX[upperTri]||'金',shi:3,type:'三世'};}
     var gongWX=guaInfo.wx;
     var shiYao=guaInfo.shi;
-    var yingYao=(shiYao+2)%6; if(yingYao===0) yingYao=6;
+    var yingYao=shiYao+3;if(yingYao>6)yingYao-=6;
 
     // 纳支
     var innerDZ=NAZHI[lowerTri]?NAZHI[lowerTri].inner:['子','寅','辰'];
@@ -198,8 +200,8 @@ var LIUYAO = (function(){
         if(pure.qin[i]===qIdx){
           var feiQin=liuqin[i]||'?';
           var wx=DZ_WX[pure.dz[i]]||'?';
-          // 飞伏关系
-          var feiWX=DZ_WX[(liuqin[i]+'$').split('')[0]]||'土';
+          // 飞伏关系：飞神五行从地支取
+          var feiWX=wx;
           var sheng={'木':'火','火':'土','土':'金','金':'水','水':'木'};
           var rel='';
           if(sheng[wx]===feiWX||sheng[feiWX]===wx) rel='相生';
