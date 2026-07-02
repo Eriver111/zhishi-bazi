@@ -1191,6 +1191,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- 真太阳时纠正（默认开启，solar=0 时跳过）---
     var originalHour = _params.hour;
+    // 确保 _params.hour 始终是时辰索引（0-11），不是钟点（0-23）
+    if (_params.hour >= 12) _params.hour = Math.floor(_params.hour / 2) % 12;
+
     var solarInfo = null;
     if (_params.prov && _params.solar !== '0') {
         solarInfo = window.BaZiCalculator.getTrueSolarHour(
