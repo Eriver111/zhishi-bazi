@@ -502,6 +502,7 @@ function renderShenSha() {
 // 合并所有神煞（四柱+大运+流年）并更新accordion
 function refreshShenShaDetail() {
     const accordion = document.getElementById('shenshaAccordion');
+    if (!accordion) return;
 
     // 合并所有神煞：四柱 + 大运 + 流年
     const allList = [..._nativeShenSha, ..._dayunShenSha, ..._liunianShenSha];
