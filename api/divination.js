@@ -96,8 +96,10 @@ module.exports = async function handler(req, res) {
 
     if (!creditOk) {
       return res.status(403).json({
-        error: '免费次数已用完，请购买次数包继续使用',
-        creditExhausted: true
+        error: '免费次数已用完（已用'+freeInfo.used+'/'+maxFree+'次），请购买次数包继续使用',
+        creditExhausted: true,
+        free_used: freeInfo.used,
+        free_max: maxFree
       });
     }
 
