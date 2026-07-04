@@ -175,13 +175,13 @@
     var fab = document.getElementById('aiFab');
     if (fab) {
       fab.addEventListener('click', function(e) {
-        // 保存排盘数据供AI页使用
-        var cd = buildChartData();
-        if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
-        var pt=detectPageType();var mode='';if(pt==='ziwei')mode='?t=zw';else if(pt==='liuren')mode='?t=lr';
-        window.location.href = 'ai-chat.html'+mode;
+        try{
+          var cd = buildChartData();
+          if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
+          var pt=detectPageType();var mode='';if(pt==='ziwei')mode='?t=zw';else if(pt==='liuren')mode='?t=lr';
+          window.location.href = 'ai-chat.html'+mode;
+        }catch(ex){window.location.href = 'ai-chat.html'}
       });
-    } else {/* console.() */;
     }
   }
 
