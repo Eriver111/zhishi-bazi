@@ -32,8 +32,8 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   var key = (req.query && req.query.key) || '';
-  var adminKey = process.env.ADMIN_KEY || 'zhishi-admin-2026';
-  if (key !== adminKey) return res.status(401).json({ error: 'key required' });
+  var channelKey = process.env.CHANNEL_ADMIN_KEY || process.env.ADMIN_KEY || 'knowbazi2026';
+  if (key !== channelKey) return res.status(401).json({ error: '密码错误' });
 
   var channel = (req.query && req.query.ch) || 'knowbazi';
 
