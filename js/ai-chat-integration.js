@@ -257,14 +257,17 @@
       body.code = AI.code;
     }
 
+    var ctrl=new AbortController();
+    var timer=setTimeout(function(){ctrl.abort();hideTyping();addMessage('ai','AI 响应超时，请稍后重试。若持续超时，可能是 API 额度不足。');AI.isWaiting=false;updateSendBtn()},30000);
     fetch('/api/ai-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: ctrl.signal
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      hideTyping();
+      clearTimeout(timer);hideTyping();
       if (data.error) {
         if (data.free_exhausted) {
           useFreeCredit(); // 确保本地也归零
@@ -291,10 +294,9 @@
       updateSendBtn();
     })
     .catch(function(e) {
-      hideTyping();
-      addMessage('ai', '抱歉，网络出现异常，请稍后重试。');
-      AI.isWaiting = false;
-      updateSendBtn();
+      clearTimeout(timer);hideTyping();
+      addMessage('ai', e.name==='AbortError'?'AI 响应超时（>30秒），请稍后重试或检查 DeepSeek 账户余额。':'网络异常，请稍后重试。');
+      AI.isWaiting = false;updateSendBtn();
     });
   }
 
