@@ -84,6 +84,10 @@ CREATE INDEX IF NOT EXISTS idx_credits_user ON user_credits(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON user_subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_history(user_id);
 
+-- v4.1 分销渠道字段
+ALTER TABLE user_credits ADD COLUMN IF NOT EXISTS channel VARCHAR(32);
+ALTER TABLE user_subscriptions ADD COLUMN IF NOT EXISTS channel VARCHAR(32);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_credits_code ON user_credits(code);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_code ON user_subscriptions(code);

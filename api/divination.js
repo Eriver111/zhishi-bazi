@@ -83,8 +83,13 @@ module.exports = async function handler(req, res) {
 
     // 积分检查：月度会员 → 免费次数（3次）→ 付费积分
     var monthlyActive = await isMonthlyActiveByUserId(userId);
+    // 回退：如果 userId 查不到，尝试用兑换码查询（兼容旧版订阅数据）
+    if (!monthlyActive) {
+      var code = (req.body && req.body.code) || '';
+      if (code) monthlyActive = await isMonthlyActive(code);
+    }
     var freeInfo = await trackFreeUsageByUser(userId);
-    var maxFree = (parseInt(process.env.FREE_CREDITS_PER_DEVICE) || 2) + 3; // 与 ai-chat 统一：基础2+注册奖励3=5
+    var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 3; // 与 ai-chat 统一：基础+注册奖励3，显式处理0值
     var freeUsed = false;
     var creditOk = !!monthlyActive || freeInfo.used < maxFree;
 

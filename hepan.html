@@ -13,24 +13,24 @@
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --ink:#080c14;
-  --paper:#0d1525;
-  --card:rgba(13,21,37,.82);
+  --ink:#0e0c0a;
+  --paper:#181612;
+  --card:rgba(28,26,22,.82);
   --gold:#c9a84c;
   --gold-l:#e8cf70;
   --gold-d:#8a6d28;
   --gold-glow:rgba(201,168,76,.14);
   --star:#5b7fa5;
   --star-dim:#3a5068;
-  --star-glow:rgba(91,127,165,.1);
+  --star-glow:rgba(180,160,140,.1);
   --mist:rgba(160,170,185,.38);
   --mist-dim:rgba(160,170,185,.18);
-  --tx:#e2dcc8;
+  --tx:#d8d0c0;
   --tx2:#a09888;
   --tx3:#8a8580;
   --bd:rgba(201,168,76,.1);
   --bd2:rgba(201,168,76,.25);
-  --bd-star:rgba(91,127,165,.08);
+  --bd-star:rgba(180,160,140,.08);
   --radius:12px;
   --red:#c41e3a;
 }
@@ -44,7 +44,7 @@ body{
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(91,127,165,.03) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(180,160,140,.03) 0%, transparent 60%),
     radial-gradient(ellipse 50% 40% at 70% 70%, rgba(201,168,76,.02) 0%, transparent 50%);
   opacity:.7;
 }
@@ -185,8 +185,8 @@ body::before{
 .field select{
   width:100%;padding:12px 34px 12px 12px;
   font-size:14px;font-family:inherit;font-weight:500;
-  color:var(--tx);background:rgba(20,20,36,.6);
-  border:1px solid rgba(255,255,255,.06);border-radius:8px;
+  color:var(--tx);background:rgba(30,28,24,.6);
+  border:1px solid rgba(200,190,170,.06);border-radius:8px;
   cursor:pointer;
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E");
@@ -201,8 +201,8 @@ body::before{
 .minute-inp{
   width:100%;padding:12px 14px;
   font-size:14px;font-family:inherit;font-weight:500;
-  color:var(--tx);background:rgba(20,20,36,.6);
-  border:1px solid rgba(255,255,255,.06);border-radius:8px;
+  color:var(--tx);background:rgba(30,28,24,.6);
+  border:1px solid rgba(200,190,170,.06);border-radius:8px;
   text-align:center;letter-spacing:2px;
   transition:all .3s;
   -moz-appearance:textfield;
@@ -217,7 +217,7 @@ body::before{
 .radio{
   flex:1;display:flex;align-items:center;justify-content:center;
   padding:11px 6px;
-  background:rgba(20,20,36,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;
+  background:rgba(30,28,24,.5);border:1px solid rgba(200,190,170,.05);border-radius:8px;
   cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist);
 }
 .radio:hover{border-color:rgba(255,255,255,.1)}
@@ -318,7 +318,7 @@ body::before{
   border-bottom-right-radius:4px;
 }
 .message.ai .msg-bubble{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.04);border:1px solid rgba(200,190,170,.06);
   border-bottom-left-radius:4px;
 }
 .msg-bubble p{margin-bottom:6px}
@@ -340,7 +340,7 @@ body::before{
 .chat-input-area{padding:14px 18px;border-top:1px solid var(--bd);display:flex;gap:10px;align-items:flex-end}
 .chat-input{
   flex:1;padding:12px 16px;
-  background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:20px;
+  background:rgba(30,28,24,.6);border:1px solid rgba(200,190,170,.06);border-radius:20px;
   color:var(--tx);font-size:14px;font-family:inherit;outline:none;
   resize:none;min-height:42px;max-height:100px;line-height:1.5;
   transition:border-color .3s;
@@ -386,7 +386,7 @@ body::before{
 .modal h3{color:var(--gold-l);font-size:1.2rem;margin-bottom:10px;letter-spacing:3px}
 .modal p{color:var(--tx2);margin-bottom:18px;font-size:13px;line-height:1.6}
 .modal .code-display{
-  background:rgba(20,20,36,.6);border:2px dashed var(--bd2);border-radius:8px;
+  background:rgba(30,28,24,.6);border:2px dashed var(--bd2);border-radius:8px;
   padding:14px;font-size:1.4rem;font-weight:700;color:var(--gold-l);
   letter-spacing:6px;margin-bottom:14px;user-select:all;
   font-family:monospace;
@@ -527,8 +527,8 @@ body::before{
 .swap-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 10px 28px;
-  background: rgba(20,20,36,.5);
-  border: 1px solid rgba(255,255,255,.06); border-radius: 8px;
+  background: rgba(30,28,24,.5);
+  border: 1px solid rgba(200,190,170,.06); border-radius: 8px;
   color: var(--tx3); font-size: 13px; font-weight: 600;
   letter-spacing: 4px; cursor: pointer; font-family: inherit;
   transition: all .3s;
@@ -777,9 +777,9 @@ body.has-mobile-nav{padding-bottom:60px}
   body.has-mobile-nav{padding-bottom:60px}
   
 }
-</style><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/landing.css"><link rel="stylesheet" href="css/auth.css"></head>
+</style><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/landing.css"><link rel="stylesheet" href="css/auth.css"><link rel="stylesheet" href="css/interactions.css"><link rel="stylesheet" href="css/ink-wash.css"></head>
 <body>
-<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(13,21,37,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
+<div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 
 <div class="hepan-wrap">
   <!-- ====== Header ====== -->

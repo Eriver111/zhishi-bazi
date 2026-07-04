@@ -1,0 +1,151 @@
+/* ============================================
+   知时 — 墨色山水 v3 · 古画真迹背景
+   北宋·郭熙 1080 / 室町·山水屏风 1500s
+   来源：The Met & Cleveland Museum Open Access (CC0)
+   ============================================ */
+
+/* === 场景容器 === */
+.ink-wash-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* === 古画图片 — 原生 <img> 渲染，不缩不压 === */
+.ink-wash-scene img {
+  position: absolute;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  /* 居中偏上，聚焦山腰 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  /* 极缓慢平移 */
+  animation: paintingPan 150s ease-in-out infinite;
+  /* 和背景融合 */
+  opacity: 0.85;
+  filter: contrast(1.05) brightness(0.9);
+}
+
+@keyframes paintingPan {
+  0%, 100% { transform: translate(-50%, -55%); }
+  30% { transform: translate(-48%, -54%); }
+  60% { transform: translate(-52%, -56%); }
+}
+
+/* === 单层暗色渐变叠加 — 让画融入网站暗色底色 === */
+.ink-wash-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(8,10,14,0.7) 0%,
+    rgba(10,12,16,0.5) 18%,
+    rgba(14,12,10,0.2) 40%,
+    rgba(12,10,8,0.3) 65%,
+    rgba(6,5,4,0.65) 90%,
+    rgba(4,3,2,0.85) 100%
+  );
+  mix-blend-mode: multiply;
+}
+
+/* === 宣纸纹理 === */
+.ink-wash-texture {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7 0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* === 底部渐暗水面 === */
+.ink-wash-water {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 14%;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(6,5,4,0.6) 50%,
+    rgba(4,3,2,0.92) 100%
+  );
+}
+
+/* === 与现有星点协调 === */
+.ink-wash-scene ~ #bgCanvas { opacity: 0.25 !important; }
+
+/* ============================================
+   暖墨色卡片 — 适配山水背景
+   ============================================ */
+
+/* 功能卡：暖墨底色替代蓝黑毛玻璃 */
+.feat-card {
+  background: rgba(24,22,18,.78) !important;
+  border: 1px solid rgba(180,160,140,.08) !important;
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  box-shadow: 0 4px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(200,180,150,.03) !important;
+}
+.feat-card::before {
+  background: linear-gradient(90deg,transparent,rgba(180,150,120,.12),transparent) !important;
+}
+.feat-card:hover {
+  border-color: rgba(200,180,150,.2) !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(200,180,150,.06) inset !important;
+}
+
+/* 卡片标题色温 */
+.feat-card h3 {
+  color: #d4c8b0 !important;
+  letter-spacing: 5px;
+}
+.feat-card:nth-child(2) h3 { color: #c8d8e0 !important; }
+
+/* 描述文字 */
+.feat-card p {
+  color: rgba(180,170,150,.65) !important;
+}
+
+/* Trust 区域：暖色背景 */
+.trust-item {
+  background: rgba(24,22,18,.7) !important;
+  border-color: rgba(180,160,140,.06) !important;
+}
+.trust-item:hover {
+  border-color: rgba(200,180,150,.15) !important;
+  box-shadow: 0 0 24px rgba(200,170,140,.04) !important;
+}
+.trust-num { color: rgba(210,195,160,.18) !important; }
+.trust-body h4 { color: #d4c8b0 !important; }
+.trust-body p { color: rgba(170,160,140,.6) !important; }
+
+/* CTA 按钮：暖金调 */
+.cta-btn {
+  background: linear-gradient(135deg,rgba(180,150,120,.15),rgba(160,130,100,.03)) !important;
+  color: #d4c8b0 !important;
+  border-color: rgba(200,170,140,.2) !important;
+}
+.cta-btn:hover {
+  box-shadow: 0 0 24px rgba(200,170,140,.1) !important;
+}
+
+/* Trust 标题 */
+.trust-section h2 { color: #d4c8b0 !important; }
+
+/* CTA bottom 标题 */
+.cta-bottom h2 { color: #d4c8b0 !important; }
+.cta-bottom p { color: rgba(180,170,150,.55) !important; }
+
+/* Hero 描述文字 */
+.hero-desc { color: rgba(180,170,150,.55) !important; }
+
+/* === 响应式 === */
+@media (max-width: 768px) {
+  .ink-wash-scene img {
+    min-width: 120%;
+    min-height: 100%;
+  }
+  .ink-wash-water { height: 10%; }
+}

@@ -1,0 +1,99 @@
+/* ============================================
+   知时 — 交互增强
+   卡片流光 · 边框辉光 · 3D 浮动 · 视差
+   ============================================ */
+
+/* ============================================
+   1. 卡片 hover — 流光扫过 + 辉光 + 微浮动
+   ============================================ */
+
+/* 功能卡 + 积分卡 + trust 卡 通用增强 */
+.feat-card, .pricing-card, .trust-item, .card {
+  transition: transform .5s cubic-bezier(.25,.46,.45,.94),
+              box-shadow .5s ease,
+              border-color .5s ease;
+}
+
+/* 流光扫过 — 功能卡和积分卡 */
+.feat-card, .pricing-card {
+  position: relative;
+  overflow: hidden;
+}
+.feat-card::after, .pricing-card::after {
+  content: '';
+  position: absolute; top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at center,
+    rgba(255,255,255,.06) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.feat-card:hover::after, .pricing-card:hover::after {
+  opacity: 1;
+  animation: lightSweep 1.5s ease-in-out;
+}
+@keyframes lightSweep {
+  0%   { transform: translate(-20%, -20%) rotate(-30deg); }
+  100% { transform: translate(20%, 20%) rotate(-30deg); }
+}
+
+/* 辉光增强 — 所有卡片 */
+.feat-card:hover, .pricing-card:hover {
+  box-shadow:
+    0 0 40px rgba(200,170,140,.1),
+    0 0 80px rgba(200,170,140,.05),
+    0 8px 32px rgba(0,0,0,.4) !important;
+  border-color: rgba(200,170,140,.25) !important;
+}
+.trust-item:hover {
+  box-shadow:
+    0 0 24px rgba(200,170,140,.08),
+    0 0 48px rgba(200,170,140,.04),
+    0 4px 20px rgba(0,0,0,.3) !important;
+  border-color: rgba(200,170,140,.18) !important;
+}
+.card:hover {
+  box-shadow:
+    0 0 40px rgba(200,170,140,.06),
+    0 12px 48px rgba(0,0,0,.5) !important;
+}
+
+/* 微浮动 — 所有卡片 hover 上浮 */
+.feat-card:hover, .pricing-card:hover {
+  transform: translateY(-6px);
+}
+.trust-item:hover {
+  transform: translateY(-4px);
+}
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* 按钮 hover 辉光 */
+.btn-gold:hover, .submit:hover, .submit-btn:hover, .hero-cta:hover {
+  box-shadow:
+    0 8px 32px rgba(201,168,76,.35),
+    0 0 60px rgba(201,168,76,.12) !important;
+}
+
+/* ============================================
+   2. 页面切换 — 原生跳转，不拖慢导航
+   需要 <meta name="view-transition"> 标签
+   暂时禁用 transition 保持页面秒切
+   ============================================ */
+/* @view-transition { navigation: auto; } */
+
+/* ============================================
+   3. 视差滚动
+   ============================================ */
+/* 山水背景层 — 比内容滚动慢 */
+.parallax-bg {
+  will-change: transform;
+}
+/* 内容层 — 正常速度 */
+.parallax-content {
+  position: relative;
+  z-index: 1;
+}

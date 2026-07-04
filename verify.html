@@ -2,13 +2,15 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="view-transition" content="same-origin">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>知时 · 验证邮箱</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --ink:#080c14;--paper:#0d1525;--gold:#c9a84c;--gold-l:#e8cf70;--gold-d:#8a6d28;
-  --tx:#e2dcc8;--tx2:#a09888;--tx3:#8a8580;--bd:rgba(201,168,76,.1);
+  --ink:#0e0c0a;--paper:#181612;--gold:#c9a84c;--gold-l:#e8cf70;--gold-d:#8a6d28;
+  --tx:#d8d0c0;--tx2:#a89880;--tx3:#8a8078;--bd:rgba(180,160,140,.08);
 }
 html{font-size:16px;-webkit-font-smoothing:antialiased}
 body{
@@ -43,7 +45,7 @@ body::before{
 
 /* 验证码区 */
 .code-box{
-  background:rgba(13,21,37,.6);border:2px solid rgba(201,168,76,.15);
+  background:rgba(13,21,37,.6);border:2px solid rgba(180,160,140,.15);
   border-radius:16px;padding:32px 20px;margin-bottom:24px;
   backdrop-filter:blur(16px);position:relative;overflow:hidden;
 }
@@ -76,7 +78,7 @@ body::before{
   color:var(--ink);border:none;border-radius:25px;
   font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;
   text-decoration:none;font-family:inherit;
-  box-shadow:0 4px 24px rgba(201,168,76,.15);transition:all .3s;
+  box-shadow:0 4px 24px rgba(180,160,140,.15);transition:all .3s;
 }
 .btn:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.25)}
 .btn.dim{opacity:.4;pointer-events:none}
@@ -88,7 +90,14 @@ body::before{
 }
 </style>
 </head>
-<body>
+<body class="loading">
+<div class="page-loader" id="pageLoader">
+  <div class="hexa-reveal" id="hexaReveal"></div>
+  <div class="hexa-name" id="hexaName"></div>
+  <div class="hexa-sub" id="hexaSub"></div>
+</div>
+</div>
+
 <div class="container">
   <div class="brand">知 时</div>
   <div class="tagline">知 天 时 · 见 自 己</div>
@@ -110,57 +119,38 @@ body::before{
   </div>
 </div>
 
+
+
+
 <script>
 (function(){
-  var p = new URLSearchParams(window.location.search);
-  var code = p.get('code') || '';
-  var email = p.get('email') || '';
-
-  var codeEl = document.getElementById('codeDisplay');
-  var hintEl = document.getElementById('hint');
-  var btn = document.getElementById('verifyBtn');
-  var status = document.getElementById('status');
-
-  if (code) {
-    codeEl.textContent = code;
-    hintEl.textContent = '验证码 5 分钟内有效，请勿转发给他人';
+var G=['111111乾为天|元亨利贞','000000坤为地|厚德载物','010001水雷屯|刚柔始交','100010山水蒙|童蒙求我','010111水天需|险在前也','111010天水讼|讼不可成','000010地水师|师出以律','010000水地比|亲附辅弼','110111风天小畜|以懿文德','111011天泽履|履虎尾也','000111地天泰|天地交泰','111000天地否|大往小来','111101天火同人|类族辨物','101111火天大有|顺天休命','000100地山谦|裒多益寡','001000雷地豫|作乐崇德','011001泽雷随|随时之义','100110山风蛊|振民育德','000011地泽临|教思无穷','110000风地观|观民设教','101001火雷噬嗑|明罚敕法','100101山火贲|明庶政也','000001山地剥|上厚下安','100000地雷复|闭关休息','111001天雷无妄|天命不佑','100111山天大畜|多识前言','100001山雷颐|节饮食也','011110泽风大过|独立不惧','010010坎为水|常德行也','101101离为火|明照四方','011100泽山咸|感而遂通','001110雷风恒|立不易方','111100天山遁|远小人也','001111雷天大壮|非礼弗履','101000火地晋|自昭明德','000101地火明夷|用晦而明','110101风火家人|言有物也','101011火泽睽|以同而异','010100水山蹇|反身修德','001010雷水解|赦过宥罪','110001山泽损|惩忿窒欲','100011风雷益|迁善改过','011111泽天夬|施禄及下','111110天风姤|施命诰四方','011000泽地萃|除戎器也','000110地风升|积小高大','011010泽水困|致命遂志','010110水风井|劳民劝相','101110泽火革|治历明时','011101火风鼎|正位凝命','001001震为雷|恐惧修省','100100艮为山|思不出位','110100风山渐|居贤德善','001011雷泽归妹|永终知敝','001101雷火丰|折狱致刑','101100火山旅|明慎用刑','110110巽为风|申命行事','011011兑为泽|朋友讲习','110010风水涣|享于帝也','010011水泽节|制数度也','110011风泽中孚|议狱缓死','001100雷山小过|行过恭也','010101水火既济|思患预防','101010火水未济|慎辨物居'];
+var h=G[Math.floor(Math.random()*64)],b=h.substring(0,6),r=h.substring(6).split('|'),n=r[0],s=r[1];
+var box=document.getElementById('hexaReveal'),delays=[800,650,500,350,200,80];
+for(var i=0;i<6;i++){
+  if(b[i]==='1'){
+    var el=document.createElement('div');el.className='hexa-yao-yang';el.style.animationDelay=delays[i]+'ms';box.appendChild(el);
+  }else{
+    var el=document.createElement('div');el.className='hexa-yao-yin';el.style.animationDelay=delays[i]+'ms';
+    el.innerHTML='<span></span><span></span>';box.appendChild(el);
   }
-
-  window.doAutoVerify = function() {
-    if (!code || !email) {
-      status.className = 'status err';
-      status.textContent = '链接不完整，请回到注册页面手动输入验证码';
-      return;
-    }
-    btn.className = 'btn dim';
-    btn.textContent = '验证中...';
-
-    fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, code: code, password: '', _verify_only: true })
-    }).then(function(r){ return r.json(); })
-    .then(function(d){
-      if (d.verified) {
-        status.className = 'status ok';
-        status.textContent = '✅ 邮箱验证成功！请返回注册页面继续设置密码';
-        btn.style.display = 'none';
-        codeEl.textContent = '✓';
-        hintEl.textContent = '该邮箱已验证通过，请回到注册弹窗完成最后一步';
-      } else {
-        status.className = 'status err';
-        status.textContent = '❌ ' + (d.error || '验证失败，可能验证码已过期');
-        btn.className = 'btn';
-        btn.textContent = '重新验证';
-      }
-    }).catch(function(){
-      status.className = 'status err';
-      status.textContent = '网络错误，请稍后重试';
-      btn.className = 'btn';
-      btn.textContent = '重新验证';
-    });
-  };
+}
+document.getElementById('hexaName').textContent=n;document.getElementById('hexaName').style.animationDelay='1050ms';
+document.getElementById('hexaSub').textContent='—— '+s;document.getElementById('hexaSub').style.animationDelay='1250ms';
 })();
 </script>
+
+<script>
+document.body.classList.add('loading');
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var l=document.getElementById('pageLoader');
+    if(l)l.classList.add('hidden');
+    document.body.classList.remove('loading');
+    document.body.classList.add('loaded');
+  },2500);
+});
+</script>
+
 </body>
 </html>

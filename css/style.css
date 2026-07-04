@@ -1,28 +1,28 @@
 /* ============================================
-   知时 — 墨渊星汉 · AI 命理
-   深空蓝黑 · 流金辉光 · 玻璃质感 · 星河流转
+   知时 — 墨色山水 · 暖墨金辉
+   古画底韵 · 流金辉光 · 宣纸质感 · 烟云氤氲
    ============================================ */
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --ink:#080c14;
-  --paper:#0d1525;
-  --card:rgba(13,21,37,.82);
+  --ink:#0e0c0a;
+  --paper:#181612;
+  --card:rgba(24,22,18,.82);
   --gold:#c9a84c;
   --gold-l:#e8cf70;
   --gold-d:#8a6d28;
   --gold-glow:rgba(201,168,76,.14);
-  --star:#5b7fa5;
-  --star-dim:#3a5068;
-  --star-glow:rgba(91,127,165,.1);
-  --mist:rgba(160,170,185,.38);
-  --mist-dim:rgba(160,170,185,.18);
-  --tx:#e2dcc8;
-  --tx2:#a09888;
-  --tx3:#8a8580;
-  --bd:rgba(201,168,76,.1);
-  --bd2:rgba(201,168,76,.25);
-  --bd-star:rgba(91,127,165,.08);
+  --star:#8a8070;
+  --star-dim:#5a5045;
+  --star-glow:rgba(160,140,110,.08);
+  --mist:rgba(170,160,145,.35);
+  --mist-dim:rgba(160,150,135,.16);
+  --tx:#d8d0c0;
+  --tx2:#a89880;
+  --tx3:#8a8078;
+  --bd:rgba(180,160,140,.08);
+  --bd2:rgba(180,160,140,.2);
+  --bd-star:rgba(160,140,120,.06);
   --radius:12px;
   --red:#c41e3a;
 }
@@ -36,7 +36,7 @@ body{
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(91,127,165,.03) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(160,140,110,.03) 0%, transparent 60%),
     radial-gradient(ellipse 50% 40% at 70% 70%, rgba(201,168,76,.02) 0%, transparent 50%);
   opacity:.7;
 }
@@ -129,12 +129,12 @@ body::before{
   border-radius:var(--radius);
   padding:28px 24px;
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  box-shadow:0 0 80px rgba(0,0,0,.5),0 0 0 1px rgba(201,168,76,.04) inset;
+  box-shadow:0 0 80px rgba(0,0,0,.5),0 0 0 1px rgba(180,160,140,.04) inset;
   position:relative;overflow:hidden;
 }
 .card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent);
+  background:linear-gradient(90deg,transparent,rgba(180,160,140,.15),transparent);
 }
 .card-title{
   font-size:14px;color:var(--gold-l);letter-spacing:6px;font-weight:600;
@@ -147,7 +147,7 @@ body::before{
 /* === Bazi Input Form === */
 .mode-tabs{
   display:flex;gap:4px;margin-bottom:20px;
-  background:rgba(255,255,255,.02);border-radius:8px;padding:3px;
+  background:rgba(200,190,170,.02);border-radius:8px;padding:3px;
 }
 .mode-tab{
   flex:1;padding:10px 0;
@@ -177,24 +177,24 @@ body::before{
 .field select{
   width:100%;padding:12px 34px 12px 12px;
   font-size:14px;font-family:inherit;font-weight:500;
-  color:var(--tx);background:rgba(20,20,36,.6);
-  border:1px solid rgba(255,255,255,.06);border-radius:8px;
+  color:var(--tx);background:rgba(30,28,24,.6);
+  border:1px solid rgba(200,190,170,.06);border-radius:8px;
   cursor:pointer;
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;
   transition:all .3s;
 }
-.field select:hover{border-color:rgba(255,255,255,.1);background:rgba(24,24,42,.7)}
+.field select:hover{border-color:rgba(200,190,170,.1);background:rgba(34,32,28,.7)}
 .field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 20px var(--gold-glow)}
 .field select:disabled{opacity:.3;cursor:not-allowed}
-.field select option{background:#141428;color:var(--tx)}
+.field select option{background:#201e1a;color:var(--tx)}
 
 .minute-inp{
   width:100%;padding:12px 14px;
   font-size:14px;font-family:inherit;font-weight:500;
-  color:var(--tx);background:rgba(20,20,36,.6);
-  border:1px solid rgba(255,255,255,.06);border-radius:8px;
+  color:var(--tx);background:rgba(30,28,24,.6);
+  border:1px solid rgba(200,190,170,.06);border-radius:8px;
   text-align:center;letter-spacing:2px;
   transition:all .3s;
   -moz-appearance:textfield;
@@ -209,10 +209,10 @@ body::before{
 .radio{
   flex:1;display:flex;align-items:center;justify-content:center;
   padding:11px 6px;
-  background:rgba(20,20,36,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;
+  background:rgba(28,26,22,.5);border:1px solid rgba(200,190,170,.05);border-radius:8px;
   cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist);
 }
-.radio:hover{border-color:rgba(255,255,255,.1)}
+.radio:hover{border-color:rgba(200,190,170,.1)}
 .radio input{display:none}
 .radio:has(input:checked){
   border-color:var(--gold);background:rgba(201,168,76,.08);
@@ -233,7 +233,7 @@ body::before{
   animation:shimmer 3s ease-in-out infinite;
 }
 .submit:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.3)}
-.submit:active{transform:translateY(0);box-shadow:0 2px 12px rgba(201,168,76,.15)}
+.submit:active{transform:translateY(0);box-shadow:0 2px 12px rgba(180,160,140,.15)}
 .submit.loading{pointer-events:none;opacity:.65}
 
 .submit-btn{
@@ -300,7 +300,7 @@ body::before{
   display:flex;align-items:center;justify-content:center;
   font-size:15px;flex-shrink:0;
 }
-.message.user .msg-avatar{background:rgba(201,168,76,.15)}
+.message.user .msg-avatar{background:rgba(180,160,140,.15)}
 .message.ai .msg-avatar{background:rgba(196,30,58,.12)}
 .msg-bubble{
   padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.7;word-break:break-word;
@@ -310,7 +310,7 @@ body::before{
   border-bottom-right-radius:4px;
 }
 .message.ai .msg-bubble{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+  background:rgba(200,190,170,.04);border:1px solid rgba(200,190,170,.06);
   border-bottom-left-radius:4px;
 }
 .msg-bubble p{margin-bottom:6px}
@@ -332,7 +332,7 @@ body::before{
 .chat-input-area{padding:14px 18px;border-top:1px solid var(--bd);display:flex;gap:10px;align-items:flex-end}
 .chat-input{
   flex:1;padding:12px 16px;
-  background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:20px;
+  background:rgba(30,28,24,.6);border:1px solid rgba(200,190,170,.06);border-radius:20px;
   color:var(--tx);font-size:14px;font-family:inherit;outline:none;
   resize:none;min-height:42px;max-height:100px;line-height:1.5;
   transition:border-color .3s;
@@ -378,7 +378,7 @@ body::before{
 .modal h3{color:var(--gold-l);font-size:1.2rem;margin-bottom:10px;letter-spacing:3px}
 .modal p{color:var(--tx2);margin-bottom:18px;font-size:13px;line-height:1.6}
 .modal .code-display{
-  background:rgba(20,20,36,.6);border:2px dashed var(--bd2);border-radius:8px;
+  background:rgba(30,28,24,.6);border:2px dashed var(--bd2);border-radius:8px;
   padding:14px;font-size:1.4rem;font-weight:700;color:var(--gold-l);
   letter-spacing:6px;margin-bottom:14px;user-select:all;
   font-family:monospace;
@@ -423,24 +423,42 @@ body::before{
   .tagline{font-size:12px;letter-spacing:5px}
 }
 
-/* === Page Loader === */
-/* 加载过渡动画 */
-.page-loader{position:fixed;inset:0;z-index:9999;background:var(--ink,#080c14);
+/* === Page Loader — 随机卦象 === */
+.page-loader{position:fixed;inset:0;z-index:9999;background:var(--ink,#0e0c0a);
   display:flex;align-items:center;justify-content:center;flex-direction:column;
   transition:opacity .5s ease,visibility .5s ease}
 .page-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
-/* 太极旋转loader */
-.loader-taiji{width:48px;height:48px;border-radius:50%;
-  background:conic-gradient(var(--gold,#c9a84c) 0 180deg,var(--star,#5b7fa5) 180deg 360deg);
-  animation:taijiSpin 1.2s linear infinite;position:relative}
-.loader-taiji::after{content:"";position:absolute;top:10%;left:50%;transform:translateX(-50%);
-  width:20%;height:20%;background:var(--star,#5b7fa5);border-radius:50%}
-.loader-taiji::before{content:"";position:absolute;bottom:10%;left:50%;transform:translateX(-50%);
-  width:20%;height:20%;background:var(--gold,#c9a84c);border-radius:50%}
-@keyframes taijiSpin{to{transform:rotate(360deg)}}
-.loader-text{color:var(--gold-l,#e8cf70);margin-top:20px;font-size:14px;letter-spacing:4px;
-  animation:loaderPulse 2s ease-in-out infinite}
-@keyframes loaderPulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* === 卦象 reveal — 大尺寸金线 + 梅花同款动画 === */
+.hexa-reveal{display:flex;flex-direction:column-reverse;align-items:center;gap:14px}
+/* 阳爻：整条金线 */
+.hexa-yao-yang{
+  width:200px;height:12px;border-radius:6px;
+  background:var(--gold-l,#e8cf70);
+  box-shadow:0 0 20px rgba(201,168,76,.4),0 0 6px rgba(201,168,76,.7);
+  opacity:0;animation:hexaReveal .5s ease-out forwards;
+}
+/* 阴爻：两段 */
+.hexa-yao-yin{
+  display:flex;gap:28px;opacity:0;animation:hexaReveal .5s ease-out forwards;
+}
+.hexa-yao-yin span{
+  display:block;width:86px;height:12px;border-radius:6px;
+  background:var(--gold-l,#e8cf70);
+  box-shadow:0 0 18px rgba(201,168,76,.35),0 0 5px rgba(201,168,76,.65);
+}
+@keyframes hexaReveal{from{opacity:0;transform:scale(.5);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+/* 卦名 */
+.hexa-name{
+  font-size:22px;color:var(--gold-l);font-weight:700;letter-spacing:6px;
+  opacity:0;animation:hexaReveal .5s ease-out forwards;margin-top:12px;
+}
+/* 卦辞 */
+.hexa-sub{
+  font-size:12px;color:rgba(180,165,140,.5);letter-spacing:3px;
+  opacity:0;animation:hexaReveal .5s ease-out forwards;
+}
+
 /* 页面内容初始隐藏 */
 body.loading .landing-wrap,body.loading .app,body.loading .result-container{opacity:0}
 body.loaded .landing-wrap,body.loaded .app,body.loaded .result-container{

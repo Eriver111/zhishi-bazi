@@ -3,7 +3,8 @@
  * GET ?code=xxx
  * 同时查次数表 + 订阅表，月会员返回 credits:-1
  */
-const { getCreditsByCode, isMonthlyActive } = require('../lib/supabase.js');
+const { getCreditsByCode, isMonthlyActive, linkCodeToUser } = require('../lib/supabase.js');
+const { requireAuth } = require('../lib/auth.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -59,6 +60,16 @@ module.exports = async function handler(req, res) {
           codes: codes,
           message: '已生成 ' + codes.length + ' 个兑换码，每个 ' + count + ' 次'
         });
+      }
+      // ---- 用户激活兑换码（关联到用户账号）----
+      if (action === 'activate') {
+        const code = (req.body && req.body.code) || '';
+        if (!code) return res.status(400).json({ error: '缺少兑换码' });
+        var authUser = requireAuth(req);
+        if (!authUser || !authUser.uid) return res.status(401).json({ error: '请先登录', needLogin: true });
+        await linkCodeToUser(code, authUser.uid);
+        // 同时存到客户端 localStorage 以便后续请求使用
+        return res.status(200).json({ success: true, code: code, message: '兑换码已关联到你的账号' });
       }
     } catch(e) { return res.status(500).json({ error: e.message }); }
   }

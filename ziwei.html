@@ -1,7 +1,12 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>知时 · 紫微斗数</title>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="view-transition" content="same-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>知时 · 紫微斗数</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/interactions.css">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--ink:#080c14;--paper:#0d1525;--card:rgba(13,21,37,.82);--gold:#c9a84c;--gold-l:#e8cf70;--gold-d:#8a6d28;--gold-glow:rgba(201,168,76,.14);--mist:rgba(160,170,185,.38);--tx:#e2dcc8;--tx2:#a09888;--tx3:#8a8580;--bd:rgba(201,168,76,.1);--bd2:rgba(201,168,76,.25);--radius:12px}
+:root{--ink:#0e0c0a;--paper:#181612;--card:rgba(24,22,18,.82);--gold:#c9a84c;--gold-l:#e8cf70;--gold-d:#8a6d28;--gold-glow:rgba(201,168,76,.14);--mist:rgba(170,160,145,.35);--tx:#d8d0c0;--tx2:#a89880;--tx3:#8a8078;--bd:rgba(180,160,140,.08);--bd2:rgba(180,160,140,.2);--radius:12px}
 html{font-size:16px;-webkit-font-smoothing:antialiased}
 body{font-family:'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;background:var(--ink);color:var(--tx);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 50% at 30% 20%,rgba(91,127,165,.03) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 70% 70%,rgba(201,168,76,.02) 0%,transparent 50%)}
@@ -12,8 +17,8 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .header h1{font-size:48px;font-weight:900;letter-spacing:22px;background:linear-gradient(180deg,var(--gold-l),var(--gold),var(--gold-d));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 32px var(--gold-glow));margin-bottom:8px}
 .header h1 a{color:inherit;text-decoration:none}
 .tagline{font-size:14px;color:var(--mist);letter-spacing:8px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--radius);padding:22px 20px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 0 80px rgba(0,0,0,.5),0 0 0 1px rgba(201,168,76,.04) inset;position:relative;overflow:hidden;margin-bottom:14px}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--radius);padding:22px 20px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 0 80px rgba(0,0,0,.5),0 0 0 1px rgba(180,160,140,.04) inset;position:relative;overflow:hidden;margin-bottom:14px}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(180,160,140,.15),transparent)}
 .info{text-align:center;font-size:13px;color:var(--tx3);margin-bottom:12px;line-height:1.8}
 .info b{color:var(--gold-l)}
 .grid{display:grid;grid-template-columns:1fr 0.55fr 0.55fr 1fr;grid-template-rows:repeat(4,1fr);gap:3px;width:100%;aspect-ratio:1;max-width:960px;margin:0 auto;background:rgba(201,168,76,.04);border:1px solid var(--bd);border-radius:4px;padding:3px}
@@ -44,7 +49,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .svg-overlay line.opp{stroke:rgba(91,159,212,.4);stroke-dasharray:3 3}
 .palace.hl{border-color:rgba(201,168,76,.6)!important;box-shadow:0 0 20px rgba(201,168,76,.2)!important}
 .palace.hl2{border-color:rgba(91,159,212,.4)!important;box-shadow:0 0 15px rgba(91,159,212,.12)!important}
-.zw-mode-bar{display:flex;justify-content:center;gap:8px;width:100%;max-width:960px;margin:0 auto;padding:8px 0}.zw-mode-btn{flex:1;max-width:160px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;letter-spacing:4px;color:var(--mist);background:rgba(20,20,36,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .35s}.zw-mode-btn:hover{border-color:rgba(255,255,255,.1);color:var(--tx)}.zw-mode-btn.active{border-color:var(--gold);background:rgba(201,168,76,.08);color:var(--gold-l);box-shadow:0 0 20px var(--gold-glow)}.palace.hua-lu{border-color:rgba(76,175,80,.5)!important;box-shadow:inset 0 0 16px rgba(76,175,80,.06)}.palace.hua-quan{border-color:rgba(255,152,0,.5)!important;box-shadow:inset 0 0 16px rgba(255,152,0,.06)}.palace.hua-ke{border-color:rgba(33,150,243,.5)!important;box-shadow:inset 0 0 16px rgba(33,150,243,.06)}.palace.hua-ji{border-color:rgba(244,67,54,.5)!important;box-shadow:inset 0 0 16px rgba(244,67,54,.06)}
+.zw-mode-bar{display:flex;justify-content:center;gap:8px;width:100%;max-width:960px;margin:0 auto;padding:8px 0}.zw-mode-btn{flex:1;max-width:160px;padding:10px 16px;font-family:inherit;font-size:14px;font-weight:600;letter-spacing:4px;color:var(--mist);background:rgba(28,26,22,.5);border:1px solid rgba(200,190,170,.05);border-radius:8px;cursor:pointer;transition:all .35s}.zw-mode-btn:hover{border-color:rgba(200,190,170,.1);color:var(--tx)}.zw-mode-btn.active{border-color:var(--gold);background:rgba(201,168,76,.08);color:var(--gold-l);box-shadow:0 0 20px var(--gold-glow)}.palace.hua-lu{border-color:rgba(76,175,80,.5)!important;box-shadow:inset 0 0 16px rgba(76,175,80,.06)}.palace.hua-quan{border-color:rgba(255,152,0,.5)!important;box-shadow:inset 0 0 16px rgba(255,152,0,.06)}.palace.hua-ke{border-color:rgba(33,150,243,.5)!important;box-shadow:inset 0 0 16px rgba(33,150,243,.06)}.palace.hua-ji{border-color:rgba(244,67,54,.5)!important;box-shadow:inset 0 0 16px rgba(244,67,54,.06)}
 .triad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;width:100%;max-width:960px}
 .triad-card{background:rgba(13,21,37,.6);border:1px solid rgba(91,127,165,.08);border-radius:10px;padding:14px}
 .triad-card .t-name{font-size:14px;color:var(--gold-l);letter-spacing:2px;margin-bottom:4px;font-weight:700}
@@ -56,13 +61,13 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .row.two .field{flex:1}
 .field{flex:1;min-width:0}
 .field label{display:block;font-size:10px;color:var(--mist);letter-spacing:3px;margin-bottom:6px;font-weight:500}
-.field select{width:100%;padding:12px 34px 12px 12px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center}
+.field select{width:100%;padding:12px 34px 12px 12px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(30,28,24,.6);border:1px solid rgba(200,190,170,.06);border-radius:8px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center}
 .field select:focus{outline:none;border-color:var(--gold)}
-.minute-inp{width:100%;padding:12px 14px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:8px;text-align:center;letter-spacing:2px}
+.minute-inp{width:100%;padding:12px 14px;font-size:14px;font-family:inherit;font-weight:500;color:var(--tx);background:rgba(30,28,24,.6);border:1px solid rgba(200,190,170,.06);border-radius:8px;text-align:center;letter-spacing:2px}
 .minute-inp:focus{outline:none;border-color:var(--gold)}
 .radio-group{display:flex;gap:6px}
-.radio{flex:1;display:flex;align-items:center;justify-content:center;padding:11px 6px;background:rgba(20,20,36,.5);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist)}
-.radio:hover{border-color:rgba(255,255,255,.1)}
+.radio{flex:1;display:flex;align-items:center;justify-content:center;padding:11px 6px;background:rgba(28,26,22,.5);border:1px solid rgba(200,190,170,.05);border-radius:8px;cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist)}
+.radio:hover{border-color:rgba(200,190,170,.1)}
 .radio input{display:none}
 .radio:has(input:checked){border-color:var(--gold);background:rgba(201,168,76,.08);color:var(--gold-l);box-shadow:0 0 24px var(--gold-glow)}
 .submit{width:100%;padding:16px;margin-top:12px;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:10px;color:var(--ink);background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));background-size:200% 100%;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 24px rgba(201,168,76,.2);animation:shimmer 3s ease-in-out infinite;transition:all .4s}
@@ -73,8 +78,14 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:820px){.app{padding:20px 10px 40px}.header h1{font-size:28px;letter-spacing:10px}.tagline{font-size:12px}.row{flex-wrap:wrap;gap:6px;margin-bottom:10px}.field{min-width:60px}.field select{font-size:13px;padding:10px 28px 10px 8px}.minute-inp{font-size:13px;padding:10px 8px}.card{padding:16px 14px;margin-bottom:10px}.card-title{font-size:13px;margin-bottom:14px}.submit{font-size:15px;letter-spacing:6px;padding:14px}.grid{max-width:100%;aspect-ratio:auto;min-height:340px;grid-template-columns:1fr 0.5fr 0.5fr 1fr;gap:2px;padding:2px}.stars{font-size:10px;left:2px;top:2px}.stars .s.major{font-size:12px}.mid .row1,.mid .row2{font-size:8px}.mid .daxian{font-size:9px}.bot-l{font-size:8px;left:2px;bottom:2px}.bot-r{font-size:9px;right:3px;bottom:2px}.bot-r .gz{font-size:11px}.pname{font-size:10px}.triad-grid{grid-template-columns:1fr}.center-cell .c-title{font-size:13px}.center-cell .c-info{font-size:9px}}
 
-.zhishi-nav .nav-brand{font-size:20px;font-weight:900;letter-spacing:6px;color:var(--gold-l);text-decoration:none}.zhishi-nav .nav-links{display:flex;gap:6px;flex-wrap:wrap}.zhishi-nav .nav-links a{font-size:13px;color:var(--tx2);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .25s}.zhishi-nav .nav-links a:hover{color:var(--gold);background:rgba(201,168,76,.06)}.zhishi-nav .nav-cta{color:var(--gold)!important;border:1px solid var(--bd2)}@media(max-width:640px){.zhishi-nav .nav-links a{font-size:11px;padding:4px 6px}}</style></head><body>
-<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(13,21,37,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
+.zhishi-nav .nav-brand{font-size:20px;font-weight:900;letter-spacing:6px;color:var(--gold-l);text-decoration:none}.zhishi-nav .nav-links{display:flex;gap:6px;flex-wrap:wrap}.zhishi-nav .nav-links a{font-size:13px;color:var(--tx2);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .25s}.zhishi-nav .nav-links a:hover{color:var(--gold);background:rgba(201,168,76,.06)}.zhishi-nav .nav-cta{color:var(--gold)!important;border:1px solid var(--bd2)}@media(max-width:640px){.zhishi-nav .nav-links a{font-size:11px;padding:4px 6px}}</style></head><body class="loading">
+<div class="page-loader" id="pageLoader">
+  <div class="hexa-reveal" id="hexaReveal"></div>
+  <div class="hexa-name" id="hexaName"></div>
+  <div class="hexa-sub" id="hexaSub"></div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(22,20,17,.94);border-bottom:1px solid rgba(180,160,140,.06);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(180,160,140,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 <div class="app">
 <div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">紫 微 斗 数 · 三 合 盘</div></div>
 
@@ -101,5 +112,42 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 
 <script src="js/ziwei-render.js?v=3"></script>
 <script src="js/ziwei-analysis.js?v=1"></script>
+
+
+
+
+
+
+
+
+<script>
+(function(){
+var G=['111111乾为天|元亨利贞','000000坤为地|厚德载物','010001水雷屯|刚柔始交','100010山水蒙|童蒙求我','010111水天需|险在前也','111010天水讼|讼不可成','000010地水师|师出以律','010000水地比|亲附辅弼','110111风天小畜|以懿文德','111011天泽履|履虎尾也','000111地天泰|天地交泰','111000天地否|大往小来','111101天火同人|类族辨物','101111火天大有|顺天休命','000100地山谦|裒多益寡','001000雷地豫|作乐崇德','011001泽雷随|随时之义','100110山风蛊|振民育德','000011地泽临|教思无穷','110000风地观|观民设教','101001火雷噬嗑|明罚敕法','100101山火贲|明庶政也','000001山地剥|上厚下安','100000地雷复|闭关休息','111001天雷无妄|天命不佑','100111山天大畜|多识前言','100001山雷颐|节饮食也','011110泽风大过|独立不惧','010010坎为水|常德行也','101101离为火|明照四方','011100泽山咸|感而遂通','001110雷风恒|立不易方','111100天山遁|远小人也','001111雷天大壮|非礼弗履','101000火地晋|自昭明德','000101地火明夷|用晦而明','110101风火家人|言有物也','101011火泽睽|以同而异','010100水山蹇|反身修德','001010雷水解|赦过宥罪','110001山泽损|惩忿窒欲','100011风雷益|迁善改过','011111泽天夬|施禄及下','111110天风姤|施命诰四方','011000泽地萃|除戎器也','000110地风升|积小高大','011010泽水困|致命遂志','010110水风井|劳民劝相','101110泽火革|治历明时','011101火风鼎|正位凝命','001001震为雷|恐惧修省','100100艮为山|思不出位','110100风山渐|居贤德善','001011雷泽归妹|永终知敝','001101雷火丰|折狱致刑','101100火山旅|明慎用刑','110110巽为风|申命行事','011011兑为泽|朋友讲习','110010风水涣|享于帝也','010011水泽节|制数度也','110011风泽中孚|议狱缓死','001100雷山小过|行过恭也','010101水火既济|思患预防','101010火水未济|慎辨物居'];
+var h=G[Math.floor(Math.random()*64)],b=h.substring(0,6),r=h.substring(6).split('|'),n=r[0],s=r[1];
+var box=document.getElementById('hexaReveal'),delays=[800,650,500,350,200,80];
+for(var i=0;i<6;i++){
+  if(b[i]==='1'){
+    var el=document.createElement('div');el.className='hexa-yao-yang';el.style.animationDelay=delays[i]+'ms';box.appendChild(el);
+  }else{
+    var el=document.createElement('div');el.className='hexa-yao-yin';el.style.animationDelay=delays[i]+'ms';
+    el.innerHTML='<span></span><span></span>';box.appendChild(el);
+  }
+}
+document.getElementById('hexaName').textContent=n;document.getElementById('hexaName').style.animationDelay='1050ms';
+document.getElementById('hexaSub').textContent='—— '+s;document.getElementById('hexaSub').style.animationDelay='1250ms';
+})();
+</script>
+
+<script>
+document.body.classList.add('loading');
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var l=document.getElementById('pageLoader');
+    if(l)l.classList.add('hidden');
+    document.body.classList.remove('loading');
+    document.body.classList.add('loaded');
+  },2500);
+});
+</script>
 
 </body></html>
