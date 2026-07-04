@@ -25,16 +25,14 @@
 
   // ===== 初始化 =====
   function init() {
-    // 检测页面类型
-    if (typeof _bazi !== 'undefined' || typeof _params !== 'undefined') {
-      AI.pageType = 'result';
-    } else if (typeof window._hepanData !== 'undefined') {
-      AI.pageType = 'hepan';
-    } else if (typeof window._sihuaCol !== 'undefined') {
-      AI.pageType = 'ziwei';
-    } else if (typeof window._liurenData !== 'undefined' || document.querySelector('.shapan-grid')) {
-      AI.pageType = 'liuren';
-    }
+    // 检测页面类型（延迟到有数据时再确定，避免跨页残留变量误判）
+    function detectPageType(){
+      if (typeof _bazi !== 'undefined' && _bazi !== null) return 'result';
+      if (typeof _params !== 'undefined' && _params !== null) return 'result';
+      if (typeof window._hepanData !== 'undefined' && window._hepanData !== null) return 'hepan';
+      if (document.querySelector('.shapan-grid')) return 'liuren';
+      return document.title.indexOf('紫微')>=0?'ziwei':(document.title.indexOf('六壬')>=0?'liuren':'');}
+    AI.pageType = detectPageType();
 
     // 初始化免费用户标识
     initFreeId();
@@ -176,7 +174,7 @@
         // 保存排盘数据供AI页使用
         var cd = buildChartData();
         if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
-        var mode='';if(AI.pageType==='ziwei')mode='?t=zw';else if(AI.pageType==='liuren')mode='?t=lr';
+        var pt=detectPageType();var mode='';if(pt==='ziwei')mode='?t=zw';else if(pt==='liuren')mode='?t=lr';
         window.location.href = 'ai-chat.html'+mode;
       });
     } else {/* console.() */;
@@ -473,10 +471,11 @@
 
   // ===== 排盘上下文（保持不变） =====
   function buildChartData() {
-    if (AI.pageType === 'result') return buildResultContext();
-    if (AI.pageType === 'hepan') return buildHePanContext();
-    if (AI.pageType === 'ziwei'){try{var d=localStorage.getItem('ai_ziwei_data');return d?JSON.parse(d):null}catch(e){return null}}
-    if (AI.pageType === 'liuren'){try{var d=localStorage.getItem('ai_liuren_data');return d?JSON.parse(d):null}catch(e){return null}}
+    var pt=detectPageType();
+    if (pt==='result') return buildResultContext();
+    if (pt==='hepan') return buildHePanContext();
+    if (pt==='ziwei'){try{var d=localStorage.getItem('ai_ziwei_data');return d?JSON.parse(d):null}catch(e){return null}}
+    if (pt==='liuren'){try{var d=localStorage.getItem('ai_liuren_data');return d?JSON.parse(d):null}catch(e){return null}}
     return null;
   }
 
