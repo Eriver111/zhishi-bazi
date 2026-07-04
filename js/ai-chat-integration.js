@@ -744,7 +744,7 @@
         if(r.left<0)fab.style.left='10px';
         if(r.bottom>window.innerHeight-80)fab.style.top=(window.innerHeight-140)+'px';
         if(r.right>window.innerWidth)fab.style.left=(window.innerWidth-r.width-10)+'px';
-        if(Math.abs(e.clientX-startX)<5&&Math.abs(e.clientY-startY)<5){/* drawer disabled - use standalone ai-chat.html */}
+        if(Math.abs(e.clientX-startX)<5&&Math.abs(e.clientY-startY)<5){var cd=buildChartData();if(cd)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){};window.location.href='ai-chat.html'}
       });
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();
