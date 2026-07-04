@@ -564,32 +564,7 @@ body::before{
   .trust-grid{grid-template-columns:1fr}
 }
 </style>
-<!-- debug removed -->
-<style>/* 桌面导航 */
-
-
-
-
-
-.nav-links 
-.nav-links .nav-cta:hover{color:#1a1a1a;box-shadow:0 0 20px var(--gold-glow)}
-
-/* 手机底部导航 */
-
-.zhishi-mobile-nav a{color:var(--tx3);text-decoration:none;font-size:13px;display:flex;padding:4px 12px}
-.zhishi-mobile-nav a:active{color:var(--gold-l)}
-
-/* 页面留出导航空间 */
-
-body.has-mobile-nav{padding-bottom:60px}
-
-@media(max-width:1024px){
-  .zhishi-nav 
-  
-  body.has-mobile-nav{padding-bottom:60px}
-  
-}
-</style></head>
+</head>
 <body>
 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(13,21,37,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 <div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
@@ -714,7 +689,9 @@ body.has-mobile-nav{padding-bottom:60px}
   </footer>
 </div>
 
-,'正财','偏财','食神','伤官','比肩','劫财','天乙','文昌','桃花','驿马','华盖','羊刃','魁罡','太极','学堂','天德','月德','将星','禄神'];
+<script>
+(function(){
+  var c=['正官','七杀','正印','偏印','比肩','劫财','食神','伤官','正财','偏财','天乙','文昌','桃花','驿马','华盖','羊刃','魁罡','太极','学堂','天德','月德','将星','禄神'];
   var box=document.getElementById('eyeParticles');
   if(!box)return;
   for(var i=0;i<40;i++){
@@ -730,7 +707,8 @@ body.has-mobile-nav{padding-bottom:60px}
   st.textContent='@keyframes suckIn{0%{opacity:0;transform:translate(0,0) scale(.5)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px)) scale(0)}}';
   document.head.appendChild(st);
 })();
-</script><script src="js/mo-xing-he.js"></script>
+</script>
+<script src="js/mo-xing-he.js"></script>
 <script src="js/bg-animation.js"></script>
 <script src="js/effects.js"></script>
 <script src="js/auth.js"></script>
@@ -755,6 +733,10 @@ MoXingHe.start('mxhCanvas');
   track.appendChild(el);
   var el2=document.createElement('span');
   el2.className='book-scroll-inner';
+  el2.textContent=books.join(' · ');
+  track.appendChild(el2);
+})();
+</script>
 <script>
 /**
  * 墨渊星汉 — 背景动画引擎 v2.0
