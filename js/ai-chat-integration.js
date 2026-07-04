@@ -728,23 +728,18 @@
         var r=fab.getBoundingClientRect();
         origLeft=r.left; origTop=r.top;
         fab.style.transition='none'; fab.style.cursor='grabbing';
-        fab.setPointerCapture(e.pointerId);
       });
       fab.addEventListener('pointermove',function(e){
         if(!dragging)return;
         var dx=e.clientX-startX, dy=e.clientY-startY;
-        fab.style.right='auto'; fab.style.bottom='auto';
-        fab.style.left=(origLeft+dx)+'px'; fab.style.top=(origTop+dy)+'px';
+        if(Math.abs(dx)>5||Math.abs(dy)>5){fab.style.right='auto';fab.style.bottom='auto';fab.style.left=(origLeft+dx)+'px';fab.style.top=(origTop+dy)+'px'}
       });
       fab.addEventListener('pointerup',function(e){
         if(!dragging)return;
         dragging=false; fab.style.transition=''; fab.style.cursor='pointer';
-        var r=fab.getBoundingClientRect();
-        if(r.top<60)fab.style.top='65px';
-        if(r.left<0)fab.style.left='10px';
-        if(r.bottom>window.innerHeight-80)fab.style.top=(window.innerHeight-140)+'px';
-        if(r.right>window.innerWidth)fab.style.left=(window.innerWidth-r.width-10)+'px';
-        if(Math.abs(e.clientX-startX)<5&&Math.abs(e.clientY-startY)<5){var cd=buildChartData();if(cd)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){};window.location.href='ai-chat.html'}
+        var dx=e.clientX-startX,dy=e.clientY-startY;
+        if(Math.abs(dx)<5&&Math.abs(dy)<5){try{var cd2=buildChartData();if(cd2)localStorage.setItem('ai_chart_data',JSON.stringify(cd2))}catch(ex){}window.location.href='ai-chat.html'}
+        else{var r=fab.getBoundingClientRect();if(r.top<60)fab.style.top='65px';if(r.left<0)fab.style.left='10px'}
       });
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();
