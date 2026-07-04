@@ -175,12 +175,10 @@
     var fab = document.getElementById('aiFab');
     if (fab) {
       fab.addEventListener('click', function(e) {
-        try{
-          var cd = buildChartData();
-          if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
-          var pt=detectPageType();var mode='';if(pt==='ziwei')mode='?t=zw';else if(pt==='liuren')mode='?t=lr';
-          window.location.href = 'ai-chat.html'+mode;
-        }catch(ex){window.location.href = 'ai-chat.html'}
+        var pt=detectPageType();
+        var cd=buildChartData();
+        if(cd){try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){}}
+        window.location.href='ai-chat.html';
       });
     }
   }
