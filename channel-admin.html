@@ -52,7 +52,7 @@ function load(){
   fetch('/api/channel-stats?ch='+CH+'&key='+encodeURIComponent(KEY))
   .then(function(r){return r.json()}).then(function(d){
     document.getElementById('loadingArea').style.display='none';document.getElementById('contentArea').style.display='block';if(d.error){document.getElementById('mainArea').innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><button onclick="location.reload()">重试</button></div>';return}
-    render(d);
+    render(d);document.getElementById("contentArea").style.display="block";
   }).catch(function(){document.getElementById('mainArea').innerHTML='<div class="login-box"><h3 style="color:var(--red)">网络错误</h3><button onclick="location.reload()">重试</button></div>'})
 }
 function render(d){
@@ -68,7 +68,7 @@ function render(d){
     document.getElementById('noOrders').style.display='none';
     tb.innerHTML=orders.map(function(o){return'<tr><td>'+(o.date||'').slice(0,10)+'</td><td style="font-size:10px">'+(o.order_id||'').slice(0,20)+'</td><td>'+o.type+'</td><td>¥'+o.price+'</td><td style="color:var(--gold)">¥'+o.commission+'</td><td style="font-size:10px">'+(o.code||'').slice(0,12)+'</td></tr>'}).join('');
   }else{tb.innerHTML='';document.getElementById('noOrders').style.display='block'}
-  document.getElementById('dashboard').style.display='block';
+  
 }
 var params=new URLSearchParams(location.search);
 if(params.get('ch'))CH=params.get('ch');
