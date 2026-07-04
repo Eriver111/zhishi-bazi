@@ -3402,39 +3402,50 @@ function getPattern(bazi) {
     '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》' }
   };
 
-  // 按本气→中气→余气顺序，每个藏干先精确匹配再同五行
+  // 透干取格：只取与本气同五行的透干，或本气本身
+  // 余气透干不取为格（如寅月戊土透→仍取甲木本气为正财格）
+  var benQi = cangGan[0]; // 本气
+  var benQiWx = WU_XING[benQi];
   var matchedSS = '';
   var matchedGan = '';
   var matchedPillar = '';
   var pillarNames = ['年','月','日','时'];
+  var matchCangGan = ''; // 记录匹配到的藏干
 
   for (var ci = 0; ci < cangGan.length; ci++) {
     var cg = cangGan[ci];
     var cgWx = WU_XING[cg];
-    // 先精确匹配
     for (var gi = 0; gi < allGan.length; gi++) {
       if (allGan[gi] === cg) {
-        matchedSS = getShiShen(dayGan, cg);
-        matchedGan = cg;
-        matchedPillar = pillarNames[gi] + '柱';
+        matchCangGan = cg;
+        // 只有本气或与本气同五行的透干才取为格
+        if (ci === 0 || cgWx === benQiWx) {
+          matchedSS = getShiShen(dayGan, cg);
+          matchedGan = cg;
+          matchedPillar = pillarNames[gi] + '柱';
+        }
         break;
       }
     }
-    // 精确未匹配则同五行匹配
-    if (!matchedSS) {
-      for (var gi = 0; gi < allGan.length; gi++) {
-        if (WU_XING[allGan[gi]] === cgWx && allGan[gi] !== cg) {
-          matchedSS = getShiShen(dayGan, cg);
-          matchedGan = allGan[gi];
-          matchedPillar = pillarNames[gi] + '柱(同' + cgWx + '透' + allGan[gi] + ')';
-          break;
-        }
-      }
+    if (matchCangGan && !matchedSS) {
+      // 透出的是余气且五行不同→不取，继续找
+      matchCangGan = '';
     }
     if (matchedSS) break;
   }
+  // 若未匹配到符合条件的透干，不降级匹配同五行，直接取本气十神
+  if (!matchedSS) {
+    for (var gi = 0; gi < allGan.length; gi++) {
+      if (WU_XING[allGan[gi]] === benQiWx && allGan[gi] !== benQi) {
+        matchedSS = getShiShen(dayGan, benQi);
+        matchedGan = allGan[gi];
+        matchedPillar = pillarNames[gi] + '柱(同' + benQiWx + '透)';
+        break;
+      }
+    }
+  }
 
-  // 若透出，取对应的十神为格；否则取月支本气十神
+  // 取格：优先透干匹配，否则取月支本气十神
   var ss = matchedSS || ((bazi.month.shiShen && bazi.month.shiShen.zhi) || '');
 
   // ---- 同柱复合格局检测（月干+月支搭配） ----
