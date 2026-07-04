@@ -172,6 +172,7 @@ function buyCredits(mode, amount, name) {
 
   var myReqId = ++_reqId; // 递增序列号
   var body = { mode: mode, amount: amount, name: name, money: amount };
+  var ch=localStorage.getItem('channel'); if(ch) body.channel=ch;
   // 登录用户：带上token，购买后积分直接到账
   if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) { body.token = Auth.getToken(); }
   fetch('/api/create-order', {
