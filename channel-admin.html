@@ -41,10 +41,10 @@ function load(){
   fetch('/api/channel-stats?ch='+CH+'&key='+encodeURIComponent(KEY))
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><p style="font-size:11px;margin-top:4px;color:var(--tx3)">请确认密码正确或联系管理员</p></div>';return}
-    build(d);
+    build(d,db);
   }).catch(function(e){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">请求失败</h3><p style="font-size:12px;margin-top:8px;color:var(--tx3)">'+e.message+'</p></div>'})
 }
-function build(d){
+function build(d,db){
   var h='',bk=d.breakdown||{},items=[{k:'credit_3',n:'体验包 4.9',p:4.9},{k:'credit_10',n:'进阶包 9.9',p:9.9},{k:'credit_20',n:'专业包 14.9',p:14.9},{k:'monthly',n:'月会员 29.9',p:29.9}];
   h+='<div class="stats-row"><div class="stat-card green"><div class="stat-label">累计订单</div><div class="stat-val">'+(d.totalOrders||0)+'</div></div><div class="stat-card gold"><div class="stat-label">总流水</div><div class="stat-val">'+((d.totalGMV||0).toFixed(2))+'</div></div><div class="stat-card gold"><div class="stat-label">应得分成</div><div class="stat-val">'+((d.totalCommission||0).toFixed(2))+'</div></div><div class="stat-card"><div class="stat-label">更新时间</div><div class="stat-val" style="font-size:18px">'+new Date().toLocaleTimeString()+'</div></div></div>';
   h+='<div class="breakdown">';
