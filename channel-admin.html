@@ -46,30 +46,32 @@ var KEY='',CH='knowbazi';
 function login(){var k=document.getElementById('keyInput').value.trim();if(!k)return;KEY=k;load()}
 function load(){
   if(!KEY)return;
+  var db=document.getElementById('dashboard');
   document.getElementById('loginBox').style.display='none';
-  document.getElementById('mainArea').style.display='block';document.getElementById('loadingArea').style.display='block';document.getElementById('contentArea').style.display='none';
-  
+  db.style.display='block';
+  db.innerHTML='<div class="loading"><div class="s"></div><p>加载中...</p></div>';
   fetch('/api/channel-stats?ch='+CH+'&key='+encodeURIComponent(KEY))
   .then(function(r){return r.json()}).then(function(d){
-    document.getElementById('loadingArea').style.display='none';document.getElementById('contentArea').style.display='block';if(d.error){document.getElementById('mainArea').innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><button onclick="location.reload()">重试</button></div>';return}
-    render(d);document.getElementById("contentArea").style.display="block";
-  }).catch(function(){document.getElementById('mainArea').innerHTML='<div class="login-box"><h3 style="color:var(--red)">网络错误</h3><button onclick="location.reload()">重试</button></div>'})
+    if(d.error){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><button onclick="location.reload()">重试</button></div>';return}
+    buildDashboard(d);
+  }).catch(function(){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">网络错误</h3><button onclick="location.reload()">重试</button></div>'})
 }
-function render(d){
-  document.getElementById('totalOrders').textContent=d.totalOrders||0;
-  document.getElementById('totalGMV').textContent='¥'+(d.totalGMV||0).toFixed(2);
-  document.getElementById('totalCommission').textContent='¥'+(d.totalCommission||0).toFixed(2);
-  document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString();
-  var bd=document.getElementById('breakdown'), bk=d.breakdown||{};
-  var items=[{k:'credit_3',n:'体验包 ¥4.9'},{k:'credit_10',n:'进阶包 ¥9.9'},{k:'credit_20',n:'专业包 ¥14.9'},{k:'monthly',n:'月会员 ¥29.9'}];
-  bd.innerHTML=items.map(function(i){var b=bk[i.k]||{};return'<div class="break-card"><div class="b-name">'+i.n+'</div><div class="b-count">'+(b.count||0)+'单</div><div class="b-sub">'+b.rate+' · 小计 ¥'+(b.subtotal||0).toFixed(2)+'</div></div>'}).join('');
-  var orders=d.orders||[],tb=document.getElementById('orderBody');
-  if(orders.length){
-    document.getElementById('noOrders').style.display='none';
-    tb.innerHTML=orders.map(function(o){return'<tr><td>'+(o.date||'').slice(0,10)+'</td><td style="font-size:10px">'+(o.order_id||'').slice(0,20)+'</td><td>'+o.type+'</td><td>¥'+o.price+'</td><td style="color:var(--gold)">¥'+o.commission+'</td><td style="font-size:10px">'+(o.code||'').slice(0,12)+'</td></tr>'}).join('');
-  }else{tb.innerHTML='';document.getElementById('noOrders').style.display='block'}
-  
+function buildDashboard(d){
+  var h='';
+  h+='<div class="stats-row"><div class="stat-card green"><div class="stat-label">累计订单</div><div class="stat-val">'+(d.totalOrders||0)+'</div></div>';
+  h+='<div class="stat-card gold"><div class="stat-label">总流水</div><div class="stat-val">¥'+(d.totalGMV||0).toFixed(2)+'</div></div>';
+  h+='<div class="stat-card gold"><div class="stat-label">应得分成</div><div class="stat-val">¥'+(d.totalCommission||0).toFixed(2)+'</div></div>';
+  h+='<div class="stat-card"><div class="stat-label">最后更新</div><div class="stat-val" style="font-size:18px">'+new Date().toLocaleTimeString()+'</div></div></div>';
+  h+='<div class="breakdown">';
+  var bk=d.breakdown||{},items=[{k:'credit_3',n:'体验包 ¥4.9'},{k:'credit_10',n:'进阶包 ¥9.9'},{k:'credit_20',n:'专业包 ¥14.9'},{k:'monthly',n:'月会员 ¥29.9'}];
+  items.forEach(function(i){var b=bk[i.k]||{};h+='<div class="break-card"><div class="b-name">'+i.n+'</div><div class="b-count">'+(b.count||0)+'单</div><div class="b-sub">'+b.rate+' · ¥'+(b.subtotal||0).toFixed(2)+'</div></div>'});
+  h+='</div><div style="font-size:14px;color:var(--gold-l);letter-spacing:3px;margin-bottom:12px">订单明细</div>';
+  h+='<div style="overflow-x:auto"><table class="order-table"><thead><tr><th>时间</th><th>订单号</th><th>套餐</th><th>金额</th><th>分成</th><th>兑换码</th></tr></thead><tbody>';
+  var orders=d.orders||[];
+  if(orders.length){orders.forEach(function(o){h+='<tr><td>'+(o.date||'').slice(0,10)+'</td><td style="font-size:10px">'+(o.order_id||'').slice(0,20)+'</td><td>'+o.type+'</td><td>¥'+o.price+'</td><td style="color:var(--gold)">¥'+o.commission+'</td><td style="font-size:10px">'+(o.code||'').slice(0,12)+'</td></tr>'})}
+  else{h+='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--tx3)">暂无订单数据，用户通过你的渠道购买后会出现在这里</td></tr>'}
+  h+='</tbody></table></div>';
+  document.getElementById('dashboard').innerHTML=h;
 }
 var params=new URLSearchParams(location.search);
 if(params.get('ch'))CH=params.get('ch');
-</script></body></html>
