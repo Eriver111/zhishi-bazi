@@ -30,6 +30,10 @@
       AI.pageType = 'result';
     } else if (typeof window._hepanData !== 'undefined') {
       AI.pageType = 'hepan';
+    } else if (typeof window._sihuaCol !== 'undefined') {
+      AI.pageType = 'ziwei';
+    } else if (typeof window._liurenData !== 'undefined' || document.querySelector('.shapan-grid')) {
+      AI.pageType = 'liuren';
     }
 
     // 初始化免费用户标识
@@ -172,7 +176,8 @@
         // 保存排盘数据供AI页使用
         var cd = buildChartData();
         if (cd) { try { localStorage.setItem('ai_chart_data', JSON.stringify(cd)); } catch(ex) {} }
-        window.location.href = 'ai-chat.html';
+        var mode='';if(AI.pageType==='ziwei')mode='?t=zw';else if(AI.pageType==='liuren')mode='?t=lr';
+        window.location.href = 'ai-chat.html'+mode;
       });
     } else {/* console.() */;
     }
@@ -470,6 +475,8 @@
   function buildChartData() {
     if (AI.pageType === 'result') return buildResultContext();
     if (AI.pageType === 'hepan') return buildHePanContext();
+    if (AI.pageType === 'ziwei'){try{var d=localStorage.getItem('ai_ziwei_data');return d?JSON.parse(d):null}catch(e){return null}}
+    if (AI.pageType === 'liuren'){try{var d=localStorage.getItem('ai_liuren_data');return d?JSON.parse(d):null}catch(e){return null}}
     return null;
   }
 
