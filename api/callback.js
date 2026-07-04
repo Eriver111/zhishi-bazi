@@ -22,25 +22,26 @@ module.exports = async function handler(req, res) {
 
     const outTradeNo = params.out_trade_no || '';
     const userId = params.uid ? parseInt(params.uid) : null;
+    const channel = params.ch || ''; // 分销渠道标识
 
-    if (outTradeNo.startsWith('credit3_')) { const code = generateCode(); await doInsert(code, outTradeNo, 3, userId); }
-    else if (outTradeNo.startsWith('credit10_')) { const code = generateCode(); await doInsert(code, outTradeNo, 10, userId); }
-    else if (outTradeNo.startsWith('credit20_')) { const code = generateCode(); await doInsert(code, outTradeNo, 20, userId); }
+    if (outTradeNo.startsWith('credit3_')) { const code = generateCode(); await doInsert(code, outTradeNo, 3, userId, channel); }
+    else if (outTradeNo.startsWith('credit10_')) { const code = generateCode(); await doInsert(code, outTradeNo, 10, userId, channel); }
+    else if (outTradeNo.startsWith('credit20_')) { const code = generateCode(); await doInsert(code, outTradeNo, 20, userId, channel); }
     else if (outTradeNo.startsWith('monthly_')) {
       const code = generateCode();
-      await activateMonthly(code, outTradeNo);
+      await activateMonthly(code, outTradeNo, undefined, channel);
       if (userId) { try { var db = require('../lib/supabase.js').getSupabase(); if(db) await db.from('user_subscriptions').update({user_id:userId}).eq('code',code).is('user_id',null); } catch(e){} }
     } else if (outTradeNo.startsWith('credit_')) {
-      const code = generateCode(); await doInsert(code, outTradeNo, 10, userId);
+      const code = generateCode(); await doInsert(code, outTradeNo, 10, userId, channel);
     } else if (outTradeNo.startsWith('aichat_')) {
-      const code = generateCode(); await doInsert(code, outTradeNo, 5, userId);
+      const code = generateCode(); await doInsert(code, outTradeNo, 5, userId, channel);
     }
     return res.status(200).send('success');
   } catch (e) { return res.status(200).send('success'); }
 };
 
-async function doInsert(code, oid, count, userId) {
-  await insertCredits(code, oid, count);
+async function doInsert(code, oid, count, userId, channel) {
+  await insertCredits(code, oid, count, channel);
   if (userId) {
     try {
       var db = require('../lib/supabase.js').getSupabase();

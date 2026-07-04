@@ -55,9 +55,11 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      var channel=(req.body&&req.body.channel)||'';
+      var notifParams=[];if(userId)notifParams.push('uid='+userId);if(channel)notifParams.push('ch='+channel);
       const payParams = {
         pid: PAY_PID, type: 'alipay',
-        out_trade_no: orderId, notify_url: SITE + '/api/callback' + (userId ? '?uid='+userId : ''),
+        out_trade_no: orderId, notify_url: SITE + '/api/callback' + (notifParams.length?'?'+notifParams.join('&'):''),
         return_url: returnUrl, name: payName, money: String(payAmount)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);

@@ -25,8 +25,17 @@ function autoPull(){
 // 启动后 10 秒做首次检查，之后每 60 秒检查
 setTimeout(function(){ autoPull(); setInterval(autoPull,60000); },10000);
 
+const CHANNEL_DOMAINS={'knowbazi.online':'knowbazi','zx.zhishi.online':'zx'};
 const s=http.createServer(async(req,res)=>{
 res.setHeader('Access-Control-Allow-Origin','*');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}
+
+// 渠道检测：根据 Host 头自动标记渠道来源
+var host=req.headers.host||'';
+var channel=CHANNEL_DOMAINS[host]||'';
+if(channel){
+  res.setHeader('Set-Cookie','channel='+channel+'; Path=/; Max-Age=7776000; SameSite=Lax');
+}
+
 let c=200, _sent=false;res.status=x=>{c=x;return res};
 res.json=d=>{if(_sent)return;_sent=true;res.writeHead(c,{'Content-Type':'application/json'});res.end(JSON.stringify(d))};
 res.send=d=>{if(_sent)return;_sent=true;res.writeHead(c,{'Content-Type':'text/plain'});res.end(String(d))};
@@ -36,8 +45,17 @@ let pn=(origUrl.split('?')[0]||'/').replace(/^\/server\.js/,'')||'/';
 if(!pn||pn==='/')pn='/index.html';
 
 // API
-if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await new Promise(o=>{let b='';req.on('data',d=>b+=d);req.on('end',()=>{try{o(JSON.parse(b))}catch(_){let p={};b.split('&').forEach(s=>{let kv=s.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1])});o(p)}})});await h(req,res)}catch(e){if(!_sent)res.json({error:e.message})}return}
-const fp=__dirname+pn;try{const b=fs.readFileSync(fp);res.writeHead(200,{'Content-Type':M[path.extname(pn).toLowerCase()]||'text/plain'});res.end(b);return}catch(e){}
-if(!path.extname(pn)){try{const b=fs.readFileSync(fp+'.html');res.writeHead(200,{'Content-Type':'text/html'});res.end(b);return}catch(e){}}
+if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await new Promise(o=>{let b='';req.on('data',d=>b+=d);req.on('end',()=>{try{o(JSON.parse(b))}catch(_){let p={};b.split('&').forEach(s=>{let kv=s.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1])});o(p)}})});// 注入渠道标记到 body
+if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
+await h(req,res)}catch(e){if(!_sent)res.json({error:e.message})}return}
+const fp=__dirname+pn;try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
+// HTML 页面注入渠道持久化脚本
+if(ct==='text/html'&&channel){
+  var injectScript='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';
+  b=b.toString().replace('</head>',injectScript+'</head>');
+}
+res.writeHead(200,{'Content-Type':ct});res.end(b);return}catch(e){}
+if(!path.extname(pn)){try{let b=fs.readFileSync(fp+'.html');if(channel){var injectScript2='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';b=b.toString().replace('</head>',injectScript2+'</head>')}
+res.writeHead(200,{'Content-Type':'text/html'});res.end(b);return}catch(e){}}
 res.writeHead(404);res.end('404')});s.listen(process.env.PORT||3000,()=>console.log('OK'));
 // force rebuild 1781971871
