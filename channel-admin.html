@@ -47,13 +47,13 @@ function login(){var k=document.getElementById('keyInput').value.trim();if(!k)re
 function load(){
   if(!KEY)return;
   document.getElementById('loginBox').style.display='none';
-  document.getElementById('dashboard').style.display='block';
-  document.getElementById('dashboard').innerHTML='<div class="loading"><div class="s"></div><p>加载中...</p></div>';
+  document.getElementById('mainArea').style.display='block';document.getElementById('loadingArea').style.display='block';document.getElementById('contentArea').style.display='none';
+  
   fetch('/api/channel-stats?ch='+CH+'&key='+encodeURIComponent(KEY))
   .then(function(r){return r.json()}).then(function(d){
-    if(d.error){document.getElementById('dashboard').innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><button onclick="location.reload()">重试</button></div>';return}
+    document.getElementById('loadingArea').style.display='none';document.getElementById('contentArea').style.display='block';if(d.error){document.getElementById('mainArea').innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><button onclick="location.reload()">重试</button></div>';return}
     render(d);
-  }).catch(function(){document.getElementById('dashboard').innerHTML='<div class="login-box"><h3 style="color:var(--red)">网络错误</h3><button onclick="location.reload()">重试</button></div>'})
+  }).catch(function(){document.getElementById('mainArea').innerHTML='<div class="login-box"><h3 style="color:var(--red)">网络错误</h3><button onclick="location.reload()">重试</button></div>'})
 }
 function render(d){
   document.getElementById('totalOrders').textContent=d.totalOrders||0;
