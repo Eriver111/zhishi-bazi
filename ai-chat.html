@@ -2,25 +2,24 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="view-transition" content="same-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>知时先生 · AI 易学助手</title>
 <meta name="description" content="知时先生，融合子平法与盲派体系的AI易学助手。">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/auth.css">
-<link rel="stylesheet" href="css/interactions.css">
-<link rel="stylesheet" href="css/ink-wash.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;height:100dvh;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--ink,#0e0c0a);color:var(--tx,#d8d0c0)}
+html,body{height:100%;height:100dvh;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--ink,#080c14);color:var(--tx,#e2dcc8)}
 .page{display:flex;flex-direction:column;height:100%;height:100dvh;max-width:800px;margin:0 auto;position:relative}
-.topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bd,rgba(180,160,140,.08));background:var(--ink);flex-shrink:0}
+/* 顶栏 */
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--bd,rgba(201,168,76,.1));background:var(--ink);flex-shrink:0}
 .topbar .back{color:var(--tx2);text-decoration:none;font-size:20px;padding:4px 8px}
 .topbar .title{flex:1;font-size:18px;color:var(--gold-l);letter-spacing:3px;font-weight:700}
 .topbar .mode-btn{padding:5px 14px;border-radius:14px;border:1px solid var(--bd2);background:none;color:var(--tx2);font-size:12px;cursor:pointer;letter-spacing:1px;font-family:inherit}
 .topbar .mode-btn.pro{color:var(--gold-l);border-color:var(--gold);background:rgba(201,168,76,.08)}
 .topbar .credits{font-size:13px;color:var(--tx2)}
 .topbar .credits strong{color:var(--gold-l);font-size:16px}
+/* 消息区 */
 .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
 .msg{display:flex;gap:10px;max-width:90%}
 .msg.user{align-self:flex-end;flex-direction:row-reverse}
@@ -30,53 +29,35 @@ html,body{height:100%;height:100dvh;overflow:hidden;font-family:'PingFang SC','M
 .msg.ai .avatar{background:rgba(201,168,76,.12);color:var(--gold-l)}
 .msg .bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.7;word-break:break-word}
 .msg.user .bubble{background:rgba(80,160,200,.1);color:var(--tx);border-top-right-radius:4px}
-.msg.ai .bubble{background:rgba(28,26,22,.8);border:1px solid rgba(180,160,140,.12);color:var(--tx);border-top-left-radius:4px}
+.msg.ai .bubble{background:rgba(13,21,37,.8);border:1px solid rgba(201,168,76,.12);color:var(--tx);border-top-left-radius:4px}
 .msg.ai .bubble strong{color:var(--gold-l)}
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--tx3);gap:8px;padding:40px}
 .empty-state .icon{font-size:48px;opacity:.5}
 .empty-state h3{color:var(--gold-l);font-size:18px;letter-spacing:3px}
 .empty-state p{font-size:13px;text-align:center;line-height:1.8}
+/* 底部栏 */
 .bottombar{flex-shrink:0;border-top:1px solid var(--bd);background:var(--ink);padding:8px 12px max(12px,env(safe-area-inset-bottom))}
 .redeem-row{display:flex;gap:8px;margin-bottom:8px}
-.redeem-row input{flex:1;padding:8px 12px;background:rgba(30,28,24,.6);border:1px solid rgba(200,190,170,.06);border-radius:10px;color:var(--tx);font-size:13px;font-family:monospace;letter-spacing:2px;text-align:center;outline:none}
+.redeem-row input{flex:1;padding:8px 12px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:10px;color:var(--tx);font-size:13px;font-family:monospace;letter-spacing:2px;text-align:center;outline:none}
 .redeem-row input:focus{border-color:var(--gold)}
 .redeem-row button{padding:8px 16px;border-radius:10px;border:1px solid var(--bd2);background:none;color:var(--gold-l);font-size:12px;cursor:pointer;letter-spacing:1px;white-space:nowrap}
 .input-row{display:flex;gap:8px;align-items:flex-end}
-.input-row textarea{flex:1;padding:10px 14px;background:rgba(30,28,24,.6);border:1px solid rgba(200,190,170,.06);border-radius:18px;color:var(--tx);font-size:14px;font-family:inherit;outline:none;resize:none;min-height:40px;max-height:100px;line-height:1.4}
+.input-row textarea{flex:1;padding:10px 14px;background:rgba(20,20,36,.6);border:1px solid rgba(255,255,255,.06);border-radius:18px;color:var(--tx);font-size:14px;font-family:inherit;outline:none;resize:none;min-height:40px;max-height:100px;line-height:1.4}
 .input-row textarea:focus{border-color:var(--gold)}
 .input-row .send{width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .input-row .send:disabled{opacity:.3}
-
-/* 加载动画 */
-.page-loader{position:fixed;inset:0;z-index:9998;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
-.page-loader.hidden{opacity:0;pointer-events:none}
-.hexa-reveal{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:20px}
-.hexa-yao-yang{width:100px;height:8px;background:linear-gradient(90deg,transparent,var(--gold),transparent);border-radius:4px;opacity:0;animation:hexaAppear .5s forwards}
-.hexa-yao-yin{display:flex;gap:14px;opacity:0;animation:hexaAppear .5s forwards}
-.hexa-yao-yin span{width:38px;height:8px;background:linear-gradient(90deg,transparent,rgba(180,180,200,.5),transparent);border-radius:4px}
-@keyframes hexaAppear{from{opacity:0;transform:scale(.5);filter:blur(4px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
-.hexa-name{font-size:24px;color:var(--gold-l);font-weight:900;letter-spacing:8px;opacity:0;animation:hexaAppear .5s 1.05s forwards}
-.hexa-sub{font-size:11px;color:var(--tx3);letter-spacing:4px;opacity:0;animation:hexaAppear .5s 1.25s forwards;margin-top:4px}
-body.loading .page{opacity:0}
-body.loaded .page{opacity:1}
-
-.eye-splash{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#181612 0%,#0e0c0a 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .5s}
-.eye-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 2s ease-out infinite}
-@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
-@media(max-width:600px){.page{max-width:100%}.topbar{padding:10px 12px;gap:8px}.topbar .title{font-size:15px;letter-spacing:1px}.topbar .mode-btn{padding:4px 10px;font-size:11px}.topbar .credits{font-size:11px}.messages{padding:10px;gap:8px}.msg{max-width:95%}.msg .bubble{padding:10px 12px;font-size:13px}.msg .avatar{width:30px;height:30px;font-size:12px}.bottombar{padding:6px 8px}.input-row textarea{font-size:13px;padding:8px 12px}.input-row .send{width:36px;height:36px;font-size:16px}.redeem-row input{font-size:12px;padding:6px 10px}.eye-splash svg{width:120px;height:72px}}
+.share-bar{display:none;text-align:center;padding:8px 0}
+.share-bar button{padding:8px 20px;border-radius:16px;border:none;background:linear-gradient(135deg,#4CAF50,#2d8a4a);color:#fff;font-size:13px;cursor:pointer;letter-spacing:1px;font-family:inherit}
+.share-bar .hint{display:block;font-size:11px;color:var(--tx3);margin-top:4px}
+.share-bar .hint a{color:var(--gold)}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
 </style>
 </head>
-<body class="loading">
-
-<div class="page-loader" id="pageLoader">
-  <div class="hexa-reveal" id="hexaReveal"></div>
-  <div class="hexa-name" id="hexaName"></div>
-  <div class="hexa-sub" id="hexaSub"></div>
-</div>
-
-<div class="eye-splash" id="eyeSplash">
-  <div class="eye-ring" style="width:260px;height:260px"></div>
-  <div class="eye-ring" style="width:180px;height:180px;animation-delay:.4s"></div>
+<body>
+<!-- 页面加载：天眼动画 -->
+<div id="eyeSplash" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#0d1525 0%,#080c14 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .5s">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 2s ease-out infinite"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 2s ease-out .4s infinite"></div>
   <svg viewBox="0 0 100 60" style="width:160px;height:96px;position:relative;z-index:1">
     <defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
     <path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150" filter="url(#eyeGlow)" id="eyePath"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1s" fill="freeze"/></path>
@@ -84,15 +65,19 @@ body.loaded .page{opacity:1}
     <circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0"><animate attributeName="opacity" from=".6" to="0" dur=".6s" begin="1.1s" fill="freeze"/><animate attributeName="r" from="8" to="25" dur=".6s" begin="1.1s" fill="freeze"/></circle>
   </svg>
   <div style="color:#e8cf70;margin-top:16px;font-size:15px;letter-spacing:5px;position:relative;z-index:1">知 时 先 生</div>
+  <style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
 </div>
 
 <div class="page">
+  <!-- 顶栏 -->
   <div class="topbar">
     <a href="javascript:history.back()" class="back">←</a>
     <span class="title">知时先生</span>
     <button class="mode-btn" id="modeBtn" onclick="toggleMode()">白话</button>
     <span class="credits" id="creditsLabel"></span>
   </div>
+
+  <!-- 消息 -->
   <div class="messages" id="messages">
     <div class="empty-state" id="emptyState">
       <div class="icon" style="font-size:48px;color:rgba(201,168,76,.3);font-family:'STKaiti','KaiTi',serif">知</div>
@@ -100,10 +85,16 @@ body.loaded .page{opacity:1}
       <p id="emptyDesc">首次体验免费，可提问 2 次<br>融合子平法与盲派体系</p>
     </div>
   </div>
+
+  <!-- 底部 -->
   <div class="bottombar">
     <div class="redeem-row" id="redeemRow">
       <input type="text" id="redeemInput" placeholder="输入兑换码" maxlength="16">
       <button onclick="redeem()">激活</button>
+    </div>
+    <div class="share-bar" id="shareBar">
+      <button onclick="doShare()">分享给好友 · 得1次提问</button>
+      <span class="hint">如需多次提问请前往 <a href="pricing.html">积分方案</a></span>
     </div>
     <div class="input-row" id="inputRow">
       <textarea id="input" placeholder="输入你的问题..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
@@ -112,48 +103,137 @@ body.loaded .page{opacity:1}
   </div>
 </div>
 
-<script src="js/auth.js"></script>
 <script>
-// 加载动画
-(function(){
-var G=['111111乾|元','000000坤|厚','010001屯|始','100010蒙|求','010111需|前','111010讼|成','000010师|律','010000比|辅','110111小畜|懿','111011履|虎','000111泰|交','111000否|往','111101同人|族','101111大有|顺','000100谦|裒','001000豫|乐','011001随|时','100110蛊|振','000011临|思','110000观|设','101001噬嗑|明','100101贲|明','000001剥|安','100000复|闭','111001无妄|佑','100111大畜|识','100001颐|饮','011110大过|立','010010坎|常','101101离|照','011100咸|通','001110恒|易','111100遁|远','001111大壮|履','101000晋|昭','000101明夷|晦','110101家人|言','101011睽|异','010100蹇|反','001010解|过','110001损|忿','100011益|善','011111夬|及','111110姤|诰','011000萃|除','000110升|大','011010困|志','010110井|相','101110革|时','011101鼎|位','001001震|省','100100艮|出','110100渐|善','001011归妹|敝','001101丰|刑','101100旅|刑','110110巽|命','011011兑|习','110010涣|帝','010011节|度','110011中孚|死','001100小过|过','010101既济|防','101010未济|居'];
-var h=G[Math.floor(Math.random()*G.length)],b=h.split('|')[0].split(''),r=h.split('|');
-var box=document.getElementById('hexaReveal'),delays=[800,650,500,350,200,80];
-for(var i=0;i<6;i++){
-  if(i<3&&(b[i]==='1'||!b[i])){var el=document.createElement('div');el.className='hexa-yao-yang';el.style.animationDelay=delays[i]+'ms';box.appendChild(el);}
-  else if(i<3){var el=document.createElement('div');el.className='hexa-yao-yin';el.style.animationDelay=delays[i]+'ms';el.innerHTML='<span></span><span></span>';box.appendChild(el);}
+var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:''};
+
+// 天眼加载
+setTimeout(function(){var e=document.getElementById('eyeSplash');if(e){e.style.opacity='0';setTimeout(function(){e.remove()},500)}},2500);
+
+// AI思考时显示三步分析动画
+var _thinkTimer=null;
+var _thinkSteps=['五行图分析中','盲派算法分析中','子平派分析中'];
+var _thinkIcons=['◇','◎','◉'];
+function showThinking(){
+  var d=document.createElement('div');d.className='msg ai';d.id='thinking';
+  var step=0;
+  function cycle(){
+    d.querySelector('.bubble').innerHTML=_thinkIcons[step]+' <span style=color:var(--gold-l)>'+_thinkSteps[step]+'</span>';
+    step=(step+1)%3;
+  }
+  d.innerHTML='<div class="avatar">师</div><div class="bubble" style="animation:pulse 1s infinite">◇ 五行图分析中</div>';
+  document.getElementById('messages').appendChild(d);
+  document.getElementById('messages').scrollTop=99999;
+  _thinkTimer=setInterval(cycle,900);
+  cycle();
 }
-document.getElementById('hexaName').textContent='知时先生';document.getElementById('hexaName').style.animationDelay='1050ms';
-document.getElementById('hexaSub').textContent='—— AI易学助手';document.getElementById('hexaSub').style.animationDelay='1250ms';
-setTimeout(function(){var l=document.getElementById('pageLoader');if(l)l.classList.add('hidden');document.body.classList.remove('loading');document.body.classList.add('loaded');var e=document.getElementById('eyeSplash');if(e){e.style.opacity='0';setTimeout(function(){e.remove()},600);}},1800);
+function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById('thinking');if(t)t.remove()}
+
+(function init(){
+  AI.freeId=localStorage.getItem('ai_free_id')||('f_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8));
+  localStorage.setItem('ai_free_id',AI.freeId);
+  var used=parseInt(localStorage.getItem('ai_free_used')||'0');
+  AI.freeRemaining=Math.max(0,2-used);
+  updateCreditsUI();
+
+  // 恢复会话
+  var savedCode=localStorage.getItem('ai_chat_code');
+  if(savedCode){
+    fetch('/api/credits?code='+encodeURIComponent(savedCode)).then(function(r){return r.json()}).then(function(d){
+      if(d.credits>0){AI.code=savedCode;AI.credits=d.credits;updateCreditsUI()}
+      else if(d.credits===-1){AI.code=savedCode;AI.isMonthly=true;document.getElementById('creditsLabel').innerHTML='<strong>∞</strong> 会员'}
+    });
+  }
+
+  // 检测分享来访
+  var m=location.search.match(/ref=([^&]+)/);
+  if(m){fetch('/api/referral?ref='+m[1]+'&visitor='+AI.freeId).then(function(r){return r.json()}).then(function(d){
+    if(d.success){AI.freeRemaining=1;localStorage.setItem('ai_free_used','0');updateCreditsUI();addMsg('ai','朋友邀请你来的！你获得了 1 次额外免费提问。')}
+  })}
 })();
 
-// 聊天功能
-window._chatMode='plain';
-function send(){var inp=document.getElementById('input');if(!inp||!inp.value.trim())return;var msg=inp.value.trim();inp.value='';addMsg('user',msg);callAI(msg);}
-function toggleMode(){var btn=document.getElementById('modeBtn');window._chatMode=window._chatMode==='pro'?'plain':'pro';btn.textContent=window._chatMode==='pro'?'专业':'白话';btn.className='mode-btn'+(window._chatMode==='pro'?' pro':'');}
-function redeem(){var inp=document.getElementById('redeemInput');if(!inp||!inp.value.trim())return;var code=inp.value.trim();var token=null;try{token=localStorage.getItem('ai_auth_token');}catch(e){}if(!token){alert('请先登录再激活兑换码');return;}fetch('/api/credits',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({code:code,action:'activate'})}).then(function(r){return r.json()}).then(function(d){if(d.success){try{localStorage.setItem('ai_auth_code',code);}catch(e){}alert('激活成功！会员已绑定到你的账号');inp.value='';updateCredits();}else{alert(d.error||'激活失败');}}).catch(function(){alert('网络错误');});}
-function addMsg(role,text){var msgs=document.getElementById('messages');var empty=document.getElementById('emptyState');if(empty)empty.style.display='none';var div=document.createElement('div');div.className='msg '+role;div.innerHTML='<div class="avatar">'+(role==='user'?'你':'师')+'</div><div class="bubble">'+text.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
-function updateCredits(){var el=document.getElementById('creditsLabel');if(!el)return;var token=null,code='';try{token=localStorage.getItem('ai_auth_token');code=localStorage.getItem('ai_auth_code')||localStorage.getItem('bazi_auth_code')||'';}catch(e){}if(!token&&!code){el.innerHTML='<a href="/profile" style="color:var(--gold-l);text-decoration:none;font-size:12px">登录</a>';return}if(!code){el.innerHTML='<a href="/pricing" style="color:var(--gold-l);text-decoration:none;font-size:11px">已登录</a>';return}el.textContent='加载中...';fetch('/api/credits?code='+encodeURIComponent(code)).then(function(r){return r.json()}).then(function(d){if(d.is_monthly||d.subscription_active){el.innerHTML='积分：<strong>∞会员</strong>';}else{el.innerHTML='积分：<strong>'+(d.credits||0)+'</strong>';}}).catch(function(){el.textContent='积分：?';});}
-function callAI(msg){
-  var msgs=document.getElementById('messages');var div=document.createElement('div');div.className='msg ai';div.id='aiTyping';div.innerHTML='<div class="avatar">师</div><div class="bubble">知时先生正在推演...</div>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
-  var token=null,code='';try{token=localStorage.getItem('ai_auth_token');code=localStorage.getItem('ai_auth_code')||'';}catch(e){}
-  var prompt='用户提问：'+msg+'\n\n请以"知时先生"身份回答。'+(window._chatMode==='pro'?'请使用专业命理术语。':'请用通俗易懂的白话。');
-  var lrData=null;try{lrData=localStorage.getItem('ai_liuren_data');if(lrData)lrData=JSON.parse(lrData);}catch(e){}
-  if(lrData&&lrData.type==='liuren'){prompt='以下是一份大六壬课式数据，请根据此课式进行专业断课解读：\n\n'+JSON.stringify({dateInfo:lrData.dateInfo,sanChuan:lrData.sanChuan,siKe:lrData.siKe,tianDiPan:lrData.tianDiPan,shenSha:lrData.shenSha},null,2)+'\n\n用户问题：'+(msg||'综合参详');}
-  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({prompt:prompt,divType:'liuren',code:code})})
-  .then(function(r){return r.json()}).then(function(d){
-    var typing=document.getElementById('aiTyping');if(typing)typing.remove();
-    if(d.error){addMsg('ai','抱歉：'+d.error);return;}
-    var text=d.reading||'';text=text.replace(/```json[\s\S]*?```/g,'').replace(/```[\s\S]*?```/g,'').trim();
-    addMsg('ai',text||'卦象已显，请静心体悟。');
-    updateCredits();
-    try{localStorage.removeItem('ai_liuren_data');}catch(e){}
-  }).catch(function(){var typing=document.getElementById('aiTyping');if(typing)typing.remove();addMsg('ai','网络连接失败，请稍后再试。');});
+function updateCreditsUI(){
+  var el=document.getElementById('creditsLabel');
+  if(AI.isMonthly){el.innerHTML='<strong>∞</strong> 会员';return}
+  if(AI.freeRemaining>0){el.innerHTML='免费<strong>'+AI.freeRemaining+'</strong>次';return}
+  if(AI.credits>0){el.innerHTML='剩余<strong>'+AI.credits+'</strong>次';return}
+  el.innerHTML='';
+  document.getElementById('shareBar').style.display=AI.freeRemaining<=0?'block':'none';
 }
-updateCredits();
-// 大六壬跳转自动提示
-(function(){var p=new URLSearchParams(location.search);if(p.get('t')==='lr'){var lr=null;try{lr=localStorage.getItem('ai_liuren_data');lr=lr?JSON.parse(lr):null;}catch(e){}if(lr){document.getElementById('emptyDesc').textContent='已加载六壬课式数据，输入问题即可开始解读';document.getElementById('input').placeholder='输入你的问题（或直接发送获取综合解读）...';}}})();
+
+function addMsg(role,text){
+  AI.messages.push({role:role,content:text});
+  var d=document.getElementById('emptyState');if(d)d.style.display='none';
+  var div=document.createElement('div');div.className='msg '+role;
+  div.innerHTML='<div class="avatar">'+(role==='user'?'我':'师')+'</div><div class="bubble">'+text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</div>';
+  document.getElementById('messages').appendChild(div);
+  document.getElementById('messages').scrollTop=99999;
+}
+
+function toggleMode(){
+  AI.mode=AI.mode==='simple'?'pro':'simple';
+  var btn=document.getElementById('modeBtn');
+  btn.textContent=AI.mode==='simple'?'白话':'专业';
+  btn.className='mode-btn'+(AI.mode==='pro'?' pro':'');
+}
+
+function send(){
+  if(AI.isWaiting)return;
+  var inp=document.getElementById('input');var text=inp.value.trim();if(!text)return;
+  if(AI.freeRemaining<=0&&AI.credits<=0&&!AI.isMonthly){document.getElementById('shareBar').style.display='block';return}
+  inp.value='';AI.isWaiting=true;document.getElementById('sendBtn').disabled=true;
+  addMsg('user',text);showThinking();
+
+  var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
+  // 检测紫微/八字模式
+  var zwMode=false;try{var sp2=new URLSearchParams(window.location.search);zwMode=sp2.get('t')==='zw'}catch(e){}
+  // 附加上次保存的排盘数据
+  try { var cd2=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data'); if(cd2) {body.chartData=JSON.parse(cd2);if(zwMode)body.mode='ziwei';} } catch(ex) {}
+  // 无排盘数据时提醒
+  if(!body.chartData){
+    if(zwMode){
+      addMsg('ai','⚠️ 未检测到紫微排盘数据。请先在<a href=\"ziwei.html\">紫微斗数排盘</a>页面完成排盘，再向我提问，分析会更精准。');
+    } else {
+      addMsg('ai','⚠️ 未检测到排盘数据。建议先通过<a href=\"paipan.html\">八字排盘</a>获取完整命盘，再向我提问，分析会更精准。');
+    }
+    return;
+  }
+  if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}
+  else{body.code=AI.code}
+
+  fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  .then(function(r){return r.json()}).then(function(d){
+    hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
+    if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
+    addMsg('ai',d.reply);
+    if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
+    if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}
+    if(d.is_monthly){AI.isMonthly=true;updateCreditsUI()}
+  }).catch(function(e){hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','网络错误，请重试')});
+}
+
+function redeem(){
+  var cd=document.getElementById('redeemInput').value.trim();if(!cd)return;
+  // 防重复：检查本地是否已兑换过此码
+  var usedCodes=JSON.parse(localStorage.getItem('ai_used_codes')||'[]');
+  if(usedCodes.indexOf(cd)>=0){alert('此兑换码已使用过，不能重复兑换');return}
+  fetch('/api/credits?code='+encodeURIComponent(cd)).then(function(r){return r.json()}).then(function(d){
+    if(d.error){alert(d.error);return}
+    // 检查服务端是否已使用（total_used>0 说明有人用过了，防止跨设备重复）
+    if(d.total_used>0){alert('此兑换码已被使用，不能重复兑换');return}
+    if(d.credits>0){AI.code=cd;AI.credits+=d.credits;AI.isMonthly=false;usedCodes.push(cd);localStorage.setItem('ai_used_codes',JSON.stringify(usedCodes));localStorage.setItem('ai_chat_code',cd);localStorage.setItem('ai_chat_type','credits');updateCreditsUI();addMsg('ai','兑换成功！获得 '+d.credits+' 次提问。')}
+    else if(d.credits===-1){AI.code=cd;AI.isMonthly=true;usedCodes.push(cd);localStorage.setItem('ai_used_codes',JSON.stringify(usedCodes));localStorage.setItem('ai_chat_code',cd);localStorage.setItem('ai_chat_type','monthly');updateCreditsUI();addMsg('ai','月度会员已激活，30天内无限次提问。')}
+    else{alert('该兑换码已用完或已过期')}
+  }).catch(function(){alert('网络错误')});
+}
+
+function doShare(){
+  var url='https://zhishi.online/?ref='+AI.freeId;
+  if(navigator.share){navigator.share({title:'知时',text:'AI+传统易学，前两次免费体验',url:url}).catch(function(){})}
+  else if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){alert('链接已复制！发给朋友即可')})}
+  else{prompt('复制链接分享：',url)}
+  fetch('/api/referral',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code||'',freeId:AI.freeId,action:'share'})}).catch(function(){});
+}
 </script>
+<script src="js/auth.js"></script>
 </body>
 </html>
