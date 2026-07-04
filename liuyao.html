@@ -36,7 +36,7 @@
 /* ====== 卡片 ====== */
 .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent)}
-.btn-submit{display:block;margin:20px auto 0;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:all .2s}
+.btn-submit{display:block;margin:20px auto 15px;padding:14px 40px;font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:25px;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:all .2s}
 .btn-submit:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(201,168,76,.2)}
 .btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
@@ -239,7 +239,7 @@ function findGua(name){ return YIJING.find(function(g){ return g.name===name; })
 
 function showGuaReveal(gName,lines,callback){
   var overlay=document.createElement('div'); overlay.className='gua-reveal';
-  var yaoHTML=''; for(var i=0;i<6;i++) yaoHTML+='<div class="reveal-yao" style="color:'+(lines[i]?'var(--gold-l)':'var(--tx2)')+'">'+(lines[i]?'━━━━━':'━   ━')+'</div>';
+  var yaoHTML=''; for(var i=5;i>=0;i--) yaoHTML+='<div class="reveal-yao" style="color:'+(lines[i]?'var(--gold-l)':'var(--tx2)')+'">'+(lines[i]?'━━━━━':'━   ━')+'</div>';
   overlay.innerHTML='<canvas class="particles" id="pCanvas"></canvas>'+yaoHTML+'<div class="reveal-name">'+gName+'</div><div class="reveal-sub">卦 象 已 显</div>';
   document.body.appendChild(overlay);
   setTimeout(function(){
