@@ -40,9 +40,9 @@ function load(){
   db.innerHTML='<div class="loading"><div class="s"></div><p>加载中...</p></div>';
   fetch('/api/channel-stats?ch='+CH+'&key='+encodeURIComponent(KEY))
   .then(function(r){return r.json()}).then(function(d){
-    if(d.error){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3></div>';return}
+    if(d.error){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">'+d.error+'</h3><p style="font-size:11px;margin-top:4px;color:var(--tx3)">请确认密码正确或联系管理员</p></div>';return}
     build(d);
-  }).catch(function(){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">网络错误</h3></div>'})
+  }).catch(function(e){db.innerHTML='<div class="login-box"><h3 style="color:var(--red)">请求失败</h3><p style="font-size:12px;margin-top:8px;color:var(--tx3)">'+e.message+'</p></div>'})
 }
 function build(d){
   var h='',bk=d.breakdown||{},items=[{k:'credit_3',n:'体验包 4.9',p:4.9},{k:'credit_10',n:'进阶包 9.9',p:9.9},{k:'credit_20',n:'专业包 14.9',p:14.9},{k:'monthly',n:'月会员 29.9',p:29.9}];
