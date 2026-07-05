@@ -1985,11 +1985,11 @@ function calcDayMasterStrength(bazi) {
       var key = (g1 < g2 ? g1 + g2 : g2 + g1); // 甲己 = 己甲
       var heWx = GAN_HE_RES[key] || '';
       if (heWx) {
-        if (heWx === dgWx) score += 4;         // 合化为日主五行 → 加强
-        else if (SHENGWO[dgWx] === heWx) score += 2; // 合化为印星 → 助力
-        else if (KEWO[dgWx] === heWx) score -= 3;    // 合化为官杀 → 压制
-        else if (WOSHENG[dgWx] === heWx) score -= 2; // 合化为食伤 → 泄气
-        else if (WOKE[dgWx] === heWx) score -= 2;    // 合化为财星 → 耗力
+        if (heWx === dgWx) score += 2;         // 合化为日主五行 → 加强
+        else if (SHENGWO[dgWx] === heWx) score += 1; // 合化为印星 → 助力
+        else if (KEWO[dgWx] === heWx) score -= 1;    // 合化为官杀 → 压制
+        else if (WOSHENG[dgWx] === heWx) score -= 1; // 合化为食伤 → 泄气
+        else if (WOKE[dgWx] === heWx) score -= 1;    // 合化为财星 → 耗力
       }
     }
   });
@@ -2021,31 +2021,31 @@ function calcDayMasterStrength(bazi) {
 
     // 六冲：相邻地支冲 → 根气动摇，减分
     if (chongMap[z1] === z2) {
-      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 6;  // 日支被冲，根气受损
-      else score -= 3;  // 其他柱冲，动荡
+      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 3;  // 日支被冲，根气受损
+      else score -= 1;  // 其他柱冲，动荡
     }
 
     // 六害：暗中不利
     if (haiMap[z1] === z2) {
-      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 4;  // 日支被害
-      else score -= 2;
+      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 2;  // 日支被害
+      else score -= 1;
     }
 
     // 刑：不和
     if (xingMap[z1] === z2) {
-      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 4;
-      else score -= 2;
+      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 2;
+      else score -= 1;
     }
 
     // 地支合化：相邻地支合化出新五行
     var heKey = z1 + z2;
     if (zhiHeScore[heKey]) {
       var heWx = zhiHeScore[heKey];
-      if (heWx === dgWx) score += 5;           // 合化为日主 → 强根
-      else if (SHENGWO[dgWx] === heWx) score += 3; // 合化为印 → 助力
-      else if (KEWO[dgWx] === heWx) score -= 4;    // 合化为官杀 → 压力
-      else if (WOSHENG[dgWx] === heWx) score -= 3; // 合化为食伤 → 泄气
-      else if (WOKE[dgWx] === heWx) score -= 3;    // 合化为财 → 耗力
+      if (heWx === dgWx) score += 2;           // 合化为日主 → 强根
+      else if (SHENGWO[dgWx] === heWx) score += 1; // 合化为印 → 助力
+      else if (KEWO[dgWx] === heWx) score -= 2;    // 合化为官杀 → 压力
+      else if (WOSHENG[dgWx] === heWx) score -= 1; // 合化为食伤 → 泄气
+      else if (WOKE[dgWx] === heWx) score -= 1;    // 合化为财 → 耗力
     }
   });
 
@@ -2055,18 +2055,18 @@ function calcDayMasterStrength(bazi) {
     var hasA = allZhiArr.indexOf(tri[0])>=0, hasB = allZhiArr.indexOf(tri[1])>=0, hasC = allZhiArr.indexOf(tri[2])>=0;
     if (hasA && hasB && hasC) {
       // 三合成局，力量极强
-      if (wx === dgWx) score += 8;           // 三合日主 → 极强根气
-      else if (SHENGWO[dgWx] === wx) score += 5; // 三合印局
-      else if (KEWO[dgWx] === wx) score -= 6;    // 三合官杀局
-      else if (WOSHENG[dgWx] === wx) score -= 5; // 三合食伤局
-      else if (WOKE[dgWx] === wx) score -= 5;    // 三合财局
+      if (wx === dgWx) score += 4;           // 三合日主 → 强根
+      else if (SHENGWO[dgWx] === wx) score += 2; // 三合印局
+      else if (KEWO[dgWx] === wx) score -= 3;    // 三合官杀局
+      else if (WOSHENG[dgWx] === wx) score -= 2; // 三合食伤局
+      else if (WOKE[dgWx] === wx) score -= 2;    // 三合财局
     }
     // 半合（只含两支）→ 力量弱一些
     var count = (hasA?1:0)+(hasB?1:0)+(hasC?1:0);
     if (count === 2 && !(hasA&&hasB&&hasC)) {
-      if (wx === dgWx) score += 3;
-      else if (SHENGWO[dgWx] === wx) score += 2;
-      else if (KEWO[dgWx] === wx) score -= 2;
+      if (wx === dgWx) score += 1;
+      else if (SHENGWO[dgWx] === wx) score += 1;
+      else if (KEWO[dgWx] === wx) score -= 1;
     }
   });
 
