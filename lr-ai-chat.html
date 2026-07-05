@@ -204,7 +204,7 @@ function send(){
   .then(function(r){return r.json()}).then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
-    addMsg('ai',d.reply);
+    var pre='';try{var cd3=JSON.parse(localStorage.getItem('ai_liuren_data')||'{}');if(cd3.pattern&&cd3.pattern.name)pre+='【系统判定】格局：'+cd3.pattern.name+'。';if(cd3.dayMasterStrength)pre+='日主旺衰：'+cd3.dayMasterStrength.level+'（'+cd3.dayMasterStrength.score+'/100）。';if(cd3.dateInfo)pre+="起课："+cd3.dateInfo.date+"。";if(pre)pre+='以下为AI详细解读：\n\n---\n\n';}catch(ex){}addMsg('ai',pre+d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}
     if(d.is_monthly){AI.isMonthly=true;updateCreditsUI()}
