@@ -281,7 +281,7 @@ module.exports = async function handler(req, res) {
         usageByClient ? usageByClient.used : 0,
         usageByServer ? usageByServer.used : 0
       );
-      const maxRemaining = Math.max(0, (parseInt(process.env.FREE_CREDITS_PER_DEVICE) || 2) - maxUsed);
+      var fb3=parseInt(process.env.FREE_CREDITS_PER_DEVICE);var unloggedMax=(isNaN(fb3)?2:fb3);const maxRemaining=Math.max(0,unloggedMax-maxUsed);
 
       if (maxRemaining > 0) {
         await saveChatHistory('free_' + free_id, 'user', question);
