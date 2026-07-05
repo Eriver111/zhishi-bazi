@@ -175,10 +175,11 @@
     var fab = document.getElementById('aiFab');
     if (fab) {
       fab.addEventListener('click', function(e) {
-        var pt=detectPageType();
-        var cd=buildChartData();
-        if(cd){try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){}}
-        window.location.href='ai-chat.html';
+        var pt=detectPageType();var cd=buildChartData();var tgt='ai-chat.html';
+        if(pt==='ziwei'){tgt='zw-ai-chat.html';if(cd)try{localStorage.setItem('ai_ziwei_data',JSON.stringify(cd))}catch(ex){}}
+        else if(pt==='liuren'){tgt='lr-ai-chat.html';if(cd)try{localStorage.setItem('ai_liuren_data',JSON.stringify(cd))}catch(ex){}}
+        else{if(cd)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){}}
+        window.location.href=tgt;
       });
     }
   }
@@ -738,7 +739,7 @@
         if(!dragging)return;
         dragging=false; fab.style.transition=''; fab.style.cursor='pointer';
         var dx=e.clientX-startX,dy=e.clientY-startY;
-        if(Math.abs(dx)<5&&Math.abs(dy)<5){try{var cd2=buildChartData();if(cd2)localStorage.setItem('ai_chart_data',JSON.stringify(cd2))}catch(ex){}window.location.href='ai-chat.html'}
+        if(Math.abs(dx)<5&&Math.abs(dy)<5){var pt2=detectPageType();var cd2=buildChartData();var t2='ai-chat.html';if(pt2==='ziwei'){t2='zw-ai-chat.html';if(cd2)try{localStorage.setItem('ai_ziwei_data',JSON.stringify(cd2))}catch(ex){}}else if(pt2==='liuren'){t2='lr-ai-chat.html';if(cd2)try{localStorage.setItem('ai_liuren_data',JSON.stringify(cd2))}catch(ex){}}else{if(cd2)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd2))}catch(ex){}}window.location.href=t2}
         else{var r=fab.getBoundingClientRect();if(r.top<60)fab.style.top='65px';if(r.left<0)fab.style.left='10px'}
       });
     }
