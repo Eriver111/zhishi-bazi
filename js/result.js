@@ -126,6 +126,23 @@ function render(data) {
         hour: _params.hour,
         gender: _params.gender
     });
+    // 自动存储排盘数据到 localStorage，确保 AI 对话页总能获取到
+    try {
+      var d={birthInfo:{year:_params.year,month:_params.month,day:_params.day,hour:_params.hour,gender:_params.gender}};
+      if(_bazi){
+        d.fourPillars={};
+        ['year','month','day','hour'].forEach(function(p){
+          if(_bazi[p])d.fourPillars[p]={gan:_bazi[p].gan,zhi:_bazi[p].zhi,ganWX:(_bazi[p].wuXing||{}).gan||'',zhiWX:(_bazi[p].wuXing||{}).zhi||'',nayin:_bazi[p].nayin||''};
+        });
+        if(_bazi.day&&_bazi.day.gan)d.dayMaster={gan:_bazi.day.gan,wuXing:(_bazi.day.wuXing||{}).gan||''};
+        if(typeof BaZiCalculator!=='undefined'){
+          try{d.dayMasterStrength=BaZiCalculator.calcDayMasterStrength(_bazi)}catch(e){}
+          try{d.pattern=BaZiCalculator.getPattern(_bazi)}catch(e){}
+          try{d.yongJi=BaZiCalculator.getYongJi(_bazi)}catch(e){}
+        }
+      }
+      localStorage.setItem('ai_chart_data',JSON.stringify(d));
+    }catch(e){console.log('auto-save chartData failed:',e)}
 }
 
 // ---- 付费内容渲染 (由 paywall 在解锁后调用) ----
