@@ -247,7 +247,7 @@ module.exports = async function handler(req, res) {
       // 登录用户：按 user_id 追踪免费次数 + 注册奖励
       if (userId) {
         var freeInfo = await trackFreeUsageByUser(userId);
-        var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 3; // 基础+注册奖励3，显式处理0值
+        var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2; // 基础2+注册奖励2=4次
         if (freeInfo.used < maxFree) {
           await saveUserChatHistory(userId, 'user', question);
 

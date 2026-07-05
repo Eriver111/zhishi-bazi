@@ -89,7 +89,7 @@ module.exports = async function handler(req, res) {
       if (code) monthlyActive = await isMonthlyActive(code);
     }
     var freeInfo = await trackFreeUsageByUser(userId);
-    var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 3; // 与 ai-chat 统一：基础+注册奖励3，显式处理0值
+    var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2; // 与 ai-chat 统一：基础2+注册奖励2=4次
     var freeUsed = false;
     var creditOk = !!monthlyActive || freeInfo.used < maxFree;
 

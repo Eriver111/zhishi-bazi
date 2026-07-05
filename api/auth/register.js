@@ -50,7 +50,7 @@ module.exports = async function handler(req, res) {
     const user = await createUser(email, hashed, phone || null);
 
     // 新注册用户赠送 3 次免费提问（注册激励）
-    try { await bumpFreeUsageByUser(user.id); await bumpFreeUsageByUser(user.id); await bumpFreeUsageByUser(user.id); } catch (e) {}
+    try { await bumpFreeUsageByUser(user.id); await bumpFreeUsageByUser(user.id); } catch (e) {}
 
     // 签发 token
     const token = signToken({ uid: user.id, email: user.email });
