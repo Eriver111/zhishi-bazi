@@ -152,32 +152,7 @@ function renderPower(bazi){
                   申:'申月·秋金当令',酉:'酉月·秋金当令',戌:'戌月·秋土当令',亥:'亥月·冬水当令'};
 
     // ---- 子平法：得令·得地·得势 评分 ----
-    var score=50;
-    if(mWx===dgWx)score+=30;           // 得令：月令与日主同五行
-    else if(SG[mWx]===dgWx)score+=20;  // 月令生日主（印星当令）
-    else if(SG[dgWx]===mWx)score-=15;  // 日主生月令（泄气）
-    else if(KE[mWx]===dgWx)score-=25;  // 月令克日主（官杀当令）
-
-    // 得势：其他三柱与日主的关系
-    ['year','month','hour'].forEach(function(p){
-      var gw2=TG[bazi[p].gan];
-      if(gw2===dgWx)score+=6;        // 比劫帮身
-      else if(SG[gw2]===dgWx)score+=4; // 印星生身
-      else if(KE[dgWx]===gw2)score-=4; // 官杀克身
-      else if(SG[dgWx]===gw2)score-=3; // 食伤泄气
-      else if(KE[gw2]===dgWx)score-=5; // 财星耗身
-    });
-
-    // 藏干粗略修正（日支藏干有无印比）
-    try{
-      var cgList=typeof getCangGan==='function'?getCangGan(bazi.day.zhi):[];
-      cgList.forEach(function(cg){
-        if(TG[cg]===dgWx)score+=3;
-        else if(SG[TG[cg]]===dgWx)score+=2;
-      });
-    }catch(e){}
-
-    var l=Math.max(10,Math.min(95,score));
+    var dm=typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和"};var l=dm.score||50;
     var lb=l>=65?'身强':l>=45?'中和':'身弱';
     var co=l>=65?'#e07050':l>=45?'#c9a84c':'#5b9fd4';
     var emoji=l>=65?'🔥':l>=45?'⚖️':'💧';
