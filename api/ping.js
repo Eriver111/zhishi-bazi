@@ -3,7 +3,7 @@ module.exports = async function handler(req, res) {
   const diag = {
     ok: true, time: new Date().toISOString(),
     su_url: process.env.SUPABASE_URL ? 'set' : 'MISSING',
-    su_key: process.env.SUPABASE_KEY ? 'set(len='+(process.env.SUPABASE_KEY||'').length+')' : 'MISSING',
+    su_key: process.env.SUPABASE_KEY ? 'set' : 'MISSING',
     site: process.env.SITE_URL || 'MISSING',
   };
   try {

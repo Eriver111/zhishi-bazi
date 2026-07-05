@@ -5,7 +5,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const DATA_FILE = '/tmp/feedback.jsonl';
+const DATA_FILE = path.join(__dirname, '..', 'feedback.jsonl');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

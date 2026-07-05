@@ -26,20 +26,20 @@ module.exports = async function handler(req, res) {
       if (db) {
         // 防重复
         var dupKey = 'inv_' + inviteCode + '_' + myUid;
-        var { data: exist } = await db.from('free_credits_log').select('*').eq('identifier', dupKey).single();
+        var { data: exist } = await db.from('free_credits_log').select('*').eq('identifier', dupKey).maybeSingle();
         if (exist) return res.status(200).json({ success: false, reason: 'used', message: '你已经使用过这个邀请码了' });
 
         // 记录使用
         await db.from('free_credits_log').insert({ identifier: dupKey, used_count: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
 
         // 给被邀请人（当前用户）加额度
-        var { data: myData } = await db.from('free_credits_log').select('*').eq('identifier', myUid).single();
+        var { data: myData } = await db.from('free_credits_log').select('*').eq('identifier', myUid).maybeSingle();
         if (myData && myData.used_count > 0) {
           await db.from('free_credits_log').update({ used_count: myData.used_count - 2 }).eq('identifier', myUid);
         }
 
         // 给邀请人加额度
-        var { data: refData } = await db.from('free_credits_log').select('*').eq('identifier', inviteCode).single();
+        var { data: refData } = await db.from('free_credits_log').select('*').eq('identifier', inviteCode).maybeSingle();
         if (refData && refData.used_count > 0) {
           await db.from('free_credits_log').update({ used_count: refData.used_count - 2 }).eq('identifier', inviteCode);
         }
@@ -67,10 +67,10 @@ module.exports = async function handler(req, res) {
     const key = 'ref_' + ref + '_' + visitor;
 
     if (db) {
-      const { data: existing } = await db.from('free_credits_log').select('*').eq('identifier', key).single();
+      const { data: existing } = await db.from('free_credits_log').select('*').eq('identifier', key).maybeSingle();
       if (existing) return res.status(200).json({ success: false, reason: 'used' });
       await db.from('free_credits_log').insert({ identifier: key, used_count: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
-      const { data: refData } = await db.from('free_credits_log').select('*').eq('identifier', ref).single();
+      const { data: refData } = await db.from('free_credits_log').select('*').eq('identifier', ref).maybeSingle();
       if (refData && refData.used_count > 0) {
         await db.from('free_credits_log').update({ used_count: refData.used_count - 2, updated_at: new Date().toISOString() }).eq('identifier', ref);
       }
