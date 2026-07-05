@@ -1,5 +1,6 @@
 /**
- * 报告付费 v3.0 - QR弹窗 + 手动解锁 + AI引导入口
+ * 报告付费 v3.1 - QR弹窗 + 手动解锁 + AI引导入口
+ * 八字排盘结果页付费遮罩
  */
 var _baziHash='';
 function hp(p){return [p.year,p.month,p.day,p.hour,p.gender].join('|')}
@@ -12,22 +13,37 @@ function initPaywall(bp){
   var first=document.getElementById(secs[0]);
   if(!first||document.getElementById('unifiedReport'))return;
 
-  // 先渲染付费内容（这样遮罩下面有实际内容）
+  // 先渲染付费内容
   if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
-  // 然后折叠所有板块
+  // 折叠所有板块
   secs.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('drawer-open')});
 
   var wrap=document.createElement('div');wrap.id='unifiedReport';
-  wrap.style.cssText='position:relative;min-height:300px';
+  wrap.style.cssText='position:relative;padding-bottom:20px';
   first.parentNode.insertBefore(wrap,first);
   secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
 
   if(iru()){unlock();return}
   injectQRModal();
 
+  // 计算付费内容实际高度
+  var contentH=0;
+  secs.forEach(function(id){var el=document.getElementById(id);if(el)contentH+=el.offsetHeight||160;});
+
   var pw=document.createElement('div');pw.id='rptPaywall';
-  pw.style.cssText='position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(8,12,20,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(8px)';
-  pw.innerHTML='<h3 style="color:var(--gold-l);margin:8px 0">深度命理分析报告</h3><p style="color:var(--tx2);font-size:13px;text-align:center;line-height:1.8">今年运势 · 婚姻感情 · 财运分析<br>学业分析 · 近5年流年运势</p><div style="font-size:30px;font-weight:900;color:var(--gold-l);margin:10px 0">¥9.9</div><button class="submit-btn" onclick="startRP()" style="max-width:280px">积分解锁完整报告</button><p style="color:var(--tx3);font-size:11px;margin-top:8px">一次积分兑换 · 永久查看 · 支持下载</p><div style="margin-top:22px;padding:16px 20px;background:rgba(201,168,76,.1);border:1px dashed var(--bd2);border-radius:12px;text-align:center"><p style="color:var(--gold-l);font-size:16px;font-weight:700;margin-bottom:6px">不想看报告？试试知时AI</p><p style="color:var(--tx);font-size:14px;margin-bottom:4px">基于子平八字+盲派理论，为你深度解读命盘</p><p style="color:var(--gold);font-size:14px;font-weight:600;margin-top:8px;cursor:pointer" onclick="window.open('/ai-chat.html','_blank')">前2次免费 · 点我开始对话</p></div>';
+  pw.style.cssText='position:absolute;top:0;left:0;right:0;height:'+(contentH||500)+'px;background:linear-gradient(180deg,rgba(14,12,10,.88) 0%,rgba(18,16,12,.94) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)';
+  pw.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">'
+    +'<div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-bottom:24px"></div>'
+    +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">深度命理分析报告</h3>'
+    +'<p style="color:var(--tx2);font-size:13px;text-align:center;line-height:2">今年运势 · 婚姻感情 · 财运分析<br>学业分析 · 近5年流年运势</p>'
+    +'<div style="font-size:36px;font-weight:900;color:var(--gold-l);margin:16px 0">¥9.9</div>'
+    +'<button class="submit-btn" onclick="startRP()" style="max-width:280px;width:100%;padding:14px 32px;font-size:16px;letter-spacing:3px">积分解锁完整报告</button>'
+    +'<p style="color:var(--tx3);font-size:11px;margin-top:10px">一次付费 · 永久查看 · 支持下载</p>'
+    +'</div>'
+    +'<div style="width:100%;padding:20px;background:rgba(24,22,18,.6);border-top:1px solid rgba(180,160,140,.08);text-align:center">'
+    +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 命理师</p>'
+    +'<a href="/ai-chat.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:20px;color:var(--gold-l);text-decoration:none;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .3s" onmouseenter="this.style.boxShadow=\'0 0 20px rgba(201,168,76,.15)\'" onmouseleave="this.style.boxShadow=\'none\'">🤖 前2次免费 · 开始对话</a>'
+    +'</div>';
   wrap.appendChild(pw);
   autoRestore();
 }
@@ -35,8 +51,8 @@ function initPaywall(bp){
 function injectQRModal(){
   if(document.getElementById('qrModal'))return;
   var m=document.createElement('div');m.id='qrModal';
-  m.style.cssText='display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:var(--card,#0d1525);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px">扫码支付 ¥9.9</h3><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.05);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
+  m.style.cssText='display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);align-items:center;justify-content:center';
+  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
   document.body.appendChild(m);
 }
 
@@ -51,30 +67,20 @@ function startRP(){
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:9.9,name:'八字完整分析报告'})})
-  .then(function(r){
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    return r.json();
-  }).then(function(d){
-    if(d.error){status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
+  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'credit_pack',name:'八字完整分析报告'})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
     localStorage.setItem('rpt_ord',d.out_trade_no);
-
     var payUrl=d.pay_url||'';
-
-    // 手机端：直接跳转支付宝/支付页面
     if(isMobile()&&payUrl){
       if(status)status.textContent='正在跳转支付...';
       setTimeout(function(){window.location.href=payUrl},500);
-    }
-    // 电脑端/无真实链接：显示二维码
-    else {
-      // 用 zpayz 返回的真实 QR 图，或 QuickChart 生成
+    } else {
       var qrSrc=d.qrcode||'';
       if(!qrSrc&&payUrl) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(payUrl);
       if(container&&qrSrc){
-        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:#333;padding:20px>请用支付宝扫描<br>二维码支付 ¥9.9</p>\'">';
-      } else if(container){
-        container.innerHTML='<p style=color:var(--tx)">请用支付宝扫描二维码支付 ¥9.9</p><p style=color:var(--tx3);font-size:11px">如未显示二维码，请点击重新支付</p>';
+        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>请用支付宝扫描<br>二维码支付 ¥9.9</p>\'">';
       }
       if(status)status.textContent='请扫码支付 ¥9.9';
     }
@@ -82,7 +88,6 @@ function startRP(){
   }).catch(function(e){
     if(status)status.textContent='连接失败，请重试';
     if(retry)retry.style.display='block';
-    if(container)container.innerHTML='<p style=color:var(--tx3)">支付服务暂时不可用</p>';
   });
 }
 
@@ -90,7 +95,7 @@ function startQRPoll(oid){
   if(_qrTimer)clearInterval(_qrTimer);
   var n=0;var status=document.getElementById('qrStatus');
   _qrTimer=setInterval(function(){
-    n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
+    n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
     fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
       if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
@@ -105,7 +110,7 @@ function manualUnlock(){
     if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
-  }).catch(function(){alert('网络错误')});
+  }).catch(function(){alert('网络错误，请稍后重试')});
 }
 
 function unlock(){
