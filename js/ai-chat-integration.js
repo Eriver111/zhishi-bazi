@@ -23,19 +23,20 @@
   var $fab, $badge, $backdrop, $drawer, $messages, $input, $sendBtn, $emptyState,
       $creditsLabel, $buyBar, $inputWrap, $redeemRow, $statusLine;
 
+  // 检测页面类型（顶层，所有事件处理器都能访问）
+  function detectPageType(){
+    try{if(typeof _bazi!=='undefined'&&_bazi!==null)return'result'}catch(e){}
+    try{if(typeof _params!=='undefined'&&_params!==null)return'result'}catch(e){}
+    try{if(typeof window._hepanData!=='undefined'&&window._hepanData!==null)return'hepan'}catch(e){}
+    try{if(document.querySelector('.shapan-grid'))return'liuren'}catch(e){}
+    try{if(document.title.indexOf('紫微')>=0)return'ziwei'}catch(e){}
+    try{if(document.title.indexOf('六壬')>=0)return'liuren'}catch(e){}
+    try{if(window.location.href.indexOf('ziwei')>=0)return'ziwei'}catch(e){}
+    try{if(window.location.href.indexOf('liuren')>=0)return'liuren'}catch(e){}
+    return'result';}
+
   // ===== 初始化 =====
   function init() {
-    // 检测页面类型（实时判断，避免跨页残留变量误判）
-    function detectPageType(){
-      try{if(typeof _bazi!=='undefined'&&_bazi!==null)return'result'}catch(e){}
-      try{if(typeof _params!=='undefined'&&_params!==null)return'result'}catch(e){}
-      try{if(typeof window._hepanData!=='undefined'&&window._hepanData!==null)return'hepan'}catch(e){}
-      try{if(document.querySelector('.shapan-grid'))return'liuren'}catch(e){}
-      try{if(document.title.indexOf('紫微')>=0)return'ziwei'}catch(e){}
-      try{if(document.title.indexOf('六壬')>=0)return'liuren'}catch(e){}
-      try{if(window.location.href.indexOf('ziwei')>=0)return'ziwei'}catch(e){}
-      try{if(window.location.href.indexOf('liuren')>=0)return'liuren'}catch(e){}
-      return'result';}
     AI.pageType = detectPageType();
 
     // 初始化免费用户标识
