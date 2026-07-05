@@ -12,7 +12,7 @@ const { requireAuth } = require('../lib/auth.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat';
+const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
 
 const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学的 AI 命理师。你深研子平八字（格局法）与盲派命理（象法）两大体系，融合《滴天髓》《三命通会》《子平真诠》《穷通宝鉴》《渊海子平》等古典命籍，为用户提供专业、客观、有深度的命理分析。
 
