@@ -2061,8 +2061,9 @@ function calcDayMasterStrength(bazi) {
   });
 
   // ---------- ⑨ 分级输出 ----------
-  // 分数下限 5，防止极端八字出现负数或零分
-  if (score < 5) score = 5;
+  // 分数限定在 1~100 区间
+  if (score < 1) score = 1;
+  if (score > 100) score = 100;
   var level, label;
   if (score >= 80)      { level = '极强'; label = '元气充沛'; }
   else if (score >= 60) { level = '偏强'; label = '元气较足'; }
