@@ -82,6 +82,12 @@
         html += '<a href="/pricing" class="btn" style="text-decoration:none;padding:8px 16px;font-size:12px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:20px;font-weight:600;letter-spacing:1px">购买</a>';
         html += '</div></div>';
 
+        // 兑换码输入
+        html += '<div style="margin-top:16px;padding:14px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:10px">';
+        html += '<div style="font-size:10px;color:var(--tx3);letter-spacing:2px;margin-bottom:8px">使用兑换码</div>';
+        html += '<div style="display:flex;gap:8px"><input id="redeemInput" placeholder="输入8位兑换码" maxlength="20" style="flex:1;padding:8px 12px;font-size:13px;background:rgba(30,28,24,.6);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--tx);font-family:monospace;letter-spacing:2px;outline:none;text-transform:uppercase"><button onclick="redeemCode()" style="padding:8px 16px;font-size:13px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap">兑换</button></div>';
+        html += '<div id="redeemMsg" style="margin-top:6px;font-size:11px"></div></div>';
+
         var myInviteCode='ZS'+String((Auth.getUser()&&Auth.getUser().id)||'0').padStart(6,'0');
         html+='<div style="margin-top:16px;padding:14px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:10px">';
         html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:10px;color:var(--tx3);letter-spacing:2px">我的邀请码</div><div style="font-size:20px;font-weight:700;color:var(--gold-l);letter-spacing:3px;font-family:monospace">'+myInviteCode+'</div></div><button onclick="navigator.clipboard.writeText(\''+myInviteCode+'\');var t=this;t.textContent=\'已复制\';setTimeout(function(){t.textContent=\'复制\'},2000)" style="padding:6px 12px;font-size:11px;background:rgba(201,168,76,.1);border:1px solid var(--bd2);color:var(--gold);border-radius:12px;cursor:pointer">复制</button></div>';
@@ -117,6 +123,20 @@
     }).catch(function(e){ content.innerHTML = '<div class="empty-state"><p>加载失败：'+ (e&&e.message||'请确认已登录并刷新') +'</p><button class="btn" onclick="location.reload()" style="margin-top:12px">重新加载</button></div>'; });
   });
   }
+
+  window.redeemCode=function(){
+    var code=document.getElementById("redeemInput").value.trim().toUpperCase();
+    var msg=document.getElementById("redeemMsg");
+    if(!code){msg.innerHTML="<span style=color:#F44336>请输入兑换码</span>";return;}
+    if(code.length<4){msg.innerHTML="<span style=color:#F44336>兑换码格式不正确</span>";return;}
+    if(!Auth.isLoggedIn()){Auth.showModal("login");return;}
+    msg.innerHTML="兑换中...";
+    fetch("/api/credits",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+Auth.getToken()},body:JSON.stringify({action:"activate",code:code})})
+    .then(function(r){return r.json()}).then(function(d){
+      if(d.success){msg.innerHTML="<span style=color:#4CAF50>✅ "+d.message+"</span>";setTimeout(function(){location.reload()},1500);}
+      else msg.innerHTML="<span style=color:#F44336>"+(d.error||"兑换失败，请检查兑换码是否正确")+"</span>";
+    }).catch(function(){msg.innerHTML="<span style=color:#F44336>网络异常，请重试</span>";});
+  };
 
   window.redeemInvite=function(){
     var code=document.getElementById("inviteInput").value.trim();
