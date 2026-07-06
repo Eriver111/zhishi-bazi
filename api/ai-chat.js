@@ -7,7 +7,7 @@
  * 支持完整排盘数据注入（chartData）和简版信息（bazi）
  */
 
-const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits } = require('../lib/supabase.js');
+const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits, deductCreditByUser, isMonthlyActiveByUserId } = require('../lib/supabase.js');
 const { requireAuth } = require('../lib/auth.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
@@ -272,6 +272,33 @@ module.exports = async function handler(req, res) {
             is_auth: true
           });
         } else {
+          // 免费次数用完 → 检查用户是否有关联的付费积分或会员
+          var userCreditsFallback = await getUserCredits(userId);
+          var userMonthlyFallback = await isMonthlyActiveByUserId(userId);
+          if (userMonthlyFallback || userCreditsFallback > 0) {
+            // 有付费积分或会员，自动使用付费模式
+            await saveUserChatHistory(userId, 'user', question);
+            var paidReply; try { paidReply = await callAI(question, chartData, bazi, history, mode); } catch(aiErr) {
+              return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
+            }
+            var creditsAfterDeduct;
+            if (!userMonthlyFallback) {
+              creditsAfterDeduct = await deductCreditByUser(userId);
+              if (!creditsAfterDeduct) {
+                return res.status(500).json({ error: '扣减次数失败，请稍后重试' });
+              }
+            }
+            await saveUserChatHistory(userId, 'assistant', paidReply);
+            var creditsLeftPaid = userMonthlyFallback ? -1 : (creditsAfterDeduct ? creditsAfterDeduct.credits : 0);
+            return res.status(200).json({
+              reply: paidReply,
+              credits_left: creditsLeftPaid,
+              is_monthly: userMonthlyFallback ? true : undefined,
+              monthly_expires: userMonthlyFallback ? userMonthlyFallback.expires_at : undefined,
+              is_auth: true,
+              from_purchased: true
+            });
+          }
           return res.status(403).json({
             error: '免费次数已用完，请购买次数包或开通会员继续使用',
             free_exhausted: true
@@ -315,23 +342,50 @@ module.exports = async function handler(req, res) {
     }
 
     // ---- 付费模式 ----
+    // 登录用户没有兑换码时，尝试使用关联积分
+    var useUserCredits = false;
     if (!code) {
-      return res.status(400).json({ error: '缺少兑换码，请先购买次数或开通会员' });
+      if (userId) {
+        monthlyActive = await isMonthlyActiveByUserId(userId);
+        if (!monthlyActive) {
+          var userTotalCredits = await getUserCredits(userId);
+          if (userTotalCredits <= 0) {
+            return res.status(400).json({ error: '没有可用次数，请先购买次数包或开通会员' });
+          }
+          useUserCredits = true;
+        }
+      } else {
+        return res.status(400).json({ error: '缺少兑换码，请先购买次数或开通会员' });
+      }
     }
 
     // 先验证：有月度会员或有效次数（不扣减）
-    monthlyActive = await isMonthlyActive(code);
-    if (!monthlyActive) {
-      var creditCheck = await getCreditsByCode(code);
-      if (!creditCheck || (creditCheck.credits != null && creditCheck.credits <= 0)) {
-        return res.status(403).json({
-          error: '兑换码无效、次数已用完或会员已过期，请重新购买'
-        });
+    if (!useUserCredits && !monthlyActive) {
+      monthlyActive = await isMonthlyActive(code);
+      if (!monthlyActive) {
+        var creditCheck = await getCreditsByCode(code);
+        if (!creditCheck || (creditCheck.credits != null && creditCheck.credits <= 0)) {
+          // 登录用户：兑换码无效时，再尝试用户关联积分
+          if (userId) {
+            monthlyActive = await isMonthlyActiveByUserId(userId);
+            if (!monthlyActive) {
+              var fallbackCredits = await getUserCredits(userId);
+              if (fallbackCredits > 0) {
+                useUserCredits = true;
+              }
+            }
+          }
+          if (!useUserCredits && !monthlyActive) {
+            return res.status(403).json({
+              error: '兑换码无效、次数已用完或会员已过期，请重新购买'
+            });
+          }
+        }
       }
     }
 
     // 保存用户问题
-    await saveChatHistory(code, 'user', question);
+    if (code) await saveChatHistory(code, 'user', question);
     if (userId) await saveUserChatHistory(userId, 'user', question);
 
     // ---- 构建 AI 请求 ----
@@ -380,14 +434,18 @@ module.exports = async function handler(req, res) {
 
     // ---- AI 成功后才真正扣减 ----
     if (!monthlyActive) {
-      credits = await deductCredit(code);
+      if (useUserCredits) {
+        credits = await deductCreditByUser(userId);
+      } else {
+        credits = await deductCredit(code);
+      }
       if (!credits) {
         return res.status(500).json({ error: '扣减次数失败，请稍后重试' });
       }
     }
 
     // ---- 保存 AI 回答 ----
-    await saveChatHistory(code, 'assistant', reply);
+    if (code) await saveChatHistory(code, 'assistant', reply);
     if (userId) await saveUserChatHistory(userId, 'assistant', reply);
 
     // 月度会员返回特殊标记，次数制返回剩余次数
