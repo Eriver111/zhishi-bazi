@@ -100,7 +100,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，**禁止自行重新推算**：
 - **pattern**（格局）：已由子平法精确判定，直接引用"你的命局为XX格"，禁止重新判断格局。哪怕你觉得有更好的格局名也必须用系统判定的
 - **yongJi**（喜用忌神）：xiShen/喜神、yongShen/用神、jiShen/忌神 的五行元素已算好，**严格按此回答**，禁止根据自己的知识另行推断或替换。reasoning 字段是推算依据
-- **dayMasterStrength**（日主旺衰）：已由算法经九步精确计算——①得令（月令生克±30）②得地（日支通根±12）③得势（天干比劫印星±6/个）④藏干评分（±3/个）⑤过耗修正（月令反噬-8~-4）⑥调候（寒暖±8）⑦天干合化（甲己合土等±2~4）⑧地支合冲刑害（六合±3~5、六冲-3~-6、六害-2~-4、三刑-2~-4）⑨三合局（全合±5~8、半合±2~3）。必须严格输出这个结论，禁止自行推算分数或修改强弱等级。
+- **dayMasterStrength**（日主旺衰）：已由算法经八步精确计算（起评分50，最低不低于5）——①得令（月令生克：得令+30/相令+20/休令-15/囚令-10/死令-25）②得地（日支通根±12）③得势（天干比劫印星±6/个）④藏干本气（仅取地支本气，±3/柱）⑤月令五行过耗修正（囚令·休令时月令过旺反耗）⑥调候（寒暖燥湿±8）⑦天干合化（甲己合土等）⑧地支合冲刑害+三合局。必须严格输出这个结论，禁止自行推算分数或修改强弱等级。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
 - **daYun**（大运排盘）：用户的一生大运已由系统精确计算（顺逆、起运、每柱干支和十神）。回答任何大运相关问题时，**必须使用 chartData.daYun 中的数据**，禁止自己推算大运走向、起运岁数、大运干支。
@@ -366,7 +366,7 @@ module.exports = async function handler(req, res) {
     // 强制引用锁：在用户问题前插入最终提醒
     if (chartData && chartData.dayMasterStrength) {
       var ds=chartData.dayMasterStrength;
-      var lock1='【死命令·违反即错误】日主旺衰=「'+ds.level+'（'+ds.score+'/100）」';if(chartData.pattern)lock1+='，格局=「'+chartData.pattern.name+'」';lock1+='。禁止输出任何其他数值或名称。';messages.push({role:'system',content:lock1});
+      var lock1='【死命令·违反即错误】日主旺衰=「'+ds.level+'（'+ds.score+'）」';if(chartData.pattern)lock1+='，格局=「'+chartData.pattern.name+'」';lock1+='。禁止输出任何其他数值或名称。';messages.push({role:'system',content:lock1});
     }
 
     // 插入当前问题
@@ -460,7 +460,7 @@ async function callAI(question, chartData, bazi, history, mode) {
   // 强制引用锁：日主旺衰和格局必须用预计算数据
   if (chartData) {
     var lock2='【死命令】';
-    if (chartData.dayMasterStrength) lock2+='日主旺衰=「'+chartData.dayMasterStrength.level+'（'+chartData.dayMasterStrength.score+'/100）」';
+    if (chartData.dayMasterStrength) lock2+='日主旺衰=「'+chartData.dayMasterStrength.level+'（'+chartData.dayMasterStrength.score+'）」';
     if (chartData.pattern) lock2+=(lock2.length>10?'，':'')+'格局=「'+chartData.pattern.name+'」';
     if (lock2.length>10) {lock2+='。禁止输出任何其他数值或名称。';messages.push({role:'system',content:lock2});}
   }
@@ -581,7 +581,7 @@ function buildSingleChart(data) {
   // v3.1: 日主旺衰（结构化）
   if (data.dayMasterStrength) {
     const ds = data.dayMasterStrength;
-    ctx += `\n【权威数据 · 禁止重新推算】日主旺衰评定：${ds.level || '?'}（评分 ${ds.score || '?'}/100，${ds.label || ''}）。此结论由算法精确计算，你在回答中必须严格引用此数值，绝对禁止给出不同的分数或不同的强弱判断。\n`;
+    ctx += `\n【权威数据 · 禁止重新推算】日主旺衰评定：${ds.level || '?'}（评分 ${ds.score || '?'}，${ds.label || ''}）。此结论由算法精确计算，你在回答中必须严格引用此数值，绝对禁止给出不同的分数或不同的强弱判断。\n`;
   }
 
   // v3.4: 从格判定
