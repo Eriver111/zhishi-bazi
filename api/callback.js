@@ -127,9 +127,9 @@ async function doInsertWithRetry(code, oid, count, userId, channel, retries) {
   const MAX_RETRIES = 3;
 
   try {
-    const result = await insertCredits(code, oid, count, channel);
+    const result = await insertCredits(code, oid, count, channel, userId);
     if (result) {
-      if (userId) await linkUser('user_credits', code, userId);
+      // userId 已在 insertCredits 中直接写入，不再需要 linkUser 补绑
       return true;
     }
     if (retries < MAX_RETRIES) {
@@ -153,9 +153,9 @@ async function doMonthlyWithRetry(code, oid, days, userId, channel, retries) {
   const MAX_RETRIES = 3;
 
   try {
-    const result = await activateMonthly(code, oid, days, channel);
+    const result = await activateMonthly(code, oid, days, channel, userId);
     if (result) {
-      if (userId) await linkUser('user_subscriptions', code, userId);
+      // userId 已在 activateMonthly 中直接写入
       return true;
     }
     if (retries < MAX_RETRIES) {
