@@ -17,6 +17,8 @@ function autoPull(){
       var out=execSync('git pull origin main 2>&1',{cwd:dir,timeout:30000}).toString();
       console.log('[autoPull] git pull: '+out.trim());
       _lastPull=Date.now();
+      // 通知 pm2 重启
+      try{ execSync('pm2 restart zhishi 2>&1',{cwd:dir,timeout:5000}); }catch(e){}
       return true;
     }
   }catch(e){ console.error('[autoPull] 失败: '+e.message); }
