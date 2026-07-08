@@ -2,7 +2,7 @@
  * /api/admin/stats - 管理员统计
  * GET ?key=xxx 返回注册用户、付费、浏览量等数据
  */
-const { getSupabase } = require('../lib/supabase.js');
+const { getSupabase } = require('../../lib/supabase.js');
 
 const ADMIN_KEY = process.env.ADMIN_KEY || 'zhishi-admin-2026';
 
