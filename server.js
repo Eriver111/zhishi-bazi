@@ -27,6 +27,41 @@ function autoPull(){
 // 启动后 10 秒做首次检查，之后每 60 秒检查
 setTimeout(function(){ autoPull(); setInterval(autoPull,60000); },10000);
 
+// ===== 页面浏览统计（内存计数，每60秒刷入Supabase）=====
+var _pvCache = {}; // { 'YYYY-MM-DD|path': count }
+var _pvTimer = null;
+function flushPV() {
+  if (Object.keys(_pvCache).length === 0) return;
+  var batch = {};
+  for (var k in _pvCache) { batch[k] = _pvCache[k]; _pvCache[k] = 0; }
+  try {
+    var db = require('./lib/supabase.js').getSupabase();
+    if (!db) return;
+    var today = new Date().toISOString().slice(0,10);
+    var entries = [];
+    for (var k in batch) {
+      if (batch[k] <= 0) continue;
+      var parts = k.split('|');
+      entries.push({ date: parts[0], path: parts[1] || '/', count: batch[k] });
+    }
+    if (entries.length > 0) {
+      entries.forEach(function(e) {
+        db.from('page_views').upsert({ date: e.date, path: e.path, count: e.count },
+          { onConflict: 'date,path' }).then(function(){}).catch(function(){});
+      });
+    }
+  } catch(e) {}
+}
+function trackPV(path) {
+  var today = new Date().toISOString().slice(0,10);
+  var p = (path || '/').split('?')[0] || '/';
+  // 排除 API 和资源文件
+  if (p.startsWith('/api/') || p.includes('.')) return;
+  var key = today + '|' + p;
+  _pvCache[key] = (_pvCache[key] || 0) + 1;
+}
+setTimeout(function() { _pvTimer = setInterval(flushPV, 60000); }, 30000);
+
 const CHANNEL_DOMAINS={'knowbazi.online':'knowbazi','zx.zhishi.online':'zx'};
 const s=http.createServer(async(req,res)=>{
 res.setHeader('Access-Control-Allow-Origin','*');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}
@@ -45,6 +80,7 @@ res.send=d=>{if(_sent)return;_sent=true;res.writeHead(c,{'Content-Type':'text/pl
 const origUrl=req.headers['x-original-url']||req.headers['x-now-route']||req.url||'';
 let pn=(origUrl.split('?')[0]||'/').replace(/^\/server\.js/,'')||'/';
 if(!pn||pn==='/')pn='/index.html';
+trackPV(pn);
 
 // API
 if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];// 同时清除核心依赖缓存，确保 git pull 后生效
