@@ -47,9 +47,8 @@ module.exports = async function handler(req, res) {
       db.from('user_credits').select('code,credits,created_at,channel').order('created_at', { ascending: false }).limit(20),
       // 近7天每日注册数
       db.from('users').select('created_at').gte('created_at', daysAgo(7)),
-      // 页面浏览量（from page_views table if exists, else empty）
-      db.from('page_views').select('path,count,date').order('date', { ascending: false }).limit(100)
-        .catch(() => ({ data: [], error: null }))
+      // 页面浏览量（表可能不存在，安全查询）
+      (async function() { try { var r = await db.from('page_views').select('path,count,date').order('date', { ascending: false }).limit(100); return { data: r.data, error: r.error }; } catch(e) { return { data: [], error: null }; } })()
     ]);
 
     // 计算积分销售汇总
