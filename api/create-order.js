@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
       const payAmount = pricing.amount;
       const payName = name || pricing.label;
       const orderId = pricing.prefix + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
-      const returnUrl = SITE + '/result.html?paid=' + orderId;
+      const returnUrl = SITE + '/pricing?paid=' + orderId;
 
       if (!PAY_PID || !PAY_KEY) {
         return res.status(200).json({
@@ -123,7 +123,7 @@ module.exports = async function handler(req, res) {
       const payParams = {
         pid: PAY_PID, type: 'alipay',
         out_trade_no: orderId, notify_url: SITE + '/api/callback',
-        return_url: SITE + '/result.html?paid=' + orderId, name: payName, money: String(payAmount)
+        return_url: SITE + '/pricing?paid=' + orderId, name: payName, money: String(payAmount)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';

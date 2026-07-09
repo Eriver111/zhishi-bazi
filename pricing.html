@@ -251,6 +251,13 @@ function startPolling(orderId) {
 }
 
 function onPaySuccess(data) {
+  // 持久化保存兑换码，防止页面关闭丢失
+  if (data.code) {
+    try { localStorage.setItem('last_paid_code', data.code); } catch(e) {}
+    try { localStorage.setItem('last_paid_credits', String(data.credits || '')); } catch(e) {}
+    try { localStorage.setItem('last_paid_time', String(Date.now())); } catch(e) {}
+  }
+
   stopPolling();
   _currentOrderId = null;
   localStorage.removeItem('credit_ord');
@@ -317,20 +324,60 @@ function checkManualPayment() {
     });
 }
 
-// 页面恢复：只有 15 分钟内的未完成订单才恢复
+// ---- 页面恢复：从 URL 参数或 localStorage 恢复支付结果 ----
 (function() {
+  // 1. 优先从 URL ?paid=xxx 恢复（支付宝支付后跳回）
+  var urlParams = new URLSearchParams(window.location.search);
+  var paidOid = urlParams.get('paid');
+  if (paidOid) {
+    // 清除 URL 参数，避免刷新重复触发
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', '/pricing');
+    }
+    // 轮询查码（回调可能已经完成）
+    var pollCount = 0;
+    function checkPaidOrder() {
+      pollCount++;
+      fetch('/api/check-order?out_trade_no=' + encodeURIComponent(paidOid))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.paid || d.status === 'paid') {
+            onPaySuccess(d);
+          } else if (pollCount < 30) {
+            setTimeout(checkPaidOrder, 2000);
+          }
+        })
+        .catch(function() {
+          if (pollCount < 30) setTimeout(checkPaidOrder, 2000);
+        });
+    }
+    checkPaidOrder();
+    return; // URL 恢复优先，跳过 localStorage 恢复
+  }
+
+  // 2. 从 localStorage 恢复未完成的订单（页面刷新/关闭重开）
   var oid = localStorage.getItem('credit_ord');
   var ts = localStorage.getItem('credit_ord_ts');
   if (oid && ts) {
     var elapsed = Date.now() - parseInt(ts);
-    if (elapsed < 15 * 60 * 1000) {
+    if (elapsed < 30 * 60 * 1000) { // 30 分钟窗口
       _currentOrderId = oid;
       injectQrModal();
       var modal = document.getElementById('creditQrModal');
       if (modal) modal.style.display = 'flex';
-      startPolling(oid);
+      // 先快速查一次，可能已经付过了
+      fetch('/api/check-order?out_trade_no=' + encodeURIComponent(oid))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.paid || d.status === 'paid') {
+            onPaySuccess(d);
+          } else {
+            startPolling(oid);
+          }
+        })
+        .catch(function() { startPolling(oid); });
     } else {
-      localStorage.removeItem('credit_ord');localStorage.removeItem('credit_ord_ts');
+      localStorage.removeItem('credit_ord');
       localStorage.removeItem('credit_ord_ts');
     }
   }
