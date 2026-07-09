@@ -61,9 +61,12 @@ module.exports = async function handler(req, res) {
 
     const db = getSupabase();
     if (!global._refLog) global._refLog = {};
+// 每小时清理超过1小时的分享记录
+setInterval(function(){var now=Date.now();for(var k in global._refLog){if(now-global._refLog[k]>3600000)delete global._refLog[k];}},3600000).unref();
+
     const memKey = ref + "_" + visitor;
-    if (global._refLog[memKey]) return res.status(200).json({ success: false, reason: "used" });
-    global._refLog[memKey] = true;
+    if (global._refLog[memKey] && Date.now() - global._refLog[memKey] < 3600000) return res.status(200).json({ success: false, reason: "used" });
+    global._refLog[memKey] = Date.now();
     const key = 'ref_' + ref + '_' + visitor;
 
     if (db) {

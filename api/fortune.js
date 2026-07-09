@@ -162,6 +162,9 @@ function buildHuangli(y, m, d) {
   };
 }
 
+// 每小时清理超过1小时的缓存
+setInterval(function(){var now=Date.now();for(var k in _cache){if(_cache[k]._ts&&now-_cache[k]._ts>3600000)delete _cache[k];}},3600000).unref();
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -218,7 +221,7 @@ module.exports = async function handler(req, res) {
     var tip = fortune.tip || fortune.overview || content;
     tip = tip.replace(/以上[^。]*生成[^。]*参考[^。]*[。\n]/g, '').replace(/（以上[^）]*仅供参考[^）]*）/g, '').trim();
     var output = { tip: tip, _date: todayKey, _cached: false };
-    _cache[cacheKey] = output;
+    output._ts = Date.now(); _cache[cacheKey] = output;
     return res.status(200).json({ huangli: huangli, fortune: output });
   } catch (e) {
     return res.status(500).json({ error: '服务器内部错误，请稍后重试' });

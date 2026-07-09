@@ -1,3 +1,21 @@
+// === 崩溃保护：捕获未处理异常，记录日志但不退出 ===
+process.on('uncaughtException', function(err) {
+  try { fs.appendFileSync(path.join(__dirname,'crash.log'), new Date().toISOString()+' uncaughtException: '+err.message+'\n'+err.stack+'\n'); } catch(_) {}
+  console.error('[CRASH] uncaughtException:', err.message);
+});
+process.on('unhandledRejection', function(reason) {
+  try { fs.appendFileSync(path.join(__dirname,'crash.log'), new Date().toISOString()+' unhandledRejection: '+(reason&&reason.message||reason)+'\n'); } catch(_) {}
+  console.error('[CRASH] unhandledRejection:', reason&&reason.message||reason);
+});
+// === 内存上限保护：超过 500MB 主动重启 ===
+setInterval(function() {
+  var mem = process.memoryUsage();
+  if (mem.heapUsed > 500 * 1024 * 1024) {
+    console.error('[OOM] 内存超 500MB, 主动退出以触发守护进程重启');
+    process.exit(1);
+  }
+}, 30000).unref();
+
 const http=require('http');const fs=require('fs');const path=require('path');
 const execSync=require('child_process').execSync;
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json'};
