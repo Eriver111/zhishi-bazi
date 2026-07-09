@@ -46,6 +46,12 @@ module.exports = async function handler(req, res) {
       if (creds) creds.forEach(function(c){ history.push({ type:'积分包', detail: c.credits+'次', code: c.code, date: c.created_at }); });
       var { data: subs } = await db.from('user_subscriptions').select('code,starts_at,expires_at,created_at').eq('user_id', user.uid).order('created_at', { ascending: false }).limit(5);
       if (subs) subs.forEach(function(s){ history.push({ type:'月度会员', detail: s.expires_at ? s.expires_at.slice(0,10)+'到期' : '', code: s.code, date: s.created_at }); });
+    } else {
+      // Supabase 不可用：从内存/文件存储加载用户兑换码
+      var totalCredits = getUserCredits(user.uid);
+      if (totalCredits > 0) {
+        history.push({ type:'积分包', detail: totalCredits+'次（总计）', code: '（本地存储）', date: new Date().toISOString() });
+      }
     }
 
     return res.status(200).json({
