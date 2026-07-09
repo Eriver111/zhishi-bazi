@@ -46,20 +46,24 @@ module.exports = async function handler(req, res) {
       const payAmount = pricing.amount;
       const payName = name || pricing.label;
       const orderId = pricing.prefix + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
-      const returnUrl = SITE + '/pricing?paid=' + orderId;
+      const returnUrl = SITE + '/pricing?paid=' + finalOrderId;
 
       if (!PAY_PID || !PAY_KEY) {
         return res.status(200).json({
-          pay_url: null, out_trade_no: orderId, test_mode: true,
+          pay_url: null, out_trade_no: finalOrderId, test_mode: true,
           amount: payAmount, mode: mode
         });
       }
 
-      var channel=(req.body&&req.body.channel)||'';
-      var notifParams=[];if(userId)notifParams.push('uid='+userId);if(channel)notifParams.push('ch='+channel);
+      // 将 userId 编码进订单号（zpayz 回调时 notify_url 查询参数可能丢失）
+      var finalOrderId = orderId;
+      if (userId) {
+        finalOrderId = orderId.replace(pricing.prefix, pricing.prefix + "u" + userId + "_");
+      }
+      var channel=(req.body&&req.body.channel)||"";
       const payParams = {
-        pid: PAY_PID, type: 'alipay',
-        out_trade_no: orderId, notify_url: SITE + '/api/callback' + (notifParams.length?'?'+notifParams.join('&'):''),
+        pid: PAY_PID, type: "alipay",
+        out_trade_no: finalOrderId, notify_url: SITE + "/api/callback",
         return_url: returnUrl, name: payName, money: String(payAmount)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
@@ -83,7 +87,7 @@ module.exports = async function handler(req, res) {
           const fallbackUrl = PAY_URL + '?' + formBody;
           const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
           return res.status(200).json({
-            out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+            out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
             amount: payAmount, mode: mode, status: 'pending'
           });
         }
@@ -99,7 +103,7 @@ module.exports = async function handler(req, res) {
           realQr = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
         }
         return res.status(200).json({
-          out_trade_no: orderId,
+          out_trade_no: finalOrderId,
           pay_url: realPayUrl, qrcode: realQr,
           amount: payAmount, mode: mode, status: 'pending'
         });
@@ -108,7 +112,7 @@ module.exports = async function handler(req, res) {
         const fallbackUrl = PAY_URL + '?' + formBody;
         const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
         return res.status(200).json({
-          out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+          out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
           amount: payAmount, mode: mode, status: 'pending'
         });
       }
@@ -122,7 +126,7 @@ module.exports = async function handler(req, res) {
 
       const payParams = {
         pid: PAY_PID, type: 'alipay',
-        out_trade_no: orderId, notify_url: SITE + '/api/callback',
+        out_trade_no: finalOrderId, notify_url: SITE + '/api/callback',
         return_url: SITE + '/pricing?paid=' + orderId, name: payName, money: String(payAmount)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
@@ -145,7 +149,7 @@ module.exports = async function handler(req, res) {
           const fallbackUrl = PAY_URL + '?' + formBody;
           const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
           return res.status(200).json({
-            out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+            out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
             amount: payAmount, status: 'pending'
           });
         }
@@ -154,7 +158,7 @@ module.exports = async function handler(req, res) {
         }
         // Return the real Alipay URL + QR
         return res.status(200).json({
-          out_trade_no: orderId, pay_url: zdata.payurl || zdata.qrcode || '',
+          out_trade_no: finalOrderId, pay_url: zdata.payurl || zdata.qrcode || '',
           qrcode: zdata.img || zdata.qrcode || '',
           amount: payAmount, status: 'pending'
         });
@@ -163,7 +167,7 @@ module.exports = async function handler(req, res) {
         const fallbackUrl = PAY_URL + '?' + formBody;
         const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
         return res.status(200).json({
-          out_trade_no: orderId, pay_url: fallbackUrl, qrcode: qrImg,
+          out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
           amount: payAmount, status: 'pending'
         });
       }
@@ -185,7 +189,7 @@ module.exports = async function handler(req, res) {
 
       const payParams = {
         pid: PAY_PID, type: 'alipay',
-        out_trade_no: orderId, notify_url: notifyUrl,
+        out_trade_no: finalOrderId, notify_url: notifyUrl,
         return_url: hprUrl, name: payName, money: String(payAmount)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
@@ -235,7 +239,7 @@ module.exports = async function handler(req, res) {
 
     const payParams = {
       pid: PAY_PID, type: 'alipay',
-      out_trade_no: orderId, notify_url: notifyUrl,
+      out_trade_no: finalOrderId, notify_url: notifyUrl,
       return_url: returnUrl, name: '知时 · 完整分析报告', money: String(payAmount)
     };
     payParams.sign = md5Sign(payParams, PAY_KEY);
