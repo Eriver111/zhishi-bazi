@@ -175,7 +175,11 @@ module.exports = async function handler(req, res) {
       const payAmount = amount || 13.9;
       const payName = description || '知时 · 合盘报告';
       const orderId = 'hepan_' + Date.now().toString(36) + '_' + hash.slice(0, 6);
-      const notifyUrl = SITE + '/api/callback';
+      var hepanChannel = (req.body && req.body.channel) || '';
+      var hepanParams = [];
+      if (userId) hepanParams.push('uid=' + userId);
+      if (hepanChannel) hepanParams.push('ch=' + hepanChannel);
+      const notifyUrl = SITE + '/api/callback' + (hepanParams.length ? '?' + hepanParams.join('&') : '');
       const ref = (req.headers.referer || '').split('?')[1] || '';
       const hprUrl = SITE + '/hepan-result.html?' + ref;
 
@@ -222,7 +226,11 @@ module.exports = async function handler(req, res) {
     const payAmount = amount || 9.9;
     const bzHash = makeHash({ year, month, day, hour, gender });
     const orderId = 'bazi_' + Date.now().toString(36) + '_' + bzHash.slice(0, 6);
-    const notifyUrl = SITE + '/api/callback';
+    var baziChannel = (req.body && req.body.channel) || '';
+    var baziParams = [];
+    if (userId) baziParams.push('uid=' + userId);
+    if (baziChannel) baziParams.push('ch=' + baziChannel);
+    const notifyUrl = SITE + '/api/callback' + (baziParams.length ? '?' + baziParams.join('&') : '');
     const returnUrl = SITE + '/result.html?year=' + year + '&month=' + month + '&day=' + day + '&hour=' + hour + '&gender=' + gender;
 
     const payParams = {
