@@ -3,7 +3,7 @@
  * GET 方式：token 和 baziHash 放 URL 查询参数
  */
 const crypto = require('crypto');
-const TOKEN_SECRET = process.env.TOKEN_SECRET || 'knowbazi';
+const TOKEN_SECRET = process.env.TOKEN_SECRET || 'knowbazi-change-me';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

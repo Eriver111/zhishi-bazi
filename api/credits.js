@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
         // 同时存到客户端 localStorage 以便后续请求使用
         return res.status(200).json({ success: true, code: code, message: '兑换码已关联到你的账号' });
       }
-    } catch(e) { return res.status(500).json({ error: e.message }); }
+    } catch(e) { return res.status(500).json({ error: '服务器内部错误，请稍后重试' }); }
   }
 
   try {

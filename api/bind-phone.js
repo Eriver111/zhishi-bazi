@@ -3,6 +3,7 @@
  * POST { code, phone }
  */
 const { getSupabase } = require('../lib/supabase.js');
+const { requireAuth } = require('../lib/auth.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,6 +11,10 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   try {
+    // 鉴权
+    var authUser = requireAuth(req);
+    if (!authUser || !authUser.uid) return res.status(401).json({ error: '请先登录' });
+
     const { code, phone } = req.body || {};
     if (!code || !phone) return res.status(400).json({ error: '缺少参数' });
     if (!/^1\d{10}$/.test(phone)) return res.status(400).json({ error: '手机号格式不正确' });
@@ -27,6 +32,6 @@ module.exports = async function handler(req, res) {
     // Memory fallback - store in localStorage on the client side is enough
     return res.status(200).json({ success: true, message: '绑定成功' });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };

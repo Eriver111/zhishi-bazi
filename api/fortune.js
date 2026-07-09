@@ -76,22 +76,30 @@ const JD_JI = {
 };
 
 // ---- 节气（2026）----
-const SOLAR_TERMS_2026 = [
-  [1,5,'小寒'],[1,20,'大寒'],[2,4,'立春'],[2,19,'雨水'],[3,5,'惊蛰'],[3,20,'春分'],
-  [4,5,'清明'],[4,20,'谷雨'],[5,5,'立夏'],[5,21,'小满'],[6,5,'芒种'],[6,21,'夏至'],
-  [7,7,'小暑'],[7,22,'大暑'],[8,7,'立秋'],[8,23,'处暑'],[9,7,'白露'],[9,23,'秋分'],
-  [10,8,'寒露'],[10,23,'霜降'],[11,7,'立冬'],[11,22,'小雪'],[12,7,'大雪'],[12,22,'冬至']
-];
+// 节气日期表（2026-2030），每年按 [立春,惊蛰,清明,立夏,芒种,小暑,立秋,白露,寒露,立冬,大雪,小寒] 顺序，仅存 day
+const SOLAR_TERMS_DATA = {
+  2026: [4,5,5,5,5,7,7,7,8,7,7,5],
+  2027: [4,6,5,6,6,7,8,8,9,8,7,6],
+  2028: [4,5,4,5,5,7,7,7,8,7,7,6],
+  2029: [3,5,4,5,5,7,7,7,8,7,7,5],
+  2030: [4,5,5,5,6,7,7,8,8,7,7,6]
+};
+const BASE_MONTHS = [2,3,4,5,6,7,8,9,10,11,12,1]; // 各节气对应月份
 
 function getSolarTerm(month, day) {
-  for (var i = SOLAR_TERMS_2026.length - 1; i >= 0; i--) {
-    var t = SOLAR_TERMS_2026[i];
-    if (month > t[0] || (month === t[0] && day >= t[1])) {
-      var cur = t[2];
-      var next = SOLAR_TERMS_2026[i+1];
-      if (!next) next = SOLAR_TERMS_2026[0];
-      var diffDays = (next[0]-month)*30 + (next[1]-day);
-      return { cur: cur, next: next[2], days: diffDays };
+  var y = new Date().getFullYear();
+  var data = SOLAR_TERMS_DATA[y] || SOLAR_TERMS_DATA[2026];
+  var terms = [];
+  for (var i = 0; i < 12; i++) {
+    terms.push({ m: BASE_MONTHS[i], d: data[i], name: ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'][i] });
+  }
+  for (var i = terms.length - 1; i >= 0; i--) {
+    var t = terms[i];
+    if (month > t.m || (month === t.m && day >= t.d)) {
+      var next = terms[(i + 1) % 12];
+      var diffDays = (next.m - month) * 30 + (next.d - day);
+      if (diffDays < 0) diffDays += 365;
+      return { cur: t.name, next: next.name, days: diffDays };
     }
   }
   return { cur:'未知', next:'未知', days:0 };
@@ -188,13 +196,31 @@ module.exports = async function handler(req, res) {
     // 去除可能的免责声明
     content = content.replace(/以上[^。]*生成[^。]*参考[^。]*[\n。]/g, '').replace(/以上[^。]*由[^。]*生成[^。]*/g, '').replace(/(本文|此内容|以上内容)[^。]*免责[^。]*[。\n]/g, '').replace(/\n*---\n.*$/s, '').replace(/（以上[^）]*）/, '').trim();
     var fortune = {};
-    try { fortune = JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || content); } catch(e) { fortune = { tip: content }; }
+    // 安全解析：找第一个完整JSON对象（非贪婪），避免匹配到AI返回的多个JSON块
+    try {
+      var firstBrace = content.indexOf('{');
+      if (firstBrace >= 0) {
+        var depth = 0, end = -1;
+        for (var i = firstBrace; i < content.length; i++) {
+          if (content[i] === '{') depth++;
+          if (content[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+        }
+        if (end > firstBrace) {
+          var jsonStr = content.substring(firstBrace, end + 1);
+          fortune = JSON.parse(jsonStr);
+        } else {
+          fortune = { tip: content };
+        }
+      } else {
+        fortune = { tip: content };
+      }
+    } catch(e) { fortune = { tip: content }; }
     var tip = fortune.tip || fortune.overview || content;
     tip = tip.replace(/以上[^。]*生成[^。]*参考[^。]*[。\n]/g, '').replace(/（以上[^）]*仅供参考[^）]*）/g, '').trim();
     var output = { tip: tip, _date: todayKey, _cached: false };
     _cache[cacheKey] = output;
     return res.status(200).json({ huangli: huangli, fortune: output });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };

@@ -260,7 +260,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
 
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };
 

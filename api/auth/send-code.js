@@ -8,15 +8,37 @@ const { sendCode } = require('../../lib/email.js');
 const { getUserByEmail } = require('../../lib/supabase.js');
 const { rateLimit } = require('../../lib/auth.js');
 
-// 内存存储验证码（5分钟过期，服务器重启丢失，可接受）
+// 验证码存储（内存 + 文件持久化，服务器重启不丢）
+const path = require('path');
+const CODES_FILE = path.join(__dirname, '..', '..', '.verification-codes.json');
 const _codes = {};
+
+// 启动时从文件加载
+(function loadCodes() {
+  try {
+    if (fs.existsSync(CODES_FILE)) {
+      var loaded = JSON.parse(fs.readFileSync(CODES_FILE, 'utf-8'));
+      var now = Date.now();
+      for (var k in loaded) {
+        if (now - loaded[k].ts < 300000) _codes[k] = loaded[k];
+      }
+      console.log('[verify-codes] 从文件加载 ' + Object.keys(_codes).length + ' 个有效验证码');
+    }
+  } catch(e) { /* 忽略 */ }
+})();
+
+function saveCodes() {
+  try { fs.writeFileSync(CODES_FILE, JSON.stringify(_codes), 'utf-8'); } catch(e) {}
+}
 
 // 定期清理过期验证码
 setInterval(function () {
   var now = Date.now();
+  var cleaned = false;
   for (var k in _codes) {
-    if (now - _codes[k].ts > 300000) delete _codes[k];
+    if (now - _codes[k].ts > 300000) { delete _codes[k]; cleaned = true; }
   }
+  if (cleaned) saveCodes();
 }, 60000).unref();
 
 function generateCode() {
@@ -51,6 +73,7 @@ module.exports = async function handler(req, res) {
 
     var code = generateCode();
     _codes[email] = { code: code, ts: Date.now() };
+    saveCodes();
 
     // 尝试发送邮件，失败时降级为直接显示验证码
     try {
@@ -62,7 +85,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ success: true });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };
 
@@ -70,8 +93,8 @@ module.exports = async function handler(req, res) {
 module.exports.verifyCode = function (email, code) {
   var entry = _codes[email];
   if (!entry) return false;
-  if (Date.now() - entry.ts > 300000) { delete _codes[email]; return false; }
+  if (Date.now() - entry.ts > 300000) { delete _codes[email]; saveCodes(); return false; }
   if (entry.code !== String(code)) return false;
-  delete _codes[email]; // 验证成功即销毁
+  delete _codes[email]; saveCodes(); // 验证成功即销毁
   return true;
 };

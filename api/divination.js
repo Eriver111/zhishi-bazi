@@ -8,7 +8,7 @@ const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
 
 const { requireAuth } = require('../lib/auth.js');
-const { deductCredit, isMonthlyActive, isMonthlyActiveByUserId, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');
+const { deductCredit, deductCreditByUser, isMonthlyActive, isMonthlyActiveByUserId, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');
 
 const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦。用户来问卦是求结果、求时间、求方向——不是来听学术报告的。你必须直接回答"能不能""什么时候""该怎么办"。
 
@@ -94,9 +94,10 @@ module.exports = async function handler(req, res) {
     var creditOk = !!monthlyActive || freeInfo.used < maxFree;
 
     // 不是会员且免费次数用完，检查付费积分
+    var hasPaidCredits = false;
     if (!creditOk) {
       var totalCredits = await getUserCredits(userId);
-      if (totalCredits > 0) creditOk = true;
+      if (totalCredits > 0) { creditOk = true; hasPaidCredits = true; }
     }
 
     if (!creditOk) {
@@ -114,16 +115,19 @@ module.exports = async function handler(req, res) {
     } else if (freeInfo.used < maxFree) {
       await bumpFreeUsageByUser(userId);
       freeUsed = true;
-    } else {
-      // 扣付费积分：找用户关联的 code 并扣减
+    } else if (hasPaidCredits) {
+      // 扣付费积分：优先用传入的 code，否则用 userId 关联的积分
       var userCode = (req.body && req.body.code) || '';
+      var deducted = null;
       if (userCode) {
-        var deducted = await deductCredit(userCode);
-        if (!deducted) {
-          return res.status(403).json({ error: '积分扣减失败，请重新登录', creditExhausted: true });
-        }
+        deducted = await deductCredit(userCode);
       }
-      // 无 code 但有积分余额（可能是旧数据），仍然放行
+      if (!deducted) {
+        deducted = await deductCreditByUser(userId);
+      }
+      if (!deducted) {
+        return res.status(403).json({ error: '积分扣减失败，请刷新页面重试', creditExhausted: true });
+      }
     }
 
     // 调用 AI
@@ -144,7 +148,7 @@ module.exports = async function handler(req, res) {
     if (!aiResp.ok) {
       var errText = '';
       try { errText = await aiResp.text(); } catch (_) {}
-      throw new Error('AI 服务响应异常 (' + aiResp.status + ')' + (errText ? ': ' + errText.slice(0, 200) : ''));
+      console.error('AI响应异常 status=' + aiResp.status + (errText ? ' ' + errText.slice(0,200) : '')); throw new Error('AI 服务暂时不可用，请稍后重试');
     }
 
     var aiData = await aiResp.json();
@@ -189,6 +193,6 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (e) {
-    return res.status(500).json({ error: e.message || '服务异常，请稍后重试' });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };

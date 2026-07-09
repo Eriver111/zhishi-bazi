@@ -194,8 +194,10 @@ function buyCredits(mode, amount, name) {
     localStorage.setItem('credit_ord_ts', Date.now());
 
     if (isMobile() && d.pay_url) {
-      if (status) status.textContent = '正在跳转支付...';
-      setTimeout(function() { window.location.href = d.pay_url; }, 500);
+      if (status) status.textContent = '正在跳转支付宝...';
+      // 手机端跳转后通过 URL ?paid=xxx 恢复，无需轮询
+      setTimeout(function() { window.location.href = d.pay_url; }, 800);
+      return; // 不启动轮询，也不显示二维码
     } else {
       var container = document.getElementById('qrContainer');
       // zpayz 返回的 qrcode/pay_url 是支付宝链接（非图片），统一用 QuickChart 生成二维码图片

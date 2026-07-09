@@ -37,6 +37,6 @@ module.exports = async function handler(req, res) {
       user: { id: user.id, email: user.email, phone: user.phone, created_at: user.created_at }
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message || '登录失败' });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };

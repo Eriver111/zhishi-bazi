@@ -61,6 +61,6 @@ module.exports = async function handler(req, res) {
       bonus: 3
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message || '注册失败' });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };
