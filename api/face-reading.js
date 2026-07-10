@@ -8,7 +8,7 @@ const path = require('path');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.VISION_MODEL || 'qwen3.7-plus';
+const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, deductCreditByUser, isMonthlyActiveByUserId, getUserCredits, saveUserChatHistory } = require('../lib/supabase.js');
@@ -83,9 +83,9 @@ module.exports = async function handler(req, res) {
     if (!aiResp.ok) {
       var errText = '';
       try { errText = await aiResp.text(); } catch(_) {}
-      console.error('[face-reading] AI error:', aiResp.status);
-      var errDetail = (errText||'').substring(0,200) || '请检查VISION_API_KEY和VISION_MODEL是否正确配置';
-      return res.status(500).json({ error: 'AI服务异常(' + aiResp.status + '): ' + errDetail });
+      console.error('[face-reading] AI error:', aiResp.status, 'body:', (errText||'').substring(0,300));
+      var errDetail = 'HTTP ' + aiResp.status + ': ' + (errText||'').substring(0,200) || '请检查VISION_API_KEY和VISION_MODEL';
+      return res.status(500).json({ error: errDetail });
     }
 
     var aiData = await aiResp.json();
