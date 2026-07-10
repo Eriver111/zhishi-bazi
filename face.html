@@ -3,73 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>知时 · AI 面相分析</title>
+<title>知时 · 观面</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/landing.css">
 <style>
-.face-page{max-width:600px;margin:60px auto 40px;padding:0 20px;text-align:center}
-.face-page h1{font-size:24px;color:var(--gold-l);letter-spacing:6px;margin-bottom:4px}
-.face-page .sub{font-size:12px;color:var(--tx3);margin-bottom:24px;letter-spacing:2px}
+.face-wrap{max-width:640px;margin:0 auto;padding:60px 20px 80px;position:relative;z-index:1}
+.face-hero{text-align:center;margin-bottom:36px}
+.face-hero h1{font-size:36px;color:var(--gold-l);letter-spacing:10px;margin-bottom:4px;font-weight:900}
+.face-hero .tagline{font-size:13px;color:var(--tx2);letter-spacing:4px}
+.face-hero .tagline span{color:var(--gold);font-weight:600}
+
+.face-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;backdrop-filter:blur(20px)}
+.face-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.3}
+
+.upload-area{position:relative;margin-bottom:20px}
 .upload-zone{
-  width:280px;height:280px;margin:0 auto 20px;border:2px dashed rgba(201,168,76,.25);
-  border-radius:16px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .3s;overflow:hidden;position:relative;
-  background:rgba(201,168,76,.02);
+  width:100%;aspect-ratio:1;max-height:360px;border:2px dashed rgba(201,168,76,.2);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .35s;overflow:hidden;position:relative;
+  background:linear-gradient(135deg,rgba(201,168,76,.02),rgba(201,168,76,0));
 }
-.upload-zone:hover{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.06)}
+.upload-zone:hover{border-color:var(--gold);background:rgba(201,168,76,.04);box-shadow:0 0 40px rgba(201,168,76,.06)}
+.upload-zone.has-image{border-style:solid;border-color:rgba(201,168,76,.15)}
 .upload-zone img{width:100%;height:100%;object-fit:cover}
-.upload-hint{color:var(--tx3);font-size:13px;line-height:1.8}
-.upload-hint .icon{font-size:40px;display:block;margin-bottom:8px}
-#result{display:none;text-align:left;margin-top:20px;padding:20px;background:var(--card);border:1px solid var(--bd);border-radius:12px;line-height:2;font-size:14px;color:var(--tx)}
-#result h3{text-align:center;color:var(--gold-l);margin-bottom:16px;letter-spacing:3px}
-.credits-tag{display:inline-block;padding:4px 12px;border:1px solid rgba(201,168,76,.2);border-radius:20px;font-size:12px;color:var(--gold-l);margin-bottom:16px}
-.btn-analyze{
-  display:none;margin:16px auto;padding:14px 40px;background:linear-gradient(135deg,var(--gold-d),var(--gold));
-  color:var(--ink);border:none;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;font-family:inherit
+.upload-placeholder{text-align:center;color:var(--tx3);pointer-events:none}
+.upload-placeholder .icon{font-size:44px;display:block;margin-bottom:10px;opacity:.6}
+.upload-placeholder .main-hint{font-size:14px;color:var(--tx2);letter-spacing:2px;margin-bottom:6px}
+.upload-placeholder .sub-hint{font-size:11px;color:var(--tx3);line-height:1.8}
+
+.tips-box{
+  margin-bottom:20px;padding:16px 18px;background:rgba(201,168,76,.03);
+  border:1px solid rgba(201,168,76,.1);border-radius:10px
 }
-.btn-analyze:disabled{opacity:.5;cursor:not-allowed}
-.loading-dots{text-align:center;padding:40px}
-.loading-dots span{display:inline-block;width:8px;height:8px;margin:0 3px;background:var(--gold);border-radius:50%;animation:dotBounce 1.4s infinite ease-in-out}
+.tips-title{font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:10px}
+.tips-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:var(--tx2)}
+.tips-grid div{padding:6px 8px;background:rgba(0,0,0,.1);border-radius:6px;letter-spacing:1px}
+.tips-grid .good{color:#81C784}
+.tips-grid .warn{color:#E57373}
+
+.credit-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:12px}
+.credit-tag{padding:4px 12px;border:1px solid rgba(201,168,76,.2);border-radius:20px;color:var(--gold-l);letter-spacing:1px}
+
+.btn-face{
+  width:100%;padding:14px;border-radius:28px;font-size:15px;font-weight:700;
+  letter-spacing:4px;cursor:pointer;font-family:inherit;transition:all .3s;border:none;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));
+  background-size:200% 100%;color:var(--ink);animation:shimmer 3s infinite
+}
+.btn-face:disabled{opacity:.4;cursor:not-allowed;animation:none}
+.btn-face:not(:disabled):hover{box-shadow:0 6px 28px rgba(201,168,76,.25);transform:translateY(-1px)}
+
+.result-card{display:none;margin-top:20px;padding:24px;background:var(--card);border:1px solid var(--bd);border-radius:14px;line-height:2.1;font-size:14px;color:var(--tx)}
+.result-card h3{text-align:center;font-size:18px;color:var(--gold-l);letter-spacing:4px;margin-bottom:18px}
+.result-card .poem{text-align:center;color:var(--gold);font-size:15px;letter-spacing:2px;margin:16px 0;padding:12px;background:rgba(201,168,76,.04);border-radius:8px;font-style:italic}
+
+.loading-state{display:none;text-align:center;padding:36px 0}
+.loading-dots span{display:inline-block;width:7px;height:7px;margin:0 3px;background:var(--gold);border-radius:50%;animation:dotBounce 1.4s infinite ease-in-out}
 .loading-dots span:nth-child(2){animation-delay:.16s}
 .loading-dots span:nth-child(3){animation-delay:.32s}
 @keyframes dotBounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-@media(max-width:400px){.face-page{padding:0 12px;margin-top:40px}.upload-zone{width:240px;height:240px}}
+.loading-text{margin-top:10px;font-size:13px;color:var(--tx3);letter-spacing:2px}
+
+.error-msg{display:none;margin-top:12px;padding:10px 14px;background:rgba(244,67,54,.06);border:1px solid rgba(244,67,54,.15);border-radius:8px;color:#E57373;font-size:12px;text-align:center}
+
+@media(max-width:400px){
+  .face-wrap{padding:40px 10px 60px}
+  .face-hero h1{font-size:28px;letter-spacing:8px}
+  .tips-grid{grid-template-columns:1fr}
+  .face-card{padding:20px 16px}
+}
 </style>
 </head>
 <body>
 <div id="zhishi-nav"></div>
 
-<div class="face-page">
-  <h1>AI 面相</h1>
-  <div class="sub">《麻衣神相》· 十二宫精解</div>
+<div class="face-wrap">
+  <div class="face-hero">
+    <h1>观 面</h1>
+    <div class="tagline"><span>《麻衣神相》</span> · 十二宫精解 · AI 参详</div>
+  </div>
 
-  <div class="credits-tag" id="creditTag">-- 次剩余</div>
-
-  <input type="file" id="fileInput" accept="image/*" capture="user" style="display:none">
-  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-    <div class="upload-hint" id="uploadHint">
-      <span class="icon">📷</span>
-      点击上传正面照片<br>（光线充足、无遮挡为佳）
+  <div class="face-card">
+    <div class="credit-bar">
+      <span style="color:var(--tx3)">单次消耗 <b style="color:var(--gold)">1</b> 积分</span>
+      <span class="credit-tag" id="creditTag">-- 次剩余</span>
     </div>
-    <img id="preview" style="display:none">
+
+    <div class="tips-box">
+      <div class="tips-title">拍摄建议</div>
+      <div class="tips-grid">
+        <div class="good">☀️ 正对自然光源，光线均匀</div>
+        <div class="good">👤 露出额头，勿用刘海遮挡</div>
+        <div class="good">📷 平视镜头，面部居中清晰</div>
+        <div class="warn">⚠️ 避免顶部强光或逆光拍摄</div>
+        <div class="warn">⚠️ 勿戴帽子、墨镜等遮挡物</div>
+        <div class="warn">⚠️ 美颜滤镜会影响判断准确度</div>
+      </div>
+    </div>
+
+    <div class="upload-area">
+      <input type="file" id="fileInput" accept="image/*" capture="user" style="display:none">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-placeholder" id="placeholder">
+          <span class="icon">📷</span>
+          <div class="main-hint">点击上传正面照片</div>
+          <div class="sub-hint">五官清晰、额头可见为佳</div>
+        </div>
+        <img id="preview" style="display:none">
+      </div>
+    </div>
+
+    <button class="btn-face" id="btnAnalyze" onclick="startAnalysis()" style="display:none">开 始 观 面</button>
+
+    <div class="loading-state" id="loading">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div class="loading-text">逐宫分析中，请稍候...</div>
+    </div>
+
+    <div class="error-msg" id="error"></div>
   </div>
 
-  <button class="btn-analyze" id="btnAnalyze" onclick="startAnalysis()">开始面相分析</button>
-
-  <div id="loading" style="display:none">
-    <div class="loading-dots"><span></span><span></span><span></span></div>
-    <div style="color:var(--tx3);font-size:13px">AI 正在逐宫分析中...</div>
-  </div>
-
-  <div id="result"></div>
-  <div id="error" style="display:none;color:#E57373;font-size:13px;margin-top:12px"></div>
+  <div class="result-card" id="result"></div>
 </div>
 
 <script src="js/auth.js"></script>
 <script>
 var _imageData = null;
 
-// Init
 (function(){
   if(typeof Auth!=='undefined') Auth.ready(function(){
     if(!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
@@ -85,23 +146,20 @@ function handleFile(e){
 
   var reader=new FileReader();
   reader.onload=function(ev){
-    // 压缩图片
     var img=new Image();
     img.onload=function(){
       var canvas=document.createElement('canvas');
       var maxW=800,maxH=800;
       var w=img.width,h=img.height;
-      if(w>maxW||h>maxH){
-        var ratio=Math.min(maxW/w,maxH/h);
-        w*=ratio;h*=ratio;
-      }
+      if(w>maxW||h>maxH){var r=Math.min(maxW/w,maxH/h);w*=r;h*=r}
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
       _imageData=canvas.toDataURL('image/jpeg',0.8);
       document.getElementById('preview').src=_imageData;
       document.getElementById('preview').style.display='block';
-      document.getElementById('uploadHint').style.display='none';
-      document.getElementById('btnAnalyze').style.display='inline-block';
+      document.getElementById('placeholder').style.display='none';
+      document.getElementById('uploadZone').classList.add('has-image');
+      document.getElementById('btnAnalyze').style.display='block';
     };
     img.src=ev.target.result;
   };
@@ -126,15 +184,16 @@ function startAnalysis(){
   .then(function(r){return r.json()})
   .then(function(d){
     document.getElementById('loading').style.display='none';
-    btn.disabled=false;btn.textContent='重新分析';
+    btn.disabled=false;btn.textContent='重新观面';
     if(d.error){showError(d.error);return;}
-    document.getElementById('result').style.display='block';
-    document.getElementById('result').innerHTML='<h3>面相分析结果</h3>'+d.reading.replace(/\n/g,'<br>');
+    var el=document.getElementById('result');
+    el.style.display='block';
+    el.innerHTML='<h3>观面结果</h3>'+d.reading.replace(/\n/g,'<br>');
     updateCreditsUI();
   })
-  .catch(function(e){
+  .catch(function(){
     document.getElementById('loading').style.display='none';
-    btn.disabled=false;btn.textContent='开始面相分析';
+    btn.disabled=false;btn.textContent='开始观面';
     showError('网络错误，请重试');
   });
 }
@@ -145,7 +204,7 @@ function updateCreditsUI(){
   .then(function(r){return r.json()})
   .then(function(d){
     var tag=document.getElementById('creditTag');
-    if(d.is_monthly){tag.textContent='月度会员 · 不限次';}
+    if(d.is_monthly){tag.textContent='月会员 · 不限次';}
     else{tag.textContent=(d.credits||0)+' 次剩余';}
   }).catch(function(){});
 }
