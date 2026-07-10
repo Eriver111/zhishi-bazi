@@ -58,6 +58,7 @@ module.exports = async function handler(req, res) {
     // 去重检查（同一张图短时间内不重复扣费）
     var imgHash = crypto.createHash('md5').update(imgBuffer).digest('hex');
 
+    console.log('[face-reading] model=' + AI_MODEL + ' key=' + (AI_API_KEY||'').substring(0,8) + '... url=' + AI_API_URL);
     // 调用 Vision AI
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST',
@@ -83,7 +84,8 @@ module.exports = async function handler(req, res) {
       var errText = '';
       try { errText = await aiResp.text(); } catch(_) {}
       console.error('[face-reading] AI error:', aiResp.status);
-      return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试' });
+      var errDetail = (errText||'').substring(0,200) || '请检查VISION_API_KEY和VISION_MODEL是否正确配置';
+      return res.status(500).json({ error: 'AI服务异常(' + aiResp.status + '): ' + errDetail });
     }
 
     var aiData = await aiResp.json();
