@@ -920,6 +920,7 @@ function renderCharacter(bazi) {
 
 // ==================== 今年运势渲染 ====================
 function renderThisYear(bazi, gender) {
+    var yongJiTy = window.BaZiCalculator.getYongJi(bazi);
     var ty = window.BaZiCalculator.analyzeThisYear(bazi, gender, yongJiTy);
     var el = document.getElementById('thisYearContent');
     if (!el) return;
@@ -996,6 +997,7 @@ function renderThisYear(bazi, gender) {
 
 // ==================== 财运分析渲染（加强版） ====================
 function renderWealth(bazi, gender) {
+    var yongJiWealth = window.BaZiCalculator.getYongJi(bazi);
     var wl = window.BaZiCalculator.analyzeWealth(bazi, gender, yongJiWealth);
     var el = document.getElementById('wealthContent');
     if (!el) return;
@@ -1078,6 +1080,7 @@ function renderWealth(bazi, gender) {
 
 // ==================== 流年运势渲染 ====================
 function renderFortune(bazi, gender) {
+    var yongJiFt = window.BaZiCalculator.getYongJi(bazi);
     const ft = window.BaZiCalculator.analyzeFortune(bazi, gender, yongJiFt);
     const el = document.getElementById('fortuneContent');
     if (!el) return;
