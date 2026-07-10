@@ -6,7 +6,6 @@
 <title>知时 · 观面</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/auth.css">
-<link rel="stylesheet" href="css/landing.css">
 <style>
 .face-wrap{max-width:640px;margin:0 auto;padding:60px 20px 80px;position:relative;z-index:1}
 .face-hero{text-align:center;margin-bottom:36px}
@@ -76,6 +75,7 @@
 </style>
 </head>
 <body>
+<canvas id="bgCanvas" style="position:fixed;inset:0;z-index:0;width:100%;height:100%"></canvas>
 <div id="zhishi-nav"></div>
 
 <div class="face-wrap">
@@ -127,6 +127,7 @@
   <div class="result-card" id="result"></div>
 </div>
 
+<script src="js/bg-animation.js"></script>
 <script src="js/auth.js"></script>
 <script>
 var _imageData = null;
