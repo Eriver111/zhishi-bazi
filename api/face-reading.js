@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const AI_API_URL = process.env.AI_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
 
@@ -68,15 +68,14 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        messages: [
+        input: { messages: [
           { role: 'system', content: FACE_SYSTEM },
           { role: 'user', content: [
-            { type: 'image_url', image_url: { url: image } },
+            { image: image },
             { type: 'text', text: '请按《麻衣神相》十二宫体系，对此面相进行详细分析。逐宫解读后给出综合断语，附诗一首。' }
           ]}
-        ],
-        max_tokens: 2000,
-        temperature: 0.3
+        ]},
+        parameters: { max_tokens: 2000, temperature: 0.3 }
       })
     });
 
@@ -89,7 +88,8 @@ module.exports = async function handler(req, res) {
     }
 
     var aiData = await aiResp.json();
-    var reading = aiData.choices?.[0]?.message?.content || '';
+    // DashScope 原生 API 返回 output.choices，兼容 OpenAI 格式
+    var reading = aiData.output?.choices?.[0]?.message?.content || aiData.choices?.[0]?.message?.content || '';
     if (!reading || reading.length < 20) {
       return res.status(500).json({ error: 'AI 返回异常，请稍后重试' });
     }
