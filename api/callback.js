@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
     const outTradeNo = params.out_trade_no || '';
     // 从订单号提取 userId（格式: credit10_u123_xxx_yyy，比 URL 查询参数可靠）
     var userId = null;
-    var uidMatch = outTradeNo.match(/_u(d+)_/);
+    var uidMatch = outTradeNo.match(/_u(\d+)_/);
     if (uidMatch) userId = parseInt(uidMatch[1]);
     // URL 查询参数作为备用
     if (!userId) userId = (params.uid || (req.query && req.query.uid)) ? parseInt(params.uid || (req.query && req.query.uid)) : null;
