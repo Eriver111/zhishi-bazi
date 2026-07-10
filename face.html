@@ -66,6 +66,29 @@
 
 .error-msg{display:none;margin-top:12px;padding:10px 14px;background:rgba(244,67,54,.06);border:1px solid rgba(244,67,54,.15);border-radius:8px;color:#E57373;font-size:12px;text-align:center}
 
+/* === 逐宫扫光动画 === */
+.scan-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.scan-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,rgba(232,207,112,.9),rgba(201,168,76,.3),transparent 70%);box-shadow:0 0 20px rgba(232,207,112,.5),0 0 40px rgba(201,168,76,.2);transform:translate(-50%,-50%) scale(0);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.scan-dot.active{transform:translate(-50%,-50%) scale(1)}
+.scan-dot.ripple{animation:dotRipple 1s ease-out forwards}
+@keyframes dotRipple{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(3);opacity:0}}
+.scan-label{position:absolute;font-size:11px;color:var(--gold-l);letter-spacing:2px;transform:translate(-50%,-50%);opacity:0;transition:opacity .5s;white-space:nowrap;pointer-events:none}
+.scan-label.show{opacity:1}
+.scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,207,112,.4),transparent);animation:scanLine 3s ease-in-out infinite}
+@keyframes scanLine{0%{top:20%}100%{top:80%}}
+
+/* === 墨卷舒展 === */
+.scroll-reveal{display:none;position:relative;margin-top:16px;overflow:hidden}
+.scroll-left,.scroll-right{position:absolute;top:0;width:18px;height:100%;background:linear-gradient(180deg,rgba(201,168,76,.08),rgba(139,109,40,.15),rgba(201,168,76,.08));z-index:2}
+.scroll-left{left:0;border-right:1px solid rgba(201,168,76,.12)}
+.scroll-right{right:0;border-left:1px solid rgba(201,168,76,.12)}
+.scroll-body{overflow:hidden;transition:max-height 1.2s cubic-bezier(.4,0,.2,1);max-height:0;position:relative;z-index:1}
+.scroll-body.open{max-height:8000px}
+.scroll-body-inner{padding:18px;opacity:0;transition:opacity .8s .4s}
+.scroll-body.open .scroll-body-inner{opacity:1}
+.scroll-hint{text-align:center;padding:12px;color:var(--gold);font-size:12px;letter-spacing:3px;animation:scrollPulse 2s ease-in-out infinite}
+@keyframes scrollPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
 @media(max-width:400px){
   .face-wrap{padding:40px 10px 60px}
   .face-hero h1{font-size:28px;letter-spacing:8px}
@@ -167,36 +190,50 @@ function handleFile(e){
   reader.readAsDataURL(file);
 }
 
+// === 十二宫扫光位置 ===
+var PALACE_POS=[{name:'命宫',x:50,y:33},{name:'财帛',x:50,y:54},{name:'兄弟',x:42,y:30},{name:'田宅',x:55,y:38},{name:'男女',x:50,y:44},{name:'妻妾',x:70,y:34},{name:'疾厄',x:50,y:40},{name:'迁移',x:40,y:28},{name:'官禄',x:50,y:20},{name:'福德',x:65,y:30},{name:'奴仆',x:50,y:62},{name:'相貌',x:50,y:50}];
+function buildScanOverlay(){
+  var zone=document.getElementById('uploadZone');
+  var overlay=document.getElementById('scanOverlay');
+  if(!overlay){overlay=document.createElement('div');overlay.id='scanOverlay';overlay.className='scan-overlay';zone.appendChild(overlay)}
+  overlay.innerHTML='';overlay.style.display='block';
+  PALACE_POS.forEach(function(p,i){
+    var dot=document.createElement('div');dot.className='scan-dot';dot.id='scanDot'+i;dot.style.left=p.x+'%';dot.style.top=p.y+'%';overlay.appendChild(dot);
+    var label=document.createElement('div');label.className='scan-label';label.id='scanLabel'+i;label.style.left=p.x+'%';label.style.top=(p.y+4)+'%';label.textContent=p.name+'宫';overlay.appendChild(label);
+  });
+  var line=document.createElement('div');line.className='scan-line';overlay.appendChild(line);
+}
+function runScanPhase(){
+  return new Promise(function(resolve){
+    buildScanOverlay();document.getElementById('btnAnalyze').style.display='none';
+    var i=0,labels=['命宫','财帛','兄弟','田宅','男女','妻妾','疾厄','迁移','官禄','福德','奴仆','相貌'];
+    var iv=setInterval(function(){
+      if(i>0){var pd=document.getElementById('scanDot'+(i-1));var pl=document.getElementById('scanLabel'+(i-1));if(pd)pd.classList.remove('active');if(pl)pl.classList.remove('show')}
+      if(i>=12){clearInterval(iv);setTimeout(function(){document.getElementById('scanOverlay').style.display='none';resolve()},600);return}
+      var d=document.getElementById('scanDot'+i);var l=document.getElementById('scanLabel'+i);if(d)d.classList.add('active');if(l)l.classList.add('show');i++;
+    },750);
+  });
+}
+function runScrollReveal(resultHTML){
+  return new Promise(function(resolve){
+    var scroll=document.getElementById('scrollReveal');
+    if(!scroll){scroll=document.createElement('div');scroll.id='scrollReveal';scroll.className='scroll-reveal';scroll.innerHTML='<div class=scroll-left></div><div class=scroll-right></div><div class=scroll-body id=scrollBody><div class=scroll-body-inner id=scrollInner></div></div>';var fc=document.querySelector('.face-card');fc.parentNode.insertBefore(scroll,fc.nextSibling)}
+    scroll.style.display='block';var body=document.getElementById('scrollBody');body.classList.remove('open');document.getElementById('scrollInner').innerHTML=resultHTML;
+    setTimeout(function(){body.classList.add('open');setTimeout(resolve,1400)},200);
+  });
+}
 function startAnalysis(){
   if(!_imageData) return;
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
-
-  var btn=document.getElementById('btnAnalyze');
-  btn.disabled=true;btn.textContent='分析中...';
-  document.getElementById('loading').style.display='block';
-  document.getElementById('result').style.display='none';
-  document.getElementById('error').style.display='none';
-
-  fetch('/api/face-reading',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+Auth.getToken()},
-    body:JSON.stringify({image:_imageData})
-  })
-  .then(function(r){return r.json()})
-  .then(function(d){
-    document.getElementById('loading').style.display='none';
-    btn.disabled=false;btn.textContent='重新观面';
-    if(d.error){showError(d.error);return;}
-    var el=document.getElementById('result');
-    el.style.display='block';
-    el.innerHTML='<h3>观面结果</h3>'+d.reading.replace(/\n/g,'<br>');
-    updateCreditsUI();
-  })
-  .catch(function(){
-    document.getElementById('loading').style.display='none';
-    btn.disabled=false;btn.textContent='开始观面';
-    showError('网络错误，请重试');
-  });
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){Auth.showModal('login');return}
+  var btn=document.getElementById('btnAnalyze');btn.disabled=true;btn.textContent='观面中...';
+  document.getElementById('result').style.display='none';document.getElementById('error').style.display='none';
+  var scrollEl=document.getElementById('scrollReveal');if(scrollEl)scrollEl.style.display='none';
+  var apiP=fetch('/api/face-reading',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+Auth.getToken()},body:JSON.stringify({image:_imageData})}).then(function(r){return r.json()});
+  var scanP=runScanPhase();
+  Promise.all([scanP,apiP]).then(function(rr){var d=rr[1];if(d.error){showError(d.error);btn.disabled=false;btn.textContent='开始观面';return}
+    var html='<div class=scroll-hint>—— 观面结果 ——</div>'+d.reading.replace(/\n/g,'<br>');
+    runScrollReveal(html).then(function(){btn.disabled=false;btn.textContent='重新观面';updateCreditsUI()});
+  }).catch(function(){btn.disabled=false;btn.textContent='开始观面';showError('网络错误')});
 }
 
 function updateCreditsUI(){
