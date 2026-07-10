@@ -51,8 +51,8 @@ module.exports = async function handler(req, res) {
 
     // 图片体积限制（base64 解码后 < 2MB）
     var imgBuffer = Buffer.from(image.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-    if (imgBuffer.length > 2 * 1024 * 1024) {
-      return res.status(400).json({ error: '图片过大，请压缩后重试（不超过2MB）' });
+    if (imgBuffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: '图片过大，请压缩后重试（不超过5MB）' });
     }
 
     // 去重检查（同一张图短时间内不重复扣费）
@@ -72,7 +72,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: FACE_SYSTEM },
           { role: 'user', content: [
             { image: image },
-            { type: 'text', text: '请按《麻衣神相》十二宫体系，对此面相进行详细分析。逐宫解读后给出综合断语，附诗一首。' }
+            { type: 'text', text: '请分析这张面相。只分析清晰可见的部位，看不清的地方如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天，不教条。最后给一段温暖的总结和一首短诗。' }
           ]}
         ]},
         parameters: { max_tokens: 2000, temperature: 0.3 }
