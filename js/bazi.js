@@ -1950,8 +1950,17 @@ function calcDayMasterStrength(bazi) {
   }
   // 冬季水冷金寒，需火调候暖局
   if (isWinter && dgWx !== '火') {
-    if (hasWx('火')) score += 5;       // 有火暖局——寒谷回春，生机勃发
-    else score -= 8;                     // 无火暖局——金寒水冷，生机不展
+    if (hasWx('火')) {
+      score += 5;                       // 有火暖局——寒谷回春，生机勃发
+      // 土日主在丑月：冻土虽旺而无用，火暖则土活
+      if (dgWx === '土' && mZhi === '丑') score += 5;
+    } else {
+      score -= 8;                       // 无火暖局——金寒水冷，生机不展
+      // 土日主在丑月无火：冻土，大幅降分（虽有禄位亦不旺）
+      if (dgWx === '土' && mZhi === '丑') score -= 12;
+      // 水日主在亥子月无火：冻水不流
+      if (dgWx === '水' && ['亥','子'].indexOf(mZhi) >= 0) score -= 8;
+    }
   }
   // 春季木旺，需金修剪（但木为日主时不需）
   if (isSpring && dgWx !== '木' && dgWx !== '金') {
@@ -3535,6 +3544,50 @@ function getYongJi(bazi) {
     jiShen = [];
     reasoning = '日主中和（' + dmStr.score + '分），元气均衡。需结合大运流年走势灵活取用——行运偏强则取克泄耗为用，行运偏弱则取生扶为用。';
   }
+
+  // ---- v4.2 调候修正（穷通宝鉴：寒暖燥湿优先于扶抑）----
+  var mz = bazi.month.zhi;
+  var dg = bazi.day.gan;
+  var hasWxGlobal = function(wx) {
+    return ['year','month','day','hour'].some(function(p) {
+      return WU_XING[bazi[p].gan] === wx || DI_ZHI_WU_XING[bazi[p].zhi] === wx;
+    });
+  };
+  var tiaoHouNote = '';
+
+  // 冬土（丑月）：冻土需火暖局，火从忌转喜
+  if (dmWx === '土' && mz === '丑') {
+    if (!hasWxGlobal('火')) {
+      // 原局无火 — 火为调候第一用神
+      if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+      if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+      if (yongShen.indexOf('火') < 0) { yongShen.unshift('火'); }
+      tiaoHouNote = '《穷通宝鉴》：己土冬生，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
+    } else {
+      // 原局有火 — 火已为喜
+      if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+      if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+      tiaoHouNote = '原局有火暖局（' + (hasWxGlobal('火')?'如丁火透出':'') + '），寒谷回春，调候已得。';
+    }
+  }
+
+  // 冬水（亥子月）：冻水不流，需火暖局
+  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
+  }
+
+  // 夏火（巳午未月）：炎火需水调候
+  if (dmWx === '火' && ['巳','午','未'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
+  }
+
+  if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
 
   // 格局微调
   var pattern = getPattern(bazi);
