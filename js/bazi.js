@@ -2530,7 +2530,7 @@ function analyzeCharacter(bazi) {
 }
 
 // ==================== 财运分析 ====================
-function analyzeWealth(bazi, gender) {
+function analyzeWealth(bazi, gender, yongJi) {
     const DAY = bazi.day.gan;
     const WX = WU_XING[DAY];
     const isMale = gender === 'male';
@@ -2644,8 +2644,7 @@ function analyzeWealth(bazi, gender) {
         caiAdvice = '当前阶段求稳为主，不宜冒进。建议先借力发展——与' + helpWX + '五行属性的人合作，或从' + helpWX + '相关行业切入，能让财运更加顺畅。待大运走强时再大规模投入也不迟。';
     }
 
-    // --- 财富方位与城市 ---
-    const wxDirection = { '金':'西','木':'东','水':'北','火':'南','土':'中' };
+    // --- 财富方位与城市（基于喜用忌，不再盲指财星方向） ---
     const wxDirMap = {
         '金': { dir:'西方', d:'西', cities: ['成都','重庆','西安','昆明','贵阳','兰州','银川','西宁','拉萨','乌鲁木齐'] },
         '木': { dir:'东方', d:'东', cities: ['上海','苏州','杭州','南京','宁波','无锡','合肥','福州','厦门','济南'] },
@@ -2653,13 +2652,15 @@ function analyzeWealth(bazi, gender) {
         '火': { dir:'南方', d:'南', cities: ['深圳','广州','东莞','佛山','珠海','海口','三亚','南宁','长沙','武汉'] },
         '土': { dir:'中原', d:'中', cities: ['郑州','洛阳','开封','武汉','长沙','南昌','合肥','西安','石家庄','太原'] }
     };
-    // 不利方位：克财星的五行方位
-    const wxKe = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
-    const killerWX = wxKe[caiWX];
-    const badDirInfo = wxDirMap[killerWX] || wxDirMap['金'];
-    const goodDirInfo = wxDirMap[caiWX] || wxDirMap['土'];
+    // 旺财方位用喜神五行（身强→克泄耗方；身弱→生扶方）
+    var goodWX = caiWX;
+    var wxKe2 = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+    var badWX = wxKe2[caiWX] || '金';
+    if (yongJi && yongJi.xiShen && yongJi.xiShen.length > 0) goodWX = yongJi.xiShen[0];
+    if (yongJi && yongJi.jiShen && yongJi.jiShen.length > 0) badWX = yongJi.jiShen[0];
+    const goodDirInfo = wxDirMap[goodWX] || wxDirMap['土'];
+    const badDirInfo = wxDirMap[badWX] || wxDirMap['金'];
 
-    // 适合发展的城市（取前5个）
     const goodCities = goodDirInfo.cities.slice(0, 5);
     const badCities = badDirInfo.cities.slice(0, 3);
 
@@ -2728,7 +2729,7 @@ function analyzeWealth(bazi, gender) {
 
 
 // ==================== 大运流年运势分析 ====================
-function analyzeFortune(bazi, gender) {
+function analyzeFortune(bazi, gender, yongJi) {
     const DAY = bazi.day.gan;
     const DAY_WX = WU_XING[DAY];
     const currentYear = new Date().getFullYear();
@@ -2777,18 +2778,9 @@ function analyzeFortune(bazi, gender) {
     const wxSHENG = { '木':'火','火':'土','土':'金','金':'水','水':'木' };
     const shiShangWX2 = wxSHENG[DAY_WX];
 
-    let wangScore = 0;
-    ['year','month','day','hour'].forEach(pos => {
-        const gWx = WU_XING[bazi[pos].gan];
-        if (gWx === sameWX) wangScore += 1;
-        if (gWx === helpWX) wangScore += 0.5;
-        getCangGan(bazi[pos].zhi).forEach(g => {
-            const gw = WU_XING[g];
-            if (gw === sameWX) wangScore += 0.5;
-            if (gw === helpWX) wangScore += 0.25;
-        });
-    });
-    const isStrong = wangScore >= 3;
+    // 使用权威 calcDayMasterStrength（通过 yongJi 参数）
+    const wangLevel = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '偏强';
+    const isStrong = (wangLevel === '极强' || wangLevel === '偏强');
 
     // 身强喜克泄耗（财/官杀/食伤）为好运；身弱喜生扶（印/比劫）为好运
     const favorableSet = isStrong
@@ -2925,7 +2917,7 @@ function analyzeFortune(bazi, gender) {
 }
 
 // ==================== 今年运势详细分析 ====================
-function analyzeThisYear(bazi, gender) {
+function analyzeThisYear(bazi, gender, yongJi) {
     var DAY = bazi.day.gan, DAY_WX = WU_XING[DAY];
     var currentYear = new Date().getFullYear();
     var yp = getYearPillar(currentYear, 6, 15);
@@ -2940,18 +2932,9 @@ function analyzeThisYear(bazi, gender) {
     var helpWX = wxSheng[DAY_WX], sameWX = DAY_WX;
     var caiWX = woKe[DAY_WX], shiShangWX = wxSHENG[DAY_WX];
 
-    var wangScore = 0;
-    ['year','month','day','hour'].forEach(function(pos) {
-        var gWx = WU_XING[bazi[pos].gan];
-        if (gWx === sameWX) wangScore += 1;
-        if (gWx === helpWX) wangScore += 0.5;
-        getCangGan(bazi[pos].zhi).forEach(function(g) {
-            var gw = WU_XING[g];
-            if (gw === sameWX) wangScore += 0.5;
-            if (gw === helpWX) wangScore += 0.25;
-        });
-    });
-    var isStrong = wangScore >= 3;
+    // 使用权威 calcDayMasterStrength（通过 yongJi 参数）
+    var wangLevelTA = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '偏强';
+    var isStrong = (wangLevelTA === '极强' || wangLevelTA === '偏强');
     var favorableSet = isStrong
         ? [caiWX, shiShangWX, guanWX[DAY_WX]]
         : [helpWX, sameWX];
