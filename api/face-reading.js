@@ -89,7 +89,9 @@ module.exports = async function handler(req, res) {
 
     var aiData = await aiResp.json();
     // DashScope 原生 API 返回 output.choices，兼容 OpenAI 格式
-    var reading = aiData.output?.choices?.[0]?.message?.content || aiData.choices?.[0]?.message?.content || '';
+    var rawContent = aiData.output?.choices?.[0]?.message?.content || aiData.choices?.[0]?.message?.content || '';
+    // Qwen native API 返回 content 为数组 [{text:'...'}]，需提取
+    var reading = Array.isArray(rawContent) ? rawContent.map(function(c){return c.text||''}).join('') : String(rawContent);
     if (!reading || reading.length < 20) {
       return res.status(500).json({ error: 'AI 返回异常，请稍后重试' });
     }
