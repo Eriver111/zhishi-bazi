@@ -68,26 +68,24 @@
 
 /* === 逐宫扫光动画 === */
 .scan-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
-.scan-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,rgba(232,207,112,.9),rgba(201,168,76,.3),transparent 70%);box-shadow:0 0 20px rgba(232,207,112,.5),0 0 40px rgba(201,168,76,.2);transform:translate(-50%,-50%) scale(0);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
-.scan-dot.active{transform:translate(-50%,-50%) scale(1)}
-.scan-dot.ripple{animation:dotRipple 1s ease-out forwards}
-@keyframes dotRipple{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(3);opacity:0}}
-.scan-label{position:absolute;font-size:11px;color:var(--gold-l);letter-spacing:2px;transform:translate(-50%,-50%);opacity:0;transition:opacity .5s;white-space:nowrap;pointer-events:none}
+.scan-overlay{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
+.scan-dot{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(232,207,112,.9);box-shadow:0 0 18px 6px rgba(232,207,112,.6),0 0 36px 12px rgba(201,168,76,.3);transform:translate(-50%,-50%) scale(0);opacity:0;transition:all .3s ease-out}
+.scan-dot.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+.scan-dot.glow{animation:dotGlow .7s ease-out forwards}
+@keyframes dotGlow{0%{transform:translate(-50%,-50%) scale(1);opacity:1;box-shadow:0 0 28px 10px rgba(232,207,112,.8)}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0;box-shadow:0 0 60px 20px rgba(232,207,112,0)}}
+.scan-label{position:absolute;font-size:11px;color:var(--gold-l);letter-spacing:2px;transform:translate(-50%,-100%);opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none;text-shadow:0 0 8px rgba(0,0,0,.8)}
 .scan-label.show{opacity:1}
-.scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,207,112,.4),transparent);animation:scanLine 3s ease-in-out infinite}
-@keyframes scanLine{0%{top:20%}100%{top:80%}}
 
-/* === 墨卷舒展 === */
-.scroll-reveal{display:none;position:relative;margin-top:16px;overflow:hidden}
-.scroll-left,.scroll-right{position:absolute;top:0;width:18px;height:100%;background:linear-gradient(180deg,rgba(201,168,76,.08),rgba(139,109,40,.15),rgba(201,168,76,.08));z-index:2}
-.scroll-left{left:0;border-right:1px solid rgba(201,168,76,.12)}
-.scroll-right{right:0;border-left:1px solid rgba(201,168,76,.12)}
-.scroll-body{overflow:hidden;transition:max-height 1.2s cubic-bezier(.4,0,.2,1);max-height:0;position:relative;z-index:1}
-.scroll-body.open{max-height:8000px}
-.scroll-body-inner{padding:18px;opacity:0;transition:opacity .8s .4s}
-.scroll-body.open .scroll-body-inner{opacity:1}
-.scroll-hint{text-align:center;padding:12px;color:var(--gold);font-size:12px;letter-spacing:3px;animation:scrollPulse 2s ease-in-out infinite}
-@keyframes scrollPulse{0%,100%{opacity:.5}50%{opacity:1}}
+.scroll-reveal{display:none;position:relative;margin-top:20px;overflow:hidden;background:var(--card);border:1px solid var(--bd);border-radius:14px}
+.scroll-reveal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;z-index:3}
+.scroll-left,.scroll-right{position:absolute;top:0;width:14px;height:100%;background:linear-gradient(180deg,rgba(201,168,76,.12),rgba(139,109,40,.2),rgba(201,168,76,.12));z-index:2}
+.scroll-left{left:0;border-right:1px solid rgba(201,168,76,.15)}
+.scroll-right{right:0;border-left:1px solid rgba(201,168,76,.15)}
+.scroll-body{overflow:hidden;max-height:0;transition:max-height 1s cubic-bezier(.4,0,.2,1);position:relative;z-index:1}
+.scroll-body.open{max-height:6000px}
+.scroll-body-inner{padding:24px 20px;opacity:0;transform:translateY(12px);transition:all .6s .3s;line-height:2.1;font-size:14px;color:var(--tx)}
+.scroll-body.open .scroll-body-inner{opacity:1;transform:translateY(0)}
+.scroll-hint{text-align:center;padding:14px;color:var(--gold);font-size:12px;letter-spacing:3px}
 
 @media(max-width:400px){
   .face-wrap{padding:40px 10px 60px}
@@ -197,24 +195,29 @@ function buildScanOverlay(){
   var overlay=document.getElementById('scanOverlay');
   if(!overlay){overlay=document.createElement('div');overlay.id='scanOverlay';overlay.className='scan-overlay';zone.appendChild(overlay)}
   overlay.innerHTML='';overlay.style.display='block';
-  PALACE_POS.forEach(function(p,i){
-    var dot=document.createElement('div');dot.className='scan-dot';dot.id='scanDot'+i;dot.style.left=p.x+'%';dot.style.top=p.y+'%';overlay.appendChild(dot);
-    var label=document.createElement('div');label.className='scan-label';label.id='scanLabel'+i;label.style.left=p.x+'%';label.style.top=(p.y+4)+'%';label.textContent=p.name+'宫';overlay.appendChild(label);
-  });
-  var line=document.createElement('div');line.className='scan-line';overlay.appendChild(line);
 }
 function runScanPhase(){
   return new Promise(function(resolve){
-    buildScanOverlay();document.getElementById('btnAnalyze').style.display='none';
-    var i=0,labels=['命宫','财帛','兄弟','田宅','男女','妻妾','疾厄','迁移','官禄','福德','奴仆','相貌'];
-    var iv=setInterval(function(){
-      if(i>0){var pd=document.getElementById('scanDot'+(i-1));var pl=document.getElementById('scanLabel'+(i-1));if(pd)pd.classList.remove('active');if(pl)pl.classList.remove('show')}
-      if(i>=12){clearInterval(iv);setTimeout(function(){document.getElementById('scanOverlay').style.display='none';resolve()},600);return}
-      var d=document.getElementById('scanDot'+i);var l=document.getElementById('scanLabel'+i);if(d)d.classList.add('active');if(l)l.classList.add('show');i++;
-    },750);
+    buildScanOverlay();
+    document.getElementById('btnAnalyze').style.display='none';
+    var overlay=document.getElementById('scanOverlay');
+    var names=['命宫','财帛','兄弟','田宅','男女','妻妾','疾厄','迁移','官禄','福德','奴仆','相貌'];
+    var pos=PALACE_POS;
+    var current=-1;
+    function next(){
+      current++;
+      if(current>=pos.length){setTimeout(function(){overlay.style.display='none';resolve()},500);return}
+      var dot=document.createElement('div');dot.className='scan-dot';dot.style.left=pos[current].x+'%';dot.style.top=pos[current].y+'%';overlay.appendChild(dot);
+      var label=document.createElement('div');label.className='scan-label';label.style.left=pos[current].x+'%';label.style.top=pos[current].y+'%';label.textContent=names[current]+'宫';overlay.appendChild(label);
+      requestAnimationFrame(function(){
+        dot.classList.add('show');label.classList.add('show');
+        setTimeout(function(){dot.classList.add('glow');label.classList.remove('show')},500);
+        setTimeout(function(){dot.remove();label.remove();next()},750);
+      });
+    }
+    next();
   });
-}
-function runScrollReveal(resultHTML){
+}function runScrollReveal(resultHTML){
   return new Promise(function(resolve){
     var scroll=document.getElementById('scrollReveal');
     if(!scroll){scroll=document.createElement('div');scroll.id='scrollReveal';scroll.className='scroll-reveal';scroll.innerHTML='<div class=scroll-left></div><div class=scroll-right></div><div class=scroll-body id=scrollBody><div class=scroll-body-inner id=scrollInner></div></div>';var fc=document.querySelector('.face-card');fc.parentNode.insertBefore(scroll,fc.nextSibling)}
