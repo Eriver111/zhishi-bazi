@@ -188,8 +188,8 @@ function handleFile(e){
   reader.readAsDataURL(file);
 }
 
-// === 十二宫扫光位置 ===
-var PALACE_POS=[{name:'命宫',x:50,y:33},{name:'财帛',x:50,y:54},{name:'兄弟',x:42,y:30},{name:'田宅',x:55,y:38},{name:'男女',x:50,y:44},{name:'妻妾',x:70,y:34},{name:'疾厄',x:50,y:40},{name:'迁移',x:40,y:28},{name:'官禄',x:50,y:20},{name:'福德',x:65,y:30},{name:'奴仆',x:50,y:62},{name:'相貌',x:50,y:50}];
+// === 手相五指+掌纹扫光位置 ===
+var PALACE_POS=[{name:'拇指',x:20,y:42},{name:'食指',x:46,y:14},{name:'中指',x:50,y:6},{name:'无名指',x:58,y:16},{name:'小指',x:78,y:28},{name:'拜相纹',x:58,y:54},{name:'兵符纹',x:50,y:44},{name:'玉柱纹',x:50,y:58},{name:'金花印',x:42,y:48},{name:'双鱼纹',x:50,y:36},{name:'掌心',x:50,y:50},{name:'手腕',x:50,y:86}];
 function buildScanOverlay(){
   var zone=document.getElementById('uploadZone');
   var overlay=document.getElementById('scanOverlay');
@@ -201,7 +201,7 @@ function runScanPhase(){
     buildScanOverlay();
     document.getElementById('btnAnalyze').style.display='none';
     var overlay=document.getElementById('scanOverlay');
-    var names=['命宫','财帛','兄弟','田宅','男女','妻妾','疾厄','迁移','官禄','福德','奴仆','相貌'];
+    var names=['拇指','食指','中指','无名指','小指','拜相纹','兵符纹','玉柱纹','金花印','双鱼纹','掌心','手腕'];
     var pos=PALACE_POS;
     var current=-1;
     function next(){
