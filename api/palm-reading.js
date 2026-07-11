@@ -72,7 +72,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: PALM_SYSTEM },
           { role: 'user', content: [
             { image: image },
-            { type: 'text', text: '请分析这张手相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察掌中痣、纹路深浅等特征。语气像朋友聊天。最后给一段总结和一首短诗。' }
+            { type: 'text', text: '请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。' }
           ]}
         ]},
         parameters: { max_tokens: 2000, temperature: 0.3 }
