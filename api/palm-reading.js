@@ -59,12 +59,15 @@ module.exports = async function handler(req, res) {
     // 去重检查（同一张图短时间内不重复扣费）
     var imgHash = crypto.createHash('md5').update(imgBuffer).digest('hex');
 
-        var actualUrl = USE_OPENAI_FORMAT ? AI_API_URL + '/chat/completions' : AI_API_URL;
-    console.log('[palm-reading] bodySize='+Math.round(image.length/1024)+'KB');
     console.log('[palm-reading] fmt=' + (USE_OPENAI_FORMAT?'openai':'native') + ' model=' + AI_MODEL + ' key=' + (AI_API_KEY||'').substring(0,8) + '...');
     // 调用 Vision AI
     var actualUrl = USE_OPENAI_FORMAT ? AI_API_URL + '/chat/completions' : AI_API_URL;
-    var aiResp = await fetch(actualUrl, {
+    console.log('[palm-reading] bodySize='+Math.round(image.length/1024)+'KB');
+    var controller = new AbortController();
+    var timeout = setTimeout(function(){ controller.abort(); }, 60000);
+    try {
+      var aiResp = await fetch(actualUrl, {
+        signal: controller.signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -114,6 +117,12 @@ module.exports = async function handler(req, res) {
     if (!reading || reading.length < 20) {
       return res.status(500).json({ error: 'AI 返回异常，请稍后重试' });
     }
+    } catch(e) {
+      if (e.name === 'AbortError') {
+        return res.status(504).json({ error: 'AI 分析超时，请稍后重试（已等待60秒）' });
+      }
+      throw e;
+    } finally { clearTimeout(timeout); }
 
     // 扣费
     if (!monthlyActive) {
