@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
       ? JSON.stringify({
         model: AI_MODEL,
         messages: [
-          { role: 'system', content: FACE_SYSTEM },
+          { role: 'system', content: PALM_SYSTEM },
           { role: 'user', content: [
             { type: 'image_url', image_url: { url: image } },
             { type: 'text', text: "请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。" }
@@ -84,7 +84,7 @@ module.exports = async function handler(req, res) {
       : JSON.stringify({
         model: AI_MODEL,
         input: { messages: [
-          { role: 'system', content: FACE_SYSTEM },
+          { role: 'system', content: PALM_SYSTEM },
           { role: 'user', content: [
             { image: image },
             { type: 'text', text: "请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。" }
