@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
 
@@ -68,16 +68,15 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        messages: [
+        input: { messages: [
           { role: 'system', content: FACE_SYSTEM },
           { role: 'user', content: [
-            { type: 'image_url', image_url: { url: image } },
+            { image: image },
             { type: 'text', text: '请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后给一段总结和一首短诗。' }
           ]}
-        ],
-        max_tokens: 2000,
-        temperature: 0.3,
-        enable_thinking: true
+        ]
+        ]},
+        parameters: { max_tokens: 2000, temperature: 0.3 }
       })
     });
 
@@ -91,13 +90,9 @@ module.exports = async function handler(req, res) {
 
     var aiData = await aiResp.json();
     // DashScope 原生 API 返回 output.choices，兼容 OpenAI 格式
-    // OpenAI 兼容格式：choices[0].message.content 为字符串
-    var reading = aiData.choices?.[0]?.message?.content || '';
-    // 兼容旧格式：output.choices 或 content 为数组
-    if (!reading) {
-      var rawContent = aiData.output?.choices?.[0]?.message?.content || '';
-      reading = Array.isArray(rawContent) ? rawContent.map(function(c){return c.text||''}).join('') : String(rawContent);
-    }
+    // DashScope 原生格式
+    var rawContent = aiData.output?.choices?.[0]?.message?.content || aiData.choices?.[0]?.message?.content || '';
+    var reading = Array.isArray(rawContent) ? rawContent.map(function(c){return c.text||''}).join('') : String(rawContent);
     if (!reading || reading.length < 20) {
       return res.status(500).json({ error: 'AI 返回异常，请稍后重试' });
     }
