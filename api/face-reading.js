@@ -79,8 +79,7 @@ module.exports = async function handler(req, res) {
           ]}
         ],
         max_tokens: 2000,
-        temperature: 0.3,
-        enable_thinking: true
+        temperature: 0.3
       })
       : JSON.stringify({
         model: AI_MODEL,
