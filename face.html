@@ -176,7 +176,7 @@ function handleFile(e){
       if(w>maxW||h>maxH){var r=Math.min(maxW/w,maxH/h);w*=r;h*=r}
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      _imageData=canvas.toDataURL('image/jpeg',0.92);
+      _imageData=canvas.toDataURL('image/jpeg',0.7);
       document.getElementById('preview').src=_imageData;
       document.getElementById('preview').style.display='block';
       document.getElementById('placeholder').style.display='none';
