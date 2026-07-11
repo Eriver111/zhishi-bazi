@@ -6,9 +6,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
+const AI_MODEL = process.env.VISION_MODEL || 'qwen3.7-plus';
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, deductCreditByUser, isMonthlyActiveByUserId, getUserCredits, saveUserChatHistory } = require('../lib/supabase.js');
@@ -68,10 +68,10 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        input: { messages: [
+        messages: [
           { role: 'system', content: PALM_SYSTEM },
           { role: 'user', content: [
-            { image: image },
+            { type: 'image_url', image_url: { url: image } },
             { type: 'text', text: '请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。' }
           ]}
         ]
