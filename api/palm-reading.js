@@ -59,9 +59,10 @@ module.exports = async function handler(req, res) {
     // 去重检查（同一张图短时间内不重复扣费）
     var imgHash = crypto.createHash('md5').update(imgBuffer).digest('hex');
 
-    console.log('[palm-reading] model=' + AI_MODEL + ' key=' + (AI_API_KEY||'').substring(0,8) + '... url=' + AI_API_URL);
+    console.log('[palm-reading] fmt=' + (USE_OPENAI_FORMAT?'openai':'native') + ' model=' + AI_MODEL + ' key=' + (AI_API_KEY||'').substring(0,8) + '...');
     // 调用 Vision AI
-    var aiResp = await fetch(AI_API_URL, {
+    var actualUrl = USE_OPENAI_FORMAT ? AI_API_URL + '/chat/completions' : AI_API_URL;
+    var aiResp = await fetch(actualUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
