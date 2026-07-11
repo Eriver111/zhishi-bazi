@@ -6,9 +6,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const AI_API_URL = process.env.VISION_API_URL || 'https://ws-bbx09ebwqbrx4mzt.cn-beijing.maas.aliyuncs.com/compatible-mode/v1';
+const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.VISION_MODEL || 'qwen3.7-plus';
+const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, deductCreditByUser, isMonthlyActiveByUserId, getUserCredits, saveUserChatHistory } = require('../lib/supabase.js');
