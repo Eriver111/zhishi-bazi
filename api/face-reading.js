@@ -63,6 +63,7 @@ module.exports = async function handler(req, res) {
     console.log('[face-reading] fmt=' + (USE_OPENAI_FORMAT?'openai':'native') + ' model=' + AI_MODEL + ' key=' + (AI_API_KEY||'').substring(0,8) + '...');
     // 调用 Vision AI
     var actualUrl = USE_OPENAI_FORMAT ? AI_API_URL + '/chat/completions' : AI_API_URL;
+    console.log('[face-reading] bodySize=' + Math.round(image.length/1024) + 'KB url=' + actualUrl);
     var aiResp = await fetch(actualUrl, {
       method: 'POST',
       headers: {
