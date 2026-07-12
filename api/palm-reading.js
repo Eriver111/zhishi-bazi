@@ -10,6 +10,8 @@ const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
 const USE_OPENAI_FORMAT = AI_API_URL.includes('compatible-mode');
+const FALLBACK_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+const FALLBACK_MODEL = 'qwen-vl-max';
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, deductCreditByUser, isMonthlyActiveByUserId, getUserCredits, saveUserChatHistory } = require('../lib/supabase.js');
@@ -118,10 +120,36 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'AI 返回异常，请稍后重试' });
     }
     } catch(e) {
-      if (e.name === 'AbortError') {
-        return res.status(504).json({ error: 'AI 分析超时，请稍后重试（已等待60秒）' });
+      if (e.name === 'AbortError' && USE_OPENAI_FORMAT) {
+        console.log('[palm-reading] MaaS超时,降级到qwen-vl-max');
+        clearTimeout(timeout);
+        var fbUrl = FALLBACK_URL;
+        var fbController = new AbortController();
+        var fbTimeout = setTimeout(function(){ fbController.abort(); }, 60000);
+        try {
+          var fbResp = await fetch(fbUrl, {
+            method: 'POST', signal: fbController.signal,
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
+            body: JSON.stringify({ model: FALLBACK_MODEL,
+              input: { messages: [
+                { role: 'system', content: PALM_SYSTEM },
+                { role: 'user', content: [{ image: image }, { type: 'text', text: '请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。' }] }
+              ]},
+              parameters: { max_tokens: 2000, temperature: 0.3 }
+            })
+          });
+          if (fbResp.ok) {
+            var fbData = await fbResp.json();
+            var raw = fbData.output?.choices?.[0]?.message?.content || fbData.choices?.[0]?.message?.content || '';
+            reading = Array.isArray(raw) ? raw.map(function(c){return c.text||''}).join('') : String(raw);
+          }
+        } catch(_) {} finally { clearTimeout(fbTimeout); }
+        if (!reading || reading.length < 20) {
+          return res.status(504).json({ error: 'AI 分析超时，请稍后重试' });
+        }
+      } else if (e.name !== 'AbortError') {
+        throw e;
       }
-      throw e;
     } finally { clearTimeout(timeout); }
 
     // 扣费
