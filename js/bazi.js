@@ -59,10 +59,27 @@ var LICHUN_HOUR = {
 };
 
 // 小寒近似时刻（北京时间小时数）— 子/丑月分界
-// 1月5-6日左右，通常在下午到晚间；默认16时
 var XIAOHAN_HOUR = {
     2009:19,2010:0,2011:6,2012:12,2013:18,2014:0,2015:6,2016:12,2017:18,2018:23,
     2019:5,2020:11,2021:17,2022:23,2023:4,2024:10,2025:16,2026:22,2027:4,2028:10,2029:15,2030:21
+};
+
+// 立冬时刻（11月7-8日，凌晨到上午）— 戌/亥月分界
+var LIDONG_HOUR = {
+    2007:3,2008:9,2009:15,2010:20,2011:2,2012:8,2013:14,2014:20,2015:2,2016:7,
+    2017:13,2018:19,2019:1,2020:7,2021:13,2022:18,2023:0,2024:6,2025:12,2026:18,2027:0,2028:6,2029:12,2030:18
+};
+
+// 立秋时刻（8月7-8日，下午到晚间）— 未/申月分界
+var LIQIU_HOUR = {
+    2007:16,2008:22,2009:4,2010:10,2011:16,2012:22,2013:4,2014:10,2015:16,2016:22,
+    2017:3,2018:9,2019:15,2020:21,2021:3,2022:8,2023:14,2024:20,2025:2,2026:8,2027:14,2028:20,2029:2,2030:8
+};
+
+// 立夏时刻（5月5-6日，凌晨到上午）— 辰/巳月分界
+var LIXIA_HOUR = {
+    2007:5,2008:11,2009:17,2010:23,2011:4,2012:10,2013:16,2014:22,2015:4,2016:9,
+    2017:15,2018:21,2019:3,2020:9,2021:14,2022:20,2023:2,2024:8,2025:14,2026:20,2027:2,2028:8,2029:14,2030:20
 };
 
 /**
@@ -155,9 +172,13 @@ function getJieQiDates(year) {
             var d = days[i];
             var targetYear = (m === 1) ? year + 1 : year;
             // 立春和小寒返回带钟点（用于精确到时的月柱切换）
-            // 立春支持小数（19.5=19:30），小寒整数小时
-            var hVal = (i === 0) ? (LICHUN_HOUR[year] || 12) :
-                       (i === 11) ? (XIAOHAN_HOUR[year] || 16) : 0;
+            // 四立+小寒精确到小时（月柱分界关键节点）
+            var hVal = 0;
+            if (i === 0) hVal = (LICHUN_HOUR[year] || 12);          // 立春
+            else if (i === 11) hVal = (XIAOHAN_HOUR[year] || 16);   // 小寒
+            else if (i === 9) hVal = (LIDONG_HOUR[year] || 4);      // 立冬
+            else if (i === 6) hVal = (LIQIU_HOUR[year] || 16);      // 立秋
+            else if (i === 3) hVal = (LIXIA_HOUR[year] || 8);       // 立夏
             var hHour = Math.floor(hVal);
             var hMin = Math.round((hVal - hHour) * 60);
             return { name: bq.name, date: new Date(targetYear, m - 1, d, hHour, hMin, 0) };
@@ -243,7 +264,7 @@ function getMonthPillar(year, month, day, hour, clock) {
     // 先判断是否在立春时刻之前（属于上一年）
     if ((month < realLiChunMonth) || 
         (month === realLiChunMonth && day < realLiChunDay) ||
-        (month === realLiChunMonth && day === realLiChunDay && (clock || 0) < liChunHour)) {
+        (month === realLiChunMonth && day === realLiChunDay && (clock != null ? clock : 12) < liChunHour)) {
         // 在立春之前，属于上一年的丑月(1)或之前的月份
         yearForMonthGan = year - 1;
         
@@ -271,12 +292,15 @@ function getMonthPillar(year, month, day, hour, clock) {
         //        6=立秋(申8),7=白露(酉9),8=寒露(戌10),9=立冬(亥11),10=大雪(子0),11=小寒(丑1)
         var monthZhiMap = [2,3,4,5,6,7,8,9,10,11,0,1]; // 节气索引 → 地支索引
         
-        // 找到当前日期属于哪个节气之后（遍历0-10，跳过小寒因为小寒在次年1月）
+        // 找到当前日期属于哪个节气之后（考虑节气具体时刻）
         for (var i = 10; i >= 0; i--) {
             var jq = jieQi[i].date;
             var jqM = jq.getMonth() + 1;
             var jqD = jq.getDate();
-            if (month > jqM || (month === jqM && day >= jqD)) {
+            var jqH = jq.getHours() + jq.getMinutes() / 60; // 节气时刻（小数小时）
+            var afterJq = month > jqM || (month === jqM && day > jqD) ||
+              (month === jqM && day === jqD && (clock != null ? clock : 12) >= jqH);
+            if (afterJq) {
                 zhiIndex = monthZhiMap[i];
                 break;
             }
@@ -450,7 +474,7 @@ function getCangGan(zhi) {
 function calculateBaZi(year, month, day, hour, gender, clock) {
     // 计算四柱
     const yearPillar = getYearPillar(year, month, day, clock || 0);
-    const monthPillar = getMonthPillar(year, month, day, hour, clock || 0);
+    const monthPillar = getMonthPillar(year, month, day, hour, (clock != null ? clock : 12));
     
     const dayForPillar = getDayPillar(year, month, day);
     const dayPillar = dayForPillar;
