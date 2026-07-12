@@ -539,22 +539,22 @@ function calculateBaZi(year, month, day, hour, gender, clock) {
  * 统计五行数量
  */
 function countWuXing(yearPillar, monthPillar, dayPillar, hourPillar) {
-    const count = {
-        '金': 0, '木': 0, '水': 0, '火': 0, '土': 0
-    };
-    
-    // 统计天干
+    var count = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
+    // 天干（权重 1）
     count[WU_XING[yearPillar.gan]]++;
     count[WU_XING[monthPillar.gan]]++;
     count[WU_XING[dayPillar.gan]]++;
     count[WU_XING[hourPillar.gan]]++;
-    
-    // 统计地支
+    // 地支（权重 1，月令额外 +1）
     count[DI_ZHI_WU_XING[yearPillar.zhi]]++;
-    count[DI_ZHI_WU_XING[monthPillar.zhi]]++;
+    count[DI_ZHI_WU_XING[monthPillar.zhi]] += 2; // 月令加权
     count[DI_ZHI_WU_XING[dayPillar.zhi]]++;
     count[DI_ZHI_WU_XING[hourPillar.zhi]]++;
-    
+    // 藏干（权重 1）
+    [yearPillar, monthPillar, dayPillar, hourPillar].forEach(function(p) {
+      var cg = getCangGan(p.zhi);
+      cg.forEach(function(g) { count[WU_XING[g]]++; });
+    });
     return count;
 }
 
