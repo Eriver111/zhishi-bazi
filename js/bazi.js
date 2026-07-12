@@ -3538,11 +3538,20 @@ function getYongJi(bazi) {
       + '喜：' + xiShen.join('、') + '来生扶，补足元气。'
       + '忌：' + jiShen.join('、') + '再来克泄耗，元气更伤。';
   } else {
-    // 中和
-    xiShen = [SHENG_WO, KE_WO];
-    yongShen = [];
-    jiShen = [];
-    reasoning = '日主中和（' + dmStr.score + '分），元气均衡。需结合大运流年走势灵活取用——行运偏强则取克泄耗为用，行运偏弱则取生扶为用。';
+    // 中和 — 根据实际分数倾向给出更有意义的建议
+    if (dmStr.score < 50) {
+      // 中和偏弱：略偏柔，宜适当生扶
+      xiShen = [SHENG_WO, TONG];
+      yongShen = [SHENG_WO];
+      jiShen = [KE_WO, WO_SHENG, WO_KE];
+      reasoning = '日主中和偏弱（' + dmStr.score + '分）。元气虽均衡但略有不足，宜适当生扶。喜：' + xiShen.join('、') + '来补足元气。忌：克泄耗太过则元气难支。';
+    } else {
+      // 中和偏强：略偏旺，宜适当克泄耗
+      xiShen = [KE_WO, WO_SHENG, WO_KE];
+      yongShen = [KE_WO, WO_SHENG];
+      jiShen = [SHENG_WO, TONG];
+      reasoning = '日主中和偏强（' + dmStr.score + '分）。元气充足略有过旺之象，宜适当克泄耗以求平衡。喜：克泄耗来平衡。忌：印比再来生扶。';
+    }
   }
 
   // ---- v4.2 调候修正（穷通宝鉴：寒暖燥湿优先于扶抑）----
