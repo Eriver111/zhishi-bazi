@@ -134,6 +134,8 @@ function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById
   var used=parseInt(localStorage.getItem('ai_free_used')||'0');
   AI.freeRemaining=Math.max(0,2-used);
   updateCreditsUI();
+  // 登录用户自动同步后端积分
+  syncUserCredits();
 
   // 恢复会话
   var savedCode=localStorage.getItem('ai_chat_code');
@@ -151,6 +153,19 @@ function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById
   })}
 })();
 
+function syncUserCredits(){
+  if(typeof Auth==='undefined'){setTimeout(syncUserCredits,1000);return}
+  Auth.ready(function(){
+    if(!Auth.isLoggedIn())return;
+    fetch('/api/auth/profile',{headers:{'Authorization':'Bearer '+Auth.getToken()}})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d.error)return;
+      if(d.is_monthly){AI.isMonthly=true;updateCreditsUI();return}
+      if(d.credits>0){AI.credits=d.credits;updateCreditsUI()}
+    });
+  });
+}
 function updateCreditsUI(){
   var el=document.getElementById('creditsLabel');
   if(AI.isMonthly){el.innerHTML='<strong>∞</strong> 会员';return}
