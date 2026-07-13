@@ -470,24 +470,30 @@
   }
 
   function showBuyBar() {
+    // 隐藏购买提示
+    var shareBtn = document.getElementById('aiShareBtn');
+    if (shareBtn) shareBtn.style.display = 'none';
+    var hint = document.getElementById('aiBuyHint');
+    if (hint) hint.style.display = 'none';
+
     if (AI.isMonthly) {
       if ($buyBar) $buyBar.style.display = 'none';
+      if ($input) $input.disabled = false;
+      if ($sendBtn) $sendBtn.disabled = false;
+      if ($inputWrap) $inputWrap.style.display = 'flex';
       return;
     }
-    // 免费用尽且无积分 → 显示分享按钮
+    // 免费用尽且无积分 → 显示购买提示
     if (AI.freeRemaining <= 0 && AI.credits <= 0) {
       if ($buyBar) $buyBar.style.display = 'flex';
-      if ($inputWrap) $inputWrap.style.display = 'flex';
       if ($input) $input.disabled = true;
       if ($sendBtn) $sendBtn.disabled = true;
-      // 隐藏购买提示，显示分享按钮
-      var shareBtn = document.getElementById('aiShareBtn');
+      if ($inputWrap) $inputWrap.style.display = 'flex';
       if (shareBtn) shareBtn.style.display = 'inline-block';
-      var hint = document.getElementById('aiBuyHint');
       if (hint) hint.style.display = 'block';
       return;
     }
-    // 有免费或有积分 → 隐藏分享条，启用输入
+    // 有免费或有积分 → 启用输入
     if ($buyBar) $buyBar.style.display = 'none';
     if ($input) $input.disabled = false;
     if ($sendBtn) $sendBtn.disabled = false;
