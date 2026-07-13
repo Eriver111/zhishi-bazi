@@ -215,7 +215,8 @@ function send(){
   if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}
   else{body.code=AI.code}
 
-  fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  var headers={'Content-Type':'application/json'};if(typeof Auth!=='undefined'&&Auth.isLoggedIn())headers['Authorization']='Bearer '+Auth.getToken();
+  fetch('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
   .then(function(r){return r.json()}).then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
