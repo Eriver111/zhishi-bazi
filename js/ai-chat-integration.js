@@ -46,6 +46,7 @@
       injectUI();
       restoreSession();
       migrateLegacyUsers();
+      syncUserCredits();
     });
   }
 
@@ -60,6 +61,31 @@
     var used = parseInt(localStorage.getItem('ai_free_used') || '0');
     var maxFree = 2;
     AI.freeRemaining = Math.max(0, maxFree - used);
+  }
+
+  // 登录用户自动同步后端积分（无需兑换码）
+  function syncUserCredits() {
+    if (typeof Auth === 'undefined') return setTimeout(syncUserCredits, 1000);
+    Auth.ready(function() {
+      if (!Auth.isLoggedIn()) return;
+      fetch('/api/auth/profile', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.error) return;
+          if (d.is_monthly) {
+            AI.isMonthly = true;
+            AI.credits = -1;
+            updateMonthlyDisplay();
+          } else if (d.credits > 0) {
+            AI.credits = d.credits;
+            updateCreditsDisplay(d.credits);
+          }
+          if (AI.isMonthly || AI.credits > 0) {
+            showBuyBar(); // 重新判断是否隐藏购买提示
+          }
+        })
+        .catch(function() {});
+    });
   }
 
   function useFreeCredit() {
