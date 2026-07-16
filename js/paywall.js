@@ -78,11 +78,11 @@ function startRP(){
       setTimeout(function(){window.location.href=payUrl},500);
     } else {
       var qrSrc=d.qrcode||'';
-      if(!qrSrc&&payUrl) qrSrc='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(payUrl);
+      if(!qrSrc&&payUrl) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
       if(container&&qrSrc){
-        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>请用支付宝扫描<br>二维码支付 ¥9.9</p>\'">';
+        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败<br><a href=\\\''+payUrl+'\\\' target=\\\'_blank\\\' style=\\\'color:var(--gold);text-decoration:underline\\\'>点击此处直接支付</a></p>\'">';
       }
-      if(status)status.textContent='请扫码支付 ¥9.9';
+      if(status)status.textContent='请扫码支付 ¥9.9（电脑端可截图扫码）';
     }
     startQRPoll(d.out_trade_no);
   }).catch(function(e){

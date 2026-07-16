@@ -139,7 +139,8 @@
 
     <div class="loading-state" id="loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
-      <div class="loading-text">逐宫分析中，请稍候...</div>
+      <div class="loading-text" id="loadingText">AI 正在读取面部特征...</div>
+      <div style="margin-top:6px;font-size:11px;color:var(--tx3);opacity:.6" id="loadingSub">请耐心等待，并非卡住，图片分析约需30-60秒</div>
     </div>
 
     <div class="error-msg" id="error"></div>
@@ -229,14 +230,17 @@ function startAnalysis(){
   if(!_imageData) return;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){Auth.showModal('login');return}
   var btn=document.getElementById('btnAnalyze');btn.disabled=true;btn.textContent='观面中...';
+  // 轮换提示词
+  var tips=['正在定位命宫与财帛宫...','分析面部骨相与皮相...','参详五官气色与光泽...','《麻衣神相》对照十二宫...','综合判断各宫吉凶...','生成面相分析报告...'];
+  var tipIdx=0;var tipTimer=setInterval(function(){tipIdx=(tipIdx+1)%tips.length;var el=document.getElementById('loadingText');if(el)el.textContent=tips[tipIdx]},5000);
   document.getElementById('result').style.display='none';document.getElementById('error').style.display='none';
   var scrollEl=document.getElementById('scrollReveal');if(scrollEl)scrollEl.style.display='none';
   var apiP=fetch('/api/face-reading',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+Auth.getToken()},body:JSON.stringify({image:_imageData})}).then(function(r){return r.json()});
   var scanP=runScanPhase();
-  Promise.all([scanP,apiP]).then(function(rr){var d=rr[1];if(d.error){showError(d.error);btn.disabled=false;btn.textContent='开始观面';return}
+  Promise.all([scanP,apiP]).then(function(rr){clearInterval(tipTimer);var d=rr[1];if(d.error){showError(d.error);btn.disabled=false;btn.textContent='开始观面';return}
     var html='<div class=scroll-hint>—— 观面结果 ——</div>'+d.reading.replace(/\n/g,'<br>');
     runScrollReveal(html).then(function(){btn.disabled=false;btn.textContent='重新观面';updateCreditsUI()});
-  }).catch(function(){btn.disabled=false;btn.textContent='开始观面';showError('网络错误')});
+  }).catch(function(){clearInterval(tipTimer);btn.disabled=false;btn.textContent='开始观面';showError('网络错误')});
 }
 
 function updateCreditsUI(){

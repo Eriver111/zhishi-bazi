@@ -165,6 +165,7 @@ module.exports = async function handler(req, res) {
       '- 房屋类型：**' + roomTypeLabel + '**（' + (roomTypeNotes[roomType] || '') + '）',
       '- 房屋坐向：**坐' + sitting + '朝' + facing + '**',
       '- 大门方位：' + (layout.door || '未标注'),
+      '- 客厅方位：' + (layout.living || layout.livingRoom || '未标注'),
       '- 厨房方位：' + (layout.kitchen || '未标注')
     ];
 

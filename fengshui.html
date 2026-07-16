@@ -220,7 +220,8 @@
       </div>
       <div class="loading-state" id="loading">
         <div class="loading-dots"><span></span><span></span><span></span></div>
-        <div class="loading-text">八宅排盘分析中，请稍候...</div>
+        <div class="loading-text" id="loadingText">AI 正在排布八宅九星...</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--tx3);opacity:.6" id="loadingSub">AI 正在分析照片和方位数据，请耐心等待约60-90秒，并非卡住</div>
       </div>
       <div class="error-msg" id="error"></div>
     </div>
@@ -362,9 +363,10 @@ function buildLayoutSelects(){
   container.dataset.built = '1';
 
   var html = '';
-  // Fixed: door, kitchen
+  // Fixed: door, living room, kitchen
   html += '<div class="room-group-label">📌 基本格局</div>';
   html += makeOptionRow('🚪 大门在', 'selDoor', false);
+  html += makeOptionRow('🛋️ 客厅在', 'selLiving', false);
   html += makeOptionRow('🍳 厨房在', 'selKitchen', false);
 
   // Dynamic bedrooms
@@ -448,6 +450,7 @@ function highlightGridCells(){
   document.querySelectorAll('.grid-9 .cell').forEach(function(c){ c.classList.remove('highlight'); });
   var positions = [];
   var dv = document.getElementById('selDoor'); if(dv&&dv.value) positions.push(dv.value);
+  var lv = document.getElementById('selLiving'); if(lv&&lv.value) positions.push(lv.value);
   var kv = document.getElementById('selKitchen'); if(kv&&kv.value) positions.push(kv.value);
   _bedrooms.forEach(function(b){ if(b.dir) positions.push(b.dir); });
   _bathrooms.forEach(function(b){ if(b.dir) positions.push(b.dir); });
@@ -461,6 +464,7 @@ function checkStep2Ready(){
   highlightGridCells();
   var ok = true;
   if(!document.getElementById('selDoor').value) ok = false;
+  if(!document.getElementById('selLiving').value) ok = false;
   if(!document.getElementById('selKitchen').value) ok = false;
   for(var i=0; i<_bedrooms.length; i++){
     if(!_bedrooms[i].dir) ok = false;
@@ -473,8 +477,8 @@ function checkStep2Ready(){
 
 function goStep3(){
   _layout.door = document.getElementById('selDoor').value;
+  _layout.living = document.getElementById('selLiving').value;
   _layout.kitchen = document.getElementById('selKitchen').value;
-  // Re-read bedrooms/bathrooms from state (already synced via onchange)
   buildPhotoSlots();
   switchPanel(3);
 }
@@ -594,6 +598,9 @@ function startAnalysis(){
 
   var btn = document.getElementById('btnAnalyze');
   btn.disabled = true; btn.textContent = '分析中...';
+  // 轮换提示词
+  var tips=['正在根据坐向排布八宅九星...','分析大门与客厅照片形煞...','检查厨房与主卧风水格局...','《八宅明镜》对照大游年歌诀...','逐方位判断吉凶影响...','生成完整风水分析报告...'];
+  var tipIdx=0;var tipTimer=setInterval(function(){tipIdx=(tipIdx+1)%tips.length;var el=document.getElementById('loadingText');if(el)el.textContent=tips[tipIdx]},5000);
   document.getElementById('error').style.display = 'none';
   var scrollEl = document.getElementById('scrollReveal');
   if(scrollEl) scrollEl.style.display = 'none';
@@ -612,6 +619,7 @@ function startAnalysis(){
     facing: _facing,
     layout: {
       door: _layout.door,
+      living: _layout.living,
       kitchen: _layout.kitchen,
       bedrooms: _bedrooms.map(function(b){ return {type:b.type, dir:b.dir}; }),
       bathrooms: _bathrooms.map(function(b){ return {dir:b.dir}; })
@@ -626,6 +634,7 @@ function startAnalysis(){
   }).then(function(r){ return r.json(); })
   .then(function(d){
     document.getElementById('loading').style.display = 'none';
+    clearInterval(tipTimer);
     if(d.error){ showError(d.error); btn.disabled=false; btn.textContent='开始风水分析'; return; }
     var reading = d.reading.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^### (.+)/gm,'<h4>$1</h4>').replace(/^## (.+)/gm,'<h3>$1</h3>').replace(/^- (.+)/gm,'· $1').replace(/\n/g,'<br>');
     var html = '<div class=scroll-hint>—— 风水分析结果 ——</div>' + reading;
@@ -634,6 +643,7 @@ function startAnalysis(){
       updateCreditsUI();
     });
   }).catch(function(e){
+    clearInterval(tipTimer);
     document.getElementById('loading').style.display = 'none';
     btn.disabled = false; btn.textContent = '开始风水分析';
     showError('请求失败：' + (e.message || '请稍后重试'));

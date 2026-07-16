@@ -49,7 +49,7 @@ function hstartPay(){
     localStorage.setItem('hepan_ord',d.out_trade_no);
     if(isM&&d.pay_url){window.location.href=d.pay_url;return}
     var c=document.getElementById('hepanQrContainer');
-    if(c&&(d.qrcode||d.pay_url)){c.innerHTML='<img src="'+(d.qrcode||d.pay_url)+'" style="width:200px;height:200px">'}
+    if(c){var qr=d.qrcode||'';if(!qr&&d.pay_url)qr='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(d.pay_url);if(qr){c.innerHTML='<img src="'+qr+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败<br>点击下方\"我已付过款\"重试</p>\'">'}else{c.innerHTML='<p style=color:var(--tx3)">二维码生成失败，请重试</p>'}}
     if(status)status.textContent='请扫码支付 ¥13.9';
     hpoll(d.out_trade_no);
   }).catch(function(e){if(status)status.textContent='网络错误，请重试';var r=document.getElementById('hepanQrRetry');if(r)r.style.display='block'});
