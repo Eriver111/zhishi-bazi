@@ -3620,6 +3620,21 @@ function getYongJi(bazi) {
     tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
   }
 
+  // 冬木（亥子丑月）：寒木需火暖局，否则木不发育
+  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
+  }
+
+  // 秋金（申酉戌月）：金旺无火则顽金不器
+  if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmLevel.indexOf('强') >= 0) {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
+  }
+
   if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
 
   // 格局微调
@@ -3810,6 +3825,14 @@ function getCongGe(bazi) {
 
   var level = ds.level, score = ds.score;
 
+  // 检查日支藏干是否有日主之根（有根则不能从）
+  var dayCangGanAll = getCangGan(bazi.day.zhi);
+  var hasDayRoot = false;
+  for (var cgi = 0; cgi < dayCangGanAll.length; cgi++) {
+    var cgWx2 = WU_XING[dayCangGanAll[cgi]];
+    if (cgWx2 === dgWx || cgWx2 === SHENGWO) { hasDayRoot = true; break; }
+  }
+
   // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱，且日支不能有克泄耗（日支坐克星则破格）
   var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
   var dayZhiIsKeXie = (KEWO === dayZhiGuanXi || WOSHENG === dayZhiGuanXi || WOKE === dayZhiGuanXi);
@@ -3821,8 +3844,10 @@ function getCongGe(bazi) {
       source: '从旺/从强'
     };
   }
-  // 从杀：日主弱(极弱/偏弱/score<40)且官杀极旺(≥6且≥日主2倍)
-  if ((level === '极弱' || level === '偏弱' || score < 40) && kePower >= 6 && kePower >= dgPower * 2) {
+  // 从杀/从财/从儿/从势：日主需极弱(<30分)且日支无根
+  var canCong = level === '极弱' && !hasDayRoot;
+  // 从杀：官杀极旺(≥6且≥日主2倍)
+  if (canCong && kePower >= 6 && kePower >= dgPower * 2) {
     return {
       isCong: true, name: '从杀格',
       desc: '日主弱极，官杀成势，不得不从。"弃命从杀，杀旺为贵。"喜财官杀顺势，忌印比破格。',
@@ -3830,8 +3855,8 @@ function getCongGe(bazi) {
       source: '弃命从杀'
     };
   }
-  // 从财：日主弱且财星极旺
-  if ((level === '极弱' || level === '偏弱' || score < 40) && caiPower >= 6 && caiPower >= dgPower * 2) {
+  // 从财：财星极旺
+  if (canCong && caiPower >= 6 && caiPower >= dgPower * 2) {
     return {
       isCong: true, name: '从财格',
       desc: '日主弱极，财星成势，弃命从财。"从财格成，富压一方。"喜食伤财官顺势，忌印比破格。',
@@ -3839,8 +3864,8 @@ function getCongGe(bazi) {
       source: '弃命从财'
     };
   }
-  // 从儿：日主弱且食伤极旺
-  if ((level === '极弱' || level === '偏弱' || score < 40) && shiPower >= 6 && shiPower >= dgPower * 2) {
+  // 从儿：食伤极旺
+  if (canCong && shiPower >= 6 && shiPower >= dgPower * 2) {
     return {
       isCong: true, name: '从儿格',
       desc: '日主弱极，食伤成势，弃命从儿。"从儿格，不论身强弱，只要我生者成势即可。"喜食伤财顺势，忌印星破格。',
@@ -3848,18 +3873,10 @@ function getCongGe(bazi) {
       source: '弃命从儿'
     };
   }
-  // 从势格（假从）：日主极弱(<40分)，克泄耗总量远超生扶，且无一五行独大
-  // 关键：日支不能有日主之根（藏干含日主五行或印星则破格）
+  // 从势格（假从）：日主弱且克泄耗总量远超生扶
   var keXieHaoTotal = kePower + caiPower + shiPower;
   var shengFuTotal = dgPower + yinPower;
-  // 检查日支藏干是否有生扶（印/比 = 同五行或生我）
-  var dayCangGan = getCangGan(bazi.day.zhi);
-  var hasDayRoot = false;
-  for (var cg = 0; cg < dayCangGan.length; cg++) {
-    var cgWx = WU_XING[dayCangGan[cg]];
-    if (cgWx === dgWx || (SHENGWO && SHENGWO === cgWx)) { hasDayRoot = true; break; }
-  }
-  if (score < 40 && keXieHaoTotal >= shengFuTotal * 2 && !hasDayRoot) {
+  if (canCong && keXieHaoTotal >= shengFuTotal * 2) {
     return {
       isCong: true, name: '假从势格',
       desc: '日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。',
