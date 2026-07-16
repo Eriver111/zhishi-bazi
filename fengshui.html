@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知时 · 风水</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
+<style>
+.fs-wrap{max-width:640px;margin:0 auto;padding:60px 20px 80px;position:relative;z-index:1}
+.fs-hero{text-align:center;margin-bottom:36px}
+.fs-hero h1{font-size:36px;color:var(--gold-l);letter-spacing:10px;margin-bottom:4px;font-weight:900}
+.fs-hero .tagline{font-size:13px;color:var(--tx2);letter-spacing:4px}
+.fs-hero .tagline span{color:var(--gold);font-weight:600}
+
+.fs-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:28px 24px;backdrop-filter:blur(20px);position:relative}
+.fs-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.3;border-radius:16px 16px 0 0}
+
+/* Step indicator */
+.fs-step-dot{width:28px;height:28px;border-radius:50%;border:2px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx3);background:var(--card);transition:all .35s;position:relative;z-index:1}
+.fs-step-dot.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08);box-shadow:0 0 12px rgba(201,168,76,.15)}
+.fs-step-dot.done{border-color:var(--gold-d);color:var(--ink);background:var(--gold-d)}
+.fs-step-line{flex:1;height:2px;background:rgba(201,168,76,.1);align-self:center;margin:0 -4px;transition:background .35s}
+.fs-step-line.done{background:rgba(201,168,76,.3)}
+.fs-step-label{text-align:center;font-size:9px;color:var(--tx3);margin-top:4px;letter-spacing:1px;transition:color .35s}
+.fs-step-label.active{color:var(--gold)}
+
+/* Step panels */
+.fs-step-panel{display:none}
+.fs-step-panel.active{display:block}
+
+/* Room type cards */
+.room-type-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.room-type-card{border:1px solid rgba(201,168,76,.1);border-radius:12px;padding:18px 10px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(24,22,18,.3)}
+.room-type-card:hover{border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.04)}
+.room-type-card.selected{border-color:var(--gold);background:rgba(201,168,76,.08);box-shadow:0 0 16px rgba(201,168,76,.1)}
+.room-type-card .rt-icon{font-size:32px;display:block;margin-bottom:8px}
+.room-type-card .rt-title{font-size:13px;color:var(--tx);letter-spacing:2px;margin-bottom:4px}
+.room-type-card .rt-desc{font-size:10px;color:var(--tx3);line-height:1.5}
+
+/* Compass selector */
+.compass-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:20px}
+.compass-ring{width:220px;height:220px;border-radius:50%;border:2px solid rgba(201,168,76,.15);position:relative;margin-bottom:16px;background:radial-gradient(circle,rgba(24,22,18,.9),rgba(14,12,10,.95))}
+.compass-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px rgba(201,168,76,.4)}
+.compass-n{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:var(--gold-l);font-size:12px;font-weight:700;letter-spacing:2px}
+.compass-dir{position:absolute;width:54px;height:54px;border-radius:50%;border:1px solid rgba(201,168,76,.1);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--tx2);cursor:pointer;transition:all .3s;background:rgba(24,22,18,.5);letter-spacing:1px}
+.compass-dir:hover{border-color:var(--gold);color:var(--gold-l);background:rgba(201,168,76,.06)}
+.compass-dir.selected{border-color:var(--gold);color:var(--ink);background:var(--gold);font-weight:700;box-shadow:0 0 14px rgba(201,168,76,.3)}
+.compass-dir[data-dir="北"]{top:8px;left:50%;transform:translate(-50%,-50%)}
+.compass-dir[data-dir="东北"]{top:22px;right:22px;transform:translate(50%,-50%)}
+.compass-dir[data-dir="东"]{right:4px;top:50%;transform:translate(50%,-50%)}
+.compass-dir[data-dir="东南"]{bottom:22px;right:22px;transform:translate(50%,50%)}
+.compass-dir[data-dir="南"]{bottom:4px;left:50%;transform:translate(-50%,50%)}
+.compass-dir[data-dir="西南"]{bottom:22px;left:22px;transform:translate(-50%,50%)}
+.compass-dir[data-dir="西"]{left:4px;top:50%;transform:translate(-50%,-50%)}
+.compass-dir[data-dir="西北"]{top:22px;left:22px;transform:translate(-50%,-50%)}
+.sitting-display{text-align:center;margin-top:8px;font-size:15px;color:var(--gold-l);letter-spacing:3px;min-height:24px}
+
+/* Grid layout */
+.grid-9{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:240px;margin:0 auto 20px;aspect-ratio:1}
+.grid-9 .cell{border:1px solid rgba(201,168,76,.1);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx3);background:rgba(24,22,18,.4);border-radius:4px;letter-spacing:1px;transition:all .3s}
+.grid-9 .cell.highlight{border-color:var(--gold);color:var(--gold-l);background:rgba(201,168,76,.06)}
+.grid-9 .cell.center-cell{border-color:rgba(201,168,76,.2);color:var(--tx2)}
+
+.layout-selects{margin-bottom:8px}
+.layout-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(201,168,76,.06)}
+.layout-row:last-child{border-bottom:none}
+.layout-row .icon-label{font-size:13px;color:var(--tx);letter-spacing:1px;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.layout-row select{background:rgba(24,22,18,.6);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:13px;font-family:inherit;cursor:pointer;min-width:120px;text-align:right}
+.layout-row select:focus{outline:none;border-color:var(--gold)}
+.btn-sm{width:28px;height:28px;border-radius:50%;border:1px solid rgba(201,168,76,.2);background:transparent;color:var(--tx2);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;margin-left:6px}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.06)}
+.btn-sm.danger:hover{border-color:#E57373;color:#E57373;background:rgba(244,67,54,.06)}
+.room-group-label{font-size:11px;color:var(--gold);letter-spacing:2px;margin:16px 0 6px;padding-top:8px;border-top:1px solid rgba(201,168,76,.08)}
+.room-group-label:first-child{margin-top:0;border-top:none;padding-top:0}
+.add-room-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--tx3);cursor:pointer;padding:4px 10px;border:1px dashed rgba(201,168,76,.12);border-radius:16px;margin-top:6px;transition:all .2s;letter-spacing:1px}
+.add-room-btn:hover{border-color:var(--gold);color:var(--gold-l)}
+
+/* Photo slots */
+.photo-slots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.photo-slot{border:2px dashed rgba(201,168,76,.12);border-radius:12px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:all .35s;background:rgba(24,22,18,.2)}
+.photo-slot:hover{border-color:var(--gold);background:rgba(201,168,76,.03)}
+.photo-slot.has-photo{border-style:solid;border-color:rgba(201,168,76,.2)}
+.photo-slot img{width:100%;height:100%;object-fit:cover}
+.photo-slot .slot-hint{text-align:center;color:var(--tx3);pointer-events:none;padding:8px}
+.photo-slot .slot-hint .s-icon{font-size:28px;display:block;margin-bottom:4px;opacity:.5}
+.photo-slot .slot-hint .s-title{font-size:11px;color:var(--tx2);letter-spacing:1px;margin-bottom:2px}
+.photo-slot .slot-hint .s-guide{font-size:10px;color:var(--tx3);line-height:1.5}
+.photo-slot.optional{border-style:dotted;opacity:.8}
+.photo-slot .slot-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 8px;border-radius:10px;letter-spacing:1px;z-index:2;pointer-events:none}
+.photo-slot .slot-badge.required{background:rgba(201,168,76,.15);color:var(--gold)}
+.photo-slot .slot-badge.optional{background:rgba(255,255,255,.06);color:var(--tx3)}
+
+.credit-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:12px}
+.credit-tag{padding:4px 12px;border:1px solid rgba(201,168,76,.2);border-radius:20px;color:var(--gold-l);letter-spacing:1px}
+
+.btn-fs{
+  width:100%;padding:14px;border-radius:28px;font-size:15px;font-weight:700;
+  letter-spacing:4px;cursor:pointer;font-family:inherit;transition:all .3s;border:none;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));
+  background-size:200% 100%;color:var(--ink);animation:shimmer 3s infinite
+}
+.btn-fs:disabled{opacity:.4;cursor:not-allowed;animation:none}
+.btn-fs:not(:disabled):hover{box-shadow:0 6px 28px rgba(201,168,76,.25);transform:translateY(-1px)}
+.btn-fs.secondary{background:transparent;border:1px solid rgba(201,168,76,.25);color:var(--gold);animation:none;letter-spacing:2px;font-size:13px}
+
+.loading-state{display:none;text-align:center;padding:36px 0}
+.loading-dots span{display:inline-block;width:7px;height:7px;margin:0 3px;background:var(--gold);border-radius:50%;animation:dotBounce 1.4s infinite ease-in-out}
+.loading-dots span:nth-child(2){animation-delay:.16s}
+.loading-dots span:nth-child(3){animation-delay:.32s}
+@keyframes dotBounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+.loading-text{margin-top:10px;font-size:13px;color:var(--tx3);letter-spacing:2px}
+
+.error-msg{display:none;margin-top:12px;padding:10px 14px;background:rgba(244,67,54,.06);border:1px solid rgba(244,67,54,.15);border-radius:8px;color:#E57373;font-size:12px;text-align:center}
+
+/* Scroll reveal */
+.scroll-reveal{display:none;position:relative;margin-top:20px;overflow:hidden;background:var(--card);border:1px solid var(--bd);border-radius:14px}
+.scroll-reveal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;z-index:3}
+.scroll-left,.scroll-right{position:absolute;top:0;width:14px;height:100%;background:linear-gradient(180deg,rgba(201,168,76,.12),rgba(139,109,40,.2),rgba(201,168,76,.12));z-index:2}
+.scroll-left{left:0;border-right:1px solid rgba(201,168,76,.15)}
+.scroll-right{right:0;border-left:1px solid rgba(201,168,76,.15)}
+.scroll-body{overflow:hidden;max-height:0;transition:max-height 1s cubic-bezier(.4,0,.2,1);position:relative;z-index:1}
+.scroll-body.open{max-height:10000px}
+.scroll-body-inner{padding:24px 20px;opacity:0;transform:translateY(12px);transition:all .6s .3s;line-height:2.1;font-size:14px;color:var(--tx)}
+.scroll-body.open .scroll-body-inner{opacity:1;transform:translateY(0)}
+.scroll-hint{text-align:center;padding:14px;color:var(--gold);font-size:12px;letter-spacing:3px}
+
+.tips-box{margin-bottom:20px;padding:14px 16px;background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.1);border-radius:10px}
+.tips-title{font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px}
+.tips-list{font-size:11px;color:var(--tx2);line-height:1.8}
+.tips-list .good{color:#81C784}
+.tips-list .warn{color:#E57373}
+
+@media(max-width:400px){
+  .fs-wrap{padding:40px 10px 60px}
+  .fs-hero h1{font-size:28px;letter-spacing:8px}
+  .photo-slots{grid-template-columns:1fr}
+  .fs-card{padding:20px 16px}
+  .compass-ring{width:180px;height:180px}
+  .compass-dir{width:44px;height:44px;font-size:11px}
+  .room-type-grid{grid-template-columns:1fr;gap:8px}
+}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas" style="position:fixed;inset:0;z-index:0;width:100%;height:100%"></canvas>
+<div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#e8cf70;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
+
+<div class="fs-wrap">
+  <div class="fs-hero">
+    <h1>风 水</h1>
+    <div class="tagline"><span>《八宅明镜》</span> · 八宅定局 · 形煞辨识 · AI 参详</div>
+  </div>
+
+  <div class="fs-card">
+    <!-- Step indicators -->
+    <div style="display:flex;align-items:center;margin-bottom:4px">
+      <div style="flex:1;text-align:center"><div class="fs-step-dot active" id="dot0">1</div><div class="fs-step-label active" id="lbl0">选房型</div></div>
+      <div class="fs-step-line" id="line0"></div>
+      <div style="flex:1;text-align:center"><div class="fs-step-dot" id="dot1">2</div><div class="fs-step-label" id="lbl1">定坐向</div></div>
+      <div class="fs-step-line" id="line1"></div>
+      <div style="flex:1;text-align:center"><div class="fs-step-dot" id="dot2">3</div><div class="fs-step-label" id="lbl2">标格局</div></div>
+      <div class="fs-step-line" id="line2"></div>
+      <div style="flex:1;text-align:center"><div class="fs-step-dot" id="dot3">4</div><div class="fs-step-label" id="lbl3">拍照片</div></div>
+    </div>
+
+    <!-- STEP 0: Room Type -->
+    <div class="fs-step-panel active" id="panel0">
+      <p style="text-align:center;font-size:12px;color:var(--tx3);margin-bottom:16px">选择您的房屋类型，我们会据此调整分析维度</p>
+      <div class="room-type-grid" id="roomTypeGrid"></div>
+      <button class="btn-fs" id="btnStep0" onclick="goStep1()" disabled>下一步：确定坐向</button>
+    </div>
+
+    <!-- STEP 1: Sitting/Facing -->
+    <div class="fs-step-panel" id="panel1">
+      <div class="compass-wrap">
+        <div class="compass-ring" id="compassRing">
+          <div class="compass-n">北</div>
+          <div class="compass-center"></div>
+        </div>
+        <div class="sitting-display" id="sittingDisplay">请选择房屋坐向</div>
+      </div>
+      <div class="tips-box" style="text-align:center" id="sittingTips">
+        <div class="tips-title">如何确定坐向？</div>
+        <div class="tips-list">
+          站在屋内面向大门，打开手机指南针<br>
+          <span class="good">"坐北朝南"即背对北方面朝南方</span><br>
+          <span style="color:var(--tx3)">不确定时选最接近的方位即可</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-fs secondary" onclick="goStep0()" style="flex:1">← 返回</button>
+        <button class="btn-fs" id="btnStep1" onclick="goStep2()" disabled style="flex:2">下一步：标注格局</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Layout (dynamic rooms) -->
+    <div class="fs-step-panel" id="panel2">
+      <p style="text-align:center;font-size:12px;color:var(--tx3);margin-bottom:14px">以房屋中心为基准，标注各房间所在方位</p>
+      <div class="grid-9" id="grid9"></div>
+      <div class="layout-selects" id="layoutSelects">
+        <!-- Built by JS -->
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-fs secondary" onclick="goStep1()" style="flex:1">← 返回</button>
+        <button class="btn-fs" id="btnStep2" onclick="goStep3()" disabled style="flex:2">下一步：拍摄照片</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Photos -->
+    <div class="fs-step-panel" id="panel3">
+      <div class="credit-bar">
+        <span style="color:var(--tx3)">单次消耗 <b style="color:var(--gold)">1</b> 积分</span>
+        <span class="credit-tag" id="creditTag">-- 次剩余</span>
+      </div>
+      <div class="photo-slots" id="photoSlots"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-fs secondary" onclick="goStep2()" style="flex:1">← 返回</button>
+        <button class="btn-fs" id="btnAnalyze" onclick="startAnalysis()" style="flex:2">开 始 风 水 分 析</button>
+      </div>
+      <div class="loading-state" id="loading">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <div class="loading-text">八宅排盘分析中，请稍候...</div>
+      </div>
+      <div class="error-msg" id="error"></div>
+    </div>
+  </div>
+
+  <div class="scroll-reveal" id="scrollReveal">
+    <div class="scroll-left"></div><div class="scroll-right"></div>
+    <div class="scroll-body" id="scrollBody"><div class="scroll-body-inner" id="scrollInner"></div></div>
+  </div>
+</div>
+
+<script src="js/bg-animation.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ===== State =====
+var _roomType = ''; // 'house' | 'apartment' | 'villa'
+var _sitting = '', _facing = '';
+var _layout = { door:'', kitchen:'' }; // dynamic: bedrooms[], bathrooms[]
+var _bedrooms = [{type:'主卧', dir:''}];
+var _bathrooms = [{dir:''}];
+var _photos = {};
+var _dirs = ['北','东北','东','东南','南','西南','西','西北'];
+var _dirMap = { '北':'南','东北':'西南','东':'西','东南':'西北','南':'北','西南':'东北','西':'东','西北':'东南' };
+
+var ROOM_TYPES = [
+  { key:'house', icon:'🏠', title:'自建房 / 平房', desc:'独立院落或单层平房，有独立朝向' },
+  { key:'apartment', icon:'🏢', title:'楼房 / 公寓', desc:'单元楼内一套，整栋楼统一朝向' },
+  { key:'villa', icon:'🏡', title:'别墅 / 复式', desc:'独栋或多层，需考虑楼层叠加' }
+];
+
+var BEDROOM_TYPES = ['主卧','次卧','老人房','儿童房','书房','客房'];
+
+// Default photo slots — adapts by room type
+var BASE_PHOTO_SLOTS = [
+  { key:'door', title:'大门', guide:'站在门外正对大门拍摄，拍到门框和门外视野', icon:'🚪', required:true },
+  { key:'living', title:'客厅', guide:'站在客厅入口处拍摄整个客厅空间', icon:'🛋️', required:true },
+  { key:'kitchen', title:'厨房', guide:'站在厨房门口向内拍，拍到灶台和水槽相对位置', icon:'🍳', required:true },
+  { key:'master_bedroom', title:'主卧', guide:'站在卧室门口拍向窗户方向，拍到床的摆放', icon:'🛏️', required:true },
+  { key:'floorplan', title:'户型图', guide:'如有户型图请拍照上传，可大幅提升分析精度', icon:'📐', required:false }
+];
+
+var PHOTO_SLOTS = []; // populated dynamically
+
+// ===== Init =====
+(function(){
+  if(typeof Auth!=='undefined') Auth.ready(function(){
+    if(!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
+    updateCreditsUI();
+  });
+  buildRoomTypeCards();
+  buildCompass();
+  buildGrid();
+})();
+
+// ===== Step 0: Room Type =====
+function buildRoomTypeCards(){
+  var grid = document.getElementById('roomTypeGrid');
+  ROOM_TYPES.forEach(function(rt){
+    var el = document.createElement('div');
+    el.className = 'room-type-card';
+    el.innerHTML = '<span class="rt-icon">'+rt.icon+'</span><div class="rt-title">'+rt.title+'</div><div class="rt-desc">'+rt.desc+'</div>';
+    el.onclick = function(){
+      document.querySelectorAll('.room-type-card').forEach(function(c){ c.classList.remove('selected'); });
+      el.classList.add('selected');
+      _roomType = rt.key;
+      document.getElementById('btnStep0').disabled = false;
+      // Update sitting tips based on type
+      var tips = document.getElementById('sittingTips');
+      if(rt.key === 'apartment'){
+        tips.innerHTML = '<div class="tips-title">楼房用户注意</div><div class="tips-list"><span class="warn">楼房坐向以<b>整栋单元楼</b>为准，不是你家入户门</span><br>站在<b>单元门口</b>面向楼外，打开指南针<br><span style="color:var(--tx3)">也可以咨询物业或参考同户型邻居</span></div>';
+      } else if(rt.key === 'villa'){
+        tips.innerHTML = '<div class="tips-title">如何确定坐向？</div><div class="tips-list">站在<b>一楼大门</b>口面向室外，打开手机指南针<br><span class="good">"坐北朝南"即背对北方面朝南方</span><br><span style="color:var(--tx3)">别墅以一层大门朝向为整栋坐向</span></div>';
+      } else {
+        tips.innerHTML = '<div class="tips-title">如何确定坐向？</div><div class="tips-list">站在屋内面向大门，打开手机指南针<br><span class="good">"坐北朝南"即背对北方面朝南方</span><br><span style="color:var(--tx3)">不确定时选最接近的方位即可</span></div>';
+      }
+    };
+    grid.appendChild(el);
+  });
+}
+
+function goStep0(){ switchPanel(0); }
+
+// ===== Step 1: Compass =====
+function buildCompass(){
+  var ring = document.getElementById('compassRing');
+  _dirs.forEach(function(d){
+    var el = document.createElement('div');
+    el.className = 'compass-dir';
+    el.dataset.dir = d;
+    el.textContent = d;
+    el.onclick = function(){ selectSitting(d); };
+    ring.appendChild(el);
+  });
+}
+function selectSitting(dir){
+  _sitting = dir; _facing = _dirMap[dir];
+  document.getElementById('sittingDisplay').textContent = '坐' + _sitting + ' · 朝' + _facing;
+  document.querySelectorAll('.compass-dir').forEach(function(d){ d.classList.remove('selected'); });
+  document.querySelector('.compass-dir[data-dir="'+dir+'"]').classList.add('selected');
+  document.getElementById('btnStep1').disabled = false;
+  updateGridCenter();
+}
+function goStep1(){ switchPanel(1); }
+function goStep2(){
+  // Build layout selects on first entry
+  buildLayoutSelects();
+  switchPanel(2);
+}
+
+// ===== Step 2: Grid & Dynamic Layout =====
+function buildGrid(){
+  var grid = document.getElementById('grid9');
+  var cells = ['西北','北','东北','西','中宫','东','西南','南','东南'];
+  cells.forEach(function(c){
+    var el = document.createElement('div');
+    el.className = 'cell' + (c==='中宫'?' center-cell':'');
+    el.dataset.cell = c;
+    el.textContent = c==='中宫'?'中':c;
+    grid.appendChild(el);
+  });
+}
+function updateGridCenter(){
+  var s = _sitting || '?', f = _facing || '?';
+  var c = document.querySelector('.cell.center-cell');
+  if(c) c.textContent = '坐'+s[0]+'\n朝'+f[0];
+}
+
+function makeOptionRow(label, selectId, showDeleteBtn){
+  var opt = '<option value="">-- 请选择 --</option>';
+  _dirs.forEach(function(d){ opt += '<option value="'+d+'">'+d+'</option>'; });
+  var delBtn = showDeleteBtn ? '<button class="btn-sm danger" title="删除" onclick="removeRoomRow(this)">×</button>' : '';
+  return '<div class="layout-row"><span class="icon-label">'+label+'</span><div style="display:flex;align-items:center">'+
+    '<select id="'+selectId+'" onchange="checkStep2Ready()">'+opt+'</select>'+delBtn+'</div></div>';
+}
+
+function buildLayoutSelects(){
+  var container = document.getElementById('layoutSelects');
+  if(container.dataset.built === '1') return;
+  container.dataset.built = '1';
+
+  var html = '';
+  // Fixed: door, kitchen
+  html += '<div class="room-group-label">📌 基本格局</div>';
+  html += makeOptionRow('🚪 大门在', 'selDoor', false);
+  html += makeOptionRow('🍳 厨房在', 'selKitchen', false);
+
+  // Dynamic bedrooms
+  html += '<div class="room-group-label" style="margin-top:16px">🛏️ 卧室 <span style="font-size:10px;color:var(--tx3);font-weight:400" id="bedroomCount"></span></div>';
+  html += '<div id="bedroomRows"></div>';
+  html += '<div class="add-room-btn" onclick="addBedroom()">＋ 添加卧室</div>';
+
+  // Dynamic bathrooms
+  html += '<div class="room-group-label" style="margin-top:16px">🚽 卫生间 <span style="font-size:10px;color:var(--tx3);font-weight:400" id="bathroomCount"></span></div>';
+  html += '<div id="bathroomRows"></div>';
+  html += '<div class="add-room-btn" onclick="addBathroom()">＋ 添加卫生间</div>';
+
+  container.innerHTML = html;
+  refreshBedroomRows();
+  refreshBathroomRows();
+  document.getElementById('bedroomCount').textContent = _bedrooms.length + '间';
+  document.getElementById('bathroomCount').textContent = _bathrooms.length + '间';
+}
+
+function refreshBedroomRows(){
+  var wrap = document.getElementById('bedroomRows');
+  if(!wrap) return;
+  var html = '';
+  _bedrooms.forEach(function(b, i){
+    var id = 'selBedroom' + i;
+    var tOpt = '';
+    BEDROOM_TYPES.forEach(function(t){
+      tOpt += '<option value="'+t+'"'+(b.type===t?' selected':'')+'>'+t+'</option>';
+    });
+    var label = '🛏️ 卧室'+(i+1);
+    var typeSel = '<select id="type'+id+'" onchange="_bedrooms['+i+'].type=this.value" style="min-width:70px;margin-right:6px;font-size:12px">'+tOpt+'</select>';
+    var dirOpt = '<option value="">-- 方位 --</option>';
+    _dirs.forEach(function(d){ dirOpt += '<option value="'+d+'"'+(b.dir===d?' selected':'')+'>'+d+'</option>'; });
+    var dirSel = '<select id="'+id+'" onchange="_bedrooms['+i+'].dir=this.value;checkStep2Ready()">'+dirOpt+'</select>';
+    var delBtn = _bedrooms.length > 1 ? '<button class="btn-sm danger" title="删除" onclick="removeBedroom('+i+')">×</button>' : '';
+    html += '<div class="layout-row"><span class="icon-label">'+label+'</span><div style="display:flex;align-items:center">'+typeSel+dirSel+delBtn+'</div></div>';
+  });
+  wrap.innerHTML = html;
+  document.getElementById('bedroomCount').textContent = _bedrooms.length + '间';
+}
+
+function refreshBathroomRows(){
+  var wrap = document.getElementById('bathroomRows');
+  if(!wrap) return;
+  var html = '';
+  _bathrooms.forEach(function(b, i){
+    var id = 'selBathroom' + i;
+    var dirOpt = '<option value="">-- 方位 --</option>';
+    _dirs.forEach(function(d){ dirOpt += '<option value="'+d+'"'+(b.dir===d?' selected':'')+'>'+d+'</option>'; });
+    var delBtn = _bathrooms.length > 1 ? '<button class="btn-sm danger" title="删除" onclick="removeBathroom('+i+')">×</button>' : '';
+    html += '<div class="layout-row"><span class="icon-label">🚽 卫生间'+(i+1)+'</span><div style="display:flex;align-items:center"><select id="'+id+'" onchange="_bathrooms['+i+'].dir=this.value;checkStep2Ready()">'+dirOpt+'</select>'+delBtn+'</div></div>';
+  });
+  wrap.innerHTML = html;
+  document.getElementById('bathroomCount').textContent = _bathrooms.length + '间';
+}
+
+function addBedroom(){
+  _bedrooms.push({type:'次卧', dir:''});
+  refreshBedroomRows();
+  checkStep2Ready();
+}
+function removeBedroom(idx){
+  if(_bedrooms.length <= 1) return;
+  _bedrooms.splice(idx, 1);
+  refreshBedroomRows();
+  checkStep2Ready();
+}
+function addBathroom(){
+  _bathrooms.push({dir:''});
+  refreshBathroomRows();
+  checkStep2Ready();
+}
+function removeBathroom(idx){
+  if(_bathrooms.length <= 1) return;
+  _bathrooms.splice(idx, 1);
+  refreshBathroomRows();
+  checkStep2Ready();
+}
+
+function highlightGridCells(){
+  document.querySelectorAll('.grid-9 .cell').forEach(function(c){ c.classList.remove('highlight'); });
+  var positions = [];
+  var dv = document.getElementById('selDoor'); if(dv&&dv.value) positions.push(dv.value);
+  var kv = document.getElementById('selKitchen'); if(kv&&kv.value) positions.push(kv.value);
+  _bedrooms.forEach(function(b){ if(b.dir) positions.push(b.dir); });
+  _bathrooms.forEach(function(b){ if(b.dir) positions.push(b.dir); });
+  positions.forEach(function(p){
+    var cell = document.querySelector('.cell[data-cell="'+p+'"]');
+    if(cell) cell.classList.add('highlight');
+  });
+}
+
+function checkStep2Ready(){
+  highlightGridCells();
+  var ok = true;
+  if(!document.getElementById('selDoor').value) ok = false;
+  if(!document.getElementById('selKitchen').value) ok = false;
+  for(var i=0; i<_bedrooms.length; i++){
+    if(!_bedrooms[i].dir) ok = false;
+  }
+  for(var i=0; i<_bathrooms.length; i++){
+    if(!_bathrooms[i].dir) ok = false;
+  }
+  document.getElementById('btnStep2').disabled = !ok;
+}
+
+function goStep3(){
+  _layout.door = document.getElementById('selDoor').value;
+  _layout.kitchen = document.getElementById('selKitchen').value;
+  // Re-read bedrooms/bathrooms from state (already synced via onchange)
+  buildPhotoSlots();
+  switchPanel(3);
+}
+
+// ===== Step 3: Photos =====
+function buildPhotoSlots(){
+  var container = document.getElementById('photoSlots');
+  if(container.dataset.built === '1') return;
+  container.dataset.built = '1';
+
+  // Build dynamic slots
+  PHOTO_SLOTS = [];
+
+  // Door & Living & Kitchen are always needed
+  PHOTO_SLOTS.push({ key:'door', title:'大门', guide:'站在门外正对大门拍摄，拍到门框和门外视野', icon:'🚪', required:true });
+  PHOTO_SLOTS.push({ key:'living', title:'客厅', guide:'站在客厅入口处拍摄整个客厅空间', icon:'🛋️', required:true });
+  PHOTO_SLOTS.push({ key:'kitchen', title:'厨房', guide:'站在厨房门口向内拍，拍到灶台和水槽相对位置', icon:'🍳', required:true });
+
+  // Bedrooms: first one is required, rest optional
+  _bedrooms.forEach(function(b, i){
+    var label = b.type || ('卧室'+(i+1));
+    PHOTO_SLOTS.push({
+      key: 'bedroom_'+i, title: label,
+      guide: '站在'+label+'门口拍向窗户方向，拍到床的摆放',
+      icon: '🛏️', required: i === 0
+    });
+  });
+
+  // Bathrooms: first one is required, rest optional
+  _bathrooms.forEach(function(b, i){
+    PHOTO_SLOTS.push({
+      key: 'bathroom_'+i, title: '卫生间'+(i>0?i+1:''),
+      guide: '拍卫生间门或内部，注意通风和采光',
+      icon: '🚽', required: i === 0
+    });
+  });
+
+  // Villa extras
+  if(_roomType === 'villa'){
+    PHOTO_SLOTS.push({ key:'stairs', title:'楼梯', guide:'拍楼梯区域，注意楼梯位置和走向', icon:'🪜', required:false });
+  }
+
+  // Floor plan always optional
+  PHOTO_SLOTS.push({ key:'floorplan', title:'户型图', guide:'如有户型图请拍照上传，可大幅提升分析精度', icon:'📐', required:false });
+
+  // Render
+  PHOTO_SLOTS.forEach(function(slot){
+    var div = document.createElement('div');
+    div.className = 'photo-slot' + (slot.required?'':' optional');
+    div.id = 'slot-' + slot.key;
+    div.innerHTML = '<div class="slot-badge '+(slot.required?'required':'optional')+'">'+(slot.required?'必传':'选传')+'</div>'+
+      '<div class="slot-hint"><span class="s-icon">'+slot.icon+'</span><div class="s-title">'+slot.title+'</div><div class="s-guide">'+slot.guide+'</div></div>'+
+      '<img id="preview-'+slot.key+'" style="display:none">';
+    div.onclick = function(){ triggerFileInput(slot.key); };
+    container.appendChild(div);
+  });
+}
+
+function triggerFileInput(key){
+  var input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = function(e){ handlePhotoFile(key, e); };
+  input.click();
+}
+function handlePhotoFile(key, e){
+  var file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ showError('图片过大，请选择5MB以下的照片'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    var img = new Image();
+    img.onload = function(){
+      var canvas = document.createElement('canvas');
+      var maxW=800, maxH=800, w=img.width, h=img.height;
+      if(w>maxW||h>maxH){ var r=Math.min(maxW/w,maxH/h); w*=r; h*=r; }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      _photos[key] = canvas.toDataURL('image/jpeg',0.6);
+      var preview = document.getElementById('preview-'+key);
+      preview.src = _photos[key]; preview.style.display = 'block';
+      var slot = document.getElementById('slot-'+key);
+      slot.querySelector('.slot-hint').style.display = 'none';
+      slot.classList.add('has-photo');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== Panel switcher =====
+function switchPanel(n){
+  document.querySelectorAll('.fs-step-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('panel'+n).classList.add('active');
+  for(var i=0; i<=3; i++){
+    var dot = document.getElementById('dot'+i);
+    var lbl = document.getElementById('lbl'+i);
+    var line = document.getElementById('line'+i);
+    if(!dot) continue;
+    dot.classList.remove('active','done'); lbl.classList.remove('active');
+    if(line) line.classList.remove('done');
+    if(i < n){ dot.classList.add('done'); dot.textContent='✓'; if(line) line.classList.add('done'); }
+    else if(i === n){ dot.classList.add('active'); lbl.classList.add('active'); }
+  }
+}
+
+// ===== Analysis =====
+function startAnalysis(){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
+
+  var hasRequired = true;
+  PHOTO_SLOTS.forEach(function(s){
+    if(s.required && !_photos[s.key]) hasRequired = false;
+  });
+  if(!hasRequired){
+    if(!confirm('还有必传照片未上传，仅凭方位数据分析可能不够精准。\n\n确定继续吗？')) return;
+  }
+
+  var btn = document.getElementById('btnAnalyze');
+  btn.disabled = true; btn.textContent = '分析中...';
+  document.getElementById('error').style.display = 'none';
+  var scrollEl = document.getElementById('scrollReveal');
+  if(scrollEl) scrollEl.style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  var images = [];
+  for(var k in _photos){ images.push({ slot: k, data: _photos[k] }); }
+
+  // Build layout description
+  var bedrooms = _bedrooms.map(function(b){ return (b.type||'卧室')+':'+b.dir; }).join(', ');
+  var bathrooms = _bathrooms.map(function(b, i){ return '卫生间'+(i>0?i+1:'')+':'+b.dir; }).join(', ');
+
+  var body = {
+    roomType: _roomType,
+    sitting: _sitting,
+    facing: _facing,
+    layout: {
+      door: _layout.door,
+      kitchen: _layout.kitchen,
+      bedrooms: _bedrooms.map(function(b){ return {type:b.type, dir:b.dir}; }),
+      bathrooms: _bathrooms.map(function(b){ return {dir:b.dir}; })
+    },
+    images: images
+  };
+
+  fetch('/api/fengshui-reading', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+Auth.getToken() },
+    body: JSON.stringify(body)
+  }).then(function(r){ return r.json(); })
+  .then(function(d){
+    document.getElementById('loading').style.display = 'none';
+    if(d.error){ showError(d.error); btn.disabled=false; btn.textContent='开始风水分析'; return; }
+    var reading = d.reading.replace(/\n/g,'<br>');
+    var html = '<div class=scroll-hint>—— 风水分析结果 ——</div>' + reading;
+    runScrollReveal(html).then(function(){
+      btn.disabled = false; btn.textContent = '重新分析';
+      updateCreditsUI();
+    });
+  }).catch(function(){
+    document.getElementById('loading').style.display = 'none';
+    btn.disabled = false; btn.textContent = '开始风水分析';
+    showError('网络错误，请稍后重试');
+  });
+}
+
+// ===== Scroll reveal =====
+function runScrollReveal(resultHTML){
+  return new Promise(function(resolve){
+    var scroll = document.getElementById('scrollReveal');
+    scroll.style.display = 'block';
+    var body = document.getElementById('scrollBody');
+    body.classList.remove('open');
+    document.getElementById('scrollInner').innerHTML = resultHTML;
+    setTimeout(function(){ body.classList.add('open'); setTimeout(resolve, 1400); }, 200);
+    scroll.scrollIntoView({ behavior:'smooth', block:'center' });
+  });
+}
+
+// ===== Credits =====
+function updateCreditsUI(){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()) return;
+  fetch('/api/auth/profile',{headers:{'Authorization':'Bearer '+Auth.getToken()}})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    var tag = document.getElementById('creditTag');
+    if(d.is_monthly){ tag.textContent='月会员 · 不限次'; }
+    else{ tag.textContent=(d.credits||0)+' 次剩余'; }
+  }).catch(function(){});
+}
+
+function showError(msg){
+  var el = document.getElementById('error');
+  el.style.display = 'block'; el.textContent = msg;
+}
+</script>
+</body>
+</html>
