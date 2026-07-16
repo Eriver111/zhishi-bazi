@@ -104,13 +104,14 @@ async function callAIWithFallback(systemPrompt, userContent) {
       throw e;
     }
   }
-  // 降级到原生端点
+  // 降级到原生端点 — 需将 OpenAI 格式转为原生格式
   var nativeContent;
   if (Array.isArray(userContent)) {
-    // 转换 OpenAI 格式的 content 数组为 native 格式
     nativeContent = userContent.map(function(c){
       if (c.image_url) return { image: c.image_url.url };
+      if (c.type === 'text' && c.text) return { text: c.text };
       if (c.image) return c;
+      if (c.text) return c;
       return c;
     });
   } else {
@@ -205,17 +206,13 @@ module.exports = async function handler(req, res) {
         'stairs': '楼梯', 'floorplan': '户型图'
       };
 
-      // 构建多图+文本的 content 数组
+      // 构建多图+文本的 content 数组（统一用 OpenAI 兼容格式，原生端点不支持多图）
       var userContent = [];
       images.forEach(function(img) {
         var imgData = img.data || img;
         var slot = img.slot || 'photo';
         var label = slotLabels[slot] || slot;
-        if (USE_OPENAI_FORMAT) {
-          userContent.push({ type: 'image_url', image_url: { url: imgData } });
-        } else {
-          userContent.push({ image: imgData });
-        }
+        userContent.push({ type: 'image_url', image_url: { url: imgData } });
         userContent.push({ type: 'text', text: '【上图：' + label + '】' });
       });
 
@@ -224,7 +221,18 @@ module.exports = async function handler(req, res) {
         '逐张照片分析形煞，然后结合方位数据给出综合判断。';
       userContent.push({ type: 'text', text: textPrompt });
 
-      reading = await callAIWithFallback(FENGSHUI_SYSTEM, userContent);
+      // 多图时强制使用 OpenAI 兼容格式（原生端点不支持一次传多图）
+      var useOA = USE_OPENAI_FORMAT || images.length > 0;
+      reading = await callAI(FENGSHUI_SYSTEM, userContent, useOA);
+      if ((!reading || reading.length < 20) && !USE_OPENAI_FORMAT) {
+        // OpenAI 格式失败且当前是原生配置，降级到原生（单文本兜底）
+        var nativeContent = userContent.map(function(c){
+          if (c.image_url) return { image: c.image_url.url };
+          if (c.type === 'text' && c.text) return { text: c.text };
+          return c;
+        });
+        reading = await callAI(FENGSHUI_SYSTEM, nativeContent, false);
+      }
 
     } else {
       // === 无照片：纯文本分析 ===
