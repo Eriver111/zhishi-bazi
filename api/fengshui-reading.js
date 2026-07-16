@@ -137,15 +137,16 @@ module.exports = async function handler(req, res) {
     }
     var userId = authUser.uid;
 
-    // 积分检查
+    // 积分检查（风水分析消耗15积分）
+    var FENGSHUI_COST = 15;
     var monthlyActive = await isMonthlyActiveByUserId(userId);
     var creditOk = !!monthlyActive;
     if (!creditOk) {
       var totalCredits = await getUserCredits(userId);
-      if (totalCredits > 0) creditOk = true;
+      if (totalCredits >= FENGSHUI_COST) creditOk = true;
     }
     if (!creditOk) {
-      return res.status(403).json({ error: '积分不足，请先购买次数包', creditExhausted: true });
+      return res.status(403).json({ error: '积分不足，风水分析需要' + FENGSHUI_COST + '积分，请先购买次数包', creditExhausted: true });
     }
 
     // 房型文案
@@ -269,11 +270,13 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'AI 返回异常，请稍后重试' });
     }
 
-    // 扣费
+    // 扣费（月度会员免费，普通用户扣15积分）
     if (!monthlyActive) {
-      var deducted = await deductCreditByUser(userId);
-      if (!deducted) {
-        return res.status(403).json({ error: '积分扣减失败', creditExhausted: true });
+      for (var di = 0; di < FENGSHUI_COST; di++) {
+        var deducted = await deductCreditByUser(userId);
+        if (!deducted) {
+          return res.status(403).json({ error: '积分扣减失败，请确认积分余额充足', creditExhausted: true });
+        }
       }
     }
 
