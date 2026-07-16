@@ -267,7 +267,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error('[fengshui] 异常:', e.message);
-    return res.status(500).json({ error: '服务异常，请稍后重试' });
+    console.error('[fengshui] 异常:', e.message, e.stack);
+    return res.status(500).json({ error: '服务异常：' + (e.message || '未知错误') });
   }
 };
