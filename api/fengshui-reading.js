@@ -56,7 +56,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
   }
 
   var controller = new AbortController();
-  var timeout = setTimeout(function(){ controller.abort(); }, 60000);
+  var timeout = setTimeout(function(){ controller.abort(); }, 120000);
   try {
     var resp = await fetch(actualUrl, {
       method: 'POST',
