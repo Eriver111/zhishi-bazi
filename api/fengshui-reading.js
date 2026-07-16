@@ -39,7 +39,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent }
       ],
-      max_tokens: 4000,
+      max_tokens: 5000,
       temperature: 0.3
     });
   } else {
