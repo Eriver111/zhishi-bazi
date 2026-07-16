@@ -49,6 +49,8 @@
 
   function render() {
     if (typeof Auth === 'undefined') return setTimeout(render, 300);
+    // 登录成功后自动刷新
+    Auth.onLogin(function() { render(); });
     Auth.ready(function() {
     if (!Auth.isLoggedIn()) {
       content.innerHTML =

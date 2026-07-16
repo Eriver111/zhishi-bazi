@@ -6,6 +6,7 @@ var Auth = (function () {
   var _token = null;
   var _user = null;
   var _inited = false;
+  var _loginListeners = [];
 
   // ============ 初始化 ============
   function init() {
@@ -27,6 +28,8 @@ var Auth = (function () {
     _user = user;
     try { localStorage.setItem('ai_auth_token', token); } catch (e) {}
     updateNavUI();
+    // 通知所有监听登录状态的页面
+    _loginListeners.forEach(function(cb){ try { cb(user); } catch(e){} });
   }
 
   function logout() {
@@ -470,6 +473,7 @@ var Auth = (function () {
     doSubmit: doSubmit,
     sendCode: sendCode,
     showProfile: showProfile,
+    onLogin: function(cb) { _loginListeners.push(cb); },
     changePassword: changePassword,
     showChangePwd: showChangePwd,
     ready: function(cb) {
