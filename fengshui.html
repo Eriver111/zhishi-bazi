@@ -633,10 +633,11 @@ function startAnalysis(){
       btn.disabled = false; btn.textContent = '重新分析';
       updateCreditsUI();
     });
-  }).catch(function(){
+  }).catch(function(e){
     document.getElementById('loading').style.display = 'none';
     btn.disabled = false; btn.textContent = '开始风水分析';
-    showError('网络错误，请稍后重试');
+    showError('请求失败：' + (e.message || '请稍后重试'));
+    console.error(e);
   });
 }
 
