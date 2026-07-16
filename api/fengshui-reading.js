@@ -39,7 +39,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent }
       ],
-      max_tokens: 3000,
+      max_tokens: 4000,
       temperature: 0.3
     });
   } else {
@@ -51,7 +51,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
     body = JSON.stringify({
       model: AI_MODEL,
       input: { messages: messages },
-      parameters: { max_tokens: 3000, temperature: 0.3 }
+      parameters: { max_tokens: 4000, temperature: 0.3 }
     });
   }
 
