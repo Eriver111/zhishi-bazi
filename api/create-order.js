@@ -46,6 +46,11 @@ module.exports = async function handler(req, res) {
       const payAmount = pricing.amount;
       const payName = name || pricing.label;
       const orderId = pricing.prefix + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+      // 将 userId 编码进订单号（zpayz 回调时 notify_url 查询参数可能丢失）
+      var finalOrderId = orderId;
+      if (userId) {
+        finalOrderId = orderId.replace(pricing.prefix, pricing.prefix + "u" + userId + "_");
+      }
       const returnUrl = SITE + '/pricing?paid=' + finalOrderId;
 
       if (!PAY_PID || !PAY_KEY) {
@@ -55,11 +60,6 @@ module.exports = async function handler(req, res) {
         });
       }
 
-      // 将 userId 编码进订单号（zpayz 回调时 notify_url 查询参数可能丢失）
-      var finalOrderId = orderId;
-      if (userId) {
-        finalOrderId = orderId.replace(pricing.prefix, pricing.prefix + "u" + userId + "_");
-      }
       var channel=(req.body&&req.body.channel)||"";
       const payParams = {
         pid: PAY_PID, type: "alipay",
@@ -123,6 +123,7 @@ module.exports = async function handler(req, res) {
       const payAmount = money || amount || 5;
       const payName = name || description || 'AI命理咨询·5次提问';
       const orderId = 'rpt_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+      var finalOrderId = orderId;
 
       const payParams = {
         pid: PAY_PID, type: 'alipay',
@@ -179,6 +180,7 @@ module.exports = async function handler(req, res) {
       const payAmount = amount || 13.9;
       const payName = description || '知时 · 合盘报告';
       const orderId = 'hepan_' + Date.now().toString(36) + '_' + hash.slice(0, 6);
+      var finalOrderId = orderId;
       var hepanChannel = (req.body && req.body.channel) || '';
       var hepanParams = [];
       if (userId) hepanParams.push('uid=' + userId);
@@ -219,7 +221,7 @@ module.exports = async function handler(req, res) {
         return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
       }
 
-      return res.status(200).json({ orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
+      return res.status(200).json({ orderId, out_trade_no: finalOrderId, amount: payAmount, qrcode, pay_url: payUrl, status: 'pending' });
     }
 
     // ---- 个人排盘模式 ----
@@ -230,6 +232,7 @@ module.exports = async function handler(req, res) {
     const payAmount = amount || 9.9;
     const bzHash = makeHash({ year, month, day, hour, gender });
     const orderId = 'bazi_' + Date.now().toString(36) + '_' + bzHash.slice(0, 6);
+    var finalOrderId = orderId;
     var baziChannel = (req.body && req.body.channel) || '';
     var baziParams = [];
     if (userId) baziParams.push('uid=' + userId);
@@ -269,7 +272,7 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
     }
 
-    return res.status(200).json({ orderId, amount: payAmount, qrcode, payUrl, status: 'pending' });
+    return res.status(200).json({ orderId, out_trade_no: finalOrderId, amount: payAmount, qrcode, pay_url: payUrl, status: 'pending' });
 
   } catch (e) {
     return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
