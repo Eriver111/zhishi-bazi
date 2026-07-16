@@ -3849,9 +3849,17 @@ function getCongGe(bazi) {
     };
   }
   // 从势格（假从）：日主极弱(<40分)，克泄耗总量远超生扶，且无一五行独大
+  // 关键：日支不能有日主之根（藏干含日主五行或印星则破格）
   var keXieHaoTotal = kePower + caiPower + shiPower;
   var shengFuTotal = dgPower + yinPower;
-  if (score < 40 && keXieHaoTotal >= shengFuTotal * 2) {
+  // 检查日支藏干是否有生扶（印/比 = 同五行或生我）
+  var dayCangGan = getCangGan(bazi.day.zhi);
+  var hasDayRoot = false;
+  for (var cg = 0; cg < dayCangGan.length; cg++) {
+    var cgWx = WU_XING[dayCangGan[cg]];
+    if (cgWx === dgWx || (SHENGWO && SHENGWO === cgWx)) { hasDayRoot = true; break; }
+  }
+  if (score < 40 && keXieHaoTotal >= shengFuTotal * 2 && !hasDayRoot) {
     return {
       isCong: true, name: '假从势格',
       desc: '日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。',
