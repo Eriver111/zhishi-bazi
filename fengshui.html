@@ -627,7 +627,7 @@ function startAnalysis(){
   .then(function(d){
     document.getElementById('loading').style.display = 'none';
     if(d.error){ showError(d.error); btn.disabled=false; btn.textContent='开始风水分析'; return; }
-    var reading = d.reading.replace(/\n/g,'<br>');
+    var reading = d.reading.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^### (.+)/gm,'<h4>$1</h4>').replace(/^## (.+)/gm,'<h3>$1</h3>').replace(/^- (.+)/gm,'· $1').replace(/\n/g,'<br>');
     var html = '<div class=scroll-hint>—— 风水分析结果 ——</div>' + reading;
     runScrollReveal(html).then(function(){
       btn.disabled = false; btn.textContent = '重新分析';
