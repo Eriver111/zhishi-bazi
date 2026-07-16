@@ -39,7 +39,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent }
       ],
-      max_tokens: 2500,
+      max_tokens: 3000,
       temperature: 0.3
     });
   } else {
@@ -51,7 +51,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
     body = JSON.stringify({
       model: AI_MODEL,
       input: { messages: messages },
-      parameters: { max_tokens: 2500, temperature: 0.3 }
+      parameters: { max_tokens: 3000, temperature: 0.3 }
     });
   }
 
@@ -195,69 +195,36 @@ module.exports = async function handler(req, res) {
     var reading = '';
 
     if (images && images.length > 0) {
-      // === 有照片：多轮分析 ===
+      // === 有照片：所有图片+方位数据一次性发给AI ===
+      console.log('[fengshui] 单轮分析，照片数=' + images.length + ' 总KB=' + Math.round(images.reduce(function(s,img){return s+(img.data||img||'').length/1024}, 0)));
 
-      // 第一轮：逐图分析形煞
-      var photoAnalyses = [];
       var slotLabels = {
-        'door': '大门',
-        'living': '客厅',
-        'kitchen': '厨房',
-        'bedroom': '主卧',
-        'floorplan': '户型图'
+        'door': '大门', 'living': '客厅', 'kitchen': '厨房',
+        'bedroom': '主卧', 'bedroom_0': '主卧', 'bedroom_1': '次卧',
+        'bathroom_0': '卫生间', 'bathroom_1': '卫生间',
+        'stairs': '楼梯', 'floorplan': '户型图'
       };
 
-      for (var i = 0; i < images.length; i++) {
-        var imgData = images[i].data || images[i];
-        var slot = images[i].slot || ('photo_' + i);
+      // 构建多图+文本的 content 数组
+      var userContent = [];
+      images.forEach(function(img) {
+        var imgData = img.data || img;
+        var slot = img.slot || 'photo';
         var label = slotLabels[slot] || slot;
-
-        var photoPrompt = [
-          '请分析这张' + label + '照片中与风水相关的内容。',
-          '',
-          '重点关注：',
-          '1. 此空间是否存在形煞？（穿堂煞、横梁压顶、门冲、角煞等）',
-          '2. 格局是否合理？（采光、通风、空间布局）',
-          '3. 家具摆放是否符合风水原则？',
-          '4. 有什么需要注意的问题？',
-          '',
-          '请用简明扼要的几点说明，每点不超过两行。只分析能看清的，看不清的如实说"无法判断"。'
-        ].join('\n');
-
-        var content;
         if (USE_OPENAI_FORMAT) {
-          content = [
-            { type: 'image_url', image_url: { url: imgData } },
-            { type: 'text', text: photoPrompt }
-          ];
+          userContent.push({ type: 'image_url', image_url: { url: imgData } });
         } else {
-          content = [
-            { image: imgData },
-            { text: photoPrompt }
-          ];
+          userContent.push({ image: imgData });
         }
+        userContent.push({ type: 'text', text: '【上图：' + label + '】' });
+      });
 
-        try {
-          console.log('[fengshui] 分析' + label + '照片 (' + Math.round((imgData||'').length/1024) + 'KB)...');
-          var photoResult = await callAIWithFallback(FENGSHUI_SYSTEM, content);
-          if (photoResult && photoResult.length >= 10) {
-            photoAnalyses.push('### ' + label + '分析\n' + photoResult);
-          }
-        } catch(e) {
-          console.error('[fengshui] ' + label + '分析失败:', e.message);
-          photoAnalyses.push('### ' + label + '分析\n（该照片分析失败，请参考其他结果）');
-        }
-      }
+      var textPrompt = layoutText.join('\n') + '\n\n' +
+        '以上是各房间照片和房屋方位信息。请按照知识库要求的五段式格式，结合八宅法进行完整风水分析。' +
+        '逐张照片分析形煞，然后结合方位数据给出综合判断。';
+      userContent.push({ type: 'text', text: textPrompt });
 
-      // 第二轮：综合总结
-      var summaryPrompt = layoutText.join('\n') + '\n\n' +
-        '以下是各房间照片的风水分析结果，请结合八宅理论给出综合总结：\n\n' +
-        photoAnalyses.join('\n\n---\n\n') + '\n\n' +
-        '请按照知识库要求的五段式输出格式给出完整的风水分析报告。';
-
-      var summaryContent = [{ type: 'text', text: summaryPrompt }];
-      console.log('[fengshui] 生成综合报告...');
-      reading = await callAIWithFallback(FENGSHUI_SYSTEM, summaryContent);
+      reading = await callAIWithFallback(FENGSHUI_SYSTEM, userContent);
 
     } else {
       // === 无照片：纯文本分析 ===
