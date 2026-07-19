@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>01 · 相同八字不同命运</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0c0a;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+.stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+/* 初始：两个相同的八字卡片居中 */
+.bazi-card{position:absolute;width:420px;padding:32px 24px;background:rgba(24,22,18,.95);border:1px solid rgba(201,168,76,.2);border-radius:16px;text-align:center;left:50%;transform:translateX(-50%);transition:all 1.2s cubic-bezier(.4,0,.2,1)}
+#card1{top:500px}
+#card2{top:500px}
+.bazi-card .chars{font-size:52px;letter-spacing:12px;color:#e8cf70;font-weight:900;margin-bottom:8px}
+.bazi-card .info{font-size:20px;color:#a09888;letter-spacing:4px}
+/* 分裂后 */
+#card1.split{top:650px;left:280px;transform:translateX(0) rotate(-3deg)}
+#card2.split{top:650px;left:calc(100% - 280px);transform:translateX(-100%) rotate(3deg)}
+/* 人物剪影 */
+.silhouette{position:absolute;opacity:0;transition:opacity .8s 1s}
+.silhouette.show{opacity:.15}
+#sil1{top:850px;left:100px;width:260px;height:500px}
+#sil2{top:850px;right:100px;width:260px;height:500px}
+/* 下方标签 */
+.fate-label{position:absolute;font-size:26px;color:#e8cf70;letter-spacing:6px;opacity:0;transition:opacity .6s 1.5s}
+#label1{top:1420px;left:280px;transform:translateX(-50%)}
+#label2{top:1420px;left:calc(100% - 280px);transform:translateX(-50%)}
+.fate-label.show{opacity:1}
+/* 标题文字 */
+.title{position:absolute;top:320px;left:50%;transform:translateX(-50%);font-size:38px;color:#d8d0c0;letter-spacing:8px;white-space:nowrap;opacity:0;transition:opacity .8s}
+.title.show{opacity:1}
+.subtitle{position:absolute;top:380px;left:50%;transform:translateX(-50%);font-size:22px;color:#a09888;letter-spacing:4px;opacity:0;transition:opacity .8s .3s}
+.subtitle.show{opacity:1}
+/* 分割线发光 */
+.glow-line{position:absolute;top:800px;left:50%;width:2px;height:600px;background:linear-gradient(180deg,transparent,rgba(201,168,76,.6),transparent);transform:translateX(-50%);opacity:0;transition:opacity .6s .5s}
+.glow-line.show{opacity:.6}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="title" id="title">同年同月同日同时</div>
+  <div class="subtitle" id="subtitle">相同的八字 · 不同的命运</div>
+
+  <div class="bazi-card" id="card1">
+    <div class="chars" id="chars1">丙 戌 · 癸 巳</div>
+    <div class="info">2006年5月6日 · 男</div>
+  </div>
+  <div class="bazi-card" id="card2">
+    <div class="chars" id="chars2">丙 戌 · 癸 巳</div>
+    <div class="info">2006年5月6日 · 男</div>
+  </div>
+
+  <div class="glow-line" id="glow"></div>
+
+  <!-- 人物剪影 SVG -->
+  <svg class="silhouette" id="sil1" viewBox="0 0 200 400">
+    <ellipse cx="100" cy="40" rx="28" ry="32" fill="#e8cf70"/>
+    <path d="M65,85 Q60,200 55,280 L45,380 L70,380 L75,290 L85,260 Q95,240 100,230 Q105,240 115,260 L125,290 L130,380 L155,380 L145,280 Q140,200 135,85 Z" fill="#e8cf70"/>
+  </svg>
+  <svg class="silhouette" id="sil2" viewBox="0 0 200 400">
+    <ellipse cx="100" cy="40" rx="28" ry="32" fill="#e8cf70"/>
+    <path d="M65,85 Q70,160 75,220 L75,310 Q85,340 100,350 Q115,340 125,310 L125,220 Q130,160 135,85 Z" fill="#e8cf70"/>
+  </svg>
+
+  <div class="fate-label" id="label1">富商 · 资产过亿</div>
+  <div class="fate-label" id="label2">教师 · 安稳一生</div>
+</div>
+<script>
+(function(){
+  var t=document.getElementById('title');
+  var st=document.getElementById('subtitle');
+  var c1=document.getElementById('card1');
+  var c2=document.getElementById('card2');
+  var gl=document.getElementById('glow');
+  var s1=document.getElementById('sil1');
+  var s2=document.getElementById('sil2');
+  var l1=document.getElementById('label1');
+  var l2=document.getElementById('label2');
+
+  // Phase 1: Title appears
+  setTimeout(function(){t.classList.add('show')},300);
+  setTimeout(function(){st.classList.add('show')},600);
+
+  // Phase 2: Cards split
+  setTimeout(function(){
+    c1.classList.add('split');
+    c2.classList.add('split');
+  },1800);
+
+  // Phase 3: Glow line appears (split between fates)
+  setTimeout(function(){gl.classList.add('show')},2200);
+
+  // Phase 4: Silhouettes appear
+  setTimeout(function(){s1.classList.add('show');s2.classList.add('show')},2500);
+
+  // Phase 5: Fate labels appear
+  setTimeout(function(){l1.classList.add('show')},3000);
+  setTimeout(function(){l2.classList.add('show')},3200);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>08 · 千人案例</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0c0a;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+.stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+/* 中央计数器 */
+.counter-wrap{position:absolute;top:500px;left:50%;transform:translateX(-50%);text-align:center}
+.counter-num{font-size:160px;font-weight:900;color:#e8cf70;letter-spacing:8px;line-height:1;transition:color .5s}
+.counter-label{font-size:28px;color:#d8d0c0;letter-spacing:6px;margin-top:12px}
+.counter-num.gold{color:#ff9800;text-shadow:0 0 40px rgba(255,152,0,.3)}
+/* 头像卡片 */
+.avatars{position:absolute;top:950px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:16px;width:900px;justify-content:center}
+.avatar-card{width:80px;height:100px;background:rgba(24,22,18,.8);border:1px solid rgba(201,168,76,.1);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transform:scale(.5);transition:all .4s}
+.avatar-card.show{opacity:1;transform:scale(1)}
+.avatar-card .face{font-size:32px;margin-bottom:4px}
+.avatar-card .init{font-size:11px;color:#a09888;letter-spacing:1px}
+/* 底部结论 */
+.result{position:absolute;top:1500px;left:50%;transform:translateX(-50%);text-align:center;opacity:0;transition:opacity .8s 5s}
+.result.show{opacity:1}
+.result .main{font-size:32px;color:#e8cf70;letter-spacing:6px;font-weight:700}
+.result .sub{font-size:20px;color:#a09888;letter-spacing:3px;margin-top:10px;line-height:1.8}
+/* 滚动数字背景 */
+.bg-nums{position:absolute;top:0;left:0;width:100%;height:1920px;pointer-events:none;overflow:hidden}
+.bg-num{position:absolute;font-size:14px;color:rgba(201,168,76,.06);white-space:nowrap;animation:fall 8s linear infinite}
+@keyframes fall{0%{transform:translateY(-50px);opacity:.08}100%{transform:translateY(1950px);opacity:0}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg-nums" id="bgNums"></div>
+
+  <div class="counter-wrap">
+    <div class="counter-num" id="counter">0</div>
+    <div class="counter-label">实战案例</div>
+  </div>
+
+  <div class="avatars" id="avatars"></div>
+
+  <div class="result" id="result">
+    <div class="main">千人反馈 · 持续优化</div>
+    <div class="sub">不妄言 · 不乱断 · 没把握的结论不说<br>一个月内 AI 分析精度显著提升</div>
+  </div>
+</div>
+<script>
+(function(){
+  // 背景数字
+  var bg=document.getElementById('bgNums');
+  for(var i=0;i<40;i++){
+    var n=document.createElement('div');
+    n.className='bg-num';
+    n.style.left=(Math.random()*100)+'%';
+    n.style.animationDelay=(Math.random()*8)+'s';
+    n.style.animationDuration=(6+Math.random()*8)+'s';
+    n.textContent=Math.random().toString(36).substring(2,8);
+    bg.appendChild(n);
+  }
+
+  // 计数器滚动
+  var counter=document.getElementById('counter');
+  var start=Date.now();
+  function roll(){
+    var elapsed=(Date.now()-start)/1000;
+    var val=Math.floor(Math.min(elapsed*120,1000+elapsed*15));
+    if(val>1150)val=1150+Math.floor(Math.random()*20);
+    counter.textContent=val.toLocaleString();
+    if(val>=1000){counter.classList.add('gold')}
+    if(elapsed<6){requestAnimationFrame(roll)}
+  }
+  setTimeout(function(){start=Date.now();roll()},500);
+
+  // 头像卡片逐个出现
+  var emotions=['😊','😎','🤔','😌','🙂','😄','🧐','😏','🤓','😇','💪','🫡'];
+  var users=['张*','李*','王*','刘*','陈*','杨*','赵*','黄*','周*','吴*','徐*','孙*','胡*','朱*','高*','林*','何*','郭*','马*','罗*'];
+  var avatars=document.getElementById('avatars');
+  for(var i=0;i<20;i++){
+    var card=document.createElement('div');
+    card.className='avatar-card';
+    card.innerHTML='<span class="face">'+emotions[i%emotions.length]+'</span><span class="init">'+users[i%users.length]+'</span>';
+    avatars.appendChild(card);
+    (function(c,idx){
+      setTimeout(function(){c.classList.add('show')},800+idx*200);
+    })(card,i);
+  }
+
+  setTimeout(function(){document.getElementById('result').classList.add('show')},5000);
+})();
+</script>
+</body>
+</html>

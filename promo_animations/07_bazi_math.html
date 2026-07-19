@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>07 · 八字排列组合</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0c0a;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+.stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+/* 旋转环 */
+.ring-container{position:relative;width:700px;height:700px}
+/* 天干内环 */
+.inner-ring{position:absolute;top:50%;left:50%;width:520px;height:520px;border-radius:50%;border:2px solid rgba(201,168,76,.2);transform:translate(-50%,-50%);animation:spin 20s linear infinite}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* 地支外环 */
+.outer-ring{position:absolute;top:50%;left:50%;width:660px;height:660px;border-radius:50%;border:2px solid rgba(129,199,132,.15);transform:translate(-50%,-50%);animation:spin 25s linear infinite reverse}
+/* 环上字符 */
+.char{position:absolute;font-size:32px;font-weight:700;letter-spacing:2px;transition:all .5s}
+.char.gan{color:#e8cf70}
+.char.zhi{color:#81c784}
+.char.hit{color:#ff9800!important;text-shadow:0 0 20px rgba(255,152,0,.6);transform:scale(1.3)}
+/* 中心文字 */
+.center-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5}
+.center-text .num{font-size:140px;font-weight:900;color:#e8cf70;letter-spacing:8px;transition:all .5s}
+.center-text .label{font-size:20px;color:#a09888;letter-spacing:4px;margin-top:4px}
+/* 碰撞点 */
+.hit-spot{position:absolute;top:50%;left:50%;width:16px;height:16px;border-radius:50%;background:#ff9800;transform:translate(-50%,-50%);opacity:0;transition:all .3s}
+.hit-spot.flash{opacity:1;box-shadow:0 0 30px rgba(255,152,0,.8);animation:pop .5s ease-out}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(4);opacity:0}}
+/* 下方结论 */
+.bottom{position:absolute;top:1550px;left:50%;transform:translateX(-50%);text-align:center;opacity:0;transition:opacity .8s 4s}
+.bottom.show{opacity:1}
+.bottom .main{font-size:30px;color:#e8cf70;letter-spacing:6px;font-weight:700}
+.bottom .sub{font-size:18px;color:#a09888;letter-spacing:3px;margin-top:10px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="ring-container" id="rings">
+    <div class="inner-ring" id="innerRing"></div>
+    <div class="outer-ring" id="outerRing"></div>
+    <div class="center-text" id="centerText">
+      <div class="num" id="comboNum">518,400</div>
+      <div class="label">种排列组合</div>
+    </div>
+    <div class="hit-spot" id="hitSpot"></div>
+  </div>
+  <div class="bottom" id="bottom">
+    <div class="main">本质上 = 统计学 + 概率论</div>
+    <div class="sub">十天干 × 十二地支 × 六十甲子 × 年月日时<br>不是封建迷信，是古人用几千年积累的经验模型</div>
+  </div>
+</div>
+<script>
+(function(){
+  var gan=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  var zhi=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var innerR=260,outerR=330;
+  var cx=350,cy=350;
+  var inner=document.getElementById('innerRing');
+  var outer=document.getElementById('outerRing');
+
+  // 放置天干（内环）
+  gan.forEach(function(g,i){
+    var angle=(i/10)*Math.PI*2-Math.PI/2;
+    var x=cx+Math.cos(angle)*innerR;
+    var y=cy+Math.sin(angle)*innerR;
+    var el=document.createElement('span');
+    el.className='char gan';el.textContent=g;
+    el.style.left=(x-20)+'px';el.style.top=(y-20)+'px';
+    el.style.transform='rotate('+((i/10)*360)+'deg)';
+    el.dataset.index=i;
+    inner.appendChild(el);
+  });
+
+  // 放置地支（外环）
+  zhi.forEach(function(z,i){
+    var angle=(i/12)*Math.PI*2-Math.PI/2;
+    var x=cx+Math.cos(angle)*outerR;
+    var y=cy+Math.sin(angle)*outerR;
+    var el=document.createElement('span');
+    el.className='char zhi';el.textContent=z;
+    el.style.left=(x-20)+'px';el.style.top=(y-20)+'px';
+    el.style.transform='rotate('+((i/12)*360)+'deg)';
+    el.dataset.index=i;
+    outer.appendChild(el);
+  });
+
+  // 碰撞检测
+  var spot=document.getElementById('hitSpot');
+  var combo=document.getElementById('comboNum');
+  var count=518400;
+  setInterval(function(){
+    spot.classList.remove('flash');
+    void spot.offsetWidth;
+    spot.classList.add('flash');
+    // 随机高亮一个天干和地支
+    var all=document.querySelectorAll('.char.hit');
+    all.forEach(function(c){c.classList.remove('hit')});
+    var r1=Math.floor(Math.random()*10);
+    var r2=Math.floor(Math.random()*12);
+    document.querySelector('.char.gan[data-index="'+r1+'"]').classList.add('hit');
+    document.querySelector('.char.zhi[data-index="'+r2+'"]').classList.add('hit');
+  },2000);
+
+  // 数字滚动效果
+  setTimeout(function(){
+    var steps=0,target=518400;
+    var iv=setInterval(function(){
+      steps++;combo.textContent=Math.floor(steps/target*518400).toLocaleString();
+      if(steps>=80){combo.textContent='518,400';clearInterval(iv)}
+    },30);
+  },500);
+
+  setTimeout(function(){document.getElementById('bottom').classList.add('show')},4000);
+})();
+</script>
+</body>
+</html>
