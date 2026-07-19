@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S3 · 天干地支流动</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0c0a;overflow:hidden;font-family:"Source Han Serif SC","Noto Serif SC","SimSun",serif}
+[data-composition-id="s3-stems-branches"]{width:1080px;height:1920px;position:relative;overflow:hidden}
+
+.bg-glow{position:absolute;top:45%;left:50%;width:800px;height:800px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,168,76,.06),rgba(201,168,76,.01),transparent 65%);
+  transform:translate(-50%,-50%)}
+.bg-ring{position:absolute;top:45%;left:50%;width:650px;height:650px;border-radius:50%;
+  border:1px solid rgba(201,168,76,.04);transform:translate(-50%,-50%)}
+
+/* Stem ring */
+.stem-ring,.branch-ring{position:absolute;top:45%;left:50%;border-radius:50%;transform:translate(-50%,-50%)}
+.stem-ring{width:460px;height:460px}
+.branch-ring{width:620px;height:620px}
+.ring-char{position:absolute;font-size:56px;font-weight:900;color:#c9a84c;text-align:center;
+  width:60px;height:60px;line-height:60px;opacity:.25}
+.ring-char.active{color:#e8cf70;opacity:1;text-shadow:0 0 24px rgba(232,207,112,.5);transform:scale(1.2)}
+
+/* Pop combinations */
+.combo-pop{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%) scale(0);
+  font-size:72px;font-weight:900;color:#e8cf70;letter-spacing:8px;white-space:nowrap;
+  text-shadow:0 0 40px rgba(232,207,112,.6);pointer-events:none}
+
+/* Center label */
+.center-label{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);
+  font-size:28px;color:rgba(200,180,160,.4);letter-spacing:6px;pointer-events:none}
+
+/* Bottom text */
+.bottom-text{position:absolute;bottom:280px;left:50%;transform:translateX(-50%);
+  font-size:42px;color:#d8d0c0;letter-spacing:8px;font-weight:700;white-space:nowrap}
+.bottom-sub{position:absolute;bottom:200px;left:50%;transform:translateX(-50%);
+  font-size:24px;color:rgba(200,180,160,.5);letter-spacing:4px}
+
+/* Particles */
+.particles{position:absolute;inset:0;pointer-events:none}
+.p{position:absolute;width:3px;height:3px;background:rgba(201,168,76,.12);border-radius:50%}
+</style>
+</head>
+<body>
+<div data-composition-id="s3-stems-branches" data-width="1080" data-height="1920">
+
+  <div class="bg-glow"></div>
+  <div class="bg-ring"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="stem-ring" id="stemRing"></div>
+  <div class="branch-ring" id="branchRing"></div>
+  <div class="center-label" id="centerLabel">生成组合</div>
+  <div class="combo-pop" id="comboPop"></div>
+
+  <div class="bottom-text" id="bottomText">518,400 种排列</div>
+  <div class="bottom-sub" id="bottomSub">十天干 × 十二地支 × 六十甲子 × 四柱 = 千人千命</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script>
+window.__timelines = window.__timelines || {};
+
+var gan=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+var zhi=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+var combos=[
+  '甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉',
+  '甲戌','乙亥','丙子','丁丑','戊寅','己卯','庚辰','辛巳','壬午','癸未',
+  '甲申','乙酉','丙戌','丁亥','戊子','己丑','庚寅','辛卯','壬辰','癸巳'
+];
+
+// Place stems on ring
+(function(){
+  var sr=document.getElementById('stemRing');
+  var r=230;var cx=0,cy=0;
+  gan.forEach(function(g,i){
+    var angle=(i/gan.length)*Math.PI*2-Math.PI/2;
+    var x=cx+Math.cos(angle)*r-30;
+    var y=cy+Math.sin(angle)*r-30;
+    var el=document.createElement('span');
+    el.className='ring-char';el.textContent=g;
+    el.style.left=x+'px';el.style.top=y+'px';
+    el.dataset.index=i;
+    sr.appendChild(el);
+  });
+  // Place branches on outer ring
+  var br=document.getElementById('branchRing');
+  var r2=310;
+  zhi.forEach(function(z,i){
+    var angle=(i/zhi.length)*Math.PI*2-Math.PI/2;
+    var x=cx+Math.cos(angle)*r2-30;
+    var y=cy+Math.sin(angle)*r2-30;
+    var el=document.createElement('span');
+    el.className='ring-char';el.textContent=z;
+    el.style.left=x+'px';el.style.top=y+'px';
+    el.dataset.index=i;
+    br.appendChild(el);
+  });
+  // Particles
+  var pc=document.getElementById('particles');
+  for(var i=0;i<60;i++){
+    var p=document.createElement('div');
+    p.className='p';
+    p.style.left=Math.random()*100+'%';
+    p.style.top=Math.random()*100+'%';
+    pc.appendChild(p);
+  }
+})();
+
+// ===== TIMELINE =====
+var tl = gsap.timeline({paused:true});
+
+// Ambient
+tl.from('.bg-glow',{scale:.8,opacity:0,duration:1,ease:'power2.out'},0.1);
+tl.to('.bg-glow',{scale:1.06,duration:10,ease:'sine.inOut',repeat:1,yoyo:true},0.1);
+tl.from('.bg-ring',{opacity:0,rotation:-30,duration:1.5,ease:'power3.out'},0.2);
+
+// Rotate rings
+tl.to('#stemRing',{rotation:360,duration:12,ease:'none'},0.3);
+tl.to('#branchRing',{rotation:-360,duration:14,ease:'none'},0.3);
+
+// Random char highlights
+var stemEls=document.querySelectorAll('#stemRing .ring-char');
+var branchEls=document.querySelectorAll('#branchRing .ring-char');
+for(var t=0;t<10;t++){
+  (function(delay){
+    var si=Math.floor(Math.random()*10),bi=Math.floor(Math.random()*12);
+    tl.call(function(){
+      stemEls.forEach(function(e){e.classList.remove('active')});
+      branchEls.forEach(function(e){e.classList.remove('active')});
+    },[],delay);
+    tl.call(function(a,b){
+      stemEls[a].classList.add('active');
+      branchEls[b].classList.add('active');
+      var combo=gan[a]+zhi[b];
+      document.getElementById('comboPop').textContent=combo;
+    },[si,bi],delay+.05);
+    tl.fromTo('#comboPop',{scale:0,opacity:.9},{scale:1.2,opacity:1,duration:.35,ease:'back.out(1.7)'},delay+.05);
+    tl.to('#comboPop',{scale:2.5,opacity:0,duration:.6,ease:'power2.out'},delay+.35);
+  })(1.5+t*0.9);
+}
+
+// Center label
+tl.from('#centerLabel',{opacity:0,duration:.6,ease:'power2.out'},0.8);
+tl.to('#centerLabel',{opacity:0,duration:.6,ease:'power2.in'},9.0);
+
+// Bottom text entrance
+tl.from('#bottomText',{y:40,opacity:0,duration:.8,ease:'expo.out'},10.0);
+tl.from('#bottomSub',{y:30,opacity:0,duration:.7,ease:'power2.out'},10.3);
+
+// Fade all
+tl.to('#stemRing',{opacity:.3,duration:.8,ease:'power2.in'},10.5);
+tl.to('#branchRing',{opacity:.3,duration:.8,ease:'power2.in'},10.5);
+tl.to('.bg-glow',{opacity:.05,duration:.8,ease:'power2.in'},10.5);
+
+// End fade
+tl.to('[data-composition-id="s3-stems-branches"] > *',{opacity:0,duration:.5,ease:'power2.in'},12.0);
+
+window.__timelines["s3-stems-branches"] = tl;
+</script>
+</body>
+</html>

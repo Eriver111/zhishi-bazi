@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html data-composition-variables='[{"id":"year","type":"string","label":"Year","default":"2006"},{"id":"month","type":"string","label":"Month","default":"5"},{"id":"day","type":"string","label":"Day","default":"6"},{"id":"hour","type":"string","label":"Hour","default":"14"},{"id":"minute","type":"string","label":"Minute","default":"30"},{"id":"baziY","type":"string","label":"Year Pillar","default":"丙戌"},{"id":"baziM","type":"string","label":"Month Pillar","default":"癸巳"},{"id":"baziD","type":"string","label":"Day Pillar","default":"乙丑"},{"id":"baziH","type":"string","label":"Hour Pillar","default":"癸未"}]'>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>S1 · 出生时间流动 → 八字定格</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0c0a;overflow:hidden;font-family:"Source Han Serif SC","Noto Serif SC","SimSun",serif}
+[data-composition-id="s1-birth-bazi"]{width:1080px;height:1920px;position:relative;overflow:hidden}
+
+/* Decorative background */
+.bg-glow{position:absolute;top:25%;left:50%;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,168,76,.08),rgba(201,168,76,.02),transparent 70%);
+  transform:translate(-50%,-50%)}
+.bg-particles{position:absolute;inset:0}
+.particle{position:absolute;width:2px;height:2px;background:rgba(201,168,76,.15);border-radius:50%}
+.bg-ring{position:absolute;top:40%;left:50%;width:700px;height:700px;border-radius:50%;
+  border:1px solid rgba(201,168,76,.04);transform:translate(-50%,-50%)}
+
+/* Flowing digit display */
+.flow-stage{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:0;padding:200px 80px}
+.flow-row{display:flex;align-items:center;justify-content:center;gap:16px;height:120px}
+.flow-label{font-size:48px;color:rgba(201,168,76,.05);font-weight:900;letter-spacing:8px;width:180px;text-align:right}
+.flow-digits{display:flex;align-items:center;gap:0}
+.flow-digit{font-size:100px;font-weight:900;color:#d8d0c0;letter-spacing:4px;width:120px;text-align:center;font-variant-numeric:tabular-nums}
+.flow-digit.scrolling{color:#c9a84c;animation:digitPulse .6s ease-in-out infinite}
+@keyframes digitPulse{0%,100%{color:#c9a84c}50%{color:#e8cf70}}
+.flow-unit{font-size:36px;color:rgba(200,180,160,.4);letter-spacing:4px;width:80px;text-align:left}
+
+/* Final bazi display */
+.bazi-stage{position:absolute;top:0;left:0;width:100%;height:100%;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:0}
+.bazi-grid{display:flex;gap:60px;align-items:center}
+.bazi-col{display:flex;flex-direction:column;align-items:center;gap:16px}
+.bazi-col .gan{font-size:120px;font-weight:900;color:#e8cf70;letter-spacing:4px;line-height:1}
+.bazi-col .zhi{font-size:120px;font-weight:900;color:#c9a84c;letter-spacing:4px;line-height:1}
+.bazi-col .pillar-label{font-size:28px;color:rgba(200,180,160,.5);letter-spacing:6px;margin-top:8px}
+.bazi-title{font-size:36px;color:rgba(200,180,160,.6);letter-spacing:12px;margin-bottom:60px;text-align:center}
+.bazi-sub{font-size:28px;color:rgba(200,180,160,.35);letter-spacing:6px;margin-top:40px}
+
+/* Scene transition overlay */
+.scene-transition{position:absolute;inset:0;background:rgba(14,12,10,.95);opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div data-composition-id="s1-birth-bazi" data-width="1080" data-height="1920">
+
+  <div class="bg-glow"></div>
+  <div class="bg-ring"></div>
+  <div class="bg-particles" id="particles"></div>
+
+  <!-- SCENE 1: Flowing time -->
+  <div class="flow-stage" id="flowStage">
+    <div class="flow-row" id="rowYear">
+      <span class="flow-label">年</span>
+      <div class="flow-digits" id="digitsYear"></div>
+      <span class="flow-unit">年</span>
+    </div>
+    <div class="flow-row" id="rowMonth">
+      <span class="flow-label">月</span>
+      <div class="flow-digits" id="digitsMonth"></div>
+      <span class="flow-unit">月</span>
+    </div>
+    <div class="flow-row" id="rowDay">
+      <span class="flow-label">日</span>
+      <div class="flow-digits" id="digitsDay"></div>
+      <span class="flow-unit">日</span>
+    </div>
+    <div class="flow-row" id="rowHour">
+      <span class="flow-label">时</span>
+      <div class="flow-digits" id="digitsHour"></div>
+      <span class="flow-unit">分</span>
+    </div>
+  </div>
+
+  <!-- SCENE 2: Bazi result -->
+  <div class="bazi-stage" id="baziStage">
+    <div class="bazi-title">同 年 同 月 同 日 同 时</div>
+    <div class="bazi-grid" id="baziGrid"></div>
+    <div class="bazi-sub">八字定格 · 这一刻起，你的命盘便已注定</div>
+  </div>
+
+  <div class="scene-transition" id="transition"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script>
+window.__timelines = window.__timelines || {};
+
+// Build particles
+(function(){
+  var container = document.getElementById('particles');
+  for(var i=0;i<50;i++){
+    var p=document.createElement('div');
+    p.className='particle';
+    p.style.left=(Math.floor(Math.random()*100))+'%';
+    p.style.top=(Math.floor(Math.random()*100))+'%';
+    p.dataset.ox=Math.floor(Math.random()*100);
+    p.dataset.oy=Math.floor(Math.random()*100);
+    container.appendChild(p);
+  }
+})();
+
+// Build flowing digits
+function buildDigits(containerId, count, defaultValue){
+  var c = document.getElementById(containerId);
+  for(var i=0;i<count;i++){
+    var d=document.createElement('span');
+    d.className='flow-digit';
+    d.textContent = defaultValue !== undefined ? defaultValue[i] : String(Math.floor(Math.random()*10));
+    c.appendChild(d);
+  }
+}
+buildDigits('digitsYear',4,'2006');
+buildDigits('digitsMonth',2,'05');
+buildDigits('digitsDay',2,'06');
+buildDigits('digitsHour',4,'1430');
+
+// Build bazi display
+var pillars = [
+  {gan:'丙',zhi:'戌',label:'年柱'},
+  {gan:'癸',zhi:'巳',label:'月柱'},
+  {gan:'乙',zhi:'丑',label:'日柱'},
+  {gan:'癸',zhi:'未',label:'时柱'}
+];
+var grid = document.getElementById('baziGrid');
+pillars.forEach(function(p){
+  var col=document.createElement('div');
+  col.className='bazi-col';
+  col.innerHTML='<span class="gan">'+p.gan+'</span><span class="zhi">'+p.zhi+'</span><span class="pillar-label">'+p.label+'</span>';
+  grid.appendChild(col);
+});
+
+// ===== TIMELINE =====
+var tl = gsap.timeline({paused:true});
+
+// --- SCENE 1: Time flowing (0s - 7s) ---
+
+// Background ambient
+tl.from('.bg-glow',{scale:.85,opacity:0,duration:1.2,ease:'power2.out'},0.1);
+tl.to('.bg-glow',{scale:1.05,duration:6,ease:'sine.inOut',repeat:1,yoyo:true},0.1);
+tl.to('.bg-ring',{rotation:15,duration:7,ease:'none'},0.1);
+
+// Particles drift
+tl.from('.particle',{opacity:0,duration:.8,stagger:.02,ease:'power2.out'},0.3);
+document.querySelectorAll('.particle').forEach(function(p,i){
+  var ox=parseFloat(p.dataset.ox),oy=parseFloat(p.dataset.oy);
+  tl.to(p,{x:ox-50,y:oy-50+Math.random()*40,duration:4+Math.random()*3,ease:'sine.inOut'},0.1+i*0.02);
+});
+
+// Year row — appears first, digits scroll
+tl.from('#rowYear',{x:-60,opacity:0,duration:.7,ease:'expo.out'},0.3);
+tl.from('#rowYear .flow-label',{opacity:0,duration:.4,ease:'power2.out'},0.3);
+
+// Month row
+tl.from('#rowMonth',{x:-60,opacity:0,duration:.7,ease:'expo.out'},1.5);
+
+// Day row
+tl.from('#rowDay',{x:-60,opacity:0,duration:.7,ease:'expo.out'},2.7);
+
+// Hour row
+tl.from('#rowHour',{x:-60,opacity:0,duration:.7,ease:'expo.out'},3.9);
+
+// Digits scroll effect: cycle random numbers then settle
+function digitScroll(selector, targetDigits, startTime, settleTime){
+  var digits = document.querySelectorAll(selector + ' .flow-digit');
+  var total = targetDigits.length;
+  for(var i=0;i<digits.length;i++){
+    var d=digits[i];
+    // Make it scroll
+    var steps=Math.floor(Math.random()*6)+3;
+    for(var s=0;s<steps;s++){
+      tl.call(function(el,val){el.textContent=val},[d,String(Math.floor(Math.random()*10))],startTime+s*0.12);
+    }
+    // Settle on target
+    tl.call(function(el,val){el.textContent=val;el.classList.add('scrolling')},[d,targetDigits[i]],startTime+steps*0.12);
+  }
+  // Freeze
+  tl.to(selector+' .flow-digit',{color:'#e8cf70',duration:.4,ease:'power2.out',onComplete:function(){
+    document.querySelectorAll(selector+' .flow-digit').forEach(function(d){d.classList.remove('scrolling')});
+  }},settleTime);
+}
+
+digitScroll('#rowYear',['2','0','0','6'],0.6,4.8);
+digitScroll('#rowMonth',['0','5'],1.8,4.9);
+digitScroll('#rowDay',['0','6'],3.0,5.0);
+digitScroll('#rowHour',['1','4','3','0'],4.2,5.1);
+
+// Hold moment: all digits frozen, glow intensifies
+tl.to('#flowStage .flow-digit',{textShadow:'0 0 30px rgba(201,168,76,.4)',duration:.8,ease:'power2.out'},5.3);
+tl.to('.bg-glow',{scale:1.15,opacity:1,duration:1,ease:'power2.out'},5.3);
+
+// --- TRANSITION to SCENE 2 (6.5s) ---
+tl.to('#flowStage',{opacity:0,duration:.5,ease:'power2.in'},6.5);
+tl.to('.bg-glow',{scale:1.4,opacity:.15,duration:.8,ease:'power3.in'},6.5);
+
+// --- SCENE 2: Bazi display (7.5s - 12s) ---
+tl.set('#baziStage',{display:'flex'},7.0);
+
+// Bazi title
+tl.from('.bazi-title',{y:-30,opacity:0,duration:.7,ease:'expo.out'},7.3);
+
+// Each column enters
+tl.from('.bazi-col:nth-child(1)',{scale:.5,opacity:0,y:40,duration:.6,ease:'back.out(1.4)'},7.8);
+tl.from('.bazi-col:nth-child(2)',{scale:.5,opacity:0,y:40,duration:.6,ease:'back.out(1.4)'},8.2);
+tl.from('.bazi-col:nth-child(3)',{scale:.5,opacity:0,y:40,duration:.6,ease:'back.out(1.4)'},8.6);
+tl.from('.bazi-col:nth-child(4)',{scale:.5,opacity:0,y:40,duration:.6,ease:'back.out(1.4)'},9.0);
+
+// Subtitle
+tl.from('.bazi-sub',{opacity:0,duration:.8,ease:'power2.out'},9.6);
+
+// Final glow pulse
+tl.to('.bazi-col .gan',{textShadow:'0 0 40px rgba(232,207,112,.5)',duration:1,ease:'sine.inOut'},9.8);
+tl.to('.bg-glow',{scale:1.1,opacity:.12,duration:2,ease:'sine.inOut'},9.8);
+
+// Fade to black at end
+tl.to('.bazi-stage',{opacity:0,duration:.6,ease:'power2.in'},11.5);
+
+window.__timelines["s1-birth-bazi"] = tl;
+</script>
+</body>
+</html>
