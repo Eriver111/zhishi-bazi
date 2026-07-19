@@ -556,10 +556,27 @@ body::before{
   .hero h1{font-size:42px;letter-spacing:20px;margin-left:20px}
   .hero-tagline{font-size:14px;letter-spacing:10px}
   .hero-cta{padding:12px 28px;font-size:14px}
-  .features{grid-template-columns:1fr;gap:16px}
+  .features{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
   .trust-grid{grid-template-columns:1fr 1fr;gap:12px}
   .trust-num{font-size:22px}
   .cta-bottom h2{font-size:22px}
+}
+.mobile-nav-extra{display:none!important}
+@media(max-width:600px){
+  #zhishi-nav{padding:8px 10px!important}
+  #zhishi-nav .zhishi-brand{margin-right:4px!important}
+  #zhishi-nav .zhishi-nav-links{flex-wrap:nowrap!important;gap:1px!important}
+  #zhishi-nav .nav-secondary{display:none!important}
+  #zhishi-nav .mobile-nav-extra{display:block!important}
+  #zhishi-nav .nav-more .dd-menu{left:auto!important;right:0!important}
+  #zhishi-nav .nav-primary,
+  #zhishi-nav .nav-points,
+  #zhishi-nav .nav-more>span{padding:6px 7px!important;font-size:12px!important}
+  #nav-user-area{display:none!important}
+  .features{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .feat-card{padding:24px 14px}
+  .feat-card h3{font-size:16px;letter-spacing:3px}
+  .feat-card p{font-size:12px;line-height:1.9}
 }
 @media(max-width:400px){
   .hero{min-height:80vh}
@@ -573,14 +590,42 @@ body::before{
 <body>
 <!-- ====== 墨色山水背景 v3 · 古画真迹 ====== -->
 <div class="ink-wash-scene">
-  <img src="images/cleveland_screen_print.jpg" alt="" loading="eager">
+  <picture>
+    <source srcset="images/cleveland_screen_print.webp" type="image/webp">
+    <img src="images/cleveland_screen_print.jpg" alt="" loading="eager" fetchpriority="high">
+  </picture>
   <div class="ink-wash-overlay"></div>
   <div class="ink-wash-texture"></div>
 
   <div class="ink-wash-water"></div>
 </div>
 
-<div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(22,20,17,.94);border-bottom:1px solid rgba(180,160,140,.06);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(26,24,20,.97);border:1px solid rgba(180,160,140,.1);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
+<div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(22,20,17,.94);border-bottom:1px solid rgba(180,160,140,.06);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px">
+  <a href="/" class="zhishi-brand" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a>
+  <div class="zhishi-nav-links" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+    <a href="/paipan" class="nav-primary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a>
+    <a href="/ziwei" class="nav-primary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a>
+    <a href="/fengshui" class="nav-secondary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a>
+    <a href="/face" class="nav-secondary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a>
+    <a href="/palm" class="nav-secondary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a>
+    <div class="nav-more" style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'">
+      <span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span>
+      <div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(26,24,20,.97);border:1px solid rgba(180,160,140,.1);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)">
+        <a href="/fengshui" class="mobile-nav-extra" style="color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">风水</a>
+        <a href="/face" class="mobile-nav-extra" style="color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">观面</a>
+        <a href="/palm" class="mobile-nav-extra" style="color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">观手</a>
+        <a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a>
+        <a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a>
+        <a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a>
+        <a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a>
+        <a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a>
+        <a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a>
+      </div>
+    </div>
+    <a href="/pricing" class="nav-points" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a>
+    <span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span>
+  </div>
+</div>
 <div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#181612 0%,#0e0c0a 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
@@ -619,7 +664,7 @@ body::before{
   </section>
 
   <!-- ====== Features ====== -->
-  <section class="features" style="grid-template-columns:repeat(3,1fr)">
+  <section class="features">
     <a href="/paipan" class="feat-card" style="text-decoration:none">
       <div class="feat-icon" style="color:#a0c8e8"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#d4c8a8">命</span></div>
       <h3>八字排盘</h3>
@@ -1311,13 +1356,8 @@ var MoXingHe = (function(){
 </script><script>
 (function(){
 var G=['111111乾为天|元亨利贞','000000坤为地|厚德载物','010001水雷屯|刚柔始交','100010山水蒙|童蒙求我','010111水天需|险在前也','111010天水讼|讼不可成','000010地水师|师出以律','010000水地比|亲附辅弼','110111风天小畜|以懿文德','111011天泽履|履虎尾也','000111地天泰|天地交泰','111000天地否|大往小来','111101天火同人|类族辨物','101111火天大有|顺天休命','000100地山谦|裒多益寡','001000雷地豫|作乐崇德','011001泽雷随|随时之义','100110山风蛊|振民育德','000011地泽临|教思无穷','110000风地观|观民设教','101001火雷噬嗑|明罚敕法','100101山火贲|明庶政也','000001山地剥|上厚下安','100000地雷复|闭关休息','111001天雷无妄|天命不佑','100111山天大畜|多识前言','100001山雷颐|节饮食也','011110泽风大过|独立不惧','010010坎为水|常德行也','101101离为火|明照四方','011100泽山咸|感而遂通','001110雷风恒|立不易方','111100天山遁|远小人也','001111雷天大壮|非礼弗履','101000火地晋|自昭明德','000101地火明夷|用晦而明','110101风火家人|言有物也','101011火泽睽|以同而异','010100水山蹇|反身修德','001010雷水解|赦过宥罪','110001山泽损|惩忿窒欲','100011风雷益|迁善改过','011111泽天夬|施禄及下','111110天风姤|施命诰四方','011000泽地萃|除戎器也','000110地风升|积小高大','011010泽水困|致命遂志','010110水风井|劳民劝相','101110泽火革|治历明时','011101火风鼎|正位凝命','001001震为雷|恐惧修省','100100艮为山|思不出位','110100风山渐|居贤德善','001011雷泽归妹|永终知敝','001101雷火丰|折狱致刑','101100火山旅|明慎用刑','110110巽为风|申命行事','011011兑为泽|朋友讲习','110010风水涣|享于帝也','010011水泽节|制数度也','110011风泽中孚|议狱缓死','001100雷山小过|行过恭也','010101水火既济|思患预防','101010火水未济|慎辨物居'];
-var h=G[Math.floor(Math.random()*64)];
-var b=h.substring(0,6),r=h.substring(6).split('|'),n=r[0],s=r[1];
-document.getElementById('hexaName').textContent=n;
-document.getElementById('hexaSub').textContent='—— '+s;
-var box=document.getElementById('hexaBox');
-for(var i=0;i<6;i++){var d=document.createElement('div');d.className='hexa-line '+(b[i]==='1'?'yang':'yin');d.style.animationDelay=i*300+'ms';box.appendChild(d)}
-var td=6*300+600;document.getElementById('hexaName').style.animationDelay=td+'ms';document.getElementById('hexaSub').style.animationDelay=(td+300)+'ms';
+// The old hexagram loader UI was removed; keep this block inert to avoid
+// dereferencing loader nodes that no longer exist on the homepage.
 })();
 </script>
 

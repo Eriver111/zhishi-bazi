@@ -12,7 +12,7 @@
   var KE={'木':'土','土':'水','水':'火','火':'金','金':'木'};
 
   function init(){
-    if(typeof _bazi==='undefined'){setTimeout(init,300);return}
+    if(typeof _bazi==='undefined'||!_bazi){setTimeout(init,300);return}
     var bazi=_bazi;
     hideShensha();
     try{var sec=document.getElementById('proSection');if(sec)sec.classList.add('drawer-open');var arrow=document.querySelector('#proSection .drawer-arrow');if(arrow)arrow.style.transform='rotate(90deg)'}catch(e){}

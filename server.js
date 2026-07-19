@@ -18,7 +18,7 @@ setInterval(function() {
 
 const http=require('http');const fs=require('fs');const path=require('path');
 const execSync=require('child_process').execSync;
-const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json'};
+const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.gif':'image/gif','.ico':'image/x-icon','.mp4':'video/mp4','.mp3':'audio/mpeg'};
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0)process.env[t.slice(0,i).trim()]=t.slice(i+1).trim()}})}catch(_){}
 const DEPLOY_SECRET=process.env.DEPLOY_SECRET||'zhishi-deploy-2026';
 
@@ -111,8 +111,8 @@ if(ct==='text/html'&&channel){
   var injectScript='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';
   b=b.toString().replace('</head>',injectScript+'</head>');
 }
-res.writeHead(200,{'Content-Type':ct});res.end(b);return}catch(e){}
+res.writeHead(200,{'Content-Type':ct,'Cache-Control':ct==='text/html'?'no-cache':'public, max-age=86400'});res.end(b);return}catch(e){}
 if(!path.extname(pn)){try{let b=fs.readFileSync(fp+'.html');if(channel){var injectScript2='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';b=b.toString().replace('</head>',injectScript2+'</head>')}
-res.writeHead(200,{'Content-Type':'text/html'});res.end(b);return}catch(e){}}
+res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-cache'});res.end(b);return}catch(e){}}
 res.writeHead(404);res.end('404')});s.listen(process.env.PORT||3000,()=>console.log('OK'));
 // force rebuild 1781971871

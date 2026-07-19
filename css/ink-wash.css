@@ -138,8 +138,15 @@
 .cta-bottom h2 { color: #d4c8b0 !important; }
 .cta-bottom p { color: rgba(180,170,150,.55) !important; }
 
-/* Hero 描述文字 */
-.hero-desc { color: rgba(180,170,150,.55) !important; }
+/* Hero 描述文字：保持水墨气质，同时提高背景图上的可读性 */
+.hero-desc {
+  color: rgba(232,224,204,.78) !important;
+  text-shadow: 0 2px 14px rgba(0,0,0,.72);
+}
+.hero-tagline {
+  color: rgba(232,224,204,.76) !important;
+  text-shadow: 0 2px 16px rgba(0,0,0,.68);
+}
 
 /* === 响应式 === */
 @media (max-width: 768px) {
