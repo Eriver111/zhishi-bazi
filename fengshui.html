@@ -538,9 +538,19 @@ function buildPhotoSlots(){
 }
 
 function triggerFileInput(key){
-  var input = document.createElement('input');
-  input.type = 'file'; input.accept = 'image/*';
-  input.onchange = function(e){ handlePhotoFile(key, e); };
+  var input = document.getElementById('fsFileInput');
+  if(!input){
+    input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.id = 'fsFileInput';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+  }
+  input.dataset.slot = key;
+  input.onchange = function(e){
+    handlePhotoFile(this.dataset.slot, e);
+    this.value = '';
+  };
   input.click();
 }
 function handlePhotoFile(key, e){
