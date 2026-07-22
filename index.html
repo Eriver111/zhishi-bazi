@@ -517,13 +517,6 @@ body::before{
 .feat-card .feat-icon{font-size:36px;margin-bottom:16px}
 .feat-card h3{font-size:18px;font-weight:700;color:var(--gold-l);letter-spacing:4px;margin-bottom:10px}
 .feat-card p{font-size:13px;color:var(--tx2);line-height:1.8;letter-spacing:1px}
-/* 第二张卡星光色 */
-.feat-card:nth-child(2) h3{color:#a0c8e8}
-.feat-card:nth-child(2)::before{background:linear-gradient(90deg,transparent,var(--star),var(--gold),transparent)}
-/* 第三张卡 AI 辉光 */
-.feat-card:nth-child(3){border-color:rgba(201,168,76,.2)}
-.feat-card:nth-child(3) h3{background:linear-gradient(135deg,var(--gold-l),#f0d060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-
 /* ============ TRUST ============ */
 .trust-section{margin-top:80px;text-align:center}
 .trust-section h2{font-size:22px;font-weight:700;color:var(--gold-l);letter-spacing:6px;margin-bottom:40px}
@@ -588,6 +581,7 @@ body::before{
 </style>
 <style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
 <link rel="stylesheet" href="css/theme-light.css?v=1">
+<link rel="stylesheet" href="css/theme-light-home.css?v=1">
 </head>
 <body>
 <!-- ====== 墨色山水背景 v3 · 古画真迹 ====== -->
@@ -602,29 +596,30 @@ body::before{
   <div class="ink-wash-water"></div>
 </div>
 
-<div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(22,20,17,.94);border-bottom:1px solid rgba(180,160,140,.06);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px">
-  <a href="/" class="zhishi-brand" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a>
+<div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px">
+  <a href="/" class="zhishi-brand" style="font-size:18px;font-weight:900;letter-spacing:4px;text-decoration:none;margin-right:8px">知时</a>
   <div class="zhishi-nav-links" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-    <a href="/paipan" class="nav-primary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a>
-    <a href="/ziwei" class="nav-primary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a>
-    <a href="/fengshui" class="nav-secondary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a>
-    <a href="/face" class="nav-secondary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a>
-    <a href="/palm" class="nav-secondary" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a>
+    <a href="/paipan" class="nav-primary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">命理</a>
+    <a href="/liuren" class="nav-primary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">卜筮</a>
+    <a href="/face" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观相</a>
+    <a href="/fengshui" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">堪舆</a>
+    <a href="/fortune" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">运势</a>
     <div class="nav-more" style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'">
-      <span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span>
-      <div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(26,24,20,.97);border:1px solid rgba(180,160,140,.1);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)">
-        <a href="/fengshui" class="mobile-nav-extra" style="color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">风水</a>
-        <a href="/face" class="mobile-nav-extra" style="color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">观面</a>
-        <a href="/palm" class="mobile-nav-extra" style="color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">观手</a>
-        <a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a>
-        <a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a>
-        <a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a>
-        <a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a>
-        <a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a>
-        <a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a>
+      <span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span>
+      <div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;border-radius:8px;padding:4px 0;min-width:120px;z-index:200">
+        <a href="/face" class="mobile-nav-extra" style="text-decoration:none;padding:8px 16px;white-space:nowrap">观相</a>
+        <a href="/fengshui" class="mobile-nav-extra" style="text-decoration:none;padding:8px 16px;white-space:nowrap">堪舆</a>
+        <a href="/fortune" class="mobile-nav-extra" style="text-decoration:none;padding:8px 16px;white-space:nowrap">运势</a>
+        <a href="/ziwei" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">紫微斗数</a>
+        <a href="/palm" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">AI 观手</a>
+        <a href="/hepan" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a>
+        <a href="/meihua" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a>
+        <a href="/liuyao" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a>
+        <a href="/liuren" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a>
+        <a href="/profile" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a>
       </div>
     </div>
-    <a href="/pricing" class="nav-points" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a>
+    <a href="/pricing" class="nav-points" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">积分</a>
     <span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span>
   </div>
 </div>
@@ -650,7 +645,7 @@ body::before{
     <div class="hero-brand">
       <div class="hero-line"></div>
       <h1>知 时</h1>
-      <p class="hero-tagline">知天时 · 见自己</p>
+      <p class="hero-tagline">知天时，见自己</p>
     </div>
     <p class="hero-desc">传承千年东方智慧，AI 参详引经据典<br>为你解读专属命盘，知命不认命</p>
     <div class="hero-ctas">
@@ -667,52 +662,66 @@ body::before{
   <!-- ====== Features ====== -->
   <section class="features">
     <a href="/paipan" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#a0c8e8"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#d4c8a8">命</span></div>
+      <div class="feat-icon"><span>命</span></div>
       <h3>八字排盘</h3>
       <p>公历农历双输入 · 真太阳时校正<br>十神旺衰 · 大运流年 · 纳音神煞</p>
     </a>
     <a href="/ziwei" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e8cf70"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#e8d8b0">斗</span></div>
+      <div class="feat-icon"><span>斗</span></div>
       <h3>紫微斗数</h3>
       <p>三合飞星四化 · 十二宫精断<br>十四主星 · 辅星杂曜 · 格局论断</p>
     </a>
     <a href="/liuren" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#5b9fd4"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#c0d0e0">壬</span></div>
+      <div class="feat-icon"><span>壬</span></div>
       <h3>大六壬</h3>
       <p>月将加时 · 天地盘转 · 四课三传<br>九宗门起课 · 十二天将神煞</p>
     </a>
     <a href="/liuyao" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e07050"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#d8c0b0">爻</span></div>
+      <div class="feat-icon"><span>爻</span></div>
       <h3>六爻占卜</h3>
       <p>掷钱起卦 · 六爻装卦<br>世应用神 · 动变生克 · 月建日辰</p>
     </a>
     <a href="/meihua" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#6db86d"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#b8c8b0">梅</span></div>
+      <div class="feat-icon"><span>梅</span></div>
       <h3>梅花易数</h3>
       <p>以数起卦 · 万物类象<br>本卦变卦 · 互卦综卦 · AI 解卦</p>
     </a>
     <a href="/hepan" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e8c8a0"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#e0d0b8">缘</span></div>
+      <div class="feat-icon"><span>缘</span></div>
       <h3>合盘缘分</h3>
       <p>双人八字深度合盘<br>五行互补 · 相处模式 · 关键节点</p>
     </a>
  
     <a href="/fengshui" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#c9a84c"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#d8c8a8">宅</span></div>
+      <div class="feat-icon"><span>宅</span></div>
       <h3>八宅风水</h3>
       <p>坐向定局 · 《八宅明镜》九星分布<br>多图识煞 · 门主灶三要互配</p>
     </a>
     <a href="/face" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e8cf70"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#e8d8b0">观</span></div>
+      <div class="feat-icon"><span>观</span></div>
       <h3>AI 观面</h3>
       <p>上传正面照片 · 《麻衣神相》十二宫<br>逐宫分析 · 好坏都客观指出</p>
     </a>
     <a href="/palm" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon" style="color:#e8cf70"><span style="font-family:STKaiti,KaiTi,serif;font-size:38px;font-weight:400;color:#d4c8a8">手</span></div>
+      <div class="feat-icon"><span>手</span></div>
       <h3>AI 观手</h3>
       <p>上传手掌照片 · 《神相全编》掌纹<br>生命智慧感情线 · 五指掌丘分析</p>
     </a>
+    <a href="/fortune" class="feat-card" style="text-decoration:none">
+      <div class="feat-icon"><span>运</span></div>
+      <h3>今日运势</h3>
+      <p>结合个人资料查看每日趋势<br>宜忌参考 · 理性规划 · 一次性解读</p>
+    </a>
    </section>
+
+  <section class="usage-section" aria-labelledby="usage-title">
+    <h2 id="usage-title">如何使用</h2>
+    <div class="usage-grid">
+      <article><span>一</span><h3>选择功能</h3><p>按命理、卜筮、观相、堪舆或运势进入对应工具。</p></article>
+      <article><span>二</span><h3>提交信息</h3><p>依照页面提示填写资料、问题，或上传清晰图像。</p></article>
+      <article><span>三</span><h3>查看结果</h3><p>获得计算与智能解读；支持的功能可基于结果继续提问。</p></article>
+    </div>
+  </section>
 
   <!-- ====== Trust ====== -->
   <section class="trust-section">
@@ -729,21 +738,21 @@ body::before{
         <div class="trust-num">02</div>
         <div class="trust-body">
           <h4>AI 参详 · 引经据典</h4>
-          <p>AI 分析引擎逐柱推演，融合《滴天髓》《三命通会》《耕寸集》等古典命理，输出通俗易懂的现代解读，不空谈、可溯源。</p>
+          <p>结合排盘信息与传统命理概念生成现代解读，帮助你整理观察角度；内容用于参考，不替代专业意见或个人判断。</p>
         </div>
       </div>
       <div class="trust-item">
         <div class="trust-num">03</div>
         <div class="trust-body">
-          <h4>隐私安全 · 数据加密</h4>
-          <p>全程 HTTPS 加密传输，报告生成后个人信息即时脱敏。不存盘、不追踪、不售卖。你的命运，只有你能看见。</p>
+          <h4>隐私提示 · 克制提交</h4>
+          <p>使用观面、观手等功能时，只需提交完成分析所必需的清晰图像；请主动避开证件、住址等无关敏感信息。</p>
         </div>
       </div>
       <div class="trust-item">
         <div class="trust-num">04</div>
         <div class="trust-body">
           <h4>灵活付费 · 自由选择</h4>
-          <p>前2次AI提问完全免费，次数包 ¥9.9/10次 满足偶尔使用，月会员 ¥29.9 适合深度咨询。无自动续费陷阱。</p>
+          <p>前 2 次 AI 提问可免费体验；次数包 ¥9.9/10 次，30 天会员 ¥29.9。按需选择，购买前可在积分页确认方案。</p>
         </div>
       </div>
     </div>
@@ -754,8 +763,7 @@ body::before{
     <h2>准备好了吗？</h2>
     <p>输入你的生辰，看看千年前的东方智慧如何解读你的生命密码</p>
     <a href="paipan" class="cta-btn">📜 免费起盘</a>
-    <a href="hepan" class="cta-btn" style="background:linear-gradient(135deg,rgba(91,127,165,.18),rgba(91,127,165,.04));color:#a0c8e8;border:1px solid rgba(91,127,165,.22);margin-left:8px">💞 合盘缘分</a>
-    <a href="paipan" class="cta-btn" style="background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(91,127,165,.08));color:#f0d060;border:1px solid rgba(201,168,76,.35);margin-left:8px">🤖 AI 命理咨询</a>
+    <a href="hepan" class="cta-btn">💞 合盘缘分</a>
   </section>
 
   <!-- ====== Footer ====== -->
