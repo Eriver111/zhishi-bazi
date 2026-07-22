@@ -1,0 +1,27 @@
+.mode-tabs,
+.radio-group,
+.form-section { background: rgba(255,252,245,.42); }
+.mode-tab,
+.radio { color: var(--tx2); background: rgba(255,253,248,.48); border-color: var(--bd); }
+.mode-tab.active,
+.radio:has(input:checked) {
+  color: var(--zh-vermilion);
+  background: rgba(132,54,47,.08);
+  border-color: rgba(132,54,47,.35);
+  box-shadow: none;
+}
+.upload-zone,
+.upload-area,
+.upload-placeholder {
+  color: var(--tx2);
+  background: rgba(255,253,248,.58);
+  border-color: rgba(54,93,80,.24);
+}
+.upload-zone:hover,
+.upload-area:hover { border-color: var(--zh-pine); background: rgba(54,93,80,.055); }
+.submit.loading,
+.submit-btn.loading,
+button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
+@media (max-width: 768px) {
+  select, input, textarea, button, .radio, .mode-tab { min-height: 44px; }
+}
