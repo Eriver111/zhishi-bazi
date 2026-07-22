@@ -47,6 +47,32 @@ test('light theme defines the approved palette and light color scheme', () => {
   assert.match(css, /color-scheme:\s*light/);
 });
 
+test('light theme covers the real chat composer controls and states', () => {
+  const css = read('css/theme-light.css');
+  for (const page of ['ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html']) {
+    assert.match(read(page), /class="input-row"[\s\S]*?<textarea\b/, `${page} must retain its textarea composer`);
+  }
+  assert.match(css, /\.input-row\s+textarea(?:\s*,|\s*\{)/);
+  assert.match(css, /\.input-row\s+textarea::placeholder\s*\{[^}]*color:\s*var\(--tx3\)[^}]*opacity:\s*1\s*;/s);
+  assert.match(css, /\.input-row\s+textarea:focus(?:\s*,|\s*\{)/);
+  assert.match(css, /\.input-row\s+\.send(?:\s*,|\s*\{)/);
+  assert.match(css, /\.input-row\s+\.send:disabled\s*\{[^}]*cursor:\s*not-allowed/s);
+});
+
+test('inline legacy navigations expose a light-theme hook and light dropdown', () => {
+  for (const page of ['result.html', 'ziwei.html', 'fortune.html']) {
+    assert.match(
+      activeMarkup(read(page)),
+      /<div\b[^>]*\bclass\s*=\s*(["'])[^"']*\btop-nav\b[^"']*\1[^>]*>/i,
+      `${page} navigation is missing the top-nav theme hook`,
+    );
+  }
+  const css = read('css/theme-light.css');
+  assert.match(css, /\.top-nav\s*\{[^}]*background:\s*rgba\(249,244,233,\.9\)\s*!important;[^}]*border-color:\s*var\(--bd\)\s*!important/s);
+  assert.match(css, /\.top-nav\s+\.dd-menu\s*\{[^}]*background:\s*rgba\(249,244,233,\.98\)\s*!important/s);
+  assert.match(css, /\.top-nav\s+a(?:\s*,|\s*\{)[\s\S]*?color:\s*var\(--tx2\)\s*!important/);
+});
+
 test('homepage exposes ten uniform tools and no standalone AI consultation CTA', () => {
   const html = read('index.html');
   const featureLinks = [...html.matchAll(/<a[^>]+class="feat-card"/g)];

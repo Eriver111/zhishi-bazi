@@ -55,6 +55,7 @@ body::before {
 .submit,
 .submit-btn,
 .chat-send-btn,
+.input-row .send,
 .auth-submit {
   color: #fff8ea;
   background: linear-gradient(135deg, #963f38, var(--zh-vermilion));
@@ -63,19 +64,23 @@ body::before {
 .field select,
 .minute-inp,
 .chat-input,
+.input-row textarea,
 .auth-field input {
   color: var(--zh-ink);
   background-color: rgba(255,253,248,.76);
   border-color: var(--bd);
 }
 .field select option { color: var(--zh-ink); background: #fffaf0; }
+.input-row textarea::placeholder { color: var(--tx3); opacity: 1; }
 .field select:focus,
 .minute-inp:focus,
 .chat-input:focus,
+.input-row textarea:focus,
 .auth-field input:focus {
   border-color: var(--zh-vermilion);
   box-shadow: 0 0 0 3px rgba(132,54,47,.09);
 }
+.input-row .send:disabled { cursor: not-allowed; opacity: .38; box-shadow: none; }
 .toast.success { color: #244c3f; background: #e6efe8; border-color: #b8ccbe; }
 .toast.error { color: #742f2a; background: #f5e5df; border-color: #dfb9af; }
 .toast.info { color: #4e4338; background: #f3ead8; border-color: #d8c8b0; }
@@ -84,6 +89,15 @@ body::before {
 #zhishi-nav,
 .site-nav,
 .top-nav { color: var(--zh-ink); background: rgba(249,244,233,.9) !important; border-color: var(--bd) !important; }
+.top-nav a,
+.top-nav span { color: var(--tx2) !important; }
+.top-nav > a { color: var(--zh-vermilion) !important; }
+.top-nav a[href="/pricing"] { color: var(--zh-pine) !important; border-color: rgba(54,93,80,.18) !important; }
+.top-nav .dd-menu {
+  background: rgba(249,244,233,.98) !important;
+  border-color: var(--bd) !important;
+  box-shadow: 0 12px 30px rgba(67,46,24,.12) !important;
+}
 .nav-user .btn-auth,
 .credits-badge { color: var(--zh-pine); background: rgba(54,93,80,.055); border-color: rgba(54,93,80,.18); }
 :focus-visible { outline: 2px solid var(--zh-vermilion); outline-offset: 3px; }
