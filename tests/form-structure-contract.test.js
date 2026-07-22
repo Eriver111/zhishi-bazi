@@ -53,3 +53,11 @@ test('every tool input page loads the form light theme after the shared light th
     assert.ok(formTheme > sharedTheme, `${page} must load the form theme after the shared theme`);
   }
 });
+
+test('calendar preview handlers tolerate pages without the optional preview node', () => {
+  const script = read('js/main.js');
+  const solarHandler = script.match(/function showSolarLunarHint\(\) \{[\s\S]*?\n\}/)?.[0] || '';
+  const lunarHandler = script.match(/function showLunarPreview\([^)]*\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(solarHandler, /var prev = document\.getElementById\(['"]lunarPreview['"]\);\s*if \(!prev\) return;/);
+  assert.match(lunarHandler, /var prev = document\.getElementById\(['"]lunarPreview['"]\);\s*if \(!prev\) return;/);
+});

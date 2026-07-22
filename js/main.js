@@ -226,6 +226,7 @@ function showSolarLunarHint() {
   var m = parseInt(document.getElementById('sMonth').value);
   var d = parseInt(document.getElementById('sDay').value);
   var prev = document.getElementById('lunarPreview');
+  if (!prev) return;
   if (!y || !m || !d) { prev.classList.remove('show'); return; }
   try {
     var lr = LunarCalendar.solarToLunar(y, m, d);
@@ -236,6 +237,7 @@ function showSolarLunarHint() {
 
 function showLunarPreview(ly, lm, ld, isLeap) {
   var prev = document.getElementById('lunarPreview');
+  if (!prev) return;
   try {
     var sr = LunarCalendar.lunarToSolar(ly, lm, ld, isLeap);
     prev.textContent = '对应公历：' + sr.year + '年' + sr.month + '月' + sr.day + '日';
