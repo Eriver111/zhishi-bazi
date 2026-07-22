@@ -100,4 +100,22 @@ body::before {
 }
 .nav-user .btn-auth,
 .credits-badge { color: var(--zh-pine); background: rgba(54,93,80,.055); border-color: rgba(54,93,80,.18); }
+.auth-overlay,
+.modal-overlay { background: rgba(45,38,31,.38) !important; backdrop-filter: blur(8px); }
+.auth-modal,
+.buy-card,
+.paywall,
+.migrate-banner {
+  color: var(--zh-ink) !important;
+  background: rgba(255,252,245,.96) !important;
+  border-color: var(--bd) !important;
+  box-shadow: 0 18px 52px rgba(67,46,24,.15) !important;
+}
+.credits-badge { box-shadow: none !important; }
+.credit-success-toast,
+.toast {
+  color: var(--zh-ink) !important;
+  background-color: #fffaf0 !important;
+  border-color: var(--bd) !important;
+}
 :focus-visible { outline: 2px solid var(--zh-vermilion); outline-offset: 3px; }

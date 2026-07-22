@@ -1,0 +1,24 @@
+.result-box,
+.result-card,
+.analysis-result,
+.fortune-result,
+.hexagram,
+.tips-card,
+.pricing-card,
+.profile-card {
+  color: var(--zh-ink);
+  background: rgba(255,252,245,.66) !important;
+  border-color: var(--bd) !important;
+  box-shadow: 0 12px 32px rgba(67,46,24,.055) !important;
+}
+.result-box h2,
+.result-box h3,
+.analysis-result h2,
+.analysis-result h3 { color: #4a3729; }
+.result-box strong,
+.analysis-result strong { color: var(--zh-pine); }
+.chat-header,
+.chat-input-area { border-color: var(--bd); }
+.message.user .msg-bubble { background: rgba(132,54,47,.085); border-color: rgba(132,54,47,.18); }
+.message.ai .msg-bubble { background: rgba(54,93,80,.065); border-color: rgba(54,93,80,.15); }
+.pricing-card.featured { border-color: rgba(132,54,47,.32) !important; box-shadow: 0 14px 36px rgba(132,54,47,.08) !important; }
