@@ -49,6 +49,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+@media (max-width: 768px) {
+  .dayun-scroll-wrapper,
+  .liunian-scroll-wrapper { overscroll-behavior-inline: contain; }
+}
+
 .ai-float-btn,
 #aiFloatBtn {
   background: linear-gradient(145deg, #963f38, #6d2925) !important;

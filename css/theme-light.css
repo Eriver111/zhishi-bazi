@@ -118,4 +118,22 @@ body::before {
   background-color: #fffaf0 !important;
   border-color: var(--bd) !important;
 }
+button:disabled,
+.submit.loading,
+.submit-btn.loading { opacity: .56; cursor: not-allowed; filter: saturate(.55); }
+.error,
+.field-error,
+[data-state="error"] { color: #84362f; }
+.success,
+[data-state="success"] { color: #365d50; }
+@media (max-width: 768px) {
+  button, a.btn, .hero-cta, .cta-btn, select, input, textarea { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.loaded .landing-wrap,
+  body.loaded .app,
+  body.loaded .result-container,
+  .feat-card,
+  .card { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
 :focus-visible { outline: 2px solid var(--zh-vermilion); outline-offset: 3px; }
