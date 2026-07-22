@@ -40,3 +40,9 @@ test('one-shot tools do not gain follow-up chat routes', () => {
     assert.doesNotMatch(read(page), /(?:ai-chat|zw-ai-chat|lr-ai-chat)\.html/, `${page} gained a follow-up route`);
   }
 });
+
+test('result skin preserves the floating AI entry as a visible interactive control', () => {
+  const css = read('css/theme-light-results.css');
+  assert.match(css, /\.ai-float-btn\s*,\s*#aiFloatBtn\s*\{[^}]*background\s*:/s);
+  assert.doesNotMatch(css, /(?:\.ai-float-btn|#aiFloatBtn)[^{]*\{[^}]*(?:display\s*:\s*none|visibility\s*:\s*hidden|pointer-events\s*:\s*none)/is);
+});
