@@ -564,7 +564,7 @@ body::before{
   #zhishi-nav .nav-more .dd-menu{left:auto!important;right:0!important}
   #zhishi-nav .nav-primary,
   #zhishi-nav .nav-points,
-  #zhishi-nav .nav-more>span{padding:6px 7px!important;font-size:12px!important}
+  #zhishi-nav .nav-more>button{padding:6px 7px!important;font-size:12px!important}
   #nav-user-area{display:none!important}
   .features{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .feat-card{padding:24px 14px}
@@ -604,9 +604,9 @@ body::before{
     <a href="/face" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观相</a>
     <a href="/fengshui" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">堪舆</a>
     <a href="/fortune" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">运势</a>
-    <div class="nav-more" style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'">
-      <span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span>
-      <div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;border-radius:8px;padding:4px 0;min-width:120px;z-index:200">
+    <div class="nav-more" style="position:relative;display:inline-block">
+      <button type="button" id="nav-more-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-more-menu" style="cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</button>
+      <div id="nav-more-menu" class="dd-menu" style="display:none;position:absolute;top:100%;left:0;border-radius:8px;padding:4px 0;min-width:120px;z-index:200">
         <a href="/face" class="mobile-nav-extra" style="text-decoration:none;padding:8px 16px;white-space:nowrap">观相</a>
         <a href="/fengshui" class="mobile-nav-extra" style="text-decoration:none;padding:8px 16px;white-space:nowrap">堪舆</a>
         <a href="/fortune" class="mobile-nav-extra" style="text-decoration:none;padding:8px 16px;white-space:nowrap">运势</a>
@@ -730,8 +730,8 @@ body::before{
       <div class="trust-item">
         <div class="trust-num">01</div>
         <div class="trust-body">
-          <h4>古法起盘 · 算法可验</h4>
-          <p>基于寿星万年历数据，1900-2100 年农历/公历互转经过严格往返验证。八字四柱 + 藏干 + 纳音 + 神煞 + 十神，古法全流程排盘，非黑箱输出。</p>
+          <h4>本地排盘 · 文化参考</h4>
+          <p>基础排盘由本地规则计算，AI 解读仅供传统文化参考。结果请结合实际情况理性看待，不作为决策依据。</p>
         </div>
       </div>
       <div class="trust-item">
@@ -772,6 +772,72 @@ body::before{
     <p class="disc">※ 本站内容仅供学习参考与娱乐交流，不构成任何决策建议</p>
   </footer>
 </div>
+
+<script>
+(function initHomepageNavMore(){
+  var wrap=document.querySelector('#zhishi-nav .nav-more');
+  var toggle=document.getElementById('nav-more-toggle');
+  var menu=document.getElementById('nav-more-menu');
+  if(!wrap||!toggle||!menu)return;
+  var firstItem=menu.querySelector('a');
+  var openedByHover=false;
+
+  function isOpen(){return toggle.getAttribute('aria-expanded')==='true'}
+  function openMenu(focusFirst){
+    menu.style.display='block';
+    toggle.setAttribute('aria-expanded','true');
+    if(focusFirst&&firstItem)firstItem.focus();
+  }
+  function closeMenu(returnFocus){
+    menu.style.display='none';
+    toggle.setAttribute('aria-expanded','false');
+    openedByHover=false;
+    if(returnFocus)toggle.focus();
+  }
+  function toggleMenu(){
+    if(isOpen())closeMenu(false);else openMenu(false);
+  }
+
+  toggle.addEventListener('click',function(){
+    if(openedByHover){openedByHover=false;return}
+    toggleMenu();
+  });
+  toggle.addEventListener('keydown',function(event){
+    if(event.key==='Enter'||event.key===' '){
+      event.preventDefault();
+      toggleMenu();
+    }else if(event.key==='ArrowDown'){
+      event.preventDefault();
+      openMenu(true);
+    }else if(event.key==='Escape'&&isOpen()){
+      event.preventDefault();
+      closeMenu(true);
+    }
+  });
+  wrap.addEventListener('mouseenter',function(){
+    if(!isOpen()){
+      openedByHover=true;
+      openMenu(false);
+    }
+  });
+  wrap.addEventListener('mouseleave',function(){
+    openedByHover=false;
+    if(!wrap.contains(document.activeElement))closeMenu(false);
+  });
+  wrap.addEventListener('focusout',function(event){
+    if(!wrap.contains(event.relatedTarget))closeMenu(false);
+  });
+  document.addEventListener('pointerdown',function(event){
+    if(!wrap.contains(event.target))closeMenu(false);
+  });
+  document.addEventListener('keydown',function(event){
+    if(event.key==='Escape'&&isOpen()){
+      event.preventDefault();
+      closeMenu(true);
+    }
+  });
+})();
+</script>
 
 <script>
 (function(){

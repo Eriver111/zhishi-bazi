@@ -29,17 +29,24 @@
 
 #zhishi-nav .nav-primary,
 #zhishi-nav .nav-secondary,
-#zhishi-nav .nav-more > span,
+#zhishi-nav .nav-more > button,
 #zhishi-nav .dd-menu a {
   color: var(--tx2);
 }
 
 #zhishi-nav .nav-primary:hover,
 #zhishi-nav .nav-secondary:hover,
-#zhishi-nav .nav-more > span:hover,
+#zhishi-nav .nav-more > button:hover,
 #zhishi-nav .dd-menu a:hover {
   color: var(--zh-vermilion);
   background: rgba(132,54,47,.055);
+}
+
+#zhishi-nav .nav-more > button {
+  appearance: none;
+  font: inherit;
+  background: transparent;
+  border: 0;
 }
 
 #zhishi-nav .nav-points {

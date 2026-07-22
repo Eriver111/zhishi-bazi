@@ -133,6 +133,36 @@ test('homepage navigation uses five practical categories and retains every tool 
   assert.doesNotMatch(textContent(nav[2]), /书院|藏阁/);
 });
 
+test('homepage more menu uses a semantic button with an explicit ARIA relationship', () => {
+  const html = activeMarkup(read('index.html'));
+  const button = html.match(/<button\b[^>]*\bid\s*=\s*(["'])nav-more-toggle\1[^>]*>[\s\S]*?<\/button\s*>/i);
+  assert.ok(button, 'homepage more menu is missing its semantic button');
+  assert.equal(attributeValue(button[0], 'type'), 'button');
+  assert.equal(attributeValue(button[0], 'aria-haspopup'), 'true');
+  assert.equal(attributeValue(button[0], 'aria-expanded'), 'false');
+  assert.equal(attributeValue(button[0], 'aria-controls'), 'nav-more-menu');
+  assert.doesNotMatch(button[0], /\bonclick\s*=/i);
+  assert.match(html, /<div\b[^>]*\bid\s*=\s*(["'])nav-more-menu\1[^>]*\bclass\s*=\s*(["'])[^"']*\bdd-menu\b[^"']*\2/i);
+  assert.doesNotMatch(html, /\bclass\s*=\s*(["'])[^"']*\bnav-more\b[^"']*\1[^>]*\bonmouse(?:enter|leave)\s*=/i);
+});
+
+test('homepage more menu script supports keyboard, outside click, focus, mouse and touch-safe click hooks', () => {
+  const html = read('index.html');
+  assert.match(html, /getElementById\(['"]nav-more-toggle['"]\)/);
+  assert.match(html, /getElementById\(['"]nav-more-menu['"]\)/);
+  assert.match(html, /toggle\.addEventListener\(['"]click['"]/);
+  assert.match(html, /toggle\.addEventListener\(['"]keydown['"][\s\S]*?['"]Enter['"][\s\S]*?['"] ['"]/);
+  assert.match(html, /document\.addEventListener\(['"]keydown['"][\s\S]*?['"]Escape['"]/);
+  assert.match(html, /document\.addEventListener\(['"]pointerdown['"]/);
+  assert.match(html, /wrap\.addEventListener\(['"]mouseenter['"]/);
+  assert.match(html, /wrap\.addEventListener\(['"]mouseleave['"]/);
+  assert.match(html, /var openedByHover=false/);
+  assert.match(html, /if\(openedByHover\)\{openedByHover=false;return\}/);
+  assert.match(html, /firstItem\.focus\(\)/);
+  assert.match(html, /toggle\.focus\(\)/);
+  assert.match(html, /setAttribute\(['"]aria-expanded['"],\s*['"](?:true|false)['"]\)/);
+});
+
 test('homepage adds three usage steps before the four trust cards and keeps two direct bottom CTAs', () => {
   const html = activeMarkup(read('index.html'));
   const usageStart = html.search(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\busage-section\b[^"']*\1/i);
@@ -143,6 +173,9 @@ test('homepage adds three usage steps before the four trust cards and keeps two 
   for (const heading of ['选择功能', '提交信息', '查看结果']) assert.match(textContent(usage?.[2] || ''), new RegExp(heading));
   const trust = html.match(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\btrust-section\b[^"']*\1[^>]*>([\s\S]*?)<\/section\s*>/i);
   assert.equal((trust?.[2].match(/class="trust-item"/g) || []).length, 4);
+  const trustText = textContent(trust?.[2] || '');
+  assert.match(trustText, /基础排盘由本地规则计算，AI解读仅供传统文化参考/);
+  assert.doesNotMatch(trustText, /1900[-–—]2100|严格往返验证|全范围准确/);
   const cta = html.match(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\bcta-bottom\b[^"']*\1[^>]*>([\s\S]*?)<\/section\s*>/i);
   const ctaLinks = [...(cta?.[2] || '').matchAll(/<a\b[^>]*>[\s\S]*?<\/a\s*>/gi)];
   assert.deepEqual(ctaLinks.map(({ 0: tag }) => attributeValue(tag, 'href')), ['paipan', 'hepan']);
