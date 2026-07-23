@@ -21,6 +21,7 @@ test('homepage light treatment keeps the artwork visible', () => {
   const themeCss = fs.readFileSync(path.join(root, 'css', 'theme-light-home.css'), 'utf8');
   assert.match(themeCss, /\.ink-wash-scene\s*\{[^}]*opacity:\s*\.8/);
   assert.match(themeCss, /\.ink-wash-overlay\s*\{[^}]*rgba\(246,239,223,\.2[0-9]\)/);
+  assert.match(themeCss, /#mxhCanvas,\s*#bgCanvas\s*\{[^}]*opacity:\s*\.1\s*!important/);
 });
 
 test('homepage has mobile navigation hooks and a two-column mobile feature grid', () => {
