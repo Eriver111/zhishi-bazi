@@ -74,3 +74,13 @@ test('result skin is additive and cannot convert or hide the existing layout', (
   assert.doesNotMatch(css, /\b(?:grid-template|grid-area|order)\s*:/i, 'result skin must not reorder result modules');
   assert.doesNotMatch(css, /\b(?:visibility\s*:\s*hidden|content-visibility\s*:\s*hidden)/i, 'result skin must not hide result modules');
 });
+
+test('result skin uses opaque paper cells and readable ink text', () => {
+  const css = read('css/theme-light-results.css');
+  assert.match(css, /body[^}]*background:\s*#f4eddf\s*!important/);
+  assert.match(css, /\.dayun-col,[\s\S]*?\.liunian-col,[\s\S]*?\.pp-col\s*\{[^}]*background:\s*#fbf6eb\s*!important/);
+  assert.match(css, /color:\s*#2d261f\s*!important/);
+  assert.match(css, /(?:\.dayun-age|\.dayun-year|\.liunian-year|\.qiyun-info)[\s\S]*?color:\s*#655b51\s*!important/);
+  assert.match(css, /background:\s*#efe0d6\s*!important/);
+  assert.match(css, /\.liunian-col\.active-ln\s+\.liunian-gz\s*\{[^}]*color:\s*#84362f\s*!important/);
+});
