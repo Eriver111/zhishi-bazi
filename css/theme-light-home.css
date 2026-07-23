@@ -8,8 +8,11 @@
   background: linear-gradient(180deg, rgba(246,239,223,.26), rgba(246,239,223,.18) 48%, rgba(246,239,223,.28)) !important;
 }
 
-#mxhCanvas,
-#bgCanvas {
+#mxhCanvas {
+  opacity: .1 !important;
+}
+
+.ink-wash-scene ~ #bgCanvas {
   opacity: .1 !important;
 }
 
