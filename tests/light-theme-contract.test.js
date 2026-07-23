@@ -78,6 +78,20 @@ test('light theme covers the real chat composer controls and states', () => {
   assert.match(css, /\.input-row\s+\.send:disabled\s*\{[^}]*cursor:\s*not-allowed/s);
 });
 
+test('light page theme overrides the real Zhishi chat surfaces', () => {
+  const css = read('css/theme-light-pages.css');
+  for (const page of ['ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html']) {
+    const html = read(page);
+    assert.match(html, /className\s*=\s*['"]msg ai['"]/, `${page} must retain the runtime AI message class`);
+    assert.match(html, /css\/theme-light-pages\.css\?v=2/);
+  }
+  assert.match(css, /\.page\s*\{[^}]*background:\s*#f0e6d1\s*!important/s);
+  assert.match(css, /\.msg\.ai\s+\.bubble\s*\{[^}]*color:\s*#2d261f\s*!important;[^}]*background:\s*#fbf6eb\s*!important/s);
+  assert.match(css, /\.msg\.user\s+\.bubble\s*\{[^}]*background:\s*#f3e5dd\s*!important/s);
+  assert.match(css, /\.topbar,[\s\S]*?\.bottombar\s*\{[^}]*background:\s*rgba\(251,246,235,\.98\)\s*!important/s);
+  assert.match(css, /\.redeem-row\s+input,[\s\S]*?\.input-row\s+textarea\s*\{[^}]*background:\s*#fffaf0\s*!important/s);
+});
+
 test('inline legacy navigations expose a light-theme hook and light dropdown', () => {
   for (const page of ['result.html', 'ziwei.html', 'fortune.html']) {
     assert.match(

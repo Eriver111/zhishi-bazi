@@ -22,3 +22,13 @@
 .message.user .msg-bubble { background: rgba(132,54,47,.085); border-color: rgba(132,54,47,.18); }
 .message.ai .msg-bubble { background: rgba(54,93,80,.065); border-color: rgba(54,93,80,.15); }
 .pricing-card.featured { border-color: rgba(132,54,47,.32) !important; box-shadow: 0 14px 36px rgba(132,54,47,.08) !important; }
+
+/* Chat pages retain dark inline styles; these loaded-last overrides keep the real surfaces readable. */
+.page { background: #f0e6d1 !important; }
+.topbar,
+.bottombar { background: rgba(251,246,235,.98) !important; border-color: var(--bd) !important; }
+.msg.ai .bubble { color: #2d261f !important; background: #fbf6eb !important; border-color: rgba(72,52,31,.16) !important; }
+.msg.user .bubble { color: #2d261f !important; background: #f3e5dd !important; }
+.msg.ai .bubble strong { color: #84362f !important; }
+.redeem-row input,
+.input-row textarea { color: #2d261f !important; background: #fffaf0 !important; border-color: rgba(72,52,31,.16) !important; }
