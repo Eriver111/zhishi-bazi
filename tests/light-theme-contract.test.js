@@ -92,6 +92,13 @@ test('light page theme overrides the real Zhishi chat surfaces', () => {
   assert.match(css, /\.redeem-row\s+input,[\s\S]*?\.input-row\s+textarea\s*\{[^}]*background:\s*#fffaf0\s*!important/s);
 });
 
+test('light page theme keeps secondary Zhishi chat content legible', () => {
+  const css = read('css/theme-light-pages.css');
+  assert.match(css, /\.msg\.user\s+\.avatar\s*\{[^}]*background:\s*#efe0d6\s*!important;[^}]*color:\s*#84362f\s*!important/s);
+  assert.match(css, /\.share-bar\s+button\s*\{[^}]*background:\s*linear-gradient\(135deg,\s*#365d50,\s*#27483e\)\s*!important;[^}]*color:\s*#fff\s*!important/s);
+  assert.match(css, /\.empty-state\s*\{[^}]*color:\s*#655b51\s*!important/s);
+});
+
 test('inline legacy navigations expose a light-theme hook and light dropdown', () => {
   for (const page of ['result.html', 'ziwei.html', 'fortune.html']) {
     assert.match(

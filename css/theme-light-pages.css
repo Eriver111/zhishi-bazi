@@ -29,6 +29,9 @@
 .bottombar { background: rgba(251,246,235,.98) !important; border-color: var(--bd) !important; }
 .msg.ai .bubble { color: #2d261f !important; background: #fbf6eb !important; border-color: rgba(72,52,31,.16) !important; }
 .msg.user .bubble { color: #2d261f !important; background: #f3e5dd !important; }
+.msg.user .avatar { background: #efe0d6 !important; color: #84362f !important; }
 .msg.ai .bubble strong { color: #84362f !important; }
+.empty-state { color: #655b51 !important; }
+.share-bar button { background: linear-gradient(135deg, #365d50, #27483e) !important; color: #fff !important; }
 .redeem-row input,
 .input-row textarea { color: #2d261f !important; background: #fffaf0 !important; border-color: rgba(72,52,31,.16) !important; }
