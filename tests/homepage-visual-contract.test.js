@@ -11,10 +11,12 @@ test('homepage keeps the agreed intro duration', () => {
   assert.match(html, /setTimeout\([\s\S]{0,300}?1800\)/);
 });
 
-test('homepage uses art-directed desktop and mobile hero backgrounds', () => {
-  assert.match(html, /<source[^>]+media=["']\(max-width:\s*600px\)["'][^>]+zhishi-hero-ink-mobile-v2\.webp/);
+test('homepage uses v3 mobile artwork while preserving the v2 desktop artwork', () => {
+  assert.match(html, /<source[^>]+media=["']\(max-width:\s*600px\)["'][^>]+zhishi-hero-ink-mobile-v3\.webp/);
   assert.match(html, /<source[^>]+zhishi-hero-ink-v2\.webp[^>]+image\/webp/);
   assert.match(html, /<img[^>]+zhishi-hero-ink-v2\.png/);
+  assert.ok(fs.existsSync(path.join(root, 'images', 'zhishi-hero-ink-mobile-v3.png')));
+  assert.ok(fs.existsSync(path.join(root, 'images', 'zhishi-hero-ink-mobile-v3.webp')));
 });
 
 test('mobile hero fits the portrait artwork to the viewport without intrinsic-size cropping', () => {
