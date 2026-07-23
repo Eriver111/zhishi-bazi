@@ -99,6 +99,11 @@ test('light page theme keeps secondary Zhishi chat content legible', () => {
   assert.match(css, /\.empty-state\s*\{[^}]*color:\s*#655b51\s*!important/s);
 });
 
+test('light page theme keeps the Zhishi share pricing link readable', () => {
+  const css = read('css/theme-light-pages.css');
+  assert.match(css, /\.share-bar\s+\.hint\s+a\s*\{[^}]*color:\s*#84362f\s*!important/s);
+});
+
 test('inline legacy navigations expose a light-theme hook and light dropdown', () => {
   for (const page of ['result.html', 'ziwei.html', 'fortune.html']) {
     assert.match(

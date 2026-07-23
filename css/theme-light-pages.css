@@ -33,5 +33,6 @@
 .msg.ai .bubble strong { color: #84362f !important; }
 .empty-state { color: #655b51 !important; }
 .share-bar button { background: linear-gradient(135deg, #365d50, #27483e) !important; color: #fff !important; }
+.share-bar .hint a { color: #84362f !important; }
 .redeem-row input,
 .input-row textarea { color: #2d261f !important; background: #fffaf0 !important; border-color: rgba(72,52,31,.16) !important; }
