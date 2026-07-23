@@ -46,12 +46,17 @@ test('light theme defines the approved palette and light color scheme', () => {
   }
   assert.match(css, /color-scheme:\s*light/);
   assert.match(css.toLowerCase(), /--zh-paper:\s*#f0e6d1/);
+  assert.match(css, /--card:\s*rgba\(255,\s*252,\s*245,\s*\.94\)/);
   assert.match(css, /\.card,[\s\S]*?\.chat-panel[\s\S]*?background:\s*rgba\(255,252,245,\.94\)/);
+  assert.match(css, /\.bg-overlay\s*\{[^}]*rgba\(240,230,209,\.0[0-6]\)/s);
+  assert.doesNotMatch(css, /\.bg-overlay\s*\{[^}]*rgba\(246,239,223,\.72\)[^}]*rgba\(238,227,205,\.9\)/s);
 });
 
 test('shared light theme suppresses dynamic background canvas while the homepage restores its restrained canvas', () => {
   const css = read('css/theme-light.css');
-  assert.match(css, /body\s*>\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
+  assert.match(css, /body\s+#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
+  assert.match(activeMarkup(read('paipan.html')), /<div\b[^>]*\bclass\s*=\s*(["'])[^"']*\bbg-layer\b[^"']*\1[^>]*>\s*<canvas\b[^>]*\bid\s*=\s*(["'])bgCanvas\2/i);
+  assert.match(read('paipan.html'), /#bgCanvas\s*\{[^}]*opacity:\s*\.6/, 'paipan must retain its nested canvas styling beneath the shared suppression');
   for (const page of publicPages) {
     const hrefs = stylesheetLinks(activeMarkup(read(page))).map(({ 0: tag }) => attributeValue(tag, 'href'));
     assert.ok(hrefs.includes('css/theme-light.css?v=2'), `${page} must load the cache-busted shared light theme`);

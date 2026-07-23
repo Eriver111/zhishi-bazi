@@ -2,7 +2,7 @@
   color-scheme: light;
   --ink: #f0e6d1;
   --paper: #eadfc9;
-  --card: rgba(255, 252, 245, .68);
+  --card: rgba(255, 252, 245, .94);
   --gold: #a47b42;
   --gold-l: #84362f;
   --gold-d: #6d2925;
@@ -40,9 +40,9 @@ body::before {
   opacity: 1;
 }
 .bg-overlay {
-  background: linear-gradient(180deg, rgba(246,239,223,.72), rgba(238,227,205,.9));
+  background: rgba(240,230,209,.04) !important;
 }
-body > #bgCanvas { opacity: 0 !important; }
+body #bgCanvas { opacity: 0 !important; }
 .card,
 .chat-panel,
 .modal,

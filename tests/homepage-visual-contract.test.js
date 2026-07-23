@@ -20,6 +20,7 @@ test('homepage uses art-directed desktop and mobile hero backgrounds', () => {
 test('homepage presents the generated artwork without grey post-processing', () => {
   const themeCss = fs.readFileSync(path.join(root, 'css', 'theme-light-home.css'), 'utf8');
   assert.match(themeCss, /\.ink-wash-scene\s*\{[^}]*opacity:\s*1\s*;[^}]*filter:\s*none\s*;/s);
+  assert.match(themeCss, /\.ink-wash-scene\s+img\s*\{[^}]*opacity:\s*1\s*!important\s*;[^}]*filter:\s*none\s*!important\s*;/s);
   assert.match(themeCss, /\.ink-wash-overlay\s*\{[^}]*rgba\(240,230,209,\.0[0-6]\)/s);
   assert.match(themeCss, /#mxhCanvas\s*\{[^}]*opacity:\s*0\s*!important/);
   assert.match(themeCss, /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/);

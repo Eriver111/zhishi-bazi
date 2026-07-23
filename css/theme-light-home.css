@@ -4,6 +4,11 @@
   filter: none;
 }
 
+.ink-wash-scene img {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
 .ink-wash-overlay {
   background: rgba(240,230,209,.04) !important;
 }
