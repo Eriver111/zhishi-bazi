@@ -1,19 +1,19 @@
 /* Homepage-specific light treatment: quiet paper, restrained vermilion accents. */
 .ink-wash-scene {
-  opacity: .8;
-  filter: saturate(.88) contrast(.96);
+  opacity: 1;
+  filter: none;
 }
 
 .ink-wash-overlay {
-  background: linear-gradient(180deg, rgba(246,239,223,.26), rgba(246,239,223,.18) 48%, rgba(246,239,223,.28)) !important;
+  background: rgba(240,230,209,.04) !important;
 }
 
 #mxhCanvas {
-  opacity: .1 !important;
+  opacity: 0 !important;
 }
 
 .ink-wash-scene ~ #bgCanvas {
-  opacity: .1 !important;
+  opacity: 0 !important;
 }
 
 .landing-wrap {

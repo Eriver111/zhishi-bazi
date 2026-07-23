@@ -41,10 +41,12 @@ test('light theme defines the approved palette and light color scheme', () => {
   const themePath = path.join(root, 'css', 'theme-light.css');
   assert.ok(fs.existsSync(themePath), 'css/theme-light.css is missing');
   const css = fs.readFileSync(themePath, 'utf8');
-  for (const token of ['#f6efdf', '#eee3cd', '#2d261f', '#796d61', '#84362f', '#365d50', '#a47b42']) {
+  for (const token of ['#f0e6d1', '#eadfc9', '#2d261f', '#796d61', '#84362f', '#365d50', '#a47b42']) {
     assert.match(css.toLowerCase(), new RegExp(token.replace('#', '#')));
   }
   assert.match(css, /color-scheme:\s*light/);
+  assert.match(css.toLowerCase(), /--zh-paper:\s*#f0e6d1/);
+  assert.match(css, /\.card,[\s\S]*?\.chat-panel[\s\S]*?background:\s*rgba\(255,252,245,\.94\)/);
 });
 
 test('shared light theme suppresses dynamic background canvas while the homepage restores its restrained canvas', () => {
@@ -56,7 +58,7 @@ test('shared light theme suppresses dynamic background canvas while the homepage
   }
   const homeLinks = stylesheetLinks(activeMarkup(read('index.html'))).map(({ 0: tag }) => attributeValue(tag, 'href'));
   assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=2') > homeLinks.indexOf('css/theme-light.css?v=2'));
-  assert.match(read('css/theme-light-home.css'), /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*\.1\s*!important/s);
+  assert.match(read('css/theme-light-home.css'), /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
 });
 
 test('light theme covers the real chat composer controls and states', () => {

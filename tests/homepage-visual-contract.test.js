@@ -17,12 +17,12 @@ test('homepage uses art-directed desktop and mobile hero backgrounds', () => {
   assert.match(html, /<img[^>]+zhishi-hero-ink-v2\.png/);
 });
 
-test('homepage light treatment keeps the artwork visible', () => {
+test('homepage presents the generated artwork without grey post-processing', () => {
   const themeCss = fs.readFileSync(path.join(root, 'css', 'theme-light-home.css'), 'utf8');
-  assert.match(themeCss, /\.ink-wash-scene\s*\{[^}]*opacity:\s*\.8/);
-  assert.match(themeCss, /\.ink-wash-overlay\s*\{[^}]*rgba\(246,239,223,\.2[0-9]\)/);
-  assert.match(themeCss, /#mxhCanvas\s*\{[^}]*opacity:\s*\.1\s*!important/);
-  assert.match(themeCss, /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*\.1\s*!important/);
+  assert.match(themeCss, /\.ink-wash-scene\s*\{[^}]*opacity:\s*1\s*;[^}]*filter:\s*none\s*;/s);
+  assert.match(themeCss, /\.ink-wash-overlay\s*\{[^}]*rgba\(240,230,209,\.0[0-6]\)/s);
+  assert.match(themeCss, /#mxhCanvas\s*\{[^}]*opacity:\s*0\s*!important/);
+  assert.match(themeCss, /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/);
 });
 
 test('homepage has mobile navigation hooks and a two-column mobile feature grid', () => {
