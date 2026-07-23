@@ -135,3 +135,32 @@ test('result skin gives Ziwei and Liuren emitted children semantic dark ink', ()
   assert.match(css, /body:has\(#zwGrid\)\s+#zwGrid\s+\.stars\s+\.s\s*\.b,[\s\S]*?body:has\(#zwGrid\)\s+#zwGrid\s+\.center-cell\s+\[style\*="color:var\(--gold-l\)"\]\s*\{[^}]*!important/);
   assert.match(css, /body:has\(#lrOutput\)\s+#lrOutput\s+\.sp-cell\s+\.sp-zhi,[\s\S]*?body:has\(#lrOutput\)\s+#lrOutput\s+\.sp-center-cell\s+\.cp-yj\s*\{[^}]*color:\s*#84362f\s*!important/);
 });
+
+test('result skin directly repairs every remaining Hepan, Ziwei, and Liuren child cascade', () => {
+  const css = read('css/theme-light-results.css');
+  const primary = [
+    '.hp-pillar-gan', '.hp-pillar-zhi', '.hp-xiyong-name', '.hp-wuxing-name',
+    '.hp-dgs-name', '.hp-dgs-gan b', '.hp-dgs-strength', '.hp-cross-type',
+    '.hp-cross-pillars', '.hp-mode-title', '.hp-yearly-label',
+  ];
+  const secondary = [
+    '.hp-pillar-label', '.hp-xiyong-row', '.hp-xiyong-complement', '.hp-wx-count',
+    '.hp-wuxing-desc', '.hp-wuxing-score', '.hp-dgs-gan', '.hp-dgs-wx',
+    '.hp-dgs-detail', '.hp-cross-detail', '.hp-mode-detail', '.hp-yearly-advice',
+  ];
+  for (const selector of [...primary, ...secondary]) {
+    assert.ok(css.includes(selector), `missing direct Hepan child selector ${selector}`);
+  }
+  for (const selector of [
+    'body:has(#zwGrid) #zwGrid .mid .row1', 'body:has(#zwGrid) #zwGrid .mid .row2',
+    'body:has(#zwGrid) #zwGrid .mid .ln-label', 'body:has(#zwGrid) #zwGrid .mid .xx-label',
+    'body:has(#zwGrid) #zwGrid .mid .daxian',
+    'body:has(#lrOutput) #lrOutput [style*="color:#d4b860"]',
+  ]) {
+    assert.ok(css.includes(selector), `missing direct rendered child selector ${selector}`);
+  }
+  assert.match(css, /\.hp-pillar-gan,[\s\S]*?\.hp-cross-pillars,[\s\S]*?\.hp-yearly-label\s*\{[^}]*color:\s*#2d261f\s*!important/);
+  assert.match(css, /\.hp-pillar-label,[\s\S]*?\.hp-wuxing-desc,[\s\S]*?\.hp-yearly-advice\s*\{[^}]*color:\s*#655b51\s*!important/);
+  assert.match(css, /body:has\(#zwGrid\)\s+#zwGrid\s+\.mid\s+\.row1,[\s\S]*?body:has\(#zwGrid\)\s+#zwGrid\s+\.mid\s+\.daxian\s*\{[^}]*color:\s*#655b51\s*!important/);
+  assert.match(css, /body:has\(#lrOutput\)\s+#lrOutput\s+\[style\*="color:#d4b860"\]\s*\{[^}]*color:\s*#3d4d43\s*!important/);
+});

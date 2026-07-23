@@ -48,7 +48,7 @@ test('every tool input page loads the form light theme after the shared light th
 
   for (const page of pages) {
     const html = read(page);
-    const sharedTheme = html.indexOf('css/theme-light.css?v=1');
+    const sharedTheme = html.indexOf('css/theme-light.css?v=2');
     const formTheme = html.indexOf('css/theme-light-forms.css?v=1');
     assert.ok(formTheme > sharedTheme, `${page} must load the form theme after the shared theme`);
   }

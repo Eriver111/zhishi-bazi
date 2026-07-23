@@ -47,6 +47,18 @@ test('light theme defines the approved palette and light color scheme', () => {
   assert.match(css, /color-scheme:\s*light/);
 });
 
+test('shared light theme suppresses dynamic background canvas while the homepage restores its restrained canvas', () => {
+  const css = read('css/theme-light.css');
+  assert.match(css, /body\s*>\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
+  for (const page of publicPages) {
+    const hrefs = stylesheetLinks(activeMarkup(read(page))).map(({ 0: tag }) => attributeValue(tag, 'href'));
+    assert.ok(hrefs.includes('css/theme-light.css?v=2'), `${page} must load the cache-busted shared light theme`);
+  }
+  const homeLinks = stylesheetLinks(activeMarkup(read('index.html'))).map(({ 0: tag }) => attributeValue(tag, 'href'));
+  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=2') > homeLinks.indexOf('css/theme-light.css?v=2'));
+  assert.match(read('css/theme-light-home.css'), /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*\.1\s*!important/s);
+});
+
 test('light theme covers the real chat composer controls and states', () => {
   const css = read('css/theme-light.css');
   for (const page of ['ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html']) {
@@ -184,7 +196,7 @@ test('homepage adds three usage steps before the four trust cards and keeps two 
 test('homepage loads a dedicated responsive light stylesheet after the shared theme', () => {
   const html = activeMarkup(read('index.html'));
   const links = stylesheetLinks(html).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(links.indexOf('css/theme-light-home.css?v=2') > links.indexOf('css/theme-light.css?v=1'));
+  assert.ok(links.indexOf('css/theme-light-home.css?v=2') > links.indexOf('css/theme-light.css?v=2'));
   const themePath = path.join(root, 'css', 'theme-light-home.css');
   assert.ok(fs.existsSync(themePath), 'css/theme-light-home.css is missing');
   const css = fs.readFileSync(themePath, 'utf8');

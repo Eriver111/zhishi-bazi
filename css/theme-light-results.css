@@ -32,6 +32,35 @@ body {
   color: #655b51 !important;
 }
 
+.hp-drawer .hp-pillar-gan,
+.hp-drawer .hp-pillar-zhi,
+.hp-drawer .hp-xiyong-name,
+.hp-drawer .hp-wuxing-name,
+.hp-drawer .hp-dgs-name,
+.hp-drawer .hp-dgs-gan b,
+.hp-drawer .hp-dgs-strength,
+.hp-drawer .hp-cross-type,
+.hp-drawer .hp-cross-pillars,
+.hp-drawer .hp-mode-title,
+.hp-drawer .hp-yearly-label {
+  color: #2d261f !important;
+}
+
+.hp-drawer .hp-pillar-label,
+.hp-drawer .hp-xiyong-row,
+.hp-drawer .hp-xiyong-complement,
+.hp-drawer .hp-wx-count,
+.hp-drawer .hp-wuxing-desc,
+.hp-drawer .hp-wuxing-score,
+.hp-drawer .hp-dgs-gan,
+.hp-drawer .hp-dgs-wx,
+.hp-drawer .hp-dgs-detail,
+.hp-drawer .hp-cross-detail,
+.hp-drawer .hp-mode-detail,
+.hp-drawer .hp-yearly-advice {
+  color: #655b51 !important;
+}
+
 .result-header,
 .section-dayun,
 .section-liunian,
@@ -156,6 +185,14 @@ body:has(#zwGrid) #zwGrid .center-cell .c-info {
   color: #655b51 !important;
 }
 
+body:has(#zwGrid) #zwGrid .mid .row1,
+body:has(#zwGrid) #zwGrid .mid .row2,
+body:has(#zwGrid) #zwGrid .mid .ln-label,
+body:has(#zwGrid) #zwGrid .mid .xx-label,
+body:has(#zwGrid) #zwGrid .mid .daxian {
+  color: #655b51 !important;
+}
+
 body:has(#zwGrid) #zwGrid .bot-r .gz,
 body:has(#zwGrid) #zwGrid .pname,
 body:has(#zwGrid) #zwGrid .center-cell .c-title,
@@ -188,6 +225,10 @@ body:has(#lrOutput) #lrOutput [style*="background:rgba(13,21,37"] {
 body:has(#lrOutput) #lrOutput [style*="color:var(--gold)"],
 body:has(#lrOutput) #lrOutput [style*="color:var(--gold-l)"] {
   color: #84362f !important;
+}
+
+body:has(#lrOutput) #lrOutput [style*="color:#d4b860"] {
+  color: #3d4d43 !important;
 }
 
 .dayun-scroll-wrapper,
