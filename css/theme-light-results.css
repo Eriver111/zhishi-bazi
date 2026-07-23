@@ -32,9 +32,19 @@ body {
   border-color: rgba(72,52,31,.12) !important;
 }
 
+.dayun-col .dayun-gz,
+.liunian-col .liunian-gz,
+.pp-col .tian-gan,
+.pp-col .di-zhi {
+  color: #2d261f !important;
+}
+
 .dayun-age,
 .dayun-year,
 .liunian-year,
+.liunian-year-label,
+.dayun-ss,
+.liunian-ss,
 .qiyun-info,
 .section-subtitle,
 .pp-ss-text {
@@ -52,8 +62,34 @@ body {
   border-color: rgba(132,54,47,.24) !important;
 }
 
+.dayun-col.current .dayun-gz,
+.dayun-col.active .dayun-gz,
+.liunian-col.current-year .liunian-gz,
 .liunian-col.active-ln .liunian-gz {
   color: #84362f !important;
+}
+
+.dayun-col.current .dayun-ss,
+.dayun-col.active .dayun-ss,
+.liunian-col.current-year .liunian-ss,
+.liunian-col.active-ln .liunian-ss,
+.pp-dayun-col.active-dayun .pp-ss-text,
+.pp-liunian-col.active-liunian .pp-ss-text,
+.pp-dayun-col.active-dayun .tian-gan,
+.pp-dayun-col.active-dayun .di-zhi,
+.pp-liunian-col.active-liunian .tian-gan,
+.pp-liunian-col.active-liunian .di-zhi {
+  color: #84362f !important;
+}
+
+body:has(#zwGrid) .card,
+body:has(#zwGrid) .palace,
+body:has(#zwGrid) .center-cell,
+body:has(#zwGrid) .triad-card,
+body:has(#lrOutput) .card,
+body:has(#lrOutput) .sp-cell,
+body:has(#lrOutput) .sp-center-cell {
+  background: rgba(251,246,235,.94) !important;
 }
 
 .dayun-scroll-wrapper,

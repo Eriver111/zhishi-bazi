@@ -84,3 +84,13 @@ test('result skin uses opaque paper cells and readable ink text', () => {
   assert.match(css, /background:\s*#efe0d6\s*!important/);
   assert.match(css, /\.liunian-col\.active-ln\s+\.liunian-gz\s*\{[^}]*color:\s*#84362f\s*!important/);
 });
+
+test('result skin overrides legacy child ink and scopes opaque chart surfaces', () => {
+  const css = read('css/theme-light-results.css');
+  assert.match(css, /\.dayun-col\s+\.dayun-gz,[\s\S]*?\.liunian-col\s+\.liunian-gz,[\s\S]*?\.pp-col\s+\.tian-gan,[\s\S]*?\.pp-col\s+\.di-zhi\s*\{[^}]*color:\s*#2d261f\s*!important/);
+  assert.match(css, /\.liunian-year-label,[\s\S]*?\.dayun-ss,[\s\S]*?\.liunian-ss[\s\S]*?color:\s*#655b51\s*!important/);
+  assert.match(css, /\.dayun-col\.current\s+\.dayun-gz,[\s\S]*?\.dayun-col\.active\s+\.dayun-gz,[\s\S]*?\.liunian-col\.current-year\s+\.liunian-gz,[\s\S]*?\.liunian-col\.active-ln\s+\.liunian-gz\s*\{[^}]*color:\s*#84362f\s*!important/);
+  assert.match(css, /\.dayun-col\.current\s+\.dayun-ss,[\s\S]*?\.liunian-col\.active-ln\s+\.liunian-ss,[\s\S]*?\{[^}]*color:\s*#84362f\s*!important/);
+  assert.match(css, /\.pp-dayun-col\.active-dayun\s+\.tian-gan,[\s\S]*?\.pp-liunian-col\.active-liunian\s+\.di-zhi\s*\{[^}]*color:\s*#84362f\s*!important/);
+  assert.match(css, /body:has\(#zwGrid\)\s+\.card,[\s\S]*?body:has\(#zwGrid\)\s+\.palace,[\s\S]*?body:has\(#lrOutput\)\s+\.card[\s\S]*?background:\s*rgba\(251,246,235,\.94\)\s*!important/);
+});
