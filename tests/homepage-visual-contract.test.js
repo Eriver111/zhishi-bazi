@@ -17,6 +17,19 @@ test('homepage uses art-directed desktop and mobile hero backgrounds', () => {
   assert.match(html, /<img[^>]+zhishi-hero-ink-v2\.png/);
 });
 
+test('mobile hero fits the portrait artwork to the viewport without intrinsic-size cropping', () => {
+  const themeCss = fs.readFileSync(path.join(root, 'css', 'theme-light-home.css'), 'utf8');
+  assert.match(html, /theme-light-home\.css\?v=4/);
+  assert.match(
+    themeCss,
+    /@media\s*\(max-width:\s*600px\)[\s\S]*?\.ink-wash-scene\s+img\s*\{[^}]*width:\s*100%\s*!important;[^}]*height:\s*100%\s*!important;[^}]*min-width:\s*0\s*!important;[^}]*min-height:\s*0\s*!important;[^}]*object-fit:\s*cover;[^}]*object-position:\s*center\s+center;[^}]*top:\s*0;[^}]*left:\s*0;[^}]*transform:\s*none\s*!important;[^}]*animation:\s*none\s*!important;/s
+  );
+  assert.match(
+    themeCss,
+    /@media\s*\(max-width:\s*600px\)[\s\S]*?\.ink-wash-water\s*\{[^}]*display:\s*none\s*!important;/s
+  );
+});
+
 test('homepage presents the generated artwork without grey post-processing', () => {
   const themeCss = fs.readFileSync(path.join(root, 'css', 'theme-light-home.css'), 'utf8');
   assert.match(themeCss, /\.ink-wash-scene\s*\{[^}]*opacity:\s*1\s*;[^}]*filter:\s*none\s*;/s);

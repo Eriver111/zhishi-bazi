@@ -315,6 +315,23 @@
 }
 
 @media (max-width: 600px) {
+  .ink-wash-scene img {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    object-fit: cover;
+    object-position: center center;
+    top: 0;
+    left: 0;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .ink-wash-water {
+    display: none !important;
+  }
+
   .landing-wrap {
     padding-inline: 12px;
   }

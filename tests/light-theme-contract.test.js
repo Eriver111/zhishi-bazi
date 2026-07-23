@@ -62,7 +62,7 @@ test('shared light theme suppresses dynamic background canvas while the homepage
     assert.ok(hrefs.includes('css/theme-light.css?v=3'), `${page} must load the cache-busted shared light theme`);
   }
   const homeLinks = stylesheetLinks(activeMarkup(read('index.html'))).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=3') > homeLinks.indexOf('css/theme-light.css?v=3'));
+  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=4') > homeLinks.indexOf('css/theme-light.css?v=3'));
   assert.match(read('css/theme-light-home.css'), /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
 });
 
@@ -241,7 +241,7 @@ test('homepage adds three usage steps before the four trust cards and keeps two 
 test('homepage loads a dedicated responsive light stylesheet after the shared theme', () => {
   const html = activeMarkup(read('index.html'));
   const links = stylesheetLinks(html).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(links.indexOf('css/theme-light-home.css?v=3') > links.indexOf('css/theme-light.css?v=3'));
+  assert.ok(links.indexOf('css/theme-light-home.css?v=4') > links.indexOf('css/theme-light.css?v=3'));
   const themePath = path.join(root, 'css', 'theme-light-home.css');
   assert.ok(fs.existsSync(themePath), 'css/theme-light-home.css is missing');
   const css = fs.readFileSync(themePath, 'utf8');
