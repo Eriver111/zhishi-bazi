@@ -11,9 +11,16 @@ test('homepage keeps the agreed intro duration', () => {
   assert.match(html, /setTimeout\([\s\S]{0,300}?1800\)/);
 });
 
-test('homepage uses WebP with the original JPG fallback', () => {
-  assert.match(html, /<source[^>]+cleveland_screen_print\.webp[^>]+image\/webp/);
-  assert.match(html, /<img[^>]+cleveland_screen_print\.jpg/);
+test('homepage uses art-directed desktop and mobile hero backgrounds', () => {
+  assert.match(html, /<source[^>]+media=["']\(max-width:\s*600px\)["'][^>]+zhishi-hero-ink-mobile-v2\.webp/);
+  assert.match(html, /<source[^>]+zhishi-hero-ink-v2\.webp[^>]+image\/webp/);
+  assert.match(html, /<img[^>]+zhishi-hero-ink-v2\.png/);
+});
+
+test('homepage light treatment keeps the artwork visible', () => {
+  const themeCss = fs.readFileSync(path.join(root, 'css', 'theme-light-home.css'), 'utf8');
+  assert.match(themeCss, /\.ink-wash-scene\s*\{[^}]*opacity:\s*\.8/);
+  assert.match(themeCss, /\.ink-wash-overlay\s*\{[^}]*rgba\(246,239,223,\.2[0-9]\)/);
 });
 
 test('homepage has mobile navigation hooks and a two-column mobile feature grid', () => {
