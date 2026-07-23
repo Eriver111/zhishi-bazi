@@ -184,7 +184,7 @@ test('homepage adds three usage steps before the four trust cards and keeps two 
 test('homepage loads a dedicated responsive light stylesheet after the shared theme', () => {
   const html = activeMarkup(read('index.html'));
   const links = stylesheetLinks(html).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(links.indexOf('css/theme-light-home.css?v=1') > links.indexOf('css/theme-light.css?v=1'));
+  assert.ok(links.indexOf('css/theme-light-home.css?v=2') > links.indexOf('css/theme-light.css?v=1'));
   const themePath = path.join(root, 'css', 'theme-light-home.css');
   assert.ok(fs.existsSync(themePath), 'css/theme-light-home.css is missing');
   const css = fs.readFileSync(themePath, 'utf8');

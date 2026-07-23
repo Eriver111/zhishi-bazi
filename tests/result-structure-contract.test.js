@@ -39,13 +39,13 @@ test('hepan result keeps its existing result and AI integration hooks', () => {
 test('result-capable pages load the result skin after every existing stylesheet', () => {
   for (const page of ['result.html', 'hepan-result.html', 'ziwei.html', 'liuren.html']) {
     const hrefs = stylesheetHrefs(read(page));
-    assert.equal(hrefs.at(-1), 'css/theme-light-results.css?v=1', `${page} must load the result skin last`);
+    assert.equal(hrefs.at(-1), 'css/theme-light-results.css?v=2', `${page} must load the result skin last`);
   }
 
   for (const page of ['ziwei.html', 'liuren.html']) {
     const hrefs = stylesheetHrefs(read(page));
     assert.ok(
-      hrefs.indexOf('css/theme-light-forms.css?v=1') < hrefs.indexOf('css/theme-light-results.css?v=1'),
+      hrefs.indexOf('css/theme-light-forms.css?v=1') < hrefs.indexOf('css/theme-light-results.css?v=2'),
       `${page} must keep the form skin before the result skin`,
     );
   }
@@ -93,4 +93,45 @@ test('result skin overrides legacy child ink and scopes opaque chart surfaces', 
   assert.match(css, /\.dayun-col\.current\s+\.dayun-ss,[\s\S]*?\.liunian-col\.active-ln\s+\.liunian-ss,[\s\S]*?\{[^}]*color:\s*#84362f\s*!important/);
   assert.match(css, /\.pp-dayun-col\.active-dayun\s+\.tian-gan,[\s\S]*?\.pp-liunian-col\.active-liunian\s+\.di-zhi\s*\{[^}]*color:\s*#84362f\s*!important/);
   assert.match(css, /body:has\(#zwGrid\)\s+\.card,[\s\S]*?body:has\(#zwGrid\)\s+\.palace,[\s\S]*?body:has\(#lrOutput\)\s+\.card[\s\S]*?background:\s*rgba\(251,246,235,\.94\)\s*!important/);
+});
+
+test('result skin repairs actual drawer surfaces, subdued text, and past-state legibility', () => {
+  const css = read('css/theme-light-results.css');
+  for (const selector of [
+    '.section-drawer', '.section-drawer .drawer-body',
+    '.hp-drawer', '.hp-drawer .hp-drawer-body', '.hp-drawer .drawer-body',
+    '.section-drawer .drawer-body :is(p, li)',
+    '.hp-drawer .drawer-body :is(p, li)',
+    '.hp-bazi-card', '.hp-cross-item', '.hp-dgs-card', '.hp-do-item', '.hp-dont-item',
+    '.hp-mode-card', '.hp-wuxing-card', '.hp-xiyong-card', '.hp-yearly-card',
+    '.pp-ss-text', '.cang-ss-text', '.dayun-col.past', '.liunian-col.past-year',
+  ]) {
+    assert.ok(css.includes(selector), `missing repaired selector ${selector}`);
+  }
+  assert.match(css, /\.section-drawer,[\s\S]*?\.hp-drawer\s*\{[^}]*background:\s*rgba\(251,246,235,\.98\)\s*!important/);
+  assert.match(css, /\.section-drawer\s+\.drawer-body,[\s\S]*?\.hp-drawer\s+\.hp-drawer-body,[\s\S]*?\.hp-drawer\s+\.drawer-body\s*\{[^}]*color:\s*#2d261f\s*!important/);
+  assert.match(css, /\.cang-ss-text\s*\{[^}]*color:\s*#655b51\s*!important/);
+  assert.match(css, /\.dayun-col\.past,[\s\S]*?\.liunian-col\.past-year\s*\{[^}]*opacity:\s*1\s*!important/);
+  assert.match(css, /\.dayun-col\.past,[\s\S]*?\.liunian-col\.past-year\s*\{[^}]*background:\s*#f1eadf\s*!important/);
+});
+
+test('result skin gives Ziwei and Liuren emitted children semantic dark ink', () => {
+  const css = read('css/theme-light-results.css');
+  for (const selector of [
+    'body:has(#zwGrid) #zwGrid .stars .s', 'body:has(#zwGrid) #zwGrid .mid',
+    'body:has(#zwGrid) #zwGrid .bot-r .gz', 'body:has(#zwGrid) #zwGrid .pname',
+    'body:has(#zwGrid) #zwGrid .center-cell .c-title', 'body:has(#zwGrid) #zwGrid .center-cell .c-info',
+    'body:has(#zwGrid) #zwGrid .stars .s[style*="color:#e07050"]',
+    'body:has(#zwGrid) #zwGrid .stars [style*="color:#4CAF50"]',
+    'body:has(#zwGrid) #zwGrid .stars [style*="color:#F44336"]',
+    'body:has(#lrOutput) #lrOutput .sp-cell .sp-zhi', 'body:has(#lrOutput) #lrOutput .sp-cell .sp-tian',
+    'body:has(#lrOutput) #lrOutput .sp-cell .sp-god', 'body:has(#lrOutput) #lrOutput .sp-center-cell .cp-yj',
+    'body:has(#lrOutput) #lrOutput [style*="color:var(--gold)"]',
+    'body:has(#lrOutput) #lrOutput [style*="background:rgba(28,26,22"]',
+  ]) {
+    assert.ok(css.includes(selector), `missing readable emitted child selector ${selector}`);
+  }
+  assert.match(css, /body:has\(#zwGrid\)\s+#zwGrid\s+\.stars\s+\.s\s*\{[^}]*color:\s*#3d4d43\s*!important/);
+  assert.match(css, /body:has\(#zwGrid\)\s+#zwGrid\s+\.stars\s+\.s\s*\.b,[\s\S]*?body:has\(#zwGrid\)\s+#zwGrid\s+\.center-cell\s+\[style\*="color:var\(--gold-l\)"\]\s*\{[^}]*!important/);
+  assert.match(css, /body:has\(#lrOutput\)\s+#lrOutput\s+\.sp-cell\s+\.sp-zhi,[\s\S]*?body:has\(#lrOutput\)\s+#lrOutput\s+\.sp-center-cell\s+\.cp-yj\s*\{[^}]*color:\s*#84362f\s*!important/);
 });

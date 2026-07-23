@@ -5,6 +5,33 @@ body {
 
 .result-container { color: #2d261f !important; }
 
+.section-drawer,
+.hp-drawer {
+  background: rgba(251,246,235,.98) !important;
+  color: #2d261f !important;
+  border-color: rgba(72,52,31,.12) !important;
+}
+
+.section-drawer .drawer-body,
+.hp-drawer .hp-drawer-body,
+.hp-drawer .drawer-body {
+  background: #fbf6eb !important;
+  color: #2d261f !important;
+}
+
+.section-drawer .drawer-body :is(p, li),
+.hp-drawer .drawer-body :is(p, li),
+.hp-drawer :is(.hp-bazi-card, .hp-cross-item, .hp-dgs-card, .hp-do-item, .hp-dont-item, .hp-mode-card, .hp-wuxing-card, .hp-xiyong-card, .hp-yearly-card) {
+  background: #fbf6eb !important;
+  color: #2d261f !important;
+  border-color: rgba(72,52,31,.12) !important;
+}
+
+.section-drawer .drawer-body :is(.text-dim, .text-muted),
+.hp-drawer :is(.hp-dgs-summary, .hp-score-subtitle) {
+  color: #655b51 !important;
+}
+
 .result-header,
 .section-dayun,
 .section-liunian,
@@ -47,8 +74,16 @@ body {
 .liunian-ss,
 .qiyun-info,
 .section-subtitle,
-.pp-ss-text {
+.pp-ss-text,
+.cang-ss-text {
   color: #655b51 !important;
+}
+
+.dayun-col.past,
+.liunian-col.past-year {
+  opacity: 1 !important;
+  color: #655b51 !important;
+  background: #f1eadf !important;
 }
 
 .dayun-col.current,
@@ -90,6 +125,69 @@ body:has(#lrOutput) .card,
 body:has(#lrOutput) .sp-cell,
 body:has(#lrOutput) .sp-center-cell {
   background: rgba(251,246,235,.94) !important;
+}
+
+body:has(#zwGrid) #zwGrid .stars .s {
+  color: #3d4d43 !important;
+}
+
+body:has(#zwGrid) #zwGrid .stars .s[style*="color:#e8d5a3"] { color: #5f4926 !important; }
+body:has(#zwGrid) #zwGrid .stars .s[style*="color:#e07050"] { color: #84362f !important; }
+body:has(#zwGrid) #zwGrid .stars .s[style*="color:#e8a040"] { color: #765423 !important; }
+body:has(#zwGrid) #zwGrid .stars .s[style*="color:#5b9fd4"] { color: #315b78 !important; }
+body:has(#zwGrid) #zwGrid .stars .s[style*="color:#6db86d"] { color: #3d6540 !important; }
+body:has(#zwGrid) #zwGrid .stars .s .b,
+body:has(#zwGrid) #zwGrid .stars [style*="color:#888"],
+body:has(#zwGrid) #zwGrid .stars [style*="color:#9098a0"],
+body:has(#zwGrid) #zwGrid .stars [style*="color:#6a6570"],
+body:has(#zwGrid) #zwGrid .stars [style*="color:#555"] {
+  color: #655b51 !important;
+}
+
+body:has(#zwGrid) #zwGrid .stars [style*="color:#4CAF50"] { color: #3d6540 !important; }
+body:has(#zwGrid) #zwGrid .stars [style*="color:#FF9800"] { color: #765423 !important; }
+body:has(#zwGrid) #zwGrid .stars [style*="color:#2196F3"] { color: #315b78 !important; }
+body:has(#zwGrid) #zwGrid .stars [style*="color:#F44336"] { color: #84362f !important; }
+
+body:has(#zwGrid) #zwGrid .mid,
+body:has(#zwGrid) #zwGrid .bot-l,
+body:has(#zwGrid) #zwGrid .bot-r .zs,
+body:has(#zwGrid) #zwGrid .center-cell .c-info {
+  color: #655b51 !important;
+}
+
+body:has(#zwGrid) #zwGrid .bot-r .gz,
+body:has(#zwGrid) #zwGrid .pname,
+body:has(#zwGrid) #zwGrid .center-cell .c-title,
+body:has(#zwGrid) #zwGrid .center-cell [style*="color:var(--gold-l)"] {
+  color: #84362f !important;
+}
+
+body:has(#lrOutput) #lrOutput .sp-cell .sp-zhi,
+body:has(#lrOutput) #lrOutput .sp-center-cell .cp-yj {
+  color: #84362f !important;
+}
+
+body:has(#lrOutput) #lrOutput .sp-cell .sp-tian {
+  color: #3d4d43 !important;
+}
+
+body:has(#lrOutput) #lrOutput .sp-cell .sp-god,
+body:has(#lrOutput) #lrOutput .sp-cell .sp-dun,
+body:has(#lrOutput) #lrOutput .sp-center-cell .cp-label,
+body:has(#lrOutput) #lrOutput [style*="color:var(--tx2)"],
+body:has(#lrOutput) #lrOutput [style*="color:var(--tx3)"] {
+  color: #655b51 !important;
+}
+
+body:has(#lrOutput) #lrOutput [style*="background:rgba(28,26,22"],
+body:has(#lrOutput) #lrOutput [style*="background:rgba(13,21,37"] {
+  background: #fbf6eb !important;
+}
+
+body:has(#lrOutput) #lrOutput [style*="color:var(--gold)"],
+body:has(#lrOutput) #lrOutput [style*="color:var(--gold-l)"] {
+  color: #84362f !important;
 }
 
 .dayun-scroll-wrapper,
