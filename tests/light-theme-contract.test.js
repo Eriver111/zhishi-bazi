@@ -59,10 +59,10 @@ test('shared light theme suppresses dynamic background canvas while the homepage
   assert.match(read('paipan.html'), /#bgCanvas\s*\{[^}]*opacity:\s*\.6/, 'paipan must retain its nested canvas styling beneath the shared suppression');
   for (const page of publicPages) {
     const hrefs = stylesheetLinks(activeMarkup(read(page))).map(({ 0: tag }) => attributeValue(tag, 'href'));
-    assert.ok(hrefs.includes('css/theme-light.css?v=2'), `${page} must load the cache-busted shared light theme`);
+    assert.ok(hrefs.includes('css/theme-light.css?v=3'), `${page} must load the cache-busted shared light theme`);
   }
   const homeLinks = stylesheetLinks(activeMarkup(read('index.html'))).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=2') > homeLinks.indexOf('css/theme-light.css?v=2'));
+  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=3') > homeLinks.indexOf('css/theme-light.css?v=3'));
   assert.match(read('css/theme-light-home.css'), /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
 });
 
@@ -90,13 +90,25 @@ test('light page theme overrides the real Zhishi chat surfaces', () => {
   assert.match(css, /\.msg\.user\s+\.bubble\s*\{[^}]*background:\s*#f3e5dd\s*!important/s);
   assert.match(css, /\.topbar,[\s\S]*?\.bottombar\s*\{[^}]*background:\s*rgba\(251,246,235,\.98\)\s*!important/s);
   assert.match(css, /\.redeem-row\s+input,[\s\S]*?\.input-row\s+textarea\s*\{[^}]*background:\s*#fffaf0\s*!important/s);
+  assert.match(css, /\.redeem-row\s+input::placeholder\s*\{[^}]*color:\s*var\(--tx3\)\s*;[^}]*opacity:\s*1\s*;/s);
 });
 
 test('light page theme keeps secondary Zhishi chat content legible', () => {
   const css = read('css/theme-light-pages.css');
   assert.match(css, /\.msg\.user\s+\.avatar\s*\{[^}]*background:\s*#efe0d6\s*!important;[^}]*color:\s*#84362f\s*!important/s);
   assert.match(css, /\.share-bar\s+button\s*\{[^}]*background:\s*linear-gradient\(135deg,\s*#365d50,\s*#27483e\)\s*!important;[^}]*color:\s*#fff\s*!important/s);
-  assert.match(css, /\.empty-state\s*\{[^}]*color:\s*#655b51\s*!important/s);
+  assert.match(css, /\.page\s+\.empty-state\s*\{[^}]*color:\s*#655b51\s*!important/s);
+  assert.doesNotMatch(css, /^\.empty-state\s*\{/m, 'empty state coloring must stay scoped to chat pages');
+});
+
+test('all Zhishi chat pages preserve the runtime message class creation path', () => {
+  for (const page of ['ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html']) {
+    assert.match(
+      read(page),
+      /function\s+addMsg\s*\(\s*role\s*,\s*text\s*\)\s*\{[\s\S]{0,500}?className\s*=\s*['"]msg\s+['"]\s*\+\s*role/s,
+      `${page} must create real runtime messages with the msg and role classes`,
+    );
+  }
 });
 
 test('light page theme keeps the Zhishi share pricing link readable', () => {
@@ -229,7 +241,7 @@ test('homepage adds three usage steps before the four trust cards and keeps two 
 test('homepage loads a dedicated responsive light stylesheet after the shared theme', () => {
   const html = activeMarkup(read('index.html'));
   const links = stylesheetLinks(html).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(links.indexOf('css/theme-light-home.css?v=2') > links.indexOf('css/theme-light.css?v=2'));
+  assert.ok(links.indexOf('css/theme-light-home.css?v=3') > links.indexOf('css/theme-light.css?v=3'));
   const themePath = path.join(root, 'css', 'theme-light-home.css');
   assert.ok(fs.existsSync(themePath), 'css/theme-light-home.css is missing');
   const css = fs.readFileSync(themePath, 'utf8');
