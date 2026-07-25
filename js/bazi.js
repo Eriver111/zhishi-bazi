@@ -675,9 +675,9 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
 
     var calcMonths = remainDays * 4;             // 1天 = 4个月
     var calcDays = remainShiChen * 10;           // 1时辰 = 10天
-    // 归一化：满12个月进1年，满30天进1月
-    if (calcMonths >= 12) { calcMonths -= 12; wholeYears += 1; }
-    if (calcDays >= 30) { calcDays -= 30; calcMonths += 1; if (calcMonths >= 12) { calcMonths -= 12; wholeYears += 1; } }
+    // 归一化：满30天进1月，满12个月进1年，循环直到干净
+    while (calcDays >= 30) { calcDays -= 30; calcMonths += 1; }
+    while (calcMonths >= 12) { calcMonths -= 12; wholeYears += 1; }
 
     const timingInfo = {
         years: wholeYears,
