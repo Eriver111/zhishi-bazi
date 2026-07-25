@@ -3009,6 +3009,10 @@ function analyzeFortune(bazi, gender, yongJi) {
             }
         });
 
+        // 流年十神喜忌色彩
+        if (isFavorable) riskLevel = Math.max(0, riskLevel - 1);
+        else riskLevel += 1;
+
         // 流年天干十神解读
         const ssNotes = {
             '正官': '事业上责任加重，压力与机遇并存——利于求职、晋升、考试。也是适合结婚的好年份。需注意职场竞争，保持低调谦逊。',
@@ -3223,15 +3227,29 @@ function analyzeThisYear(bazi, gender, yongJi) {
       var keMap3={};['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){keMap3[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];});
       if (keMap3[currentDY.gan]===yp.gan) dyWarnings.push('大运天干克流年天干——大的环境在压制今年的势头，需要更多耐心和策略。');
 
-      // 三合/半合检测：流年+原局+大运
+      // 三合/半合检测：流年+原局+大运 — 需判断喜忌
       var SAN_HE2=[['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
       var allZhiArr3=[bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi,yp.zhi,currentDY.zhi];
       SAN_HE2.forEach(function(tri){
         var hasA=allZhiArr3.indexOf(tri[0])>=0,hasB=allZhiArr3.indexOf(tri[1])>=0,hasC=allZhiArr3.indexOf(tri[2])>=0;
         if (hasA&&hasB&&hasC) {
-          if (KEWO[DAY_WX]===tri[3]||woKe[DAY_WX]===tri[3]||wxSHENG[DAY_WX]===tri[3]) {
-            dyWarnings.push('流年+原局+大运形成三合'+tri[3]+'局——该五行能量极强，是今年最大的变数。若为喜用则可成大事，若为忌神则压力集中释放。');
+          var heWx3=tri[3];
+          var heIsXi=favorableSet.indexOf(heWx3)>=0;
+          if (heIsXi) {
+            dyWarnings.push('今年流年+原局+大运形成三合<b>'+heWx3+'</b>局——此五行恰好是你的喜用神，能量集中释放，是成大事的窗口期。该方向上的机会要果断抓住。');
+          } else {
+            dyWarnings.push('今年流年+原局+大运形成三合<b>'+heWx3+'</b>局——此五行是你的忌神，该领域压力集中释放。不是坏事，但需要提前准备应对方案。');
           }
+        }
+      });
+      // 刑冲检测：未丑戌三刑等 — 需判断所化五行喜忌
+      var XING_SAN=[['丑','戌','未','土'],['寅','巳','申','火']];
+      XING_SAN.forEach(function(tri){
+        var ha=allZhiArr3.indexOf(tri[0])>=0,hb=allZhiArr3.indexOf(tri[1])>=0,hc=allZhiArr3.indexOf(tri[2])>=0;
+        if (ha&&hb&&hc) {
+          var xw=tri[3], xi=favorableSet.indexOf(xw)>=0;
+          if (xi) dyWarnings.push('今年触发'+tri[0]+tri[1]+tri[2]+'三刑，化出<b>'+xw+'</b>为喜用——传统说法"冲库得财"即指此类：看似动荡，实则破中有立，往往伴随意外收获。');
+          else dyWarnings.push('今年触发'+tri[0]+tri[1]+tri[2]+'三刑，化出<b>'+xw+'</b>为忌神——刑冲之年多有变动，大事决策前多找人商量，避免冲动行事。');
         }
       });
     }
