@@ -1622,55 +1622,108 @@ const DITIANSUI = {
 
 
 // ==================== 夫妻宫分析 ====================
-function analyzePei(bazi) {
-    const dayGan = bazi.day.gan;
-    const dayZhi = bazi.day.zhi;
-    const cangGan = getCangGan(dayZhi);
-    // 取本气（第一个藏干）作为夫妻宫主要十神
-    const mainCG = cangGan[0];
-    const ss = getShiShen(dayGan, mainCG);
-    const allSS = cangGan.map(cg => getShiShen(dayGan, cg));
+function analyzePei(bazi, gender) {
+    var dayGan = bazi.day.gan, dayZhi = bazi.day.zhi;
+    var cangGan = getCangGan(dayZhi);
+    var mainCG = cangGan[0];
+    var ss = getShiShen(dayGan, mainCG);
+    var isMale = gender === 'male';
+    var spouseStar = isMale ? ['正财','偏财'] : ['正官','七杀'];
 
-    const traits = {
-        '正官': '配偶品性端正、有责任感和正义感，可能从事公职或管理工作，行事有规矩，重视名誉和社会地位。',
-        '七杀': '配偶性格强势、果敢有魄力，有领导才能但也可能有霸道倾向。若为喜用则得良夫/贤妻，为忌则有压力和争执。',
-        '正财': '配偶勤俭持家、善于理财，对家庭物质生活重视，是比较传统务实型的伴侣。男命正财为妻，感情较为稳定。',
-        '偏财': '配偶大方豪爽、社交能力强，在财务上有商业头脑，但也可能有冲动消费倾向，不拘小节。',
-        '正印': '配偶温和包容、善良体贴，像长辈一样呵护和照顾你，有很强的情感包容度，家庭氛围温馨。',
-        '偏印': '配偶聪明机敏、思想独特，有特殊的才华或技能，可能在专业领域有所建树，但有时也显得孤僻。',
-        '食神': '配偶性情温厚、随和享受，有艺术气质或文学才华，喜欢安逸舒适的生活，不喜争斗和压力。',
-        '伤官': '配偶才华出众、个性独立，有强烈的表现欲和创造力，但也可能情绪敏感、要求高。女命伤官需防克夫。',
-        '比肩': '两人性格相似，如同知己和战友，有共同的兴趣和价值观，相处模式像朋友一般自由。但可能缺少激情。',
-        '劫财': '两人性格相近但有竞争，相处更像合作伙伴，需要注意避免因个性冲突带来的争执，保持彼此空间。'
+    // === 1. 配偶星搜索（四柱全查） ===
+    var starPositions = []; var starCount = 0; var starOnGan = false;
+    ['year','month','day','hour'].forEach(function(pos){
+      var ganSS = getShiShen(dayGan, bazi[pos].gan);
+      if (spouseStar.indexOf(ganSS) >= 0) {
+        starPositions.push({pos:pos, layer:'干', gan:bazi[pos].gan, ss:ganSS});
+        starCount++; starOnGan = true;
+      }
+      getCangGan(bazi[pos].zhi).forEach(function(g){
+        var zgSS = getShiShen(dayGan, g);
+        if (spouseStar.indexOf(zgSS) >= 0) {
+          starPositions.push({pos:pos, layer:'支藏', gan:g, ss:zgSS});
+          starCount++;
+        }
+      });
+    });
+
+    // === 2. 配偶星被克/被合 ===
+    var starDamaged = [];
+    var keMap = {}; ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){ keMap[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10]; });
+    var heMap = {'甲己':'土','乙庚':'金','丙辛':'水','丁壬':'木','戊癸':'火'};
+    starPositions.forEach(function(sp){
+      if (sp.layer === '干') {
+        ['year','month','day','hour'].forEach(function(pos){
+          if (bazi[pos].gan === keMap[sp.gan]) starDamaged.push(sp.ss+'星('+sp.gan+')被'+pos+'干'+bazi[pos].gan+'克');
+        });
+        ['year','month','day','hour'].forEach(function(pos){
+          var hk = sp.gan+bazi[pos].gan; var hk2 = bazi[pos].gan+sp.gan;
+          if (heMap[hk] || heMap[hk2]) starDamaged.push(sp.ss+'星('+sp.gan+')与'+pos+'干'+bazi[pos].gan+'合');
+        });
+      }
+    });
+
+    // === 3. 夫妻宫（日支）被冲/刑/害 ===
+    var CHONG2 = {子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:'酉',酉:'卯',辰:'戌',戌:'辰',巳:'亥',亥:'巳'};
+    var chongPos = []; var haiPos = [];
+    var HAI2 = {子:'未',未:'子',丑:'午',午:'丑',寅:'巳',巳:'寅',卯:'辰',辰:'卯',申:'亥',亥:'申',酉:'戌',戌:'酉'};
+    ['year','month','hour'].forEach(function(pos){
+      if (CHONG2[dayZhi] === bazi[pos].zhi) chongPos.push(pos);
+      if (HAI2[dayZhi] === bazi[pos].zhi) haiPos.push(pos);
+    });
+
+    // === 4. 多婚/晚婚信号 ===
+    var lateMarriage = false, multiMarriage = false;
+    var lateSigns = [];
+    if (starCount >= 3) { multiMarriage = true; lateSigns.push('配偶星出现3次以上，感情经历可能较丰富或婚姻不止一次'); }
+    if (chongPos.length > 0) { lateSigns.push('夫妻宫被冲，感情易有波折，早婚不吉'); lateMarriage = true; }
+    if (['子','午','卯','酉'].indexOf(dayZhi)>=0 && chongPos.length>0) lateMarriage = true;
+    if (starCount === 0) { lateMarriage = true; lateSigns.push('配偶星不显，缘分来得较晚'); }
+
+    // === 5. 配偶星与日主生克 ===
+    var starRelation = '';
+    var dayWX = WU_XING[dayGan];
+    if (starPositions.length > 0) {
+      var swx = WU_XING[starPositions[0].gan];
+      var wxS2 = {木:'水',火:'木',土:'火',金:'土',水:'金'};
+      var wxK2 = {木:'土',火:'金',土:'水',金:'木',水:'火'};
+      if (swx === dayWX) starRelation = '配偶星五行与日主相同（比和），两人性格相似，相处平等但有竞争感。';
+      else if (wxS2[dayWX] === swx) starRelation = '配偶星生扶日主——另一半会照顾、支持你，对你是加分项。';
+      else if (wxK2[dayWX] === swx) starRelation = '日主克配偶星——你在关系中掌握主动权，但需适度付出以保持平衡。';
+      else starRelation = '配偶星五行克日主——关系中另一半要求较高，需更多磨合和包容。';
+    }
+
+    var traits = {
+        '正官':'配偶品性端正、有责任感，行事有规矩。喜用则得良缘，为忌则有约束感。',
+        '七杀':'配偶性格强势、果敢有魄力。喜用则得其助，为忌则关系压力较大。',
+        '正财':'配偶勤俭持家、善于理财，是传统务实型伴侣。感情较为稳定。',
+        '偏财':'配偶大方豪爽、社交能力强，有商业头脑，但不拘小节。',
+        '正印':'配偶温和包容、善良体贴，有很强的情感包容度。',
+        '偏印':'配偶聪明机敏、思想独特，有特殊才华，有时显得孤僻。',
+        '食神':'配偶性情温厚、随和享受，有艺术气质，不喜争斗。',
+        '伤官':'配偶才华出众、个性独立，但也可能情绪敏感。女命伤官需防克夫。',
+        '比肩':'两人相似如同知己，相处自由，但可能缺少激情。',
+        '劫财':'两人性格相近有竞争，更像合作伙伴，注意避免冲突。'
     };
-
-    const trait = traits[ss] || '夫妻宫十神较为中和，配偶性格圆融，没有极端倾向。';
-
-    // 配偶样貌
-    const looks = {
-        '正官': '配偶五官端正、气质沉稳，面相有正气，眉目清秀，身高体型匀称，举止端庄有分寸，给人可靠的安全感。',
-        '七杀': '配偶面庞线条分明，眼神犀利有神，气质威严，身材精干或偏瘦，外表有英气和攻击性，走在人群中也比较引人注目。',
-        '正财': '配偶面相敦厚朴实，五官圆润柔和，体型偏结实或微胖，打扮低调实际，整体给人踏实可靠的感觉。',
-        '偏财': '配偶外表大方得体，面带福相，体型适中或偏丰满，穿着有品味，社交场合中显得游刃有余，有一股富贵气。',
-        '正印': '配偶面容温和慈善，皮肤白净，气质文雅，举止从容，可能偏丰满或骨架较大，整体给人一种温暖包容的感觉。',
-        '偏印': '配偶相貌清秀独特，眼神灵动，五官精致，可能偏瘦或身材纤细，气质文静中带着一丝灵气，有种书卷气或艺术范儿。',
-        '食神': '配偶面相和善圆润，笑起来有亲和力，体型偏丰润或微胖，气质轻松自在，给人一种舒适悠闲的印象。',
-        '伤官': '配偶相貌出众，五官立体分明，气质独特有锋芒，身材适中或偏瘦，打扮时尚有个性，容易让人眼前一亮。',
-        '比肩': '配偶与你相貌气质相似，两人站在一起很有夫妻相，五官端正大方，体型匀称，整体给人一种势均力敌的感觉。',
-        '劫财': '配偶五官分明，有独立个性，气质爽朗直率，身材偏精瘦或结实，不喜过分修饰，休闲打扮为主，看起来精力充沛。'
+    var looks = {
+        '正官':'五官端正、气质沉稳，眉目清秀，身高匀称。','七杀':'面庞线条分明，眼神犀利，外表有英气。',
+        '正财':'面相敦厚朴实，五官圆润柔和。','偏财':'外表大方得体，面带福相，有富贵气。',
+        '正印':'面容温和慈善，皮肤白净，气质文雅。','偏印':'相貌清秀独特，眼神灵动，有灵气。',
+        '食神':'面相和善圆润，有亲和力。','伤官':'相貌出众，五官立体，气质独特。',
+        '比肩':'与你相貌气质相似，有夫妻相。','劫财':'五官分明，气质爽朗直率。'
     };
-    const spLooks = looks[ss] || '配偶相貌中等，没有突出的外形特征，属于耐看型。';
+    var trait = traits[ss] || '夫妻宫十神较为中和，配偶性格圆融。';
+    var spLooks = looks[ss] || '配偶相貌中等，属于耐看型。';
 
     return {
-        dayZhi: dayZhi,
-        cangGan: cangGan,
-        mainSS: ss,
-        trait: trait,
-        looks: spLooks
+        dayZhi:dayZhi, cangGan:cangGan, mainSS:ss, trait:trait, looks:spLooks,
+        starPositions:starPositions, starCount:starCount, starOnGan:starOnGan,
+        starDamaged:starDamaged, chongPos:chongPos, haiPos:haiPos,
+        lateMarriage:lateMarriage, lateSigns:lateSigns, multiMarriage:multiMarriage,
+        starRelation:starRelation
     };
 }
 
-// ==================== 配偶年龄大小判断 ====================
 function calculateSpouseAge(bazi, peiSS) {
     // 统计全局十神倾向
     const DAY = bazi.day.gan;
@@ -3240,57 +3293,72 @@ function analyzeStudy(bazi) {
         if (WU_XING[bazi[pos].gan] === guanWX) guanScore += 1;
     });
 
-    // 6. 综合判断
-    let levelLabel, levelText;
-    const totalStudy = yinScore + guanScore * 0.5;
+    // 6. 财星破印检测（财克印=有钱分心，不利学业）
+    var caiPoYin = false; var caiScore = 0;
+    var caiWX2 = {木:'土',火:'金',土:'水',金:'木',水:'火'}[DAY_WX];
+    var caiPoDetails = [];
+    ['year','month','day','hour'].forEach(function(pos){
+      if (WU_XING[bazi[pos].gan]===caiWX2){caiScore+=1;caiPoDetails.push(pos+'干'+bazi[pos].gan);}
+    });
+    if (caiScore>=1 && yinCount>=1) { caiPoYin=true; }
 
-    if (totalStudy >= 4) {
-        levelLabel = '学业优秀';
-        levelText = '命局中印星得力、官星有制，天生适合读书考试。对新知识的吸收速度快、理解力强，在升学考公考证方面有先天优势。学习对你而言不是负担，而是乐趣。';
-    } else if (totalStudy >= 2.5) {
-        levelLabel = '学业良好';
-        levelText = '具备正常的学习能力和读书兴趣，能够按部就班完成学业。如果大运流年再走印运或官运，有进一步提升的空间，关键时刻也能考出不错的成绩。';
-    } else if (totalStudy >= 1) {
-        levelLabel = '学业中等';
-        levelText = '传统书本学习可能不是你的最强天赋，但这不代表不聪明——你可能更擅长实践操作、人际交往或创意表达，适合技能型或应用型的学习方式。';
-    } else {
-        levelLabel = '学业需努力';
-        levelText = '命局中学业星不显，读书考试确实需要比别人多下功夫。但这往往意味着你的天赋在别处——实践、艺术、社交或运动方面可能有突出表现。找到适合自己的赛道很重要。';
-    }
+    // 7. 综合评定
+    var totalStudy = yinScore + guanScore*0.5;
+    var levelLabel, levelText;
+    if (totalStudy>=4){levelLabel='学业优秀';levelText='印星得力、官星有制，天生适合读书考试。吸收速度快、理解力强，升学考公考证有先天优势。';}
+    else if (totalStudy>=2.5){levelLabel='学业良好';levelText='具备正常学习能力，按部就班可完成学业。大运再走印运或官运有进一步提升空间。';}
+    else if (totalStudy>=1){levelLabel='学业中等';levelText='书本学习可能不是最强天赋，但可能在实践操作、创意表达方面有突出表现，适合技能型学习。';}
+    else {levelLabel='学业需努力';levelText='学业星不显，读书需比别人多下功夫。天赋可能在实践、艺术、社交方面。找到对的赛道很重要。';}
 
-    // 印星位置描述
-    let yinPosText = '';
-    if (hasYearYin) yinPosText += '· 年柱有印：家庭书香氛围较浓，或祖辈重视教育。';
-    if (hasMonthYin) yinPosText += '· 月柱有印：青少年时期学习环境好，易遇良师益友。';
-    if (hasDayYin) yinPosText += '· 日柱有印：自学能力强，会主动钻研感兴趣的领域。';
-    if (hasHourYin) yinPosText += '· 时柱有印：晚年仍有学习热情，或下一代学业运佳。';
-    if (!yinPosText) yinPosText = '· 印星不显于四柱，学习上需要更多外部督促和环境支持。';
+    // 8. 格局区分
+    var studyType='';
+    if (yinScore>=2.5 && guanScore>=1){studyType='官印相生型——自律+吸收力强，典型的学霸配置，最适合考试升学和体制内发展。';}
+    else if (yinScore>=2.5){studyType='印星主导型——擅长理解和记忆，属于"给你一本书自己就能学会"的类型，适合学术研究和知识密集型工作。';}
+    else if (shiShangScore>=2 && yinScore>=1){studyType='食伤泄秀配印——既有创造力又有逻辑支撑，属于文理兼备的通才型，在需要跨界思维的领域特别出色。';}
+    else if (shiShangScore>=2){studyType='食伤泄秀型——聪明但不太喜欢框框，适合创意、艺术、设计等需要灵感的领域。传统应试教育可能让你觉得压抑，但一旦找到感兴趣的方向进步极快。';}
+    else if (guanScore>=1.5){studyType='官星自律型——自制力强，适合需要长期坚持的学习路径，如考公考研、专业认证。';}
+    else {studyType='综合型——没有明显单一天赋偏向，但适应力强，什么都能学一些。关键在于找到自己真正感兴趣的方向深耕。';}
+
+    // 9. 特殊格局加分
+    var specialPattern='';
+    var wxKe3 = {木:'金',火:'水',土:'木',金:'火',水:'土'};
+    var shaWX = wxKe3[DAY_WX]; // 杀星五行
+    var shaScore=0;
+    ['year','month','day','hour'].forEach(function(pos){
+      if (WU_XING[bazi[pos].gan]===shaWX) shaScore+=1;
+      if (DI_ZHI_WU_XING[bazi[pos].zhi]===shaWX) shaScore+=0.5;
+    });
+    if (shaScore>=2 && yinScore>=2.5) specialPattern='命带「杀印相生」格局——压力越大动力越足，考试前临时抱佛脚也能出成绩，适合在竞争激烈的环境中脱颖而出。';
+    else if (shaScore>=2 && shiShangScore>=1.5 && yinScore>=1) specialPattern='「食伤制杀配印」——能搞定复杂难题的聪明人，逻辑清晰+应变力强，数理竞赛和研究型学霸配置。';
+
+    // 印星位置
+    var yinPosText='';
+    if (hasYearYin) yinPosText+='· 年柱有印：家庭书香氛围较浓，祖辈重视教育。';
+    if (hasMonthYin) yinPosText+='· 月柱有印：青少年时期学习环境好，易遇良师益友。';
+    if (hasDayYin) yinPosText+='· 日柱有印：自学能力强，主动钻研感兴趣的领域。';
+    if (hasHourYin) yinPosText+='· 时柱有印：晚年仍有学习热情，或下一代学业运佳。';
+    if (!yinPosText) yinPosText='· 印星不显，学习上需更多外部督促和环境支持。';
 
     // 综合建议
-    let adviceText = '';
-    if (yinScore >= 2 && shiShangScore >= 1) {
-        adviceText = '印星与食伤兼具，属于「学以致用」的聪明类型——既有扎实的学习能力，又有灵活的表达和创造力。适合教育、写作、科研、设计等需要深度思考与输出的领域。';
-    } else if (yinScore >= 2 && shiShangScore < 1) {
-        adviceText = '学习吸收能力强，但表达输出稍显不足。建议多写、多说、多动手，把学到的知识转化为实际能力，而非只停留在理解层面。';
-    } else if (yinScore < 2 && shiShangScore >= 1) {
-        adviceText = '属于「实践出真知」的类型——你可能不太喜欢死记硬背，但动手能力、创意和社交天赋突出。建议选择技能型、艺术型或应用型专业方向，让才华有用武之地。';
-    } else if (guanScore >= 1) {
-        adviceText = '官星有根，自律性较强，能够按计划坚持学习。适合需要毅力和纪律的学习路径，比如考公考研或长周期的专业深造。';
-    } else {
-        adviceText = '学习之路需要更多自律和环境支持，找到自己真正感兴趣的方向会事半功倍。优势可能在非学术领域，选择适合的赛道比强行补短板更重要。';
-    }
+    var adviceText='';
+    if (yinScore>=2&&shiShangScore>=1) adviceText='印星与食伤兼具——「学以致用」型，既有扎实学习能力又有灵活表达，适合教育、写作、科研、设计等需要深度思考与输出的领域。';
+    else if (yinScore>=2) adviceText='吸收能力强，但表达输出稍显不足。建议多写多说多动手，把知识转化为实际能力。';
+    else if (yinScore<2&&shiShangScore>=1) adviceText='「实践出真知」型——不太喜欢死记硬背，但动手能力、创意和社交天赋突出，适合技能型、艺术型或应用型方向。';
+    else if (guanScore>=1) adviceText='官星有根，自律性强，能按计划坚持学习，适合考公考研或长期专业深造。';
+    else adviceText='需更多自律和环境支持。优势可能在非学术领域，选对赛道比强行补短板重要。';
 
-    if (hasWenChang) adviceText += ' 另外，命带「文昌贵人」（位于' + wenChangPos + '），在考试和写作方面有加分——关键时刻容易超常发挥。';
-    if (hasXueTang) adviceText += ' 命带「学堂」，天生对知识有好奇心，适合需要持续学习的环境和职业。';
+    if (caiPoYin) adviceText+=' 注意：命局财星破印——容易因赚钱、社交活动分心，学业期间需刻意减少干扰。';
+    if (hasWenChang) adviceText+=' 命带「文昌贵人」——考试写作有加分，关键时刻容易超常发挥。';
+    if (hasXueTang) adviceText+=' 命带「学堂」——天生对知识有好奇心。';
 
     return {
-        dayGan: DAY, wuXing: DAY_WX,
-        yinScore: yinScore, yinCount: yinCount,
-        shiShangScore: shiShangScore,
-        guanScore: guanScore,
-        hasWenChang: hasWenChang, hasXueTang: hasXueTang,
-        levelLabel: levelLabel, levelText: levelText,
-        yinPosText: yinPosText, adviceText: adviceText
+        dayGan:DAY,wuXing:DAY_WX, yinScore:yinScore,yinCount:yinCount,
+        shiShangScore:shiShangScore,guanScore:guanScore,
+        hasWenChang:hasWenChang,hasXueTang:hasXueTang,
+        levelLabel:levelLabel,levelText:levelText,
+        yinPosText:yinPosText,adviceText:adviceText,
+        studyType:studyType,specialPattern:specialPattern,
+        caiPoYin:caiPoYin,caiPoDetails:caiPoDetails
     };
 }
 
