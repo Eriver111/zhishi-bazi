@@ -2084,14 +2084,45 @@ function calcDayMasterStrength(bazi) {
       else if (WOSHENG[dgWx] === wx) score -= 2; // 三合食伤局
       else if (WOKE[dgWx] === wx) score -= 2;    // 三合财局
     }
-    // 半合（只含两支）→ 力量弱一些
+    // 半合（只含两支）→ 力量弱一些，但涉及日支时影响翻倍
     var count = (hasA?1:0)+(hasB?1:0)+(hasC?1:0);
     if (count === 2 && !(hasA&&hasB&&hasC)) {
-      if (wx === dgWx) score += 1;
-      else if (SHENGWO[dgWx] === wx) score += 1;
-      else if (KEWO[dgWx] === wx) score -= 1;
+      var involvesDayHe = (bazi.day.zhi===tri[0]||bazi.day.zhi===tri[1]||bazi.day.zhi===tri[2]);
+      var mult = involvesDayHe ? 2 : 1;
+      if (wx === dgWx) score += 1 * mult;
+      else if (SHENGWO[dgWx] === wx) score += 1 * mult;
+      else if (KEWO[dgWx] === wx) score -= 1 * mult;
+      else if (WOSHENG[dgWx] === wx) score -= 1 * mult;
+      else if (WOKE[dgWx] === wx) score -= 1 * mult;
     }
   });
+
+  // 跨柱六合检测 — 不限于相邻柱，所有地支对都要查
+  // 月支（月令）被合走、日支（坐支）被合走时对日主影响极大
+  var allPositions = ['year','month','day','hour'];
+  for (var a=0; a<allPositions.length; a++) {
+    for (var b=a+1; b<allPositions.length; b++) {
+      var za = bazi[allPositions[a]].zhi, zb = bazi[allPositions[b]].zhi;
+      var heKey2 = za + zb;
+      if (zhiHeScore[heKey2]) {
+        var heWx2 = zhiHeScore[heKey2];
+        var involvesMonth = (za === bazi.month.zhi || zb === bazi.month.zhi);
+        var involvesDay = (za === bazi.day.zhi || zb === bazi.day.zhi);
+        var multiplier = involvesMonth ? (involvesDay ? 5 : 3) : 1;
+        if (heWx2 === dgWx) { score += 2 * (multiplier > 1 ? multiplier/2 : 1); }
+        else if (KEWO[dgWx] === heWx2) { score -= 2 * multiplier; }
+        else if (WOSHENG[dgWx] === heWx2) { score -= 2 * multiplier; }
+        else if (WOKE[dgWx] === heWx2) { score -= 1 * multiplier; }
+        /* SHENGWO（印）：无负面 */
+        // 月令被合化后，得令本质改变。合化为克/泄时得令虚浮，大幅扣分。
+        // 例：己土生辰月→辰酉合金（泄气），原本+30得令实际效力度大减。
+        if (involvesMonth && !(heWx2 === dgWx || SHENGWO[dgWx] === heWx2)) {
+          if (KEWO[dgWx] === heWx2 || WOSHENG[dgWx] === heWx2) score -= 18;
+          else score -= 12;
+        }
+      }
+    }
+  }
 
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
