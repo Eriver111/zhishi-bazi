@@ -992,6 +992,7 @@ function renderThisYear(bazi, gender) {
         +     '流年 <span style="color:' + overallColor + ';font-weight:700">' + ty.gan + ty.zhi + '</span>'
         +     ' · 十神 <span style="color:var(--text-primary);font-weight:700">' + ty.shiShen + '</span>'
         +   '</div>'
+        +   (ty.dyInfo ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.8;margin-top:6px;padding:6px 12px;background:rgba(201,168,76,.03);border-radius:3px">' + ty.dyInfo + '</div>' : '')
         + '</div>'
 
         // 概括
@@ -1007,6 +1008,11 @@ function renderThisYear(bazi, gender) {
 
         + chongHtml
         + heHtml
+        + (ty.dyWarnings && ty.dyWarnings.length > 0
+          ? '<div style="font-size:13px;color:#feca57;line-height:2;padding:14px 16px;background:rgba(255,193,7,.04);border:1px solid rgba(255,193,7,.12);border-radius:3px;margin-bottom:12px">'
+            + '<div style="font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:6px">大运与流年联动</div>'
+            + ty.dyWarnings.map(function(w) { return '<p style="margin:0 0 6px">-- ' + w + '</p>'; }).join('')
+            + '</div>' : '')
         + oppHtml
 
         // 健康

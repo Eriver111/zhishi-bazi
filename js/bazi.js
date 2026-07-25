@@ -3059,6 +3059,12 @@ function analyzeFortune(bazi, gender, yongJi) {
             cautions.push('社交圈扩大是好，但要擦亮眼睛——不熟的人提出的合作邀约要仔细辨别。');
         }
 
+        // 大运+流年联动
+        if (currentDY) {
+          var keMap4 = {};['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){keMap4[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];});
+          if (keMap4[currentDY.gan]===yr.gan) { riskText+=(riskText?' ':'! ')+'大运天干克流年天干——大环境在压制今年的机会，需更多耐心。'; riskLevel+=1; }
+        }
+
         // 冲克风险补充
         if (riskText && riskText.length > 0) {
             if (riskText.indexOf('日柱') >= 0) {
@@ -3195,6 +3201,41 @@ function analyzeThisYear(bazi, gender, yongJi) {
     if (ss === '伤官' || ss === '偏印') healthExtra.push('用脑过度容易头晕、注意力不集中，每隔一小时站起来走走能缓解很多。');
     if (chongPillars.length > 0) healthExtra.push('冲太岁的一年身体容易出现小意外——开车慢一点，运动前热身要充分，别太拼。');
 
+    // === 大运+流年+原局三合半合检测 ===
+    var dyInfo = ''; var dyWarnings = [];
+    var daYun = calculateDaYun(bazi.month, bazi.year, gender, bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour);
+    var currentDY = null;
+    for (var di=0; di<daYun.list.length; di++) {
+      if (currentYear>=daYun.list[di].startYear && currentYear<=daYun.list[di].endYear) { currentDY=daYun.list[di]; break; }
+    }
+    if (!currentDY && daYun.list.length>0) currentDY = daYun.list[0];
+    if (currentDY) {
+      dyInfo = '当前行' + currentDY.gan+zhi+'大运（'+currentDY.startYear+'-'+currentDY.endYear+'年），十神为' + getShiShen(DAY,currentDY.gan) + '。';
+      var dyGanWX = WU_XING[currentDY.gan], dyZhiWX = DI_ZHI_WU_XING[currentDY.zhi];
+      var dyIsFav = favorableSet.indexOf(dyGanWX)>=0;
+      if (dyIsFav) dyInfo+='此运为喜用运——大方向上对你是有利的，流年波动会被大运兜住。';
+      else dyInfo+='此运为忌神运——大方向偏紧，但流年好时依然有不错的节点，需要把握好窗口期。';
+
+      // 大运+流年天干联合对日主
+      var dySS = getShiShen(DAY,currentDY.gan);
+      if (dySS===ss) dyWarnings.push('今年流年天干与大运天干十神相同（皆为'+ss+'），该十神能量加倍——好事加倍则机会翻番，坏事加倍则问题严重。需结合是喜是忌来应对。');
+      // 大运天干克流年天干
+      var keMap3={};['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){keMap3[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];});
+      if (keMap3[currentDY.gan]===yp.gan) dyWarnings.push('大运天干克流年天干——大的环境在压制今年的势头，需要更多耐心和策略。');
+
+      // 三合/半合检测：流年+原局+大运
+      var SAN_HE2=[['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
+      var allZhiArr3=[bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi,yp.zhi,currentDY.zhi];
+      SAN_HE2.forEach(function(tri){
+        var hasA=allZhiArr3.indexOf(tri[0])>=0,hasB=allZhiArr3.indexOf(tri[1])>=0,hasC=allZhiArr3.indexOf(tri[2])>=0;
+        if (hasA&&hasB&&hasC) {
+          if (KEWO[DAY_WX]===tri[3]||woKe[DAY_WX]===tri[3]||wxSHENG[DAY_WX]===tri[3]) {
+            dyWarnings.push('流年+原局+大运形成三合'+tri[3]+'局——该五行能量极强，是今年最大的变数。若为喜用则可成大事，若为忌神则压力集中释放。');
+          }
+        }
+      });
+    }
+
     // 机会
     var opportunities = [];
     if (isFavorable || ss === '正财' || ss === '正官' || ss === '正印' || ss === '食神') {
@@ -3227,7 +3268,8 @@ function analyzeThisYear(bazi, gender, yongJi) {
         healthSummary: healthSummary,
         healthExtra: healthExtra,
         opportunities: opportunities,
-        dyInfo: ''
+        dyInfo: dyInfo,
+        dyWarnings: dyWarnings
     };
 }
 
