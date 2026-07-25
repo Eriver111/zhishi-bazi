@@ -2253,22 +2253,22 @@ function analyzeParents(bazi, gender) {
         return false;
     }
 
-    // === 2. 查找父母星位置 ===
+    // === 2. 查找父母星位置（四柱全查，星宫同参） ===
     var fatherPos = [], motherPos = [];
     var fatherGan = null, motherGan = null, fatherShiShenOnGan = null, motherShiShenOnGan = null;
     var fatherInYear = false, motherInYear = false;
-    var posNameMap = { year: '年', month: '月' };
+    var posNameMap = { year: '年', month: '月', day: '日', hour: '时' };
 
-    ['year','month'].forEach(function(pos) {
+    ['year','month','day','hour'].forEach(function(pos) {
         var ganSS = getShiShen(DAY, bazi[pos].gan);
-        if (ganSS === fatherStar) { fatherPos.push(posNameMap[pos] + '干'); fatherGan = bazi[pos].gan; fatherShiShenOnGan = ganSS; if (pos==='year') fatherInYear = true; }
-        if (ganSS === motherStar) { motherPos.push(posNameMap[pos] + '干'); motherGan = bazi[pos].gan; motherShiShenOnGan = ganSS; if (pos==='year') motherInYear = true; }
+        if (ganSS === fatherStar) { fatherPos.push(posNameMap[pos] + '干'); if (!fatherGan) fatherGan = bazi[pos].gan; fatherShiShenOnGan = ganSS; if (pos==='year') fatherInYear = true; }
+        if (ganSS === motherStar) { motherPos.push(posNameMap[pos] + '干'); if (!motherGan) motherGan = bazi[pos].gan; motherShiShenOnGan = ganSS; if (pos==='year') motherInYear = true; }
 
         var cg = getCangGan(bazi[pos].zhi);
         cg.forEach(function(g) {
             var ss = getShiShen(DAY, g);
-            if (ss === fatherStar) { fatherPos.push(posNameMap[pos] + '支'); if (pos==='year') fatherInYear = true; }
-            if (ss === motherStar) { motherPos.push(posNameMap[pos] + '支'); if (pos==='year') motherInYear = true; }
+            if (ss === fatherStar) { fatherPos.push(posNameMap[pos] + '支（藏' + g + '）'); if (pos==='year') fatherInYear = true; }
+            if (ss === motherStar) { motherPos.push(posNameMap[pos] + '支（藏' + g + '）'); if (pos==='year') motherInYear = true; }
         });
     });
 
@@ -2310,7 +2310,7 @@ function analyzeParents(bazi, gender) {
 
     // === 5. 生成文本 ===
     var fatherText = '', motherText = '', summaryText = '', yearNote = '';
-    var posName = { year: '年柱', month: '月柱' };
+    var posName = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
 
     // ---- 父亲 ----
     var fIsXi = isXiShen(fatherStar);
