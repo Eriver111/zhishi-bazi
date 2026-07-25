@@ -2722,37 +2722,10 @@ function analyzeWealth(bazi, gender, yongJi) {
         });
     });
 
-    // --- 简化日主旺衰判断 ---
-    let wangScore = 0;
-    // 得月令
-    const monthZhi = bazi.month.zhi;
-    const DI_ZHI_WX_MAP = { '寅':'木','卯':'木','辰':'土','巳':'火','午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水','子':'水','丑':'土' };
-    const monthWX = DI_ZHI_WX_MAP[monthZhi];
-    if (monthWX === WX) wangScore += 3;
-    else {
-        const wxSheng = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-        if (wxSheng[WX] === monthWX) wangScore += 2; // 月令生扶
-    }
-
-    // 天干同类比劫 + 印星
-    pillars.forEach(pos => {
-        const gWx = TIAN_GAN_WX[bazi[pos].gan];
-        if (gWx === WX) wangScore += 1; // 比劫
-        const wxSheng2 = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-        if (gWx === wxSheng2[WX]) wangScore += 0.5; // 印星
-    });
-
-    // 地支藏干加分
-    pillars.forEach(pos => {
-        getCangGan(bazi[pos].zhi).forEach(g => {
-            const gWx = TIAN_GAN_WX[g];
-            if (gWx === WX) wangScore += 0.5;
-            const ws = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-            if (gWx === ws[WX]) wangScore += 0.25;
-        });
-    });
-
-    const wangStatus = wangScore >= 4 ? '身强' : (wangScore >= 2 ? '中和偏强' : (wangScore >= 0.5 ? '中和偏弱' : '身弱'));
+    // 统一使用权威 calcDayMasterStrength（通过 yongJi）——不再自算旺衰
+    var dmLevel = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '中和';
+    var wangScore = (yongJi && typeof yongJi.dayMasterScore !== 'undefined') ? yongJi.dayMasterScore : 50;
+    var wangStatus = dmLevel === '极强' || dmLevel === '偏强' ? '身强' : (dmLevel === '中和' ? '中和偏弱' : '身弱');
 
     // --- 财运解读 ---
     let caiText = '', caiWanxi = '', caiAdvice = '';
@@ -2778,11 +2751,11 @@ function analyzeWealth(bazi, gender, yongJi) {
     }
 
     // 身强身弱与财的关系
-    if (wangStatus === '身强' || wangStatus === '中和偏强') {
+    if (wangStatus === '身强') {
         if (caiCount >= 2) {
-            caiWanxi = '日主' + wangStatus + '可以担财，命局财星有力，属于「能赚钱也能守财」的类型。';
+            caiWanxi = '日主身强可以担财，命局财星有力，属于「能赚钱也能守财」的类型。';
         } else {
-            caiWanxi = '日主' + wangStatus + '足以担财，虽然命局财星不算多，但自身能量足够，可通过努力一步步积累财富。';
+            caiWanxi = '日主身强足以担财，虽然命局财星不算多，但自身能量足够，可通过努力一步步积累财富。';
         }
     } else {
         if (caiCount >= 2) {
@@ -2827,9 +2800,9 @@ function analyzeWealth(bazi, gender, yongJi) {
         wealthLevels.push('你有很强的赚钱能力和财运基础，只要方向对，**千万级别**的财富完全在你的射程之内。关键是找准赛道、持续深耕十年以上。');
     } else if (wangStatus === '身强' && caiCount >= 1) {
         wealthLevels.push('你的命格底子扎实，加上财星有根，**三五百万**这个量级对你来说只是时间问题。做好规划、保持专注，财富会自然积累。');
-    } else if (wangStatus === '身强' || (wangStatus === '中和偏强' && caiCount >= 2)) {
+    } else if (wangStatus === '身强' || caiCount >= 2) {
         wealthLevels.push('你的底子不错，财气也够用——**百万级别**的财富是完全可以期待的。抓住大运走强的年份，三五年就能看到明显变化。');
-    } else if (wangStatus === '中和偏强' || (wangStatus === '中和偏弱' && caiCount >= 2)) {
+    } else if (wangStatus === '中和偏弱' && caiCount >= 2) {
         wealthLevels.push('你的财运需要一点时间酝酿，但只要坚持走对方向，**几十万到百万**的积累是完全现实的。稳扎稳打比什么都重要。');
     } else if (caiCount >= 1) {
         wealthLevels.push('你的财运偏稳，不太适合冒险——但好在有财星在命，**几十万**的稳定积累不成问题。建议把重心放在主业深耕上，别频繁换赛道。');
@@ -2854,7 +2827,7 @@ function analyzeWealth(bazi, gender, yongJi) {
         summaryParts.push('命局财星不显，但你有生财的能力');
     }
 
-    if (wangStatus === '身强' || wangStatus === '中和偏强') {
+    if (wangStatus === '身强') {
         summaryParts.push('自身能量足，赚钱有底气');
     } else {
         summaryParts.push('适合与人合作，借力发展');
@@ -3090,7 +3063,7 @@ function analyzeThisYear(bazi, gender, yongJi) {
     var caiWX = woKe[DAY_WX], shiShangWX = wxSHENG[DAY_WX];
 
     // 使用权威 calcDayMasterStrength（通过 yongJi 参数）
-    var wangLevelTA = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '偏强';
+    var wangLevelTA = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '中和';
     var isStrong = (wangLevelTA === '极强' || wangLevelTA === '偏强');
     var favorableSet = isStrong
         ? [caiWX, shiShangWX, guanWX[DAY_WX]]
