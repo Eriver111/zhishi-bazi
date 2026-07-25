@@ -667,7 +667,7 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     // 将天数差拆分为整3天组(岁) + 余天 + 余时辰
     const totalHours = diffDays * 24;
     const threeDayHours = 3 * 24;
-    const wholeYears = Math.floor(totalHours / threeDayHours);
+    var wholeYears = Math.floor(totalHours / threeDayHours);
     const remainHours = totalHours - wholeYears * threeDayHours;
     const remainDays = Math.floor(remainHours / 24);
     const remainHourRemainder = remainHours - remainDays * 24;
