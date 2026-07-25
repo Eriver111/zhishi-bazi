@@ -673,8 +673,11 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     const remainHourRemainder = remainHours - remainDays * 24;
     const remainShiChen = Math.floor(remainHourRemainder / 2); // 1时辰=2小时
 
-    const calcMonths = remainDays * 4;           // 1天 = 4个月
-    const calcDays = remainShiChen * 10;         // 1时辰 = 10天
+    var calcMonths = remainDays * 4;             // 1天 = 4个月
+    var calcDays = remainShiChen * 10;           // 1时辰 = 10天
+    // 归一化：满12个月进1年，满30天进1月
+    if (calcMonths >= 12) { calcMonths -= 12; wholeYears += 1; }
+    if (calcDays >= 30) { calcDays -= 30; calcMonths += 1; if (calcMonths >= 12) { calcMonths -= 12; wholeYears += 1; } }
 
     const timingInfo = {
         years: wholeYears,
