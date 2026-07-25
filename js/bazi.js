@@ -2124,6 +2124,53 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  // 三会局检测（寅卯辰/巳午未/申酉戌/亥子丑 — 比三合局更强）
+  var HUI_JU = [
+    { zhi: ['寅','卯','辰'], wx: '木' },
+    { zhi: ['巳','午','未'], wx: '火' },
+    { zhi: ['申','酉','戌'], wx: '金' },
+    { zhi: ['亥','子','丑'], wx: '水' }
+  ];
+  HUI_JU.forEach(function(hj) {
+    var has = hj.zhi.map(function(z){ return allZhiArr.indexOf(z) >= 0; });
+    var fullCount = has.filter(Boolean).length;
+    if (fullCount === 3) {
+      // 三会成局，力量压倒性
+      if (hj.wx === dgWx) score += 6;
+      else if (SHENGWO[dgWx] === hj.wx) score += 3;
+      else if (KEWO[dgWx] === hj.wx) score -= 5;
+      else if (WOSHENG[dgWx] === hj.wx) score -= 4;
+      else if (WOKE[dgWx] === hj.wx) score -= 3;
+    } else if (fullCount === 2) {
+      // 半会 — 力量约等于半合但略强
+      var involvesDayHui = hj.zhi.indexOf(bazi.day.zhi) >= 0;
+      var involvesMonthHui = hj.zhi.indexOf(bazi.month.zhi) >= 0;
+      var multHui = (involvesDayHui ? 2 : 1) * (involvesMonthHui ? 1.5 : 1);
+      if (hj.wx === dgWx) score += Math.round(1 * multHui);
+      else if (SHENGWO[dgWx] === hj.wx) score += Math.round(1 * multHui);
+      else if (KEWO[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+      else if (WOSHENG[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+      else if (WOKE[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+    }
+  });
+
+  // 跨柱六冲检测 — 月支被冲（非相邻），得令根基动摇
+  for (var xa=0; xa<allPositions.length; xa++) {
+    for (var xb=xa+1; xb<allPositions.length; xb++) {
+      // skip adjacent pairs (already handled in §⑧)
+      if (Math.abs(xa-xb) === 1) continue;
+      var zxa = bazi[allPositions[xa]].zhi, zxb = bazi[allPositions[xb]].zhi;
+      if (chongMap[zxa] === zxb) {
+        var involvesMonthChong = (zxa === bazi.month.zhi || zxb === bazi.month.zhi);
+        var involvesDayChong = (zxa === bazi.day.zhi || zxb === bazi.day.zhi);
+        if (involvesMonthChong) {
+          score -= 4;  // 月令被跨柱冲，得令不稳
+          if (involvesDayChong) score -= 3; // 月日双冲，根气大伤
+        }
+      }
+    }
+  }
+
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
   if (score < 1) score = 1;
