@@ -3186,6 +3186,53 @@ function analyzeThisYear(bazi, gender, yongJi) {
         }
     });
 
+    // === 暗合检测（寅丑/卯申/亥午 — 目前代码完全没有） ===
+    var AN_HE = {寅:'丑',丑:'寅',卯:'申',申:'卯',亥:'午',午:'亥'};
+    var anHeHits=[];
+    ['year','month','day','hour'].forEach(function(pos){
+      if (AN_HE[yp.zhi]===bazi[pos].zhi) anHeHits.push(pos);
+    });
+    if (anHeHits.length>0) {
+      var anHePosNames = {year:'祖上/家庭', month:'事业/工作', day:'感情', hour:'内心'};
+      var anHeDesc = anHeHits.map(function(p){return anHePosNames[p]+'宫'}).join('、');
+      heGoods.push('流年与'+anHeDesc+'暗合——有一种暗中助力的缘分，可能是某个人在默默地帮你，或者你自己都不知道的机遇在悄悄靠近。保持敏锐，多留意细节。');
+    }
+
+    // === 天干四冲检测（甲庚冲/乙辛冲/丙壬冲/丁癸冲 — 目前代码完全没有） ===
+    var GAN_CHONG={甲:'庚',庚:'甲',乙:'辛',辛:'乙',丙:'壬',壬:'丙',丁:'癸',癸:'丁'};
+    ['year','month','day','hour'].forEach(function(pos){
+      if (GAN_CHONG[yp.gan]===bazi[pos].gan) {
+        var gPosNames={year:'祖基',month:'事业',day:'自身',hour:'晚辈'};
+        chongWarnings.push('流年天干'+yp.gan+'与原局'+pos+'干'+bazi[pos].gan+'天干对冲——'+gPosNames[pos]+'方面可能出现公开的矛盾或冲突，说话做事多留余地为好。');
+      }
+    });
+
+    // === 地支破检测（子酉/寅亥/卯午/巳申破） ===
+    var PO={子:'酉',酉:'子',寅:'亥',亥:'寅',卯:'午',午:'卯',巳:'申',申:'巳'};
+    var poHits=[];
+    ['year','month','day','hour'].forEach(function(pos){
+      if (PO[yp.zhi]===bazi[pos].zhi) poHits.push(pos);
+    });
+    if (poHits.length>0) {
+      var poPosNames={year:'家中',month:'工作上',day:'感情上',hour:'心态上'};
+      var poDesc=poHits.map(function(p){return poPosNames[p]}).join('、');
+      chongWarnings.push('流年与原局相破——表面风平浪静，但'+poDesc+'可能有隐藏的摩擦。破不是大灾，属于小损耗，多注意细节少粗心就行。');
+    }
+
+    // === 流年刑原局检测（全柱扫描，不限日支年支） ===
+    var XING_MAP2={子:['卯'],卯:['子'],寅:['巳','申'],巳:['寅','申'],申:['寅','巳'],丑:['戌','未'],戌:['丑','未'],未:['丑','戌'],辰:['辰'],午:['午'],酉:['酉'],亥:['亥']};
+    var xingHits=[];
+    (XING_MAP2[yp.zhi]||[]).forEach(function(t){
+      ['year','month','day','hour'].forEach(function(pos){
+        if (bazi[pos].zhi===t) xingHits.push({target:pos,type:'刑'});
+      });
+    });
+    if (xingHits.length>0) {
+      var xingPosNames={year:'家庭根基',month:'事业平台',day:'婚姻感情',hour:'内心想法'};
+      var xingDesc=xingHits.map(function(h){return xingPosNames[h.target]}).join('、');
+      chongWarnings.push('流年刑原局——'+xingDesc+'方面可能有些别扭和纠结。刑不是毁灭性的，更像是鞋子里的沙子，不舒服但能解决。遇事别钻牛角尖就好。');
+    }
+
     // 健康状况详细
     var wxHealth = {
         '木': { strong:'肝胆功能偏旺，注意少喝酒、少熬夜，春天容易上火。', weak:'肝气不足，容易疲劳犯困，早上起床困难。多吃绿色蔬菜补一补。', organ:'肝胆、筋腱、眼睛' },
