@@ -2114,11 +2114,16 @@ function calcDayMasterStrength(bazi) {
         else if (WOSHENG[dgWx] === heWx2) { score -= 2 * multiplier; }
         else if (WOKE[dgWx] === heWx2) { score -= 1 * multiplier; }
         /* SHENGWO（印）：无负面 */
-        // 月令被合化后，得令本质改变。合化为克/泄时得令虚浮，大幅扣分。
-        // 例：己土生辰月→辰酉合金（泄气），原本+30得令实际效力度大减。
+        // 月令被合化后，得令本质改变。但扣分需区分原状态：
+        // 若月令原本生扶日主（得令+30或相令+20），合化后利好消失 → 重扣
+        // 若月令原本就克泄耗日主（休囚死），合化后变另一种克泄耗 → 不重扣
         if (involvesMonth && !(heWx2 === dgWx || SHENGWO[dgWx] === heWx2)) {
-          if (KEWO[dgWx] === heWx2 || WOSHENG[dgWx] === heWx2) score -= 18;
-          else score -= 12;
+          var mwx2 = DI_ZHI_WU_XING[bazi.month.zhi];
+          var wasFavorable = (mwx2 === dgWx || SHENGWO[dgWx] === mwx2);
+          if (wasFavorable) {
+            if (KEWO[dgWx] === heWx2 || WOSHENG[dgWx] === heWx2) score -= 18;
+            else score -= 12;
+          }
         }
       }
     }
