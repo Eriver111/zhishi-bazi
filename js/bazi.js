@@ -2312,43 +2312,78 @@ function analyzeParents(bazi, gender) {
     var fatherText = '', motherText = '', summaryText = '', yearNote = '';
     var posName = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
 
+    // ----父亲被克检测（通用版）----
+    function starKeLevel(starGan, starPositions) {
+      // 遍历四柱天干，检查是否有克该星的天干
+      var keMap = {};
+      ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
+        keMap[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];
+      });
+      var keResult = [];
+      ['year','month','day','hour'].forEach(function(pos){
+        var g = bazi[pos].gan;
+        if (g === keMap[starGan]) {
+          keResult.push(posNameMap[pos] + '干' + g);
+        }
+      });
+      // 同时检查星所在的地支是否被冲
+      if (starPositions && starPositions.length > 0) {
+        var starZhi = null;
+        // 找到星所在的第一个地支（从藏干推断）
+        ['year','month','day','hour'].forEach(function(pos){
+          var cg = getCangGan(bazi[pos].zhi);
+          if (cg.indexOf(starGan) >= 0 && !starZhi) starZhi = bazi[pos].zhi;
+        });
+        if (starZhi && ZHI_CHONG[starZhi]) {
+          keResult.push('坐支' + starZhi + '被' + ZHI_CHONG[starZhi] + '冲');
+        }
+      }
+      return keResult;
+    }
+
     // ---- 父亲 ----
     var fIsXi = isXiShen(fatherStar);
     if (fatherPos.length > 0) {
         var fPositions = fatherPos.join('、');
         fatherText = '父亲星（' + fatherStar + '）出现在' + fPositions;
-        if (fatherInYear) fatherText += '，得位年柱父母宫';
+
+        // 得位判断《三命通会》：星在年=得位=最亲，在月=近，在日时=远
+        if (fatherInYear) {
+          fatherText += '，得位年柱父母宫——父亲在你的成长中参与度高，家庭结构较为传统；';
+        } else {
+          // 检查是否在日时柱
+          var fOnlyInDayHour = fatherPos.every(function(p){ return p.indexOf('日')>=0 || p.indexOf('时')>=0; });
+          if (fOnlyInDayHour) {
+            fatherText += '，出现在日时柱而非年月柱，按《三命通会》「星在日时上为远」——父亲可能在你性格形成期因工作或其他原因不常在家，但成年后你反而能更理解他；';
+          }
+        }
 
         // 有根
         if (!fatherHasRoot) {
-            fatherText += '。但父星根基较浅——在全局中只有孤星没有同五行支撑，意味着父亲可能在你的成长中很用心，但能给的实质资源或助力有限';
+            fatherText += '父星根基较浅，全局中缺少同五行支撑，父亲能给的实质资源有限，但在情感上的付出是真诚的。';
         } else {
-            fatherText += '。父星根基扎实，意味着父亲自身能力或资源较充足，对你的人生有实质性帮助';
+            fatherText += '父星根基扎实，父亲自身能力或资源较充足，对你人生有实质性帮助。';
         }
 
         // 喜用还是压力
         if (fIsXi) {
-            fatherText += '。从命局看，父亲特质恰好是你所需要的，他对你的教导和要求大多对你有益，属于「严是爱」的类型';
+            fatherText += '从命局看，父亲特质恰好是你所需要的，他对你的教导大多对你有益，属于「严是爱」的类型。';
         } else {
-            fatherText += '。不过要注意，你命局日主' + dmLabel + '，父星对你的要求有时候会超出你的承受范围，需要学会把父亲的期望转化成动力而不是压力';
+            fatherText += '需留意你命局日主' + dmLabel + '，父星为忌，父亲的要求有时会超出你的承受范围——把期望转化成动力而不是压力，是你跟父亲相处的一门课。';
         }
 
-        // 父星是否被克
+        // 父星是否被克（全柱检测）
         if (fatherGan) {
-            var keMap = {};
-            ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
-                keMap[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10]; // 间隔7位为克
-            });
-            var keGan = keMap[fatherGan];
-            if (bazi.month.gan === keGan) {
-                fatherText += '。特别提醒：父星在年干被月干' + keGan + '克制，需多留意父亲的身体健康，尤其在父亲年长之后';
+            var fKeList = starKeLevel(fatherGan, fatherPos);
+            if (fKeList.length > 0) {
+                fatherText += '特别提醒：父星受' + fKeList.join('、') + '所克，多关心父亲健康，尤其在他年长之后。';
             }
         }
     } else {
         if (fatherWx && hasWuxingRoot(fatherWx)) {
-            fatherText = '父亲星（' + fatherStar + '）虽未直接显现在年、月柱的天干地支上，但命局中' + fatherWx + '元素较旺，父缘并不浅——父亲对你的影响可能是间接的、潜移默化的方式存在，或者通过家中的其他长辈传递给你。';
+            fatherText = '父亲星（' + fatherStar + '）在命局四柱中不直接显现，但' + fatherWx + '元素较旺，父缘并不浅——父亲的影响通过间接或潜移默化的方式存在，也可能通过其他男性长辈传递给你。';
         } else {
-            fatherText = '父亲星（' + fatherStar + '）未显于命局，且相关五行也较弱，与父亲的缘分相对较浅。这并不代表关系不好，而是父亲在你性格形成期可能不在身边，或者有祖辈、师长在你人生中扮演了部分「父亲」角色。';
+            fatherText = '父亲星（' + fatherStar + '）不显于命局，相关五行也较弱，与父亲的缘分偏淡。这不代表关系不好，而是父亲在你性格形成期可能不在身边，或者祖辈、师长在你人生中扮演了部分「父亲」角色。';
         }
     }
 
@@ -2357,34 +2392,39 @@ function analyzeParents(bazi, gender) {
     if (motherPos.length > 0) {
         var mPositions = motherPos.join('、');
         motherText = '母亲星（' + motherStar + '）出现在' + mPositions;
-        if (motherInYear) motherText += '，得位年柱父母宫';
+
+        if (motherInYear) {
+          motherText += '，得位年柱父母宫——母亲在你成长中的陪伴是直接而持续的；';
+        } else {
+          var mOnlyInDayHour = motherPos.every(function(p){ return p.indexOf('日')>=0 || p.indexOf('时')>=0; });
+          if (mOnlyInDayHour) {
+            motherText += '，出现在日时柱——母亲的影响力更多体现在你成年后的生活中，童年可能有其他照顾者（祖辈、保姆等）参与了你的日常照料；';
+          }
+        }
 
         if (!motherHasRoot) {
-            motherText += '。母星根基较浅，母亲在自己的生活中可能有自己的难处或局限，能给你的资源不是最充裕的，但她在情感上的付出是真诚的';
+            motherText += '母星根基较浅，母亲在自己的生活中可能有难处或局限，给你的资源不是最充裕的，但她在情感上的付出是真诚的。';
         } else {
-            motherText += '。母星根基扎实，母亲是很坚实的后盾，在你需要的时候总能提供情感和实际上的支持';
+            motherText += '母星根基扎实，母亲是很坚实的后盾，在你需要的时候总能提供情感和实际上的支持。';
         }
 
         if (mIsXi) {
-            motherText += '。从命局看，母亲的包容和支持正是你最需要的东西，你们之间有一种天然的互相理解，这对你的性格形成很关键';
+            motherText += '母亲的包容和支持正是你最需要的东西，你们之间有一种天然的互相理解，这对你的性格形成很关键。';
         } else {
-            motherText += '。但需留意——你命局日主' + dmLabel + '，母亲的过度保护和关注有时候反而会让你觉得「喘不过气」来。学会对母亲说「我可以自己来」也是长大的一部分';
+            motherText += '需留意你命局日主' + dmLabel + '，母星为忌——母亲的过度保护和关注有时候反而让你觉得「喘不过气」，学会对母亲说「我可以自己来」也是长大的一部分。';
         }
 
         if (motherGan) {
-            var keMap2 = {};
-            ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
-                keMap2[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];
-            });
-            if (bazi.month.gan === keMap2[motherGan]) {
-                motherText += '。母星在年干受月干克制，平时应多关心母亲的身体和情绪';
+            var mKeList = starKeLevel(motherGan, motherPos);
+            if (mKeList.length > 0) {
+                motherText += '母星受' + mKeList.join('、') + '所克，平时多关心母亲身体和情绪。';
             }
         }
     } else {
         if (motherWx && hasWuxingRoot(motherWx)) {
-            motherText = '母亲星（' + motherStar + '）在年、月柱的天干地支上不直接显现，但命局中' + motherWx + '元素不算弱，说明母亲的能量是通过生活细节渗透给你的——可能她没有用你期待的方式关爱你，但她一直以自己的方式在。';
+            motherText = '母亲星（' + motherStar + '）在命局中不直接显现，但' + motherWx + '元素不算弱——母亲的能量通过生活细节渗透给你，她可能没有用你期待的方式关爱你，但一直以自己的方式在。';
         } else {
-            motherText = '母亲星（' + motherStar + '）不显于命局，与母亲的缘分偏淡。每个人的成长环境不同，有些人是从长辈或朋友那里学到温柔和关怀的，这不一定是遗憾';
+            motherText = '母亲星（' + motherStar + '）不显于命局，与母亲的缘分偏淡。每个人成长环境不同，有些人是从长辈或朋友那里学到温柔和关怀的，这不一定是遗憾。';
         }
     }
 
