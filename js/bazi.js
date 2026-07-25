@@ -3161,6 +3161,14 @@ function analyzeThisYear(bazi, gender, yongJi) {
     };
     var story = ssStories[ss] || { good:'今年运势总体平稳，没有大风大浪。', bad:'平平淡淡就是福，别焦虑。', health:'身体无大碍，保持平时习惯就好。' };
 
+    // 提前计算当前大运（后续刑冲合害都要用）
+    var daYun2 = calculateDaYun(bazi.month, bazi.year, gender, bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour);
+    var currentDY = null;
+    for (var di2=0; di2<daYun2.list.length; di2++) {
+      if (currentYear>=daYun2.list[di2].startYear && currentYear<=daYun2.list[di2].endYear) { currentDY=daYun2.list[di2]; break; }
+    }
+    if (!currentDY && daYun2.list.length>0) currentDY = daYun2.list[0];
+
     // 冲合影响
     var chongWarnings = [];
     var heGoods = [];
@@ -3233,6 +3241,62 @@ function analyzeThisYear(bazi, gender, yongJi) {
       chongWarnings.push('流年刑原局——'+xingDesc+'方面可能有些别扭和纠结。刑不是毁灭性的，更像是鞋子里的沙子，不舒服但能解决。遇事别钻牛角尖就好。');
     }
 
+    // === 大运+流年+原局 交叉关系（刑/合/暗合/破/冲） ===
+    if (currentDY) {
+      var dyZhi=currentDY.zhi, dyGan=currentDY.gan;
+      var posNamesAll={year:'年柱(祖基)',month:'月柱(事业)',day:'日柱(夫妻)',hour:'时柱(晚年)',dy:'当前大运'};
+
+      // 流年刑大运
+      (XING_MAP2[yp.zhi]||[]).forEach(function(t){
+        if (t===dyZhi) chongWarnings.push('流年刑大运——今年你想做的事和大环境的节奏不太合拍，容易感到别扭。建议顺应而非对抗，调整步伐比硬闯更有效。');
+      });
+      // 大运刑原局
+      (XING_MAP2[dyZhi]||[]).forEach(function(t){
+        ['year','month','day','hour'].forEach(function(pos){
+          if (bazi[pos].zhi===t) {
+            var posLabel={year:'家庭根基',month:'事业平台',day:'婚姻感情',hour:'内心世界'};
+            chongWarnings.push('大运刑'+posLabel[pos]+'——当前十年在'+posLabel[pos]+'方面需要多一些耐心和磨合，这是长期功课。');
+          }
+        });
+      });
+
+      // 流年合大运（六合+暗合）
+      if (HE_MAP[yp.zhi+dyZhi]) heGoods.push('流年与大运六合——今年做的事正好踩在大运的节奏上，事半功倍。这一年是大运十年里最好的窗口期之一，适合做重要决策。');
+      if (AN_HE[yp.zhi]===dyZhi) heGoods.push('流年与大运暗合——当下行的事可能不是你原计划的方向，但冥冥中在帮你铺路。多相信直觉。');
+
+      // 大运合原局（六合+暗合）
+      ['year','month','day','hour'].forEach(function(pos){
+        if (HE_MAP[dyZhi+bazi[pos].zhi]) {
+          var pn2={year:'家庭',month:'事业',day:'感情',hour:'子女'};
+          heGoods.push('大运与'+pn2[pos]+'宫六合——当前十年在'+pn2[pos]+'方面容易遇到贵人，整体趋势向好。');
+        }
+        if (AN_HE[dyZhi]===bazi[pos].zhi) {
+          var pn3={year:'家庭',month:'事业',day:'感情',hour:'内心'};
+          heGoods.push('大运与'+pn3[pos]+'宫暗合——'+pn3[pos]+'方面有暗中助力，可能你自己都没察觉到的缘分在默默运行。');
+        }
+      });
+
+      // 大运刑流年（同上，换个说法）
+      (XING_MAP2[dyZhi]||[]).forEach(function(t){
+        if (t===yp.zhi) { /* 已在上面流年刑大运中覆盖 */ }
+      });
+
+      // 流年天干冲大运天干
+      if (GAN_CHONG[yp.gan]===dyGan) {
+        chongWarnings.push('流年天干与大运天干对冲——今年的想法和大方向的节奏在打架。不宜做太冒险的决定，稳扎稳打比强出头更安全。');
+      }
+
+      // 流年地支冲大运地支
+      if (CHONG_MAP[yp.zhi+dyZhi]) {
+        chongWarnings.push('流年冲大运——今年可能是十年周期中的转折点，职业或生活方向上会有重要变化。变不是坏事，但过程需要适应。');
+      }
+
+      // 大运冲原局日支
+      if (CHONG_MAP[dyZhi+bazi.day.zhi]) {
+        chongWarnings.push('大运冲夫妻宫——当前十年感情和家庭方面处于调整期，需要更多耐心和沟通。');
+      }
+    }
+
     // 健康状况详细
     var wxHealth = {
         '木': { strong:'肝胆功能偏旺，注意少喝酒、少熬夜，春天容易上火。', weak:'肝气不足，容易疲劳犯困，早上起床困难。多吃绿色蔬菜补一补。', organ:'肝胆、筋腱、眼睛' },
@@ -3254,14 +3318,8 @@ function analyzeThisYear(bazi, gender, yongJi) {
 
     // === 大运+流年+原局三合半合检测 ===
     var dyInfo = ''; var dyWarnings = [];
-    var daYun = calculateDaYun(bazi.month, bazi.year, gender, bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour);
-    var currentDY = null;
-    for (var di=0; di<daYun.list.length; di++) {
-      if (currentYear>=daYun.list[di].startYear && currentYear<=daYun.list[di].endYear) { currentDY=daYun.list[di]; break; }
-    }
-    if (!currentDY && daYun.list.length>0) currentDY = daYun.list[0];
     if (currentDY) {
-      dyInfo = '当前行' + currentDY.gan+zhi+'大运（'+currentDY.startYear+'-'+currentDY.endYear+'年），十神为' + getShiShen(DAY,currentDY.gan) + '。';
+      dyInfo = '当前行' + currentDY.gan+currentDY.zhi+'大运（'+currentDY.startYear+'-'+currentDY.endYear+'年），十神为' + getShiShen(DAY,currentDY.gan) + '。';
       var dyGanWX = WU_XING[currentDY.gan], dyZhiWX = DI_ZHI_WU_XING[currentDY.zhi];
       var dyIsFav = favorableSet.indexOf(dyGanWX)>=0;
       if (dyIsFav) dyInfo+='此运为喜用运——大方向上对你是有利的，流年波动会被大运兜住。';
