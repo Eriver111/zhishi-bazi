@@ -749,6 +749,16 @@ function renderMarriage(bazi, gender) {
         + starHtml
         + relationHtml
         + warnHtml
+        // 配偶星所在柱位→婚姻时机+对方特征
+        + (function(){
+          var t=[];
+          if (pei.starInYear) t.push('配偶星在年柱——<b>早婚</b>为宜（25岁前），对方年龄<b>偏大</b>、成熟稳重，多半是<b>异地或远方</b>人。');
+          if (pei.starInMonth) t.push('配偶星在月柱——适龄结婚，对方年龄<b>相仿</b>，多半是<b>同乡或邻近地区</b>的人，通过工作或亲朋介绍认识。');
+          if (pei.starInDay) t.push('配偶星在日柱——适龄结婚，对方年龄<b>相仿</b>，两人距离<b>最近</b>（同事、同学、发小），日支坐配偶星是正缘入宫的好兆头。');
+          if (pei.starInHour) t.push('配偶星在时柱——<b>晚婚</b>为宜（30岁后），对方年龄<b>偏小</b>，可能来自<b>远方或异国</b>，缘分晚到但稳定。');
+          if (t.length===0) t.push('配偶星不显——缘分来得较晚，不必焦虑，日柱夫妻宫自有定数。');
+          return '<div class="mp-section-title">婚姻时机</div><div style="font-size:13px;color:var(--text-primary);line-height:2;padding:0 0 8px">'+t.join('<br>')+'</div>';
+        })()
         + '<div class="mp-section-title">对方样貌特点</div>'
         + '<div class="mp-looks">' + pei.looks + '</div>'
         + '<div class="mp-section-title">年龄差距</div>'

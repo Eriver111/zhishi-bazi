@@ -1720,7 +1720,11 @@ function analyzePei(bazi, gender) {
         starPositions:starPositions, starCount:starCount, starOnGan:starOnGan,
         starDamaged:starDamaged, chongPos:chongPos, haiPos:haiPos,
         lateMarriage:lateMarriage, lateSigns:lateSigns, multiMarriage:multiMarriage,
-        starRelation:starRelation
+        starRelation:starRelation,
+        starInYear:starPositions.some(function(s){return s.pos==='year'}),
+        starInMonth:starPositions.some(function(s){return s.pos==='month'}),
+        starInDay:starPositions.some(function(s){return s.pos==='day'}),
+        starInHour:starPositions.some(function(s){return s.pos==='hour'})
     };
 }
 
