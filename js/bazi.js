@@ -2102,6 +2102,7 @@ function calcDayMasterStrength(bazi) {
   var allPositions = ['year','month','day','hour'];
   for (var a=0; a<allPositions.length; a++) {
     for (var b=a+1; b<allPositions.length; b++) {
+      if (Math.abs(a-b) === 1) continue; // 相邻柱地支合已在§⑧处理，这里只补跨柱
       var za = bazi[allPositions[a]].zhi, zb = bazi[allPositions[b]].zhi;
       var heKey2 = za + zb;
       if (zhiHeScore[heKey2]) {
