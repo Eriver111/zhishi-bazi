@@ -173,7 +173,10 @@ function getJieQiDates(year) {
             var targetYear = (m === 1) ? year + 1 : year;
             // 立春和小寒返回带钟点（用于精确到时的月柱切换）
             // 四立+小寒精确到小时（月柱分界关键节点）
-            var hVal = 0;
+            // 节气默认时刻表（未精确到年份时用此值，正午=12 作为保守默认）
+            // 午夜出生的边缘案例：节气在凌晨则在前一月的最后时刻
+            var jqDefHours = [12, 8, 12, 8, 12, 8, 12, 8, 12, 8, 12, 8]; // 立春12 惊蛰8 清明12 立夏8 芒种12...
+            var hVal = jqDefHours[i] || 12;
             if (i === 0) hVal = (LICHUN_HOUR[year] || 12);          // 立春
             else if (i === 11) hVal = (XIAOHAN_HOUR[year] || 16);   // 小寒
             else if (i === 9) hVal = (LIDONG_HOUR[year] || 4);      // 立冬
