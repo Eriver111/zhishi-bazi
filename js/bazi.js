@@ -2053,6 +2053,10 @@ function calcDayMasterStrength(bazi) {
   // 秋季金旺，需火炼金成器（但金为日主时不需）
   if (isAutumn && dgWx !== '金' && dgWx !== '火') {
     if (!hasWx('火')) score -= 3;       // 金无火炼，顽金不器
+    // 秋金成局+无火 → 官杀无制，日主被克严重（如申酉戌会金局）
+    if (dgWx !== '木' && allZhiArr.indexOf('申')>=0 && allZhiArr.indexOf('酉')>=0 && allZhiArr.indexOf('戌')>=0) {
+      if (!hasWx('火')) score -= 3;    // 金局无火制杀 → 追加调候扣分
+    }
   }
 
   // ---------- ⑦ 天干合化修正 ----------
@@ -2201,12 +2205,12 @@ function calcDayMasterStrength(bazi) {
     var has = hj.zhi.map(function(z){ return allZhiArr.indexOf(z) >= 0; });
     var fullCount = has.filter(Boolean).length;
     if (fullCount === 3) {
-      // 三会成局，力量压倒性
-      if (hj.wx === dgWx) score += 6;
-      else if (SHENGWO[dgWx] === hj.wx) score += 3;
-      else if (KEWO[dgWx] === hj.wx) score -= 5;
-      else if (WOSHENG[dgWx] === hj.wx) score -= 4;
-      else if (WOKE[dgWx] === hj.wx) score -= 3;
+      // 三会成局，力量压倒性（会局>三合，扣/加分更高）
+      if (hj.wx === dgWx) score += 8;
+      else if (SHENGWO[dgWx] === hj.wx) score += 5;
+      else if (KEWO[dgWx] === hj.wx) score -= 8;
+      else if (WOSHENG[dgWx] === hj.wx) score -= 6;
+      else if (WOKE[dgWx] === hj.wx) score -= 4;
     } else if (fullCount === 2) {
       // 半会 — 力量约等于半合但略强
       var involvesDayHui = hj.zhi.indexOf(bazi.day.zhi) >= 0;
