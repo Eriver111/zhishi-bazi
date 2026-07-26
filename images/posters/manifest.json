@@ -1,0 +1,182 @@
+[
+  {
+    "dayGan": "甲",
+    "gender": "male",
+    "src": "/images/posters/jia-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "甲木男命古木金脉国风海报背景"
+  },
+  {
+    "dayGan": "甲",
+    "gender": "female",
+    "src": "/images/posters/jia-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "甲木女命古树新芽国风海报背景"
+  },
+  {
+    "dayGan": "乙",
+    "gender": "male",
+    "src": "/images/posters/yi-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "乙木男命藤蔓金脉国风海报背景"
+  },
+  {
+    "dayGan": "乙",
+    "gender": "female",
+    "src": "/images/posters/yi-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "乙木女命花藤灵气国风海报背景"
+  },
+  {
+    "dayGan": "丙",
+    "gender": "male",
+    "src": "/images/posters/bing-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "丙火男命赤金曜阳国风海报背景"
+  },
+  {
+    "dayGan": "丙",
+    "gender": "female",
+    "src": "/images/posters/bing-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "丙火女命朱霞流焰国风海报背景"
+  },
+  {
+    "dayGan": "丁",
+    "gender": "male",
+    "src": "/images/posters/ding-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "丁火男命铜灯凝焰国风海报背景"
+  },
+  {
+    "dayGan": "丁",
+    "gender": "female",
+    "src": "/images/posters/ding-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "丁火女命莲灯柔焰国风海报背景"
+  },
+  {
+    "dayGan": "戊",
+    "gender": "male",
+    "src": "/images/posters/wu-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "戊土男命厚土方层国风海报背景"
+  },
+  {
+    "dayGan": "戊",
+    "gender": "female",
+    "src": "/images/posters/wu-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "戊土女命沃土新芽国风海报背景"
+  },
+  {
+    "dayGan": "己",
+    "gender": "male",
+    "src": "/images/posters/ji-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "己土男命沃壤禾苗国风海报背景"
+  },
+  {
+    "dayGan": "己",
+    "gender": "female",
+    "src": "/images/posters/ji-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "己土女命香草柔苗国风海报背景"
+  },
+  {
+    "dayGan": "庚",
+    "gender": "male",
+    "src": "/images/posters/geng-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "庚金男命锻钢墨锋国风海报背景"
+  },
+  {
+    "dayGan": "庚",
+    "gender": "female",
+    "src": "/images/posters/geng-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "庚金女命天钢银光国风海报背景"
+  },
+  {
+    "dayGan": "辛",
+    "gender": "male",
+    "src": "/images/posters/xin-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "辛金男命白金玉质国风海报背景"
+  },
+  {
+    "dayGan": "辛",
+    "gender": "female",
+    "src": "/images/posters/xin-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "辛金女命珍珠白玉国风海报背景"
+  },
+  {
+    "dayGan": "壬",
+    "gender": "male",
+    "src": "/images/posters/ren-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "壬水男命玄流巨浪国风海报背景"
+  },
+  {
+    "dayGan": "壬",
+    "gender": "female",
+    "src": "/images/posters/ren-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "壬水女命月映流波国风海报背景"
+  },
+  {
+    "dayGan": "癸",
+    "gender": "male",
+    "src": "/images/posters/gui-male-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "癸水男命雨线潜流国风海报背景"
+  },
+  {
+    "dayGan": "癸",
+    "gender": "female",
+    "src": "/images/posters/gui-female-v1.webp",
+    "width": 1080,
+    "height": 1920,
+    "version": "v1",
+    "alt": "癸水女命明露水韵国风海报背景"
+  }
+]
