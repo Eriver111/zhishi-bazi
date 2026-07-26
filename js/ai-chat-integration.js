@@ -520,8 +520,13 @@
   function buildResultContext() {
     var data = {};
     if (typeof _params !== 'undefined' && _params) {
-      data.birthInfo = { year: _params.year, month: _params.month, day: _params.day, hour: _params.hour, gender: _params.gender };
-      if (_params.clock !== undefined) data.birthInfo.clock = _params.clock;
+      var isUnknownDirect = _params.mode === 'pillars' && _params.timing === 'unknown';
+      if (isUnknownDirect) {
+        data.birthInfo = { gender: _params.gender, mode: _params.mode, timing: _params.timing };
+      } else {
+        data.birthInfo = { year: _params.year, month: _params.month, day: _params.day, hour: _params.hour, gender: _params.gender };
+        if (_params.clock !== undefined) data.birthInfo.clock = _params.clock;
+      }
     }
     if (typeof _bazi !== 'undefined' && _bazi) {
       var dayGan = _bazi.day && _bazi.day.gan ? _bazi.day.gan : '';

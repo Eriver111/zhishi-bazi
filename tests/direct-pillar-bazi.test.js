@@ -47,6 +47,45 @@ function loadResult(search = '') {
   return { context, elements, runDOMContentLoaded: () => domReady() };
 }
 
+function buildAiChartContext(params, bazi) {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'ai-chat-integration.js'), 'utf8')
+    .replace(/\}\)\(\);\s*$/, 'window.__buildChartData = buildChartData;\n})();');
+  const storage = new Map();
+  const window = {
+    location: { href: 'https://example.test/result', search: '' },
+    open() {},
+  };
+  const context = {
+    window,
+    location: window.location,
+    document: {
+      readyState: 'loading',
+      addEventListener() {},
+      querySelector() { return null; },
+    },
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, value); },
+    },
+    navigator: {},
+    console,
+    Date,
+    setTimeout,
+    clearTimeout,
+    fetch() { throw new Error('AI context collection must not make requests'); },
+    alert() {},
+    prompt() {},
+    _params: params,
+    _bazi: bazi,
+    _currentDaYunIndex: -1,
+    _nativeShenSha: [],
+    BaZiCalculator: {},
+  };
+  window.window = window;
+  vm.runInNewContext(source, context);
+  return JSON.parse(JSON.stringify(window.__buildChartData()));
+}
+
 const pillars = {
   year: { gan: '甲', zhi: '申' }, month: { gan: '壬', zhi: '申' },
   day: { gan: '乙', zhi: '丑' }, hour: { gan: '丁', zhi: '亥' }
@@ -220,4 +259,61 @@ test('unknown direct initialization leaves timing data absent for AI consumers',
 
   assert.equal(vm.runInNewContext('typeof _daYunData', context), 'undefined');
   assert.equal(vm.runInNewContext('_bazi', context), directChart);
+});
+
+test('live AI context omits fabricated timing only for unknown direct charts', () => {
+  const bazi = {
+    year: { gan: '甲', zhi: '申' },
+    month: { gan: '壬', zhi: '申' },
+    day: { gan: '乙', zhi: '丑' },
+    hour: { gan: '丁', zhi: '亥' },
+  };
+  const unknown = buildAiChartContext({
+    mode: 'pillars',
+    timing: 'unknown',
+    gender: 'male',
+    year: NaN,
+    month: NaN,
+    day: NaN,
+    hour: NaN,
+    clock: 0,
+  }, bazi);
+
+  assert.deepEqual(unknown.birthInfo, {
+    gender: 'male',
+    mode: 'pillars',
+    timing: 'unknown',
+  });
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(unknown.fourPillars).map(([key, value]) => [
+      key, { gan: value.gan, zhi: value.zhi },
+    ])),
+    pillars,
+  );
+
+  const matched = buildAiChartContext({
+    mode: 'pillars',
+    timing: 'matched',
+    gender: 'female',
+    year: 2004,
+    month: 8,
+    day: 20,
+    hour: 11,
+    clock: 22,
+  }, bazi);
+  assert.deepEqual(matched.birthInfo, {
+    year: 2004, month: 8, day: 20, hour: 11, gender: 'female', clock: 22,
+  });
+
+  const ordinary = buildAiChartContext({
+    gender: 'male',
+    year: 1990,
+    month: 1,
+    day: 2,
+    hour: 3,
+    clock: 6,
+  }, bazi);
+  assert.deepEqual(ordinary.birthInfo, {
+    year: 1990, month: 1, day: 2, hour: 3, gender: 'male', clock: 6,
+  });
 });
