@@ -2,23 +2,24 @@
 
 ## Release checkpoint
 
-- Status: **BLOCKED**
-- Production commit tested: `7c9052a` (`fix: omit unknown timing from AI context`)
+- Status: **DONE**
+- Production commit tested: `60346b7` (`fix: enforce direct paipan visibility and sizing`)
 - Verification coverage added in this checkpoint:
   - dedicated pre-Li-Chun reverse-lookup regression (`2024-02-03`, year pillar `癸卯`)
   - executable mode-switch state coverage
   - executable rendered-candidate click/navigation coverage
 - Runtime origin: `http://127.0.0.1:3000`
 
-The automated and functional flows pass, but visual acceptance found two production issues described under **Blocking findings**. No production code was changed as part of this verification task.
+The automated, functional, and follow-up visual acceptance checks pass. The two findings from the initial checkpoint were resolved by reviewed production commit `60346b7`; no production code was changed by the verification task.
 
 ## Automated verification
 
 | Command | Result |
 | --- | --- |
-| `node --test tests/*.test.js` | PASS — 78 tests, 78 passed, 0 failed |
+| `node --test tests/*.test.js` | PASS — 80 tests, 80 passed, 0 failed |
 | `node --test tests/lunar-calendar.test.js` | PASS — 5 tests, 5 passed, 0 failed |
 | `node --test tests/pillar-reverse-lookup.test.js tests/paipan-direct-mode-contract.test.js` | PASS — 14 tests, 14 passed, 0 failed |
+| `node --test tests/paipan-direct-mode-contract.test.js` | PASS — 11 tests, 11 passed, 0 failed |
 
 The explicit lunar run includes:
 
@@ -102,7 +103,7 @@ http://127.0.0.1:3000/result?yg=%E7%94%B2&yz=%E8%BE%B0&mg=%E4%B8%81&mz=%E5%8D%AF
 
 It contains no fabricated `year`, `month`, `day`, `hour`, or `clock`.
 
-## Viewport evidence
+## Initial viewport evidence
 
 Each viewport displayed two candidate buttons with `16px` text, all candidate buttons stayed within the viewport, the mode-tab top-edge spread was `0px`, and the labels were readable as `年柱 / 月柱 / 日柱 / 时柱`.
 
@@ -120,14 +121,32 @@ C:\Users\86132\AppData\Local\Temp\bazi-task7-390x844.png
 C:\Users\86132\AppData\Local\Temp\bazi-task7-430x932.png
 ```
 
-## Blocking findings
+## Follow-up visual acceptance after `60346b7`
 
-1. In direct mode, `.calendar-only-fields` elements have `hidden=true` and their controls are disabled, but the zishi, true-solar, and location controls remain visibly rendered at all three viewports. The author layout rules override the expected hidden rendering. Direct URLs correctly omit these values, but the visual behavior does not meet the intended direct-mode isolation.
-2. At `1440×900`, the pillar selects render at `19px` high rather than the `44px` acceptance target. The two mobile viewports render these controls at approximately `44px`.
+The previously blocked checks were repeated against reviewed production fix `60346b7` using the same Playwright + Edge fallback.
 
-Per the task constraint, these production defects were not fixed inside the verification checkpoint.
+| Viewport | Direct calendar-only rows | Eight pillar selects | Horizontal overflow | Solar restoration |
+| --- | --- | --- | --- | --- |
+| `1440×900` | 3/3 `hidden=true`, `display:none`, `0px`; all fields disabled | 8/8 exactly `44px` | none (`1440/1440`) | 3/3 rows visible again |
+| `390×844` | 3/3 `hidden=true`, `display:none`, `0px`; all fields disabled | 8/8 exactly `44px` | none (`390/390`) | 3/3 rows visible again |
+| `430×932` | 3/3 `hidden=true`, `display:none`, `0px`; all fields disabled | 8/8 exactly `44px` | none (`430/430`) | 3/3 rows visible again |
+
+On return to solar mode, the zishi/true-solar controls and location rows regain their visible layout. Province and other normally available controls are enabled; the dependent district selector correctly remains disabled until its parent location is chosen.
+
+Follow-up screenshots, captured after switching back to solar mode, are at:
+
+```text
+C:\Users\86132\AppData\Local\Temp\bazi-task7-resolved-1440x900.png
+C:\Users\86132\AppData\Local\Temp\bazi-task7-resolved-390x844.png
+C:\Users\86132\AppData\Local\Temp\bazi-task7-resolved-430x932.png
+```
+
+## Resolved findings
+
+1. **Resolved:** direct-mode calendar-only controls now compute to `display:none` with zero height at every target viewport.
+2. **Resolved:** all eight direct pillar selects now render at `44px` at every target viewport, including desktop.
 
 ## Deferred items
 
 - In-app browser verification remains unavailable because no in-app browser backend was connected. Headless Edge fallback evidence is recorded above.
-- Production fixes for the two blocking visual findings require a reviewed implementation task followed by another visual acceptance run.
+- This availability limitation is not a release blocker because the required runtime and visual checks completed through the established local Edge fallback.
