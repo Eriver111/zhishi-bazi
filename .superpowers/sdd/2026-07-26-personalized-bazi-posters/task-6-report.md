@@ -4,7 +4,7 @@
 
 - Added `tests/poster-assets.test.js`.
 - Verified the 20-entry poster manifest maps each of the ten day masters to exactly one male and one female asset.
-- Verified every referenced asset is a local, unique, non-empty WebP below 900 KiB; `ffprobe` decodes each at 1080 by 1920 and confirms manifest dimensions.
+- Verified every referenced asset is a local, unique, non-empty WebP below 900 KiB; a dependency-free RIFF/VP8-family parser validates each at 1080 by 1920 and confirms manifest dimensions.
 - Verified there are no PNG/JPEG production poster sources.
 - Verified the homepage's local CSS/JS dependency graph does not load poster assets or poster implementation files.
 - Verified `PosterUI.configure()` is resource-free; first open fetches only the manifest and renders only the selected URL once; completed renders are reused; reconfiguration waits for the stale render then renders only the new selection; malformed entries produce the typed retry state without rendering.
@@ -24,3 +24,19 @@
 ## Scope note
 
 `js/auth.js` intentionally loads the site-wide PWA `/manifest.json`; it is not the poster manifest and remains unchanged. The homepage exclusion test rejects the poster manifest path and all poster asset/module references.
+
+## Review fix round 1
+
+- Fixed root-relative homepage dependency traversal: `/js/...` and `/css/...` references resolve from the declared repository/site root. Lexical and real-path containment keep the entry file and every traversed dependency inside that root. A temporary-site regression fixture proves root-relative linked assets and imports are scanned while an outside-root entry is rejected.
+- Removed the undeclared machine `ffprobe` dependency. WebP verification now uses only Node built-ins to validate the RIFF/WEBP signature, exact declared container size, chunk bounds, required zero padding, and a single supported image payload.
+- Tightened VP8-family checks: `VP8X` must be first and unique, reserved flag bits/bytes must be zero, animation is rejected for poster assets, and canvas area/dimensions are validated; `VP8 ` and `VP8L` signatures, versions, first-partition bounds/non-empty bitstreams, non-zero dimensions, and VP8X-to-payload dimension agreement are checked.
+- Added hand-built VP8, VP8L, and VP8X fixtures plus regressions for wrong signatures/sizes, truncated containers and bitstreams, invalid padding, reserved metadata, duplicate/late/animated VP8X headers, unsupported versions, zero dimensions, excessive canvas area, and contradictory dimensions.
+- Focused verification after the fix: `node --test tests/poster-assets.test.js` — 13 passed.
+- Full verification after the fix: `node --test tests/*.test.js` — 127 passed.
+- Syntax checks for the changed test and poster UI modules passed; `git diff --check` passed.
+
+## Recovery note
+
+- Preserved the two Task 6 working files before aborting an accidental merge, then restored them byte-for-byte.
+- Restored `js/bazi.js` in both the index and working tree to the exact `ac998df` blob; it is not part of this change.
+- Restored the pre-existing untracked `.superpowers/brainstorm/` visual-session assets in place with all 17 per-file SHA-256 hashes unchanged; they are excluded from the Task 6 commit.
