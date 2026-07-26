@@ -8,12 +8,15 @@ var currentMode = 'solar';
 document.addEventListener('DOMContentLoaded', function() {
   initSolarSelects();
   initLunarSelects();
+  initPillarSelects();
   initProvince();
   initHourSelects();
   initEvents();
-  // 页面初始：农历面板隐藏，禁用内部字段防止浏览器校验
+  // 页面初始：隐藏面板中的字段禁用，防止浏览器校验
   var lp = document.getElementById('lunarPanel');
   if (lp) setPanelFields(lp, true);
+  var pp = document.getElementById('pillarsPanel');
+  if (pp) setPanelFields(pp, true);
 });
 
 function initSolarSelects() {
@@ -85,6 +88,27 @@ function initLunarSelects() {
     o.textContent = y + '年（' + LunarCalendar.ANIMALS[(y-4)%12] + '年）';
     yS.appendChild(o);
   }
+}
+
+function initPillarSelects() {
+  var gans = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  var zhis = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  var ids = [
+    ['pYearGan', gans], ['pYearZhi', zhis],
+    ['pMonthGan', gans], ['pMonthZhi', zhis],
+    ['pDayGan', gans], ['pDayZhi', zhis],
+    ['pHourGan', gans], ['pHourZhi', zhis]
+  ];
+  ids.forEach(function(item) {
+    var select = document.getElementById(item[0]);
+    if (!select) return;
+    item[1].forEach(function(value) {
+      var option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    });
+  });
 }
 
 function initProvince() {
@@ -250,24 +274,39 @@ function switchMode(mode) {
   if (currentMode === mode) return;
   currentMode = mode;
   var oldPanel = document.querySelector('.mode-panel.active');
-  var newId = mode === 'solar' ? 'solarPanel' : 'lunarPanel';
-  var newPanel = document.getElementById(newId);
+  var panelIds = { solar:'solarPanel', lunar:'lunarPanel', pillars:'pillarsPanel' };
+  var newPanel = document.getElementById(panelIds[mode]);
+  if (!newPanel) return;
 
   document.querySelectorAll('.mode-tab').forEach(function(t) {
     t.classList.toggle('active', t.getAttribute('data-mode') === mode);
   });
 
-  if (oldPanel === newPanel) return;
+  if (oldPanel !== newPanel) {
+    // 隐藏旧面板、显示新面板
+    if (oldPanel) oldPanel.classList.remove('active');
+    newPanel.classList.add('active');
 
-  // 隐藏旧面板、显示新面板
-  oldPanel.classList.remove('active');
-  newPanel.classList.add('active');
+    // 禁用隐藏面板的所有表单字段，避免浏览器 HTML5 校验拦截
+    if (oldPanel) setPanelFields(oldPanel, true);
+    setPanelFields(newPanel, false);
+  }
 
-  // 禁用隐藏面板的所有表单字段，避免浏览器 HTML5 校验拦截
-  if (oldPanel) setPanelFields(oldPanel, true);
-  if (newPanel) setPanelFields(newPanel, false);
+  document.querySelectorAll('.calendar-only-fields').forEach(function(el) {
+    el.hidden = mode === 'pillars';
+    el.querySelectorAll('select, input').forEach(function(field) {
+      if (mode === 'pillars') {
+        field.setAttribute('data-calendar-was-disabled', field.disabled ? 'true' : 'false');
+        field.disabled = true;
+      } else if (field.hasAttribute('data-calendar-was-disabled')) {
+        field.disabled = field.getAttribute('data-calendar-was-disabled') === 'true';
+        field.removeAttribute('data-calendar-was-disabled');
+      }
+    });
+  });
 
-  document.getElementById('lunarPreview').classList.remove('show');
+  var preview = document.getElementById('lunarPreview');
+  if (preview) preview.classList.remove('show');
 }
 
 function setPanelFields(panel, disabled) {
@@ -287,6 +326,143 @@ function setPanelFields(panel, disabled) {
   }
 }
 
+function resetSubmitButton(btn) {
+  if (!btn) return;
+  btn.classList.remove('loading');
+  btn.textContent = '起盘推演';
+}
+
+function readDirectPillars() {
+  return {
+    year: { gan: document.getElementById('pYearGan').value, zhi: document.getElementById('pYearZhi').value },
+    month: { gan: document.getElementById('pMonthGan').value, zhi: document.getElementById('pMonthZhi').value },
+    day: { gan: document.getElementById('pDayGan').value, zhi: document.getElementById('pDayZhi').value },
+    hour: { gan: document.getElementById('pHourGan').value, zhi: document.getElementById('pHourZhi').value }
+  };
+}
+
+function renderPillarErrors(errors) {
+  ['year', 'month', 'day', 'hour'].forEach(function(position) {
+    var message = errors[position] || '';
+    var error = document.querySelector('[data-error-for="' + position + '"]');
+    if (error) error.textContent = message;
+    var column = document.querySelector('[data-pillar="' + position + '"]');
+    if (column) {
+      column.querySelectorAll('select').forEach(function(select) {
+        select.setAttribute('aria-invalid', message ? 'true' : 'false');
+      });
+    }
+  });
+}
+
+function buildDirectResultParams(pillars, gender, candidate) {
+  var params = PillarInput.toSearchParams(pillars);
+  params.set('mode', 'pillars');
+  params.set('timing', candidate ? 'matched' : 'unknown');
+  params.set('gender', gender);
+  if (candidate) {
+    params.set('year', candidate.year);
+    params.set('month', candidate.month);
+    params.set('day', candidate.day);
+    params.set('hour', candidate.hourIndex);
+    params.set('clock', candidate.clock);
+  }
+  return params;
+}
+
+function navigateToDirectResult(pillars, gender, candidate) {
+  var params = buildDirectResultParams(pillars, gender, candidate);
+  try { localStorage.setItem('last_bazi_params', params.toString()); } catch(e) {}
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+    try { Auth.syncData('last_bazi_params', params.toString()); } catch(e) {}
+  }
+  window.location.href = 'result?' + params.toString();
+}
+
+function appendPillarCandidateText(container, tagName, text, className) {
+  var element = document.createElement(tagName);
+  if (className) element.className = className;
+  element.textContent = text;
+  container.appendChild(element);
+  return element;
+}
+
+function renderPillarCandidates(matches, pillars, gender) {
+  var container = document.getElementById('pillarCandidates');
+  if (!container) return;
+  container.innerHTML = '';
+  container.hidden = false;
+
+  if (matches.length) {
+    appendPillarCandidateText(container, 'h3', '请选择对应的出生时间', 'pillar-candidates-title');
+    matches.slice(0, 2).forEach(function(match) {
+      var button = appendPillarCandidateText(
+        container,
+        'button',
+        match.year + '年' + match.month + '月' + match.day + '日 · ' + match.hourName + '（' + match.hourRange + '）',
+        'pillar-candidate'
+      );
+      button.type = 'button';
+      button.addEventListener('click', function() {
+        navigateToDirectResult(pillars, gender, match);
+      });
+    });
+    var midpoint = String(matches[0].clock).padStart(2, '0') + ':00';
+    appendPillarCandidateText(
+      container,
+      'p',
+      '确认后将采用该时辰的中点 ' + midpoint + ' 起盘。',
+      'pillar-midpoint-notice'
+    );
+    return;
+  }
+
+  appendPillarCandidateText(
+    container,
+    'p',
+    '近 200 年内未找到完全匹配的出生时间。请检查四柱，或先查看不含精确出生时点的基础命盘。',
+    'pillar-no-match'
+  );
+  var actions = appendPillarCandidateText(container, 'div', '', 'pillar-candidate-actions');
+  var back = appendPillarCandidateText(actions, 'button', '返回检查四柱', 'pillar-action pillar-action-secondary');
+  back.type = 'button';
+  back.addEventListener('click', function() {
+    container.hidden = true;
+    var first = document.getElementById('pYearGan');
+    if (first) first.focus();
+  });
+  var basic = appendPillarCandidateText(actions, 'button', '仅查看基础命盘', 'pillar-action pillar-action-primary');
+  basic.type = 'button';
+  basic.addEventListener('click', function() {
+    navigateToDirectResult(pillars, gender);
+  });
+}
+
+function clearPillarCandidates() {
+  var container = document.getElementById('pillarCandidates');
+  if (!container) return;
+  container.hidden = true;
+  container.innerHTML = '';
+}
+
+function handleDirectSubmit(gender, btn) {
+  clearPillarCandidates();
+  var normalized = PillarInput.normalize(readDirectPillars());
+  renderPillarErrors(normalized.errors);
+  if (!normalized.ok) {
+    resetSubmitButton(btn);
+    return;
+  }
+
+  var matches = PillarReverseLookup.findRecentMatches({
+    pillars: normalized.pillars,
+    calculator: BaZiCalculator,
+    gender: gender
+  });
+  renderPillarCandidates(matches, normalized.pillars, gender);
+  resetSubmitButton(btn);
+}
+
 // ---- 提交 ----
 function handleSubmit(e) {
   e.preventDefault();
@@ -299,6 +475,11 @@ function handleSubmit(e) {
   gender = document.querySelector('input[name="gender"]:checked');
   if (!gender) { alert('请选择性别'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return; }
   gender = gender.value;
+
+  if (currentMode === 'pillars') {
+    handleDirectSubmit(gender, btn);
+    return;
+  }
 
   prov = document.getElementById('province').value;
   city = document.getElementById('city') ? document.getElementById('city').value : '';

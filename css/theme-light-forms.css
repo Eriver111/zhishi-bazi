@@ -22,6 +22,103 @@
 .submit.loading,
 .submit-btn.loading,
 button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
+
+.pillar-intro {
+  margin: 0 0 16px;
+  color: var(--tx2);
+  font-size: 13px;
+  line-height: 1.75;
+  text-align: center;
+}
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.pillar-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+.pillar-column .pillar-label {
+  color: var(--zh-vermilion);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-align: center;
+}
+.pillar-column select {
+  width: 100%;
+  text-align: center;
+}
+.pillar-error {
+  min-height: 2.8em;
+  color: var(--zh-vermilion);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.pillar-candidates {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px;
+  color: var(--tx);
+  background: rgba(255,253,248,.72);
+  border: 1px solid rgba(54,93,80,.22);
+  border-radius: 10px;
+}
+.pillar-candidates[hidden] { display: none; }
+.pillar-candidates-title {
+  margin: 0;
+  color: var(--tx);
+  font-size: 15px;
+  text-align: center;
+}
+.pillar-candidate,
+.pillar-action {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--tx);
+  background: rgba(54,93,80,.06);
+  border: 1px solid rgba(54,93,80,.28);
+  border-radius: 8px;
+  font: inherit;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.pillar-candidate:hover,
+.pillar-action:hover { border-color: var(--zh-pine); background: rgba(54,93,80,.1); }
+.pillar-midpoint-notice,
+.pillar-no-match {
+  margin: 0;
+  color: var(--tx2);
+  font-size: 12px;
+  line-height: 1.65;
+  text-align: center;
+}
+.pillar-candidate-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.pillar-action-primary {
+  color: #fffdf8;
+  background: var(--zh-pine);
+  border-color: var(--zh-pine);
+}
 @media (max-width: 768px) {
   select, input, textarea, button, .radio, .mode-tab { min-height: 44px; }
+  .pillar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .pillar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .pillar-column { gap: 6px; }
+  .pillar-column select { min-height: 44px; padding-left: 8px; padding-right: 26px; }
+  .pillar-candidates { padding: 12px; }
+  .pillar-candidate-actions { grid-template-columns: 1fr; }
 }
