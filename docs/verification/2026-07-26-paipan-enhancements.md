@@ -3,14 +3,14 @@
 ## Release checkpoint
 
 - Status: **DONE**
-- Production commit tested: `60346b7` (`fix: enforce direct paipan visibility and sizing`)
+- Final production commit tested: `ba355cc90a4448d6d0b6797acef053bb9be791ab` (`Revert "Merge branch 'main' of https://github.com/Eriver111/zhishi-bazi into feat/light-ui-redesign"`)
 - Verification coverage added in this checkpoint:
   - dedicated pre-Li-Chun reverse-lookup regression (`2024-02-03`, year pillar `癸卯`)
   - executable mode-switch state coverage
   - executable rendered-candidate click/navigation coverage
 - Runtime origin: `http://127.0.0.1:3000`
 
-The automated, functional, and follow-up visual acceptance checks pass. The two findings from the initial checkpoint were resolved by reviewed production commit `60346b7`; no production code was changed by the verification task.
+The automated, functional, and follow-up visual acceptance checks pass. The two findings from the initial checkpoint were resolved by reviewed production commit `60346b7`; the final full acceptance matrix below was rerun after the additive scope-correction revert at `ba355cc`. No production code was changed by this verification round.
 
 ## Automated verification
 
@@ -121,7 +121,7 @@ C:\Users\86132\AppData\Local\Temp\bazi-task7-390x844.png
 C:\Users\86132\AppData\Local\Temp\bazi-task7-430x932.png
 ```
 
-## Follow-up visual acceptance after `60346b7`
+## Historical visual acceptance after `60346b7`
 
 The previously blocked checks were repeated against reviewed production fix `60346b7` using the same Playwright + Edge fallback.
 
@@ -140,6 +140,35 @@ C:\Users\86132\AppData\Local\Temp\bazi-task7-resolved-1440x900.png
 C:\Users\86132\AppData\Local\Temp\bazi-task7-resolved-390x844.png
 C:\Users\86132\AppData\Local\Temp\bazi-task7-resolved-430x932.png
 ```
+
+## Final live acceptance after scope correction `ba355cc`
+
+The complete live matrix was rerun against the final corrected first-parent HEAD, not the earlier fix commit:
+
+```text
+ba355cc90a4448d6d0b6797acef053bb9be791ab
+```
+
+It used the documented headless Microsoft Edge + Playwright fallback at `http://127.0.0.1:3000`. The matrix entered and asserted these exact flows:
+
+| Flow | Entered values | Exact result URL / assertion |
+| --- | --- | --- |
+| Solar | `2024-03-18`, hour-index `3`, clock `06:00`, male | `http://127.0.0.1:3000/result?year=2024&month=3&day=18&hour=3&gender=male&clock=6` |
+| Lunar | lunar `2013-1-1`, hour-index `3`, clock `06:00`, female | `http://127.0.0.1:3000/result?year=2013&month=2&day=10&hour=3&gender=female&clock=6` |
+| Direct, matched | `甲辰 丁卯 辛巳 辛卯`, male | two candidates; selected `2024-03-18 06:00`; result retains exactly `甲辰 丁卯 辛巳 辛卯` |
+| Direct, unknown | `甲辰 丁卯 辛巳 甲子`, male | `http://127.0.0.1:3000/result?yg=%E7%94%B2&yz=%E8%BE%B0&mg=%E4%B8%81&mz=%E5%8D%AF&dg=%E8%BE%9B&dz=%E5%B7%B3&hg=%E7%94%B2&hz=%E5%AD%90&mode=pillars&timing=unknown&gender=male`; no `year`, `month`, `day`, `hour`, `clock`, location, or correction keys |
+
+At `1440×900`, `390×844`, and `430×932`, the direct screen had no horizontal overflow, exactly two readable candidates, and all eight pillar selects at exactly `44px`. At the same three viewports, switching from 四柱 back to 公历 produced no horizontal overflow, an active `solar` tab, active solar panel, inactive pillars panel, and visible calendar-only controls.
+
+Committed screenshot evidence from this final run:
+
+| Viewport | Direct candidates | Solar-restoration screenshot |
+| --- | --- | --- |
+| `1440×900` | `evidence/bazi-task7-final-ba355cc-direct-1440x900.png` | `evidence/bazi-task7-final-ba355cc-solar-restored-1440x900.png` |
+| `390×844` | `evidence/bazi-task7-final-ba355cc-direct-390x844.png` | `evidence/bazi-task7-final-ba355cc-solar-restored-390x844.png` |
+| `430×932` | `evidence/bazi-task7-final-ba355cc-direct-430x932.png` | `evidence/bazi-task7-final-ba355cc-solar-restored-430x932.png` |
+
+The new `390×844` solar-restoration image is explicitly verified to show the 公历 tab selected; it replaces the earlier inconsistent four-pillars screenshot/caption pairing.
 
 ## Resolved findings
 
