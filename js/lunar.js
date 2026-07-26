@@ -18,6 +18,7 @@ var LunarCalendar = (function(){
   function leapMonth(y){return lunarInfo[y-1900]&0xf;}
   function leapDays(y){var m=leapMonth(y);return m?(lunarInfo[y-1900]&0x10000?30:29):0;}
   function monthDays(y,m){return lunarInfo[y-1900]&(0x10000>>m)?30:29;}
+  function lunarMonthDays(y,m,isLeap){return isLeap?leapDays(y):monthDays(y,m);}
   function lYearDays(y){var i,s=348;for(i=0x8000;i>0x8;i>>=1)s+=(lunarInfo[y-1900]&i)?1:0;return s+leapDays(y);}
 
   function solarDays(y,m){if(m===2)return(y%4===0&&y%100!==0)||(y%400===0)?29:28;return[31,28,31,30,31,30,31,31,30,31,30,31][m-1];}
@@ -66,5 +67,5 @@ var LunarCalendar = (function(){
   /** 某年是否有闰月（用于UI） */
   function hasLeapMonth(y){return leapMonth(y)>0;}
 
-  return{solarToLunar:solarToLunar,lunarToSolar:lunarToSolar,hasLeapMonth:hasLeapMonth,leapMonth:leapMonth,monthDays:monthDays,LUNAR_MONTH:LM,LUNAR_DAY:LD,GAN:GAN,ZHI:ZHI,ANIMALS:SX};
+  return{solarToLunar:solarToLunar,lunarToSolar:lunarToSolar,hasLeapMonth:hasLeapMonth,leapMonth:leapMonth,monthDays:monthDays,lunarMonthDays:lunarMonthDays,LUNAR_MONTH:LM,LUNAR_DAY:LD,GAN:GAN,ZHI:ZHI,ANIMALS:SX};
 })();

@@ -84,3 +84,26 @@ The live harness entered solar `2024-03-18`, hour-index `3`, clock `06:00`, male
 At `1440×900`, `390×844`, and `430×932`, direct mode had no horizontal overflow, exactly two candidates, and eight `44px` selects. The solar-restoration checks confirmed active 公历/solar state, inactive 四柱/pillars state, and visible calendar fields at all three viewports. Final screenshot evidence is committed at `docs/verification/evidence/bazi-task7-final-ba355cc-*.png`; the new `390×844` solar-restoration image visibly shows 公历 selected, correcting the prior evidence mismatch.
 
 No production code was changed. The in-app browser backend remains unavailable; this run used the established local headless Edge fallback.
+
+## Final-review fix wave — leap-month day selector
+
+Root cause: `updateLunarDays()` always used the ordinary-month `monthDays()` API after parsing a selected leap-month option. This omitted day 30 for 2017 leap June and offered invalid day 30 for 2023 leap February.
+
+- Added `LunarCalendar.lunarMonthDays(year, month, isLeap)` and used the selected option's parsed `isLeap` state in the lunar day selector.
+- Added executable API and selector coverage for 2017 ordinary/leap June (`29`/`30`) and 2023 ordinary/leap February (`30`/`29`).
+
+Commands and observed results:
+
+```text
+node --test tests/lunar-calendar.test.js tests/lunar-day-selector.test.js
+  RED before implementation: 5 passed, 2 failed
+  GREEN after implementation: 7 passed, 0 failed
+
+node --test tests/*.test.js
+  PASS — 82 tests, 82 passed, 0 failed
+
+node --check js/lunar.js
+node --check js/main.js
+git diff --check
+  PASS — all exited 0
+```

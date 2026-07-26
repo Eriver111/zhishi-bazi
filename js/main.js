@@ -215,7 +215,7 @@ function updateLunarDays() {
 
   // 用 LunarCalendar 查该月有多少天
   var maxDay;
-  try { maxDay = LunarCalendar.monthDays(y, lm); } catch(e) { maxDay = 29; }
+  try { maxDay = LunarCalendar.lunarMonthDays(y, lm, isLeap); } catch(e) { maxDay = 29; }
 
   dS.innerHTML = '<option value="">选择日期</option>';
   var LD = LunarCalendar.LUNAR_DAY;

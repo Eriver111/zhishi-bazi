@@ -29,6 +29,14 @@ test('rejects a lunar day beyond that month length', () => {
   assert.throws(() => calendar.lunarToSolar(2013, 1, 31, false), /日期/);
 });
 
+test('reports the day count for the selected ordinary or leap lunar month', () => {
+  const calendar = loadCalendar();
+  assert.equal(calendar.lunarMonthDays(2017, 6, false), 29);
+  assert.equal(calendar.lunarMonthDays(2017, 6, true), 30);
+  assert.equal(calendar.lunarMonthDays(2023, 2, false), 30);
+  assert.equal(calendar.lunarMonthDays(2023, 2, true), 29);
+});
+
 test('rejects non-numeric lunar date fields', () => {
   const calendar = loadCalendar();
   assert.throws(
