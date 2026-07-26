@@ -20,6 +20,8 @@ const WX_COLORS = {
 
 function getUrlParams() {
     const p = new URLSearchParams(window.location.search);
+    var mode = p.get('mode') || '';
+    var timing = mode === 'pillars' && p.get('timing') === 'matched' ? 'matched' : (mode === 'pillars' ? 'unknown' : '');
     return {
         year: parseInt(p.get('year')),
         month: parseInt(p.get('month')),
@@ -30,8 +32,48 @@ function getUrlParams() {
         minute: parseInt(p.get('minute')) || 0,
         clock: parseInt(p.get('clock')) || 0,
         solar: p.get('solar') || '',
-        zishi: p.get('zishi') || ''
+        zishi: p.get('zishi') || '',
+        mode: mode,
+        timing: timing,
+        enteredPillars: mode === 'pillars' && window.PillarInput
+            ? window.PillarInput.fromSearchParams(p)
+            : null
     };
+}
+
+function buildResultData(params) {
+    var isDirect = params.mode === 'pillars';
+    var hasTiming = !isDirect || params.timing === 'matched';
+    var birthDate = hasTiming
+        ? { year: params.year, month: params.month, day: params.day, hour: params.hour }
+        : null;
+    var bazi = isDirect
+        ? window.BaZiCalculator.buildFromPillars(params.enteredPillars, params.gender, birthDate)
+        : window.BaZiCalculator.calculate(
+            params.year, params.month, params.day, params.hour, params.gender, params.clock || 0
+        );
+    var daYun = hasTiming
+        ? window.BaZiCalculator.calculateDaYun(
+            bazi.month, bazi.year, params.gender,
+            params.year, params.month, params.day, params.hour, params.clock || 0
+        )
+        : null;
+
+    return {
+        bazi: bazi,
+        daYun: daYun,
+        shenSha: window.BaZiCalculator.calculateShenSha(bazi),
+        hasTiming: hasTiming
+    };
+}
+
+function applyTimingAvailability(hasTiming) {
+    var dayunSection = document.querySelector('.section-dayun');
+    var liunianSection = document.querySelector('.section-liunian');
+    var notice = document.getElementById('timingLimitNotice');
+    if (dayunSection) dayunSection.style.display = hasTiming ? '' : 'none';
+    if (liunianSection) liunianSection.style.display = hasTiming ? '' : 'none';
+    if (notice) notice.style.display = hasTiming ? 'none' : 'block';
 }
 
 // ==================== 全局状态 ====================
@@ -51,46 +93,56 @@ function render(data) {
     _bazi = bazi;  // 存储供 renderPaidContent 使用
     const dayGan = bazi.day.gan;
     const currentYear = new Date().getFullYear();
+    var isDirect = _params && _params.mode === 'pillars';
+    var hasTiming = data.hasTiming !== false;
+    applyTimingAvailability(hasTiming);
 
     // 顶部信息
     document.getElementById('genderLabel').textContent = bazi.gender === 'male' ? '乾造' : '坤造';
-    document.getElementById('birthDateText').textContent =
-        `${bazi.birthDate.year}年${bazi.birthDate.month}月${bazi.birthDate.day}日`;
+    document.getElementById('birthDateText').textContent = hasTiming
+        ? `${bazi.birthDate.year}年${bazi.birthDate.month}月${bazi.birthDate.day}日`
+        : '出生日期未定位';
 
     // 时辰显示：若经真太阳时调整后不同，标注原始北京时间
-    var hourText = `${SHI_CHEN_NAMES[bazi.birthDate.hour]}（${SHI_CHEN_TIMES[bazi.birthDate.hour]}）`;
-    if (bazi.originalHour !== undefined && bazi.originalHour !== bazi.birthDate.hour) {
+    var hourText = hasTiming
+        ? `${SHI_CHEN_NAMES[bazi.birthDate.hour]}（${SHI_CHEN_TIMES[bazi.birthDate.hour]}）`
+        : '四柱直排';
+    if (isDirect && hasTiming) {
+        hourText += ' <span style="font-size:10px;color:var(--text-dim)">四柱反查 · 起运按时辰中点估算</span>';
+    } else if (hasTiming && bazi.originalHour !== undefined && bazi.originalHour !== bazi.birthDate.hour) {
         hourText += ' <span style="font-size:11px;color:var(--gold)">真太阳时</span>';
         hourText += ' <span style="font-size:10px;color:var(--text-dim)">原北京时间：' + SHI_CHEN_NAMES[bazi.originalHour] + '</span>';
-    } else if (bazi.solarInfo && bazi.solarInfo.lng !== 120) {
+    } else if (hasTiming && bazi.solarInfo && bazi.solarInfo.lng !== 120) {
         hourText += ' <span style="font-size:10px;color:var(--text-dim)">（经度已校正）</span>';
     }
     document.getElementById('birthHourText').innerHTML = hourText;
     document.getElementById('nayinText').textContent = bazi.naYin;
 
-    // 大运
-    renderDaYun(data.daYun, dayGan, currentYear);
+    if (hasTiming) {
+        // 大运
+        renderDaYun(data.daYun, dayGan, currentYear);
 
-    // 流年（默认显示当前大运的流年）
-    const currentDaYun = data.daYun.list.find(dy =>
-        currentYear >= dy.startYear && currentYear <= dy.endYear
-    ) || data.daYun.list[0];
-    const currentDaYunIdx = data.daYun.list.indexOf(currentDaYun);
-    _currentDaYunIndex = currentDaYunIdx;
+        // 流年（默认显示当前大运的流年）
+        const currentDaYun = data.daYun.list.find(dy =>
+            currentYear >= dy.startYear && currentYear <= dy.endYear
+        ) || data.daYun.list[0];
+        const currentDaYunIdx = data.daYun.list.indexOf(currentDaYun);
+        _currentDaYunIndex = currentDaYunIdx;
 
-    // 当前年份在流年中的索引
-    const liuNianList = window.BaZiCalculator.calculateLiuNian(currentDaYun, dayGan);
-    const currentLnIdx = liuNianList.findIndex(ln => ln.year === currentYear);
-    _currentLiuNianIndex = currentLnIdx >= 0 ? currentLnIdx : 0;
+        // 当前年份在流年中的索引
+        const liuNianList = window.BaZiCalculator.calculateLiuNian(currentDaYun, dayGan);
+        const currentLnIdx = liuNianList.findIndex(ln => ln.year === currentYear);
+        _currentLiuNianIndex = currentLnIdx >= 0 ? currentLnIdx : 0;
 
-    renderLiuNian(currentDaYun, dayGan, currentYear);
+        renderLiuNian(currentDaYun, dayGan, currentYear);
+
+        // 更新表格中的大运/流年列
+        updateDayunColumn(currentDaYunIdx);
+        updateLiuNianColumn(currentDaYun, _currentLiuNianIndex);
+    }
 
     // 四柱主盘（固定四柱）
     renderSiZhu(bazi, dayGan);
-
-    // 更新表格中的大运/流年列
-    updateDayunColumn(currentDaYunIdx);
-    updateLiuNianColumn(currentDaYun, _currentLiuNianIndex);
 
     _nativeShenSha = data.shenSha;
 
@@ -100,7 +152,12 @@ function render(data) {
     // 滴天髓日主解析
     renderRiZhuJieXi(bazi.day.gan);
     // 真太阳时
-    renderSolarTime(_params.year, _params.month, _params.day, _params.hour);
+    if (isDirect) {
+        var solarTimeText = document.getElementById('solarTimeText');
+        if (solarTimeText) solarTimeText.textContent = '四柱直排不使用真太阳时';
+    } else {
+        renderSolarTime(_params.year, _params.month, _params.day, _params.hour);
+    }
 
     // 日主性格（大白话）
     try{renderPillarAnalysis(bazi)}catch(e){console.log("pillarAnalysis error:",e)}
@@ -119,16 +176,28 @@ function render(data) {
 
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
-    initPaywall({
-        year: _params.year,
-        month: _params.month,
-        day: _params.day,
-        hour: _params.hour,
-        gender: _params.gender
-    });
+    var paywallParams = { gender: _params.gender };
+    if (hasTiming) {
+        paywallParams.year = _params.year;
+        paywallParams.month = _params.month;
+        paywallParams.day = _params.day;
+        paywallParams.hour = _params.hour;
+    }
+    if (isDirect) {
+        paywallParams.mode = _params.mode;
+        paywallParams.timing = _params.timing;
+        paywallParams.enteredPillars = _params.enteredPillars;
+    }
+    initPaywall(paywallParams);
     // 自动存储排盘数据到 localStorage，确保 AI 对话页总能获取到
     try {
-      var d={birthInfo:{year:_params.year,month:_params.month,day:_params.day,hour:_params.hour,gender:_params.gender}};
+      var d={birthInfo:{gender:_params.gender}};
+      if(hasTiming){
+        d.birthInfo.year=_params.year;d.birthInfo.month=_params.month;d.birthInfo.day=_params.day;d.birthInfo.hour=_params.hour;
+      }
+      if(isDirect){
+        d.birthInfo.mode=_params.mode;d.birthInfo.timing=_params.timing;
+      }
       if(_bazi){
         d.fourPillars={};
         ['year','month','day','hour'].forEach(function(p){
@@ -1201,10 +1270,15 @@ function toggleDrawer(sectionId) {
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', function() {
     _params = getUrlParams();
+    var isDirect = _params.mode === 'pillars';
+    var hasTiming = !isDirect || _params.timing === 'matched';
+    var invalidDate = !_params.year || !_params.month || !_params.day || isNaN(_params.hour);
+    var invalidParams = !_params.gender
+        || (isDirect ? (!_params.enteredPillars || (hasTiming && invalidDate)) : invalidDate);
 
     // 登录用户：报告页不在这儿存档，见下方 _bazi 赋值后
 
-    if (!_params.year || !_params.month || !_params.day || isNaN(_params.hour) || !_params.gender) {
+    if (invalidParams) {
         alert('参数错误，请重新输入');
         window.location.href = 'index.html';
         return;
@@ -1212,42 +1286,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- 真太阳时纠正（默认开启，solar=0 时跳过）---
     var originalHour = _params.hour;
-    // 确保 _params.hour 始终是时辰索引（0-11），不是钟点（0-23）
-    if (_params.hour >= 12) _params.hour = Math.floor(_params.hour / 2) % 12;
-
     var solarInfo = null;
-    if (_params.prov && _params.solar !== '0') {
-        solarInfo = window.BaZiCalculator.getTrueSolarHour(
-            _params.hour, _params.city || _params.dist || _params.prov, _params.year, _params.month, _params.day, _params.minute, _params.clock
-        );
-        _params.hour = solarInfo.hourIndex;
-        // 也更新 clock 为真太阳时钟点，确保年柱/月柱的节气比较使用真太阳时
-        if (solarInfo.trueHour !== undefined) {
-            _params.clock = solarInfo.trueHour + (solarInfo.trueMinute || 0) / 60;
+    if (!isDirect) {
+        // 确保 _params.hour 始终是时辰索引（0-11），不是钟点（0-23）
+        if (_params.hour >= 12) _params.hour = Math.floor(_params.hour / 2) % 12;
+
+        if (_params.prov && _params.solar !== '0') {
+            solarInfo = window.BaZiCalculator.getTrueSolarHour(
+                _params.hour, _params.city || _params.dist || _params.prov, _params.year, _params.month, _params.day, _params.minute, _params.clock
+            );
+            _params.hour = solarInfo.hourIndex;
+            // 也更新 clock 为真太阳时钟点，确保年柱/月柱的节气比较使用真太阳时
+            if (solarInfo.trueHour !== undefined) {
+                _params.clock = solarInfo.trueHour + (solarInfo.trueMinute || 0) / 60;
+            }
+        }
+
+        // 子时换日：子时出生者可选择按次日的日柱计算
+        if (_params.zishi === '1' && _params.hour === 0) {
+            var nextDay = new Date(_params.year, _params.month - 1, _params.day + 1);
+            _params.year = nextDay.getFullYear();
+            _params.month = nextDay.getMonth() + 1;
+            _params.day = nextDay.getDate();
         }
     }
 
-    // 子时换日：子时出生者可选择按次日的日柱计算
-    if (_params.zishi === '1' && _params.hour === 0) {
-        var nextDay = new Date(_params.year, _params.month - 1, _params.day + 1);
-        _params.year = nextDay.getFullYear();
-        _params.month = nextDay.getMonth() + 1;
-        _params.day = nextDay.getDate();
+    const resultData = buildResultData(_params);
+    const bazi = resultData.bazi;
+    const daYun = resultData.daYun;
+    if (!isDirect) {
+        // 保存原始时辰供显示
+        bazi.originalHour = originalHour;
+        bazi.solarInfo = solarInfo;
     }
-
-    const bazi = window.BaZiCalculator.calculate(
-        _params.year, _params.month, _params.day, _params.hour, _params.gender, _params.clock || 0
-    );
-    // 保存原始时辰供显示
-    bazi.originalHour = originalHour;
-    bazi.solarInfo = solarInfo;
-
-    const daYun = window.BaZiCalculator.calculateDaYun(
-        bazi.month, bazi.year, _params.gender,
-        _params.year, _params.month, _params.day, _params.hour, _params.clock || 0
-    );
-
-    const shenSha = window.BaZiCalculator.calculateShenSha(bazi);
 
     // 存储供流年点击使用
     _daYunData = daYun;
@@ -1270,7 +1341,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // 找到并更新已有条目，或新增
             var found = charts.find(function(c){ return c.params === paramStr; });
             var label = _params.gender === 'male' ? '乾造' : '坤造';
-            label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
+            if (isDirect) {
+              label += ' · ' + ['year','month','day','hour'].map(function(position) {
+                var pillar = _params.enteredPillars[position];
+                return pillar.gan + pillar.zhi;
+              }).join(' ');
+            } else {
+              label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
+            }
             var entry = { label: label, params: paramStr, dayGan: bazi.day.gan, dayZhi: bazi.day.zhi, saved_at: new Date().toISOString() };
             if (found) {
               // 更新已有条目，补充日柱数据
@@ -1286,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    render({ bazi, daYun, shenSha });
+    render(resultData);
 });
 
 // ==================== 下载 / 保存报告 ====================
@@ -1366,11 +1444,14 @@ function buildReportHTML() {
     });
 
     var gender = _params ? (_params.gender === 'male' ? '男' : '女') : '';
-    var birthStr = _params ? _params.year + '年' + _params.month + '月' + _params.day + '日' : '';
-    var hourStr = _params ? (SHI_CHEN_NAMES && SHI_CHEN_NAMES[_params.hour]) || '' : '';
+    var reportHasTiming = _params && (_params.mode !== 'pillars' || _params.timing === 'matched');
+    var birthStr = reportHasTiming
+        ? _params.year + '年' + _params.month + '月' + _params.day + '日'
+        : '出生日期未定位';
+    var hourStr = reportHasTiming ? (SHI_CHEN_NAMES && SHI_CHEN_NAMES[_params.hour]) || '' : '四柱直排';
     var provStr = (_params && _params.prov) ? ' · ' + _params.prov : '';
     var dateStr = new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric'});
-    var yearNum = birthStr ? birthStr.split('年')[0] : '';
+    var yearNum = reportHasTiming ? _params.year : '';
 
     var css = ''
     // ===== 基础重置 =====
@@ -1506,7 +1587,7 @@ function buildReportHTML() {
     + '<div class="info">\n'
     + '<div class="birth-label">命 造 信 息</div>\n'
     + '<strong>' + gender + '造</strong> · ' + birthStr + '<br>\n'
-    + yearNum + '年 ' + hourStr + provStr + '<br>\n'
+    + (yearNum ? yearNum + '年 ' : '') + hourStr + provStr + '<br>\n'
     + '<span style="font-size:12px;color:#8a8070">分析日期：' + dateStr + '</span>\n'
     + '</div>\n</div>\n';
 
@@ -1550,7 +1631,16 @@ function downloadReport() {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    var fn = '知时报告_' + (_params ? _params.year + _params.month + _params.day : '') + '.html';
+    var reportName = '';
+    if (_params && _params.mode === 'pillars' && _params.enteredPillars) {
+        reportName = ['year','month','day','hour'].map(function(position) {
+            var pillar = _params.enteredPillars[position];
+            return pillar.gan + pillar.zhi;
+        }).join('');
+    } else if (_params) {
+        reportName = _params.year + '' + _params.month + _params.day;
+    }
+    var fn = '知时报告_' + reportName + '.html';
     a.download = fn;
     document.body.appendChild(a);
     a.click();
@@ -1641,8 +1731,16 @@ function submitFeedback() {
     // 收集当前八字信息做上下文
     var ctx = {};
     if (_params) {
-        ctx.year = _params.year; ctx.month = _params.month; ctx.day = _params.day;
-        ctx.hour = _params.hour; ctx.gender = _params.gender; ctx.prov = _params.prov || '';
+        var feedbackHasTiming = _params.mode !== 'pillars' || _params.timing === 'matched';
+        if (feedbackHasTiming) {
+            ctx.year = _params.year; ctx.month = _params.month; ctx.day = _params.day;
+            ctx.hour = _params.hour;
+        }
+        ctx.gender = _params.gender; ctx.prov = _params.prov || '';
+        if (_params.mode === 'pillars') {
+            ctx.mode = _params.mode; ctx.timing = _params.timing;
+            ctx.enteredPillars = _params.enteredPillars;
+        }
     }
 
     fetch('/api/feedback.js', {

@@ -2324,6 +2324,10 @@
             <button class="share-btn" onclick="shareResult()" title="复制分享链接">🔗 分享报告</button>
         </header>
 
+        <div id="timingLimitNotice" role="status" style="display:none;margin:0 0 18px;padding:14px 18px;border:1px solid rgba(201,168,76,.28);border-radius:10px;background:rgba(201,168,76,.08);color:var(--text-secondary);font-size:13px;line-height:1.8;text-align:center">
+            未在近200年内定位出生时间，以下仅展示基础命盘，大运与流年暂不计算
+        </div>
+
         <!-- 付费后下载横幅（金光闪烁） -->
         <div class="download-banner" id="downloadBanner" style="display:none;animation:dlPulse 2s ease-in-out infinite">
             <div class="dl-banner-title" style="font-size:20px">报告已解锁</div>
@@ -2722,6 +2726,7 @@
 })();
 </script>
     <script src="js/characters.js"></script>
+    <script src="js/pillar-input.js"></script>
     <script src="js/result.js"></script>
     <script src="js/pro-analysis.js?v=2"></script>
 <script src="js/auth.js"></script>

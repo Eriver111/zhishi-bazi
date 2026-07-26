@@ -29,6 +29,19 @@ test('bazi result retains the complete ordered long-report structure', () => {
   assert.match(html, /js\/ai-chat-integration\.js/);
 });
 
+test('bazi result loads direct-pillar parsing before result initialization', () => {
+  const html = read('result.html');
+  const pillarInput = html.indexOf('js/pillar-input.js');
+  const result = html.indexOf('js/result.js');
+
+  assert.ok(pillarInput >= 0, 'result page must load the shared pillar parser');
+  assert.ok(pillarInput < result, 'pillar parser must load before result initialization');
+  assert.match(
+    html,
+    /未在近200年内定位出生时间，以下仅展示基础命盘，大运与流年暂不计算/,
+  );
+});
+
 test('hepan result keeps its existing result and AI integration hooks', () => {
   const html = read('hepan-result.html');
   for (const marker of ['section-dayun', 'section-liunian', 'section-sizhu', 'js/hepan-result.js', 'js/ai-chat-integration.js']) {
