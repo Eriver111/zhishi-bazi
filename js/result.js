@@ -212,6 +212,13 @@ function render(data) {
       }
       localStorage.setItem('ai_chart_data',JSON.stringify(d));
     }catch(e){console.log('auto-save chartData failed:',e)}
+    if (window.PosterUI && window.BaZiCalculator.getPattern) {
+      window.PosterUI.configure({
+        bazi: _bazi,
+        gender: _params.gender,
+        pattern: window.BaZiCalculator.getPattern(_bazi)
+      });
+    }
 }
 
 // ---- 付费内容渲染 (由 paywall 在解锁后调用) ----

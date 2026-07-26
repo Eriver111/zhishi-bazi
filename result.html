@@ -2286,6 +2286,7 @@
 </style>
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/interactions.css">
+    <link rel="stylesheet" href="css/poster.css">
     <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_ID"></script>
 <style>@keyframes dlPulse{0%,100%{box-shadow:0 0 20px rgba(201,168,76,.2)}50%{box-shadow:0 0 50px rgba(201,168,76,.6),0 0 80px rgba(201,168,76,.2)}}</style>
 <link rel="stylesheet" href="css/theme-light.css?v=3">
@@ -2322,6 +2323,7 @@
                 真太阳时：<span id="solarTimeText"></span>
             </div>
             <button class="share-btn" onclick="shareResult()" title="复制分享链接">🔗 分享报告</button>
+            <button id="posterButton" class="share-btn poster-entry" type="button" onclick="PosterUI.open()" title="生成免费命格海报">生成命格海报</button>
         </header>
 
         <div id="timingLimitNotice" role="status" style="display:none;margin:0 0 18px;padding:14px 18px;border:1px solid rgba(201,168,76,.28);border-radius:10px;background:rgba(201,168,76,.08);color:var(--text-secondary);font-size:13px;line-height:1.8;text-align:center">
@@ -2580,6 +2582,22 @@
         </div>
     </div>
 
+    <div id="posterModal" class="poster-modal" role="dialog" aria-modal="true" aria-labelledby="posterTitle" hidden>
+        <div class="poster-dialog">
+            <button id="posterClose" class="poster-close" type="button" aria-label="关闭命格海报">×</button>
+            <h2 id="posterTitle" class="poster-title">你的命格海报</h2>
+            <p class="poster-free-note">免费生成与下载，不消耗积分</p>
+            <div class="poster-preview">
+                <canvas id="posterCanvas" aria-label="命格海报预览" hidden></canvas>
+                <p id="posterStatus" class="poster-status" role="status" aria-live="polite">准备生成海报</p>
+            </div>
+            <div class="poster-actions">
+                <button id="posterDownload" class="poster-action poster-download" type="button" hidden>免费下载</button>
+                <button id="posterRetry" class="poster-action poster-retry" type="button" hidden>重试</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/bazi.js?v=1781962250"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
@@ -2727,6 +2745,9 @@
 </script>
     <script src="js/characters.js"></script>
     <script src="js/pillar-input.js"></script>
+    <script src="js/poster-templates.js"></script>
+    <script src="js/poster-renderer.js"></script>
+    <script src="js/poster-ui.js"></script>
     <script src="js/result.js"></script>
     <script src="js/pro-analysis.js?v=2"></script>
 <script src="js/auth.js"></script>

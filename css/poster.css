@@ -20,3 +20,166 @@
 .poster-preview .poster-title {
   font-family: "ZhishiBrush", cursive;
 }
+
+.poster-entry {
+  margin-left: 8px;
+}
+
+.poster-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 18px;
+  background: rgba(35, 28, 23, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.poster-modal[hidden] {
+  display: none;
+}
+
+.poster-dialog {
+  position: relative;
+  box-sizing: border-box;
+  width: min(520px, 100%);
+  max-height: calc(100vh - 36px);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid rgba(132, 54, 47, 0.22);
+  border-radius: 16px;
+  background: #fbf6eb;
+  box-shadow: 0 24px 70px rgba(35, 28, 23, 0.32);
+  color: #2d261f;
+  text-align: center;
+}
+
+.poster-title {
+  margin: 0;
+  color: #84362f;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 4px;
+}
+
+.poster-free-note {
+  margin: 4px 32px 16px;
+  color: #655b51;
+  font-size: 13px;
+}
+
+.poster-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #655b51;
+  cursor: pointer;
+  font: 28px/1 sans-serif;
+}
+
+.poster-close:hover,
+.poster-close:focus-visible {
+  background: #efe0d6;
+  color: #84362f;
+}
+
+.poster-preview {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+}
+
+#posterCanvas {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100vh - 260px);
+  max-height: calc(100dvh - 260px);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(45, 38, 31, 0.2);
+}
+
+#posterCanvas[hidden] {
+  display: none;
+}
+
+.poster-status {
+  margin: 24px 0;
+  color: #655b51;
+  line-height: 1.7;
+}
+
+.poster-status[data-error] {
+  color: #84362f;
+}
+
+.poster-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.poster-action {
+  min-width: 132px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #84362f;
+  border-radius: 8px;
+  cursor: pointer;
+  font: 600 14px/1.4 "ZhishiSerif", serif;
+  letter-spacing: 2px;
+}
+
+.poster-download {
+  background: #84362f;
+  color: #fffaf1;
+}
+
+.poster-retry {
+  background: transparent;
+  color: #84362f;
+}
+
+.poster-action:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+@media (max-width: 390px) {
+  .poster-entry {
+    min-height: 44px;
+    padding-block: 10px;
+  }
+
+  .poster-modal {
+    padding: 10px;
+  }
+
+  .poster-dialog {
+    max-height: calc(100dvh - 20px);
+    padding: 20px 14px 16px;
+  }
+
+  .poster-actions {
+    flex-direction: column;
+  }
+
+  #posterDownload,
+  #posterRetry,
+  .poster-action,
+  .poster-close {
+    min-height: 44px;
+  }
+}
