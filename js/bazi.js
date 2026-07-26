@@ -721,14 +721,17 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     // 将天数差拆分为整3天组(岁) + 余天 + 余时辰
     const totalHours = diffDays * 24;
     const threeDayHours = 3 * 24;
-    const wholeYears = Math.floor(totalHours / threeDayHours);
+    var wholeYears = Math.floor(totalHours / threeDayHours);
     const remainHours = totalHours - wholeYears * threeDayHours;
     const remainDays = Math.floor(remainHours / 24);
     const remainHourRemainder = remainHours - remainDays * 24;
     const remainShiChen = Math.floor(remainHourRemainder / 2); // 1时辰=2小时
 
-    const calcMonths = remainDays * 4;           // 1天 = 4个月
-    const calcDays = remainShiChen * 10;         // 1时辰 = 10天
+    var calcMonths = remainDays * 4;             // 1天 = 4个月
+    var calcDays = remainShiChen * 10;           // 1时辰 = 10天
+    // 归一化：满30天进1月，满12个月进1年，循环直到干净
+    while (calcDays >= 30) { calcDays -= 30; calcMonths += 1; }
+    while (calcMonths >= 12) { calcMonths -= 12; wholeYears += 1; }
 
     const timingInfo = {
         years: wholeYears,
@@ -1676,55 +1679,112 @@ const DITIANSUI = {
 
 
 // ==================== 夫妻宫分析 ====================
-function analyzePei(bazi) {
-    const dayGan = bazi.day.gan;
-    const dayZhi = bazi.day.zhi;
-    const cangGan = getCangGan(dayZhi);
-    // 取本气（第一个藏干）作为夫妻宫主要十神
-    const mainCG = cangGan[0];
-    const ss = getShiShen(dayGan, mainCG);
-    const allSS = cangGan.map(cg => getShiShen(dayGan, cg));
+function analyzePei(bazi, gender) {
+    var dayGan = bazi.day.gan, dayZhi = bazi.day.zhi;
+    var cangGan = getCangGan(dayZhi);
+    var mainCG = cangGan[0];
+    var ss = getShiShen(dayGan, mainCG);
+    var isMale = gender === 'male';
+    var spouseStar = isMale ? ['正财','偏财'] : ['正官','七杀'];
 
-    const traits = {
-        '正官': '配偶品性端正、有责任感和正义感，可能从事公职或管理工作，行事有规矩，重视名誉和社会地位。',
-        '七杀': '配偶性格强势、果敢有魄力，有领导才能但也可能有霸道倾向。若为喜用则得良夫/贤妻，为忌则有压力和争执。',
-        '正财': '配偶勤俭持家、善于理财，对家庭物质生活重视，是比较传统务实型的伴侣。男命正财为妻，感情较为稳定。',
-        '偏财': '配偶大方豪爽、社交能力强，在财务上有商业头脑，但也可能有冲动消费倾向，不拘小节。',
-        '正印': '配偶温和包容、善良体贴，像长辈一样呵护和照顾你，有很强的情感包容度，家庭氛围温馨。',
-        '偏印': '配偶聪明机敏、思想独特，有特殊的才华或技能，可能在专业领域有所建树，但有时也显得孤僻。',
-        '食神': '配偶性情温厚、随和享受，有艺术气质或文学才华，喜欢安逸舒适的生活，不喜争斗和压力。',
-        '伤官': '配偶才华出众、个性独立，有强烈的表现欲和创造力，但也可能情绪敏感、要求高。女命伤官需防克夫。',
-        '比肩': '两人性格相似，如同知己和战友，有共同的兴趣和价值观，相处模式像朋友一般自由。但可能缺少激情。',
-        '劫财': '两人性格相近但有竞争，相处更像合作伙伴，需要注意避免因个性冲突带来的争执，保持彼此空间。'
+    // === 1. 配偶星搜索（四柱全查） ===
+    var starPositions = []; var starCount = 0; var starOnGan = false;
+    ['year','month','day','hour'].forEach(function(pos){
+      var ganSS = getShiShen(dayGan, bazi[pos].gan);
+      if (spouseStar.indexOf(ganSS) >= 0) {
+        starPositions.push({pos:pos, layer:'干', gan:bazi[pos].gan, ss:ganSS});
+        starCount++; starOnGan = true;
+      }
+      getCangGan(bazi[pos].zhi).forEach(function(g){
+        var zgSS = getShiShen(dayGan, g);
+        if (spouseStar.indexOf(zgSS) >= 0) {
+          starPositions.push({pos:pos, layer:'支藏', gan:g, ss:zgSS});
+          starCount++;
+        }
+      });
+    });
+
+    // === 2. 配偶星被克/被合 ===
+    var starDamaged = [];
+    var keMap = {}; ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){ keMap[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10]; });
+    var heMap = {'甲己':'土','乙庚':'金','丙辛':'水','丁壬':'木','戊癸':'火'};
+    starPositions.forEach(function(sp){
+      if (sp.layer === '干') {
+        ['year','month','day','hour'].forEach(function(pos){
+          if (bazi[pos].gan === keMap[sp.gan]) starDamaged.push(sp.ss+'星('+sp.gan+')被'+pos+'干'+bazi[pos].gan+'克');
+        });
+        ['year','month','day','hour'].forEach(function(pos){
+          var hk = sp.gan+bazi[pos].gan; var hk2 = bazi[pos].gan+sp.gan;
+          if (heMap[hk] || heMap[hk2]) starDamaged.push(sp.ss+'星('+sp.gan+')与'+pos+'干'+bazi[pos].gan+'合');
+        });
+      }
+    });
+
+    // === 3. 夫妻宫（日支）被冲/刑/害 ===
+    var CHONG2 = {子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:'酉',酉:'卯',辰:'戌',戌:'辰',巳:'亥',亥:'巳'};
+    var chongPos = []; var haiPos = [];
+    var HAI2 = {子:'未',未:'子',丑:'午',午:'丑',寅:'巳',巳:'寅',卯:'辰',辰:'卯',申:'亥',亥:'申',酉:'戌',戌:'酉'};
+    ['year','month','hour'].forEach(function(pos){
+      if (CHONG2[dayZhi] === bazi[pos].zhi) chongPos.push(pos);
+      if (HAI2[dayZhi] === bazi[pos].zhi) haiPos.push(pos);
+    });
+
+    // === 4. 多婚/晚婚信号 ===
+    var lateMarriage = false, multiMarriage = false;
+    var lateSigns = [];
+    if (starCount >= 3) { multiMarriage = true; lateSigns.push('配偶星出现3次以上，感情经历可能较丰富或婚姻不止一次'); }
+    if (chongPos.length > 0) { lateSigns.push('夫妻宫被冲，感情易有波折，早婚不吉'); lateMarriage = true; }
+    if (['子','午','卯','酉'].indexOf(dayZhi)>=0 && chongPos.length>0) lateMarriage = true;
+    if (starCount === 0) { lateMarriage = true; lateSigns.push('配偶星不显，缘分来得较晚'); }
+
+    // === 5. 配偶星与日主生克 ===
+    var starRelation = '';
+    var dayWX = WU_XING[dayGan];
+    if (starPositions.length > 0) {
+      var swx = WU_XING[starPositions[0].gan];
+      var wxS2 = {木:'水',火:'木',土:'火',金:'土',水:'金'};
+      var wxK2 = {木:'土',火:'金',土:'水',金:'木',水:'火'};
+      if (swx === dayWX) starRelation = '配偶星五行与日主相同（比和），两人性格相似，相处平等但有竞争感。';
+      else if (wxS2[dayWX] === swx) starRelation = '配偶星生扶日主——另一半会照顾、支持你，对你是加分项。';
+      else if (wxK2[dayWX] === swx) starRelation = '日主克配偶星——你在关系中掌握主动权，但需适度付出以保持平衡。';
+      else starRelation = '配偶星五行克日主——关系中另一半要求较高，需更多磨合和包容。';
+    }
+
+    var traits = {
+        '正官':'配偶品性端正、有责任感，行事有规矩。喜用则得良缘，为忌则有约束感。',
+        '七杀':'配偶性格强势、果敢有魄力。喜用则得其助，为忌则关系压力较大。',
+        '正财':'配偶勤俭持家、善于理财，是传统务实型伴侣。感情较为稳定。',
+        '偏财':'配偶大方豪爽、社交能力强，有商业头脑，但不拘小节。',
+        '正印':'配偶温和包容、善良体贴，有很强的情感包容度。',
+        '偏印':'配偶聪明机敏、思想独特，有特殊才华，有时显得孤僻。',
+        '食神':'配偶性情温厚、随和享受，有艺术气质，不喜争斗。',
+        '伤官':'配偶才华出众、个性独立，但也可能情绪敏感。女命伤官需防克夫。',
+        '比肩':'两人相似如同知己，相处自由，但可能缺少激情。',
+        '劫财':'两人性格相近有竞争，更像合作伙伴，注意避免冲突。'
     };
-
-    const trait = traits[ss] || '夫妻宫十神较为中和，配偶性格圆融，没有极端倾向。';
-
-    // 配偶样貌
-    const looks = {
-        '正官': '配偶五官端正、气质沉稳，面相有正气，眉目清秀，身高体型匀称，举止端庄有分寸，给人可靠的安全感。',
-        '七杀': '配偶面庞线条分明，眼神犀利有神，气质威严，身材精干或偏瘦，外表有英气和攻击性，走在人群中也比较引人注目。',
-        '正财': '配偶面相敦厚朴实，五官圆润柔和，体型偏结实或微胖，打扮低调实际，整体给人踏实可靠的感觉。',
-        '偏财': '配偶外表大方得体，面带福相，体型适中或偏丰满，穿着有品味，社交场合中显得游刃有余，有一股富贵气。',
-        '正印': '配偶面容温和慈善，皮肤白净，气质文雅，举止从容，可能偏丰满或骨架较大，整体给人一种温暖包容的感觉。',
-        '偏印': '配偶相貌清秀独特，眼神灵动，五官精致，可能偏瘦或身材纤细，气质文静中带着一丝灵气，有种书卷气或艺术范儿。',
-        '食神': '配偶面相和善圆润，笑起来有亲和力，体型偏丰润或微胖，气质轻松自在，给人一种舒适悠闲的印象。',
-        '伤官': '配偶相貌出众，五官立体分明，气质独特有锋芒，身材适中或偏瘦，打扮时尚有个性，容易让人眼前一亮。',
-        '比肩': '配偶与你相貌气质相似，两人站在一起很有夫妻相，五官端正大方，体型匀称，整体给人一种势均力敌的感觉。',
-        '劫财': '配偶五官分明，有独立个性，气质爽朗直率，身材偏精瘦或结实，不喜过分修饰，休闲打扮为主，看起来精力充沛。'
+    var looks = {
+        '正官':'五官端正、气质沉稳，眉目清秀，身高匀称。','七杀':'面庞线条分明，眼神犀利，外表有英气。',
+        '正财':'面相敦厚朴实，五官圆润柔和。','偏财':'外表大方得体，面带福相，有富贵气。',
+        '正印':'面容温和慈善，皮肤白净，气质文雅。','偏印':'相貌清秀独特，眼神灵动，有灵气。',
+        '食神':'面相和善圆润，有亲和力。','伤官':'相貌出众，五官立体，气质独特。',
+        '比肩':'与你相貌气质相似，有夫妻相。','劫财':'五官分明，气质爽朗直率。'
     };
-    const spLooks = looks[ss] || '配偶相貌中等，没有突出的外形特征，属于耐看型。';
+    var trait = traits[ss] || '夫妻宫十神较为中和，配偶性格圆融。';
+    var spLooks = looks[ss] || '配偶相貌中等，属于耐看型。';
 
     return {
-        dayZhi: dayZhi,
-        cangGan: cangGan,
-        mainSS: ss,
-        trait: trait,
-        looks: spLooks
+        dayZhi:dayZhi, cangGan:cangGan, mainSS:ss, trait:trait, looks:spLooks,
+        starPositions:starPositions, starCount:starCount, starOnGan:starOnGan,
+        starDamaged:starDamaged, chongPos:chongPos, haiPos:haiPos,
+        lateMarriage:lateMarriage, lateSigns:lateSigns, multiMarriage:multiMarriage,
+        starRelation:starRelation,
+        starInYear:starPositions.some(function(s){return s.pos==='year'}),
+        starInMonth:starPositions.some(function(s){return s.pos==='month'}),
+        starInDay:starPositions.some(function(s){return s.pos==='day'}),
+        starInHour:starPositions.some(function(s){return s.pos==='hour'})
     };
 }
 
-// ==================== 配偶年龄大小判断 ====================
 function calculateSpouseAge(bazi, peiSS) {
     // 统计全局十神倾向
     const DAY = bazi.day.gan;
@@ -2138,14 +2198,98 @@ function calcDayMasterStrength(bazi) {
       else if (WOSHENG[dgWx] === wx) score -= 2; // 三合食伤局
       else if (WOKE[dgWx] === wx) score -= 2;    // 三合财局
     }
-    // 半合（只含两支）→ 力量弱一些
+    // 半合（只含两支）→ 力量弱一些，但涉及日支时影响翻倍
     var count = (hasA?1:0)+(hasB?1:0)+(hasC?1:0);
     if (count === 2 && !(hasA&&hasB&&hasC)) {
-      if (wx === dgWx) score += 1;
-      else if (SHENGWO[dgWx] === wx) score += 1;
-      else if (KEWO[dgWx] === wx) score -= 1;
+      var involvesDayHe = (bazi.day.zhi===tri[0]||bazi.day.zhi===tri[1]||bazi.day.zhi===tri[2]);
+      var mult = involvesDayHe ? 2 : 1;
+      if (wx === dgWx) score += 1 * mult;
+      else if (SHENGWO[dgWx] === wx) score += 1 * mult;
+      else if (KEWO[dgWx] === wx) score -= 1 * mult;
+      else if (WOSHENG[dgWx] === wx) score -= 1 * mult;
+      else if (WOKE[dgWx] === wx) score -= 1 * mult;
     }
   });
+
+  // 跨柱六合检测 — 不限于相邻柱，所有地支对都要查
+  // 月支（月令）被合走、日支（坐支）被合走时对日主影响极大
+  var allPositions = ['year','month','day','hour'];
+  for (var a=0; a<allPositions.length; a++) {
+    for (var b=a+1; b<allPositions.length; b++) {
+      if (Math.abs(a-b) === 1) continue; // 相邻柱地支合已在§⑧处理，这里只补跨柱
+      var za = bazi[allPositions[a]].zhi, zb = bazi[allPositions[b]].zhi;
+      var heKey2 = za + zb;
+      if (zhiHeScore[heKey2]) {
+        var heWx2 = zhiHeScore[heKey2];
+        var involvesMonth = (za === bazi.month.zhi || zb === bazi.month.zhi);
+        var involvesDay = (za === bazi.day.zhi || zb === bazi.day.zhi);
+        var multiplier = involvesMonth ? (involvesDay ? 5 : 3) : 1;
+        if (heWx2 === dgWx) { score += 2 * (multiplier > 1 ? multiplier/2 : 1); }
+        else if (KEWO[dgWx] === heWx2) { score -= 2 * multiplier; }
+        else if (WOSHENG[dgWx] === heWx2) { score -= 2 * multiplier; }
+        else if (WOKE[dgWx] === heWx2) { score -= 1 * multiplier; }
+        /* SHENGWO（印）：无负面 */
+        // 月令被合化后，得令本质改变。但扣分需区分原状态：
+        // 若月令原本生扶日主（得令+30或相令+20），合化后利好消失 → 重扣
+        // 若月令原本就克泄耗日主（休囚死），合化后变另一种克泄耗 → 不重扣
+        if (involvesMonth && !(heWx2 === dgWx || SHENGWO[dgWx] === heWx2)) {
+          var mwx2 = DI_ZHI_WU_XING[bazi.month.zhi];
+          var wasFavorable = (mwx2 === dgWx || SHENGWO[dgWx] === mwx2);
+          if (wasFavorable) {
+            if (KEWO[dgWx] === heWx2 || WOSHENG[dgWx] === heWx2) score -= 18;
+            else score -= 12;
+          }
+        }
+      }
+    }
+  }
+
+  // 三会局检测（寅卯辰/巳午未/申酉戌/亥子丑 — 比三合局更强）
+  var HUI_JU = [
+    { zhi: ['寅','卯','辰'], wx: '木' },
+    { zhi: ['巳','午','未'], wx: '火' },
+    { zhi: ['申','酉','戌'], wx: '金' },
+    { zhi: ['亥','子','丑'], wx: '水' }
+  ];
+  HUI_JU.forEach(function(hj) {
+    var has = hj.zhi.map(function(z){ return allZhiArr.indexOf(z) >= 0; });
+    var fullCount = has.filter(Boolean).length;
+    if (fullCount === 3) {
+      // 三会成局，力量压倒性
+      if (hj.wx === dgWx) score += 6;
+      else if (SHENGWO[dgWx] === hj.wx) score += 3;
+      else if (KEWO[dgWx] === hj.wx) score -= 5;
+      else if (WOSHENG[dgWx] === hj.wx) score -= 4;
+      else if (WOKE[dgWx] === hj.wx) score -= 3;
+    } else if (fullCount === 2) {
+      // 半会 — 力量约等于半合但略强
+      var involvesDayHui = hj.zhi.indexOf(bazi.day.zhi) >= 0;
+      var involvesMonthHui = hj.zhi.indexOf(bazi.month.zhi) >= 0;
+      var multHui = (involvesDayHui ? 2 : 1) * (involvesMonthHui ? 1.5 : 1);
+      if (hj.wx === dgWx) score += Math.round(1 * multHui);
+      else if (SHENGWO[dgWx] === hj.wx) score += Math.round(1 * multHui);
+      else if (KEWO[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+      else if (WOSHENG[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+      else if (WOKE[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+    }
+  });
+
+  // 跨柱六冲检测 — 月支被冲（非相邻），得令根基动摇
+  for (var xa=0; xa<allPositions.length; xa++) {
+    for (var xb=xa+1; xb<allPositions.length; xb++) {
+      // skip adjacent pairs (already handled in §⑧)
+      if (Math.abs(xa-xb) === 1) continue;
+      var zxa = bazi[allPositions[xa]].zhi, zxb = bazi[allPositions[xb]].zhi;
+      if (chongMap[zxa] === zxb) {
+        var involvesMonthChong = (zxa === bazi.month.zhi || zxb === bazi.month.zhi);
+        var involvesDayChong = (zxa === bazi.day.zhi || zxb === bazi.day.zhi);
+        if (involvesMonthChong) {
+          score -= 4;  // 月令被跨柱冲，得令不稳
+          if (involvesDayChong) score -= 3; // 月日双冲，根气大伤
+        }
+      }
+    }
+  }
 
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
@@ -2223,22 +2367,22 @@ function analyzeParents(bazi, gender) {
         return false;
     }
 
-    // === 2. 查找父母星位置 ===
+    // === 2. 查找父母星位置（四柱全查，星宫同参） ===
     var fatherPos = [], motherPos = [];
     var fatherGan = null, motherGan = null, fatherShiShenOnGan = null, motherShiShenOnGan = null;
     var fatherInYear = false, motherInYear = false;
-    var posNameMap = { year: '年', month: '月' };
+    var posNameMap = { year: '年', month: '月', day: '日', hour: '时' };
 
-    ['year','month'].forEach(function(pos) {
+    ['year','month','day','hour'].forEach(function(pos) {
         var ganSS = getShiShen(DAY, bazi[pos].gan);
-        if (ganSS === fatherStar) { fatherPos.push(posNameMap[pos] + '干'); fatherGan = bazi[pos].gan; fatherShiShenOnGan = ganSS; if (pos==='year') fatherInYear = true; }
-        if (ganSS === motherStar) { motherPos.push(posNameMap[pos] + '干'); motherGan = bazi[pos].gan; motherShiShenOnGan = ganSS; if (pos==='year') motherInYear = true; }
+        if (ganSS === fatherStar) { fatherPos.push(posNameMap[pos] + '干'); if (!fatherGan) fatherGan = bazi[pos].gan; fatherShiShenOnGan = ganSS; if (pos==='year') fatherInYear = true; }
+        if (ganSS === motherStar) { motherPos.push(posNameMap[pos] + '干'); if (!motherGan) motherGan = bazi[pos].gan; motherShiShenOnGan = ganSS; if (pos==='year') motherInYear = true; }
 
         var cg = getCangGan(bazi[pos].zhi);
         cg.forEach(function(g) {
             var ss = getShiShen(DAY, g);
-            if (ss === fatherStar) { fatherPos.push(posNameMap[pos] + '支'); if (pos==='year') fatherInYear = true; }
-            if (ss === motherStar) { motherPos.push(posNameMap[pos] + '支'); if (pos==='year') motherInYear = true; }
+            if (ss === fatherStar) { fatherPos.push(posNameMap[pos] + '支（藏' + g + '）'); if (pos==='year') fatherInYear = true; }
+            if (ss === motherStar) { motherPos.push(posNameMap[pos] + '支（藏' + g + '）'); if (pos==='year') motherInYear = true; }
         });
     });
 
@@ -2280,45 +2424,80 @@ function analyzeParents(bazi, gender) {
 
     // === 5. 生成文本 ===
     var fatherText = '', motherText = '', summaryText = '', yearNote = '';
-    var posName = { year: '年柱', month: '月柱' };
+    var posName = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
+
+    // ----父亲被克检测（通用版）----
+    function starKeLevel(starGan, starPositions) {
+      // 遍历四柱天干，检查是否有克该星的天干
+      var keMap = {};
+      ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
+        keMap[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];
+      });
+      var keResult = [];
+      ['year','month','day','hour'].forEach(function(pos){
+        var g = bazi[pos].gan;
+        if (g === keMap[starGan]) {
+          keResult.push(posNameMap[pos] + '干' + g);
+        }
+      });
+      // 同时检查星所在的地支是否被冲
+      if (starPositions && starPositions.length > 0) {
+        var starZhi = null;
+        // 找到星所在的第一个地支（从藏干推断）
+        ['year','month','day','hour'].forEach(function(pos){
+          var cg = getCangGan(bazi[pos].zhi);
+          if (cg.indexOf(starGan) >= 0 && !starZhi) starZhi = bazi[pos].zhi;
+        });
+        if (starZhi && ZHI_CHONG[starZhi]) {
+          keResult.push('坐支' + starZhi + '被' + ZHI_CHONG[starZhi] + '冲');
+        }
+      }
+      return keResult;
+    }
 
     // ---- 父亲 ----
     var fIsXi = isXiShen(fatherStar);
     if (fatherPos.length > 0) {
         var fPositions = fatherPos.join('、');
         fatherText = '父亲星（' + fatherStar + '）出现在' + fPositions;
-        if (fatherInYear) fatherText += '，得位年柱父母宫';
+
+        // 得位判断《三命通会》：星在年=得位=最亲，在月=近，在日时=远
+        if (fatherInYear) {
+          fatherText += '，得位年柱父母宫——父亲在你的成长中参与度高，家庭结构较为传统；';
+        } else {
+          // 检查是否在日时柱
+          var fOnlyInDayHour = fatherPos.every(function(p){ return p.indexOf('日')>=0 || p.indexOf('时')>=0; });
+          if (fOnlyInDayHour) {
+            fatherText += '，出现在日时柱而非年月柱，按《三命通会》「星在日时上为远」——父亲可能在你性格形成期因工作或其他原因不常在家，但成年后你反而能更理解他；';
+          }
+        }
 
         // 有根
         if (!fatherHasRoot) {
-            fatherText += '。但父星根基较浅——在全局中只有孤星没有同五行支撑，意味着父亲可能在你的成长中很用心，但能给的实质资源或助力有限';
+            fatherText += '父星根基较浅，全局中缺少同五行支撑，父亲能给的实质资源有限，但在情感上的付出是真诚的。';
         } else {
-            fatherText += '。父星根基扎实，意味着父亲自身能力或资源较充足，对你的人生有实质性帮助';
+            fatherText += '父星根基扎实，父亲自身能力或资源较充足，对你人生有实质性帮助。';
         }
 
         // 喜用还是压力
         if (fIsXi) {
-            fatherText += '。从命局看，父亲特质恰好是你所需要的，他对你的教导和要求大多对你有益，属于「严是爱」的类型';
+            fatherText += '从命局看，父亲特质恰好是你所需要的，他对你的教导大多对你有益，属于「严是爱」的类型。';
         } else {
-            fatherText += '。不过要注意，你命局日主' + dmLabel + '，父星对你的要求有时候会超出你的承受范围，需要学会把父亲的期望转化成动力而不是压力';
+            fatherText += '需留意你命局日主' + dmLabel + '，父星为忌，父亲的要求有时会超出你的承受范围——把期望转化成动力而不是压力，是你跟父亲相处的一门课。';
         }
 
-        // 父星是否被克
+        // 父星是否被克（全柱检测）
         if (fatherGan) {
-            var keMap = {};
-            ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
-                keMap[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10]; // 间隔7位为克
-            });
-            var keGan = keMap[fatherGan];
-            if (bazi.month.gan === keGan) {
-                fatherText += '。特别提醒：父星在年干被月干' + keGan + '克制，需多留意父亲的身体健康，尤其在父亲年长之后';
+            var fKeList = starKeLevel(fatherGan, fatherPos);
+            if (fKeList.length > 0) {
+                fatherText += '特别提醒：父星受' + fKeList.join('、') + '所克，多关心父亲健康，尤其在他年长之后。';
             }
         }
     } else {
         if (fatherWx && hasWuxingRoot(fatherWx)) {
-            fatherText = '父亲星（' + fatherStar + '）虽未直接显现在年、月柱的天干地支上，但命局中' + fatherWx + '元素较旺，父缘并不浅——父亲对你的影响可能是间接的、潜移默化的方式存在，或者通过家中的其他长辈传递给你。';
+            fatherText = '父亲星（' + fatherStar + '）在命局四柱中不直接显现，但' + fatherWx + '元素较旺，父缘并不浅——父亲的影响通过间接或潜移默化的方式存在，也可能通过其他男性长辈传递给你。';
         } else {
-            fatherText = '父亲星（' + fatherStar + '）未显于命局，且相关五行也较弱，与父亲的缘分相对较浅。这并不代表关系不好，而是父亲在你性格形成期可能不在身边，或者有祖辈、师长在你人生中扮演了部分「父亲」角色。';
+            fatherText = '父亲星（' + fatherStar + '）不显于命局，相关五行也较弱，与父亲的缘分偏淡。这不代表关系不好，而是父亲在你性格形成期可能不在身边，或者祖辈、师长在你人生中扮演了部分「父亲」角色。';
         }
     }
 
@@ -2327,34 +2506,39 @@ function analyzeParents(bazi, gender) {
     if (motherPos.length > 0) {
         var mPositions = motherPos.join('、');
         motherText = '母亲星（' + motherStar + '）出现在' + mPositions;
-        if (motherInYear) motherText += '，得位年柱父母宫';
+
+        if (motherInYear) {
+          motherText += '，得位年柱父母宫——母亲在你成长中的陪伴是直接而持续的；';
+        } else {
+          var mOnlyInDayHour = motherPos.every(function(p){ return p.indexOf('日')>=0 || p.indexOf('时')>=0; });
+          if (mOnlyInDayHour) {
+            motherText += '，出现在日时柱——母亲的影响力更多体现在你成年后的生活中，童年可能有其他照顾者（祖辈、保姆等）参与了你的日常照料；';
+          }
+        }
 
         if (!motherHasRoot) {
-            motherText += '。母星根基较浅，母亲在自己的生活中可能有自己的难处或局限，能给你的资源不是最充裕的，但她在情感上的付出是真诚的';
+            motherText += '母星根基较浅，母亲在自己的生活中可能有难处或局限，给你的资源不是最充裕的，但她在情感上的付出是真诚的。';
         } else {
-            motherText += '。母星根基扎实，母亲是很坚实的后盾，在你需要的时候总能提供情感和实际上的支持';
+            motherText += '母星根基扎实，母亲是很坚实的后盾，在你需要的时候总能提供情感和实际上的支持。';
         }
 
         if (mIsXi) {
-            motherText += '。从命局看，母亲的包容和支持正是你最需要的东西，你们之间有一种天然的互相理解，这对你的性格形成很关键';
+            motherText += '母亲的包容和支持正是你最需要的东西，你们之间有一种天然的互相理解，这对你的性格形成很关键。';
         } else {
-            motherText += '。但需留意——你命局日主' + dmLabel + '，母亲的过度保护和关注有时候反而会让你觉得「喘不过气」来。学会对母亲说「我可以自己来」也是长大的一部分';
+            motherText += '需留意你命局日主' + dmLabel + '，母星为忌——母亲的过度保护和关注有时候反而让你觉得「喘不过气」，学会对母亲说「我可以自己来」也是长大的一部分。';
         }
 
         if (motherGan) {
-            var keMap2 = {};
-            ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
-                keMap2[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];
-            });
-            if (bazi.month.gan === keMap2[motherGan]) {
-                motherText += '。母星在年干受月干克制，平时应多关心母亲的身体和情绪';
+            var mKeList = starKeLevel(motherGan, motherPos);
+            if (mKeList.length > 0) {
+                motherText += '母星受' + mKeList.join('、') + '所克，平时多关心母亲身体和情绪。';
             }
         }
     } else {
         if (motherWx && hasWuxingRoot(motherWx)) {
-            motherText = '母亲星（' + motherStar + '）在年、月柱的天干地支上不直接显现，但命局中' + motherWx + '元素不算弱，说明母亲的能量是通过生活细节渗透给你的——可能她没有用你期待的方式关爱你，但她一直以自己的方式在。';
+            motherText = '母亲星（' + motherStar + '）在命局中不直接显现，但' + motherWx + '元素不算弱——母亲的能量通过生活细节渗透给你，她可能没有用你期待的方式关爱你，但一直以自己的方式在。';
         } else {
-            motherText = '母亲星（' + motherStar + '）不显于命局，与母亲的缘分偏淡。每个人的成长环境不同，有些人是从长辈或朋友那里学到温柔和关怀的，这不一定是遗憾';
+            motherText = '母亲星（' + motherStar + '）不显于命局，与母亲的缘分偏淡。每个人成长环境不同，有些人是从长辈或朋友那里学到温柔和关怀的，这不一定是遗憾。';
         }
     }
 
@@ -2652,37 +2836,10 @@ function analyzeWealth(bazi, gender, yongJi) {
         });
     });
 
-    // --- 简化日主旺衰判断 ---
-    let wangScore = 0;
-    // 得月令
-    const monthZhi = bazi.month.zhi;
-    const DI_ZHI_WX_MAP = { '寅':'木','卯':'木','辰':'土','巳':'火','午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水','子':'水','丑':'土' };
-    const monthWX = DI_ZHI_WX_MAP[monthZhi];
-    if (monthWX === WX) wangScore += 3;
-    else {
-        const wxSheng = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-        if (wxSheng[WX] === monthWX) wangScore += 2; // 月令生扶
-    }
-
-    // 天干同类比劫 + 印星
-    pillars.forEach(pos => {
-        const gWx = TIAN_GAN_WX[bazi[pos].gan];
-        if (gWx === WX) wangScore += 1; // 比劫
-        const wxSheng2 = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-        if (gWx === wxSheng2[WX]) wangScore += 0.5; // 印星
-    });
-
-    // 地支藏干加分
-    pillars.forEach(pos => {
-        getCangGan(bazi[pos].zhi).forEach(g => {
-            const gWx = TIAN_GAN_WX[g];
-            if (gWx === WX) wangScore += 0.5;
-            const ws = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
-            if (gWx === ws[WX]) wangScore += 0.25;
-        });
-    });
-
-    const wangStatus = wangScore >= 4 ? '身强' : (wangScore >= 2 ? '中和偏强' : (wangScore >= 0.5 ? '中和偏弱' : '身弱'));
+    // 统一使用权威 calcDayMasterStrength（通过 yongJi）——不再自算旺衰
+    var dmLevel = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '中和';
+    var wangScore = (yongJi && typeof yongJi.dayMasterScore !== 'undefined') ? yongJi.dayMasterScore : 50;
+    var wangStatus = dmLevel === '极强' || dmLevel === '偏强' ? '身强' : (dmLevel === '中和' ? '中和偏弱' : '身弱');
 
     // --- 财运解读 ---
     let caiText = '', caiWanxi = '', caiAdvice = '';
@@ -2708,11 +2865,11 @@ function analyzeWealth(bazi, gender, yongJi) {
     }
 
     // 身强身弱与财的关系
-    if (wangStatus === '身强' || wangStatus === '中和偏强') {
+    if (wangStatus === '身强') {
         if (caiCount >= 2) {
-            caiWanxi = '日主' + wangStatus + '可以担财，命局财星有力，属于「能赚钱也能守财」的类型。';
+            caiWanxi = '日主身强可以担财，命局财星有力，属于「能赚钱也能守财」的类型。';
         } else {
-            caiWanxi = '日主' + wangStatus + '足以担财，虽然命局财星不算多，但自身能量足够，可通过努力一步步积累财富。';
+            caiWanxi = '日主身强足以担财，虽然命局财星不算多，但自身能量足够，可通过努力一步步积累财富。';
         }
     } else {
         if (caiCount >= 2) {
@@ -2757,9 +2914,9 @@ function analyzeWealth(bazi, gender, yongJi) {
         wealthLevels.push('你有很强的赚钱能力和财运基础，只要方向对，**千万级别**的财富完全在你的射程之内。关键是找准赛道、持续深耕十年以上。');
     } else if (wangStatus === '身强' && caiCount >= 1) {
         wealthLevels.push('你的命格底子扎实，加上财星有根，**三五百万**这个量级对你来说只是时间问题。做好规划、保持专注，财富会自然积累。');
-    } else if (wangStatus === '身强' || (wangStatus === '中和偏强' && caiCount >= 2)) {
+    } else if (wangStatus === '身强' || caiCount >= 2) {
         wealthLevels.push('你的底子不错，财气也够用——**百万级别**的财富是完全可以期待的。抓住大运走强的年份，三五年就能看到明显变化。');
-    } else if (wangStatus === '中和偏强' || (wangStatus === '中和偏弱' && caiCount >= 2)) {
+    } else if (wangStatus === '中和偏弱' && caiCount >= 2) {
         wealthLevels.push('你的财运需要一点时间酝酿，但只要坚持走对方向，**几十万到百万**的积累是完全现实的。稳扎稳打比什么都重要。');
     } else if (caiCount >= 1) {
         wealthLevels.push('你的财运偏稳，不太适合冒险——但好在有财星在命，**几十万**的稳定积累不成问题。建议把重心放在主业深耕上，别频繁换赛道。');
@@ -2784,7 +2941,7 @@ function analyzeWealth(bazi, gender, yongJi) {
         summaryParts.push('命局财星不显，但你有生财的能力');
     }
 
-    if (wangStatus === '身强' || wangStatus === '中和偏强') {
+    if (wangStatus === '身强') {
         summaryParts.push('自身能量足，赚钱有底气');
     } else {
         summaryParts.push('适合与人合作，借力发展');
@@ -2913,6 +3070,10 @@ function analyzeFortune(bazi, gender, yongJi) {
             }
         });
 
+        // 流年十神喜忌色彩
+        if (isFavorable) riskLevel = Math.max(0, riskLevel - 1);
+        else riskLevel += 1;
+
         // 流年天干十神解读
         const ssNotes = {
             '正官': '事业上责任加重，压力与机遇并存——利于求职、晋升、考试。也是适合结婚的好年份。需注意职场竞争，保持低调谦逊。',
@@ -2961,6 +3122,12 @@ function analyzeFortune(bazi, gender, yongJi) {
         } else if (ss === '比肩') {
             cautions.push('同辈竞争增加，容易在团队中被比较或被分走资源。与其计较，不如借力合作。');
             cautions.push('社交圈扩大是好，但要擦亮眼睛——不熟的人提出的合作邀约要仔细辨别。');
+        }
+
+        // 大运+流年联动
+        if (currentDY) {
+          var keMap4 = {};['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){keMap4[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];});
+          if (keMap4[currentDY.gan]===yr.gan) { riskText+=(riskText?' ':'! ')+'大运天干克流年天干——大环境在压制今年的机会，需更多耐心。'; riskLevel+=1; }
         }
 
         // 冲克风险补充
@@ -3020,7 +3187,7 @@ function analyzeThisYear(bazi, gender, yongJi) {
     var caiWX = woKe[DAY_WX], shiShangWX = wxSHENG[DAY_WX];
 
     // 使用权威 calcDayMasterStrength（通过 yongJi 参数）
-    var wangLevelTA = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '偏强';
+    var wangLevelTA = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '中和';
     var isStrong = (wangLevelTA === '极强' || wangLevelTA === '偏强');
     var favorableSet = isStrong
         ? [caiWX, shiShangWX, guanWX[DAY_WX]]
@@ -3055,6 +3222,14 @@ function analyzeThisYear(bazi, gender, yongJi) {
     };
     var story = ssStories[ss] || { good:'今年运势总体平稳，没有大风大浪。', bad:'平平淡淡就是福，别焦虑。', health:'身体无大碍，保持平时习惯就好。' };
 
+    // 提前计算当前大运（后续刑冲合害都要用）
+    var daYun2 = calculateDaYun(bazi.month, bazi.year, gender, bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour);
+    var currentDY = null;
+    for (var di2=0; di2<daYun2.list.length; di2++) {
+      if (currentYear>=daYun2.list[di2].startYear && currentYear<=daYun2.list[di2].endYear) { currentDY=daYun2.list[di2]; break; }
+    }
+    if (!currentDY && daYun2.list.length>0) currentDY = daYun2.list[0];
+
     // 冲合影响
     var chongWarnings = [];
     var heGoods = [];
@@ -3080,6 +3255,109 @@ function analyzeThisYear(bazi, gender, yongJi) {
         }
     });
 
+    // === 暗合检测（寅丑/卯申/亥午 — 目前代码完全没有） ===
+    var AN_HE = {寅:'丑',丑:'寅',卯:'申',申:'卯',亥:'午',午:'亥'};
+    var anHeHits=[];
+    ['year','month','day','hour'].forEach(function(pos){
+      if (AN_HE[yp.zhi]===bazi[pos].zhi) anHeHits.push(pos);
+    });
+    if (anHeHits.length>0) {
+      var anHePosNames = {year:'祖上/家庭', month:'事业/工作', day:'感情', hour:'内心'};
+      var anHeDesc = anHeHits.map(function(p){return anHePosNames[p]+'宫'}).join('、');
+      heGoods.push('流年与'+anHeDesc+'暗合——有一种暗中助力的缘分，可能是某个人在默默地帮你，或者你自己都不知道的机遇在悄悄靠近。保持敏锐，多留意细节。');
+    }
+
+    // === 天干四冲检测（甲庚冲/乙辛冲/丙壬冲/丁癸冲 — 目前代码完全没有） ===
+    var GAN_CHONG={甲:'庚',庚:'甲',乙:'辛',辛:'乙',丙:'壬',壬:'丙',丁:'癸',癸:'丁'};
+    ['year','month','day','hour'].forEach(function(pos){
+      if (GAN_CHONG[yp.gan]===bazi[pos].gan) {
+        var gPosNames={year:'祖基',month:'事业',day:'自身',hour:'晚辈'};
+        chongWarnings.push('流年天干'+yp.gan+'与原局'+pos+'干'+bazi[pos].gan+'天干对冲——'+gPosNames[pos]+'方面可能出现公开的矛盾或冲突，说话做事多留余地为好。');
+      }
+    });
+
+    // === 地支破检测（子酉/寅亥/卯午/巳申破） ===
+    var PO={子:'酉',酉:'子',寅:'亥',亥:'寅',卯:'午',午:'卯',巳:'申',申:'巳'};
+    var poHits=[];
+    ['year','month','day','hour'].forEach(function(pos){
+      if (PO[yp.zhi]===bazi[pos].zhi) poHits.push(pos);
+    });
+    if (poHits.length>0) {
+      var poPosNames={year:'家中',month:'工作上',day:'感情上',hour:'心态上'};
+      var poDesc=poHits.map(function(p){return poPosNames[p]}).join('、');
+      chongWarnings.push('流年与原局相破——表面风平浪静，但'+poDesc+'可能有隐藏的摩擦。破不是大灾，属于小损耗，多注意细节少粗心就行。');
+    }
+
+    // === 流年刑原局检测（全柱扫描，不限日支年支） ===
+    var XING_MAP2={子:['卯'],卯:['子'],寅:['巳','申'],巳:['寅','申'],申:['寅','巳'],丑:['戌','未'],戌:['丑','未'],未:['丑','戌'],辰:['辰'],午:['午'],酉:['酉'],亥:['亥']};
+    var xingHits=[];
+    (XING_MAP2[yp.zhi]||[]).forEach(function(t){
+      ['year','month','day','hour'].forEach(function(pos){
+        if (bazi[pos].zhi===t) xingHits.push({target:pos,type:'刑'});
+      });
+    });
+    if (xingHits.length>0) {
+      var xingPosNames={year:'家庭根基',month:'事业平台',day:'婚姻感情',hour:'内心想法'};
+      var xingDesc=xingHits.map(function(h){return xingPosNames[h.target]}).join('、');
+      chongWarnings.push('流年刑原局——'+xingDesc+'方面可能有些别扭和纠结。刑不是毁灭性的，更像是鞋子里的沙子，不舒服但能解决。遇事别钻牛角尖就好。');
+    }
+
+    // === 大运+流年+原局 交叉关系（刑/合/暗合/破/冲） ===
+    if (currentDY) {
+      var dyZhi=currentDY.zhi, dyGan=currentDY.gan;
+      var posNamesAll={year:'年柱(祖基)',month:'月柱(事业)',day:'日柱(夫妻)',hour:'时柱(晚年)',dy:'当前大运'};
+
+      // 流年刑大运
+      (XING_MAP2[yp.zhi]||[]).forEach(function(t){
+        if (t===dyZhi) chongWarnings.push('流年刑大运——今年你想做的事和大环境的节奏不太合拍，容易感到别扭。建议顺应而非对抗，调整步伐比硬闯更有效。');
+      });
+      // 大运刑原局
+      (XING_MAP2[dyZhi]||[]).forEach(function(t){
+        ['year','month','day','hour'].forEach(function(pos){
+          if (bazi[pos].zhi===t) {
+            var posLabel={year:'家庭根基',month:'事业平台',day:'婚姻感情',hour:'内心世界'};
+            chongWarnings.push('大运刑'+posLabel[pos]+'——当前十年在'+posLabel[pos]+'方面需要多一些耐心和磨合，这是长期功课。');
+          }
+        });
+      });
+
+      // 流年合大运（六合+暗合）
+      if (HE_MAP[yp.zhi+dyZhi]) heGoods.push('流年与大运六合——今年做的事正好踩在大运的节奏上，事半功倍。这一年是大运十年里最好的窗口期之一，适合做重要决策。');
+      if (AN_HE[yp.zhi]===dyZhi) heGoods.push('流年与大运暗合——当下行的事可能不是你原计划的方向，但冥冥中在帮你铺路。多相信直觉。');
+
+      // 大运合原局（六合+暗合）
+      ['year','month','day','hour'].forEach(function(pos){
+        if (HE_MAP[dyZhi+bazi[pos].zhi]) {
+          var pn2={year:'家庭',month:'事业',day:'感情',hour:'子女'};
+          heGoods.push('大运与'+pn2[pos]+'宫六合——当前十年在'+pn2[pos]+'方面容易遇到贵人，整体趋势向好。');
+        }
+        if (AN_HE[dyZhi]===bazi[pos].zhi) {
+          var pn3={year:'家庭',month:'事业',day:'感情',hour:'内心'};
+          heGoods.push('大运与'+pn3[pos]+'宫暗合——'+pn3[pos]+'方面有暗中助力，可能你自己都没察觉到的缘分在默默运行。');
+        }
+      });
+
+      // 大运刑流年（同上，换个说法）
+      (XING_MAP2[dyZhi]||[]).forEach(function(t){
+        if (t===yp.zhi) { /* 已在上面流年刑大运中覆盖 */ }
+      });
+
+      // 流年天干冲大运天干
+      if (GAN_CHONG[yp.gan]===dyGan) {
+        chongWarnings.push('流年天干与大运天干对冲——今年的想法和大方向的节奏在打架。不宜做太冒险的决定，稳扎稳打比强出头更安全。');
+      }
+
+      // 流年地支冲大运地支
+      if (CHONG_MAP[yp.zhi+dyZhi]) {
+        chongWarnings.push('流年冲大运——今年可能是十年周期中的转折点，职业或生活方向上会有重要变化。变不是坏事，但过程需要适应。');
+      }
+
+      // 大运冲原局日支
+      if (CHONG_MAP[dyZhi+bazi.day.zhi]) {
+        chongWarnings.push('大运冲夫妻宫——当前十年感情和家庭方面处于调整期，需要更多耐心和沟通。');
+      }
+    }
+
     // 健康状况详细
     var wxHealth = {
         '木': { strong:'肝胆功能偏旺，注意少喝酒、少熬夜，春天容易上火。', weak:'肝气不足，容易疲劳犯困，早上起床困难。多吃绿色蔬菜补一补。', organ:'肝胆、筋腱、眼睛' },
@@ -3098,6 +3376,49 @@ function analyzeThisYear(bazi, gender, yongJi) {
     if (ss === '偏财' || ss === '劫财') healthExtra.push('应酬和奔波多，肠胃和肝脏负担加重——吃饭尽量规律，酒后多喝温水。');
     if (ss === '伤官' || ss === '偏印') healthExtra.push('用脑过度容易头晕、注意力不集中，每隔一小时站起来走走能缓解很多。');
     if (chongPillars.length > 0) healthExtra.push('冲太岁的一年身体容易出现小意外——开车慢一点，运动前热身要充分，别太拼。');
+
+    // === 大运+流年+原局三合半合检测 ===
+    var dyInfo = ''; var dyWarnings = [];
+    if (currentDY) {
+      dyInfo = '当前行' + currentDY.gan+currentDY.zhi+'大运（'+currentDY.startYear+'-'+currentDY.endYear+'年），十神为' + getShiShen(DAY,currentDY.gan) + '。';
+      var dyGanWX = WU_XING[currentDY.gan], dyZhiWX = DI_ZHI_WU_XING[currentDY.zhi];
+      var dyIsFav = favorableSet.indexOf(dyGanWX)>=0;
+      if (dyIsFav) dyInfo+='此运为喜用运——大方向上对你是有利的，流年波动会被大运兜住。';
+      else dyInfo+='此运为忌神运——大方向偏紧，但流年好时依然有不错的节点，需要把握好窗口期。';
+
+      // 大运+流年天干联合对日主
+      var dySS = getShiShen(DAY,currentDY.gan);
+      if (dySS===ss) dyWarnings.push('今年流年天干与大运天干十神相同（皆为'+ss+'），该十神能量加倍——好事加倍则机会翻番，坏事加倍则问题严重。需结合是喜是忌来应对。');
+      // 大运天干克流年天干
+      var keMap3={};['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){keMap3[g]=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];});
+      if (keMap3[currentDY.gan]===yp.gan) dyWarnings.push('大运天干克流年天干——大的环境在压制今年的势头，需要更多耐心和策略。');
+
+      // 三合/半合检测：流年+原局+大运 — 需判断喜忌
+      var SAN_HE2=[['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
+      var allZhiArr3=[bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi,yp.zhi,currentDY.zhi];
+      SAN_HE2.forEach(function(tri){
+        var hasA=allZhiArr3.indexOf(tri[0])>=0,hasB=allZhiArr3.indexOf(tri[1])>=0,hasC=allZhiArr3.indexOf(tri[2])>=0;
+        if (hasA&&hasB&&hasC) {
+          var heWx3=tri[3];
+          var heIsXi=favorableSet.indexOf(heWx3)>=0;
+          if (heIsXi) {
+            dyWarnings.push('今年流年+原局+大运形成三合<b>'+heWx3+'</b>局——此五行恰好是你的喜用神，能量集中释放，是成大事的窗口期。该方向上的机会要果断抓住。');
+          } else {
+            dyWarnings.push('今年流年+原局+大运形成三合<b>'+heWx3+'</b>局——此五行是你的忌神，该领域压力集中释放。不是坏事，但需要提前准备应对方案。');
+          }
+        }
+      });
+      // 刑冲检测：未丑戌三刑等 — 需判断所化五行喜忌
+      var XING_SAN=[['丑','戌','未','土'],['寅','巳','申','火']];
+      XING_SAN.forEach(function(tri){
+        var ha=allZhiArr3.indexOf(tri[0])>=0,hb=allZhiArr3.indexOf(tri[1])>=0,hc=allZhiArr3.indexOf(tri[2])>=0;
+        if (ha&&hb&&hc) {
+          var xw=tri[3], xi=favorableSet.indexOf(xw)>=0;
+          if (xi) dyWarnings.push('今年触发'+tri[0]+tri[1]+tri[2]+'三刑，化出<b>'+xw+'</b>为喜用——传统说法"冲库得财"即指此类：看似动荡，实则破中有立，往往伴随意外收获。');
+          else dyWarnings.push('今年触发'+tri[0]+tri[1]+tri[2]+'三刑，化出<b>'+xw+'</b>为忌神——刑冲之年多有变动，大事决策前多找人商量，避免冲动行事。');
+        }
+      });
+    }
 
     // 机会
     var opportunities = [];
@@ -3131,7 +3452,8 @@ function analyzeThisYear(bazi, gender, yongJi) {
         healthSummary: healthSummary,
         healthExtra: healthExtra,
         opportunities: opportunities,
-        dyInfo: ''
+        dyInfo: dyInfo,
+        dyWarnings: dyWarnings
     };
 }
 
@@ -3197,57 +3519,72 @@ function analyzeStudy(bazi) {
         if (WU_XING[bazi[pos].gan] === guanWX) guanScore += 1;
     });
 
-    // 6. 综合判断
-    let levelLabel, levelText;
-    const totalStudy = yinScore + guanScore * 0.5;
+    // 6. 财星破印检测（财克印=有钱分心，不利学业）
+    var caiPoYin = false; var caiScore = 0;
+    var caiWX2 = {木:'土',火:'金',土:'水',金:'木',水:'火'}[DAY_WX];
+    var caiPoDetails = [];
+    ['year','month','day','hour'].forEach(function(pos){
+      if (WU_XING[bazi[pos].gan]===caiWX2){caiScore+=1;caiPoDetails.push(pos+'干'+bazi[pos].gan);}
+    });
+    if (caiScore>=1 && yinCount>=1) { caiPoYin=true; }
 
-    if (totalStudy >= 4) {
-        levelLabel = '学业优秀';
-        levelText = '命局中印星得力、官星有制，天生适合读书考试。对新知识的吸收速度快、理解力强，在升学考公考证方面有先天优势。学习对你而言不是负担，而是乐趣。';
-    } else if (totalStudy >= 2.5) {
-        levelLabel = '学业良好';
-        levelText = '具备正常的学习能力和读书兴趣，能够按部就班完成学业。如果大运流年再走印运或官运，有进一步提升的空间，关键时刻也能考出不错的成绩。';
-    } else if (totalStudy >= 1) {
-        levelLabel = '学业中等';
-        levelText = '传统书本学习可能不是你的最强天赋，但这不代表不聪明——你可能更擅长实践操作、人际交往或创意表达，适合技能型或应用型的学习方式。';
-    } else {
-        levelLabel = '学业需努力';
-        levelText = '命局中学业星不显，读书考试确实需要比别人多下功夫。但这往往意味着你的天赋在别处——实践、艺术、社交或运动方面可能有突出表现。找到适合自己的赛道很重要。';
-    }
+    // 7. 综合评定
+    var totalStudy = yinScore + guanScore*0.5;
+    var levelLabel, levelText;
+    if (totalStudy>=4){levelLabel='学业优秀';levelText='印星得力、官星有制，天生适合读书考试。吸收速度快、理解力强，升学考公考证有先天优势。';}
+    else if (totalStudy>=2.5){levelLabel='学业良好';levelText='具备正常学习能力，按部就班可完成学业。大运再走印运或官运有进一步提升空间。';}
+    else if (totalStudy>=1){levelLabel='学业中等';levelText='书本学习可能不是最强天赋，但可能在实践操作、创意表达方面有突出表现，适合技能型学习。';}
+    else {levelLabel='学业需努力';levelText='学业星不显，读书需比别人多下功夫。天赋可能在实践、艺术、社交方面。找到对的赛道很重要。';}
 
-    // 印星位置描述
-    let yinPosText = '';
-    if (hasYearYin) yinPosText += '· 年柱有印：家庭书香氛围较浓，或祖辈重视教育。';
-    if (hasMonthYin) yinPosText += '· 月柱有印：青少年时期学习环境好，易遇良师益友。';
-    if (hasDayYin) yinPosText += '· 日柱有印：自学能力强，会主动钻研感兴趣的领域。';
-    if (hasHourYin) yinPosText += '· 时柱有印：晚年仍有学习热情，或下一代学业运佳。';
-    if (!yinPosText) yinPosText = '· 印星不显于四柱，学习上需要更多外部督促和环境支持。';
+    // 8. 格局区分
+    var studyType='';
+    if (yinScore>=2.5 && guanScore>=1){studyType='官印相生型——自律+吸收力强，典型的学霸配置，最适合考试升学和体制内发展。';}
+    else if (yinScore>=2.5){studyType='印星主导型——擅长理解和记忆，属于"给你一本书自己就能学会"的类型，适合学术研究和知识密集型工作。';}
+    else if (shiShangScore>=2 && yinScore>=1){studyType='食伤泄秀配印——既有创造力又有逻辑支撑，属于文理兼备的通才型，在需要跨界思维的领域特别出色。';}
+    else if (shiShangScore>=2){studyType='食伤泄秀型——聪明但不太喜欢框框，适合创意、艺术、设计等需要灵感的领域。传统应试教育可能让你觉得压抑，但一旦找到感兴趣的方向进步极快。';}
+    else if (guanScore>=1.5){studyType='官星自律型——自制力强，适合需要长期坚持的学习路径，如考公考研、专业认证。';}
+    else {studyType='综合型——没有明显单一天赋偏向，但适应力强，什么都能学一些。关键在于找到自己真正感兴趣的方向深耕。';}
+
+    // 9. 特殊格局加分
+    var specialPattern='';
+    var wxKe3 = {木:'金',火:'水',土:'木',金:'火',水:'土'};
+    var shaWX = wxKe3[DAY_WX]; // 杀星五行
+    var shaScore=0;
+    ['year','month','day','hour'].forEach(function(pos){
+      if (WU_XING[bazi[pos].gan]===shaWX) shaScore+=1;
+      if (DI_ZHI_WU_XING[bazi[pos].zhi]===shaWX) shaScore+=0.5;
+    });
+    if (shaScore>=2 && yinScore>=2.5) specialPattern='命带「杀印相生」格局——压力越大动力越足，考试前临时抱佛脚也能出成绩，适合在竞争激烈的环境中脱颖而出。';
+    else if (shaScore>=2 && shiShangScore>=1.5 && yinScore>=1) specialPattern='「食伤制杀配印」——能搞定复杂难题的聪明人，逻辑清晰+应变力强，数理竞赛和研究型学霸配置。';
+
+    // 印星位置
+    var yinPosText='';
+    if (hasYearYin) yinPosText+='· 年柱有印：家庭书香氛围较浓，祖辈重视教育。';
+    if (hasMonthYin) yinPosText+='· 月柱有印：青少年时期学习环境好，易遇良师益友。';
+    if (hasDayYin) yinPosText+='· 日柱有印：自学能力强，主动钻研感兴趣的领域。';
+    if (hasHourYin) yinPosText+='· 时柱有印：晚年仍有学习热情，或下一代学业运佳。';
+    if (!yinPosText) yinPosText='· 印星不显，学习上需更多外部督促和环境支持。';
 
     // 综合建议
-    let adviceText = '';
-    if (yinScore >= 2 && shiShangScore >= 1) {
-        adviceText = '印星与食伤兼具，属于「学以致用」的聪明类型——既有扎实的学习能力，又有灵活的表达和创造力。适合教育、写作、科研、设计等需要深度思考与输出的领域。';
-    } else if (yinScore >= 2 && shiShangScore < 1) {
-        adviceText = '学习吸收能力强，但表达输出稍显不足。建议多写、多说、多动手，把学到的知识转化为实际能力，而非只停留在理解层面。';
-    } else if (yinScore < 2 && shiShangScore >= 1) {
-        adviceText = '属于「实践出真知」的类型——你可能不太喜欢死记硬背，但动手能力、创意和社交天赋突出。建议选择技能型、艺术型或应用型专业方向，让才华有用武之地。';
-    } else if (guanScore >= 1) {
-        adviceText = '官星有根，自律性较强，能够按计划坚持学习。适合需要毅力和纪律的学习路径，比如考公考研或长周期的专业深造。';
-    } else {
-        adviceText = '学习之路需要更多自律和环境支持，找到自己真正感兴趣的方向会事半功倍。优势可能在非学术领域，选择适合的赛道比强行补短板更重要。';
-    }
+    var adviceText='';
+    if (yinScore>=2&&shiShangScore>=1) adviceText='印星与食伤兼具——「学以致用」型，既有扎实学习能力又有灵活表达，适合教育、写作、科研、设计等需要深度思考与输出的领域。';
+    else if (yinScore>=2) adviceText='吸收能力强，但表达输出稍显不足。建议多写多说多动手，把知识转化为实际能力。';
+    else if (yinScore<2&&shiShangScore>=1) adviceText='「实践出真知」型——不太喜欢死记硬背，但动手能力、创意和社交天赋突出，适合技能型、艺术型或应用型方向。';
+    else if (guanScore>=1) adviceText='官星有根，自律性强，能按计划坚持学习，适合考公考研或长期专业深造。';
+    else adviceText='需更多自律和环境支持。优势可能在非学术领域，选对赛道比强行补短板重要。';
 
-    if (hasWenChang) adviceText += ' 另外，命带「文昌贵人」（位于' + wenChangPos + '），在考试和写作方面有加分——关键时刻容易超常发挥。';
-    if (hasXueTang) adviceText += ' 命带「学堂」，天生对知识有好奇心，适合需要持续学习的环境和职业。';
+    if (caiPoYin) adviceText+=' 注意：命局财星破印——容易因赚钱、社交活动分心，学业期间需刻意减少干扰。';
+    if (hasWenChang) adviceText+=' 命带「文昌贵人」——考试写作有加分，关键时刻容易超常发挥。';
+    if (hasXueTang) adviceText+=' 命带「学堂」——天生对知识有好奇心。';
 
     return {
-        dayGan: DAY, wuXing: DAY_WX,
-        yinScore: yinScore, yinCount: yinCount,
-        shiShangScore: shiShangScore,
-        guanScore: guanScore,
-        hasWenChang: hasWenChang, hasXueTang: hasXueTang,
-        levelLabel: levelLabel, levelText: levelText,
-        yinPosText: yinPosText, adviceText: adviceText
+        dayGan:DAY,wuXing:DAY_WX, yinScore:yinScore,yinCount:yinCount,
+        shiShangScore:shiShangScore,guanScore:guanScore,
+        hasWenChang:hasWenChang,hasXueTang:hasXueTang,
+        levelLabel:levelLabel,levelText:levelText,
+        yinPosText:yinPosText,adviceText:adviceText,
+        studyType:studyType,specialPattern:specialPattern,
+        caiPoYin:caiPoYin,caiPoDetails:caiPoDetails
     };
 }
 
