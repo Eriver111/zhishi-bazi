@@ -1321,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 存储供流年点击使用
-    _daYunData = daYun;
+    _daYunData = daYun || undefined;
     _dayGan = bazi.day.gan;
     _bazi = bazi;
 

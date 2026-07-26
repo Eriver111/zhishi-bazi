@@ -19,6 +19,7 @@ function loadResult(search = '') {
     dayun: { style: {} },
     liunian: { style: {} },
   };
+  let domReady;
   const context = {
     URLSearchParams,
     window: {
@@ -26,7 +27,9 @@ function loadResult(search = '') {
       BaZiCalculator: {},
     },
     document: {
-      addEventListener() {},
+      addEventListener(event, callback) {
+        if (event === 'DOMContentLoaded') domReady = callback;
+      },
       getElementById(id) {
         return elements[id] || null;
       },
@@ -41,7 +44,7 @@ function loadResult(search = '') {
   context.window.window = context.window;
   vm.runInNewContext(pillarInputSource, context);
   vm.runInNewContext(resultSource, context);
-  return { context, elements };
+  return { context, elements, runDOMContentLoaded: () => domReady() };
 }
 
 const pillars = {
@@ -191,4 +194,30 @@ test('unknown direct timing renders base chart and hides timing-only sections', 
   assert.equal(elements.dayun.style.display, 'none');
   assert.equal(elements.liunian.style.display, 'none');
   assert.equal(elements.timingLimitNotice.style.display, 'block');
+});
+
+test('unknown direct initialization leaves timing data absent for AI consumers', () => {
+  const search = '?mode=pillars&timing=unknown&gender=male'
+    + '&yg=%E7%94%B2&yz=%E7%94%B3&mg=%E5%A3%AC&mz=%E7%94%B3'
+    + '&dg=%E4%B9%99&dz=%E4%B8%91&hg=%E4%B8%81&hz=%E4%BA%A5';
+  const { context, runDOMContentLoaded } = loadResult(search);
+  const directChart = {
+    year: { gan: '甲', zhi: '申' },
+    month: { gan: '壬', zhi: '申' },
+    day: { gan: '乙', zhi: '丑' },
+    hour: { gan: '丁', zhi: '亥' },
+    gender: 'male',
+    birthDate: null,
+  };
+  context.window.BaZiCalculator = {
+    buildFromPillars() { return directChart; },
+    calculateDaYun() { throw new Error('unknown timing must not calculate DaYun'); },
+    calculateShenSha() { return []; },
+  };
+  context.render = () => {};
+
+  runDOMContentLoaded();
+
+  assert.equal(vm.runInNewContext('typeof _daYunData', context), 'undefined');
+  assert.equal(vm.runInNewContext('_bazi', context), directChart);
 });
