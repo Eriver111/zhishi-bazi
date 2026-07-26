@@ -2057,7 +2057,11 @@ function calcDayMasterStrength(bazi) {
   if (isAutumn && dgWx !== '金' && dgWx !== '火') {
     if (!hasWx('火')) score -= 3;       // 金无火炼，顽金不器
     // 秋金成局+无火 → 官杀无制，日主被克严重（如申酉戌会金局）
-    if (dgWx !== '木' && allZhiArr.indexOf('申')>=0 && allZhiArr.indexOf('酉')>=0 && allZhiArr.indexOf('戌')>=0) {
+    // 检查四柱中是否有申酉戌三字（秋金成局）——直接用四柱地支
+    var hasShen=(allZhi[0]==='申'||allZhi[1]==='申'||allZhi[2]==='申'||allZhi[3]==='申');
+    var hasYou=(allZhi[0]==='酉'||allZhi[1]==='酉'||allZhi[2]==='酉'||allZhi[3]==='酉');
+    var hasXu=(allZhi[0]==='戌'||allZhi[1]==='戌'||allZhi[2]==='戌'||allZhi[3]==='戌');
+    if (dgWx !== '木' && hasShen && hasYou && hasXu) {
       if (!hasWx('火')) score -= 3;    // 金局无火制杀 → 追加调候扣分
     }
   }
