@@ -718,7 +718,7 @@
     var value = typeof pattern === 'string' ? pattern.trim() : '';
     var i;
 
-    if (SUPPORTED_PATTERNS[value]) return value;
+    if (Object.prototype.hasOwnProperty.call(SUPPORTED_PATTERNS, value)) return value;
     for (i = 0; i < KEYWORD_RULES.length; i += 1) {
       if (value.indexOf(KEYWORD_RULES[i][0]) !== -1) return KEYWORD_RULES[i][1];
     }

@@ -110,3 +110,90 @@ Implementation and tests:
 ## Concerns
 
 No Task 1 blockers or known defects. Loading the new browser module from a page and rendering the Canvas poster are intentionally deferred to later tasks.
+
+## Review Fix Round 1
+
+### Root cause
+
+`SUPPORTED_PATTERNS[value]` read through the normal object's prototype chain. Names such as `toString`, `constructor`, `hasOwnProperty`, and `__proto__` therefore appeared truthy even though they were not supported pattern names. The resolver then used the inherited name to index the copy matrix and threw when the inherited value did not provide the expected copy-array contract.
+
+The fix changes the exact-pattern branch to an own-property check:
+
+```text
+Object.prototype.hasOwnProperty.call(SUPPORTED_PATTERNS, value)
+```
+
+### RED
+
+Command:
+
+```text
+node --test tests/poster-templates.test.js
+```
+
+Result:
+
+```text
+exit code: 1
+tests: 7
+pass: 6
+fail: 1
+
+TypeError: COPY_MATRIX[dayGan][patternName].slice is not a function
+```
+
+The new regression covers `toString`, `constructor`, `hasOwnProperty`, `__proto__`, and an ordinary unknown name.
+
+### GREEN
+
+Command:
+
+```text
+node --test tests/poster-templates.test.js
+```
+
+Result:
+
+```text
+exit code: 0
+tests: 7
+pass: 7
+fail: 0
+duration_ms: 79.9612
+```
+
+### Full suite
+
+Command:
+
+```text
+node --test tests/*.test.js
+```
+
+Result:
+
+```text
+exit code: 0
+tests: 89
+pass: 89
+fail: 0
+cancelled: 0
+skipped: 0
+todo: 0
+duration_ms: 614.4472
+```
+
+Additional check:
+
+```text
+git diff --check
+exit code: 0
+```
+
+### Review result
+
+- All listed prototype-collision names now resolve to `杂格` with the day master's reviewed miscellaneous copy.
+- Ordinary unknown fallback remains covered.
+- Exact supported names and contained-keyword normalization are unchanged.
+- No changes were made to the 160 reviewed copy pairs.
+- No new concerns or blockers were found.

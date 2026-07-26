@@ -117,6 +117,18 @@ test('normalizes empty and unknown patterns while resolving future keyword names
   );
 });
 
+test('treats Object prototype property names and ordinary unknown names as 杂格', () => {
+  const templates = loadTemplates();
+  const bazi = { day: { gan: '丁' } };
+  const miscellaneous = plain(templates.resolve({ bazi, gender: 'female', pattern: '杂格' }));
+
+  for (const pattern of ['toString', 'constructor', 'hasOwnProperty', '__proto__', 'ordinary-unknown-pattern']) {
+    const result = plain(templates.resolve({ bazi, gender: 'female', pattern }));
+    assert.equal(result.patternName, '杂格');
+    assert.deepEqual(result.copyLines, miscellaneous.copyLines);
+  }
+});
+
 test('uses gender only for the identity label and background variant', () => {
   const templates = loadTemplates();
   const bazi = { day: { gan: '乙' } };
