@@ -4180,6 +4180,21 @@ function getCongGe(bazi) {
     var cgWx2 = WU_XING[dayCangGanAll[cgi]];
     if (cgWx2 === dgWx || cgWx2 === SHENGWO) { hasDayRoot = true; break; }
   }
+  // 《子平真诠》"一字印绶即破格"：天干有印星则不能从
+  var hasGanYin = false;
+  var allGanCong = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
+  for (var gc = 0; gc < allGanCong.length; gc++) {
+    if (WU_XING[allGanCong[gc]] === SHENGWO) { hasGanYin = true; break; }
+  }
+  // 地支藏干有印也算有根（如寅藏丙火，己土见之为印）
+  var hasZhiYin = false;
+  if (!hasGanYin) {
+    ['year','month','day','hour'].forEach(function(pos) {
+      getCangGan(bazi[pos].zhi).forEach(function(g) {
+        if (WU_XING[g] === SHENGWO) hasZhiYin = true;
+      });
+    });
+  }
 
   // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱，且日支不能有克泄耗（日支坐克星则破格）
   var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
@@ -4192,8 +4207,9 @@ function getCongGe(bazi) {
       source: '从旺/从强'
     };
   }
-  // 从杀/从财/从儿/从势：日主需极弱(<30分)且日支无根
-  var canCong = level === '极弱' && !hasDayRoot;
+  // 从杀/从财/从儿/从势：日主需极弱(<30分)、日支无根、天干无印
+  // 《子平真诠》"一字印绶即破格"：哪怕暗藏印星也算有根
+  var canCong = level === '极弱' && !hasDayRoot && !hasGanYin && !hasZhiYin;
   // 从杀：官杀极旺(≥6且≥日主2倍)
   if (canCong && kePower >= 6 && kePower >= dgPower * 2) {
     return {
