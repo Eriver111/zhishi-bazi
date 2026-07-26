@@ -40,3 +40,11 @@
 - Preserved the two Task 6 working files before aborting an accidental merge, then restored them byte-for-byte.
 - Restored `js/bazi.js` in both the index and working tree to the exact `ac998df` blob; it is not part of this change.
 - Restored the pre-existing untracked `.superpowers/brainstorm/` visual-session assets in place with all 17 per-file SHA-256 hashes unchanged; they are excluded from the Task 6 commit.
+
+## Review fix round 2
+
+- Renamed the pure-Node routine to `inspectWebPContainer`: it remains a defensive RIFF/chunk and advertised-dimension inspection only, rather than implying full image decoding.
+- Added a real Playwright browser-decoder check. It opens one headless Chromium browser/page and feeds the 20 manifest assets as `data:image/webp` URLs to `HTMLImageElement.decode()`, then verifies every decoded image reports natural dimensions of 1080 by 1920.
+- The test also supplies a hand-built VP8 RIFF fixture whose structural header advertises 1080 by 1920 but whose payload is not a complete VP8 bitstream. The pure container inspector accepts that header structure; Chromium rejects it, proving the regression check exercises an actual decoder.
+- Browser startup prefers Playwright's bundled Chromium. If that executable is absent locally, the test may use an installed Microsoft Edge executable; otherwise it fails with a clear local-installation message. This verification used the bundled Chromium and never started the application server.
+- The browser is closed in a `finally` block so test failures do not leak a process.

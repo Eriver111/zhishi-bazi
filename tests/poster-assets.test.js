@@ -4,6 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
 
 const root = path.join(__dirname, '..');
 const postersDir = path.join(root, 'images', 'posters');
@@ -15,7 +16,63 @@ function read(file) {
   return fs.readFileSync(path.join(root, file), 'utf8');
 }
 
-function decodeWebP(input) {
+function installedEdgeExecutablePath() {
+  const candidates = [
+    path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+    path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+async function launchWebPDecoderBrowser() {
+  const bundledChromium = chromium.executablePath();
+  if (bundledChromium && fs.existsSync(bundledChromium)) {
+    return chromium.launch({ headless: true });
+  }
+
+  // Only use Edge when Playwright's bundled Chromium is unavailable on this machine.
+  const edge = installedEdgeExecutablePath();
+  if (edge) return chromium.launch({ executablePath: edge, headless: true });
+  throw new Error(
+    `Playwright Chromium is unavailable at ${bundledChromium}; no installed Microsoft Edge fallback was found`,
+  );
+}
+
+async function decodeWebPDataUrls(assets) {
+  const browser = await launchWebPDecoderBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto('about:blank');
+    const dataUrls = assets.map(({ label, bytes, file }) => ({
+      label,
+      dataUrl: `data:image/webp;base64,${(bytes || fs.readFileSync(file)).toString('base64')}`,
+    }));
+    return await page.evaluate(async (sources) => Promise.all(sources.map(async (source) => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = source.dataUrl;
+      try {
+        await image.decode();
+        return {
+          label: source.label,
+          decoded: true,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        };
+      } catch (error) {
+        return {
+          label: source.label,
+          decoded: false,
+          error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+        };
+      }
+    })), dataUrls);
+  } finally {
+    await browser.close();
+  }
+}
+
+function inspectWebPContainer(input) {
   const bytes = Buffer.isBuffer(input) ? input : fs.readFileSync(input);
   let offset = 12;
   let extendedSize = null;
@@ -363,7 +420,7 @@ test('homepage dependency traversal follows root-relative local scripts, styles,
   );
 });
 
-test('pure Node WebP inspection extracts VP8, VP8L, and VP8X dimensions', () => {
+test('pure Node WebP container inspection extracts VP8, VP8L, and VP8X dimensions', () => {
   const fixtures = [
     { bytes: webpFile(webpChunk('VP8 ', vp8Data(1080, 1920))), expected: { codec_name: 'webp', width: 1080, height: 1920 } },
     { bytes: webpFile(webpChunk('VP8L', vp8lData(321, 654))), expected: { codec_name: 'webp', width: 321, height: 654 } },
@@ -376,10 +433,31 @@ test('pure Node WebP inspection extracts VP8, VP8L, and VP8X dimensions', () => 
     },
   ];
 
-  for (const fixture of fixtures) assert.deepEqual(decodeWebP(fixture.bytes), fixture.expected);
+  for (const fixture of fixtures) assert.deepEqual(inspectWebPContainer(fixture.bytes), fixture.expected);
 });
 
-test('pure Node WebP inspection rejects corrupt signatures and truncated containers', () => {
+test('browser decoder validates every poster asset and rejects a structurally headered WebP stub', async () => {
+  const invalidStub = webpFile(webpChunk('VP8 ', vp8Data(1080, 1920)));
+  const entries = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const results = await decodeWebPDataUrls([
+    { label: 'header-only VP8 stub', bytes: invalidStub },
+    ...entries.map((entry) => ({
+      label: entry.src,
+      file: path.join(root, entry.src.slice(1)),
+    })),
+  ]);
+  const [result, ...decodedAssets] = results;
+
+  assert.equal(result.decoded, false);
+  assert.equal(decodedAssets.length, 20);
+  for (const asset of decodedAssets) {
+    assert.equal(asset.decoded, true, `${asset.label}: ${asset.error || 'browser decode failed'}`);
+    assert.equal(asset.width, 1080, asset.label);
+    assert.equal(asset.height, 1920, asset.label);
+  }
+});
+
+test('pure Node WebP container inspection rejects corrupt signatures and truncated containers', () => {
   const wrongSignature = webpFile(webpChunk('VP8 ', vp8Data(20, 30)));
   wrongSignature.write('NOPE', 0, 4, 'ascii');
   const wrongRiffSize = webpFile(webpChunk('VP8L', vp8lData(20, 30)));
@@ -387,22 +465,22 @@ test('pure Node WebP inspection rejects corrupt signatures and truncated contain
   const truncatedChunk = webpFile(webpChunk('VP8 ', vp8Data(20, 30))).subarray(0, -1);
   truncatedChunk.writeUInt32LE(truncatedChunk.length - 8, 4);
 
-  assert.throws(() => decodeWebP(wrongSignature), /RIFF|WebP/i);
-  assert.throws(() => decodeWebP(wrongRiffSize), /size|bounds/i);
-  assert.throws(() => decodeWebP(truncatedChunk), /truncated|bounds/i);
+  assert.throws(() => inspectWebPContainer(wrongSignature), /RIFF|WebP/i);
+  assert.throws(() => inspectWebPContainer(wrongRiffSize), /size|bounds/i);
+  assert.throws(() => inspectWebPContainer(truncatedChunk), /truncated|bounds/i);
 });
 
-test('pure Node WebP inspection rejects non-zero RIFF chunk padding', () => {
+test('pure Node WebP container inspection rejects non-zero RIFF chunk padding', () => {
   const bytes = webpFile(
     webpChunk('JUNK', Buffer.from([0x42])),
     webpChunk('VP8 ', vp8Data(20, 30)),
   );
   bytes[12 + 8 + 1] = 0xff;
 
-  assert.throws(() => decodeWebP(bytes), /padding/i);
+  assert.throws(() => inspectWebPContainer(bytes), /padding/i);
 });
 
-test('pure Node WebP inspection rejects invalid VP8X reserved fields and canvas area', () => {
+test('pure Node WebP container inspection rejects invalid VP8X reserved fields and canvas area', () => {
   const reservedFlag = vp8xData(20, 30);
   reservedFlag[0] = 0x80;
   const reservedByte = vp8xData(20, 30);
@@ -410,32 +488,32 @@ test('pure Node WebP inspection rejects invalid VP8X reserved fields and canvas 
   const oversizedCanvas = vp8xData(65536, 65536);
 
   assert.throws(
-    () => decodeWebP(webpFile(
+    () => inspectWebPContainer(webpFile(
       webpChunk('VP8X', reservedFlag),
       webpChunk('VP8 ', vp8Data(20, 30)),
     )),
     /reserved/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(
+    () => inspectWebPContainer(webpFile(
       webpChunk('VP8X', reservedByte),
       webpChunk('VP8 ', vp8Data(20, 30)),
     )),
     /reserved/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(webpChunk('VP8X', oversizedCanvas))),
+    () => inspectWebPContainer(webpFile(webpChunk('VP8X', oversizedCanvas))),
     /canvas.*area|dimensions/i,
   );
 });
 
-test('pure Node WebP inspection rejects zero and contradictory image dimensions', () => {
+test('pure Node WebP container inspection rejects zero and contradictory image dimensions', () => {
   assert.throws(
-    () => decodeWebP(webpFile(webpChunk('VP8 ', vp8Data(0, 30)))),
+    () => inspectWebPContainer(webpFile(webpChunk('VP8 ', vp8Data(0, 30)))),
     /VP8 dimensions/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(
+    () => inspectWebPContainer(webpFile(
       webpChunk('VP8X', vp8xData(20, 30)),
       webpChunk('VP8L', vp8lData(20, 31)),
     )),
@@ -443,7 +521,7 @@ test('pure Node WebP inspection rejects zero and contradictory image dimensions'
   );
 });
 
-test('pure Node WebP inspection rejects truncated VP8 family bitstreams', () => {
+test('pure Node WebP container inspection rejects truncated VP8 family bitstreams', () => {
   const truncatedVp8 = vp8Data(20, 30);
   truncatedVp8.writeUIntLE(3 << 5, 0, 3);
   const truncatedVp8l = vp8lData(20, 30).subarray(0, 5);
@@ -453,26 +531,26 @@ test('pure Node WebP inspection rejects truncated VP8 family bitstreams', () => 
   unsupportedVp8l.writeUInt32LE(unsupportedVp8l.readUInt32LE(1) | (1 << 29), 1);
 
   assert.throws(
-    () => decodeWebP(webpFile(webpChunk('VP8 ', truncatedVp8))),
+    () => inspectWebPContainer(webpFile(webpChunk('VP8 ', truncatedVp8))),
     /VP8.*partition|truncated/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(webpChunk('VP8L', truncatedVp8l))),
+    () => inspectWebPContainer(webpFile(webpChunk('VP8L', truncatedVp8l))),
     /VP8L.*bitstream|truncated/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(webpChunk('VP8 ', unsupportedVp8))),
+    () => inspectWebPContainer(webpFile(webpChunk('VP8 ', unsupportedVp8))),
     /VP8 version/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(webpChunk('VP8L', unsupportedVp8l))),
+    () => inspectWebPContainer(webpFile(webpChunk('VP8L', unsupportedVp8l))),
     /VP8L version/i,
   );
 });
 
-test('pure Node WebP inspection rejects duplicate, late, or animated VP8X headers', () => {
+test('pure Node WebP container inspection rejects duplicate, late, or animated VP8X headers', () => {
   assert.throws(
-    () => decodeWebP(webpFile(
+    () => inspectWebPContainer(webpFile(
       webpChunk('VP8X', vp8xData(20, 30)),
       webpChunk('VP8X', vp8xData(20, 30)),
       webpChunk('VP8 ', vp8Data(20, 30)),
@@ -480,7 +558,7 @@ test('pure Node WebP inspection rejects duplicate, late, or animated VP8X header
     /multiple VP8X/i,
   );
   assert.throws(
-    () => decodeWebP(webpFile(
+    () => inspectWebPContainer(webpFile(
       webpChunk('VP8 ', vp8Data(20, 30)),
       webpChunk('VP8X', vp8xData(20, 30)),
     )),
@@ -489,7 +567,7 @@ test('pure Node WebP inspection rejects duplicate, late, or animated VP8X header
   const animatedHeader = vp8xData(20, 30);
   animatedHeader[0] = 0x02;
   assert.throws(
-    () => decodeWebP(webpFile(
+    () => inspectWebPContainer(webpFile(
       webpChunk('VP8X', animatedHeader),
       webpChunk('VP8 ', vp8Data(20, 30)),
     )),
@@ -521,7 +599,7 @@ test('poster manifest provides one safe local asset for each day-master and gend
     const size = fs.statSync(file).size;
     assert.ok(size > 0, `${entry.src} is empty`);
     assert.ok(size < 900 * 1024, `${entry.src} exceeds 900 KiB`);
-    const decoded = decodeWebP(file);
+    const decoded = inspectWebPContainer(file);
     assert.equal(decoded.codec_name, 'webp');
     assert.equal(decoded.width, 1080);
     assert.equal(decoded.height, 1920);
