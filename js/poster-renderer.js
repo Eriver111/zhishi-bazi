@@ -15,9 +15,30 @@
     });
   }
 
-  function defaultWaitForFonts() {
+  function defaultWaitForFonts(model) {
     var document = global.document;
-    return document && document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    var fonts = document && document.fonts;
+    var copyLines = model && Array.isArray(model.copyLines) ? model.copyLines : [];
+    var requests;
+
+    if (!fonts || !fonts.ready) return Promise.resolve();
+    if (typeof fonts.load !== 'function') return fonts.ready;
+
+    requests = [
+      ['260px ZhishiBrush, serif', model && model.dayGan],
+      ['52px ZhishiSerif, serif', model && model.dayMasterLabel],
+      ['42px ZhishiSerif, serif', model && model.subtitle],
+      ['42px ZhishiSerif, serif', (model && model.sealText) || '知时'],
+      ['46px ZhishiSerif, serif', model && model.patternName],
+      ['48px ZhishiSerif, serif', copyLines[0]],
+      ['48px ZhishiSerif, serif', copyLines[1]],
+      ['30px ZhishiSerif, serif', (model && model.footer) || '知天时，见自己'],
+    ];
+    return Promise.all(requests.map(function (request) {
+      return fonts.load(request[0], request[1] || ' ');
+    })).then(function () {
+      return fonts.ready;
+    });
   }
 
   function getImageSize(image) {
@@ -44,6 +65,10 @@
     context.fillText(text, x, y);
   }
 
+  function setFilter(context, value) {
+    if ('filter' in context) context.filter = value;
+  }
+
   function drawSeal(context, text, x, y, width, height, font) {
     context.save();
     context.globalAlpha = 1;
@@ -67,11 +92,11 @@
 
     context.save();
     context.globalAlpha = 0.16;
-    context.filter = 'blur(12px)';
+    setFilter(context, 'blur(12px)');
     drawText(context, model.dayGan, 540, 540, '260px ZhishiBrush, serif', '#241b16');
     context.restore();
     context.globalAlpha = 1;
-    context.filter = 'none';
+    setFilter(context, 'none');
     drawText(context, model.dayGan, 540, 540, '260px ZhishiBrush, serif', '#241b16');
     drawText(context, model.dayMasterLabel, 540, 650, '52px ZhishiSerif, serif', '#241b16');
     drawText(context, model.subtitle, 540, 725, '42px ZhishiSerif, serif', '#3c3028');
@@ -98,35 +123,48 @@
     };
   }
 
+  function readinessResult(source, operation, error) {
+    return Promise.resolve()
+      .then(operation)
+      .then(function (value) { return { source: source, ok: true, value: value }; }, function () { return { source: source, ok: false, error: error }; });
+  }
+
   async function render(options, overrides) {
     var input = options || {};
     var canvas = input.canvas;
     var dependencies = resolveDependencies(overrides);
     var backgroundResult;
     var fontResult;
+    var firstResult;
+    var secondResult;
     var image;
     var context;
 
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
+    try {
+      canvas.width = CANVAS_WIDTH;
+      canvas.height = CANVAS_HEIGHT;
 
-    backgroundResult = Promise.resolve()
-      .then(function () { return dependencies.loadImage(input.backgroundUrl); })
-      .then(function (value) { return { ok: true, value: value }; }, function () { return { ok: false, error: 'BACKGROUND_LOAD_FAILED' }; });
-    fontResult = Promise.resolve()
-      .then(function () { return dependencies.waitForFonts(); })
-      .then(function () { return { ok: true }; }, function () { return { ok: false, error: 'FONT_LOAD_FAILED' }; });
+      backgroundResult = readinessResult('background', function () {
+        return dependencies.loadImage(input.backgroundUrl);
+      }, 'BACKGROUND_LOAD_FAILED');
+      fontResult = readinessResult('fonts', function () {
+        return dependencies.waitForFonts(input.model || {});
+      }, 'FONT_LOAD_FAILED');
 
-    backgroundResult = await backgroundResult;
-    fontResult = await fontResult;
-    if (!backgroundResult.ok) return { ok: false, error: backgroundResult.error };
-    if (!fontResult.ok) return { ok: false, error: fontResult.error };
+      firstResult = await Promise.race([backgroundResult, fontResult]);
+      if (!firstResult.ok) return { ok: false, error: firstResult.error };
+      secondResult = await (firstResult.source === 'background' ? fontResult : backgroundResult);
+      if (!secondResult.ok) return { ok: false, error: secondResult.error };
 
-    image = backgroundResult.value;
-    context = canvas.getContext('2d');
-    drawPoster(context, image, input.model || {});
-    if (canvasModels) canvasModels.set(canvas, input.model || {});
-    return { ok: true };
+      image = firstResult.source === 'background' ? firstResult.value : secondResult.value;
+      context = canvas.getContext('2d');
+      if (!context) return { ok: false, error: 'RENDER_FAILED' };
+      drawPoster(context, image, input.model || {});
+      if (canvasModels) canvasModels.set(canvas, input.model || {});
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: 'RENDER_FAILED' };
+    }
   }
 
   function getBlob(canvas, type, quality) {
@@ -139,9 +177,10 @@
     });
   }
 
-  function defaultFilename(model) {
+  function defaultFilename(model, mimeType) {
     var data = model || {};
-    return '知时-' + (data.dayMasterLabel || '命格') + '-' + (data.patternName || '海报') + '.webp';
+    var extension = mimeType === 'image/jpeg' ? '.jpg' : '.webp';
+    return '知时-' + (data.dayMasterLabel || '命格') + '-' + (data.patternName || '海报') + extension;
   }
 
   async function download(options, overrides) {
@@ -162,8 +201,8 @@
       url = URL.createObjectURL(blob);
       anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = input.filename || defaultFilename(model);
-      anchor.style = 'display:none';
+      anchor.download = input.filename || defaultFilename(model, blob.type);
+      if (anchor.style) anchor.style.display = 'none';
       (document.body || document.documentElement).appendChild(anchor);
       anchor.click();
       return { ok: true };
@@ -174,7 +213,7 @@
         if (typeof anchor.remove === 'function') anchor.remove();
         else if (anchor.parentNode) anchor.parentNode.removeChild(anchor);
       }
-      if (url) URL.revokeObjectURL(url);
+      if (url && URL && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(url);
     }
   }
 

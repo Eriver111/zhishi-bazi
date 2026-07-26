@@ -7,9 +7,9 @@ const assert = require('node:assert/strict');
 const root = path.join(__dirname, '..');
 const sourcePath = path.join(root, 'js', 'poster-renderer.js');
 
-function loadRenderer() {
+function loadRenderer(window = {}) {
   const source = fs.readFileSync(sourcePath, 'utf8');
-  const context = { window: {} };
+  const context = { window };
   vm.runInNewContext(source, context);
   return context.window.PosterRenderer;
 }
@@ -50,8 +50,8 @@ function createContext(operations) {
   return context;
 }
 
-function createCanvas(operations) {
-  const context = createContext(operations);
+function createCanvas(operations, suppliedContext) {
+  const context = suppliedContext || createContext(operations);
   let width = 0;
   let height = 0;
   return {
@@ -159,6 +159,66 @@ test('returns typed readiness failures without drawing', async () => {
   }
 });
 
+test('returns the first readiness failure even when the other readiness task never settles', async () => {
+  const renderer = loadRenderer();
+  const never = new Promise(() => {});
+  const cases = [
+    {
+      name: 'background',
+      dependencies: { loadImage: async () => { throw new Error('missing'); }, waitForFonts: () => never },
+      expected: 'BACKGROUND_LOAD_FAILED',
+    },
+    {
+      name: 'fonts',
+      dependencies: { loadImage: () => never, waitForFonts: async () => { throw new Error('missing'); } },
+      expected: 'FONT_LOAD_FAILED',
+    },
+  ];
+
+  for (const scenario of cases) {
+    const result = await Promise.race([
+      renderer.render({ canvas: createCanvas([]), model, backgroundUrl: '/poster.jpg' }, scenario.dependencies),
+      new Promise((resolve) => setTimeout(() => resolve('timed out'), 50)),
+    ]);
+    assert.deepEqual(plain(result), { ok: false, error: scenario.expected }, scenario.name);
+  }
+});
+
+test('loads the poster font declarations and glyphs before awaiting browser font readiness', async () => {
+  const events = [];
+  let resolveReady;
+  const renderer = loadRenderer({
+    document: {
+      fonts: {
+        load(font, text) {
+          events.push(['load', font, text]);
+          return Promise.resolve();
+        },
+        ready: new Promise((resolve) => { resolveReady = resolve; }),
+      },
+    },
+  });
+  const canvas = createCanvas([]);
+  const rendering = renderer.render({ canvas, model, backgroundUrl: '/poster.jpg' }, {
+    loadImage: async () => ({ width: 1080, height: 1920 }),
+  });
+
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(events, [
+    ['load', '260px ZhishiBrush, serif', '乙'],
+    ['load', '52px ZhishiSerif, serif', '乙木女'],
+    ['load', '42px ZhishiSerif, serif', '藤萝之木'],
+    ['load', '42px ZhishiSerif, serif', '知时'],
+    ['load', '46px ZhishiSerif, serif', '正官格'],
+    ['load', '48px ZhishiSerif, serif', '柔而有守，方能生长。'],
+    ['load', '48px ZhishiSerif, serif', '循序向上，自有枝叶。'],
+    ['load', '30px ZhishiSerif, serif', '知天时，见自己'],
+  ]);
+  resolveReady();
+  assert.deepEqual(plain(await rendering), { ok: true });
+});
+
 test('exports WebP first and falls back to JPEG while cleaning temporary download resources', async () => {
   const renderer = loadRenderer();
   const calls = [];
@@ -190,10 +250,25 @@ test('exports WebP first and falls back to JPEG while cleaning temporary downloa
     ['toBlob', 'image/webp', 0.92],
     ['toBlob', 'image/jpeg', 0.94],
   ]);
-  assert.equal(anchor.download, '知时-乙木女-正官格.webp');
+  assert.equal(anchor.download, '知时-乙木女-正官格.jpg');
   assert.equal(anchor.href, 'blob:poster');
   assert.deepEqual(removed, ['anchor']);
   assert.equal(calls.some((call) => Array.isArray(call) && call[0] === 'revoke-url'), true);
+});
+
+test('keeps an explicit export filename when WebP succeeds', async () => {
+  const renderer = loadRenderer();
+  const anchor = { click() {}, remove() {} };
+  const result = await renderer.download({
+    canvas: { toBlob(callback) { callback({ type: 'image/webp' }); } },
+    model,
+    filename: 'chosen-name.png',
+  }, {
+    document: { body: { appendChild() {} }, createElement() { return anchor; } },
+    URL: { createObjectURL() { return 'blob:poster'; }, revokeObjectURL() {} },
+  });
+  assert.deepEqual(plain(result), { ok: true });
+  assert.equal(anchor.download, 'chosen-name.png');
 });
 
 test('returns EXPORT_FAILED when neither export format produces a blob', async () => {
@@ -206,4 +281,21 @@ test('returns EXPORT_FAILED when neither export format produces a blob', async (
     URL: {},
   });
   assert.deepEqual(plain(result), { ok: false, error: 'EXPORT_FAILED' });
+});
+
+test('returns RENDER_FAILED for unavailable or throwing canvas contexts', async () => {
+  const renderer = loadRenderer();
+  const dependencies = { loadImage: async () => ({ width: 1080, height: 1920 }), waitForFonts: async () => {} };
+  const throwingContext = createContext([]);
+  throwingContext.drawImage = () => { throw new Error('draw failed'); };
+  const cases = [
+    createCanvas([], null),
+    createCanvas([], throwingContext),
+  ];
+  cases[0].getContext = () => null;
+
+  for (const canvas of cases) {
+    const result = await renderer.render({ canvas, model, backgroundUrl: '/poster.jpg' }, dependencies);
+    assert.deepEqual(plain(result), { ok: false, error: 'RENDER_FAILED' });
+  }
 });
