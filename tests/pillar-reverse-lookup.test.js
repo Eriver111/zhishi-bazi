@@ -43,6 +43,21 @@ test('finds a known source date and returns at most two newest matches', () => {
   assert.ok(matches.every((item, index) => index === 0 || matches[index - 1].iso > item.iso));
 });
 
+test('finds a pre-Li-Chun date whose year pillar belongs to the preceding solar year', () => {
+  const source = calculator.calculate(2024, 2, 3, 0, 'male', 0);
+  assert.equal(source.year.gan + source.year.zhi, '癸卯');
+
+  const matches = lookup.findRecentMatches({
+    pillars: pillarsFor(source),
+    gender: 'male',
+    now: new Date('2026-07-26T00:00:00Z'),
+    years: 200,
+    calculator
+  });
+
+  assert.ok(matches.some((item) => item.iso === '2024-02-03'));
+});
+
 test('zi hour uses a midnight midpoint and an explicit cross-day label', () => {
   assert.equal(lookup.HOUR_MIDPOINTS[0], 0);
   assert.equal(lookup.HOUR_RANGES[0], '23:00—00:59');
