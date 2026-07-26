@@ -15,11 +15,6 @@ var LunarCalendar = (function(){
   var LM=['正','二','三','四','五','六','七','八','九','十','十一','十二'];
   var LD=['','初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
 
-  // --- 春节表 (公历月,日) ---
-  var SPRING=[
-    [1,31],[2,19],[2,8],[1,29],[2,16],[2,4],[1,25],[2,13],[2,2],[1,22],[2,10],[1,30],[2,18],[2,6],[1,26],[2,14],[2,3],[1,23],[2,11],[2,1],[2,20],[2,8],[1,28],[2,16],[2,5],[1,24],[2,13],[2,2],[1,23],[2,10],[1,30],[2,17],[2,6],[1,26],[2,14],[2,4],[1,24],[2,11],[1,31],[2,19],[2,8],[1,27],[2,15],[2,5],[1,25],[2,13],[2,2],[1,22],[2,10],[1,29],[2,17],[2,6],[1,27],[2,14],[2,3],[1,24],[2,12],[1,31],[2,18],[2,8],[1,28],[2,15],[2,5],[1,25],[2,13],[2,2],[1,21],[2,9],[1,30],[2,17],[2,6],[1,27],[2,15],[2,3],[1,23],[2,11],[1,31],[2,18],[2,7],[1,28],[2,16],[2,5],[1,25],[2,13],[2,2],[2,20],[2,9],[1,29],[2,17],[2,6],[1,27],[2,15],[2,4],[1,23],[2,10],[1,31],[2,19],[2,7],[1,28],[2,16],[2,5],[1,24],[2,12],[2,1],[1,22],[2,9],[1,29],[2,18],[2,7],[1,26],[2,14],[2,3],[1,23],[2,11],[1,31],[2,19],[2,8],[1,28],[2,15],[2,4],[1,24],[2,12],[2,1],[1,22],[2,10],[1,30],[2,17],[2,6],[1,26],[2,14],[2,3],[1,23],[2,10],[1,31],[2,19],[2,7],[1,27],[2,15],[2,5],[1,25],[2,12],[2,2],[1,22],[2,9],[1,29],[2,17],[2,7],[1,27],[2,14],[2,3],[1,24],[2,12],[2,1],[1,21],[2,9],[1,29],[2,17],[2,5],[1,26],[2,14],[2,3],[1,23],[2,11],[1,31],[2,19],[2,7],[1,27],[2,15],[2,5],[1,24],[2,12],[2,2],[1,22],[2,9],[1,29],[2,18],[2,7],[1,26],[2,14],[2,3],[1,23],[2,10],[1,30],[2,18],[2,7],[1,27],[2,15],[2,5],[1,25],[2,12],[2,1],[1,21],[2,9]
-  ];
-
   function leapMonth(y){return lunarInfo[y-1900]&0xf;}
   function leapDays(y){var m=leapMonth(y);return m?(lunarInfo[y-1900]&0x10000?30:29):0;}
   function monthDays(y,m){return lunarInfo[y-1900]&(0x10000>>m)?30:29;}
@@ -45,15 +40,26 @@ var LunarCalendar = (function(){
     return{lYear:ly,lMonth:lm,lDay:ld,isLeap:isLeap,yearGan:yg,yearZhi:yz,animal:SX[(ly-4)%12],yearName:yg+yz+'年',monthName:(isLeap?'闰':'')+LM[lm-1]+'月',dayName:LD[ld]};
   }
 
-  /** 农历→公历（以春节为锚点） */
+  /** 农历→公历（与公历转农历共享 1900-01-31 纪元） */
   function lunarToSolar(ly,lm,ld,isLeap){
-    var spr=SPRING[ly-1900];
-    var base=Date.UTC(ly,spr[0]-1,spr[1]); // 春节 UTC 时间戳
-    var days=0,i,leap=leapMonth(ly);
-    for(i=1;i<lm;i++){days+=monthDays(ly,i);if(i===leap)days+=leapDays(ly);}
-    if(isLeap&&leap===lm&&lm>1)days+=monthDays(ly,lm);
-    days+=ld-1;
-    var d=new Date(base+days*86400000);
+    if(typeof ly !== 'number' || typeof lm !== 'number' || typeof ld !== 'number' || typeof isLeap !== 'boolean' || !isFinite(ly) || !isFinite(lm) || !isFinite(ld) || Math.floor(ly) !== ly || Math.floor(lm) !== lm || Math.floor(ld) !== ld) throw new TypeError('农历日期参数必须为整数，闰月标记必须为布尔值');
+    if(ly<1900||ly>2100)throw new RangeError('农历年份超出支持范围');
+    if(lm<1||lm>12)throw new RangeError('农历月份无效');
+    var leap=leapMonth(ly);
+    if(isLeap&&leap!==lm)throw new RangeError('该年没有对应闰月');
+    var maxDay=isLeap?leapDays(ly):monthDays(ly,lm);
+    if(ld<1||ld>maxDay)throw new RangeError('农历日期无效');
+
+    var offset=0,y,m;
+    for(y=1900;y<ly;y++)offset+=lYearDays(y);
+    for(m=1;m<lm;m++){
+      offset+=monthDays(ly,m);
+      if(m===leap)offset+=leapDays(ly);
+    }
+    if(isLeap)offset+=monthDays(ly,lm);
+    offset+=ld-1;
+
+    var d=new Date(Date.UTC(1900,0,31)+offset*86400000);
     return{year:d.getUTCFullYear(),month:d.getUTCMonth()+1,day:d.getUTCDate()};
   }
 
