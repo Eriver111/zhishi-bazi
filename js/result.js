@@ -753,15 +753,16 @@ function renderRiZhuJieXi(dayGan) {
 
 // ==================== 婚姻感情渲染（大白话） ====================
 function renderMarriage(bazi, gender) {
-    var pei = window.BaZiCalculator.analyzePei(bazi, gender);
-    var ageInfo = window.BaZiCalculator.calculateSpouseAge(bazi, pei.mainSS);
-    var el = document.getElementById('marriageContent');
+    const pei = window.BaZiCalculator.analyzePei(bazi);
+    const ageInfo = window.BaZiCalculator.calculateSpouseAge(bazi, pei.mainSS);
+    const el = document.getElementById('marriageContent');
     if (!el) return;
 
-    var maxCount = Math.max(ageInfo.bigCount, ageInfo.smallCount, ageInfo.sameCount);
-    var barW = function(v) { return maxCount > 0 ? Math.round(v / maxCount * 100) : 0; };
+    const maxCount = Math.max(ageInfo.bigCount, ageInfo.smallCount, ageInfo.sameCount);
+    const barW = (v) => maxCount > 0 ? Math.round(v / maxCount * 100) : 0;
 
-    var spouseDescMap = {
+    // 大白话翻译夫妻宫信息
+    const spouseDescMap = {
         '比肩': '另一半性格直爽独立，两人相处像朋友一样平等',
         '劫财': '两人个性都挺要强，偶尔会争个高低，但也更有活力',
         '食神': '另一半温和体贴，懂得享受生活，会把日子过得很舒服',
@@ -773,41 +774,16 @@ function renderMarriage(bazi, gender) {
         '正印': '另一半像你的温暖港湾，包容体贴，会照顾人',
         '偏印': '另一半思想独立深沉，可能有些神秘，不太轻易表达'
     };
-    var spouseDesc = spouseDescMap[pei.mainSS] || '两人缘法很奇特，相遇后会慢慢发现彼此的闪光点';
+    const spouseDesc = spouseDescMap[pei.mainSS] || '两人缘法很奇特，相遇后会慢慢发现彼此的闪光点';
 
-    // 配偶星信息
-    var starHtml = '';
-    if (pei.starCount > 0) {
-      starHtml = '<div class="mp-section-title">配偶星</div>'
-        + '<div class="mp-looks">配偶星（'+(gender==='male'?'财星':'官杀')+'）出现 <b>'+pei.starCount+'</b> 次';
-      if (pei.starOnGan) starHtml += '，天干透出——另一半的条件和能力比较突出，容易遇到优质的缘分';
-      else starHtml += '，藏于地支——缘分需要时间去发现和培养，不会一见面就一见钟情';
-      starHtml += '。</div>';
-    } else {
-      starHtml = '<div class="mp-section-title">配偶星</div>'
-        + '<div class="mp-looks" style="color:#feca57">配偶星不显——另一半的缘分来得较晚，但一旦出现就是正缘。不建议在年轻时急于结婚。</div>';
-    }
+    const wx = window.BaZiCalculator.WU_XING;
+    const cangInfo = pei.cangGan.map((g) => {
+        return '<span class="fq-cang-gan" style="color:' + (WX_COLORS[wx[g]] || '#b8a878') + '">' + g + '</span>';
+    }).join('<span class="fq-cang-sep">·</span>');
 
-    // 配偶星生克
-    var relationHtml = '';
-    if (pei.starRelation) {
-      relationHtml = '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:12px 14px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1);border-radius:3px;margin-top:8px">' + pei.starRelation + '</div>';
-    }
-
-    // 警告信息
-    var warnHtml = '';
-    if (pei.starDamaged && pei.starDamaged.length > 0) {
-      warnHtml += '<div style="font-size:12px;color:#E57373;line-height:2;padding:10px 14px;background:rgba(244,67,54,.04);border:1px solid rgba(244,67,54,.12);border-radius:3px;margin-top:8px">配偶星受损：' + pei.starDamaged.join('；') + '。感情中可能会经历一些波折，需用心经营。</div>';
-    }
-    if (pei.chongPos && pei.chongPos.length > 0) {
-      warnHtml += '<div style="font-size:12px;color:#E57373;line-height:2;padding:10px 14px;background:rgba(244,67,54,.04);border:1px solid rgba(244,67,54,.12);border-radius:3px;margin-top:4px">夫妻宫被' + pei.chongPos.map(function(p){return p+'柱'}).join('、') + '冲——感情稳定性偏弱，容易因外界因素产生波动，建议晚婚。</div>';
-    }
-    if (pei.lateSigns && pei.lateSigns.length > 0) {
-      warnHtml += '<div style="font-size:12px;color:#feca57;line-height:2;padding:10px 14px;background:rgba(255,193,7,.04);border:1px solid rgba(255,193,7,.1);border-radius:3px;margin-top:4px">晚婚提示：' + pei.lateSigns.join('；') + '。</div>';
-    }
-
-    var distMap = { '同城/同乡':'另一半很可能是本地人','异地':'另一半来自不同城市','远方':'另一半来自很远的地方' };
-    var meetMap = { '自由恋爱':'应该是在工作或社交中自然而然认识的','媒人介绍':'很可能是通过朋友或家人介绍认识的','巧合相遇':'缘分来得比较巧妙，可能是在旅途中偶遇' };
+    // 远近+认识方式翻译
+    const distMap = { '同城/同乡':'另一半很可能是本地人','异地':'另一半来自不同城市','远方':'另一半来自很远的地方' };
+    const meetMap = { '自由恋爱':'应该是在工作或社交中自然而然认识的','媒人介绍':'很可能是通过朋友或家人介绍认识的','巧合相遇':'缘分来得比较巧妙，可能是在旅途中偶遇' };
 
     el.innerHTML = ''
         + '<div class="mp-couple">'
@@ -815,19 +791,6 @@ function renderMarriage(bazi, gender) {
         +   '<span class="mp-day-label">（你的日柱·夫妻宫）</span>'
         + '</div>'
         + '<div class="mp-spouse-desc">' + spouseDesc + '</div>'
-        + starHtml
-        + relationHtml
-        + warnHtml
-        // 配偶星所在柱位→婚姻时机+对方特征
-        + (function(){
-          var t=[];
-          if (pei.starInYear) t.push('配偶星在年柱——<b>早婚</b>为宜（25岁前），对方年龄<b>偏大</b>、成熟稳重，多半是<b>异地或远方</b>人。');
-          if (pei.starInMonth) t.push('配偶星在月柱——适龄结婚，对方年龄<b>相仿</b>，多半是<b>同乡或邻近地区</b>的人，通过工作或亲朋介绍认识。');
-          if (pei.starInDay) t.push('配偶星在日柱——适龄结婚，对方年龄<b>相仿</b>，两人距离<b>最近</b>（同事、同学、发小），日支坐配偶星是正缘入宫的好兆头。');
-          if (pei.starInHour) t.push('配偶星在时柱——<b>晚婚</b>为宜（28岁后），对方年龄<b>偏小</b>，可能来自<b>远方或异国</b>，缘分晚到但稳定。');
-          if (t.length===0) t.push('配偶星不显——缘分来得较晚，不必焦虑，日柱夫妻宫自有定数。');
-          return '<div class="mp-section-title">婚姻时机</div><div style="font-size:13px;color:var(--text-primary);line-height:2;padding:0 0 8px">'+t.join('<br>')+'</div>';
-        })()
         + '<div class="mp-section-title">对方样貌特点</div>'
         + '<div class="mp-looks">' + pei.looks + '</div>'
         + '<div class="mp-section-title">年龄差距</div>'
@@ -1071,7 +1034,6 @@ function renderThisYear(bazi, gender) {
         +     '流年 <span style="color:' + overallColor + ';font-weight:700">' + ty.gan + ty.zhi + '</span>'
         +     ' · 十神 <span style="color:var(--text-primary);font-weight:700">' + ty.shiShen + '</span>'
         +   '</div>'
-        +   (ty.dyInfo ? '<div style="font-size:12px;color:var(--text-secondary);line-height:1.8;margin-top:6px;padding:6px 12px;background:rgba(201,168,76,.03);border-radius:3px">' + ty.dyInfo + '</div>' : '')
         + '</div>'
 
         // 概括
@@ -1087,11 +1049,6 @@ function renderThisYear(bazi, gender) {
 
         + chongHtml
         + heHtml
-        + (ty.dyWarnings && ty.dyWarnings.length > 0
-          ? '<div style="font-size:13px;color:#feca57;line-height:2;padding:14px 16px;background:rgba(255,193,7,.04);border:1px solid rgba(255,193,7,.12);border-radius:3px;margin-bottom:12px">'
-            + '<div style="font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:6px">大运与流年联动</div>'
-            + ty.dyWarnings.map(function(w) { return '<p style="margin:0 0 6px">-- ' + w + '</p>'; }).join('')
-            + '</div>' : '')
         + oppHtml
 
         // 健康
@@ -1266,9 +1223,6 @@ function renderStudy(bazi) {
         + '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:14px 16px;background:rgba(20,25,40,.4);border:1px solid rgba(212,175,55,.06);border-radius:2px;margin-bottom:12px">'
         +   '<p>' + (levelStories[st.levelLabel] || st.levelText) + '</p>'
         + '</div>'
-        +   (st.studyType ? '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:10px 14px;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.1);border-radius:2px;margin-bottom:10px"><p> 学习类型：' + st.studyType + '</p></div>' : '')
-        +   (st.specialPattern ? '<div style="font-size:13px;color:#81C784;line-height:2;padding:10px 14px;background:rgba(76,175,80,.04);border:1px solid rgba(212,175,55,.08);border-radius:2px;margin-bottom:10px"><p> 特殊格局：' + st.specialPattern + '</p></div>' : '')
-        +   (st.caiPoYin ? '<div style="font-size:13px;color:#feca57;line-height:2;padding:10px 14px;background:rgba(255,193,7,.04);border:1px solid rgba(255,193,7,.1);border-radius:2px;margin-bottom:10px"><p> 注意：财星破印——物质追求或社交活动容易分散学习精力，需刻意保持专注。</p></div>' : '')
         +   (st.hasWenChang ? '<div style="font-size:13px;color:#81C784;line-height:2;padding:10px 14px;background:rgba(76,175,80,.04);border:1px solid rgba(212,175,55,.08);border-radius:2px;margin-bottom:10px"><p> 自带文昌贵人，考试运不错，关键时刻容易发挥出超常水平。</p></div>' : '')
         +   (st.hasXueTang ? '<div style="font-size:13px;color:#81C784;line-height:2;padding:10px 14px;background:rgba(76,175,80,.04);border:1px solid rgba(212,175,55,.08);border-radius:2px;margin-bottom:10px"><p> 命带学堂，天生对知识有好奇心，适合持续学习的环境。</p></div>' : '')
         + '<div style="font-size:13px;color:var(--text-secondary);line-height:2;padding:14px 16px;background:rgba(212,175,55,.03);border:1px solid rgba(212,175,55,.1);border-radius:2px">'
