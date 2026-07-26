@@ -264,3 +264,21 @@ test('candidate chooser and pillar controls keep responsive touch targets', () =
   assert.match(css, /@media\s*\(max-width:\s*768px\)[\s\S]*?\.pillar-grid[\s\S]*?repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(css, /@media\s*\(max-width:\s*420px\)[\s\S]*?\.pillar-column select[\s\S]*?min-height:\s*44px/);
 });
+
+test('calendar-only rows stay visually absent when direct mode sets hidden', () => {
+  const css = read('css/theme-light-forms.css');
+  assert.match(
+    css,
+    /\.calendar-only-fields\[hidden\]\s*\{[^}]*display:\s*none\s*!important/,
+    'an author-level hidden rule must override the legacy .row display rule'
+  );
+});
+
+test('direct pillar selects meet the 44px target before mobile overrides apply', () => {
+  const desktopCss = read('css/theme-light-forms.css').split('@media')[0];
+  assert.match(
+    desktopCss,
+    /\.pillar-column select\s*\{[^}]*min-height:\s*44px/,
+    'desktop pillar selects must not depend on a mobile-only minimum height'
+  );
+});
