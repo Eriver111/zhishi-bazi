@@ -560,6 +560,60 @@ function calculateBaZi(year, month, day, hour, gender, clock) {
 }
 
 /**
+ * 由已知四柱建立命盘。用于无可用出生日期的基础命盘，也保留可选出生日期。
+ */
+function buildBaZiFromPillars(pillars, gender, birthDate) {
+    var positions = ['year', 'month', 'day', 'hour'];
+    var pillarRecords = {};
+
+    positions.forEach(function(position) {
+        var source = pillars && pillars[position];
+        var gan = source && source.gan;
+        var zhi = source && source.zhi;
+        var ganIndex = TIAN_GAN.indexOf(gan);
+        var zhiIndex = DI_ZHI.indexOf(zhi);
+
+        if (ganIndex < 0 || zhiIndex < 0 || ganIndex % 2 !== zhiIndex % 2) {
+            throw new TypeError('Invalid ' + position + ' pillar');
+        }
+        pillarRecords[position] = { gan: gan, zhi: zhi, ganIndex: ganIndex, zhiIndex: zhiIndex };
+    });
+
+    var dayGan = pillarRecords.day.gan;
+    var result = {};
+    positions.forEach(function(position) {
+        var pillar = pillarRecords[position];
+        var cangGan = getCangGan(pillar.zhi);
+        result[position] = {
+            gan: pillar.gan,
+            zhi: pillar.zhi,
+            ganIndex: pillar.ganIndex,
+            zhiIndex: pillar.zhiIndex,
+            shiShen: {
+                gan: position === 'day' ? '日主' : getShiShen(dayGan, pillar.gan),
+                zhi: getShiShen(dayGan, cangGan[0])
+            },
+            cangGan: cangGan,
+            nayin: getNaYin(pillar.ganIndex, pillar.zhiIndex),
+            wuXing: { gan: WU_XING[pillar.gan], zhi: DI_ZHI_WU_XING[pillar.zhi] }
+        };
+    });
+
+    return {
+        year: result.year,
+        month: result.month,
+        day: result.day,
+        hour: result.hour,
+        naYin: result.year.nayin,
+        wuXingCount: countWuXing(
+            pillarRecords.year, pillarRecords.month, pillarRecords.day, pillarRecords.hour
+        ),
+        gender: gender,
+        birthDate: birthDate === null ? null : birthDate
+    };
+}
+
+/**
  * 统计五行数量
  */
 function countWuXing(yearPillar, monthPillar, dayPillar, hourPillar) {
@@ -3971,6 +4025,7 @@ function getCangGanDepth(bazi) {
 
 window.BaZiCalculator = {
     calculate: calculateBaZi,
+    buildFromPillars: buildBaZiFromPillars,
     calculateDaYun: calculateDaYun,
     calculateLiuNian: calculateLiuNian,
     calculateShenSha: calculateShenSha,
