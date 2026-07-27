@@ -4180,18 +4180,20 @@ function getCongGe(bazi) {
     var cgWx2 = WU_XING[dayCangGanAll[cgi]];
     if (cgWx2 === dgWx || cgWx2 === SHENGWO) { hasDayRoot = true; break; }
   }
-  // 《子平真诠》"一字印绶即破格"：天干有印星则不能从
-  var hasGanYin = false;
+  // 印比帮身检测——有印星或比劫则不能从（不仅看印，比劫也是帮扶）
+  var hasGanHelp = false;
   var allGanCong = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
   for (var gc = 0; gc < allGanCong.length; gc++) {
-    if (WU_XING[allGanCong[gc]] === SHENGWO) { hasGanYin = true; break; }
+    var ganWxCong = WU_XING[allGanCong[gc]];
+    if (ganWxCong === SHENGWO || ganWxCong === dgWx) { hasGanHelp = true; break; }
   }
-  // 地支藏干有印也算有根（如寅藏丙火，己土见之为印）
-  var hasZhiYin = false;
-  if (!hasGanYin) {
+  // 地支藏干有印/比也算帮身
+  var hasZhiHelp = false;
+  if (!hasGanHelp) {
     ['year','month','day','hour'].forEach(function(pos) {
       getCangGan(bazi[pos].zhi).forEach(function(g) {
-        if (WU_XING[g] === SHENGWO) hasZhiYin = true;
+        var gwx = WU_XING[g];
+        if (gwx === SHENGWO || gwx === dgWx) hasZhiHelp = true;
       });
     });
   }
@@ -4217,7 +4219,7 @@ function getCongGe(bazi) {
   }
   // 从杀/从财/从儿/从势：日主需极弱(<30分)、日支无根、天干无印
   // 《子平真诠》"一字印绶即破格"：哪怕暗藏印星也算有根
-  var canCong = level === '极弱' && !hasDayRoot && !hasGanYin && !hasZhiYin;
+  var canCong = level === '极弱' && !hasDayRoot && !hasGanHelp && !hasZhiHelp;
   // 从杀：官杀极旺(≥6且≥日主2倍)
   if (canCong && kePower >= 6 && kePower >= dgPower * 2) {
     return {
