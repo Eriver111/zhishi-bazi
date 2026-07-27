@@ -4197,9 +4197,17 @@ function getCongGe(bazi) {
   }
 
   // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱，且日支不能有克泄耗（日支坐克星则破格）
+  // 同时检查藏干——藏干中有克泄耗也算破格（如未戌藏丁火，辛金见之为官杀）
+  var hasCangKeXie = false;
+  ['year','month','day','hour'].forEach(function(pos) {
+    getCangGan(bazi[pos].zhi).forEach(function(g) {
+      var gwx = WU_XING[g];
+      if (gwx === KEWO || gwx === WOSHENG || gwx === WOKE) hasCangKeXie = true;
+    });
+  });
   var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
   var dayZhiIsKeXie = (KEWO === dayZhiGuanXi || WOSHENG === dayZhiGuanXi || WOKE === dayZhiGuanXi);
-  if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie) {
+  if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie && !hasCangKeXie) {
     return {
       isCong: true, name: '从强格',
       desc: '日主极强，局中无克泄耗，一气专旺，顺势而行。喜印比生扶，忌克泄耗破格。',
