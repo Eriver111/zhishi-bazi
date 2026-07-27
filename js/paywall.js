@@ -78,9 +78,9 @@ function startRP(){
       setTimeout(function(){window.location.href=payUrl},500);
     } else {
       var qrSrc=d.qrcode||'';
-      // 仅当 d.pay_url 是真正的支付宝链接时才生成二维码（排除 zpayz API fallback 地址）
-      var isValidPayUrl=payUrl&&payUrl.indexOf('mapi.php')<0&&payUrl.indexOf('zpayz.cn')<0;
-      if(!qrSrc&&isValidPayUrl) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
+      // 排除 zpayz API 回退地址（mapi.php 返回 JSON，扫了乱码），但保留合法的 zpayz 支付页
+      var isApiFallback=payUrl&&payUrl.indexOf('mapi.php')>=0;
+      if(!qrSrc&&payUrl&&!isApiFallback) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
       if(container&&qrSrc){
         container.innerHTML='<img id="qrImg" src="'+qrSrc+'" style="width:200px;height:200px"><p id="qrLoading" style="color:var(--tx3);font-size:12px;margin-top:8px">二维码加载中...</p>';
         var retries=0;
@@ -98,9 +98,14 @@ function startRP(){
           }
         };
       } else if(container){
-        container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center>支付服务暂不可用<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面完成支付</span></p>';
+        container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center">支付服务暂不可用<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面完成支付</span></p>';
       }
-      if(status)status.textContent='请扫码支付 ¥9.9（电脑端可截图扫码）';
+      // 加上复制链接按钮——扫码不行的用户可以复制到手机浏览器打开
+      if(payUrl&&!isApiFallback){
+        var btnHtml='<button id="qrCopyBtn" onclick="navigator.clipboard.writeText(\''+payUrl+'\');var t=document.getElementById(\'qrCopyBtn\');t.textContent=\'已复制！\';setTimeout(function(){t.textContent=\'复制支付链接到手机\'},2000)" style="display:block;margin:8px auto 0;padding:8px 16px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:20px;color:var(--gold);font-size:12px;cursor:pointer;font-family:inherit;letter-spacing:1px">复制支付链接到手机</button>';
+        container.insertAdjacentHTML('afterend',btnHtml);
+      }
+      if(status)status.textContent='请扫码支付 ¥9.9（扫码乱码请点下方复制链接）';
     }
     startQRPoll(d.out_trade_no);
   }).catch(function(e){
