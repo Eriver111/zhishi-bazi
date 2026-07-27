@@ -82,7 +82,21 @@ function startRP(){
       var isValidPayUrl=payUrl&&payUrl.indexOf('mapi.php')<0&&payUrl.indexOf('zpayz.cn')<0;
       if(!qrSrc&&isValidPayUrl) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
       if(container&&qrSrc){
-        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败，请用手机访问此页面支付</p>\'">';
+        container.innerHTML='<img id="qrImg" src="'+qrSrc+'" style="width:200px;height:200px"><p id="qrLoading" style="color:var(--tx3);font-size:12px;margin-top:8px">二维码加载中...</p>';
+        var retries=0;
+        document.getElementById('qrImg').onload=function(){var ld=document.getElementById('qrLoading');if(ld)ld.textContent='';};
+        document.getElementById('qrImg').onerror=function(){
+          retries++;
+          if(retries<=5){
+            var delay=retries*2000;
+            document.getElementById('qrLoading').textContent='加载失败，'+Math.ceil(delay/1000)+'秒后重试...('+retries+'/5)';
+            setTimeout(function(){
+              document.getElementById('qrImg').src=qrSrc+(qrSrc.indexOf('?')>=0?'&':'?')+'_r='+Date.now();
+            },delay);
+          } else {
+            container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center">二维码加载失败<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面支付</span></p>';
+          }
+        };
       } else if(container){
         container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center>支付服务暂不可用<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面完成支付</span></p>';
       }
