@@ -3802,8 +3802,8 @@ function getPattern(bazi) {
     }
   }
 
-  // 取格：优先透干匹配，否则取月支本气十神
-  var ss = matchedSS || ((bazi.month.shiShen && bazi.month.shiShen.zhi) || '');
+  // 取格：优先透干匹配→同五行天干→月支本气十神兜底
+  var ss = matchedSS || getShiShen(dayGan, benQi);
 
   // ---- 同柱复合格局检测（月干+月支搭配） ----
   var ssGan = (bazi.month.shiShen && bazi.month.shiShen.gan) || '';
