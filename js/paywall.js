@@ -34,14 +34,14 @@ function initPaywall(bp){
   pw.style.cssText='position:absolute;top:0;left:0;right:0;height:'+(contentH||500)+'px;background:linear-gradient(180deg,rgba(14,12,10,.88) 0%,rgba(18,16,12,.94) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)';
   pw.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">'
     +'<div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-bottom:24px"></div>'
-    +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">深度命理分析报告</h3>'
+    +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">完整分析报告</h3>'
     +'<p style="color:var(--tx2);font-size:13px;text-align:center;line-height:2">今年运势 · 婚姻感情 · 财运分析<br>学业分析 · 近5年流年运势</p>'
     +'<div style="font-size:36px;font-weight:900;color:var(--gold-l);margin:16px 0">¥9.9</div>'
     +'<button class="submit-btn" onclick="startRP()" style="max-width:280px;width:100%;padding:14px 32px;font-size:16px;letter-spacing:3px">积分解锁完整报告</button>'
     +'<p style="color:var(--tx3);font-size:11px;margin-top:10px">一次付费 · 永久查看 · 支持下载</p>'
     +'</div>'
     +'<div style="width:100%;padding:20px;background:rgba(24,22,18,.6);border-top:1px solid rgba(180,160,140,.08);text-align:center">'
-    +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 命理师</p>'
+    +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 对话解读</p>'
     +'<a href="/ai-chat.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:20px;color:var(--gold-l);text-decoration:none;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .3s" onmouseenter="this.style.boxShadow=\'0 0 20px rgba(201,168,76,.15)\'" onmouseleave="this.style.boxShadow=\'none\'">🤖 前2次免费 · 开始对话</a>'
     +'</div>';
   wrap.appendChild(pw);
@@ -78,9 +78,13 @@ function startRP(){
       setTimeout(function(){window.location.href=payUrl},500);
     } else {
       var qrSrc=d.qrcode||'';
-      if(!qrSrc&&payUrl) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
+      // 仅当 d.pay_url 是真正的支付宝链接时才生成二维码（排除 zpayz API fallback 地址）
+      var isValidPayUrl=payUrl&&payUrl.indexOf('mapi.php')<0&&payUrl.indexOf('zpayz.cn')<0;
+      if(!qrSrc&&isValidPayUrl) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
       if(container&&qrSrc){
-        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败<br><a href=\\\''+payUrl+'\\\' target=\\\'_blank\\\' style=\\\'color:var(--gold);text-decoration:underline\\\'>点击此处直接支付</a></p>\'">';
+        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败，请用手机访问此页面支付</p>\'">';
+      } else if(container){
+        container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center>支付服务暂不可用<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面完成支付</span></p>';
       }
       if(status)status.textContent='请扫码支付 ¥9.9（电脑端可截图扫码）';
     }
