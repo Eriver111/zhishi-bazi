@@ -3857,8 +3857,8 @@ function getPattern(bazi) {
   var ss = matchedSS || getShiShen(dayGan, benQi);
 
   // ---- 同柱复合格局检测（月干+月支搭配） ----
-  var ssGan = (bazi.month.shiShen && bazi.month.shiShen.gan) || '';
-  var ssZhi = (bazi.month.shiShen && bazi.month.shiShen.zhi) || '';
+  var ssGan = getShiShen(dayGan, bazi.month.gan);
+  var ssZhi = getShiShen(dayGan, (cangGan && cangGan[0]) || '');
   var compound = null;
 
   // 官印相生 / 杀印相生：月干印 + 月支官杀（同一柱）
