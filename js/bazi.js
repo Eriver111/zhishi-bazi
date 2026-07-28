@@ -2022,11 +2022,18 @@ function calcDayMasterStrength(bazi) {
   var isSpring = ['寅','卯','辰'].indexOf(mZhi) >= 0;  // 春季木旺
   var isAutumn = ['申','酉','戌'].indexOf(mZhi) >= 0;  // 秋季金旺
 
-  // 盘面中是否存在某五行
+  // 盘面中是否存在某五行（天干+地支表层+藏干）
   function hasWx(wx) {
     for (var i = 0; i < 4; i++) {
       if (WU_XING[allGan[i]] === wx) return true;
       if (DI_ZHI_WU_XING[allZhi[i]] === wx) return true;
+    }
+    // 藏干也查——寅藏丙火、丑藏癸水等间接存在也算有
+    for (var i = 0; i < 4; i++) {
+      var cg = getCangGan(allZhi[i]);
+      for (var j = 0; j < cg.length; j++) {
+        if (WU_XING[cg[j]] === wx) return true;
+      }
     }
     return false;
   }
@@ -2194,8 +2201,9 @@ function calcDayMasterStrength(bazi) {
           var mwx2 = DI_ZHI_WU_XING[bazi.month.zhi];
           var wasFavorable = (mwx2 === dgWx || SHENGWO[dgWx] === mwx2);
           if (wasFavorable) {
-            if (KEWO[dgWx] === heWx2 || WOSHENG[dgWx] === heWx2) score -= 18;
-            else score -= 12;
+            if (KEWO[dgWx] === heWx2) score -= 18;        // 月令合化为克身——彻底反转，重扣
+            else if (WOSHENG[dgWx] === heWx2) score -= 10; // 月令合化为泄气——削弱而非毁灭（如亥合寅→木，禄根仍在）
+            else score -= 8;                               // 月令合化为耗身——较轻
           }
         }
       }
@@ -2244,6 +2252,8 @@ function calcDayMasterStrength(bazi) {
         if (involvesMonthChong) {
           score -= 4;  // 月令被跨柱冲，得令不稳
           if (involvesDayChong) score -= 3; // 月日双冲，根气大伤
+        } else if (involvesDayChong) {
+          score -= 2;  // 日支被跨柱冲（不涉月令，力量稍弱）
         }
       }
     }
