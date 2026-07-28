@@ -484,11 +484,12 @@ async function callAI(question, chartData, bazi, history, mode) {
   const wuHuStart = { '甲':2,'己':2,'乙':4,'庚':4,'丙':6,'辛':6,'丁':8,'壬':8,'戊':0,'癸':0 };
   const startGan = wuHuStart[yearGan] || 0;
   const monthGanIdx = (startGan + jieQiMonth) % 10;
-  const monthZhiIdx = (jieQiMonth + 1) % 12; // 寅=0→地支序0, 但公式中寅月jieQiMonth=0
+  const monthZhiIdx = jieQiMonth; // getJieQiMonth已返回正确地支序
   const GAN = '甲乙丙丁戊己庚辛壬癸';
-  const ZHI = '寅卯辰巳午未申酉戌亥子丑';
-  const liuYueGZ = GAN[monthGanIdx] + ZHI[jieQiMonth];
-  messages.push({ role: 'system', content: `当前时间：${thisYear}年${thisMonth}月${thisDay}日。${thisYear}年为${yearGan}${ZHI[(thisYear-4)%12]}年，当前流月为${liuYueGZ}月（节气月${ZHI[jieQiMonth]}月）。分析流年/流月运势时必须以此为基准。` });
+  const ZHI_MONTH = '寅卯辰巳午未申酉戌亥子丑'; // 节气月序（寅=0）
+  const ZHI_YEAR = '子丑寅卯辰巳午未申酉戌亥';   // 年支序（子=0, 公式: (year-4)%12）
+  const liuYueGZ = GAN[monthGanIdx] + ZHI_MONTH[jieQiMonth];
+  messages.push({ role: 'system', content: `当前时间：${thisYear}年${thisMonth}月${thisDay}日。${thisYear}年为${yearGan}${ZHI_YEAR[(thisYear-4)%12]}年，当前流月为${liuYueGZ}月（节气月${ZHI_MONTH[jieQiMonth]}月）。分析流年/流月运势时必须以此为基准。` });
 
   // 模式指令
   if (mode === 'simple') {
