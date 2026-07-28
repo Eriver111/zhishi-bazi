@@ -1957,11 +1957,14 @@ function calcDayMasterStrength(bazi) {
 
   // ---------- ① 得令：月令地支本气与日主关系 (权重最大) ----------
   var mwx = DI_ZHI_WU_XING[bazi.month.zhi];
-  if (mwx === dgWx)            score += 30; // 得令 — 月令与日主同五行
-  else if (SHENGWO[dgWx] === mwx) score += 20; // 相令 — 月令生我
-  else if (WOSHENG[dgWx] === mwx) score -= 15; // 休令 — 我生月令（泄气）
-  else if (WOKE[dgWx] === mwx)   score -= 10; // 囚令 — 我克月令（耗力）
-  else if (KEWO[dgWx] === mwx)   score -= 25; // 死令 — 月令克我（最不利）
+  // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
+  // 壬癸水见丑辰不算真死令
+  var wetEarthAdj = (dgWx === '水' && (mZhi === '丑' || mZhi === '辰')) ? 12 : 0;
+  if (mwx === dgWx)            score += 30;
+  else if (SHENGWO[dgWx] === mwx) score += 20;
+  else if (WOSHENG[dgWx] === mwx) score -= 15;
+  else if (WOKE[dgWx] === mwx)   score -= 10;
+  else if (KEWO[dgWx] === mwx)   score -= (25 - wetEarthAdj); // 湿土克水：-25→-13
 
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
