@@ -2262,6 +2262,43 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  // 日支被合化 → 得地根基重构（如辰酉合金→辰土变金印）
+  // 遍历所有合（相邻+跨柱），若日支参与合化且新五行≠原五行，调整得地分
+  var dayBranchAdj = 0;
+  var allHePairs = [];
+  // 相邻合
+  [['year','month'],['month','day'],['day','hour']].forEach(function(pair) {
+    var z1=bazi[pair[0]].zhi, z2=bazi[pair[1]].zhi;
+    if (zhiHeScore[z1+z2]) allHePairs.push({z1:z1, z2:z2, wx:zhiHeScore[z1+z2]});
+  });
+  // 跨柱合
+  for (var xa=0; xa<allPositions.length; xa++) {
+    for (var xb=xa+1; xb<allPositions.length; xb++) {
+      if (Math.abs(xa-xb)===1) continue;
+      var zx1=bazi[allPositions[xa]].zhi, zx2=bazi[allPositions[xb]].zhi;
+      if (zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2]});
+    }
+  }
+  allHePairs.forEach(function(he) {
+    if (he.z1===bazi.day.zhi || he.z2===bazi.day.zhi) {
+      var oldWx=DI_ZHI_WU_XING[bazi.day.zhi], newWx=he.wx;
+      if (oldWx!==newWx) {
+        // 退还旧五行得地分，计入新五行得地分
+        if (oldWx===dgWx) dayBranchAdj-=12;
+        else if (SHENGWO[dgWx]===oldWx) dayBranchAdj-=8;
+        else if (KEWO[dgWx]===oldWx) dayBranchAdj+=10;
+        else if (WOSHENG[dgWx]===oldWx) dayBranchAdj+=7;
+        else if (WOKE[dgWx]===oldWx) dayBranchAdj+=6;
+        if (newWx===dgWx) dayBranchAdj+=12;
+        else if (SHENGWO[dgWx]===newWx) dayBranchAdj+=8;
+        else if (KEWO[dgWx]===newWx) dayBranchAdj-=10;
+        else if (WOSHENG[dgWx]===newWx) dayBranchAdj-=7;
+        else if (WOKE[dgWx]===newWx) dayBranchAdj-=6;
+      }
+    }
+  });
+  score += dayBranchAdj;
+
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
   if (score < 1) score = 1;
