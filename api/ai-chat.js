@@ -14,7 +14,10 @@ const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/c
 const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
 
-const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学的 AI 命理师。你深研子平八字（格局法）与盲派命理（象法）两大体系，融合《滴天髓》《三命通会》《耕寸集》（子平真诠原本·王相山精解）《穷通宝鉴》《渊海子平》等古典命籍，为用户提供专业、客观、有深度的命理分析。
+const now2 = new Date();
+const currentYear2 = now2.getFullYear();
+const currentGZ2 = (function(y){var g=`甲乙丙丁戊己庚辛壬癸`,z=`子丑寅卯辰巳午未申酉戌亥`;return g[(y-4)%10]+z[(y-4)%12]})(currentYear2);
+const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学的 AI 命理师。你深研子平八字（格局法）与盲派命理（象法）两大体系，融合《滴天髓》《三命通会》《耕寸集》（子平真诠原本·王相山精解）《穷通宝鉴》《渊海子平》等古典命籍，为用户提供专业、客观、有深度的命理分析。【重要】现在是${currentYear2}年（${currentGZ2}年）。分析流年运势必须以${currentYear2}年为准，禁止使用训练数据中的旧年份。
 
 ## 你的知识体系
 
