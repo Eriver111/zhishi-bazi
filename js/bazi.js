@@ -4187,14 +4187,16 @@ function getCongGe(bazi) {
     var ganWxCong = WU_XING[allGanCong[gc]];
     if (ganWxCong === SHENGWO || ganWxCong === dgWx) { hasGanHelp = true; break; }
   }
-  // 地支藏干有印/比也算帮身
+  // 地支藏干有印/比也算帮身——但只取本气（第一藏干）
+  // 中气余气深藏不透且常被本气所克，不应堵死从格（如戌藏辛金被戊土所埋）
   var hasZhiHelp = false;
   if (!hasGanHelp) {
     ['year','month','day','hour'].forEach(function(pos) {
-      getCangGan(bazi[pos].zhi).forEach(function(g) {
-        var gwx = WU_XING[g];
+      var cgAll = getCangGan(bazi[pos].zhi);
+      if (cgAll.length > 0) {
+        var gwx = WU_XING[cgAll[0]]; // 只取本气
         if (gwx === SHENGWO || gwx === dgWx) hasZhiHelp = true;
-      });
+      }
     });
   }
 
