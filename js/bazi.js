@@ -3865,13 +3865,25 @@ function getPattern(bazi) {
   if ((ssGan === '正印' || ssGan === '偏印') && (ssZhi === '正官' || ssZhi === '七杀')) {
     compound = ssZhi === '七杀' ? '杀印相生格' : '官印相生格';
   }
-  // 财生官：月干官杀 + 月支财星
+  // 食伤制杀：月干食伤 + 月支七杀
+  if ((ssGan === '食神' || ssGan === '伤官') && ssZhi === '七杀') {
+    compound = ssGan === '食神' ? '食神制杀格' : '伤官制杀格';
+  }
+  // 伤官配印：月干印 + 月支伤官
+  if ((ssGan === '正印' || ssGan === '偏印') && ssZhi === '伤官') {
+    compound = '伤官配印格';
+  }
+  // 印星化杀：月干七杀 + 月支印星
+  if (ssGan === '七杀' && (ssZhi === '正印' || ssZhi === '偏印')) {
+    compound = '印星化杀格';
+  }
+  // 财生官杀：月干官杀 + 月支财星
   if ((ssGan === '正官' || ssGan === '七杀') && (ssZhi === '正财' || ssZhi === '偏财')) {
     compound = '财生官格';
   }
-  // 食神生财：月干财 + 月支食神
-  if ((ssGan === '正财' || ssGan === '偏财') && ssZhi === '食神') {
-    compound = '食神生财格';
+  // 食伤生财：月干财 + 月支食神/伤官
+  if ((ssGan === '正财' || ssGan === '偏财') && (ssZhi === '食神' || ssZhi === '伤官')) {
+    compound = ssZhi === '食神' ? '食神生财格' : '伤官生财格';
   }
 
   if (compound) {
