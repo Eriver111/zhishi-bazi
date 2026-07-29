@@ -2182,6 +2182,7 @@ function calcDayMasterStrength(bazi) {
   // 跨柱六合检测 — 不限于相邻柱，所有地支对都要查
   // 月支（月令）被合走、日支（坐支）被合走时对日主影响极大
   var allPositions = ['year','month','day','hour'];
+  var _mthHeApplied = false; // 月令合化只重扣一次
   for (var a=0; a<allPositions.length; a++) {
     for (var b=a+1; b<allPositions.length; b++) {
       if (Math.abs(a-b) === 1) continue; // 相邻柱地支合已在§⑧处理，这里只补跨柱
@@ -2189,8 +2190,9 @@ function calcDayMasterStrength(bazi) {
       var heKey2 = za + zb;
       if (zhiHeScore[heKey2]) {
         var heWx2 = zhiHeScore[heKey2];
-        var involvesMonth = (za === bazi.month.zhi || zb === bazi.month.zhi);
-        var involvesDay = (za === bazi.day.zhi || zb === bazi.day.zhi);
+        // 用位置判断涉月令（年月同支时年≠月，不能用值相等判）
+        var involvesMonth = (allPositions[a]==='month' || allPositions[b]==='month');
+        var involvesDay = (allPositions[a]==='day' || allPositions[b]==='day');
         var multiplier = involvesMonth ? (involvesDay ? 5 : 3) : 1;
         if (heWx2 === dgWx) { score += 2 * (multiplier > 1 ? multiplier/2 : 1); }
         else if (KEWO[dgWx] === heWx2) { score -= 2 * multiplier; }
@@ -2203,10 +2205,11 @@ function calcDayMasterStrength(bazi) {
         if (involvesMonth && !(heWx2 === dgWx || SHENGWO[dgWx] === heWx2)) {
           var mwx2 = DI_ZHI_WU_XING[bazi.month.zhi];
           var wasFavorable = (mwx2 === dgWx || SHENGWO[dgWx] === mwx2);
-          if (wasFavorable) {
-            if (KEWO[dgWx] === heWx2) score -= 18;        // 月令合化为克身——彻底反转，重扣
-            else if (WOSHENG[dgWx] === heWx2) score -= 10; // 月令合化为泄气——削弱而非毁灭（如亥合寅→木，禄根仍在）
-            else score -= 8;                               // 月令合化为耗身——较轻
+          if (wasFavorable && !_mthHeApplied) {
+            if (KEWO[dgWx] === heWx2) score -= 18;
+            else if (WOSHENG[dgWx] === heWx2) score -= 10;
+            else score -= 8;
+            _mthHeApplied = true; // 月令被同一合力只重扣一次（年月同支合日时防重复）
           }
         }
       }
@@ -2279,9 +2282,12 @@ function calcDayMasterStrength(bazi) {
       if (zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2]});
     }
   }
+  var dayHeApplied = {}; // 日支同一合化不重复计
   allHePairs.forEach(function(he) {
     if (he.z1===bazi.day.zhi || he.z2===bazi.day.zhi) {
       var oldWx=DI_ZHI_WU_XING[bazi.day.zhi], newWx=he.wx;
+      var heKey = oldWx+'→'+newWx;
+      if (dayHeApplied[heKey]) return; dayHeApplied[heKey]=true;
       if (oldWx!==newWx) {
         // 退还旧五行得地分，计入新五行得地分
         if (oldWx===dgWx) dayBranchAdj-=12;
