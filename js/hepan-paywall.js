@@ -5,6 +5,7 @@ var _hepanHash='';
 function hhp(p1,p2,t){return [p1.dayGan||'',p1.dayZhi||'',p2.dayGan||'',p2.dayZhi||'',t].join('|')}
 function hiru(){var s=localStorage.getItem('hepan_rpt');if(!s)return false;try{var d=JSON.parse(s);return d.h===_hepanHash&&d.e>Date.now()}catch(e){return false}}
 function hsru(){localStorage.setItem('hepan_rpt',JSON.stringify({h:_hepanHash,e:Date.now()+365*86400000}))}
+function getHepanPending(){var s=localStorage.getItem('hepan_ord');if(!s)return null;try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k?d:null}catch(e){return s.startsWith('rpt_')?{oid:s,h:_hepanHash,k:'legacy',legacy:true}:null}}
 
 function initHePanPaywall(p1,p2,relationType){
   _hepanHash=hhp(p1,p2,relationType);
@@ -43,35 +44,42 @@ function hstartPay(){
   var retry=document.getElementById('hepanQrRetry');if(retry)retry.style.display='none';
   var isM=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({money:13.9,name:'合盘完整分析报告'})})
+  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    hash:_hepanHash,amount:13.9,description:'合盘完整分析报告'
+  })})
   .then(function(r){return r.json()}).then(function(d){
     if(d.error){alert(d.error);return}
-    localStorage.setItem('hepan_ord',d.out_trade_no);
-    if(isM&&d.pay_url){window.location.href=d.pay_url;return}
+    var pending={oid:d.out_trade_no,h:_hepanHash,k:d.report_key};
+    if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
+    localStorage.setItem('hepan_ord',JSON.stringify(pending));
+    var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
+    if(isM&&payment.payUrl){window.location.href=payment.payUrl;return}
     var c=document.getElementById('hepanQrContainer');
-    if(c){var qr=d.qrcode||'';if(!qr&&d.pay_url)qr='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(d.pay_url);if(qr){c.innerHTML='<img src="'+qr+'" style="width:200px;height:200px" onerror="this.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败<br>点击下方\"我已付过款\"重试</p>\'">'}else{c.innerHTML='<p style=color:var(--tx3)">二维码生成失败，请重试</p>'}}
-    if(status)status.textContent='请扫码支付 ¥13.9';
-    hpoll(d.out_trade_no);
+    if(window.PaymentFlow)payment=window.PaymentFlow.renderQr(c,d,{size:200,failureText:'二维码加载失败，请重新支付'});
+    if(!payment.qrImageUrl){if(status)status.textContent='支付服务未返回可用二维码，请重试';if(retry)retry.style.display='block';return}
+    if(status)status.textContent='请扫码支付 ¥13.9（支付后自动解锁）';
+    hpoll(pending);
   }).catch(function(e){if(status)status.textContent='网络错误，请重试';var r=document.getElementById('hepanQrRetry');if(r)r.style.display='block'});
 }
 
-function hpoll(oid){
+function hpoll(pending){
+  if(!pending||pending.h!==_hepanHash)return;
   if(_hepanTimer)clearInterval(_hepanTimer);
   var n=0;var status=document.getElementById('hepanQrStatus');
   _hepanTimer=setInterval(function(){
     n++;if(n>120){clearInterval(_hepanTimer);if(status)status.textContent='支付超时';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
-    fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-      if(d.paid||d.status==='paid'){clearInterval(_hepanTimer);localStorage.removeItem('hepan_ord');
+    fetch('/api/check-order?expected_type=hepan&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+      if((pending.legacy&&d.report_key==='legacy'&&d.status==='paid')||(d.status==='paid'&&d.report_type==='hepan'&&d.report_key===pending.k)){clearInterval(_hepanTimer);localStorage.removeItem('hepan_ord');
         var modal=document.getElementById('hepanQrModal');if(modal)modal.style.display='none';hunlock();}
     }).catch(function(){});
   },2000);
 }
 
 function hmanualUnlock(){
-  var oid=localStorage.getItem('hepan_ord');if(!oid)return;
-  fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-    if(d.paid||d.status==='paid'){clearInterval(_hepanTimer);localStorage.removeItem('hepan_ord');
+  var pending=getHepanPending();if(!pending||pending.h!==_hepanHash)return;
+  fetch('/api/check-order?expected_type=hepan&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+    if((pending.legacy&&d.report_key==='legacy'&&d.status==='paid')||(d.status==='paid'&&d.report_type==='hepan'&&d.report_key===pending.k)){clearInterval(_hepanTimer);localStorage.removeItem('hepan_ord');
       var modal=document.getElementById('hepanQrModal');if(modal)modal.style.display='none';hunlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
   }).catch(function(){alert('网络错误')});
@@ -86,4 +94,4 @@ function hunlock(){
   if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{Auth.syncData('hepan_rpt',JSON.stringify({h:_hepanHash,e:Date.now()+365*86400000}));}catch(e){}}
 }
 
-function hautoRestore(){var oid=localStorage.getItem('hepan_ord');if(oid)hpoll(oid)}
+function hautoRestore(){var pending=getHepanPending();if(pending&&pending.h===_hepanHash)hpoll(pending)}

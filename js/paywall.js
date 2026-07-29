@@ -3,12 +3,17 @@
  * 八字排盘结果页付费遮罩
  */
 var _baziHash='';
+var _baziPayParams=null;
 function hp(p){return [p.year,p.month,p.day,p.hour,p.gender].join('|')}
 function iru(){var s=localStorage.getItem('bazi_rpt');if(!s)return false;try{var d=JSON.parse(s);return d.h===_baziHash&&d.e>Date.now()}catch(e){return false}}
 function sru(){localStorage.setItem('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}))}
+function getBaziPending(){var s=localStorage.getItem('rpt_ord');if(!s)return null;try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k?d:null}catch(e){return s.startsWith('credit_')?{oid:s,h:_baziHash,k:'legacy-credit',legacy:true}:null}}
 
 function initPaywall(bp){
   _baziHash=hp(bp);
+  _baziPayParams={
+    year:bp.year,month:bp.month,day:bp.day,hour:bp.hour,gender:bp.gender
+  };
   var secs=['thisYearSection','marriageSection','wealthSection','studySection','fortuneSection'];
   var first=document.getElementById(secs[0]);
   if(!first||document.getElementById('unifiedReport'))return;
@@ -34,14 +39,14 @@ function initPaywall(bp){
   pw.style.cssText='position:absolute;top:0;left:0;right:0;height:'+(contentH||500)+'px;background:linear-gradient(180deg,rgba(14,12,10,.88) 0%,rgba(18,16,12,.94) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)';
   pw.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">'
     +'<div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-bottom:24px"></div>'
-    +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">完整分析报告</h3>'
+    +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">深度命理分析报告</h3>'
     +'<p style="color:var(--tx2);font-size:13px;text-align:center;line-height:2">今年运势 · 婚姻感情 · 财运分析<br>学业分析 · 近5年流年运势</p>'
     +'<div style="font-size:36px;font-weight:900;color:var(--gold-l);margin:16px 0">¥9.9</div>'
     +'<button class="submit-btn" onclick="startRP()" style="max-width:280px;width:100%;padding:14px 32px;font-size:16px;letter-spacing:3px">积分解锁完整报告</button>'
     +'<p style="color:var(--tx3);font-size:11px;margin-top:10px">一次付费 · 永久查看 · 支持下载</p>'
     +'</div>'
     +'<div style="width:100%;padding:20px;background:rgba(24,22,18,.6);border-top:1px solid rgba(180,160,140,.08);text-align:center">'
-    +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 对话解读</p>'
+    +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 命理师</p>'
     +'<a href="/ai-chat.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:20px;color:var(--gold-l);text-decoration:none;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .3s" onmouseenter="this.style.boxShadow=\'0 0 20px rgba(201,168,76,.15)\'" onmouseleave="this.style.boxShadow=\'none\'">🤖 前2次免费 · 开始对话</a>'
     +'</div>';
   wrap.appendChild(pw);
@@ -67,70 +72,59 @@ function startRP(){
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'credit_pack',name:'八字完整分析报告'})})
+  var orderBody={
+    year:_baziPayParams.year,month:_baziPayParams.month,day:_baziPayParams.day,
+    hour:_baziPayParams.hour,gender:_baziPayParams.gender,
+    amount:9.9,description:'八字完整分析报告'
+  };
+  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
   .then(function(r){return r.json();})
   .then(function(d){
     if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
-    localStorage.setItem('rpt_ord',d.out_trade_no);
-    var payUrl=d.pay_url||'';
+    var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
+    if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
+    localStorage.setItem('rpt_ord',JSON.stringify(pending));
+    var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
+    var payUrl=payment.payUrl;
     if(isMobile()&&payUrl){
       if(status)status.textContent='正在跳转支付...';
       setTimeout(function(){window.location.href=payUrl},500);
     } else {
-      var qrSrc=d.qrcode||'';
-      // 排除 zpayz API 回退地址（mapi.php 返回 JSON，扫了乱码），但保留合法的 zpayz 支付页
-      var isApiFallback=payUrl&&payUrl.indexOf('mapi.php')>=0;
-      if(!qrSrc&&payUrl&&!isApiFallback) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
-      if(container&&qrSrc){
-        container.innerHTML='<img id="qrImg" src="'+qrSrc+'" style="width:200px;height:200px"><p id="qrLoading" style="color:var(--tx3);font-size:12px;margin-top:8px">二维码加载中...</p>';
-        var retries=0;
-        document.getElementById('qrImg').onload=function(){var ld=document.getElementById('qrLoading');if(ld)ld.textContent='';};
-        document.getElementById('qrImg').onerror=function(){
-          retries++;
-          if(retries<=5){
-            var delay=retries*2000;
-            document.getElementById('qrLoading').textContent='加载失败，'+Math.ceil(delay/1000)+'秒后重试...('+retries+'/5)';
-            setTimeout(function(){
-              document.getElementById('qrImg').src=qrSrc+(qrSrc.indexOf('?')>=0?'&':'?')+'_r='+Date.now();
-            },delay);
-          } else {
-            container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center">二维码加载失败<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面支付</span></p>';
-          }
-        };
-      } else if(container){
-        container.innerHTML='<p style=color:var(--tx);padding:20px;text-align:center">支付服务暂不可用<br><span style=font-size:12px;color:var(--tx3)>请用手机浏览器打开此页面完成支付</span></p>';
+      if(window.PaymentFlow){
+        payment=window.PaymentFlow.renderQr(container,d,{size:200,failureText:'二维码加载失败，请点击“重新支付”'});
       }
-      // 加上复制链接按钮——扫码不行的用户可以复制到手机浏览器打开
-      if(payUrl&&!isApiFallback){
-        var btnHtml='<button id="qrCopyBtn" onclick="navigator.clipboard.writeText(\''+payUrl+'\');var t=document.getElementById(\'qrCopyBtn\');t.textContent=\'已复制！\';setTimeout(function(){t.textContent=\'复制支付链接到手机\'},2000)" style="display:block;margin:8px auto 0;padding:8px 16px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:20px;color:var(--gold);font-size:12px;cursor:pointer;font-family:inherit;letter-spacing:1px">复制支付链接到手机</button>';
-        container.insertAdjacentHTML('afterend',btnHtml);
+      if(!payment.qrImageUrl){
+        if(status)status.textContent='支付服务未返回可用二维码，请重新支付';
+        if(retry)retry.style.display='block';
+        return;
       }
-      if(status)status.textContent='请扫码支付 ¥9.9（扫码乱码请点下方复制链接）';
+      if(status)status.textContent='请扫码支付 ¥9.9（支付后自动解锁）';
     }
-    startQRPoll(d.out_trade_no);
+    startQRPoll(pending);
   }).catch(function(e){
     if(status)status.textContent='连接失败，请重试';
     if(retry)retry.style.display='block';
   });
 }
 
-function startQRPoll(oid){
+function startQRPoll(pending){
+  if(!pending||pending.h!==_baziHash)return;
   if(_qrTimer)clearInterval(_qrTimer);
   var n=0;var status=document.getElementById('qrStatus');
   _qrTimer=setInterval(function(){
     n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
-    fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-      if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+      if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
         var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     }).catch(function(){});
   },2000);
 }
 
 function manualUnlock(){
-  var oid=localStorage.getItem('rpt_ord');if(!oid)return;
-  fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-    if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+  var pending=getBaziPending();if(!pending||pending.h!==_baziHash)return;
+  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+    if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
   }).catch(function(){alert('网络错误，请稍后重试')});
@@ -147,4 +141,4 @@ function unlock(){
   if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{Auth.syncData('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}));}catch(e){}}
 }
 
-function autoRestore(){var oid=localStorage.getItem('rpt_ord');if(oid)startQRPoll(oid)}
+function autoRestore(){var pending=getBaziPending();if(pending&&pending.h===_baziHash)startQRPoll(pending)}
