@@ -4,6 +4,13 @@
  * v3.0: 新增 mode: 'credit_pack' (¥9.9/10次), 'monthly' (¥29.9/30天)
  */
 const crypto = require('crypto');
+const {
+  getClientIp,
+  getDevice,
+  md5Sign,
+  normalizeGatewayPayment,
+  paymentResponseFields
+} = require('../lib/payment-contract.js');
 
 const PAY_URL = (process.env.PAY_API_URL || 'https://zpayz.cn/mapi.php').trim();
 const PAY_PID = process.env.PAY_PID; if(!PAY_PID) throw new Error('PAY_PID env required');
@@ -64,7 +71,8 @@ module.exports = async function handler(req, res) {
       const payParams = {
         pid: PAY_PID, type: "alipay",
         out_trade_no: finalOrderId, notify_url: SITE + "/api/callback",
-        return_url: returnUrl, name: payName, money: String(payAmount)
+        return_url: returnUrl, name: payName, money: String(payAmount),
+        clientip: getClientIp(req), device: getDevice(req)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';
@@ -83,103 +91,40 @@ module.exports = async function handler(req, res) {
         const text = await payResp.text();
         let zdata;
         try { zdata = JSON.parse(text); } catch (e) {
-          // zpayz 不可达时 falling back 到 GET URL + QuickChart QR
-          const fallbackUrl = PAY_URL + '?' + formBody;
-          const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
-          return res.status(200).json({
-            out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
-            amount: payAmount, mode: mode, status: 'pending'
-          });
+          return res.status(502).json({ error: '支付服务返回异常，请稍后重试' });
         }
-        if (zdata.code !== 1) {
+        if (String(zdata.code) !== '1') {
           return res.status(502).json({ error: zdata.msg || '支付下单失败' });
         }
-        // zpayz 返回的二维码/支付链接，如果都为空则用 GET URL fallback
-        var realPayUrl = zdata.payurl || zdata.qrcode || '';
-        var realQr = zdata.qrcode || zdata.payurl || '';
-        if (!realPayUrl && !realQr) {
-          const fallbackUrl = PAY_URL + '?' + formBody;
-          realPayUrl = fallbackUrl;
-          realQr = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
+        const normalized = normalizeGatewayPayment(zdata);
+        if (!normalized.payUrl && !normalized.qrContent && !normalized.qrImage) {
+          return res.status(502).json({ error: '支付服务未返回可用的付款地址' });
         }
         return res.status(200).json({
           out_trade_no: finalOrderId,
-          pay_url: realPayUrl, qrcode: realQr,
+          ...paymentResponseFields(zdata),
           amount: payAmount, mode: mode, status: 'pending'
         });
       } catch (e) {
-        // 网络错误也 falling back
-        const fallbackUrl = PAY_URL + '?' + formBody;
-        const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
-        return res.status(200).json({
-          out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
-          amount: payAmount, mode: mode, status: 'pending'
-        });
+        return res.status(502).json({ error: '支付服务连接失败，请稍后重试' });
       }
     }
 
-    // ---- 旧版报告支付（POST zpayz 获取真实支付宝链接） ----
+    // ---- 旧版通用金额入口已停用：报告必须走固定价格的专属订单 ----
     if (!year && !hash && (money || amount)) {
-      const payAmount = money || amount || 5;
-      const payName = name || description || 'AI命理咨询·5次提问';
-      const orderId = 'rpt_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
-      var finalOrderId = orderId;
-
-      const payParams = {
-        pid: PAY_PID, type: 'alipay',
-        out_trade_no: finalOrderId, notify_url: SITE + '/api/callback',
-        return_url: SITE + '/pricing?paid=' + orderId, name: payName, money: String(payAmount)
-      };
-      payParams.sign = md5Sign(payParams, PAY_KEY);
-      payParams.sign_type = 'MD5';
-
-      const formBody = Object.keys(payParams).map(k =>
-        encodeURIComponent(k) + '=' + encodeURIComponent(payParams[k])
-      ).join('&');
-
-      try {
-        const payResp = await fetch(PAY_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formBody
-        });
-        const text = await payResp.text();
-        let zdata;
-        try { zdata = JSON.parse(text); } catch (e) {
-          // zpayz unreachable, fallback to GET URL + QuickChart QR
-          const fallbackUrl = PAY_URL + '?' + formBody;
-          const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
-          return res.status(200).json({
-            out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
-            amount: payAmount, status: 'pending'
-          });
-        }
-        if (zdata.code !== 1) {
-          return res.status(502).json({ error: zdata.msg || '支付下单失败' });
-        }
-        // Return the real Alipay URL + QR
-        return res.status(200).json({
-          out_trade_no: finalOrderId, pay_url: zdata.payurl || zdata.qrcode || '',
-          qrcode: zdata.img || zdata.qrcode || '',
-          amount: payAmount, status: 'pending'
-        });
-      } catch (e) {
-        // Network error, fallback
-        const fallbackUrl = PAY_URL + '?' + formBody;
-        const qrImg = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(fallbackUrl);
-        return res.status(200).json({
-          out_trade_no: finalOrderId, pay_url: fallbackUrl, qrcode: qrImg,
-          amount: payAmount, status: 'pending'
-        });
-      }
+      return res.status(400).json({ error: '旧版支付入口已停用，请刷新页面后重试' });
     }
 
     // ---- 合盘模式 ----
     const isHePan = !year && !!hash;
     if (isHePan) {
-      const payAmount = amount || 13.9;
+      const payAmount = 13.9;
       const payName = description || '知时 · 合盘报告';
-      const orderId = 'hepan_' + Date.now().toString(36) + '_' + hash.slice(0, 6);
+      const safeHepanHash = crypto.createHash('sha256')
+        .update(String(hash))
+        .digest('hex')
+        .slice(0, 6);
+      const orderId = 'hepan_' + Date.now().toString(36) + '_' + safeHepanHash;
       var finalOrderId = orderId;
       var hepanChannel = (req.body && req.body.channel) || '';
       var hepanParams = [];
@@ -192,7 +137,8 @@ module.exports = async function handler(req, res) {
       const payParams = {
         pid: PAY_PID, type: 'alipay',
         out_trade_no: finalOrderId, notify_url: notifyUrl,
-        return_url: hprUrl, name: payName, money: String(payAmount)
+        return_url: hprUrl, name: payName, money: String(payAmount),
+        clientip: getClientIp(req), device: getDevice(req)
       };
       payParams.sign = md5Sign(payParams, PAY_KEY);
       payParams.sign_type = 'MD5';
@@ -212,16 +158,23 @@ module.exports = async function handler(req, res) {
         try { data = JSON.parse(text); } catch (e) {
           return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
         }
-        if (data.code !== 1) {
+        if (String(data.code) !== '1') {
           return res.status(502).json({ error: data.msg || '支付下单失败' });
         }
-        qrcode = data.qrcode || data.payurl || '';
-        payUrl = data.payurl || data.qrcode || '';
+        const normalized = normalizeGatewayPayment(data);
+        qrcode = normalized.qrContent;
+        payUrl = normalized.payUrl;
+        var qrImage = normalized.qrImage;
       } catch (e) {
         return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
       }
 
-      return res.status(200).json({ orderId, out_trade_no: finalOrderId, amount: payAmount, qrcode, pay_url: payUrl, status: 'pending' });
+      return res.status(200).json({
+        orderId, out_trade_no: finalOrderId, amount: payAmount,
+        report_key: safeHepanHash,
+        qrcode, qr_content: qrcode, qr_image: qrImage || '', pay_url: payUrl,
+        status: 'pending'
+      });
     }
 
     // ---- 个人排盘模式 ----
@@ -229,7 +182,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: '缺少必要参数' });
     }
 
-    const payAmount = amount || 9.9;
+    const payAmount = 9.9;
     const bzHash = makeHash({ year, month, day, hour, gender });
     const orderId = 'bazi_' + Date.now().toString(36) + '_' + bzHash.slice(0, 6);
     var finalOrderId = orderId;
@@ -243,7 +196,8 @@ module.exports = async function handler(req, res) {
     const payParams = {
       pid: PAY_PID, type: 'alipay',
       out_trade_no: finalOrderId, notify_url: notifyUrl,
-      return_url: returnUrl, name: '知时 · 完整分析报告', money: String(payAmount)
+      return_url: returnUrl, name: '知时 · 完整分析报告', money: String(payAmount),
+      clientip: getClientIp(req), device: getDevice(req)
     };
     payParams.sign = md5Sign(payParams, PAY_KEY);
     payParams.sign_type = 'MD5';
@@ -263,27 +217,28 @@ module.exports = async function handler(req, res) {
       try { data = JSON.parse(text); } catch (e) {
         return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
       }
-      if (data.code !== 1) {
+      if (String(data.code) !== '1') {
         return res.status(502).json({ error: data.msg || '支付下单失败' });
       }
-      qrcode = data.qrcode || data.payurl || '';
-      payUrl = data.payurl || data.qrcode || '';
+      const normalized = normalizeGatewayPayment(data);
+      qrcode = normalized.qrContent;
+      payUrl = normalized.payUrl;
+      var qrImage = normalized.qrImage;
     } catch (e) {
       return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
     }
 
-    return res.status(200).json({ orderId, out_trade_no: finalOrderId, amount: payAmount, qrcode, pay_url: payUrl, status: 'pending' });
+    return res.status(200).json({
+      orderId, out_trade_no: finalOrderId, amount: payAmount,
+      report_key: orderId.split('_').pop(),
+      qrcode, qr_content: qrcode, qr_image: qrImage || '', pay_url: payUrl,
+      status: 'pending'
+    });
 
   } catch (e) {
     return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };
-
-function md5Sign(params, key) {
-  const sorted = Object.keys(params).sort();
-  const str = sorted.map(k => k + '=' + params[k]).join('&');
-  return crypto.createHash('md5').update(str + key).digest('hex');
-}
 
 function makeHash(p) {
   const s = [p.year, p.month, p.day, p.hour, p.gender].join('|');

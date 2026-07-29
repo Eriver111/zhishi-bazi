@@ -3,12 +3,17 @@
  * 八字排盘结果页付费遮罩
  */
 var _baziHash='';
+var _baziPayParams=null;
 function hp(p){return [p.year,p.month,p.day,p.hour,p.gender].join('|')}
 function iru(){var s=localStorage.getItem('bazi_rpt');if(!s)return false;try{var d=JSON.parse(s);return d.h===_baziHash&&d.e>Date.now()}catch(e){return false}}
 function sru(){localStorage.setItem('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}))}
+function getBaziPending(){var s=localStorage.getItem('rpt_ord');if(!s)return null;try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k?d:null}catch(e){return s.startsWith('credit_')?{oid:s,h:_baziHash,k:'legacy-credit',legacy:true}:null}}
 
 function initPaywall(bp){
   _baziHash=hp(bp);
+  _baziPayParams={
+    year:bp.year,month:bp.month,day:bp.day,hour:bp.hour,gender:bp.gender
+  };
   var secs=['thisYearSection','marriageSection','wealthSection','studySection','fortuneSection'];
   var first=document.getElementById(secs[0]);
   if(!first||document.getElementById('unifiedReport'))return;
@@ -67,47 +72,59 @@ function startRP(){
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'credit_pack',name:'八字完整分析报告'})})
+  var orderBody={
+    year:_baziPayParams.year,month:_baziPayParams.month,day:_baziPayParams.day,
+    hour:_baziPayParams.hour,gender:_baziPayParams.gender,
+    amount:9.9,description:'八字完整分析报告'
+  };
+  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
   .then(function(r){return r.json();})
   .then(function(d){
     if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
-    localStorage.setItem('rpt_ord',d.out_trade_no);
-    var payUrl=d.pay_url||'';
+    var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
+    if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
+    localStorage.setItem('rpt_ord',JSON.stringify(pending));
+    var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
+    var payUrl=payment.payUrl;
     if(isMobile()&&payUrl){
       if(status)status.textContent='正在跳转支付...';
       setTimeout(function(){window.location.href=payUrl},500);
     } else {
-      var qrSrc=d.qrcode||'';
-      if(!qrSrc&&payUrl) qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(payUrl);
-      if(container&&qrSrc){
-        container.innerHTML='<img src="'+qrSrc+'" style="width:200px;height:200px" onerror="this.parentElement.innerHTML=\'<p style=color:var(--tx);padding:20px>二维码加载失败<br><a href=\\\''+payUrl+'\\\' target=\\\'_blank\\\' style=\\\'color:var(--gold);text-decoration:underline\\\'>点击此处直接支付</a></p>\'">';
+      if(window.PaymentFlow){
+        payment=window.PaymentFlow.renderQr(container,d,{size:200,failureText:'二维码加载失败，请点击“重新支付”'});
       }
-      if(status)status.textContent='请扫码支付 ¥9.9（电脑端可截图扫码）';
+      if(!payment.qrImageUrl){
+        if(status)status.textContent='支付服务未返回可用二维码，请重新支付';
+        if(retry)retry.style.display='block';
+        return;
+      }
+      if(status)status.textContent='请扫码支付 ¥9.9（支付后自动解锁）';
     }
-    startQRPoll(d.out_trade_no);
+    startQRPoll(pending);
   }).catch(function(e){
     if(status)status.textContent='连接失败，请重试';
     if(retry)retry.style.display='block';
   });
 }
 
-function startQRPoll(oid){
+function startQRPoll(pending){
+  if(!pending||pending.h!==_baziHash)return;
   if(_qrTimer)clearInterval(_qrTimer);
   var n=0;var status=document.getElementById('qrStatus');
   _qrTimer=setInterval(function(){
     n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
-    fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-      if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+      if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
         var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     }).catch(function(){});
   },2000);
 }
 
 function manualUnlock(){
-  var oid=localStorage.getItem('rpt_ord');if(!oid)return;
-  fetch('/api/check-order?out_trade_no='+oid).then(function(r){return r.json()}).then(function(d){
-    if(d.paid||d.status==='paid'){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+  var pending=getBaziPending();if(!pending||pending.h!==_baziHash)return;
+  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+    if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
   }).catch(function(){alert('网络错误，请稍后重试')});
@@ -124,4 +141,4 @@ function unlock(){
   if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{Auth.syncData('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}));}catch(e){}}
 }
 
-function autoRestore(){var oid=localStorage.getItem('rpt_ord');if(oid)startQRPoll(oid)}
+function autoRestore(){var pending=getBaziPending();if(pending&&pending.h===_baziHash)startQRPoll(pending)}

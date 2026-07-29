@@ -114,6 +114,7 @@
 </div>
 
 <script src="js/auth.js"></script>
+<script src="js/payment.js"></script>
 
 <!-- 支付逻辑：与 paywall.js 统一 -->
 <script>
@@ -194,30 +195,30 @@ function buyCredits(mode, amount, name) {
     _currentOrderId = d.out_trade_no;
     localStorage.setItem('credit_ord', d.out_trade_no);
     localStorage.setItem('credit_ord_ts', Date.now());
+    var payment = window.PaymentFlow
+      ? window.PaymentFlow.resolvePayment(d)
+      : { payUrl: d.pay_url || '', qrImageUrl: '' };
 
-    if (isMobile() && d.pay_url) {
+    if (isMobile() && payment.payUrl) {
       if (status) status.textContent = '正在跳转支付宝...';
       // 手机端跳转后通过 URL ?paid=xxx 恢复，无需轮询
-      setTimeout(function() { window.location.href = d.pay_url; }, 800);
+      setTimeout(function() { window.location.href = payment.payUrl; }, 800);
       return; // 不启动轮询，也不显示二维码
     } else {
       var container = document.getElementById('qrContainer');
-      // zpayz 返回的 qrcode/pay_url 是支付宝链接（非图片），统一用 QuickChart 生成二维码图片
-      var payUrl = d.pay_url || d.qrcode || '';
-      var qrSrc = '';
-      if (payUrl) {
-        qrSrc = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(payUrl);
+      if (window.PaymentFlow) {
+        payment = window.PaymentFlow.renderQr(container, d, {
+          size: 200,
+          failureText: '二维码加载失败，请点击下方按钮重试'
+        });
       }
-      // 兜底
-      if (!qrSrc) {
-        qrSrc = 'https://api.quickchart.io/qr?size=220&text=' + encodeURIComponent(
-          'https://zpayz.cn/mapi.php?pid=2026060400293274&out_trade_no=' + d.out_trade_no
-        );
+      if (!payment.qrImageUrl) {
+        if (status) status.textContent = '支付服务未返回可用二维码，请重新创建订单';
+        if (retry) retry.style.display = 'block';
+        allBtns.forEach(function(b) { b.disabled = false; });
+        return;
       }
-      if (container) {
-        container.innerHTML = '<img src="' + qrSrc + '" style="width:200px;height:200px;border-radius:8px" onerror="this.innerHTML=\'<p style=color:#333;padding:20px>二维码加载失败<br><small>请点击下方按钮重试</small></p>\'">';
-      }
-      if (status) status.textContent = '请扫码支付 ' + amount + ' 元';
+      if (status) status.textContent = '请扫码支付 ' + amount + ' 元（支付后自动到账）';
     }
     startPolling(d.out_trade_no);
   })
