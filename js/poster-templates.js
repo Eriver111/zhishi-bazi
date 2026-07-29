@@ -715,7 +715,9 @@
   };
 
   function normalizePattern(pattern) {
-    var value = typeof pattern === 'string' ? pattern.trim() : '';
+    var value = typeof pattern === 'string'
+      ? pattern.trim()
+      : (pattern && typeof pattern.name === 'string' ? pattern.name.trim() : '');
     var i;
 
     if (Object.prototype.hasOwnProperty.call(SUPPORTED_PATTERNS, value)) return value;

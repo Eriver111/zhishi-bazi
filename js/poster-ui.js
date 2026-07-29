@@ -65,7 +65,7 @@
     if (canvas) canvas.hidden = false;
     if (status) {
       clearError(status);
-      status.hidden = false;
+      status.hidden = true;
       status.textContent = message || '海报已生成，可免费下载。';
     }
     if (download) {

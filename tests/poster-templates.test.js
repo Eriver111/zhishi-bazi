@@ -80,6 +80,25 @@ test('keeps the approved 乙木正官 copy verbatim', () => {
   ]);
 });
 
+test('accepts the computed pattern object used by the live result page', () => {
+  const result = plain(loadTemplates().resolve({
+    bazi: { day: { gan: '乙' } },
+    gender: 'female',
+    pattern: {
+      name: '正官格',
+      desc: '月令透官，重视规则与责任。',
+      type: '透干取格',
+      source: '月令取格',
+    },
+  }));
+
+  assert.equal(result.patternName, '正官格');
+  assert.deepEqual(result.copyLines, [
+    '看似柔软，自有守住分寸的力量。',
+    '循序向上，责任会成为你攀援的支点。',
+  ]);
+});
+
 test('returns deterministic core copy across repeated calls and genders', () => {
   const templates = loadTemplates();
   const input = { bazi: { day: { gan: '壬' } }, gender: 'male', pattern: '食神生财格' };

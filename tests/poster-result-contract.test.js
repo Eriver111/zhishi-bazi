@@ -246,6 +246,17 @@ test('open lazily resolves only the selected background and renders it once', as
   assert.equal(document.getElementById('posterRetry').hidden, true);
 });
 
+test('successful render hides the status so the canvas is the only visible preview item', async () => {
+  const { ui, document } = loadUI();
+  ui.configure({ bazi: { day: { gan: '乙' } }, gender: 'female', pattern: '正官格' });
+
+  await ui.open();
+
+  assert.equal(document.getElementById('posterCanvas').hidden, false);
+  assert.equal(document.getElementById('posterStatus').hidden, true);
+  assert.equal(document.getElementById('posterDownload').hidden, false);
+});
+
 test('typed render failure shows retry and retry can recover without closing the result page', async () => {
   let attempts = 0;
   const { ui, document, calls } = loadUI({
