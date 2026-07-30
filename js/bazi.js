@@ -4021,6 +4021,15 @@ function getYongJi(bazi) {
     }
   }
 
+  // 冬火（亥子丑月）：火弱如烛，需木火双扶
+  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('木') >= 0) { jiShen.splice(jiShen.indexOf('木'), 1); }
+    if (xiShen.indexOf('木') < 0) { xiShen.push('木'); }
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.push('火'); }
+    tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
+  }
+
   // 冬水（亥子月）：冻水不流，需火暖局
   if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
     if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
@@ -4050,6 +4059,14 @@ function getYongJi(bazi) {
     if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
     if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
     tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
+  }
+
+  // 辰月湿土（土/火/水日主）：辰为水库，阴湿之气重，需火烘干方能发育
+  if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
   }
 
   // 戌月燥土（火土日主）：戌为火库，土燥木枯，需水润局
