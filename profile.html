@@ -67,8 +67,12 @@
       });
       query.set('mode', 'pillars');
       query.set('timing', params.timing || 'unknown');
+    } else {
+      if (params.mode === 'lunar') query.set('cal', 'lunar');
+      query.set('zishi', params.ziHourRule === 'next-day' ? '1' : '0');
+      query.set('solar', params.trueSolarTime === 'disabled' ? '0' : '1');
     }
-    ['year','month','day','hour','clock','minute','gender','cal','prov','city','dist','ziHourRule']
+    ['year','month','day','hour','clock','minute','gender','prov','city','dist']
       .forEach(function(key) {
         if (params[key] !== undefined && params[key] !== '') query.set(key, params[key]);
       });
@@ -93,8 +97,10 @@
     content.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
 
     // 并行加载积分+排盘
-    var p1 = fetch('/api/auth/profile', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } }).then(function(r){return r.json()});
-    var p2 = Auth.getData('saved_charts');
+    var p1 = fetch('/api/auth/profile', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } })
+      .then(function(r){return r.json()})
+      .catch(function(){ return { error:true }; });
+    var p2 = Auth.getData('saved_charts').catch(function(){ return '[]'; });
     var p3 = fetch('/api/reports', {
       headers:{ Authorization:'Bearer ' + Auth.getToken() }
     }).then(function(r){ return r.ok ? r.json() : { reports:[] }; })

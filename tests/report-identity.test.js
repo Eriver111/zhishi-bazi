@@ -30,6 +30,14 @@ test('legacy zishi and solar URL parameters map to calculation settings and chan
   assert.notEqual(makeReportKey('bazi', base), makeReportKey('bazi', { ...base, solar:'0' }));
 });
 
+test('a normalized lunar report keeps its key when normalized again', () => {
+  const raw = { year:1990, month:6, day:15, hour:0, minute:5, gender:'female', clock:0, cal:'lunar', zishi:'1', solar:'0' };
+  const normalized = normalizeBaziReportParams(raw);
+
+  assert.equal(normalized.mode, 'lunar');
+  assert.equal(makeReportKey('bazi', normalized), makeReportKey('bazi', raw));
+});
+
 test('direct-pillar reports are keyed by entered pillars and gender', () => {
   const params = normalizeBaziReportParams({ mode:'pillars', yearPillar:'庚午', monthPillar:'壬午', dayPillar:'乙卯', hourPillar:'丁亥', gender:'female' });
   assert.deepEqual(params.pillars, { year:'庚午', month:'壬午', day:'乙卯', hour:'丁亥' });
