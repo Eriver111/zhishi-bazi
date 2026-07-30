@@ -49,6 +49,32 @@
 (function(){
   var content = document.getElementById('content');
 
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function reportUrl(report) {
+    var params = report.report_params || {};
+    var query = new URLSearchParams();
+    if (params.mode === 'pillars' && params.pillars) {
+      var keys = { year:['yg','yz'], month:['mg','mz'], day:['dg','dz'], hour:['hg','hz'] };
+      Object.keys(keys).forEach(function(position) {
+        var value = params.pillars[position] || '';
+        query.set(keys[position][0], value.charAt(0));
+        query.set(keys[position][1], value.charAt(1));
+      });
+      query.set('mode', 'pillars');
+      query.set('timing', params.timing || 'unknown');
+    }
+    ['year','month','day','hour','clock','minute','gender','cal','prov','city','dist','ziHourRule']
+      .forEach(function(key) {
+        if (params[key] !== undefined && params[key] !== '') query.set(key, params[key]);
+      });
+    return '/result?' + query.toString();
+  }
+
   function render() {
     if (typeof Auth === 'undefined') return setTimeout(render, 300);
     // 登录成功后自动刷新
@@ -69,10 +95,15 @@
     // 并行加载积分+排盘
     var p1 = fetch('/api/auth/profile', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } }).then(function(r){return r.json()});
     var p2 = Auth.getData('saved_charts');
+    var p3 = fetch('/api/reports', {
+      headers:{ Authorization:'Bearer ' + Auth.getToken() }
+    }).then(function(r){ return r.ok ? r.json() : { reports:[] }; })
+      .catch(function(){ return { reports:[] }; });
 
-    Promise.all([p1, p2]).then(function(results){
+    Promise.all([p1, p2, p3]).then(function(results){
       var profile = results[0];
       var charts = [];
+      var reports = (results[2] && results[2].reports) || [];
       try { charts = JSON.parse(results[1] || '[]'); } catch(e) {}
 
       var html = '';
@@ -132,6 +163,17 @@
             '<div class="label">' + c.label + '</div>' +
             '<div class="meta"><span>' + (c.saved_at ? c.saved_at.slice(0,10) : '') + '</span></div>' +
             '<span class="arrow">→</span></div>';
+        });
+      }
+      html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">我的深度报告</h3>';
+      if (reports.length === 0) {
+        html += '<div class="empty-state" style="padding:30px"><p style="font-size:12px">还没有已购报告</p></div>';
+      } else {
+        reports.forEach(function(report) {
+          html += '<a class="chart-card" href="' + esc(reportUrl(report)) + '">' +
+            '<div class="label">' + esc(report.label || '深度报告') + '</div>' +
+            '<div class="meta"><span>' + esc((report.paid_at || '').slice(0,10)) + '</span><span>查看报告</span></div>' +
+            '<span class="arrow">→</span></a>';
         });
       }
       content.innerHTML = html;
