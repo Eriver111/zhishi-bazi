@@ -202,31 +202,20 @@ function renderPower(bazi){
 
 function renderPattern(bazi){
     var c=document.getElementById('patternAnalysis');if(!c)return;
-    var monthSS=(bazi.month.shiShen&&bazi.month.shiShen.zhi)||'';
-    var touSS=[];
-    if(bazi.year.shiShen)touSS.push(bazi.year.gan+'('+bazi.year.shiShen.gan+')');
-    if(bazi.month.shiShen)touSS.push(bazi.month.gan+'('+bazi.month.shiShen.gan+')');
-    if(bazi.hour.shiShen)touSS.push(bazi.hour.gan+'('+bazi.hour.shiShen.gan+')');
+    // 统一使用 BaZiCalculator.getPattern（与 result.js 一致）
+    var p=null;
+    try{p=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getPattern?BaZiCalculator.getPattern(bazi):null}catch(e){p=null}
+    if(!p||!p.name){c.innerHTML='<p style="color:var(--gold-l);font-size:15px;font-weight:700;margin-bottom:4px">格局不显</p><p style="color:var(--tx2);font-size:12px;line-height:1.6">需结合天干透出与地支合局综合判断。</p>';return}
 
-    var hasGuan=monthSS==='正官'||monthSS==='七杀';
-    var hasYin=touSS.some(function(t){return t.indexOf('正印')>=0||t.indexOf('偏印')>=0});
-    var yinCount=touSS.filter(function(t){return t.indexOf('印')>=0}).length;
-
-    var pn='',pi='',pd='',pr='';
-    if(hasGuan&&hasYin&&yinCount>0){
-      pn='官印相生格';pi='🏛️';
-      pd='月令申金正官当权，月干壬水正印透出，官生印、印护身，形成"官印相生"的贵格。官星得令而旺，印星透干有力，二者相生有情。《耕寸集》谓："有官必有印，无印官不真。"此格主学业有成、事业稳定、贵人相助。';
-      pr='📖 《耕寸集》："官印双全，居官清要。"《三命通会》："正官佩印，不如偏官佩印之威，然亦不失为清贵之格。"';
-    }else if(monthSS==='正官'){pn='正官格';pi='🏛️';pd='月令正官当权，为人正直有责任心。';pr='📖 "官以任能，贵乎清正。"'}
-    else if(monthSS==='七杀'){pn='七杀格';pi='⚔️';pd='月令七杀当权，果断刚毅。';pr='📖 "杀不离印，印不离杀。"'}
-    else{pn=monthSS?monthSS+'格':'杂格';pi='🔮';pd='格局需综合判断。';pr='📖 "有格论格，无格论用。"'}
+    var source=p.source||('月令'+p.monthZhi+' · 五行'+p.monthWx);
+    var iconMap={'食神制杀':'⚔️','伤官制杀':'⚔️','杀印相生':'🛡️','官印相生':'🏛️','印星化杀':'🛡️','食神生财':'💰','伤官生财':'💰','财生官':'🏛️','伤官配印':'🎨'};
+    var icon=iconMap[p.name]||'🔮';
 
     c.innerHTML=''+
-      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:24px">'+pi+'</span>'+
-      '<div style="font-size:18px;font-weight:900;color:var(--gold-l);margin:4px 0">'+pn+'</div>'+
-      '<div style="font-size:10px;color:var(--tx2)">月令：申(正官) 透干：'+touSS.join('、')+'</div></div>'+
-      '<p style="color:var(--tx);font-size:11px;line-height:1.5;margin:8px 0">'+pd+'</p>'+
-      '<div style="font-size:9px;color:var(--tx3);line-height:1.4;font-style:italic">'+pr+'</div>';
+      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:24px">'+icon+'</span>'+
+      '<div style="font-size:18px;font-weight:900;color:var(--gold-l);margin:4px 0">'+p.name+'</div>'+
+      '<div style="font-size:10px;color:var(--tx2)">'+source+'</div></div>'+
+      '<p style="color:var(--tx);font-size:11px;line-height:1.5;margin:8px 0">'+p.desc+'</p>';
   }
 
   // ============ 喜用忌神 ============

@@ -173,7 +173,11 @@ function getJieQiDates(year) {
             var targetYear = (m === 1) ? year + 1 : year;
             // 立春和小寒返回带钟点（用于精确到时的月柱切换）
             // 四立+小寒精确到小时（月柱分界关键节点）
-            var hVal = 0;
+            // 节气默认时刻表（未精确到年份时用此值，正午=12 作为保守默认）
+            // 午夜出生的边缘案例：节气在凌晨则在前一月的最后时刻
+            // 节气默认时刻（北京时）：立春2 惊蛰15 清明20 立夏6 芒种14 小暑22 立秋4 白露16 寒露3 立冬18 大雪10 小寒1
+            var jqDefHours = [2, 15, 20, 6, 14, 22, 4, 16, 3, 18, 10, 1];
+            var hVal = jqDefHours[i] || 12;
             if (i === 0) hVal = (LICHUN_HOUR[year] || 12);          // 立春
             else if (i === 11) hVal = (XIAOHAN_HOUR[year] || 16);   // 小寒
             else if (i === 9) hVal = (LIDONG_HOUR[year] || 4);      // 立冬
@@ -1947,11 +1951,14 @@ function calcDayMasterStrength(bazi) {
 
   // ---------- ① 得令：月令地支本气与日主关系 (权重最大) ----------
   var mwx = DI_ZHI_WU_XING[bazi.month.zhi];
-  if (mwx === dgWx)            score += 30; // 得令 — 月令与日主同五行
-  else if (SHENGWO[dgWx] === mwx) score += 20; // 相令 — 月令生我
-  else if (WOSHENG[dgWx] === mwx) score -= 15; // 休令 — 我生月令（泄气）
-  else if (WOKE[dgWx] === mwx)   score -= 10; // 囚令 — 我克月令（耗力）
-  else if (KEWO[dgWx] === mwx)   score -= 25; // 死令 — 月令克我（最不利）
+  // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
+  // 壬癸水见丑辰不算真死令
+  var wetEarthAdj = (dgWx === '水' && (mZhi === '丑' || mZhi === '辰')) ? 12 : 0;
+  if (mwx === dgWx)            score += 30;
+  else if (SHENGWO[dgWx] === mwx) score += 20;
+  else if (WOSHENG[dgWx] === mwx) score -= 15;
+  else if (WOKE[dgWx] === mwx)   score -= 10;
+  else if (KEWO[dgWx] === mwx)   score -= (25 - wetEarthAdj); // 湿土克水：-25→-13
 
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
@@ -2012,11 +2019,18 @@ function calcDayMasterStrength(bazi) {
   var isSpring = ['寅','卯','辰'].indexOf(mZhi) >= 0;  // 春季木旺
   var isAutumn = ['申','酉','戌'].indexOf(mZhi) >= 0;  // 秋季金旺
 
-  // 盘面中是否存在某五行
+  // 盘面中是否存在某五行（天干+地支表层+藏干）
   function hasWx(wx) {
     for (var i = 0; i < 4; i++) {
       if (WU_XING[allGan[i]] === wx) return true;
       if (DI_ZHI_WU_XING[allZhi[i]] === wx) return true;
+    }
+    // 藏干也查——寅藏丙火、丑藏癸水等间接存在也算有
+    for (var i = 0; i < 4; i++) {
+      var cg = getCangGan(allZhi[i]);
+      for (var j = 0; j < cg.length; j++) {
+        if (WU_XING[cg[j]] === wx) return true;
+      }
     }
     return false;
   }
@@ -2047,6 +2061,14 @@ function calcDayMasterStrength(bazi) {
   // 秋季金旺，需火炼金成器（但金为日主时不需）
   if (isAutumn && dgWx !== '金' && dgWx !== '火') {
     if (!hasWx('火')) score -= 3;       // 金无火炼，顽金不器
+    // 秋金成局+无火 → 官杀无制，日主被克严重（如申酉戌会金局）
+    // 检查四柱中是否有申酉戌三字（秋金成局）——直接用四柱地支
+    var hasShen=(allZhi[0]==='申'||allZhi[1]==='申'||allZhi[2]==='申'||allZhi[3]==='申');
+    var hasYou=(allZhi[0]==='酉'||allZhi[1]==='酉'||allZhi[2]==='酉'||allZhi[3]==='酉');
+    var hasXu=(allZhi[0]==='戌'||allZhi[1]==='戌'||allZhi[2]==='戌'||allZhi[3]==='戌');
+    if (dgWx !== '木' && hasShen && hasYou && hasXu) {
+      if (!hasWx('火')) score -= 3;    // 金局无火制杀 → 追加调候扣分
+    }
   }
 
   // ---------- ⑦ 天干合化修正 ----------
@@ -2146,6 +2168,132 @@ function calcDayMasterStrength(bazi) {
       else if (KEWO[dgWx] === wx) score -= 1;
     }
   });
+
+  // 跨柱六合检测 — 不限于相邻柱，所有地支对都要查
+  // 月支（月令）被合走、日支（坐支）被合走时对日主影响极大
+  var allPositions = ['year','month','day','hour'];
+  var _mthHeApplied = false; // 月令合化只重扣一次
+  for (var a=0; a<allPositions.length; a++) {
+    for (var b=a+1; b<allPositions.length; b++) {
+      if (Math.abs(a-b) === 1) continue; // 相邻柱地支合已在§⑧处理，这里只补跨柱
+      var za = bazi[allPositions[a]].zhi, zb = bazi[allPositions[b]].zhi;
+      var heKey2 = za + zb;
+      if (zhiHeScore[heKey2]) {
+        var heWx2 = zhiHeScore[heKey2];
+        // 用位置判断涉月令（年月同支时年≠月，不能用值相等判）
+        var involvesMonth = (allPositions[a]==='month' || allPositions[b]==='month');
+        var involvesDay = (allPositions[a]==='day' || allPositions[b]==='day');
+        var multiplier = involvesMonth ? (involvesDay ? 5 : 3) : 1;
+        if (heWx2 === dgWx) { score += 2 * (multiplier > 1 ? multiplier/2 : 1); }
+        else if (KEWO[dgWx] === heWx2) { score -= 2 * multiplier; }
+        else if (WOSHENG[dgWx] === heWx2) { score -= 2 * multiplier; }
+        else if (WOKE[dgWx] === heWx2) { score -= 1 * multiplier; }
+        /* SHENGWO（印）：无负面 */
+        // 月令被合化后，得令本质改变。但扣分需区分原状态：
+        // 若月令原本生扶日主（得令+30或相令+20），合化后利好消失 → 重扣
+        // 若月令原本就克泄耗日主（休囚死），合化后变另一种克泄耗 → 不重扣
+        if (involvesMonth && !(heWx2 === dgWx || SHENGWO[dgWx] === heWx2)) {
+          var mwx2 = DI_ZHI_WU_XING[bazi.month.zhi];
+          var wasFavorable = (mwx2 === dgWx || SHENGWO[dgWx] === mwx2);
+          if (wasFavorable && !_mthHeApplied) {
+            if (KEWO[dgWx] === heWx2) score -= 18;
+            else if (WOSHENG[dgWx] === heWx2) score -= 10;
+            else score -= 8;
+            _mthHeApplied = true; // 月令被同一合力只重扣一次（年月同支合日时防重复）
+          }
+        }
+      }
+    }
+  }
+
+  // 三会局检测（寅卯辰/巳午未/申酉戌/亥子丑 — 比三合局更强）
+  var HUI_JU = [
+    { zhi: ['寅','卯','辰'], wx: '木' },
+    { zhi: ['巳','午','未'], wx: '火' },
+    { zhi: ['申','酉','戌'], wx: '金' },
+    { zhi: ['亥','子','丑'], wx: '水' }
+  ];
+  HUI_JU.forEach(function(hj) {
+    var has = hj.zhi.map(function(z){ return allZhiArr.indexOf(z) >= 0; });
+    var fullCount = has.filter(Boolean).length;
+    if (fullCount === 3) {
+      // 三会成局，力量压倒性（会局>三合，扣/加分更高）
+      if (hj.wx === dgWx) score += 8;
+      else if (SHENGWO[dgWx] === hj.wx) score += 5;
+      else if (KEWO[dgWx] === hj.wx) score -= 8;
+      else if (WOSHENG[dgWx] === hj.wx) score -= 6;
+      else if (WOKE[dgWx] === hj.wx) score -= 4;
+    } else if (fullCount === 2) {
+      // 半会 — 力量约等于半合但略强
+      var involvesDayHui = hj.zhi.indexOf(bazi.day.zhi) >= 0;
+      var involvesMonthHui = hj.zhi.indexOf(bazi.month.zhi) >= 0;
+      var multHui = (involvesDayHui ? 2 : 1) * (involvesMonthHui ? 1.5 : 1);
+      if (hj.wx === dgWx) score += Math.round(1 * multHui);
+      else if (SHENGWO[dgWx] === hj.wx) score += Math.round(1 * multHui);
+      else if (KEWO[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+      else if (WOSHENG[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+      else if (WOKE[dgWx] === hj.wx) score -= Math.round(1 * multHui);
+    }
+  });
+
+  // 跨柱六冲检测 — 月支被冲（非相邻），得令根基动摇
+  for (var xa=0; xa<allPositions.length; xa++) {
+    for (var xb=xa+1; xb<allPositions.length; xb++) {
+      // skip adjacent pairs (already handled in §⑧)
+      if (Math.abs(xa-xb) === 1) continue;
+      var zxa = bazi[allPositions[xa]].zhi, zxb = bazi[allPositions[xb]].zhi;
+      if (chongMap[zxa] === zxb) {
+        var involvesMonthChong = (zxa === bazi.month.zhi || zxb === bazi.month.zhi);
+        var involvesDayChong = (zxa === bazi.day.zhi || zxb === bazi.day.zhi);
+        if (involvesMonthChong) {
+          score -= 4;  // 月令被跨柱冲，得令不稳
+          if (involvesDayChong) score -= 3; // 月日双冲，根气大伤
+        } else if (involvesDayChong) {
+          score -= 2;  // 日支被跨柱冲（不涉月令，力量稍弱）
+        }
+      }
+    }
+  }
+
+  // 日支被合化 → 得地根基重构（如辰酉合金→辰土变金印）
+  // 遍历所有合（相邻+跨柱），若日支参与合化且新五行≠原五行，调整得地分
+  var dayBranchAdj = 0;
+  var allHePairs = [];
+  // 相邻合
+  [['year','month'],['month','day'],['day','hour']].forEach(function(pair) {
+    var z1=bazi[pair[0]].zhi, z2=bazi[pair[1]].zhi;
+    if (zhiHeScore[z1+z2]) allHePairs.push({z1:z1, z2:z2, wx:zhiHeScore[z1+z2]});
+  });
+  // 跨柱合
+  for (var xa=0; xa<allPositions.length; xa++) {
+    for (var xb=xa+1; xb<allPositions.length; xb++) {
+      if (Math.abs(xa-xb)===1) continue;
+      var zx1=bazi[allPositions[xa]].zhi, zx2=bazi[allPositions[xb]].zhi;
+      if (zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2]});
+    }
+  }
+  var dayHeApplied = {}; // 日支同一合化不重复计
+  allHePairs.forEach(function(he) {
+    if (he.z1===bazi.day.zhi || he.z2===bazi.day.zhi) {
+      var oldWx=DI_ZHI_WU_XING[bazi.day.zhi], newWx=he.wx;
+      var heKey = oldWx+'→'+newWx;
+      if (dayHeApplied[heKey]) return; dayHeApplied[heKey]=true;
+      if (oldWx!==newWx) {
+        // 退还旧五行得地分，计入新五行得地分
+        if (oldWx===dgWx) dayBranchAdj-=12;
+        else if (SHENGWO[dgWx]===oldWx) dayBranchAdj-=8;
+        else if (KEWO[dgWx]===oldWx) dayBranchAdj+=10;
+        else if (WOSHENG[dgWx]===oldWx) dayBranchAdj+=7;
+        else if (WOKE[dgWx]===oldWx) dayBranchAdj+=6;
+        if (newWx===dgWx) dayBranchAdj+=12;
+        else if (SHENGWO[dgWx]===newWx) dayBranchAdj+=8;
+        else if (KEWO[dgWx]===newWx) dayBranchAdj-=10;
+        else if (WOSHENG[dgWx]===newWx) dayBranchAdj-=7;
+        else if (WOKE[dgWx]===newWx) dayBranchAdj-=6;
+      }
+    }
+  });
+  score += dayBranchAdj;
 
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
@@ -3508,25 +3656,37 @@ function getPattern(bazi) {
     }
   }
 
-  // 取格：优先透干匹配，否则取月支本气十神
-  var ss = matchedSS || ((bazi.month.shiShen && bazi.month.shiShen.zhi) || '');
+  // 取格：优先透干匹配→同五行天干→月支本气十神兜底
+  var ss = matchedSS || getShiShen(dayGan, benQi);
 
   // ---- 同柱复合格局检测（月干+月支搭配） ----
-  var ssGan = (bazi.month.shiShen && bazi.month.shiShen.gan) || '';
-  var ssZhi = (bazi.month.shiShen && bazi.month.shiShen.zhi) || '';
+  var ssGan = getShiShen(dayGan, bazi.month.gan);
+  var ssZhi = getShiShen(dayGan, (cangGan && cangGan[0]) || '');
   var compound = null;
 
   // 官印相生 / 杀印相生：月干印 + 月支官杀（同一柱）
   if ((ssGan === '正印' || ssGan === '偏印') && (ssZhi === '正官' || ssZhi === '七杀')) {
     compound = ssZhi === '七杀' ? '杀印相生格' : '官印相生格';
   }
-  // 财生官：月干官杀 + 月支财星
+  // 食伤制杀：月干食伤 + 月支七杀
+  if ((ssGan === '食神' || ssGan === '伤官') && ssZhi === '七杀') {
+    compound = ssGan === '食神' ? '食神制杀格' : '伤官制杀格';
+  }
+  // 伤官配印：月干印 + 月支伤官
+  if ((ssGan === '正印' || ssGan === '偏印') && ssZhi === '伤官') {
+    compound = '伤官配印格';
+  }
+  // 印星化杀：月干七杀 + 月支印星
+  if (ssGan === '七杀' && (ssZhi === '正印' || ssZhi === '偏印')) {
+    compound = '印星化杀格';
+  }
+  // 财生官杀：月干官杀 + 月支财星
   if ((ssGan === '正官' || ssGan === '七杀') && (ssZhi === '正财' || ssZhi === '偏财')) {
     compound = '财生官格';
   }
-  // 食神生财：月干财 + 月支食神
-  if ((ssGan === '正财' || ssGan === '偏财') && ssZhi === '食神') {
-    compound = '食神生财格';
+  // 食伤生财：月干财 + 月支食神/伤官
+  if ((ssGan === '正财' || ssGan === '偏财') && (ssZhi === '食神' || ssZhi === '伤官')) {
+    compound = ssZhi === '食神' ? '食神生财格' : '伤官生财格';
   }
 
   if (compound) {
@@ -3658,6 +3818,15 @@ function getYongJi(bazi) {
     }
   }
 
+  // 冬火（亥子丑月）：火弱如烛，需木火双扶
+  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('木') >= 0) { jiShen.splice(jiShen.indexOf('木'), 1); }
+    if (xiShen.indexOf('木') < 0) { xiShen.push('木'); }
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.push('火'); }
+    tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
+  }
+
   // 冬水（亥子月）：冻水不流，需火暖局
   if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
     if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
@@ -3687,6 +3856,46 @@ function getYongJi(bazi) {
     if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
     if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
     tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
+  }
+
+  // 辰月湿土（土/火/水日主）：辰为水库，阴湿之气重，需火烘干方能发育
+  if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
+  }
+
+  // 戌月燥土（火土日主）：戌为火库，土燥木枯，需水润局
+  if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
+  }
+
+  // 冬金（亥子丑月）：金寒水冷，冻金不锐，需火暖局
+  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
+  }
+
+  // 巳午月燥土（火土日主）：夏火炎土燥，需水润局
+  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
+  }
+
+  // 未月燥土（火土日主）：夏末火炎土燥，需水润局
+  if ((dmWx === '火' || dmWx === '土') && mz === '未') {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
   }
 
   if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
@@ -3886,11 +4095,38 @@ function getCongGe(bazi) {
     var cgWx2 = WU_XING[dayCangGanAll[cgi]];
     if (cgWx2 === dgWx || cgWx2 === SHENGWO) { hasDayRoot = true; break; }
   }
+  // 印比帮身检测——有印星或比劫则不能从（不仅看印，比劫也是帮扶）
+  var hasGanHelp = false;
+  var allGanCong = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
+  for (var gc = 0; gc < allGanCong.length; gc++) {
+    var ganWxCong = WU_XING[allGanCong[gc]];
+    if (ganWxCong === SHENGWO || ganWxCong === dgWx) { hasGanHelp = true; break; }
+  }
+  // 地支藏干有印/比也算帮身——但只取本气（第一藏干）
+  // 中气余气深藏不透且常被本气所克，不应堵死从格（如戌藏辛金被戊土所埋）
+  var hasZhiHelp = false;
+  if (!hasGanHelp) {
+    ['year','month','day','hour'].forEach(function(pos) {
+      var cgAll = getCangGan(bazi[pos].zhi);
+      if (cgAll.length > 0) {
+        var gwx = WU_XING[cgAll[0]]; // 只取本气
+        if (gwx === SHENGWO || gwx === dgWx) hasZhiHelp = true;
+      }
+    });
+  }
 
   // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱，且日支不能有克泄耗（日支坐克星则破格）
+  // 同时检查藏干——藏干中有克泄耗也算破格（如未戌藏丁火，辛金见之为官杀）
+  var hasCangKeXie = false;
+  ['year','month','day','hour'].forEach(function(pos) {
+    getCangGan(bazi[pos].zhi).forEach(function(g) {
+      var gwx = WU_XING[g];
+      if (gwx === KEWO || gwx === WOSHENG || gwx === WOKE) hasCangKeXie = true;
+    });
+  });
   var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
   var dayZhiIsKeXie = (KEWO === dayZhiGuanXi || WOSHENG === dayZhiGuanXi || WOKE === dayZhiGuanXi);
-  if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie) {
+  if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie && !hasCangKeXie) {
     return {
       isCong: true, name: '从强格',
       desc: '日主极强，局中无克泄耗，一气专旺，顺势而行。喜印比生扶，忌克泄耗破格。',
@@ -3898,8 +4134,9 @@ function getCongGe(bazi) {
       source: '从旺/从强'
     };
   }
-  // 从杀/从财/从儿/从势：日主需极弱(<30分)且日支无根
-  var canCong = level === '极弱' && !hasDayRoot;
+  // 从杀/从财/从儿/从势：日主需极弱(<30分)、日支无根、天干无印
+  // 《子平真诠》"一字印绶即破格"：哪怕暗藏印星也算有根
+  var canCong = level === '极弱' && !hasDayRoot && !hasGanHelp && !hasZhiHelp;
   // 从杀：官杀极旺(≥6且≥日主2倍)
   if (canCong && kePower >= 6 && kePower >= dgPower * 2) {
     return {
