@@ -55,6 +55,11 @@ module.exports = async function handler(req, res) {
         console.error('[callback] report order amount mismatch:', outTradeNo, params.money);
         return res.status(200).send('amount error');
       }
+      // Current Hepan orders predate report_orders. They grant access through
+      // strict gateway polling, so a valid callback only needs acknowledgement.
+      if (reportProduct.type === 'hepan') {
+        return res.status(200).send('success');
+      }
       const order = await getReportOrder(outTradeNo);
       if (!order || order.report_type !== reportProduct.type) {
         return res.status(200).send('order error');

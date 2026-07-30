@@ -34,6 +34,34 @@ const PRICING = {
   ai_chat: { amount: 5, credits: 5, label: 'AI提问·5次', prefix: 'aichat_' },
 };
 
+function buildBaziReturnUrl(params) {
+  const query = new URLSearchParams();
+  if (params.mode === 'pillars') {
+    const keys = {
+      year: ['yg', 'yz'],
+      month: ['mg', 'mz'],
+      day: ['dg', 'dz'],
+      hour: ['hg', 'hz']
+    };
+    Object.keys(keys).forEach(position => {
+      const pillar = params.pillars[position];
+      query.set(keys[position][0], pillar.charAt(0));
+      query.set(keys[position][1], pillar.charAt(1));
+    });
+    query.set('mode', 'pillars');
+    query.set('timing', params.timing);
+  } else {
+    if (params.mode === 'lunar') query.set('cal', 'lunar');
+    query.set('zishi', params.ziHourRule === 'next-day' ? '1' : '0');
+    query.set('solar', params.trueSolarTime === 'disabled' ? '0' : '1');
+  }
+  ['year', 'month', 'day', 'hour', 'clock', 'minute', 'gender', 'prov', 'city', 'dist']
+    .forEach(key => {
+      if (params[key] !== undefined && params[key] !== '') query.set(key, params[key]);
+    });
+  return SITE + '/result.html?' + query.toString();
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -221,7 +249,7 @@ module.exports = async function handler(req, res) {
     if (userId) baziParams.push('uid=' + userId);
     if (baziChannel) baziParams.push('ch=' + baziChannel);
     const notifyUrl = SITE + '/api/callback' + (baziParams.length ? '?' + baziParams.join('&') : '');
-    const returnUrl = SITE + '/result.html?year=' + normalized.year + '&month=' + normalized.month + '&day=' + normalized.day + '&hour=' + normalized.hour + '&gender=' + normalized.gender;
+    const returnUrl = buildBaziReturnUrl(normalized);
 
     const payParams = {
       pid: PAY_PID, type: 'alipay',

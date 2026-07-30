@@ -269,6 +269,128 @@ test('create-order ignores a browser-supplied BaZi report price and charges the 
   });
 });
 
+test('unknown-timing direct-pillar order returns to the complete entered chart identity', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let gatewayReturnUrl = '';
+    global.fetch = async (_url, options) => {
+      gatewayReturnUrl = new URLSearchParams(String(options.body)).get('return_url') || '';
+      return {
+        async text() {
+          return JSON.stringify({
+            code: 1,
+            payurl: 'https://cashier.example/pay/direct-unknown',
+            qrcode: 'alipays://platformapi/startapp?saId=10000007'
+          });
+        }
+      };
+    };
+
+    try {
+      const handler = loadFresh(createOrderPath, {
+        createReportOrder: async order => order,
+        hasPaidReport: async () => false
+      });
+      const res = jsonResponse();
+      await handler({
+        method: 'POST',
+        body: {
+          report_params: {
+            mode: 'pillars',
+            timing: 'unknown',
+            gender: 'female',
+            enteredPillars: {
+              year: '甲子',
+              month: '乙丑',
+              day: '丙寅',
+              hour: '丁卯'
+            }
+          }
+        },
+        headers: { 'x-forwarded-for': '203.0.113.14', 'user-agent': 'Mobile Browser' }
+      }, res);
+
+      const returnUrl = new URL(gatewayReturnUrl);
+      assert.equal(res.statusCode, 200);
+      assert.equal(returnUrl.origin + returnUrl.pathname, 'https://zhishi.online/result.html');
+      assert.deepEqual(
+        [...returnUrl.searchParams.entries()].sort(),
+        [
+          ['dg', '丙'], ['dz', '寅'], ['gender', 'female'],
+          ['hg', '丁'], ['hz', '卯'], ['mg', '乙'], ['mode', 'pillars'],
+          ['mz', '丑'], ['timing', 'unknown'], ['yg', '甲'], ['yz', '子']
+        ].sort()
+      );
+      assert.doesNotMatch(gatewayReturnUrl, /undefined/);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+});
+
+test('matched direct-pillar order returns with pillars and matched timing fields', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let gatewayReturnUrl = '';
+    global.fetch = async (_url, options) => {
+      gatewayReturnUrl = new URLSearchParams(String(options.body)).get('return_url') || '';
+      return {
+        async text() {
+          return JSON.stringify({
+            code: 1,
+            payurl: 'https://cashier.example/pay/direct-matched',
+            qrcode: 'alipays://platformapi/startapp?saId=10000007'
+          });
+        }
+      };
+    };
+
+    try {
+      const handler = loadFresh(createOrderPath, {
+        createReportOrder: async order => order,
+        hasPaidReport: async () => false
+      });
+      const res = jsonResponse();
+      await handler({
+        method: 'POST',
+        body: {
+          report_params: {
+            mode: 'pillars',
+            timing: 'matched',
+            gender: 'male',
+            pillars: {
+              year: { gan: '戊', zhi: '辰' },
+              month: { gan: '己', zhi: '巳' },
+              day: { gan: '庚', zhi: '午' },
+              hour: { gan: '辛', zhi: '未' }
+            },
+            year: 1990,
+            month: 6,
+            day: 15,
+            hour: 8,
+            clock: 9
+          }
+        },
+        headers: { 'x-forwarded-for': '203.0.113.15', 'user-agent': 'Mobile Browser' }
+      }, res);
+
+      const returnUrl = new URL(gatewayReturnUrl);
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(
+        [...returnUrl.searchParams.entries()].sort(),
+        [
+          ['clock', '9'], ['day', '15'], ['dg', '庚'], ['dz', '午'],
+          ['gender', 'male'], ['hg', '辛'], ['hour', '8'], ['hz', '未'],
+          ['mg', '己'], ['mode', 'pillars'], ['month', '6'], ['mz', '巳'],
+          ['timing', 'matched'], ['year', '1990'], ['yg', '戊'], ['yz', '辰']
+        ].sort()
+      );
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+});
+
 test('logged-in BaZi order is stored against the authenticated account', async () => {
   await withPaymentEnv(async () => {
     const originalFetch = global.fetch;
@@ -570,6 +692,35 @@ test('callback requires an explicit TRADE_SUCCESS status before granting credits
     assert.equal(res.statusCode, 200);
     assert.equal(res.body, 'success');
     assert.equal(inserted, 0);
+  });
+});
+
+test('valid current Hepan callback acknowledges success without a persisted report row', async () => {
+  await withPaymentEnv(async () => {
+    const handler = loadFresh(callbackPath, {
+      getReportOrder: async () => null,
+      markReportOrderPaid: async () => {
+        throw new Error('current Hepan orders are not persisted report rows');
+      }
+    });
+    const req = {
+      method: 'GET',
+      query: {
+        money: '13.90',
+        out_trade_no: 'hepan_example_abcdef',
+        pid: 'merchant',
+        trade_status: 'TRADE_SUCCESS',
+        type: 'alipay',
+        sign_type: 'MD5',
+        sign: 'e0979c3af52d31a7fa04d086888109c9'
+      }
+    };
+    const res = jsonResponse();
+
+    await handler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body, 'success');
   });
 });
 
