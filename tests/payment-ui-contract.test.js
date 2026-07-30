@@ -175,7 +175,9 @@ test('purchased account access removes the report paywall before any new order i
       return { ok: true, async json() { return {}; } };
     },
     setInterval() { return 1; },
-    clearInterval() {}
+    clearInterval() {},
+    setTimeout() { return 1; },
+    clearTimeout() {}
   };
   context.window = context;
   vm.createContext(context);
@@ -186,6 +188,130 @@ test('purchased account access removes the report paywall before any new order i
   assert.equal(accessCalls, 1);
   assert.equal(orderCalls, 0);
   assert.ok(!nodes.rptPaywall || nodes.rptPaywall.removed);
+});
+
+test('logged-in local guest unlock still checks account access before granting report access', async () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  const storage = new Map();
+  let accessCalls = 0;
+  const params = { year: 1990, month: 6, day: 15, hour: 8, gender: 'female' };
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, String(value)); },
+      removeItem(key) { storage.delete(key); }
+    },
+    Auth: { isLoggedIn() { return true; }, getToken() { return 'account-token'; } },
+    fetch: async url => {
+      assert.match(String(url), /^\/api\/reports\/access\?/);
+      accessCalls++;
+      return { ok: true, async json() { return { unlocked: false }; } };
+    },
+    setTimeout() { return 1; },
+    clearTimeout() {},
+    setInterval() { return 1; },
+    clearInterval() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+  storage.set('bazi_rpt', JSON.stringify({ h: context.makeLocalReportKey(params), e: Date.now() + 60_000 }));
+
+  await context.initPaywall(params);
+
+  assert.equal(accessCalls, 1);
+  assert.ok(nodes.rptPaywall && !nodes.rptPaywall.removed);
+  assert.notEqual(nodes.downloadBanner && nodes.downloadBanner.style.display, 'flex');
+});
+
+test('account access verification shows a blocking gate while its request is pending', () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    Auth: { isLoggedIn() { return true; }, getToken() { return 'account-token'; } },
+    fetch() { return new Promise(() => {}); },
+    setTimeout() { return 1; },
+    clearTimeout() {},
+    setInterval() { return 1; },
+    clearInterval() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  context.initPaywall({ year: 1990, month: 6, day: 15, hour: 8, gender: 'female' });
+
+  assert.ok(nodes.rptAccessGate && !nodes.rptAccessGate.removed);
+  assert.equal(nodes.rptAccessGate.style.pointerEvents, 'auto');
+  assert.ok(!nodes.rptPaywall);
+});
+
+test('rejected or timed-out account access replaces the gate with a locked paywall', async () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  const timeoutHandlers = [];
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    Auth: { isLoggedIn() { return true; }, getToken() { return 'account-token'; } },
+    fetch() { return new Promise(() => {}); },
+    setTimeout(fn) { timeoutHandlers.push(fn); return timeoutHandlers.length; },
+    clearTimeout() {},
+    setInterval() { return 1; },
+    clearInterval() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  const restored = context.initPaywall({ year: 1990, month: 6, day: 15, hour: 8, gender: 'female' });
+  assert.equal(timeoutHandlers.length, 1);
+  timeoutHandlers[0]();
+  await restored;
+
+  assert.ok(nodes.rptAccessGate.removed);
+  assert.ok(nodes.rptPaywall && !nodes.rptPaywall.removed);
+  assert.notEqual(nodes.downloadBanner && nodes.downloadBanner.style.display, 'flex');
+});
+
+test('rejected account access replaces the gate with a locked paywall', async () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    Auth: { isLoggedIn() { return true; }, getToken() { return 'account-token'; } },
+    fetch: async () => { throw new Error('network unavailable'); },
+    setTimeout() { return 1; },
+    clearTimeout() {},
+    setInterval() { return 1; },
+    clearInterval() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  await context.initPaywall({ year: 1990, month: 6, day: 15, hour: 8, gender: 'female' });
+
+  assert.ok(nodes.rptAccessGate.removed);
+  assert.ok(nodes.rptPaywall && !nodes.rptPaywall.removed);
+  assert.notEqual(nodes.downloadBanner && nodes.downloadBanner.style.display, 'flex');
 });
 
 test('guest unlocks for direct pillar charts remain isolated by all four pillars', () => {

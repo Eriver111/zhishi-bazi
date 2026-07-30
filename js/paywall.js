@@ -59,16 +59,38 @@ function reportSearchParams(params){
 }
 
 var _accountAccessFailed=false;
+function isAccountLoggedIn(){return typeof Auth!=='undefined'&&Auth.isLoggedIn()}
+function showAccountAccessGate(){
+  var wrap=document.getElementById('unifiedReport');
+  if(!wrap||document.getElementById('rptAccessGate'))return;
+  var gate=document.createElement('div');gate.id='rptAccessGate';
+  gate.style.cssText='position:absolute;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:rgba(14,12,10,.94);color:var(--tx2);font-size:13px;pointer-events:auto;border-radius:12px';
+  gate.style.pointerEvents='auto';
+  gate.textContent='正在验证购买记录…';
+  wrap.appendChild(gate);
+}
+function removeAccountAccessGate(){var gate=document.getElementById('rptAccessGate');if(gate)gate.remove()}
 function restoreAccountAccess(){
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn())return Promise.resolve(false);
+  if(!isAccountLoggedIn())return Promise.resolve(false);
   var query=reportSearchParams(_baziPayParams);
-  return fetch('/api/reports/access?'+query.toString(),{
-    headers:{Authorization:'Bearer '+Auth.getToken()}
-  }).then(function(response){return response.ok?response.json():{unlocked:false}})
-  .then(function(data){
-    if(data.unlocked){unlock({persistLocal:true,persistCloud:false});return true}
-    return false;
-  }).catch(function(){_accountAccessFailed=true;return false});
+  return new Promise(function(resolve){
+    var settled=false;
+    function finish(value,failed){
+      if(settled)return;
+      settled=true;
+      clearTimeout(timeout);
+      if(failed)_accountAccessFailed=true;
+      resolve(value);
+    }
+    var timeout=setTimeout(function(){finish(false,true)},8000);
+    fetch('/api/reports/access?'+query.toString(),{
+      headers:{Authorization:'Bearer '+Auth.getToken()}
+    }).then(function(response){return response.ok?response.json():{unlocked:false}})
+    .then(function(data){
+      if(data.unlocked&&!settled){unlock({persistLocal:true,persistCloud:false});finish(true,false);return}
+      finish(false,false);
+    }).catch(function(){finish(false,true)});
+  });
 }
 
 function initPaywall(bp){
@@ -76,8 +98,14 @@ function initPaywall(bp){
   _baziHash=makeLocalReportKey(_baziPayParams);
   _accountAccessFailed=false;
   if(!renderPaywall(false,true))return Promise.resolve(false);
-  if(iru()){unlock({persistLocal:false,persistCloud:false});return Promise.resolve(true)}
+  if(!isAccountLoggedIn()){
+    if(iru()){unlock({persistLocal:false,persistCloud:false});return Promise.resolve(true)}
+    renderPaywall(true);
+    return Promise.resolve(false);
+  }
+  showAccountAccessGate();
   return restoreAccountAccess().then(function(restored){
+    removeAccountAccessGate();
     if(!restored)renderPaywall(true);
     return restored;
   });
@@ -106,7 +134,7 @@ function renderPaywall(skipLayout,prepareOnly){
   }
   if(prepareOnly)return true;
 
-  if(iru()){unlock();return}
+  if(!isAccountLoggedIn()&&iru()){unlock();return}
   injectQRModal();
 
   // 计算付费内容实际高度
