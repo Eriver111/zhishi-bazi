@@ -11,6 +11,12 @@ const {
   normalizeGatewayPayment,
   paymentResponseFields
 } = require('../lib/payment-contract.js');
+const {
+  normalizeBaziReportParams,
+  makeReportKey,
+  makeBaziReportLabel
+} = require('../lib/report-identity.js');
+const { createReportOrder, hasPaidReport } = require('../lib/supabase.js');
 
 const PAY_URL = (process.env.PAY_API_URL || 'https://zpayz.cn/mapi.php').trim();
 const PAY_PID = process.env.PAY_PID; if(!PAY_PID) throw new Error('PAY_PID env required');
@@ -111,7 +117,7 @@ module.exports = async function handler(req, res) {
     }
 
     // ---- 旧版通用金额入口已停用：报告必须走固定价格的专属订单 ----
-    if (!year && !hash && (money || amount)) {
+    if (!body.report_params && !year && !hash && (money || amount)) {
       return res.status(400).json({ error: '旧版支付入口已停用，请刷新页面后重试' });
     }
 
@@ -178,20 +184,44 @@ module.exports = async function handler(req, res) {
     }
 
     // ---- 个人排盘模式 ----
-    if (!year || !month || !day || hour === undefined || !gender) {
+    if (!body.report_params && (!year || !month || !day || hour === undefined || !gender)) {
       return res.status(400).json({ error: '缺少必要参数' });
     }
 
+    let normalized;
+    try {
+      normalized = normalizeBaziReportParams(body.report_params || body);
+    } catch (e) {
+      return res.status(400).json({ error: 'invalid report params' });
+    }
+    const reportKey = makeReportKey('bazi', normalized);
+    const label = makeBaziReportLabel(normalized);
+    if (userId && await hasPaidReport(userId, 'bazi', reportKey)) {
+      return res.status(200).json({
+        already_unlocked: true,
+        report_type: 'bazi',
+        report_key: reportKey
+      });
+    }
+
     const payAmount = 9.9;
-    const bzHash = makeHash({ year, month, day, hour, gender });
-    const orderId = 'bazi_' + Date.now().toString(36) + '_' + bzHash.slice(0, 6);
+    const orderId = 'bazi_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
+    await createReportOrder({
+      order_id: orderId,
+      user_id: userId,
+      report_type: 'bazi',
+      report_key: reportKey,
+      report_params: normalized,
+      label,
+      amount: payAmount
+    });
     var finalOrderId = orderId;
     var baziChannel = (req.body && req.body.channel) || '';
     var baziParams = [];
     if (userId) baziParams.push('uid=' + userId);
     if (baziChannel) baziParams.push('ch=' + baziChannel);
     const notifyUrl = SITE + '/api/callback' + (baziParams.length ? '?' + baziParams.join('&') : '');
-    const returnUrl = SITE + '/result.html?year=' + year + '&month=' + month + '&day=' + day + '&hour=' + hour + '&gender=' + gender;
+    const returnUrl = SITE + '/result.html?year=' + normalized.year + '&month=' + normalized.month + '&day=' + normalized.day + '&hour=' + normalized.hour + '&gender=' + normalized.gender;
 
     const payParams = {
       pid: PAY_PID, type: 'alipay',
@@ -230,7 +260,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       orderId, out_trade_no: finalOrderId, amount: payAmount,
-      report_key: orderId.split('_').pop(),
+      report_key: reportKey,
       qrcode, qr_content: qrcode, qr_image: qrImage || '', pay_url: payUrl,
       status: 'pending'
     });
@@ -239,10 +269,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };
-
-function makeHash(p) {
-  const s = [p.year, p.month, p.day, p.hour, p.gender].join('|');
-  let h = 0;
-  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
-  return 'bz_' + Math.abs(h).toString(36);
-}

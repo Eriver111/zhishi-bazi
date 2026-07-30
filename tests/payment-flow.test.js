@@ -7,6 +7,8 @@ const createOrderPath = path.join(root, 'api', 'create-order.js');
 const callbackPath = path.join(root, 'api', 'callback.js');
 const checkOrderPath = path.join(root, 'api', 'check-order.js');
 const supabasePath = require.resolve(path.join(root, 'lib', 'supabase.js'));
+const authPath = require.resolve(path.join(root, 'lib', 'auth.js'));
+const { normalizeBaziReportParams, makeReportKey } = require(path.join(root, 'lib', 'report-identity.js'));
 
 function jsonResponse() {
   return {
@@ -37,6 +39,34 @@ function loadFresh(modulePath, supabaseMock) {
   if (previousSupabase) require.cache[supabasePath] = previousSupabase;
   else delete require.cache[supabasePath];
   return loaded;
+}
+
+function loadFreshWithMocks(modulePath, mocks) {
+  const resolved = require.resolve(modulePath);
+  const previousModule = require.cache[resolved];
+  const previousMocks = new Map();
+  delete require.cache[resolved];
+  for (const [modulePath, mock] of Object.entries(mocks)) {
+    previousMocks.set(modulePath, require.cache[modulePath]);
+    require.cache[modulePath] = {
+      id: modulePath,
+      filename: modulePath,
+      loaded: true,
+      exports: mock
+    };
+  }
+  const handler = require(resolved);
+  return {
+    handler,
+    restore() {
+      if (previousModule) require.cache[resolved] = previousModule;
+      else delete require.cache[resolved];
+      for (const [modulePath, previous] of previousMocks) {
+        if (previous) require.cache[modulePath] = previous;
+        else delete require.cache[modulePath];
+      }
+    }
+  };
 }
 
 function withPaymentEnv(fn) {
@@ -232,9 +262,141 @@ test('create-order ignores a browser-supplied BaZi report price and charges the 
       assert.equal(postedMoney, '9.9');
       assert.equal(res.body.amount, 9.9);
       assert.match(res.body.out_trade_no, /^bazi_[a-z0-9]+_/);
-      assert.equal(res.body.report_key, res.body.out_trade_no.split('_').pop());
+      assert.equal(res.body.report_key, makeReportKey('bazi', req.body));
     } finally {
       global.fetch = originalFetch;
+    }
+  });
+});
+
+test('logged-in BaZi order is stored against the authenticated account', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let storedOrder = null;
+    const { handler, restore } = loadFreshWithMocks(createOrderPath, {
+      [authPath]: { verifyToken: () => ({ uid: 7 }) },
+      [supabasePath]: {
+        hasPaidReport: async () => false,
+        createReportOrder: async (order) => {
+          storedOrder = { ...order, status: order.status || 'pending' };
+          return storedOrder;
+        }
+      }
+    });
+    global.fetch = async () => ({
+      async text() {
+        return JSON.stringify({
+          code: 1,
+          payurl: 'https://cashier.example/pay/bazi-account',
+          qrcode: 'alipays://platformapi/startapp?saId=10000007'
+        });
+      }
+    });
+
+    const reportParams = {
+      year: 1990, month: 6, day: 15, hour: 8, gender: 'female'
+    };
+    try {
+      const res = jsonResponse();
+      await handler({
+        method: 'POST',
+        body: { token: 'account-token', report_params: reportParams, amount: 0.01 },
+        headers: { 'x-forwarded-for': '203.0.113.11', 'user-agent': 'Desktop Browser' }
+      }, res);
+
+      assert.equal(res.statusCode, 200);
+      assert.equal(storedOrder.user_id, 7);
+      assert.equal(storedOrder.status, 'pending');
+      assert.equal(storedOrder.report_type, 'bazi');
+      assert.deepEqual(storedOrder.report_params, normalizeBaziReportParams(reportParams));
+      assert.equal(storedOrder.report_key, makeReportKey('bazi', reportParams));
+      assert.equal(res.body.report_key, storedOrder.report_key);
+    } finally {
+      global.fetch = originalFetch;
+      restore();
+    }
+  });
+});
+
+test('already-owned BaZi report returns without calling the gateway', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let fetchCalls = 0;
+    const { handler, restore } = loadFreshWithMocks(createOrderPath, {
+      [authPath]: { verifyToken: () => ({ uid: 7 }) },
+      [supabasePath]: {
+        hasPaidReport: async () => true,
+        createReportOrder: async () => { throw new Error('owned report must not create an order'); }
+      }
+    });
+    global.fetch = async () => {
+      fetchCalls += 1;
+      throw new Error('owned report must not call the gateway');
+    };
+
+    const reportParams = {
+      year: 1990, month: 6, day: 15, hour: 8, gender: 'female'
+    };
+    try {
+      const res = jsonResponse();
+      await handler({
+        method: 'POST',
+        body: { token: 'account-token', report_params: reportParams },
+        headers: { 'x-forwarded-for': '203.0.113.12', 'user-agent': 'Desktop Browser' }
+      }, res);
+
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.already_unlocked, true);
+      assert.equal(res.body.report_key, makeReportKey('bazi', reportParams));
+      assert.equal(fetchCalls, 0);
+    } finally {
+      global.fetch = originalFetch;
+      restore();
+    }
+  });
+});
+
+test('guest BaZi order remains allowed with a null user_id', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let storedOrder = null;
+    const { handler, restore } = loadFreshWithMocks(createOrderPath, {
+      [supabasePath]: {
+        hasPaidReport: async () => false,
+        createReportOrder: async (order) => {
+          storedOrder = { ...order, status: order.status || 'pending' };
+          return storedOrder;
+        }
+      }
+    });
+    global.fetch = async () => ({
+      async text() {
+        return JSON.stringify({
+          code: 1,
+          payurl: 'https://cashier.example/pay/bazi-guest',
+          qrcode: 'alipays://platformapi/startapp?saId=10000007'
+        });
+      }
+    });
+
+    const reportParams = {
+      year: 1990, month: 6, day: 15, hour: 8, gender: 'female'
+    };
+    try {
+      const res = jsonResponse();
+      await handler({
+        method: 'POST',
+        body: { report_params: reportParams },
+        headers: { 'x-forwarded-for': '203.0.113.13', 'user-agent': 'Desktop Browser' }
+      }, res);
+
+      assert.equal(res.statusCode, 200);
+      assert.equal(storedOrder.user_id, null);
+      assert.equal(storedOrder.status, 'pending');
+      assert.equal(res.body.report_key, storedOrder.report_key);
+    } finally {
+      global.fetch = originalFetch;
+      restore();
     }
   });
 });
