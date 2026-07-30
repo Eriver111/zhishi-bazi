@@ -13,6 +13,7 @@ class FakeElement {
     this.ownerDocument = document;
     this.hidden = id === 'reportPdfSheet';
     this.disabled = false;
+    this.inert = false;
     this.style = {};
     this.textContent = '';
     this.attributes = new Map();
@@ -44,6 +45,10 @@ class FakeElement {
     return this.attributes.get(name);
   }
 
+  removeAttribute(name) {
+    this.attributes.delete(name);
+  }
+
   focus() {
     this.ownerDocument.activeElement = this;
   }
@@ -68,7 +73,18 @@ function createDocument() {
       if (!this.listeners.has(type)) this.listeners.set(type, []);
       this.listeners.get(type).push(listener);
     },
+    dispatch(type, event = {}) {
+      const payload = {
+        type,
+        preventDefault() {},
+        ...event,
+      };
+      for (const listener of this.listeners.get(type) || []) listener(payload);
+    },
   };
+  document.body = new FakeElement('body', document);
+  document.body.style.overflow = '';
+  document.body.children = [];
   for (const id of ids) document.elements.set(id, new FakeElement(id, document));
   document.getElementById('reportPdfDownload').disabled = true;
   document.getElementById('reportPdfShare').disabled = true;
@@ -152,6 +168,16 @@ async function settle() {
   await Promise.resolve();
   await Promise.resolve();
   await new Promise((resolve) => setImmediate(resolve));
+}
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }
 
 function extractOpenReport() {
@@ -271,10 +297,13 @@ test('share re-checks support for the exact prepared file before invoking Web Sh
 test('generation failure keeps a visible HTML fallback and usable close control', async () => {
   const fixture = loadMobileController();
   const promise = fixture.api.prepareMobileReportPdf();
+  fixture.calls.prepare[0].onProgress(63);
   fixture.rejectPrepare(new Error('canvas unavailable'));
   await promise;
 
   assert.match(fixture.document.getElementById('reportPdfStatus').textContent, /PDF 生成失败/);
+  assert.equal(fixture.document.getElementById('reportPdfProgress').getAttribute('aria-valuenow'), '0');
+  assert.equal(fixture.document.getElementById('reportPdfProgressBar').style.width, '0%');
   assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, true);
   assert.equal(fixture.document.getElementById('reportPdfShare').disabled, true);
   fixture.document.getElementById('reportHtmlFallback').dispatch('click');
@@ -315,6 +344,109 @@ test('share stays disabled when the browser has no share action', async () => {
   await promise;
 
   assert.equal(fixture.document.getElementById('reportPdfShare').disabled, true);
+});
+
+test('closing and reopening ignores an older success and its stale progress', async () => {
+  const preparations = [];
+  const downloads = [];
+  const fixture = loadMobileController({
+    ReportPdf: {
+      prepare(options) {
+        const operation = deferred();
+        preparations.push({ ...operation, options });
+        return operation.promise;
+      },
+      download(prepared, filename) {
+        downloads.push({ prepared, filename });
+      },
+    },
+  });
+  const olderFile = { name: 'older.pdf', type: 'application/pdf' };
+  const newerFile = { name: 'newer.pdf', type: 'application/pdf' };
+
+  const olderPromise = fixture.api.prepareMobileReportPdf();
+  fixture.document.getElementById('reportPdfClose').dispatch('click');
+  const newerPromise = fixture.api.prepareMobileReportPdf();
+  preparations[1].resolve(newerFile);
+  await newerPromise;
+  preparations[0].options.onProgress(19);
+  preparations[0].resolve(olderFile);
+  await olderPromise;
+
+  assert.equal(fixture.document.getElementById('reportPdfProgress').getAttribute('aria-valuenow'), '100');
+  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，请选择下载或分享');
+  fixture.document.getElementById('reportPdfDownload').dispatch('click');
+  assert.equal(downloads.length, 1);
+  assert.equal(downloads[0].prepared, newerFile);
+});
+
+test('a stale rejection cannot clear a newer prepared PDF', async () => {
+  const preparations = [];
+  const downloads = [];
+  const fixture = loadMobileController({
+    ReportPdf: {
+      prepare(options) {
+        const operation = deferred();
+        preparations.push({ ...operation, options });
+        return operation.promise;
+      },
+      download(prepared, filename) {
+        downloads.push({ prepared, filename });
+      },
+    },
+  });
+  const newerFile = { name: 'newer.pdf', type: 'application/pdf' };
+
+  const olderPromise = fixture.api.prepareMobileReportPdf();
+  const newerPromise = fixture.api.prepareMobileReportPdf();
+  preparations[1].resolve(newerFile);
+  await newerPromise;
+  preparations[0].reject(new Error('older render failed'));
+  await olderPromise;
+
+  assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, false);
+  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，请选择下载或分享');
+  fixture.document.getElementById('reportPdfDownload').dispatch('click');
+  assert.equal(downloads.length, 1);
+  assert.equal(downloads[0].prepared, newerFile);
+});
+
+test('open sheet traps focus and suppresses then restores background interaction', () => {
+  const fixture = loadMobileController();
+  const sheet = fixture.document.getElementById('reportPdfSheet');
+  const close = fixture.document.getElementById('reportPdfClose');
+  const fallback = fixture.document.getElementById('reportHtmlFallback');
+  const opener = new FakeElement('exportButton', fixture.document);
+  const inertBackground = new FakeElement('reportContent', fixture.document);
+  const ariaBackground = new FakeElement('legacyContent', fixture.document);
+  delete ariaBackground.inert;
+  ariaBackground.setAttribute('aria-hidden', 'false');
+  fixture.document.body.children = [opener, inertBackground, ariaBackground, sheet];
+  fixture.document.body.style.overflow = 'clip';
+  fixture.document.activeElement = opener;
+
+  fixture.api.prepareMobileReportPdf();
+
+  assert.equal(fixture.document.activeElement, close);
+  assert.equal(fixture.document.body.style.overflow, 'hidden');
+  assert.equal(inertBackground.inert, true);
+  assert.equal(ariaBackground.getAttribute('aria-hidden'), 'true');
+  assert.equal(sheet.inert, false);
+  assert.notEqual(sheet.getAttribute('aria-hidden'), 'true');
+
+  fixture.document.dispatch('keydown', { key: 'Tab' });
+  assert.equal(fixture.document.activeElement, fallback);
+  fixture.document.dispatch('keydown', { key: 'Tab' });
+  assert.equal(fixture.document.activeElement, close);
+  fixture.document.dispatch('keydown', { key: 'Tab', shiftKey: true });
+  assert.equal(fixture.document.activeElement, fallback);
+
+  fixture.document.dispatch('keydown', { key: 'Escape' });
+  assert.equal(sheet.hidden, true);
+  assert.equal(fixture.document.body.style.overflow, 'clip');
+  assert.equal(inertBackground.inert, false);
+  assert.equal(ariaBackground.getAttribute('aria-hidden'), 'false');
+  assert.equal(fixture.document.activeElement, opener);
 });
 
 test('desktop export retains the existing new-tab print-to-PDF route', () => {

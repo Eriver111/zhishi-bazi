@@ -49,3 +49,41 @@ The existing mobile branch of `openReportInNewTab()` now opens an accessible in-
 ## Concerns
 
 No blocking concerns. Native file sharing remains browser-dependent by design; unsupported browsers receive the enabled PDF download action and HTML fallback instead.
+
+## Fix Round 1
+
+### Review findings addressed
+
+- Added a monotonically increasing PDF generation id. Progress, success, and failure callbacks now mutate shared file/UI state only when they belong to the active generation.
+- Closing the sheet invalidates any pending generation. A later export starts a new generation, so an older out-of-order success cannot replace the new file and an older rejection cannot disable it.
+- Added a real modal lifecycle: initial close-button focus, Tab/Shift+Tab containment across currently enabled actions, Escape close, opener focus restoration, and body scroll restoration.
+- While open, direct body siblings are suppressed with `inert` where supported or an `aria-hidden` fallback otherwise. The sheet itself is explicitly excluded, and every prior state is restored on close.
+- Active generation failures now reset both visual and semantic progress to 0% before showing fallback guidance.
+
+### RED evidence
+
+- Command: `node --test tests/mobile-report-pdf.test.js`
+- Result: 13 tests, 9 pass, 4 expected failures.
+- Failures demonstrated: stale 63% progress after rejection, older success replacing the newer PDF, older rejection disabling the newer PDF, and missing scroll/background suppression for the modal.
+
+### GREEN evidence
+
+- Focused command: `node --test tests/mobile-report-pdf.test.js`
+- Result: 13 tests, 13 pass, 0 fail.
+- Required regression command: `node --test tests/mobile-report-pdf.test.js tests/payment-ui-contract.test.js tests/static-mime-types.test.js tests/report-pdf.test.js`
+- Result: 34 tests, 34 pass, 0 fail.
+- Syntax command: `node --check js/result.js`
+- Result: exit code 0.
+- Supplemental integration command: `node --test tests/poster-result-contract.test.js tests/result-structure-contract.test.js`
+- Result: 24 tests, 24 pass, 0 fail.
+
+### Self-review and concerns
+
+- Confirmed stale callbacks return without changing progress, status, prepared file, filename, or button state.
+- Confirmed the modal background snapshot does not include the sheet and restores pre-existing `inert`, `aria-hidden`, body overflow, and focus values.
+- Confirmed PDF download/share remain dedicated click gestures, HTML fallback remains enabled, and the desktop path is unchanged.
+- No blocking concerns. The `aria-hidden` fallback is paired with the overlay and focus trap for browsers without native `inert`.
+
+### Fix commit
+
+`fix: isolate mobile PDF generation state` (Fix Round 1 commit)

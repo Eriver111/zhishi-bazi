@@ -1624,6 +1624,10 @@ function buildReportHTML() {
 var _preparedReportPdfFile = null;
 var _preparedReportPdfFilename = '';
 var _reportPdfPreviousFocus = null;
+var _reportPdfGenerationId = 0;
+var _reportPdfPreviousBodyOverflow = '';
+var _reportPdfBackgroundState = [];
+var _reportPdfSheetOpen = false;
 
 function reportFilename(extension) {
     var reportName = '';
@@ -1651,19 +1655,71 @@ function setMobileReportPdfStatus(message) {
     if (status) status.textContent = message;
 }
 
+function suppressReportPdfBackground(sheet) {
+    var body = document.body;
+    var children;
+    if (!body) return;
+    _reportPdfPreviousBodyOverflow = body.style ? body.style.overflow : '';
+    if (body.style) body.style.overflow = 'hidden';
+    children = body.children ? Array.prototype.slice.call(body.children) : [];
+    _reportPdfBackgroundState = children.filter(function(child) {
+        return child !== sheet;
+    }).map(function(child) {
+        var supportsInert = 'inert' in child;
+        var state = {
+            element: child,
+            supportsInert: supportsInert,
+            inert: supportsInert ? child.inert : false,
+            ariaHidden: typeof child.getAttribute === 'function'
+                ? child.getAttribute('aria-hidden')
+                : null
+        };
+        if (supportsInert) {
+            child.inert = true;
+        } else if (typeof child.setAttribute === 'function') {
+            child.setAttribute('aria-hidden', 'true');
+        }
+        return state;
+    });
+}
+
+function restoreReportPdfBackground() {
+    var body = document.body;
+    _reportPdfBackgroundState.forEach(function(state) {
+        var child = state.element;
+        if (state.supportsInert) {
+            child.inert = state.inert;
+        } else if (state.ariaHidden === null) {
+            if (typeof child.removeAttribute === 'function') child.removeAttribute('aria-hidden');
+        } else if (typeof child.setAttribute === 'function') {
+            child.setAttribute('aria-hidden', state.ariaHidden);
+        }
+    });
+    _reportPdfBackgroundState = [];
+    if (body && body.style) body.style.overflow = _reportPdfPreviousBodyOverflow;
+    _reportPdfPreviousBodyOverflow = '';
+}
+
 function openMobileReportPdfSheet() {
     var sheet = document.getElementById('reportPdfSheet');
     var close = document.getElementById('reportPdfClose');
     if (!sheet) return;
+    if (_reportPdfSheetOpen) return;
+    _reportPdfSheetOpen = true;
     _reportPdfPreviousFocus = document.activeElement;
     sheet.hidden = false;
     if (close && typeof close.focus === 'function') close.focus();
+    suppressReportPdfBackground(sheet);
 }
 
 function closeMobileReportPdfSheet() {
     var sheet = document.getElementById('reportPdfSheet');
     if (!sheet) return;
+    _reportPdfGenerationId += 1;
     sheet.hidden = true;
+    if (!_reportPdfSheetOpen) return;
+    _reportPdfSheetOpen = false;
+    restoreReportPdfBackground();
     if (_reportPdfPreviousFocus && typeof _reportPdfPreviousFocus.focus === 'function') {
         _reportPdfPreviousFocus.focus();
     }
@@ -1682,11 +1738,13 @@ function canSharePreparedReportPdf(file) {
 function prepareMobileReportPdf() {
     var downloadButton = document.getElementById('reportPdfDownload');
     var shareButton = document.getElementById('reportPdfShare');
+    var generationId = ++_reportPdfGenerationId;
+    var filename = reportFilename('.pdf');
     var html;
     var pending;
 
     _preparedReportPdfFile = null;
-    _preparedReportPdfFilename = reportFilename('.pdf');
+    _preparedReportPdfFilename = '';
     if (downloadButton) downloadButton.disabled = true;
     if (shareButton) shareButton.disabled = true;
     setMobileReportPdfStatus('正在生成报告……');
@@ -1700,25 +1758,35 @@ function prepareMobileReportPdf() {
         }
         pending = window.ReportPdf.prepare({
             html: html,
-            filename: _preparedReportPdfFilename,
-            onProgress: updatePdfProgress
+            filename: filename,
+            onProgress: function(value) {
+                if (generationId === _reportPdfGenerationId) updatePdfProgress(value);
+            }
         });
     } catch (error) {
-        setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
+        if (generationId === _reportPdfGenerationId) {
+            updatePdfProgress(0);
+            setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
+        }
         return Promise.resolve(null);
     }
 
     return Promise.resolve(pending).then(function(file) {
+        if (generationId !== _reportPdfGenerationId) return null;
         _preparedReportPdfFile = file;
+        _preparedReportPdfFilename = filename;
         updatePdfProgress(100);
         setMobileReportPdfStatus('PDF 已生成，请选择下载或分享');
         if (downloadButton) downloadButton.disabled = false;
         if (shareButton) shareButton.disabled = !canSharePreparedReportPdf(file);
         return file;
     }).catch(function() {
+        if (generationId !== _reportPdfGenerationId) return null;
         _preparedReportPdfFile = null;
+        _preparedReportPdfFilename = '';
         if (downloadButton) downloadButton.disabled = true;
         if (shareButton) shareButton.disabled = true;
+        updatePdfProgress(0);
         setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
         return null;
     });
@@ -1765,7 +1833,29 @@ function initMobileReportPdfActions() {
         downloadReport();
     });
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape' && !sheet.hidden) closeMobileReportPdfSheet();
+        var controls;
+        var currentIndex;
+        var nextIndex;
+        if (sheet.hidden) return;
+        if (event.key === 'Escape') {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            closeMobileReportPdfSheet();
+        } else if (event.key === 'Tab') {
+            controls = [close, downloadButton, shareButton, htmlFallback].filter(function(control) {
+                return control && !control.hidden && !control.disabled;
+            });
+            if (!controls.length) return;
+            currentIndex = controls.indexOf(document.activeElement);
+            if (event.shiftKey) {
+                nextIndex = currentIndex <= 0 ? controls.length - 1 : currentIndex - 1;
+            } else {
+                nextIndex = currentIndex < 0 || currentIndex === controls.length - 1
+                    ? 0
+                    : currentIndex + 1;
+            }
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof controls[nextIndex].focus === 'function') controls[nextIndex].focus();
+        }
     });
 }
 
