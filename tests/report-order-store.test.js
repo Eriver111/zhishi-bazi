@@ -7,6 +7,8 @@ const supabasePath = path.resolve(__dirname, '..', 'lib', 'supabase.js');
 
 function createFakeSupabase() {
   const tables = { report_orders: new Map() };
+  let heldReportOrderReads = 0;
+  const heldReadResolvers = [];
 
   function rowsFor(table, filters) {
     return Array.from((tables[table] || new Map()).values()).filter(row =>
@@ -14,6 +16,9 @@ function createFakeSupabase() {
   }
 
   return {
+    holdReportOrderReads(count) {
+      heldReportOrderReads = count;
+    },
     from(table) {
       const filters = [];
       let operation = null;
@@ -26,6 +31,22 @@ function createFakeSupabase() {
         insert(row) { operation = 'insert'; payload = row; return this; },
         update(patch) { operation = 'update'; payload = patch; return this; },
         maybeSingle() {
+          if (operation === 'update') {
+            const existing = rowsFor(table, filters)[0];
+            if (!existing) return Promise.resolve({ data: null, error: null });
+            Object.assign(existing, payload);
+            return Promise.resolve({ data: { ...existing }, error: null });
+          }
+          if (table === 'report_orders' && heldReportOrderReads > 0) {
+            heldReportOrderReads -= 1;
+            return new Promise(resolve => {
+              heldReadResolvers.push(resolve);
+              if (heldReportOrderReads === 0) {
+                heldReadResolvers.splice(0).forEach(release =>
+                  release({ data: rowsFor(table, filters)[0] ? { ...rowsFor(table, filters)[0] } : null, error: null }));
+              }
+            });
+          }
           return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null });
         },
         single() {
@@ -37,7 +58,7 @@ function createFakeSupabase() {
             const existing = rowsFor(table, filters)[0];
             if (!existing) return Promise.resolve({ data: null, error: new Error('missing row') });
             Object.assign(existing, payload);
-            return Promise.resolve({ data: existing, error: null });
+            return Promise.resolve({ data: { ...existing }, error: null });
           }
           return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null });
         },
@@ -63,7 +84,9 @@ function loadStore(db) {
     return originalLoad.call(this, request, parent, isMain);
   };
   try {
-    return require(supabasePath);
+    const store = require(supabasePath);
+    store.getSupabase();
+    return store;
   } finally {
     Module._load = originalLoad;
     if (previous) require.cache[supabasePath] = previous;
@@ -90,6 +113,24 @@ test('markReportOrderPaid is idempotent', async () => {
   const first = await store.markReportOrderPaid('bazi_order_1', '2026-07-30T12:00:00.000Z');
   const second = await store.markReportOrderPaid('bazi_order_1', '2026-07-30T12:01:00.000Z');
   assert.equal(first.paid_at, second.paid_at);
+});
+
+test('concurrent markReportOrderPaid preserves the first paid_at', async () => {
+  const db = createFakeSupabase();
+  const concurrentStore = loadStore(db);
+  await concurrentStore.createReportOrder({
+    order_id:'bazi_order_concurrent', user_id:7, report_type:'bazi',
+    report_key:'b'.repeat(64), report_params:{year:1991}, label:'并发测试', amount:9.9
+  });
+  db.holdReportOrderReads(2);
+
+  const [first, second] = await Promise.all([
+    concurrentStore.markReportOrderPaid('bazi_order_concurrent', '2026-07-30T12:00:00.000Z'),
+    concurrentStore.markReportOrderPaid('bazi_order_concurrent', '2026-07-30T12:01:00.000Z')
+  ]);
+
+  assert.equal(first.paid_at, '2026-07-30T12:00:00.000Z');
+  assert.equal(second.paid_at, first.paid_at);
 });
 
 test('hasPaidReport requires the same user, type and key', async () => {
