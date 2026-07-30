@@ -93,6 +93,16 @@ function addReportSections(document) {
   };
 }
 
+function resultParamsFromSearch(search) {
+  const source = fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8');
+  const reader = source.match(/function getUrlParams\(\) \{[\s\S]*?\n\}/);
+  assert.ok(reader, 'result page must expose URL parameter parsing');
+  const context = { URLSearchParams, window: { location: { search }, PillarInput: null } };
+  vm.createContext(context);
+  vm.runInContext(`${reader[0]}; this.params = getUrlParams();`, context);
+  return context.params;
+}
+
 test('desktop report payment renders the gateway QR image instead of treating QR content as an image', async () => {
   const nodes = {
     qrModal: new FakeElement('div'),
@@ -188,6 +198,40 @@ test('purchased account access removes the report paywall before any new order i
   assert.equal(accessCalls, 1);
   assert.equal(orderCalls, 0);
   assert.ok(!nodes.rptPaywall || nodes.rptPaywall.removed);
+});
+
+test('lunar result URL keeps calendar identity in the logged-in report access request', async () => {
+  const { document } = createPaywallDocument();
+  addReportSections(document);
+  const params = resultParamsFromSearch('?year=1990&month=6&day=15&hour=8&gender=female&cal=lunar');
+  let accessUrl = '';
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    Auth: { isLoggedIn() { return true; }, getToken() { return 'account-token'; } },
+    fetch: async url => {
+      accessUrl = String(url);
+      return { ok: true, async json() { return { unlocked: false }; } };
+    },
+    setTimeout() { return 1; },
+    clearTimeout() {},
+    setInterval() { return 1; },
+    clearInterval() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  await context.initPaywall(params);
+
+  const query = new URL(accessUrl, 'https://example.test').searchParams;
+  assert.equal(params.cal, 'lunar');
+  assert.equal(query.get('cal'), 'lunar');
+  assert.equal(params.solar, '');
+  assert.equal(query.get('solar'), '');
 });
 
 test('logged-in local guest unlock still checks account access before granting report access', async () => {
