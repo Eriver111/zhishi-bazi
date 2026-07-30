@@ -729,6 +729,44 @@ test('paid report polling repairs a missed callback', async () => {
   });
 });
 
+test('report polling does not repair a pending order stored with a different report type', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let marked = 0;
+    global.fetch = async () => ({
+      async text() {
+        return JSON.stringify({
+          code: 1,
+          out_trade_no: 'bazi_example_abcdef',
+          money: '9.90',
+          status: '1'
+        });
+      }
+    });
+    const handler = loadFresh(checkOrderPath, {
+      getCreditsByOrderId: async () => null,
+      getReportOrder: async () => ({
+        order_id: 'bazi_example_abcdef', report_type: 'hepan', report_key: 'wrong-type-key', status: 'pending'
+      }),
+      markReportOrderPaid: async () => { marked += 1; return null; }
+    });
+    const res = jsonResponse();
+
+    try {
+      await handler({
+        method: 'GET',
+        query: { out_trade_no: 'bazi_example_abcdef', expected_type: 'bazi' }
+      }, res);
+    } finally {
+      global.fetch = originalFetch;
+    }
+
+    assert.equal(res.statusCode, 409);
+    assert.equal(res.body.status, 'invalid');
+    assert.equal(marked, 0);
+  });
+});
+
 test('check-order rejects an unsupported legacy report order without querying the gateway', async () => {
   await withPaymentEnv(async () => {
     const originalFetch = global.fetch;

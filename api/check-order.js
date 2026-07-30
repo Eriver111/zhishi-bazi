@@ -63,6 +63,9 @@ module.exports = async function handler(req, res) {
     }
 
     const order = await getReportOrder(orderId);
+    if (order && order.report_type !== reportProduct.type) {
+      return res.status(409).json({ error: '报告订单类型不匹配', status: 'invalid' });
+    }
     if (order && order.status === 'pending') {
       await markReportOrderPaid(orderId, new Date().toISOString());
     }
