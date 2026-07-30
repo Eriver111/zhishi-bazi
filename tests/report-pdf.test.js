@@ -3,15 +3,24 @@ const assert = require('node:assert/strict');
 
 const ReportPdf = require('../js/report-pdf.js');
 
+const TINY_JPEG_DATA_URL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABB//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxB//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPxB//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxB//9k=';
+
 function createSourceCanvas(width, height) {
   let currentWidth = width;
   let currentHeight = height;
+  const encodings = [];
 
   return {
+    nodeName: 'CANVAS',
     get width() { return currentWidth; },
     set width(value) { currentWidth = value; },
     get height() { return currentHeight; },
     set height(value) { currentHeight = value; },
+    toDataURL(format, quality) {
+      encodings.push({ format, quality, width: currentWidth, height: currentHeight });
+      return `data:image/jpeg;w=${currentWidth};h=${currentHeight},fake`;
+    },
+    encodings,
   };
 }
 
@@ -69,9 +78,12 @@ function createFakeDocument(blocks) {
   }
 
   function createSliceCanvas() {
+    const encodings = [];
     const canvas = {
+      nodeName: 'CANVAS',
       width: 0,
       height: 0,
+      encodings,
       getContext(kind) {
         assert.equal(kind, '2d');
         return {
@@ -79,6 +91,10 @@ function createFakeDocument(blocks) {
             sliceDraws.push(Array.from(arguments));
           },
         };
+      },
+      toDataURL(format, quality) {
+        encodings.push({ format, quality, width: this.width, height: this.height });
+        return `data:image/jpeg;w=${this.width};h=${this.height},fake`;
       },
     };
     sliceCanvases.push(canvas);
@@ -100,7 +116,7 @@ function createFakeDocument(blocks) {
   };
 }
 
-function createPdfHarness() {
+function createPdfHarness(options = {}) {
   const instances = [];
 
   class FakePdf {
@@ -108,20 +124,27 @@ function createPdfHarness() {
       this.options = options;
       this.images = [];
       this.addPageCount = 0;
+      this.outputCount = 0;
       instances.push(this);
     }
 
-    addImage(image, format, x, y, width, height) {
+    addImage(image, format, x, y, width, height, alias, compression) {
+      const dimensions = typeof image === 'string'
+        ? image.match(/;w=(\d+);h=(\d+)/)
+        : null;
       this.images.push({
         image,
-        imageWidth: image.width,
-        imageHeight: image.height,
+        imageWidth: dimensions ? Number(dimensions[1]) : image.width,
+        imageHeight: dimensions ? Number(dimensions[2]) : image.height,
         format,
         x,
         y,
         width,
         height,
+        alias,
+        compression,
       });
+      if (options.onAddImage) options.onAddImage(this.images.length);
     }
 
     addPage() {
@@ -130,6 +153,7 @@ function createPdfHarness() {
 
     output(type) {
       assert.equal(type, 'blob');
+      this.outputCount += 1;
       return new Blob(['pdf'], { type: 'application/pdf' });
     }
   }
@@ -175,6 +199,22 @@ test('renders report blocks in DOM order and reports 100 percent progress', asyn
     compress: true,
   });
   assert.equal(instances[0].images.length, 3);
+  assert.deepEqual(
+    instances[0].images.map(({ format, compression }) => ({ format, compression })),
+    [
+      { format: 'JPEG', compression: 'FAST' },
+      { format: 'JPEG', compression: 'FAST' },
+      { format: 'JPEG', compression: 'FAST' },
+    ],
+  );
+  assert.deepEqual(
+    canvases.map((canvas) => canvas.encodings),
+    [
+      [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 500 }],
+      [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 500 }],
+      [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 500 }],
+    ],
+  );
   assert.equal(instances[0].addPageCount, 2, 'the first image uses jsPDF initial page');
   assert.equal(documentRef.noPrintRemovalCount, 1);
   assert.equal(documentRef.appended.length, 0);
@@ -222,7 +262,154 @@ test('slices a tall canvas across A4 pages without distorting any slice', async 
     [0, 0],
     [0, 0],
   ]);
+  assert.deepEqual(documentRef.sliceCanvases.map((canvas) => canvas.encodings), [
+    [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 1457 }],
+    [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 1457 }],
+    [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 86 }],
+  ]);
+  assert.ok(pdf.images.every((image) => image.format === 'JPEG' && image.compression === 'FAST'));
   assert.deepEqual([sourceCanvas.width, sourceCanvas.height], [0, 0]);
+});
+
+test('aborting after html2canvas stops later block renders and releases canvas and iframe state', async () => {
+  const blocks = [{ id: 'cover' }, { id: 'section' }, { id: 'footer' }];
+  const documentRef = createFakeDocument(blocks);
+  const { FakePdf, instances } = createPdfHarness();
+  const controller = new AbortController();
+  const firstCanvas = createSourceCanvas(1000, 500);
+  const rendered = [];
+  let finishFirstRender;
+
+  const pending = ReportPdf.prepare({
+    html: '<main>report</main>',
+    documentRef,
+    windowRef: { devicePixelRatio: 1 },
+    JsPdfCtor: FakePdf,
+    signal: controller.signal,
+    html2canvasImpl: (block) => {
+      rendered.push(block.id);
+      if (rendered.length > 1) {
+        throw new Error('renderer continued after cancellation');
+      }
+      return new Promise((resolve) => {
+        finishFirstRender = () => resolve(firstCanvas);
+      });
+    },
+  });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  controller.abort();
+  finishFirstRender();
+
+  await assert.rejects(pending, (error) => error && error.name === 'AbortError');
+  assert.deepEqual(rendered, ['cover']);
+  assert.deepEqual([firstCanvas.width, firstCanvas.height], [0, 0]);
+  assert.equal(instances[0].images.length, 0);
+  assert.equal(instances[0].outputCount, 0);
+  assert.equal(documentRef.appended.length, 0);
+  assert.equal(documentRef.removed.length, 1);
+});
+
+test('aborting between tall-canvas slices stops PDF insertion and releases slice state', async () => {
+  const controller = new AbortController();
+  const documentRef = createFakeDocument([{ id: 'section' }]);
+  const sourceCanvas = createSourceCanvas(1000, 3000);
+  const { FakePdf, instances } = createPdfHarness({
+    onAddImage(imageCount) {
+      if (imageCount === 1) controller.abort();
+    },
+  });
+
+  await assert.rejects(
+    ReportPdf.prepare({
+      html: '<main>report</main>',
+      documentRef,
+      windowRef: { devicePixelRatio: 1 },
+      JsPdfCtor: FakePdf,
+      signal: controller.signal,
+      html2canvasImpl: async () => sourceCanvas,
+    }),
+    (error) => error && error.name === 'AbortError',
+  );
+
+  assert.equal(instances[0].images.length, 1);
+  assert.equal(instances[0].outputCount, 0);
+  assert.deepEqual([sourceCanvas.width, sourceCanvas.height], [0, 0]);
+  assert.deepEqual(documentRef.sliceCanvases.map((canvas) => [canvas.width, canvas.height]), [[0, 0]]);
+  assert.equal(documentRef.appended.length, 0);
+});
+
+test('an already-aborted signal rejects before creating an iframe', async () => {
+  const controller = new AbortController();
+  const documentRef = createFakeDocument([{ id: 'cover' }]);
+  const { FakePdf } = createPdfHarness();
+  controller.abort();
+
+  await assert.rejects(
+    ReportPdf.prepare({
+      html: '<main>report</main>',
+      documentRef,
+      windowRef: { devicePixelRatio: 1 },
+      JsPdfCtor: FakePdf,
+      signal: controller.signal,
+      html2canvasImpl: async () => createSourceCanvas(1000, 500),
+    }),
+    (error) => error && error.name === 'AbortError',
+  );
+
+  assert.equal(documentRef.appended.length, 0);
+  assert.equal(documentRef.removed.length, 0);
+});
+
+test('an abort racing with html2canvas rejection remains abort-classified', async () => {
+  const controller = new AbortController();
+  const documentRef = createFakeDocument([{ id: 'cover' }]);
+  const { FakePdf } = createPdfHarness();
+
+  await assert.rejects(
+    ReportPdf.prepare({
+      html: '<main>report</main>',
+      documentRef,
+      windowRef: { devicePixelRatio: 1 },
+      JsPdfCtor: FakePdf,
+      signal: controller.signal,
+      html2canvasImpl: async () => {
+        controller.abort();
+        throw new Error('renderer stopped');
+      },
+    }),
+    (error) => error && error.name === 'AbortError',
+  );
+
+  assert.equal(documentRef.appended.length, 0);
+  assert.equal(documentRef.removed.length, 1);
+});
+
+test('production JPEG boundary creates a real application/pdf blob with jsPDF', async () => {
+  const { jsPDF } = require('jspdf');
+  const documentRef = createFakeDocument([{ id: 'cover' }]);
+  const canvas = createSourceCanvas(1, 1);
+  canvas.toDataURL = function toDataURL(format, quality) {
+    this.encodings.push({ format, quality, width: this.width, height: this.height });
+    return TINY_JPEG_DATA_URL;
+  };
+
+  const result = await ReportPdf.prepare({
+    html: '<main>report</main>',
+    documentRef,
+    windowRef: { devicePixelRatio: 1 },
+    JsPdfCtor: jsPDF,
+    html2canvasImpl: async () => canvas,
+  });
+  const bytes = Buffer.from(await result.arrayBuffer());
+
+  assert.equal(result.type, 'application/pdf');
+  assert.ok(bytes.length > 1000);
+  assert.equal(bytes.subarray(0, 4).toString('ascii'), '%PDF');
+  assert.deepEqual(canvas.encodings, [
+    { format: 'image/jpeg', quality: 0.85, width: 1, height: 1 },
+  ]);
+  assert.deepEqual([canvas.width, canvas.height], [0, 0]);
 });
 
 test('removes the export iframe and wraps rendering errors in Chinese', async () => {

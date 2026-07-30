@@ -11,7 +11,7 @@
     "crypto-js": "^4.2.0",
     "html2canvas": "1.4.1",
     "iztro": "^2.5.8",
-    "jspdf": "2.5.2",
+    "jspdf": "4.2.1",
     "liuren-ts-lib": "^3.0.0",
     "playwright": "^1.61.0"
   },

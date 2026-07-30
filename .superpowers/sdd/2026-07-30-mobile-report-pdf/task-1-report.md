@@ -31,8 +31,8 @@ Result: 2 passing, 0 failing. The generated local browser bundles measure 198,68
 
 ## Version checks
 
-- `package.json`: `html2canvas` is `1.4.1`; `jspdf` is `2.5.2` (no version ranges).
-- `package-lock.json`: `node_modules/html2canvas` resolves to `1.4.1`; `node_modules/jspdf` resolves to `2.5.2`.
+- `package.json`: `html2canvas` is `1.4.1`; the original Task 1 pin was `jspdf@2.5.2` (no version ranges).
+- At the end of Task 1, `package-lock.json` resolved `node_modules/html2canvas` to `1.4.1` and `node_modules/jspdf` to `2.5.2`.
 
 ## Commit
 
@@ -46,4 +46,4 @@ Result: 2 passing, 0 failing. The generated local browser bundles measure 198,68
 
 ## Concerns
 
-- `npm install` reports two existing dependency-audit findings (one moderate and one critical); they were not addressed because they are outside this dependency-freezing task.
+- Correction recorded by the final fix wave: the moderate and critical audit findings were introduced by the new `jspdf@2.5.2` dependency in Task 1; they were not pre-existing baseline findings. The final fix wave replaces that unsafe pin with exact `jspdf@4.2.1`.

@@ -1628,6 +1628,8 @@ var _reportPdfGenerationId = 0;
 var _reportPdfPreviousBodyOverflow = '';
 var _reportPdfBackgroundState = [];
 var _reportPdfSheetOpen = false;
+var _reportPdfAbortController = null;
+var _reportPdfPreparationPromise = null;
 
 function reportFilename(extension) {
     var reportName = '';
@@ -1714,8 +1716,19 @@ function openMobileReportPdfSheet() {
 
 function closeMobileReportPdfSheet() {
     var sheet = document.getElementById('reportPdfSheet');
+    var downloadButton = document.getElementById('reportPdfDownload');
+    var shareButton = document.getElementById('reportPdfShare');
     if (!sheet) return;
     _reportPdfGenerationId += 1;
+    if (_reportPdfAbortController && !_reportPdfAbortController.signal.aborted) {
+        _reportPdfAbortController.abort();
+    }
+    _preparedReportPdfFile = null;
+    _preparedReportPdfFilename = '';
+    if (downloadButton) downloadButton.disabled = true;
+    if (shareButton) shareButton.disabled = true;
+    updatePdfProgress(0);
+    setMobileReportPdfStatus('准备生成 PDF');
     sheet.hidden = true;
     if (!_reportPdfSheetOpen) return;
     _reportPdfSheetOpen = false;
@@ -1738,10 +1751,15 @@ function canSharePreparedReportPdf(file) {
 function prepareMobileReportPdf() {
     var downloadButton = document.getElementById('reportPdfDownload');
     var shareButton = document.getElementById('reportPdfShare');
+    var previousPreparation = _reportPdfPreparationPromise;
     var generationId = ++_reportPdfGenerationId;
     var filename = reportFilename('.pdf');
-    var html;
-    var pending;
+    var controller;
+    var operation;
+
+    if (_reportPdfAbortController && !_reportPdfAbortController.signal.aborted) {
+        _reportPdfAbortController.abort();
+    }
 
     _preparedReportPdfFile = null;
     _preparedReportPdfFilename = '';
@@ -1751,37 +1769,21 @@ function prepareMobileReportPdf() {
     updatePdfProgress(0);
     openMobileReportPdfSheet();
 
-    try {
-        html = buildReportHTML();
-        if (!window.ReportPdf || typeof window.ReportPdf.prepare !== 'function') {
-            throw new Error('PDF 组件未加载');
-        }
-        pending = window.ReportPdf.prepare({
-            html: html,
-            filename: filename,
-            onProgress: function(value) {
-                if (generationId === _reportPdfGenerationId) updatePdfProgress(value);
-            }
-        });
-    } catch (error) {
-        if (generationId === _reportPdfGenerationId) {
-            updatePdfProgress(0);
-            setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
-        }
+    if (typeof window.AbortController !== 'function') {
+        updatePdfProgress(0);
+        setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
         return Promise.resolve(null);
     }
 
-    return Promise.resolve(pending).then(function(file) {
-        if (generationId !== _reportPdfGenerationId) return null;
-        _preparedReportPdfFile = file;
-        _preparedReportPdfFilename = filename;
-        updatePdfProgress(100);
-        setMobileReportPdfStatus('PDF 已生成，请选择下载或分享');
-        if (downloadButton) downloadButton.disabled = false;
-        if (shareButton) shareButton.disabled = !canSharePreparedReportPdf(file);
-        return file;
-    }).catch(function() {
-        if (generationId !== _reportPdfGenerationId) return null;
+    controller = new window.AbortController();
+    _reportPdfAbortController = controller;
+
+    function handlePreparationFailure(error) {
+        if (generationId !== _reportPdfGenerationId
+            || controller.signal.aborted
+            || (error && error.name === 'AbortError')) {
+            return null;
+        }
         _preparedReportPdfFile = null;
         _preparedReportPdfFilename = '';
         if (downloadButton) downloadButton.disabled = true;
@@ -1789,7 +1791,66 @@ function prepareMobileReportPdf() {
         updatePdfProgress(0);
         setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
         return null;
+    }
+
+    function startPreparation() {
+        var html;
+        var pending;
+        if (generationId !== _reportPdfGenerationId || controller.signal.aborted) {
+            return null;
+        }
+        try {
+            html = buildReportHTML();
+            if (!window.ReportPdf || typeof window.ReportPdf.prepare !== 'function') {
+                throw new Error('PDF 组件未加载');
+            }
+            pending = window.ReportPdf.prepare({
+                html: html,
+                filename: filename,
+                signal: controller.signal,
+                onProgress: function(value) {
+                    if (generationId === _reportPdfGenerationId
+                        && !controller.signal.aborted) {
+                        updatePdfProgress(value);
+                    }
+                }
+            });
+        } catch (error) {
+            return handlePreparationFailure(error);
+        }
+
+        return Promise.resolve(pending).then(function(file) {
+            if (generationId !== _reportPdfGenerationId || controller.signal.aborted) {
+                return null;
+            }
+            _preparedReportPdfFile = file;
+            _preparedReportPdfFilename = filename;
+            updatePdfProgress(100);
+            setMobileReportPdfStatus('PDF 已生成，请选择下载或分享');
+            if (downloadButton) downloadButton.disabled = false;
+            if (shareButton) shareButton.disabled = !canSharePreparedReportPdf(file);
+            return file;
+        }, handlePreparationFailure);
+    }
+
+    if (previousPreparation) {
+        operation = Promise.resolve(previousPreparation).catch(function() {
+            return null;
+        }).then(startPreparation);
+    } else {
+        operation = Promise.resolve(startPreparation());
+    }
+
+    _reportPdfPreparationPromise = operation;
+    operation.then(function() {
+        if (_reportPdfPreparationPromise === operation) {
+            _reportPdfPreparationPromise = null;
+        }
+        if (_reportPdfAbortController === controller) {
+            _reportPdfAbortController = null;
+        }
     });
+    return operation;
 }
 
 function initMobileReportPdfActions() {

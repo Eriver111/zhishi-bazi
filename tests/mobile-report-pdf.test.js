@@ -139,6 +139,7 @@ function loadMobileController(overrides = {}) {
       calls.html += 1;
     },
     _params: { year: 1990, month: 6, day: 15 },
+    AbortController,
     setTimeout,
     clearTimeout,
     ...overrides,
@@ -188,6 +189,77 @@ function extractOpenReport() {
   return source.slice(start, end);
 }
 
+function extractBuildReportHTML() {
+  const source = read('js/result.js');
+  const match = source.match(/function buildReportHTML\(\) \{[\s\S]*?\n    return html;\n\}/);
+  assert.ok(match, 'result.js must retain the real report builder');
+  return match[0];
+}
+
+test('real report builder resolves every configured result.html section in export order', () => {
+  const expectedOrder = [
+    'sizhuSection',
+    'dayunSection',
+    'liunianSection',
+    'proSection',
+    'characterSection',
+    'parentsSection',
+    'thisYearSection',
+    'marriageSection',
+    'wealthSection',
+    'studySection',
+    'fortuneSection',
+  ];
+  const resultHtml = read('result.html');
+  const liveIds = new Set(
+    Array.from(resultHtml.matchAll(/\bid=["']([^"']+)["']/g), (match) => match[1]),
+  );
+  const requestedIds = [];
+  const missingIds = [];
+  const document = {
+    getElementById(id) {
+      requestedIds.push(id);
+      if (!liveIds.has(id)) {
+        missingIds.push(id);
+        return null;
+      }
+      return {
+        cloneNode() {
+          return {
+            innerHTML: `<p data-export-source="${id}">live report section content</p>`,
+            querySelectorAll() { return []; },
+          };
+        },
+      };
+    },
+  };
+  const context = {
+    document,
+    _isPaywallActive: () => false,
+    _params: {
+      gender: 'male',
+      mode: 'birth',
+      year: 1990,
+      month: 6,
+      day: 15,
+      hour: 0,
+      prov: '',
+    },
+    SHI_CHEN_NAMES: ['子时'],
+  };
+
+  vm.createContext(context);
+  vm.runInContext(`${extractBuildReportHTML()}; this.__report = buildReportHTML();`, context);
+
+  assert.deepEqual(requestedIds, expectedOrder);
+  assert.deepEqual(missingIds, []);
+  const exportedOrder = Array.from(
+    context.__report.matchAll(/data-export-source="([^"]+)"/g),
+    (match) => match[1],
+  );
+  assert.deepEqual(exportedOrder, expectedOrder);
+});
+
 test('result page loads local PDF dependencies in order and exposes one accessible action sheet', () => {
   const html = read('result.html');
   const scripts = [
@@ -223,6 +295,8 @@ test('mobile generation opens immediately and prepares the current report with p
   assert.equal(fixture.calls.prepare.length, 1);
   assert.equal(fixture.calls.prepare[0].html, '<main>current paid report</main>');
   assert.match(fixture.calls.prepare[0].filename, /\.pdf$/);
+  assert.ok(fixture.calls.prepare[0].signal instanceof AbortSignal);
+  assert.equal(fixture.calls.prepare[0].signal.aborted, false);
   fixture.calls.prepare[0].onProgress(42);
   assert.equal(progress.getAttribute('aria-valuenow'), '42');
   assert.equal(fixture.document.getElementById('reportPdfProgressBar').style.width, '42%');
@@ -354,6 +428,13 @@ test('closing and reopening ignores an older success and its stale progress', as
       prepare(options) {
         const operation = deferred();
         preparations.push({ ...operation, options });
+        if (options.signal) {
+          options.signal.addEventListener('abort', () => {
+            const error = new Error('cancelled');
+            error.name = 'AbortError';
+            operation.reject(error);
+          }, { once: true });
+        }
         return operation.promise;
       },
       download(prepared, filename) {
@@ -367,10 +448,13 @@ test('closing and reopening ignores an older success and its stale progress', as
   const olderPromise = fixture.api.prepareMobileReportPdf();
   fixture.document.getElementById('reportPdfClose').dispatch('click');
   const newerPromise = fixture.api.prepareMobileReportPdf();
+  await settle();
+  assert.equal(preparations.length, 2);
+  assert.ok(preparations[0].options.signal);
+  assert.equal(preparations[0].options.signal.aborted, true);
   preparations[1].resolve(newerFile);
   await newerPromise;
   preparations[0].options.onProgress(19);
-  preparations[0].resolve(olderFile);
   await olderPromise;
 
   assert.equal(fixture.document.getElementById('reportPdfProgress').getAttribute('aria-valuenow'), '100');
@@ -388,6 +472,13 @@ test('a stale rejection cannot clear a newer prepared PDF', async () => {
       prepare(options) {
         const operation = deferred();
         preparations.push({ ...operation, options });
+        if (options.signal) {
+          options.signal.addEventListener('abort', () => {
+            const error = new Error('older render cancelled');
+            error.name = 'AbortError';
+            operation.reject(error);
+          }, { once: true });
+        }
         return operation.promise;
       },
       download(prepared, filename) {
@@ -399,9 +490,13 @@ test('a stale rejection cannot clear a newer prepared PDF', async () => {
 
   const olderPromise = fixture.api.prepareMobileReportPdf();
   const newerPromise = fixture.api.prepareMobileReportPdf();
+  assert.equal(preparations.length, 1, 'replacement waits for the aborted operation to settle');
+  await settle();
+  assert.equal(preparations.length, 2);
+  assert.ok(preparations[0].options.signal);
+  assert.equal(preparations[0].options.signal.aborted, true);
   preparations[1].resolve(newerFile);
   await newerPromise;
-  preparations[0].reject(new Error('older render failed'));
   await olderPromise;
 
   assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, false);
@@ -409,6 +504,87 @@ test('a stale rejection cannot clear a newer prepared PDF', async () => {
   fixture.document.getElementById('reportPdfDownload').dispatch('click');
   assert.equal(downloads.length, 1);
   assert.equal(downloads[0].prepared, newerFile);
+});
+
+test('closing active generation aborts work and resets actions without showing a failure', async () => {
+  const fixture = loadMobileController();
+  const pending = fixture.api.prepareMobileReportPdf();
+  const options = fixture.calls.prepare[0];
+
+  fixture.document.getElementById('reportPdfClose').dispatch('click');
+
+  assert.ok(options.signal);
+  assert.equal(options.signal.aborted, true);
+  assert.equal(fixture.document.getElementById('reportPdfSheet').hidden, true);
+  assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, true);
+  assert.equal(fixture.document.getElementById('reportPdfShare').disabled, true);
+  assert.equal(fixture.document.getElementById('reportPdfProgress').getAttribute('aria-valuenow'), '0');
+  const closedStatus = fixture.document.getElementById('reportPdfStatus').textContent;
+
+  const abortError = new Error('cancelled');
+  abortError.name = 'AbortError';
+  fixture.rejectPrepare(abortError);
+  assert.equal(await pending, null);
+  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, closedStatus);
+});
+
+test('closing a completed generation releases its file and disables later download or share', async () => {
+  const fixture = loadMobileController();
+  const pending = fixture.api.prepareMobileReportPdf();
+  fixture.resolvePrepare(fixture.file);
+  await pending;
+
+  fixture.document.getElementById('reportPdfClose').dispatch('click');
+  fixture.document.getElementById('reportPdfDownload').dispatch('click');
+  fixture.document.getElementById('reportPdfShare').dispatch('click');
+  await settle();
+
+  assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, true);
+  assert.equal(fixture.document.getElementById('reportPdfShare').disabled, true);
+  assert.equal(fixture.document.getElementById('reportPdfProgress').getAttribute('aria-valuenow'), '0');
+  assert.equal(fixture.calls.download.length, 0);
+  assert.equal(fixture.calls.share.length, 0);
+});
+
+test('replacement aborts and settles the previous pipeline before another one starts', async () => {
+  const preparations = [];
+  let activeCount = 0;
+  let maxActiveCount = 0;
+  const fixture = loadMobileController({
+    ReportPdf: {
+      prepare(options) {
+        const operation = deferred();
+        activeCount += 1;
+        maxActiveCount = Math.max(maxActiveCount, activeCount);
+        preparations.push({ ...operation, options });
+        options.signal.addEventListener('abort', () => {
+          activeCount -= 1;
+          const error = new Error('cancelled');
+          error.name = 'AbortError';
+          operation.reject(error);
+        }, { once: true });
+        return operation.promise.then((value) => {
+          activeCount -= 1;
+          return value;
+        });
+      },
+      download() {},
+    },
+  });
+
+  const first = fixture.api.prepareMobileReportPdf();
+  const second = fixture.api.prepareMobileReportPdf();
+
+  assert.equal(preparations.length, 1);
+  assert.equal(preparations[0].options.signal.aborted, true);
+  await settle();
+  assert.equal(preparations.length, 2);
+  assert.equal(maxActiveCount, 1);
+
+  preparations[1].resolve(fixture.file);
+  assert.equal(await first, null);
+  assert.equal(await second, fixture.file);
+  assert.equal(maxActiveCount, 1);
 });
 
 test('open sheet traps focus and suppresses then restores background interaction', () => {
