@@ -3,7 +3,11 @@
  * Frontend payment polling for report, credit-pack and monthly orders.
  */
 const crypto = require('crypto');
-const { getCreditsByOrderId } = require('../lib/supabase.js');
+const {
+  getCreditsByOrderId,
+  getReportOrder,
+  markReportOrderPaid
+} = require('../lib/supabase.js');
 const {
   getReportProduct,
   isExpectedAmount,
@@ -58,9 +62,15 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: '旧版报告商品校验失败', status: 'pending' });
     }
 
-    const reportKey = isLegacyHepan
+    const order = await getReportOrder(orderId);
+    if (order && order.status === 'pending') {
+      await markReportOrderPaid(orderId, new Date().toISOString());
+    }
+
+    const legacyReportKey = isLegacyHepan
       ? 'legacy'
       : (orderId.includes('_') ? orderId.split('_').pop() : 'unknown');
+    const reportKey = order ? order.report_key : legacyReportKey;
     return res.status(200).json({
       orderId,
       status: 'paid',

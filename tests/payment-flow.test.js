@@ -573,6 +573,73 @@ test('callback requires an explicit TRADE_SUCCESS status before granting credits
   });
 });
 
+test('signed paid BaZi callback marks its report order paid', async () => {
+  await withPaymentEnv(async () => {
+    let paidOrderId = '';
+    const handler = loadFresh(callbackPath, {
+      getCreditsByOrderId: async () => null,
+      getReportOrder: async () => ({ order_id: 'bazi_example_abcdef', report_type: 'bazi', status: 'pending' }),
+      markReportOrderPaid: async (orderId) => {
+        paidOrderId = orderId;
+        return { order_id: orderId, report_type: 'bazi', status: 'paid' };
+      },
+      insertCredits: async () => { throw new Error('report callback must not grant credits'); },
+      activateMonthly: async () => { throw new Error('report callback must not activate monthly access'); }
+    });
+    const req = {
+      method: 'GET',
+      query: {
+        money: '9.90',
+        out_trade_no: 'bazi_example_abcdef',
+        pid: 'merchant',
+        trade_status: 'TRADE_SUCCESS',
+        type: 'alipay',
+        sign_type: 'MD5',
+        sign: 'cae2c4fa2e39a4d4fc7ba551ee06622b'
+      }
+    };
+    const res = jsonResponse();
+
+    await handler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body, 'success');
+    assert.equal(paidOrderId, 'bazi_example_abcdef');
+  });
+});
+
+test('report callback with wrong amount does not grant access', async () => {
+  await withPaymentEnv(async () => {
+    let marked = 0;
+    const handler = loadFresh(callbackPath, {
+      getCreditsByOrderId: async () => null,
+      getReportOrder: async () => ({ order_id: 'bazi_example_abcdef', report_type: 'bazi', status: 'pending' }),
+      markReportOrderPaid: async () => { marked += 1; return null; },
+      insertCredits: async () => { throw new Error('report callback must not grant credits'); },
+      activateMonthly: async () => { throw new Error('report callback must not activate monthly access'); }
+    });
+    const req = {
+      method: 'GET',
+      query: {
+        money: '0.01',
+        out_trade_no: 'bazi_example_abcdef',
+        pid: 'merchant',
+        trade_status: 'TRADE_SUCCESS',
+        type: 'alipay',
+        sign_type: 'MD5',
+        sign: 'c1b4ad7c4fce1d3f97cfa9194ad013ca'
+      }
+    };
+    const res = jsonResponse();
+
+    await handler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body, 'amount error');
+    assert.equal(marked, 0);
+  });
+});
+
 test('check-order never mints credits from polling when the callback record is missing', async () => {
   await withPaymentEnv(async () => {
     const originalFetch = global.fetch;
@@ -620,6 +687,48 @@ test('check-order never mints credits from polling when the callback record is m
   });
 });
 
+test('paid report polling repairs a missed callback', async () => {
+  await withPaymentEnv(async () => {
+    const originalFetch = global.fetch;
+    let paidOrderId = '';
+    global.fetch = async () => ({
+      async text() {
+        return JSON.stringify({
+          code: 1,
+          out_trade_no: 'bazi_example_abcdef',
+          money: '9.90',
+          status: '1'
+        });
+      }
+    });
+    const handler = loadFresh(checkOrderPath, {
+      getCreditsByOrderId: async () => null,
+      getReportOrder: async () => ({
+        order_id: 'bazi_example_abcdef', report_type: 'bazi', report_key: 'saved-report-key', status: 'pending'
+      }),
+      markReportOrderPaid: async (orderId) => {
+        paidOrderId = orderId;
+        return { order_id: orderId, status: 'paid' };
+      }
+    });
+    const res = jsonResponse();
+
+    try {
+      await handler({
+        method: 'GET',
+        query: { out_trade_no: 'bazi_example_abcdef', expected_type: 'bazi' }
+      }, res);
+    } finally {
+      global.fetch = originalFetch;
+    }
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.status, 'paid');
+    assert.equal(res.body.report_key, 'saved-report-key');
+    assert.equal(paidOrderId, 'bazi_example_abcdef');
+  });
+});
+
 test('check-order rejects an unsupported legacy report order without querying the gateway', async () => {
   await withPaymentEnv(async () => {
     const originalFetch = global.fetch;
@@ -661,7 +770,9 @@ test('check-order restores a paid legacy Hepan report only with its exact produc
       }
     });
     const handler = loadFresh(checkOrderPath, {
-      getCreditsByOrderId: async () => null
+      getCreditsByOrderId: async () => null,
+      getReportOrder: async () => null,
+      markReportOrderPaid: async () => null
     });
     const req = {
       method: 'GET',
@@ -730,7 +841,9 @@ test('check-order only unlocks a paid BaZi report at its fixed price', async () 
       }
     });
     const handler = loadFresh(checkOrderPath, {
-      getCreditsByOrderId: async () => null
+      getCreditsByOrderId: async () => null,
+      getReportOrder: async () => null,
+      markReportOrderPaid: async () => null
     });
     const req = {
       method: 'GET',

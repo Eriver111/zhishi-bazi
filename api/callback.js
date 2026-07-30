@@ -3,10 +3,17 @@
  * 验证签名→生成兑换码→写入Supabase（带重试）
  * v4.1: 移除文件降级（磁盘IOPS杀手），仅依赖Supabase
  */
-const { insertCredits, activateMonthly, getCreditsByOrderId } = require('../lib/supabase.js');
+const {
+  insertCredits,
+  activateMonthly,
+  getCreditsByOrderId,
+  getReportOrder,
+  markReportOrderPaid
+} = require('../lib/supabase.js');
 const {
   generateCode,
   getCreditProduct,
+  getReportProduct,
   getOrderUserId,
   isExpectedAmount,
   md5Sign
@@ -39,6 +46,20 @@ module.exports = async function handler(req, res) {
 
     if (!outTradeNo) {
       console.error('[callback] 缺少 out_trade_no');
+      return res.status(200).send('success');
+    }
+
+    const reportProduct = getReportProduct(outTradeNo);
+    if (reportProduct) {
+      if (!isExpectedAmount(reportProduct, params.money)) {
+        console.error('[callback] report order amount mismatch:', outTradeNo, params.money);
+        return res.status(200).send('amount error');
+      }
+      const order = await getReportOrder(outTradeNo);
+      if (!order || order.report_type !== reportProduct.type) {
+        return res.status(200).send('order error');
+      }
+      await markReportOrderPaid(outTradeNo, new Date().toISOString());
       return res.status(200).send('success');
     }
 
