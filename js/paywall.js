@@ -20,9 +20,11 @@ function directPillarValue(params,position,ganKey,zhiKey){
   if(value&&value.gan&&value.zhi)return String(value.gan)+String(value.zhi);
   return String(params[ganKey]||'')+String(params[zhiKey]||'');
 }
+function isDirectPillarReport(params){return !!(params&&(params.enteredPillars||params.pillars||params.mode==='pillars'))}
 function makeLocalReportKey(params){
   var copy=JSON.parse(JSON.stringify(params||{}));
-  if(copy.enteredPillars||copy.pillars||copy.mode==='pillars'){
+  if(copy.cal===''||copy.cal==='solar')delete copy.cal;
+  if(isDirectPillarReport(copy)){
     copy.mode='pillars';
     copy.enteredPillars={
       year:directPillarValue(copy,'year','yg','yz'),month:directPillarValue(copy,'month','mg','mz'),
@@ -32,7 +34,13 @@ function makeLocalReportKey(params){
   }
   return JSON.stringify(stableReportValue(copy));
 }
-function iru(){var s=localStorage.getItem('bazi_rpt');if(!s)return false;try{var d=JSON.parse(s);return d.h===_baziHash&&d.e>Date.now()}catch(e){return false}}
+function legacyPipeReportKey(params){
+  if(isDirectPillarReport(params)||!params)return '';
+  var keys=['year','month','day','hour','gender'];
+  if(keys.some(function(key){return params[key]===undefined||params[key]===null||params[key]===''}))return '';
+  return keys.map(function(key){return params[key]}).join('|');
+}
+function iru(){var s=localStorage.getItem('bazi_rpt');if(!s)return false;try{var d=JSON.parse(s),legacy=legacyPipeReportKey(_baziPayParams);return d.e>Date.now()&&(d.h===_baziHash||!!legacy&&d.h===legacy)}catch(e){return false}}
 function sru(){localStorage.setItem('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}))}
 function getBaziPending(){var s=localStorage.getItem('rpt_ord');if(!s)return null;try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k?d:null}catch(e){return s.startsWith('credit_')?{oid:s,h:_baziHash,k:'legacy-credit',legacy:true}:null}}
 

@@ -341,6 +341,47 @@ test('guest unlocks for direct pillar charts remain isolated by all four pillars
   assert.equal(context.iru(), false);
 });
 
+test('ordinary report local keys ignore absent and explicit default calendar fields', () => {
+  const context = {
+    console,
+    document: { getElementById() { return null; } },
+    localStorage: { getItem() { return null; }, setItem() {} }
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  const preAc92 = { year: 1990, month: 6, day: 15, hour: 8, gender: 'female', prov: '', minute: 0, clock: 0, solar: '', zishi: '', mode: '', timing: '', enteredPillars: null };
+  assert.equal(context.makeLocalReportKey(preAc92), context.makeLocalReportKey({ ...preAc92, cal: '' }));
+  assert.equal(context.makeLocalReportKey(preAc92), context.makeLocalReportKey({ ...preAc92, cal: 'solar' }));
+});
+
+test('guest ordinary reports restore old pipe keys but direct pillars never do', () => {
+  const storage = new Map();
+  const context = {
+    console,
+    document: { getElementById() { return null; } },
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, String(value)); }
+    }
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  const ordinary = { year: 1990, month: 6, day: 15, hour: 8, gender: 'female' };
+  storage.set('bazi_rpt', JSON.stringify({ h: '1990|6|15|8|female', e: Date.now() + 60_000 }));
+  context.initPaywall(ordinary);
+  assert.equal(context.iru(), true);
+
+  context.initPaywall({
+    ...ordinary, mode: 'pillars',
+    enteredPillars: { year: '甲子', month: '乙丑', day: '丙寅', hour: '丁卯' }
+  });
+  assert.equal(context.iru(), false);
+});
+
 test('hepan deep report creates a hepan order instead of falling through to the generic report branch', async () => {
   const nodes = {
     hepanQrModal: new FakeElement('div'),
