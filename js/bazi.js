@@ -4077,6 +4077,22 @@ function getYongJi(bazi) {
     tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
   }
 
+  // 冬金（亥子丑月）：金寒水冷，冻金不锐，需火暖局
+  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
+    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
+  }
+
+  // 巳午月燥土（火土日主）：夏火炎土燥，需水润局
+  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
+  }
+
   // 未月燥土（火土日主）：夏末火炎土燥，需水润局
   if ((dmWx === '火' || dmWx === '土') && mz === '未') {
     if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
