@@ -4,29 +4,107 @@
  */
 var _baziHash='';
 var _baziPayParams=null;
-function hp(p){return [p.year,p.month,p.day,p.hour,p.gender].join('|')}
+function stableReportValue(value){
+  if(Array.isArray(value))return value.map(stableReportValue);
+  if(value&&typeof value==='object'){
+    var result={};
+    Object.keys(value).sort().forEach(function(key){result[key]=stableReportValue(value[key])});
+    return result;
+  }
+  return value;
+}
+function directPillarValue(params,position,ganKey,zhiKey){
+  var pillars=params.enteredPillars||params.pillars||{};
+  var value=pillars[position];
+  if(typeof value==='string')return value;
+  if(value&&value.gan&&value.zhi)return String(value.gan)+String(value.zhi);
+  return String(params[ganKey]||'')+String(params[zhiKey]||'');
+}
+function makeLocalReportKey(params){
+  var copy=JSON.parse(JSON.stringify(params||{}));
+  if(copy.enteredPillars||copy.pillars||copy.mode==='pillars'){
+    copy.mode='pillars';
+    copy.enteredPillars={
+      year:directPillarValue(copy,'year','yg','yz'),month:directPillarValue(copy,'month','mg','mz'),
+      day:directPillarValue(copy,'day','dg','dz'),hour:directPillarValue(copy,'hour','hg','hz')
+    };
+    delete copy.pillars;
+  }
+  return JSON.stringify(stableReportValue(copy));
+}
 function iru(){var s=localStorage.getItem('bazi_rpt');if(!s)return false;try{var d=JSON.parse(s);return d.h===_baziHash&&d.e>Date.now()}catch(e){return false}}
 function sru(){localStorage.setItem('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}))}
 function getBaziPending(){var s=localStorage.getItem('rpt_ord');if(!s)return null;try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k?d:null}catch(e){return s.startsWith('credit_')?{oid:s,h:_baziHash,k:'legacy-credit',legacy:true}:null}}
 
+function reportSearchParams(params){
+  var query=new URLSearchParams();
+  params=params||{};
+  Object.keys(params).sort().forEach(function(key){
+    var value=params[key];
+    if(key==='enteredPillars'||key==='pillars'||value===undefined||value===null||typeof value==='object')return;
+    query.set(key,value);
+  });
+  if(params.enteredPillars||params.pillars||params.mode==='pillars'){
+    query.set('mode','pillars');
+    query.set('yg',directPillarValue(params,'year','yg','yz').slice(0,1));
+    query.set('yz',directPillarValue(params,'year','yg','yz').slice(1));
+    query.set('mg',directPillarValue(params,'month','mg','mz').slice(0,1));
+    query.set('mz',directPillarValue(params,'month','mg','mz').slice(1));
+    query.set('dg',directPillarValue(params,'day','dg','dz').slice(0,1));
+    query.set('dz',directPillarValue(params,'day','dg','dz').slice(1));
+    query.set('hg',directPillarValue(params,'hour','hg','hz').slice(0,1));
+    query.set('hz',directPillarValue(params,'hour','hg','hz').slice(1));
+  }
+  return query;
+}
+
+var _accountAccessFailed=false;
+function restoreAccountAccess(){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn())return Promise.resolve(false);
+  var query=reportSearchParams(_baziPayParams);
+  return fetch('/api/reports/access?'+query.toString(),{
+    headers:{Authorization:'Bearer '+Auth.getToken()}
+  }).then(function(response){return response.ok?response.json():{unlocked:false}})
+  .then(function(data){
+    if(data.unlocked){unlock({persistLocal:true,persistCloud:false});return true}
+    return false;
+  }).catch(function(){_accountAccessFailed=true;return false});
+}
+
 function initPaywall(bp){
-  _baziHash=hp(bp);
-  _baziPayParams={
-    year:bp.year,month:bp.month,day:bp.day,hour:bp.hour,gender:bp.gender
-  };
+  _baziPayParams=JSON.parse(JSON.stringify(bp||{}));
+  _baziHash=makeLocalReportKey(_baziPayParams);
+  _accountAccessFailed=false;
+  if(!renderPaywall(false,true))return Promise.resolve(false);
+  if(iru()){unlock({persistLocal:false,persistCloud:false});return Promise.resolve(true)}
+  return restoreAccountAccess().then(function(restored){
+    if(!restored)renderPaywall(true);
+    return restored;
+  });
+}
+
+function renderPaywall(skipLayout,prepareOnly){
   var secs=['thisYearSection','marriageSection','wealthSection','studySection','fortuneSection'];
-  var first=document.getElementById(secs[0]);
-  if(!first||document.getElementById('unifiedReport'))return;
+  var wrap;
+  if(!skipLayout){
+    var first=document.getElementById(secs[0]);
+    if(!first||document.getElementById('unifiedReport'))return false;
 
   // 先渲染付费内容
   if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
   // 折叠所有板块
   secs.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('drawer-open')});
 
-  var wrap=document.createElement('div');wrap.id='unifiedReport';
+  wrap=document.createElement('div');wrap.id='unifiedReport';
   wrap.style.cssText='position:relative;padding-bottom:20px';
   first.parentNode.insertBefore(wrap,first);
   secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
+
+  }else{
+    wrap=document.getElementById('unifiedReport');
+    if(!wrap)return false;
+  }
+  if(prepareOnly)return true;
 
   if(iru()){unlock();return}
   injectQRModal();
@@ -49,7 +127,17 @@ function initPaywall(bp){
     +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 命理师</p>'
     +'<a href="/ai-chat.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:20px;color:var(--gold-l);text-decoration:none;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .3s" onmouseenter="this.style.boxShadow=\'0 0 20px rgba(201,168,76,.15)\'" onmouseleave="this.style.boxShadow=\'none\'">🤖 前2次免费 · 开始对话</a>'
     +'</div>';
+  var purchaseNotice=document.createElement('p');
+  purchaseNotice.textContent='登录后购买可在个人中心长期查看；游客购买仅保存在本设备。';
+  purchaseNotice.style.cssText='color:var(--tx3);font-size:11px;text-align:center;margin:0 20px 12px';
+  pw.appendChild(purchaseNotice);
   wrap.appendChild(pw);
+  if(_accountAccessFailed){
+    var accessStatus=document.createElement('p');
+    accessStatus.textContent='购买记录暂时无法验证，请稍后重试。';
+    accessStatus.style.cssText='color:var(--tx3);font-size:11px;text-align:center;margin:8px 20px';
+    pw.appendChild(accessStatus);
+  }
   autoRestore();
 }
 
@@ -73,13 +161,18 @@ function startRP(){
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
   var orderBody={
-    year:_baziPayParams.year,month:_baziPayParams.month,day:_baziPayParams.day,
-    hour:_baziPayParams.hour,gender:_baziPayParams.gender,
+    report_params:_baziPayParams,
+    token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():'',
     amount:9.9,description:'八字完整分析报告'
   };
   fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
   .then(function(r){return r.json();})
   .then(function(d){
+    if(d.already_unlocked){
+      var existingModal=document.getElementById('qrModal');if(existingModal)existingModal.style.display='none';
+      unlock({persistLocal:true,persistCloud:false});
+      return;
+    }
     if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
     var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
     if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
@@ -130,15 +223,14 @@ function manualUnlock(){
   }).catch(function(){alert('网络错误，请稍后重试')});
 }
 
-function unlock(){
-  sru();
+function unlock(options){
+  options=options||{};
+  if(options.persistLocal!==false)sru();
   var pw=document.getElementById('rptPaywall');if(pw)pw.remove();
   var wrap=document.getElementById('unifiedReport');
   if(wrap)wrap.querySelectorAll('.section-drawer').forEach(function(s){s.classList.add('drawer-open')});
   if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
   var b=document.getElementById('downloadBanner');if(b)b.style.display='flex';
-  // 登录用户：同步报告解锁状态到云端
-  if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{Auth.syncData('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}));}catch(e){}}
 }
 
 function autoRestore(){var pending=getBaziPending();if(pending&&pending.h===_baziHash)startQRPoll(pending)}

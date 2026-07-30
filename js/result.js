@@ -176,19 +176,7 @@ function render(data) {
 
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
-    var paywallParams = { gender: _params.gender };
-    if (hasTiming) {
-        paywallParams.year = _params.year;
-        paywallParams.month = _params.month;
-        paywallParams.day = _params.day;
-        paywallParams.hour = _params.hour;
-    }
-    if (isDirect) {
-        paywallParams.mode = _params.mode;
-        paywallParams.timing = _params.timing;
-        paywallParams.enteredPillars = _params.enteredPillars;
-    }
-    initPaywall(paywallParams);
+    initPaywall(_params);
     // 自动存储排盘数据到 localStorage，确保 AI 对话页总能获取到
     try {
       var d={birthInfo:{gender:_params.gender}};

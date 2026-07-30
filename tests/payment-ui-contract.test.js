@@ -26,14 +26,71 @@ class FakeElement {
 
   appendChild(child) {
     this.children.push(child);
+    child.parentNode = this;
     return child;
+  }
+
+  remove() {
+    if (this.parentNode) {
+      this.parentNode.children = this.parentNode.children.filter(child => child !== this);
+    }
+    this.removed = true;
   }
 
   replaceChildren(...children) {
     this.children = children;
   }
 
+  querySelectorAll() { return []; }
+
   addEventListener() {}
+}
+
+function createPaywallDocument() {
+  const nodes = {};
+  const register = element => {
+    if (element.id) nodes[element.id] = element;
+    return element;
+  };
+  const body = new FakeElement('body');
+  const originalAppendChild = body.appendChild.bind(body);
+  body.appendChild = child => {
+    originalAppendChild(child);
+    register(child);
+    return child;
+  };
+  return {
+    nodes,
+    document: {
+      body,
+      getElementById(id) { return nodes[id] || null; },
+      createElement(tagName) {
+        const element = new FakeElement(tagName);
+        Object.defineProperty(element, 'id', {
+          get() { return this._id || ''; },
+          set(value) { this._id = value; nodes[value] = this; }
+        });
+        return element;
+      },
+      register
+    }
+  };
+}
+
+function addReportSections(document) {
+  const host = new FakeElement('div');
+  ['thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'].forEach(id => {
+    const section = new FakeElement('section');
+    section.id = id;
+    section.offsetHeight = 160;
+    section.classList = { remove() {}, add() {} };
+    section.parentNode = host;
+    document.register(section);
+  });
+  host.insertBefore = child => {
+    child.parentNode = host;
+    return child;
+  };
 }
 
 test('desktop report payment renders the gateway QR image instead of treating QR content as an image', async () => {
@@ -90,14 +147,72 @@ test('desktop report payment renders the gateway QR image instead of treating QR
   assert.equal(nodes.qrContainer.children[0].src, 'https://zpayz.cn/qrcode/example.jpg');
   assert.equal(nodes.qrStatus.textContent, '请扫码支付 ¥9.9（支付后自动解锁）');
   assert.deepEqual(orderBody, {
-    year: 1990,
-    month: 6,
-    day: 15,
-    hour: 8,
-    gender: 'female',
+    report_params: { year: 1990, month: 6, day: 15, hour: 8, gender: 'female' },
+    token: '',
     amount: 9.9,
     description: '八字完整分析报告'
   });
+});
+
+test('purchased account access removes the report paywall before any new order is created', async () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  let accessCalls = 0;
+  let orderCalls = 0;
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    Auth: { isLoggedIn() { return true; }, getToken() { return 'account-token'; } },
+    fetch: async url => {
+      if (String(url).startsWith('/api/reports/access?')) {
+        accessCalls++;
+        return { ok: true, async json() { return { unlocked: true }; } };
+      }
+      orderCalls++;
+      return { ok: true, async json() { return {}; } };
+    },
+    setInterval() { return 1; },
+    clearInterval() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  await context.initPaywall({ year: 1990, month: 6, day: 15, hour: 8, gender: 'female' });
+
+  assert.equal(accessCalls, 1);
+  assert.equal(orderCalls, 0);
+  assert.ok(!nodes.rptPaywall || nodes.rptPaywall.removed);
+});
+
+test('guest unlocks for direct pillar charts remain isolated by all four pillars', () => {
+  const storage = new Map();
+  const context = {
+    console,
+    document: { getElementById() { return null; } },
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, String(value)); }
+    }
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  context.initPaywall({
+    mode: 'pillars', gender: 'female',
+    enteredPillars: { year: { gan: '甲', zhi: '子' }, month: { gan: '乙', zhi: '丑' }, day: { gan: '丙', zhi: '寅' }, hour: { gan: '丁', zhi: '卯' } }
+  });
+  context.sru();
+  context.initPaywall({
+    mode: 'pillars', gender: 'female',
+    enteredPillars: { year: { gan: '戊', zhi: '辰' }, month: { gan: '己', zhi: '巳' }, day: { gan: '庚', zhi: '午' }, hour: { gan: '辛', zhi: '未' } }
+  });
+
+  assert.equal(context.iru(), false);
 });
 
 test('hepan deep report creates a hepan order instead of falling through to the generic report branch', async () => {
@@ -229,4 +344,16 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   assert.ok(cachedAssets.includes('/js/payment.js'));
   assert.ok(cachedAssets.includes('/js/paywall.js'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js'));
+});
+
+test('bazi paywall sends account credentials and supports account report recovery', () => {
+  const paywallSource = fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8');
+  const resultSource = fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8');
+
+  assert.match(paywallSource, /Authorization/);
+  assert.match(paywallSource, /Auth\.getToken\(\)/);
+  assert.match(paywallSource, /\/api\/reports\/access/);
+  assert.match(paywallSource, /already_unlocked/);
+  assert.match(paywallSource, /登录后购买可在个人中心长期查看/);
+  assert.match(resultSource, /initPaywall\(_params\)/);
 });
