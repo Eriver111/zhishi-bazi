@@ -4052,6 +4052,22 @@ function getYongJi(bazi) {
     tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
   }
 
+  // 戌月燥土（火土日主）：戌为火库，土燥木枯，需水润局
+  if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
+  }
+
+  // 未月燥土（火土日主）：夏末火炎土燥，需水润局
+  if ((dmWx === '火' || dmWx === '土') && mz === '未') {
+    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
+    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
+    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
+  }
+
   if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
 
   // 格局微调
