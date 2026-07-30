@@ -1855,6 +1855,50 @@
 .feedback-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;
   align-items:center;justify-content:center }
 .feedback-overlay.show { display:flex }
+
+/* === 移动端 PDF 操作面板 === */
+.report-pdf-sheet[hidden] { display:none }
+.report-pdf-sheet {
+  position:fixed;inset:0;z-index:10050;display:flex;align-items:flex-end;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));
+  background:rgba(31,38,34,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)
+}
+.report-pdf-dialog {
+  position:relative;width:min(100%,520px);padding:24px 20px 20px;border:1px solid rgba(54,93,80,.18);
+  border-radius:22px 22px 14px 14px;background:#fbfaf5;color:#25352f;
+  box-shadow:0 22px 70px rgba(29,46,39,.24)
+}
+.report-pdf-close {
+  position:absolute;top:10px;right:12px;width:44px;height:44px;border:0;border-radius:50%;
+  background:transparent;color:#52645d;font-size:26px;line-height:1;cursor:pointer
+}
+.report-pdf-title { margin:0 44px 8px 0;color:#27483e;font-size:21px;letter-spacing:1px }
+.report-pdf-status { margin:0 0 16px;color:#5c6b65;font-size:14px;line-height:1.7 }
+.report-pdf-progress {
+  height:8px;margin-bottom:20px;overflow:hidden;border-radius:999px;background:#e4e9e4
+}
+.report-pdf-progress-bar {
+  width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#365d50,#c59b45);
+  transition:width .18s ease
+}
+.report-pdf-actions { display:grid;grid-template-columns:1fr 1fr;gap:10px }
+.report-pdf-action {
+  min-height:48px;padding:11px 12px;border:1px solid #365d50;border-radius:12px;
+  background:#365d50;color:#fff;font:600 14px/1.35 inherit;cursor:pointer
+}
+.report-pdf-action.secondary { background:#fff;color:#365d50 }
+.report-pdf-action:disabled { border-color:#cbd2ce;background:#e5e9e6;color:#89948f;cursor:not-allowed }
+.report-pdf-fallback {
+  display:block;width:100%;min-height:44px;margin-top:10px;border:0;background:transparent;
+  color:#84362f;font:600 13px/1.5 inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer
+}
+.report-pdf-action:focus-visible,.report-pdf-close:focus-visible,.report-pdf-fallback:focus-visible {
+  outline:3px solid rgba(132,54,47,.35);outline-offset:2px
+}
+@media (min-width:600px) {
+  .report-pdf-sheet { align-items:center }
+  .report-pdf-dialog { border-radius:18px }
+}
 .feedback-dialog { background:#1a1a2e;border:1px solid rgba(212,175,55,.15);border-radius:16px;
   padding:32px 28px 24px;width:90%;max-width:420px;position:relative }
 .feedback-close { position:absolute;top:12px;right:16px;font-size:20px;color:rgba(255,255,255,.2);
@@ -2598,6 +2642,22 @@
         </div>
     </div>
 
+    <div id="reportPdfSheet" class="report-pdf-sheet" role="dialog" aria-modal="true" aria-labelledby="reportPdfTitle" aria-describedby="reportPdfStatus" hidden>
+        <div class="report-pdf-dialog">
+            <button id="reportPdfClose" class="report-pdf-close" type="button" aria-label="关闭 PDF 操作面板">×</button>
+            <h2 id="reportPdfTitle" class="report-pdf-title">保存命理报告</h2>
+            <p id="reportPdfStatus" class="report-pdf-status" role="status" aria-live="polite">准备生成 PDF</p>
+            <div id="reportPdfProgress" class="report-pdf-progress" role="progressbar" aria-label="PDF 生成进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="reportPdfProgressBar" class="report-pdf-progress-bar"></div>
+            </div>
+            <div class="report-pdf-actions">
+                <button id="reportPdfDownload" class="report-pdf-action" type="button" disabled>下载 PDF</button>
+                <button id="reportPdfShare" class="report-pdf-action secondary" type="button" disabled>保存或分享</button>
+            </div>
+            <button id="reportHtmlFallback" class="report-pdf-fallback" type="button">下载 HTML 备用</button>
+        </div>
+    </div>
+
     <script src="js/bazi.js?v=1781962250"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
@@ -2748,6 +2808,9 @@
     <script src="js/poster-templates.js"></script>
     <script src="js/poster-renderer.js"></script>
     <script src="js/poster-ui.js"></script>
+    <script src="/js/vendor/html2canvas.min.js"></script>
+    <script src="/js/vendor/jspdf.umd.min.js"></script>
+    <script src="/js/report-pdf.js"></script>
     <script src="js/result.js"></script>
     <script src="js/pro-analysis.js?v=4"></script>
 <script src="js/auth.js"></script>

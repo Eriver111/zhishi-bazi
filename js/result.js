@@ -1620,13 +1620,12 @@ function buildReportHTML() {
     return html;
 }
 
-// 直接下载 HTML 文件
-function downloadReport() {
-    var html = buildReportHTML();
-    var blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
+// ==================== 移动端 PDF 操作面板 ====================
+var _preparedReportPdfFile = null;
+var _preparedReportPdfFilename = '';
+var _reportPdfPreviousFocus = null;
+
+function reportFilename(extension) {
     var reportName = '';
     if (_params && _params.mode === 'pillars' && _params.enteredPillars) {
         reportName = ['year','month','day','hour'].map(function(position) {
@@ -1636,7 +1635,154 @@ function downloadReport() {
     } else if (_params) {
         reportName = _params.year + '' + _params.month + _params.day;
     }
-    var fn = '知时报告_' + reportName + '.html';
+    return '知时报告_' + reportName + extension;
+}
+
+function updatePdfProgress(value) {
+    var progress = document.getElementById('reportPdfProgress');
+    var bar = document.getElementById('reportPdfProgressBar');
+    var normalized = Math.max(0, Math.min(100, Number(value) || 0));
+    if (progress) progress.setAttribute('aria-valuenow', String(normalized));
+    if (bar) bar.style.width = normalized + '%';
+}
+
+function setMobileReportPdfStatus(message) {
+    var status = document.getElementById('reportPdfStatus');
+    if (status) status.textContent = message;
+}
+
+function openMobileReportPdfSheet() {
+    var sheet = document.getElementById('reportPdfSheet');
+    var close = document.getElementById('reportPdfClose');
+    if (!sheet) return;
+    _reportPdfPreviousFocus = document.activeElement;
+    sheet.hidden = false;
+    if (close && typeof close.focus === 'function') close.focus();
+}
+
+function closeMobileReportPdfSheet() {
+    var sheet = document.getElementById('reportPdfSheet');
+    if (!sheet) return;
+    sheet.hidden = true;
+    if (_reportPdfPreviousFocus && typeof _reportPdfPreviousFocus.focus === 'function') {
+        _reportPdfPreviousFocus.focus();
+    }
+    _reportPdfPreviousFocus = null;
+}
+
+function canSharePreparedReportPdf(file) {
+    try {
+        return !!(file && typeof navigator.share === 'function'
+            && navigator.canShare && navigator.canShare({ files: [file] }));
+    } catch (error) {
+        return false;
+    }
+}
+
+function prepareMobileReportPdf() {
+    var downloadButton = document.getElementById('reportPdfDownload');
+    var shareButton = document.getElementById('reportPdfShare');
+    var html;
+    var pending;
+
+    _preparedReportPdfFile = null;
+    _preparedReportPdfFilename = reportFilename('.pdf');
+    if (downloadButton) downloadButton.disabled = true;
+    if (shareButton) shareButton.disabled = true;
+    setMobileReportPdfStatus('正在生成报告……');
+    updatePdfProgress(0);
+    openMobileReportPdfSheet();
+
+    try {
+        html = buildReportHTML();
+        if (!window.ReportPdf || typeof window.ReportPdf.prepare !== 'function') {
+            throw new Error('PDF 组件未加载');
+        }
+        pending = window.ReportPdf.prepare({
+            html: html,
+            filename: _preparedReportPdfFilename,
+            onProgress: updatePdfProgress
+        });
+    } catch (error) {
+        setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
+        return Promise.resolve(null);
+    }
+
+    return Promise.resolve(pending).then(function(file) {
+        _preparedReportPdfFile = file;
+        updatePdfProgress(100);
+        setMobileReportPdfStatus('PDF 已生成，请选择下载或分享');
+        if (downloadButton) downloadButton.disabled = false;
+        if (shareButton) shareButton.disabled = !canSharePreparedReportPdf(file);
+        return file;
+    }).catch(function() {
+        _preparedReportPdfFile = null;
+        if (downloadButton) downloadButton.disabled = true;
+        if (shareButton) shareButton.disabled = true;
+        setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
+        return null;
+    });
+}
+
+function initMobileReportPdfActions() {
+    var sheet = document.getElementById('reportPdfSheet');
+    var close = document.getElementById('reportPdfClose');
+    var downloadButton = document.getElementById('reportPdfDownload');
+    var shareButton = document.getElementById('reportPdfShare');
+    var htmlFallback = document.getElementById('reportHtmlFallback');
+    if (!sheet || !close || !downloadButton || !shareButton || !htmlFallback) return;
+
+    close.addEventListener('click', closeMobileReportPdfSheet);
+    sheet.addEventListener('click', function(event) {
+        if (event.target === sheet) closeMobileReportPdfSheet();
+    });
+    downloadButton.addEventListener('click', function() {
+        if (downloadButton.disabled || !_preparedReportPdfFile) return;
+        try {
+            window.ReportPdf.download(_preparedReportPdfFile, _preparedReportPdfFilename);
+        } catch (error) {
+            setMobileReportPdfStatus('下载未能开始，请重试或下载 HTML 备用。');
+        }
+    });
+    shareButton.addEventListener('click', function() {
+        var file = _preparedReportPdfFile;
+        if (shareButton.disabled || !file) return;
+        if (!(typeof navigator.share === 'function'
+            && navigator.canShare && navigator.canShare({ files: [file] }))) {
+            shareButton.disabled = true;
+            setMobileReportPdfStatus('当前浏览器不支持文件分享，请使用“下载 PDF”。');
+            return;
+        }
+        Promise.resolve(navigator.share({
+            files: [file],
+            title: '知时命理报告'
+        })).catch(function(error) {
+            if (error && error.name === 'AbortError') return;
+            setMobileReportPdfStatus('分享未完成，PDF 仍可直接下载。');
+        });
+    });
+    htmlFallback.addEventListener('click', function() {
+        downloadReport();
+    });
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !sheet.hidden) closeMobileReportPdfSheet();
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileReportPdfActions);
+} else {
+    initMobileReportPdfActions();
+}
+
+// 直接下载 HTML 文件
+function downloadReport() {
+    var html = buildReportHTML();
+    var blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    var fn = reportFilename('.html');
     a.download = fn;
     document.body.appendChild(a);
     a.click();
@@ -1646,26 +1792,16 @@ function downloadReport() {
 
 // 在新标签页打开报告（自动弹出打印对话框）
 function openReportInNewTab() {
+    if (typeof isMobile === 'function' && isMobile()) {
+        return prepareMobileReportPdf();
+    }
+
     // 设置标记：新标签页加载后自动弹出打印
     try { sessionStorage.setItem('zhishi_auto_print', '1'); } catch(e) {}
 
     var html = buildReportHTML();
     var blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
     var url = URL.createObjectURL(blob);
-
-    // 移动端：使用窄窗口模拟打印体验
-    if (typeof isMobile === 'function' && isMobile()) {
-        var w = window.open(url, '_blank');
-        if (!w) {
-            // 弹窗被拦截，回退到下载
-            alert('弹出窗口被拦截，将为您下载报告文件。在下载文件中打开后可使用浏览器打印为 PDF。');
-            downloadReport();
-            setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
-            return;
-        }
-        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
-        return;
-    }
 
     // 桌面端：新标签页打开 + 自动弹出打印
     var w = window.open(url, '_blank');

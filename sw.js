@@ -1,6 +1,6 @@
 // 知时 Service Worker — 离线缓存 + PWA
 // 策略：只缓存静态资源，HTML 走网络保证用户始终拿到最新版
-const CACHE_NAME = 'zhishi-v5';
+const CACHE_NAME = 'zhishi-v6';
 
 // 只缓存静态资源，不缓存 HTML 页面
 const STATIC_ASSETS = [
@@ -10,6 +10,7 @@ const STATIC_ASSETS = [
   '/js/characters.js', '/js/pro-analysis.js', '/js/payment.js', '/js/paywall.js',
   '/js/mo-xing-he.js', '/js/bg-animation.js', '/js/effects.js', '/js/lunar.js',
   '/js/region.js', '/js/nav.js',
+  '/js/vendor/html2canvas.min.js', '/js/vendor/jspdf.umd.min.js', '/js/report-pdf.js',
   '/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png'
 ];
 
