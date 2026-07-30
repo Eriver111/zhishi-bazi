@@ -76,6 +76,25 @@ test('report access returns true only for the authenticated canonical key', asyn
   assert.match(received[2], /^[0-9a-f]{64}$/);
 });
 
+test('report access returns false with 200 for a valid report that is not purchased', async () => {
+  const handler = loadHandler(
+    'api/reports/access.js',
+    { requireAuth: () => ({ uid: 7 }) },
+    { hasPaidReport: async () => false }
+  );
+  const res = response();
+
+  await handler({
+    method: 'GET',
+    query: { year: '1990', month: '6', day: '15', hour: '8', gender: 'male' },
+    headers: {}
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.unlocked, false);
+  assert.match(res.body.report_key, /^[0-9a-f]{64}$/);
+});
+
 test('report access rejects invalid parameters with 400', async () => {
   const handler = loadHandler(
     'api/reports/access.js',
@@ -114,6 +133,20 @@ test('report list returns only the safe paid-row shape', async () => {
   assert.equal(res.body.reports.length, 1);
   assert.deepEqual(Object.keys(res.body.reports[0]).sort(),
     ['label', 'paid_at', 'report_key', 'report_params', 'report_type']);
+});
+
+test('the api/reports compatibility entry serves the report list handler', async () => {
+  const handler = loadHandler(
+    'api/reports.js',
+    { requireAuth: () => ({ uid: 7 }) },
+    { listPaidReports: async () => [] }
+  );
+  const res = response();
+
+  await handler({ method: 'GET', headers: {} }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { reports: [] });
 });
 
 test('report list rejects a missing token with 401', async () => {
