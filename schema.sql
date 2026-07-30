@@ -94,3 +94,20 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_code ON user_subscriptions(code);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_expires ON user_subscriptions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_free_log_identifier ON free_credits_log(identifier);
 CREATE INDEX IF NOT EXISTS idx_chat_code ON chat_history(code);
+
+CREATE TABLE IF NOT EXISTS report_orders (
+  order_id      VARCHAR(96) PRIMARY KEY,
+  user_id       BIGINT REFERENCES users(id),
+  report_type   VARCHAR(16) NOT NULL,
+  report_key    VARCHAR(64) NOT NULL,
+  report_params JSONB NOT NULL,
+  label         VARCHAR(160) NOT NULL,
+  amount        NUMERIC(10,2) NOT NULL,
+  status        VARCHAR(16) NOT NULL DEFAULT 'pending',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  paid_at       TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_report_orders_access
+  ON report_orders(user_id, report_type, report_key, status);
+CREATE INDEX IF NOT EXISTS idx_report_orders_user_paid
+  ON report_orders(user_id, paid_at DESC);
