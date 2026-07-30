@@ -28,6 +28,7 @@ function getUrlParams() {
         day: parseInt(p.get('day')),
         hour: parseInt(p.get('hour')),
         gender: p.get('gender'),
+        cal: p.get('cal') || 'solar',
         prov: p.get('prov') || '',
         minute: parseInt(p.get('minute')) || 0,
         clock: parseInt(p.get('clock')) || 0,

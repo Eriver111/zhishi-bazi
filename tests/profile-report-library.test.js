@@ -120,6 +120,7 @@ test('purchased reports escape fields and restore normalized parameters in their
   });
   assert.equal(makeReportKey('bazi', Object.fromEntries(normal.searchParams)), lunarReportKey);
   const resultParams = readResultParams(normal.search);
+  assert.equal(resultParams.cal, 'lunar');
   assert.equal(resultParams.solar, '0');
   assert.equal(resultParams.zishi, '1');
 
