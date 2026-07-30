@@ -19,10 +19,33 @@ test('every calculation-affecting field changes the report key', () => {
   }
 });
 
+test('legacy zishi and solar URL parameters map to calculation settings and change the report key', () => {
+  const base = { year:1990, month:6, day:15, hour:0, minute:5, gender:'male', clock:0, prov:'广东省', city:'广州市', dist:'天河区', cal:'solar' };
+  const zishi = normalizeBaziReportParams({ ...base, zishi:'1' });
+  const solar = normalizeBaziReportParams({ ...base, solar:'0' });
+
+  assert.equal(zishi.ziHourRule, 'next-day');
+  assert.equal(solar.trueSolarTime, 'disabled');
+  assert.notEqual(makeReportKey('bazi', base), makeReportKey('bazi', { ...base, zishi:'1' }));
+  assert.notEqual(makeReportKey('bazi', base), makeReportKey('bazi', { ...base, solar:'0' }));
+});
+
 test('direct-pillar reports are keyed by entered pillars and gender', () => {
   const params = normalizeBaziReportParams({ mode:'pillars', yearPillar:'庚午', monthPillar:'壬午', dayPillar:'乙卯', hourPillar:'丁亥', gender:'female' });
   assert.deepEqual(params.pillars, { year:'庚午', month:'壬午', day:'乙卯', hour:'丁亥' });
   assert.match(makeBaziReportLabel(params), /坤造/);
+});
+
+test('direct-pillar report keys ignore timing metadata, including matched time changes', () => {
+  const pillars = { mode:'pillars', yearPillar:'庚午', monthPillar:'壬午', dayPillar:'乙卯', hourPillar:'丁亥', gender:'female' };
+  const unknown = normalizeBaziReportParams({ ...pillars, timing:'unknown' });
+  const matched = normalizeBaziReportParams({ ...pillars, timing:'matched', year:1990, month:6, day:15, hour:8, clock:8 });
+  const changedMatched = { ...pillars, timing:'matched', year:1991, month:7, day:16, hour:9, clock:9 };
+
+  assert.equal(unknown.timing, 'unknown');
+  assert.equal(matched.timing, 'matched');
+  assert.equal(makeReportKey('bazi', unknown), makeReportKey('bazi', matched));
+  assert.equal(makeReportKey('bazi', matched), makeReportKey('bazi', changedMatched));
 });
 
 test('invalid gender or incomplete pillars are rejected', () => {
