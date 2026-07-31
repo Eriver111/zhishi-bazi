@@ -551,7 +551,7 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v6');
+  assert.equal(openedCache, 'zhishi-v7');
   assert.ok(cachedAssets.includes('/js/payment.js'));
   assert.ok(cachedAssets.includes('/js/paywall.js'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js'));
