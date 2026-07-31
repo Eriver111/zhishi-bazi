@@ -81,6 +81,90 @@ function trackPV(path) {
 setTimeout(function() { _pvTimer = setInterval(flushPV, 60000); }, 30000);
 
 const CHANNEL_DOMAINS={'knowbazi.online':'knowbazi','zx.zhishi.online':'zx'};
+class RequestBodyTooLargeError extends Error {
+  constructor(maxBytes) {
+    super('Request body too large');
+    this.name = 'RequestBodyTooLargeError';
+    this.code = 'REQUEST_BODY_TOO_LARGE';
+    this.maxBytes = maxBytes;
+  }
+}
+
+function drainRequest(req) {
+  req.on('error', function() {});
+  req.resume();
+}
+
+function readRequestBody(req, options) {
+  var maxBytes = options && options.maxBytes;
+  var declaredLength = Number(req.headers['content-length']);
+  if (maxBytes !== undefined
+      && Number.isFinite(declaredLength)
+      && declaredLength > maxBytes) {
+    drainRequest(req);
+    return Promise.reject(new RequestBodyTooLargeError(maxBytes));
+  }
+
+  return new Promise(function(resolve, reject) {
+    var chunks = [];
+    var totalBytes = 0;
+
+    function cleanup() {
+      req.removeListener('data', onData);
+      req.removeListener('end', onEnd);
+      req.removeListener('error', onError);
+      req.removeListener('aborted', onAborted);
+    }
+
+    function rejectOversized() {
+      cleanup();
+      chunks = [];
+      drainRequest(req);
+      reject(new RequestBodyTooLargeError(maxBytes));
+    }
+
+    function onData(chunk) {
+      totalBytes += chunk.length;
+      if (maxBytes !== undefined && totalBytes > maxBytes) {
+        rejectOversized();
+        return;
+      }
+      chunks.push(chunk);
+    }
+
+    function onEnd() {
+      cleanup();
+      var body = Buffer.concat(chunks, totalBytes).toString('utf8');
+      try {
+        resolve(JSON.parse(body));
+      } catch (_) {
+        var parsed = {};
+        body.split('&').forEach(function(part) {
+          var pair = part.split('=');
+          if (pair.length === 2) {
+            parsed[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+          }
+        });
+        resolve(parsed);
+      }
+    }
+
+    function onError(error) {
+      cleanup();
+      reject(error);
+    }
+
+    function onAborted() {
+      cleanup();
+      reject(new Error('Request aborted'));
+    }
+
+    req.on('data', onData);
+    req.on('end', onEnd);
+    req.on('error', onError);
+    req.on('aborted', onAborted);
+  });
+}
 const s=http.createServer(async(req,res)=>{
 res.setHeader('Access-Control-Allow-Origin','*');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}
 
@@ -102,9 +186,9 @@ trackPV(pn);
 
 // API
 if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];// 同时清除核心依赖缓存，确保 git pull 后生效
-['./lib/supabase.js','./lib/auth.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await new Promise(o=>{let b='';req.on('data',d=>b+=d);req.on('end',()=>{try{o(JSON.parse(b))}catch(_){let p={};b.split('&').forEach(s=>{let kv=s.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1])});o(p)}})});// 注入渠道标记到 body
+['./lib/supabase.js','./lib/auth.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,pn==='/api/feedback'?{maxBytes:4096}:undefined);// 注入渠道标记到 body
 if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
-await h(req,res)}catch(e){if(!_sent)res.json({error:e.message})}return}
+await h(req,res)}catch(e){if(!_sent){if(e&&e.code==='REQUEST_BODY_TOO_LARGE')res.status(413).json({ok:false,error:e.message});else res.json({error:e.message})}}return}
 const fp=__dirname+pn;try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
 // HTML 页面注入渠道持久化脚本
 if(ct==='text/html'&&channel){
