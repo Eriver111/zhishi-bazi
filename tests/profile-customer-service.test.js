@@ -184,7 +184,7 @@ test('valid guest feedback posts the exact profile payload and shows success', a
   assert.equal(requests.length, 1);
   assert.equal(requests[0].url, '/api/feedback');
   assert.equal(requests[0].options.method, 'POST');
-  assert.deepEqual(requests[0].options.headers, { 'Content-Type': 'application/json' });
+  assert.deepEqual({ ...requests[0].options.headers }, { 'Content-Type': 'application/json' });
   assert.deepEqual(JSON.parse(requests[0].options.body), {
     message: '支付后报告没有恢复',
     contact: 'wx-id',

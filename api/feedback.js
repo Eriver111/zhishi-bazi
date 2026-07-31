@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { message, contact, context } = req.body || {};
+    const { message, contact, context, page } = req.body || {};
     if (!message || !message.trim()) {
       return res.status(400).json({ ok: false, error: '内容不能为空' });
     }
@@ -22,7 +22,8 @@ module.exports = async function handler(req, res) {
       time: new Date().toISOString(),
       message: message.trim(),
       contact: (contact || '').trim(),
-      context: context || {}
+      context: context || {},
+      page: (page || '').trim()
     };
 
     // 追加一行 JSON

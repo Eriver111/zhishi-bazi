@@ -39,7 +39,20 @@
 .profile-customer-service__action--primary{border:1px solid #b95047;background:#b95047;color:#fff}
 .profile-customer-service__action--secondary{border:1px solid rgba(67,126,89,.35);background:rgba(67,126,89,.08);color:#2f7550}
 .profile-customer-service__status{min-height:18px;margin:10px 0 0;color:var(--tx3);font-size:12px}
-@media (max-width:480px){.profile-customer-service__wechat{align-items:flex-start;flex-direction:column}.profile-customer-service__actions{flex-direction:column}.profile-customer-service__action{min-height:44px}}
+.profile-feedback{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(38,32,27,.44);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.profile-feedback[hidden]{display:none}
+.profile-feedback__form{position:relative;width:min(100%,480px);padding:24px;border:1px solid rgba(181,64,56,.22);border-radius:16px;background:#fffdf8;box-shadow:0 22px 60px rgba(49,38,29,.22)}
+.profile-feedback__title{margin:0 40px 8px 0;color:#302c27;font-size:21px}
+.profile-feedback__intro{margin:0 0 18px;color:#6d655d;font-size:13px;line-height:1.7}
+.profile-feedback__close{position:absolute;top:14px;right:14px;width:36px;height:36px;border:0;border-radius:50%;background:#f3eee5;color:#625a52;font-size:22px;line-height:1;cursor:pointer}
+.profile-feedback__label{display:block;margin:14px 0 7px;color:#3c3732;font-size:13px;font-weight:700}
+.profile-feedback__field{box-sizing:border-box;width:100%;padding:11px 12px;border:1px solid #d8cfc3;border-radius:9px;background:#fff;color:#302c27;font:14px/1.5 inherit;outline:none}
+.profile-feedback__field:focus{border-color:#a55044;box-shadow:0 0 0 3px rgba(165,80,68,.12)}
+textarea.profile-feedback__field{min-height:128px;resize:vertical}
+.profile-feedback__submit{width:100%;min-height:44px;margin-top:18px;border:1px solid #b95047;border-radius:9px;background:#b95047;color:#fff;font:700 14px/1 inherit;cursor:pointer}
+.profile-feedback__submit:disabled{cursor:wait;opacity:.65}
+.profile-feedback__status{min-height:20px;margin:10px 0 0;color:#735149;font-size:12px;line-height:1.6}
+@media (max-width:480px){.profile-customer-service__wechat{align-items:flex-start;flex-direction:column}.profile-customer-service__actions{flex-direction:column}.profile-customer-service__action{min-height:44px}.profile-feedback{align-items:flex-end;padding:12px}.profile-feedback__form{max-height:calc(100vh - 24px);overflow:auto;padding:20px;border-radius:14px}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 </style>
@@ -61,17 +74,39 @@
     <div class="profile-customer-service__wechat"><span>微信号</span><strong class="profile-customer-service__id">EriverLife</strong></div>
     <div class="profile-customer-service__actions">
       <button id="profileWechatCopy" class="profile-customer-service__action profile-customer-service__action--primary" type="button" onclick="copyProfileWechat(this)">复制微信号</button>
-      <button class="profile-customer-service__action profile-customer-service__action--secondary" type="button" onclick="showProfileFeedback()">问题反馈</button>
+      <button class="profile-customer-service__action profile-customer-service__action--secondary" type="button" onclick="openProfileFeedback(this)">问题反馈</button>
     </div>
     <p id="profileCustomerServiceStatus" class="profile-customer-service__status" aria-live="polite"></p>
   </section>
 </div>
 
+<div id="profileFeedbackDialog" class="profile-feedback" role="dialog" aria-modal="true" aria-labelledby="profileFeedbackTitle" hidden>
+  <form class="profile-feedback__form" onsubmit="submitProfileFeedback(); return false;">
+    <button class="profile-feedback__close" type="button" aria-label="关闭" onclick="closeProfileFeedback()">×</button>
+    <h2 id="profileFeedbackTitle" class="profile-feedback__title">问题反馈</h2>
+    <p class="profile-feedback__intro">请描述遇到的问题，我们会尽快查看。</p>
+    <label class="profile-feedback__label" for="profileFeedbackMessage">问题或建议</label>
+    <textarea class="profile-feedback__field" id="profileFeedbackMessage" maxlength="500"></textarea>
+    <label class="profile-feedback__label" for="profileFeedbackContact">联系方式（选填）</label>
+    <input class="profile-feedback__field" id="profileFeedbackContact" maxlength="100" autocomplete="contact">
+    <button class="profile-feedback__submit" id="profileFeedbackSubmit" type="submit">提交反馈</button>
+    <p class="profile-feedback__status" id="profileFeedbackStatus" role="status"></p>
+  </form>
+</div>
+
 <script src="js/auth.js"></script>
 <script>
 (function(){
+  var profileFeedbackOpener = null;
+  var profileFeedbackSubmitting = false;
+
   function setProfileCustomerServiceStatus(message) {
     var status = document.getElementById('profileCustomerServiceStatus');
+    if (status) status.textContent = message;
+  }
+
+  function setProfileFeedbackStatus(message) {
+    var status = document.getElementById('profileFeedbackStatus');
     if (status) status.textContent = message;
   }
 
@@ -125,9 +160,89 @@
     return Promise.resolve(useFallback());
   };
 
-  window.showProfileFeedback = function() {
-    setProfileCustomerServiceStatus('请添加微信号 EriverLife，并说明遇到的问题，我们会尽快协助。');
+  window.openProfileFeedback = function(opener) {
+    var dialog = document.getElementById('profileFeedbackDialog');
+    var message = document.getElementById('profileFeedbackMessage');
+    if (!dialog || !message) return;
+    profileFeedbackOpener = opener || document.activeElement;
+    setProfileFeedbackStatus('');
+    dialog.hidden = false;
+    message.focus();
   };
+
+  window.closeProfileFeedback = function() {
+    var dialog = document.getElementById('profileFeedbackDialog');
+    if (!dialog || dialog.hidden) return;
+    dialog.hidden = true;
+    if (profileFeedbackOpener && typeof profileFeedbackOpener.focus === 'function') {
+      profileFeedbackOpener.focus();
+    }
+    profileFeedbackOpener = null;
+  };
+
+  window.showProfileFeedback = window.openProfileFeedback;
+
+  window.submitProfileFeedback = function() {
+    if (profileFeedbackSubmitting) return Promise.resolve(false);
+
+    var messageField = document.getElementById('profileFeedbackMessage');
+    var contactField = document.getElementById('profileFeedbackContact');
+    var submitButton = document.getElementById('profileFeedbackSubmit');
+    var message = messageField.value.trim();
+    var contact = contactField.value.trim();
+
+    if (!message) {
+      setProfileFeedbackStatus('请先填写问题或建议。');
+      messageField.focus();
+      return Promise.resolve(false);
+    }
+
+    profileFeedbackSubmitting = true;
+    submitButton.disabled = true;
+    submitButton.textContent = '提交中…';
+
+    var request;
+    try {
+      request = fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, contact: contact, page: 'profile' })
+      });
+    } catch (error) {
+      request = Promise.reject(error);
+    }
+
+    return Promise.resolve(request)
+      .then(function(response) {
+        if (!response.ok) throw new Error('request failed');
+        return response.json();
+      })
+      .then(function(data) {
+        if (data && data.error) throw new Error(data.error);
+        setProfileFeedbackStatus('已提交，我们会尽快查看。');
+        return true;
+      })
+      .catch(function() {
+        setProfileFeedbackStatus('提交失败，请复制微信号联系我们。');
+        return false;
+      })
+      .then(function(result) {
+        profileFeedbackSubmitting = false;
+        submitButton.disabled = false;
+        submitButton.textContent = '提交反馈';
+        return result;
+      });
+  };
+
+  if (document.addEventListener) {
+    document.addEventListener('keydown', function(event) {
+      var dialog = document.getElementById('profileFeedbackDialog');
+      if (event.key === 'Escape' && dialog && !dialog.hidden) {
+        event.preventDefault();
+        closeProfileFeedback();
+      }
+    });
+  }
 
   var content = document.getElementById('content');
 
