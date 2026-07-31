@@ -234,6 +234,7 @@ function startAnalysis(){
   if(!_imageData) return;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){Auth.showModal('login');return}
   var btn=document.getElementById('btnAnalyze');btn.disabled=true;btn.textContent='观手中...';
+  document.getElementById('loading').style.display='block';
   var tips=['正在定位生命线与智慧线...','分析五指形态与掌丘...','《神相全编》对照八大掌纹...','识别手部生活痕迹（老茧、痣、伤疤）...','综合判断事业/健康/感情线...','生成手相分析报告...'];
   var tipIdx=0;var tipTimer=setInterval(function(){tipIdx=(tipIdx+1)%tips.length;var el=document.getElementById('loadingText');if(el)el.textContent=tips[tipIdx]},5000);
   var bar=document.getElementById('loadingBar');var barPct=0;var barTimer=setInterval(function(){barPct+=Math.random()*8+2;if(barPct>90)barPct=90;if(bar)bar.style.width=barPct+'%'},2000);
