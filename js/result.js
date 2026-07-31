@@ -1273,17 +1273,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 子时换日：子时出生者可选择按次日的日柱计算
+    // 子时换日：仅日柱+时柱按次日推算，年月仍以实际出生日为准
+    var calcDay = _params.day, calcMonth = _params.month, calcYear = _params.year;
     if (_params.zishi === '1' && _params.hour === 0) {
         var nextDay = new Date(_params.year, _params.month - 1, _params.day + 1);
-        _params.year = nextDay.getFullYear();
-        _params.month = nextDay.getMonth() + 1;
-        _params.day = nextDay.getDate();
+        calcDay = nextDay.getDate();
+        calcMonth = nextDay.getMonth() + 1;
+        calcYear = nextDay.getFullYear();
     }
 
     const bazi = window.BaZiCalculator.calculate(
         _params.year, _params.month, _params.day, _params.hour, _params.gender, _params.clock || 0
     );
+    // 子时换日后重算日柱+时柱
+    if (_params.zishi === '1' && _params.hour === 0) {
+        var zishiDayPillar = window.BaZiCalculator.calculate(
+            calcYear, calcMonth, calcDay, _params.hour, _params.gender, _params.clock || 0
+        );
+        bazi.day = zishiDayPillar.day;
+        bazi.hour = zishiDayPillar.hour;
+    }
     // 保存原始时辰供显示
     bazi.originalHour = originalHour;
     bazi.solarInfo = solarInfo;
