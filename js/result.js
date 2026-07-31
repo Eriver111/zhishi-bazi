@@ -1285,13 +1285,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const bazi = window.BaZiCalculator.calculate(
         _params.year, _params.month, _params.day, _params.hour, _params.gender, _params.clock || 0
     );
-    // 子时换日后重算日柱+时柱
+    // 子时换日后重算日柱+时柱，并重新计算所有十神（十神以日干为基准）
     if (_params.zishi === '1' && _params.hour === 0) {
         var zishiDayPillar = window.BaZiCalculator.calculate(
             calcYear, calcMonth, calcDay, _params.hour, _params.gender, _params.clock || 0
         );
         bazi.day = zishiDayPillar.day;
         bazi.hour = zishiDayPillar.hour;
+        // 重新计算各柱十神（日干变了，所有柱的十神都要跟着变）
+        var newDayGan = zishiDayPillar.day.gan;
+        ['year','month','day','hour'].forEach(function(pos) {
+            var cg = zishiDayPillar[pos].cangGan || [];
+            bazi[pos].shiShen = {
+                gan: pos === 'day' ? '日主' : window.BaZiCalculator.getShiShen(newDayGan, bazi[pos].gan),
+                zhi: cg.length > 0 ? window.BaZiCalculator.getShiShen(newDayGan, cg[0]) : ''
+            };
+        });
     }
     // 保存原始时辰供显示
     bazi.originalHour = originalHour;
