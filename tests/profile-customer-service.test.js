@@ -16,7 +16,7 @@ function profileScript() {
   return script[1];
 }
 
-function runCopy({ clipboard, execCommandResult = true } = {}) {
+function runCopy({ clipboard, execCommandResult = true, timerApi } = {}) {
   const content = { innerHTML: '' };
   const temporaryNodes = [];
   const body = {
@@ -29,7 +29,12 @@ function runCopy({ clipboard, execCommandResult = true } = {}) {
   const context = {
     console,
     Promise,
-    setTimeout(fn) { fn(); return 1; },
+    setTimeout: timerApi
+      ? timerApi.setTimeout
+      : function(fn) { fn(); return 1; },
+    clearTimeout: timerApi
+      ? timerApi.clearTimeout
+      : function() {},
     document: {
       getElementById(id) { return id === 'content' ? content : null; },
       createElement() { return { style: {}, setAttribute() {}, select() {} }; },
@@ -165,6 +170,40 @@ test('copyProfileWechat falls back to a temporary textarea when Clipboard API re
 
   assert.equal(execCommandCalls, 1);
   assert.equal(temporaryNodes.length, 0, 'the fallback textarea must always be removed');
+  assert.equal(button.textContent, '\u590d\u5236\u5fae\u4fe1\u53f7');
+});
+
+test('rapid repeated copy always restores the original action label after the latest timer', async () => {
+  let nextTimerId = 1;
+  const scheduled = new Map();
+  const timerApi = {
+    setTimeout(fn) {
+      const id = nextTimerId++;
+      scheduled.set(id, fn);
+      return id;
+    },
+    clearTimeout(id) {
+      scheduled.delete(id);
+    },
+    runAll() {
+      for (const [id, fn] of [...scheduled.entries()]) {
+        scheduled.delete(id);
+        fn();
+      }
+    }
+  };
+  const { context } = runCopy({
+    clipboard: { writeText() { return Promise.resolve(); } },
+    timerApi
+  });
+  const button = { textContent: '\u590d\u5236\u5fae\u4fe1\u53f7' };
+
+  await context.copyProfileWechat(button);
+  await context.copyProfileWechat(button);
+
+  assert.equal(button.textContent, '\u5df2\u590d\u5236');
+  assert.equal(scheduled.size, 1, 'a repeated click replaces the prior reset timer');
+  timerApi.runAll();
   assert.equal(button.textContent, '\u590d\u5236\u5fae\u4fe1\u53f7');
 });
 
@@ -331,16 +370,27 @@ test('explicit close restores prior background state and opener focus', () => {
   assert.equal(document.activeElement, opener);
 });
 
-test('successful submission closes the dialog and restores background and opener focus', async () => {
+test('successful submission keeps confirmation visible, clears fields, and leaves manual close available', async () => {
   const { context, document, elements } = runFeedback();
   const opener = { focusCalled: 0, focus() { this.focusCalled += 1; document.activeElement = this; } };
   context.openProfileFeedback(opener);
+  elements.profileFeedbackContact.value = 'wx-id';
   elements.profileFeedbackMessage.value = '报告无法查看';
 
   const result = await context.submitProfileFeedback();
 
   assert.equal(result, true);
   assert.equal(elements.profileFeedbackStatus.textContent, '已提交，我们会尽快查看。');
+  assert.equal(elements.profileFeedbackMessage.value, '');
+  assert.equal(elements.profileFeedbackContact.value, '');
+  assert.equal(elements.profileFeedbackDialog.hidden, false);
+  assert.equal(elements.backgroundWithInert.inert, true);
+  assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'true');
+  assert.equal(elements.backgroundWithAriaFallback.style.pointerEvents, 'none');
+  assert.equal(opener.focusCalled, 0);
+  assert.equal(document.activeElement, elements.profileFeedbackClose);
+
+  context.closeProfileFeedback();
   assert.equal(elements.profileFeedbackDialog.hidden, true);
   assert.equal(elements.backgroundWithInert.inert, false);
   assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'false');

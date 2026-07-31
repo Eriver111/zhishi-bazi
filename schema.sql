@@ -111,3 +111,63 @@ CREATE INDEX IF NOT EXISTS idx_report_orders_access
   ON report_orders(user_id, report_type, report_key, status);
 CREATE INDEX IF NOT EXISTS idx_report_orders_user_paid
   ON report_orders(user_id, paid_at DESC);
+
+-- Customer-service feedback. This table is server-only: the service-role key
+-- bypasses RLS while public/anonymous Supabase clients receive no policy.
+CREATE TABLE IF NOT EXISTS feedback (
+  id          BIGSERIAL PRIMARY KEY,
+  message     VARCHAR(500) NOT NULL,
+  contact     VARCHAR(100) NOT NULL DEFAULT '',
+  page        VARCHAR(32) NOT NULL DEFAULT '',
+  context     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  client_key  CHAR(64) NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_client_recent
+  ON feedback(client_key, created_at DESC);
+ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
+
+-- Serialize count-and-insert per anonymous client key so concurrent serverless
+-- requests cannot both pass the five-attempt limit.
+CREATE OR REPLACE FUNCTION create_feedback_rate_limited(
+  p_message TEXT,
+  p_contact TEXT,
+  p_page TEXT,
+  p_context JSONB,
+  p_client_key TEXT,
+  p_created_at TIMESTAMPTZ,
+  p_since TIMESTAMPTZ,
+  p_limit INTEGER
+)
+RETURNS TABLE(accepted BOOLEAN, feedback_id BIGINT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  inserted_id BIGINT;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_client_key, 0));
+  IF (
+    SELECT COUNT(*)
+    FROM feedback
+    WHERE client_key = p_client_key
+      AND created_at >= p_since
+  ) >= LEAST(GREATEST(p_limit, 1), 5) THEN
+    RETURN QUERY SELECT FALSE, NULL::BIGINT;
+    RETURN;
+  END IF;
+
+  INSERT INTO feedback(message, contact, page, context, client_key, created_at)
+  VALUES(p_message, p_contact, p_page, p_context, p_client_key, p_created_at)
+  RETURNING id INTO inserted_id;
+
+  RETURN QUERY SELECT TRUE, inserted_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION create_feedback_rate_limited(
+  TEXT, TEXT, TEXT, JSONB, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, INTEGER
+) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_feedback_rate_limited(
+  TEXT, TEXT, TEXT, JSONB, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, INTEGER
+) TO service_role;

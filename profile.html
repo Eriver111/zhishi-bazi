@@ -100,6 +100,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
   var profileFeedbackOpener = null;
   var profileFeedbackSubmitting = false;
   var profileFeedbackBackgroundState = [];
+  var profileWechatCopyResetTimer = null;
 
   function setProfileCustomerServiceStatus(message) {
     var status = document.getElementById('profileCustomerServiceStatus');
@@ -112,9 +113,14 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
   }
 
   function temporaryButtonMessage(button, message) {
-    var originalText = button.textContent;
+    if (profileWechatCopyResetTimer !== null) {
+      clearTimeout(profileWechatCopyResetTimer);
+    }
     button.textContent = message;
-    setTimeout(function() { button.textContent = originalText; }, 2000);
+    profileWechatCopyResetTimer = setTimeout(function() {
+      button.textContent = '复制微信号';
+      profileWechatCopyResetTimer = null;
+    }, 2000);
   }
 
   function fallbackCopyProfileWechat() {
@@ -291,7 +297,12 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
       .then(function(data) {
         if (data && data.error) throw new Error(data.error);
         setProfileFeedbackStatus('已提交，我们会尽快查看。');
-        closeProfileFeedback();
+        messageField.value = '';
+        contactField.value = '';
+        var closeButton = document.getElementById('profileFeedbackClose');
+        if (closeButton && typeof closeButton.focus === 'function') {
+          closeButton.focus();
+        }
         return true;
       })
       .catch(function() {
