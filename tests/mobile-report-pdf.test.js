@@ -191,7 +191,7 @@ function extractOpenReport() {
 
 function extractBuildReportHTML() {
   const source = read('js/result.js');
-  const match = source.match(/function buildReportHTML\(\) \{[\s\S]*?\n    return html;\n\}/);
+  const match = source.match(/function buildReportHTML\(\) \{[\s\S]*?\r?\n    return html;\r?\n\}/);
   assert.ok(match, 'result.js must retain the real report builder');
   return match[0];
 }
