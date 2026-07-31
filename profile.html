@@ -82,7 +82,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
 
 <div id="profileFeedbackDialog" class="profile-feedback" role="dialog" aria-modal="true" aria-labelledby="profileFeedbackTitle" hidden>
   <form class="profile-feedback__form" onsubmit="submitProfileFeedback(); return false;">
-    <button class="profile-feedback__close" type="button" aria-label="关闭" onclick="closeProfileFeedback()">×</button>
+    <button class="profile-feedback__close" id="profileFeedbackClose" type="button" aria-label="关闭" onclick="closeProfileFeedback()">×</button>
     <h2 id="profileFeedbackTitle" class="profile-feedback__title">问题反馈</h2>
     <p class="profile-feedback__intro">请描述遇到的问题，我们会尽快查看。</p>
     <label class="profile-feedback__label" for="profileFeedbackMessage">问题或建议</label>
@@ -99,6 +99,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
 (function(){
   var profileFeedbackOpener = null;
   var profileFeedbackSubmitting = false;
+  var profileFeedbackBackgroundState = [];
 
   function setProfileCustomerServiceStatus(message) {
     var status = document.getElementById('profileCustomerServiceStatus');
@@ -160,12 +161,81 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
     return Promise.resolve(useFallback());
   };
 
+  function restoreProfileFeedbackBackground() {
+    var previousState = profileFeedbackBackgroundState;
+    profileFeedbackBackgroundState = [];
+    previousState.forEach(function(entry) {
+      if (entry.usesInert) {
+        try { entry.element.inert = entry.inert; } catch (error) {}
+        return;
+      }
+      if (entry.hadAriaHidden) {
+        entry.element.setAttribute('aria-hidden', entry.ariaHidden);
+      } else {
+        entry.element.removeAttribute('aria-hidden');
+      }
+      if (entry.element.style) {
+        entry.element.style.pointerEvents = entry.pointerEvents;
+      }
+    });
+  }
+
+  function suppressProfileFeedbackBackground(dialog) {
+    restoreProfileFeedbackBackground();
+    if (!document.body || !document.body.children) return;
+
+    Array.prototype.forEach.call(document.body.children, function(element) {
+      if (element === dialog || !element || typeof element.setAttribute !== 'function') return;
+
+      if ('inert' in element) {
+        var previousInert = element.inert;
+        try {
+          element.inert = true;
+          profileFeedbackBackgroundState.push({
+            element: element,
+            usesInert: true,
+            inert: previousInert
+          });
+          return;
+        } catch (error) {}
+      }
+
+      var hadAriaHidden = typeof element.hasAttribute === 'function'
+        && element.hasAttribute('aria-hidden');
+      profileFeedbackBackgroundState.push({
+        element: element,
+        usesInert: false,
+        hadAriaHidden: hadAriaHidden,
+        ariaHidden: element.getAttribute('aria-hidden'),
+        pointerEvents: element.style ? element.style.pointerEvents : ''
+      });
+      element.setAttribute('aria-hidden', 'true');
+      if (element.style) element.style.pointerEvents = 'none';
+    });
+  }
+
+  function profileFeedbackControls(dialog) {
+    if (!dialog || typeof dialog.querySelectorAll !== 'function') return [];
+    var controls = dialog.querySelectorAll(
+      'a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
+    );
+    return Array.prototype.filter.call(controls, function(control) {
+      if (control.disabled || control.hidden) return false;
+      return typeof control.getClientRects !== 'function' || control.getClientRects().length > 0;
+    });
+  }
+
   window.openProfileFeedback = function(opener) {
     var dialog = document.getElementById('profileFeedbackDialog');
     var message = document.getElementById('profileFeedbackMessage');
     if (!dialog || !message) return;
+    if (!dialog.hidden) {
+      message.focus();
+      return;
+    }
     profileFeedbackOpener = opener || document.activeElement;
     setProfileFeedbackStatus('');
+    suppressProfileFeedbackBackground(dialog);
     dialog.hidden = false;
     message.focus();
   };
@@ -174,6 +244,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
     var dialog = document.getElementById('profileFeedbackDialog');
     if (!dialog || dialog.hidden) return;
     dialog.hidden = true;
+    restoreProfileFeedbackBackground();
     if (profileFeedbackOpener && typeof profileFeedbackOpener.focus === 'function') {
       profileFeedbackOpener.focus();
     }
@@ -220,6 +291,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
       .then(function(data) {
         if (data && data.error) throw new Error(data.error);
         setProfileFeedbackStatus('已提交，我们会尽快查看。');
+        closeProfileFeedback();
         return true;
       })
       .catch(function() {
@@ -237,9 +309,28 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
   if (document.addEventListener) {
     document.addEventListener('keydown', function(event) {
       var dialog = document.getElementById('profileFeedbackDialog');
-      if (event.key === 'Escape' && dialog && !dialog.hidden) {
+      if (!dialog || dialog.hidden) return;
+      if (event.key === 'Escape') {
         event.preventDefault();
         closeProfileFeedback();
+        return;
+      }
+      if (event.key === 'Tab') {
+        var controls = profileFeedbackControls(dialog);
+        if (!controls.length) {
+          event.preventDefault();
+          return;
+        }
+        var first = controls[0];
+        var last = controls[controls.length - 1];
+        var active = document.activeElement;
+        if (event.shiftKey && (active === first || !dialog.contains(active))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (active === last || !dialog.contains(active))) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     });
   }

@@ -48,28 +48,55 @@ function runCopy({ clipboard, execCommandResult = true } = {}) {
 function runFeedback({ fetchImpl } = {}) {
   const listeners = {};
   const requests = [];
-  const makeElement = (overrides = {}) => Object.assign({
-    hidden: false,
-    disabled: false,
-    textContent: '',
-    value: '',
-    style: {},
-    focus() { document.activeElement = this; },
-    setAttribute() {},
-    removeAttribute() {}
-  }, overrides);
+  const makeElement = (overrides = {}) => {
+    const attributes = new Map();
+    return Object.assign({
+      hidden: false,
+      disabled: false,
+      textContent: '',
+      value: '',
+      style: {},
+      focus() { document.activeElement = this; },
+      getClientRects() { return this.hidden ? [] : [{}]; },
+      hasAttribute(name) { return attributes.has(name); },
+      getAttribute(name) { return attributes.has(name) ? attributes.get(name) : null; },
+      setAttribute(name, value) { attributes.set(name, String(value)); },
+      removeAttribute(name) { attributes.delete(name); }
+    }, overrides);
+  };
   const elements = {
     content: makeElement({ innerHTML: '' }),
+    backgroundWithInert: makeElement({ inert: false }),
+    backgroundWithAriaFallback: makeElement(),
     profileFeedbackDialog: makeElement({ hidden: true }),
+    profileFeedbackClose: makeElement(),
     profileFeedbackMessage: makeElement(),
     profileFeedbackContact: makeElement(),
     profileFeedbackSubmit: makeElement({ textContent: '提交反馈' }),
     profileFeedbackStatus: makeElement(),
     profileCustomerServiceStatus: makeElement()
   };
+  elements.backgroundWithAriaFallback.setAttribute('aria-hidden', 'false');
+  elements.backgroundWithAriaFallback.style.pointerEvents = 'auto';
+  const dialogControls = [
+    elements.profileFeedbackClose,
+    elements.profileFeedbackMessage,
+    elements.profileFeedbackContact,
+    elements.profileFeedbackSubmit
+  ];
+  elements.profileFeedbackDialog.contains = node => dialogControls.includes(node);
+  elements.profileFeedbackDialog.querySelectorAll = () => dialogControls;
   const document = {
     activeElement: null,
-    body: { appendChild() {}, removeChild() {} },
+    body: {
+      children: [
+        elements.backgroundWithInert,
+        elements.backgroundWithAriaFallback,
+        elements.profileFeedbackDialog
+      ],
+      appendChild() {},
+      removeChild() {}
+    },
     getElementById(id) { return elements[id] || null; },
     createElement() { return makeElement({ select() {} }); },
     execCommand() { return true; },
@@ -246,9 +273,78 @@ test('dialog opens only on demand, focuses the message, closes on Escape, and re
   context.openProfileFeedback(opener);
   assert.equal(elements.profileFeedbackDialog.hidden, false);
   assert.equal(document.activeElement, elements.profileFeedbackMessage);
+  assert.equal(elements.backgroundWithInert.inert, true);
+  assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'true');
 
   listeners.keydown({ key: 'Escape', preventDefault() {} });
   assert.equal(elements.profileFeedbackDialog.hidden, true);
+  assert.equal(elements.backgroundWithInert.inert, false);
+  assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'false');
+  assert.equal(opener.focusCalled, 1);
+  assert.equal(document.activeElement, opener);
+});
+
+test('dialog wraps Tab and Shift+Tab among visible enabled controls', () => {
+  const { context, document, elements, listeners } = runFeedback();
+  context.openProfileFeedback({ focus() {} });
+  elements.profileFeedbackContact.hidden = true;
+  elements.profileFeedbackSubmit.disabled = true;
+
+  document.activeElement = elements.profileFeedbackMessage;
+  let forwardPrevented = false;
+  listeners.keydown({
+    key: 'Tab',
+    shiftKey: false,
+    preventDefault() { forwardPrevented = true; }
+  });
+  assert.equal(forwardPrevented, true);
+  assert.equal(document.activeElement, elements.profileFeedbackClose);
+
+  document.activeElement = elements.profileFeedbackClose;
+  let backwardPrevented = false;
+  listeners.keydown({
+    key: 'Tab',
+    shiftKey: true,
+    preventDefault() { backwardPrevented = true; }
+  });
+  assert.equal(backwardPrevented, true);
+  assert.equal(document.activeElement, elements.profileFeedbackMessage);
+});
+
+test('explicit close restores prior background state and opener focus', () => {
+  const { context, document, elements } = runFeedback();
+  const opener = { focusCalled: 0, focus() { this.focusCalled += 1; document.activeElement = this; } };
+
+  context.openProfileFeedback(opener);
+
+  assert.equal(elements.backgroundWithInert.inert, true);
+  assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'true');
+  assert.equal(elements.backgroundWithAriaFallback.style.pointerEvents, 'none');
+  assert.equal(elements.profileFeedbackDialog.getAttribute('aria-hidden'), null);
+
+  context.closeProfileFeedback();
+
+  assert.equal(elements.backgroundWithInert.inert, false);
+  assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'false');
+  assert.equal(elements.backgroundWithAriaFallback.style.pointerEvents, 'auto');
+  assert.equal(opener.focusCalled, 1);
+  assert.equal(document.activeElement, opener);
+});
+
+test('successful submission closes the dialog and restores background and opener focus', async () => {
+  const { context, document, elements } = runFeedback();
+  const opener = { focusCalled: 0, focus() { this.focusCalled += 1; document.activeElement = this; } };
+  context.openProfileFeedback(opener);
+  elements.profileFeedbackMessage.value = '报告无法查看';
+
+  const result = await context.submitProfileFeedback();
+
+  assert.equal(result, true);
+  assert.equal(elements.profileFeedbackStatus.textContent, '已提交，我们会尽快查看。');
+  assert.equal(elements.profileFeedbackDialog.hidden, true);
+  assert.equal(elements.backgroundWithInert.inert, false);
+  assert.equal(elements.backgroundWithAriaFallback.getAttribute('aria-hidden'), 'false');
+  assert.equal(elements.backgroundWithAriaFallback.style.pointerEvents, 'auto');
   assert.equal(opener.focusCalled, 1);
   assert.equal(document.activeElement, opener);
 });
