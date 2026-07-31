@@ -28,6 +28,18 @@
 .empty-state p{font-size:13px;line-height:2}
 .login-prompt{text-align:center;padding:60px 20px}
 .login-prompt .btn{padding:12px 32px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none}
+.profile-customer-service{margin:24px 0 0;padding:20px;border:1px solid rgba(181,64,56,.22);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(250,247,239,.94));box-shadow:0 10px 24px rgba(68,54,40,.08)}
+.profile-customer-service__kicker{margin:0 0 6px;color:#a55044;font-size:11px;font-weight:700;letter-spacing:2px}
+.profile-customer-service__title{margin:0;color:var(--tx);font-size:19px}
+.profile-customer-service__body{margin:10px 0 14px;color:var(--tx2);font-size:13px;line-height:1.75}
+.profile-customer-service__wechat{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:10px;background:rgba(67,126,89,.08);color:var(--tx2);font-size:12px}
+.profile-customer-service__id{color:#2f7550;font-size:16px;font-weight:800;letter-spacing:1px}
+.profile-customer-service__actions{display:flex;gap:10px;margin-top:14px}
+.profile-customer-service__action{flex:1;min-height:44px;padding:10px 14px;border-radius:9px;font:600 13px/1 inherit;cursor:pointer}
+.profile-customer-service__action--primary{border:1px solid #b95047;background:#b95047;color:#fff}
+.profile-customer-service__action--secondary{border:1px solid rgba(67,126,89,.35);background:rgba(67,126,89,.08);color:#2f7550}
+.profile-customer-service__status{min-height:18px;margin:10px 0 0;color:var(--tx3);font-size:12px}
+@media (max-width:480px){.profile-customer-service__wechat{align-items:flex-start;flex-direction:column}.profile-customer-service__actions{flex-direction:column}.profile-customer-service__action{min-height:44px}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 </style>
@@ -42,11 +54,81 @@
   <h1>我的档案</h1>
   <div class="sub">积分 · 记录 · 排盘</div>
   <div id="content"></div>
+  <section id="profileCustomerService" class="profile-customer-service" aria-labelledby="profileCustomerServiceTitle">
+    <p class="profile-customer-service__kicker">使用帮助</p>
+    <h2 id="profileCustomerServiceTitle" class="profile-customer-service__title">联系客服</h2>
+    <p class="profile-customer-service__body">支付、报告恢复或使用异常，都可以联系我们。</p>
+    <div class="profile-customer-service__wechat"><span>微信号</span><strong class="profile-customer-service__id">EriverLife</strong></div>
+    <div class="profile-customer-service__actions">
+      <button id="profileWechatCopy" class="profile-customer-service__action profile-customer-service__action--primary" type="button" onclick="copyProfileWechat(this)">复制微信号</button>
+      <button class="profile-customer-service__action profile-customer-service__action--secondary" type="button" onclick="showProfileFeedback()">问题反馈</button>
+    </div>
+    <p id="profileCustomerServiceStatus" class="profile-customer-service__status" aria-live="polite"></p>
+  </section>
 </div>
 
 <script src="js/auth.js"></script>
 <script>
 (function(){
+  function setProfileCustomerServiceStatus(message) {
+    var status = document.getElementById('profileCustomerServiceStatus');
+    if (status) status.textContent = message;
+  }
+
+  function temporaryButtonMessage(button, message) {
+    var originalText = button.textContent;
+    button.textContent = message;
+    setTimeout(function() { button.textContent = originalText; }, 2000);
+  }
+
+  function fallbackCopyProfileWechat() {
+    var textarea = document.createElement('textarea');
+    textarea.value = 'EriverLife';
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    try {
+      textarea.select();
+      return document.execCommand('copy');
+    } catch (error) {
+      return false;
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  window.copyProfileWechat = function(button) {
+    function onCopied() {
+      temporaryButtonMessage(button, '已复制');
+      setProfileCustomerServiceStatus('微信号已复制，可以直接添加客服。');
+      return true;
+    }
+
+    function onCopyFailed() {
+      temporaryButtonMessage(button, '请手动复制');
+      setProfileCustomerServiceStatus('复制失败，请手动添加微信号 EriverLife。');
+      return false;
+    }
+
+    function useFallback() {
+      return fallbackCopyProfileWechat() ? onCopied() : onCopyFailed();
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      try {
+        return Promise.resolve(navigator.clipboard.writeText('EriverLife')).then(onCopied, useFallback);
+      } catch (error) {
+        return Promise.resolve(useFallback());
+      }
+    }
+    return Promise.resolve(useFallback());
+  };
+
+  window.showProfileFeedback = function() {
+    setProfileCustomerServiceStatus('请添加微信号 EriverLife，并说明遇到的问题，我们会尽快协助。');
+  };
+
   var content = document.getElementById('content');
 
   function esc(value) {
