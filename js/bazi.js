@@ -3888,6 +3888,19 @@ function getPattern(bazi) {
  * 喜用忌神判定 — 基于日主旺衰 + 格局
  * 返回喜神/用神/忌神的五行元素列表和推理
  */
+function normalizeYongJiLists(xiShen, yongShen, jiShen) {
+  var valid = ['木','火','土','金','水'];
+  var unique = function(list) {
+    return Array.from(new Set((list || []).filter(function(wx) {
+      return valid.indexOf(wx) >= 0;
+    })));
+  };
+  var yong = unique(yongShen).slice(0, 2);
+  var xi = unique(yong.concat(xiShen));
+  var ji = unique(jiShen).filter(function(wx) { return xi.indexOf(wx) < 0; });
+  return { xiShen: xi, yongShen: yong, jiShen: ji };
+}
+
 function getYongJi(bazi) {
   var dmStr = calcDayMasterStrength(bazi);
   var dmLevel = dmStr.level;
@@ -3912,9 +3925,10 @@ function getYongJi(bazi) {
     reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。⚠️注意：从格判定的喜忌与普通扶抑法相反。举例：木为食伤（泄气），正常身弱忌泄，但此命已弃命从势，故木反为喜。'
       + '喜：' + xiShen.join('、') + '来顺势助旺。'
       + '忌：' + jiShen.join('、') + '来逆势破格。';
+    var congLists = normalizeYongJiLists(xiShen, yongShen, jiShen);
     return {
       dayMasterLevel: dmLevel, dayMasterScore: dmStr.score,
-      xiShen: xiShen, yongShen: yongShen, jiShen: jiShen,
+      xiShen: congLists.xiShen, yongShen: congLists.yongShen, jiShen: congLists.jiShen,
       reasoning: reasoning, congGe: cong
     };
   }
@@ -4082,12 +4096,13 @@ function getYongJi(bazi) {
     reasoning += ' 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。';
   }
 
+  var normalizedLists = normalizeYongJiLists(xiShen, yongShen, jiShen);
   return {
     dayMasterLevel: dmLevel,
     dayMasterScore: dmStr.score,
-    xiShen: xiShen,           // 喜神（有利的五行）
-    yongShen: yongShen,       // 用神（最关键的五行）
-    jiShen: jiShen,           // 忌神（不利的五行）
+    xiShen: normalizedLists.xiShen,           // 喜神（包含核心用神）
+    yongShen: normalizedLists.yongShen,       // 用神（最关键的五行）
+    jiShen: normalizedLists.jiShen,           // 忌神（与喜用互斥）
     reasoning: reasoning
   };
 }
