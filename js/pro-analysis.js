@@ -14,12 +14,17 @@
   function init(){
     if(typeof _bazi==='undefined'||!_bazi){setTimeout(init,300);return}
     var bazi=_bazi;
+    var facts=null;
+    try{facts=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getProfessionalReportFacts?BaZiCalculator.getProfessionalReportFacts(bazi):null}catch(e){facts=null}
     hideShensha();
     try{var sec=document.getElementById('proSection');if(sec)sec.classList.add('drawer-open');var arrow=document.querySelector('#proSection .drawer-arrow');if(arrow)arrow.style.transform='rotate(90deg)'}catch(e){}
     var body=document.querySelector('#proSection .drawer-body');
     if(!body)return;
 
     body.innerHTML=''+
+      '<div class="pro-sub" style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.16);border-radius:12px;padding:14px 16px;margin-bottom:14px">'+
+        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:8px">命局总纲</div>'+
+        '<div id="reportSummary"></div></div>'+
       '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:16px;margin-bottom:14px">'+
         '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:12px">📐 四柱生克 · 刑冲合害</div>'+
         '<div id="pillarAnalysis"></div>'+
@@ -28,17 +33,25 @@
       '</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
         '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px">'+
-          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">⚡ 日主能量</div>'+
+          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">⚡ 旺衰依据</div>'+
           '<div id="dayMasterPower"></div></div>'+
         '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px">'+
-          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">📋 格局判定</div>'+
+          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">📋 格局成败</div>'+
           '<div id="patternAnalysis"></div></div>'+
       '</div>'+
       '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px">'+
         '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">🎯 喜用忌神</div>'+
-        '<div id="xiyongAnalysis"></div></div>';
+        '<div id="xiyongAnalysis"></div></div>'+
+      '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px;margin-top:14px">'+
+        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">原局作用链</div>'+
+        '<div id="actionChainAnalysis"></div></div>';
 
-    renderPillars(bazi);renderPower(bazi);renderPattern(bazi);renderXiyong(bazi);drawRadar(bazi);
+    renderSummary(facts);renderPillars(bazi);renderPower(bazi,facts);renderPattern(bazi,facts);renderXiyong(bazi,facts);renderActionChains(facts);drawRadar(bazi);
+  }
+
+  function renderSummary(facts){
+    var c=document.getElementById('reportSummary');if(!c)return;
+    c.innerHTML='<p style="color:var(--tx);font-size:12px;line-height:1.75;margin:0">'+(facts&&facts.summary?facts.summary:'专业数据暂不可用')+'</p>';
   }
 
   function hideShensha(){
@@ -141,7 +154,7 @@
     c.innerHTML=h;
 }
 
-function renderPower(bazi){
+function renderPower(bazi,facts){
     var c=document.getElementById('dayMasterPower');if(!c)return;
     var dayGan=bazi.day.gan,dgWx=TG[dayGan]||'?';
     var mz=bazi.month.zhi,mWx=DZ[mz];
@@ -152,7 +165,7 @@ function renderPower(bazi){
                   申:'申月·秋金当令',酉:'酉月·秋金当令',戌:'戌月·秋土当令',亥:'亥月·冬水当令'};
 
     // ---- 子平法：得令·得地·得势 评分 ----
-    var dm=typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和"};var l=dm.score||50;
+    var dm=facts&&facts.strength?facts.strength:(typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和",evidence:[]});var l=dm.score||50;
     var lb=dm.level||'中和';
     var co=(lb==='极强'||lb==='偏强')?'#e07050':lb==='中和'?'#c9a84c':'#5b9fd4';
     var emoji=(lb==='极强'||lb==='偏强')?'🔥':lb==='中和'?'⚖️':'💧';
@@ -181,6 +194,12 @@ function renderPower(bazi){
       detail=dayGan+dgWx+'日主生于'+yl+'，底气充足。综合评定身强（'+l+'分），能担财官，运势自主性较强。';
     }
 
+    if(facts&&facts.strength&&facts.strength.detail)detail=facts.strength.detail;
+    var evidenceHtml='';
+    (dm.evidence||[]).forEach(function(item){
+      evidenceHtml+='<div style="margin-top:5px;padding:6px 8px;border-left:2px solid rgba(201,168,76,.45);background:rgba(201,168,76,.035);font-size:10px;color:var(--tx2);line-height:1.55"><b style="color:var(--gold-l)">'+item.category+'</b> · '+item.detail+'</div>';
+    });
+
     // ---- 动态滴天髓引文 ----
     var dtQuote='';
     if(typeof DITIANSUI!=='undefined'&&DITIANSUI[dayGan]){
@@ -197,14 +216,15 @@ function renderPower(bazi){
       '<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:'+l+'%;height:100%;background:linear-gradient(90deg,#5b9fd4,#c9a84c,#e07050);border-radius:3px"></div></div>'+
       '<span style="font-size:9px;color:var(--tx3)">强</span><span style="font-weight:700;color:'+co+';font-size:12px">'+l+'%</span></div>'+
       '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;font-size:10px;color:var(--tx2);line-height:1.5">'+detail+'</div>'+
+      evidenceHtml+
       '<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-style:italic">'+dtQuote+'</div>';
 }
 
-function renderPattern(bazi){
+function renderPattern(bazi,facts){
     var c=document.getElementById('patternAnalysis');if(!c)return;
     // 统一使用 BaZiCalculator.getPattern（与 result.js 一致）
     var p=null;
-    try{p=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getPattern?BaZiCalculator.getPattern(bazi):null}catch(e){p=null}
+    try{p=facts&&facts.pattern?facts.pattern:(typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getPattern?BaZiCalculator.getPattern(bazi):null)}catch(e){p=null}
     if(!p||!p.name){c.innerHTML='<p style="color:var(--gold-l);font-size:15px;font-weight:700;margin-bottom:4px">格局不显</p><p style="color:var(--tx2);font-size:12px;line-height:1.6">需结合天干透出与地支合局综合判断。</p>';return}
 
     var source=p.source||('月令'+p.monthZhi+' · 五行'+p.monthWx);
@@ -221,7 +241,29 @@ function renderPattern(bazi){
   }
 
   // ============ 喜用忌神 ============
-  function renderXiyong(bazi){var c=document.getElementById("xiyongAnalysis");if(!c)return;try{var yj=typeof BaZiCalculator!=="undefined"&&BaZiCalculator.getYongJi?BaZiCalculator.getYongJi(bazi):null;if(!yj||!yj.yongShen){c.innerHTML="<p>喜用忌神数据暂不可用</p>";return}var wxColors={木:"#6db86d",火:"#e07050",土:"#c9a84c",金:"#e8d5a3",水:"#5b9fd4"};var h="";h+="<div style=margin-bottom:8px><span style=font-size:12px;color:var(--tx3)>用神</span><br>";if(yj.yongShen&&yj.yongShen.length){yj.yongShen.forEach(function(w){h+="<span style=display:inline-block;padding:3px 12px;margin:2px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;background:"+(wxColors[w]||"#888")+">"+w+"</span>"})}else h+="<span style=color:var(--tx3)>—</span>";h+="</div>";h+="<div style=margin-bottom:8px><span style=font-size:12px;color:var(--tx3)>喜神</span><br>";if(yj.xiShen&&yj.xiShen.length){yj.xiShen.forEach(function(w){h+="<span style=display:inline-block;padding:3px 12px;margin:2px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;background:"+(wxColors[w]||"#888")+">"+w+"</span>"})}else h+="<span style=color:var(--tx3)>—</span>";h+="</div>";h+="<div style=margin-bottom:10px><span style=font-size:12px;color:var(--tx3)>忌神</span><br>";if(yj.jiShen&&yj.jiShen.length){yj.jiShen.forEach(function(w){h+="<span style=display:inline-block;padding:3px 12px;margin:2px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;background:"+(wxColors[w]||"#888")+">"+w+"</span>"})}else h+="<span style=color:var(--tx3)>—</span>";h+="</div>";h+="<p style=color:var(--tx2);font-size:11px;line-height:1.6;padding:8px;background:rgba(255,255,255,.02);border-radius:6px>"+yj.reasoning+"</p>";c.innerHTML=h;}catch(e){c.innerHTML="<p>喜用忌神数据暂不可用</p>"}}
+  function renderXiyong(bazi,facts){
+    var c=document.getElementById('xiyongAnalysis');if(!c)return;
+    try{
+      var yj=facts&&facts.yongJi?facts.yongJi:(typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getYongJi?BaZiCalculator.getYongJi(bazi):null);
+      if(!yj||!yj.yongShen){c.innerHTML='<p>喜用忌神数据暂不可用</p>';return}
+      var wxColors={木:'#6db86d',火:'#e07050',土:'#c9a84c',金:'#b99a54',水:'#5b9fd4'};
+      var h='<div style="font-size:10px;color:var(--tx2);line-height:1.6;margin-bottom:9px"><b style="color:var(--gold-l)">取用方法：</b>'+(yj.method||'扶抑为主')+'<br>'+(yj.primaryReason||yj.reasoning||'')+'</div>';
+      [['用神',yj.yongShen],['喜神',yj.xiShen],['忌神',yj.jiShen]].forEach(function(group){
+        h+='<div style="margin-bottom:8px"><span style="font-size:12px;color:var(--tx3)">'+group[0]+'</span><br>';
+        if(group[1]&&group[1].length){group[1].forEach(function(w){h+='<span style="display:inline-block;padding:3px 12px;margin:2px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;background:'+(wxColors[w]||'#888')+'">'+w+'</span>'})}else h+='<span style="color:var(--tx3)">—</span>';
+        h+='</div>';
+      });
+      Object.keys(yj.elementReasons||{}).forEach(function(w){var item=yj.elementReasons[w];h+='<div style="font-size:10px;color:var(--tx2);line-height:1.55;margin-top:5px"><b style="color:'+(wxColors[w]||'var(--gold-l)')+'">'+item.role+'·'+w+'</b>：'+(item.reasons||[]).join('；')+'</div>'});
+      c.innerHTML=h;
+    }catch(e){c.innerHTML='<p>喜用忌神数据暂不可用</p>'}
+  }
+
+  function renderActionChains(facts){
+    var c=document.getElementById('actionChainAnalysis');if(!c)return;
+    var chains=facts&&facts.actionChains?facts.actionChains:[];
+    if(!chains.length){c.innerHTML='<p style="font-size:11px;color:var(--tx3);margin:0">原局作用关系暂不可用</p>';return}
+    c.innerHTML=chains.map(function(item,index){return '<div style="display:grid;grid-template-columns:24px 1fr;gap:8px;margin-top:'+(index?'8':'0')+'px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:8px"><span style="color:var(--gold-l);font-size:11px;font-weight:700">'+(index+1)+'</span><div><b style="color:var(--tx);font-size:11px">'+item.title+'</b><div style="color:var(--tx2);font-size:10px;line-height:1.55;margin-top:2px">'+item.detail+'</div></div></div>'}).join('');
+  }
 
 function drawRadar(bazi){
     if(!bazi.wuXingCount)return;
