@@ -4532,6 +4532,70 @@ function getCangGanDepth(bazi) {
   return result;
 }
 
+/**
+ * 深度报告的唯一专业事实汇总。只组合已计算结论，不重新判断旺衰或喜用忌。
+ */
+function getProfessionalReportFacts(bazi) {
+  var strength = calcDayMasterStrength(bazi);
+  var pattern = getPattern(bazi);
+  var yongJi = getYongJi(bazi);
+  var candidates = [];
+
+  var addChain = function(priority, title, detail) {
+    if (!title || !detail) return;
+    candidates.push({ priority:priority, title:title, detail:detail });
+  };
+
+  addChain(4, pattern.name + '·' + pattern.status,
+    pattern.status === '破格' ? (pattern.breakReasons || []).join('；') : pattern.source);
+  getGanHe(bazi).forEach(function(item) {
+    addChain(item.isTransformed ? 4 : 2, item.status, item.desc);
+  });
+  getSanHui(bazi).forEach(function(item) {
+    addChain(4, item.name, item.desc);
+  });
+  getBranchRelations(bazi).forEach(function(group) {
+    (group.relations || []).forEach(function(item) {
+      var priority = (item.type === '六冲' || item.type === '相刑' || item.type === '三合局') ? 3 : 2;
+      addChain(priority, group.from + '↔' + group.to + '·' + item.type, item.detail);
+    });
+  });
+  getPillarRelations(bazi).forEach(function(item) {
+    (item.details || []).forEach(function(detail) {
+      addChain(1, item.from + '→' + item.to, detail);
+    });
+  });
+
+  addChain(3, '取用核心', yongJi.primaryReason);
+  addChain(1, '旺衰总结', strength.detail);
+
+  var seen = {};
+  var actionChains = candidates.sort(function(a, b) {
+    return b.priority - a.priority || a.title.localeCompare(b.title, 'zh-CN');
+  }).filter(function(item) {
+    var key = item.title + '|' + item.detail;
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  }).slice(0, 4).map(function(item) {
+    return { title:item.title, detail:item.detail };
+  });
+
+  return {
+    summary: bazi.day.gan + '日主，综合评定' + strength.level + '（' + strength.score + '分）；候选' + pattern.name
+      + '，当前判为' + pattern.status + '；以' + yongJi.yongShen.join('、') + '为核心用神。',
+    strength: {
+      level: strength.level,
+      score: strength.score,
+      detail: strength.detail,
+      evidence: yongJi.evidence.filter(function(item) { return item.category === '旺衰' || item.category === '调候'; })
+    },
+    yongJi: yongJi,
+    pattern: pattern,
+    actionChains: actionChains
+  };
+}
+
 window.BaZiCalculator = {
     calculate: calculateBaZi,
     buildFromPillars: buildBaZiFromPillars,
@@ -4560,6 +4624,7 @@ window.BaZiCalculator = {
     getGanHe: getGanHe,
     getSanHui: getSanHui,
     getCangGanDepth: getCangGanDepth,
+    getProfessionalReportFacts: getProfessionalReportFacts,
     analyzeCharacter: analyzeCharacter,
     analyzeWealth: analyzeWealth,
     analyzeFortune: analyzeFortune,

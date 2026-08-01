@@ -63,3 +63,20 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
   assert.equal(winterEarth.method, '调候优先');
   assert.ok(winterEarth.evidence.some(row => row.category === '调候'));
 });
+
+test('深度报告事实对同一命盘生成稳定的专业证据链', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['乙卯', '辛酉', '甲寅', '戊辰']),
+    'male'
+  );
+  const first = calculator.getProfessionalReportFacts(chart);
+  const second = calculator.getProfessionalReportFacts(chart);
+
+  assert.equal(JSON.stringify(first), JSON.stringify(second));
+  assert.equal(first.pattern.status, '破格');
+  assert.ok(first.summary.length >= 20);
+  assert.ok(first.strength.evidence.length > 0);
+  assert.ok(first.actionChains.length >= 2 && first.actionChains.length <= 4);
+  assert.equal(first.yongJi.jiShen.filter(wx => first.yongJi.xiShen.includes(wx)).length, 0);
+});
