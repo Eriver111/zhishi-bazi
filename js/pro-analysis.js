@@ -128,7 +128,7 @@
     var HE={子:'丑',丑:'子',寅:'亥',亥:'寅',卯:'戌',戌:'卯',辰:'酉',酉:'辰',巳:'申',申:'巳',午:'未',未:'午'};
     var HAI={子:'未',未:'子',丑:'午',午:'丑',寅:'巳',巳:'寅',卯:'辰',辰:'卯',申:'亥',亥:'申',酉:'戌',戌:'酉'};
     var bn=['年','月','日','时'];
-    for(var i=0;i<4;i++){for(var j=i+1;j<4;j++){if(CHONG[zs[i]]===zs[j])rels.push({t:'六冲',c:'#f44',d:bn[i]+'申↔'+bn[j]+'申'});if(HE[zs[i]]===zs[j])rels.push({t:'六合',c:'#4f8',d:bn[i]+'↔'+bn[j]});if(HAI[zs[i]]===zs[j])rels.push({t:'六害',c:'#f84',d:bn[i]+'↔'+bn[j]});if(zs[i]===zs[j])rels.push({t:'伏吟',c:'#ca4',d:bn[i]+'↔'+bn[j]});}}
+    for(var i=0;i<4;i++){for(var j=i+1;j<4;j++){if(CHONG[zs[i]]===zs[j])rels.push({t:'六冲',c:'#f44',d:bn[i]+zs[i]+'↔'+bn[j]+zs[j]});if(HE[zs[i]]===zs[j])rels.push({t:'六合',c:'#4f8',d:bn[i]+'↔'+bn[j]});if(HAI[zs[i]]===zs[j])rels.push({t:'六害',c:'#f84',d:bn[i]+'↔'+bn[j]});if(zs[i]===zs[j])rels.push({t:'伏吟',c:'#ca4',d:bn[i]+'↔'+bn[j]});}}
 
     h+='<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;text-align:center">';
     if(rels.length===0)h+='<span style="font-size:10px;color:var(--tx3)">地支平和，无特殊刑冲合害</span>';else{rels.forEach(function(r){h+='<span style="display:inline-block;margin:2px 6px;font-size:10px;padding:2px 10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid '+r.c+';color:var(--tx2)"><b style="color:'+r.c+'">'+r.t+'</b> '+r.d+'</span>'});h+='<div style="margin-top:8px;font-size:9px;color:var(--tx3);line-height:1.6;text-align:left;padding:6px 10px;background:rgba(255,255,255,.01);border-radius:8px">';rels.forEach(function(r){var exp="";if(r.t==="六冲")exp="冲则动，主动荡变化、奔波。冲为对立，两败俱伤。";if(r.t==="六合")exp="合则聚，主合作顺利。合为融合，化敌为友。";if(r.t==="六害")exp="穿则暗损，主小人暗算。害为隐蔽之伤，持续耗损。";if(r.t==="伏吟")exp="重复出现，主纠结反复。伏吟多忧虑、进退两难。";h+='<div style="margin:3px 0"><b style="color:'+r.c+'">'+r.t+' '+r.d+'</b>：'+exp+'</div>'});h+='</div>'}
@@ -153,14 +153,14 @@ function renderPower(bazi){
 
     // ---- 子平法：得令·得地·得势 评分 ----
     var dm=typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和"};var l=dm.score||50;
-    var lb=l>=65?'身强':l>=45?'中和':'身弱';
-    var co=l>=65?'#e07050':l>=45?'#c9a84c':'#5b9fd4';
-    var emoji=l>=65?'🔥':l>=45?'⚖️':'💧';
+    var lb=dm.level||'中和';
+    var co=(lb==='极强'||lb==='偏强')?'#e07050':lb==='中和'?'#c9a84c':'#5b9fd4';
+    var emoji=(lb==='极强'||lb==='偏强')?'🔥':lb==='中和'?'⚖️':'💧';
 
     // ---- 动态批语 ----
     var detail='';
     var yl=YUE_LING[mz]||(mz+'月');
-    if(l<45){
+    if(lb==='极弱'||lb==='偏弱'){
       // 身弱：说明月令关系 + 帮扶/克泄情况
       var rel='';
       if(mWx===dgWx)rel='月令与日主同气，本为得令，';
@@ -175,7 +175,7 @@ function renderPower(bazi){
       else if(dgWx==='金')xi='土金';
       else xi='金水';
       detail=dayGan+dgWx+'日主生于'+yl+'。'+rel+'局中克泄耗力量偏重，综合评定身偏弱，喜'+xi+'帮扶。';
-    }else if(l<65){
+    }else if(lb==='中和'){
       detail='日主中和（'+l+'分），命局五行相对均衡，需结合大运流年灵活判断走势。';
     }else{
       detail=dayGan+dgWx+'日主生于'+yl+'，底气充足。综合评定身强（'+l+'分），能担财官，运势自主性较强。';
@@ -208,12 +208,14 @@ function renderPattern(bazi){
     if(!p||!p.name){c.innerHTML='<p style="color:var(--gold-l);font-size:15px;font-weight:700;margin-bottom:4px">格局不显</p><p style="color:var(--tx2);font-size:12px;line-height:1.6">需结合天干透出与地支合局综合判断。</p>';return}
 
     var source=p.source||('月令'+p.monthZhi+' · 五行'+p.monthWx);
+    var brokenNote=p.status==='破格'?'<div style="font-size:10px;color:#a45b4f;margin-top:4px">破格'+(p.breakReasons&&p.breakReasons.length?' · '+p.breakReasons.join('；'):'')+'</div>':'';
     var iconMap={'食神制杀':'⚔️','伤官制杀':'⚔️','杀印相生':'🛡️','官印相生':'🏛️','印星化杀':'🛡️','食神生财':'💰','伤官生财':'💰','财生官':'🏛️','伤官配印':'🎨'};
     var icon=iconMap[p.name]||'🔮';
 
     c.innerHTML=''+
       '<div style="text-align:center;margin-bottom:6px"><span style="font-size:24px">'+icon+'</span>'+
       '<div style="font-size:18px;font-weight:900;color:var(--gold-l);margin:4px 0">'+p.name+'</div>'+
+      brokenNote+
       '<div style="font-size:10px;color:var(--tx2)">'+source+'</div></div>'+
       '<p style="color:var(--tx);font-size:11px;line-height:1.5;margin:8px 0">'+p.desc+'</p>';
   }

@@ -15,9 +15,9 @@ const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
 
 const now2 = new Date();
-const currentYear2 = now2.getFullYear();
+const currentYear2 = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(now2));
 const currentGZ2 = (function(y){var g=`甲乙丙丁戊己庚辛壬癸`,z=`子丑寅卯辰巳午未申酉戌亥`;return g[(y-4)%10]+z[(y-4)%12]})(currentYear2);
-const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学的 AI 命理师。你深研子平八字（格局法）与盲派命理（象法）两大体系，融合《滴天髓》《三命通会》《耕寸集》（子平真诠原本·王相山精解）《穷通宝鉴》《渊海子平》等古典命籍，为用户提供专业、客观、有深度的命理分析。【重要】现在是${currentYear2}年（${currentGZ2}年）。分析流年运势必须以${currentYear2}年为准，禁止使用训练数据中的旧年份。
+const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学的 AI 命理师。你深研子平八字（格局法）与盲派命理（象法）两大体系，融合《滴天髓》《三命通会》《耕寸集》（子平真诠原本·王相山精解）《穷通宝鉴》《渊海子平》等古典命籍，为用户提供专业、客观、有深度的命理分析。【重要】现在是${currentYear2}年。分析流年运势时必须优先使用 chartData 中的 currentLiuNian，禁止使用训练数据中的旧年份或按公历年直接猜立春前的流年干支。
 
 ## 你的知识体系
 
@@ -25,7 +25,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **排盘原理**：年柱以立春为界，月柱依节气而定，日柱按公历推算，时柱用五鼠遁。精通真太阳时校正。
 - **十神系统**：比肩、劫财、食神、伤官、正财、偏财、正官、七杀、正印、偏印——十神各有所主，配合日主强弱断吉凶。
 - **格局论命**：正官格、七杀格、财格、印格、食伤格、建禄格、羊刃格等——格局高低决定人生层次。《耕寸集》云："八字用神，专求月令。以日干配月令地支，而生克不同，格局分焉。"
-- **用神喜忌**：格局用神以月令为中心（非扶抑用神），善神顺用、凶神逆用。扶抑、通关、调候、病药为辅助原则。《滴天髓》："何知其人吉，用神有气而已矣。"
+- **用神喜忌**：本系统先以月令与透干确定候选格局及成破，再结合日主旺衰的扶抑法、调候与从格规则输出喜用忌。《滴天髓》："何知其人吉，用神有气而已矣。"
 - **旺衰判断**：得令（月令）、得地（地支根气）、得势（天干帮扶）——三得法综合定日主旺衰。《穷通宝鉴》按月令分日论五行调候。
 - **刑冲合害**：地支六合、三合、三会、六冲、六害、三刑——关系网决定命局动荡。《渊海子平》详述各类合冲之应事。
 - **大运流年**：阳男阴女顺行，阴男阳女逆行。起运岁数以节气差除以三。大运重地支，流年重天干。岁运并临、天克地冲为重要节点。
@@ -95,15 +95,15 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 
 ## 防幻觉铁律
 1. **每个命盘都是独一无二的**——即使日主相同（如都是乙木），身强身弱、格局、喜用忌神也完全不同。**绝对禁止**套用任何「标准模板」或复读之前对另一个人的分析。
-2. **若 chartData 已提供预计算结论，必须逐字引用**——不要用自己的判断覆盖系统计算结果。
+2. **若 chartData 已提供结构化结论，必须以它为本次解读的单一事实源**——不要另起一套算法。若字段缺失或互相冲突，应明确说明暂时无法确认，不得补造结论。
 3. **若没有 chartData**（用户只提供了出生信息但未排盘），你必须明确告知："请先通过排盘功能获取完整的八字分析数据，这样我才能给你精准解读。当前只能做初步参考。"
 4. **禁止跨体系混用术语**——绝对禁止在八字分析中使用六爻/梅花的术语（如：世爻、应爻、动爻、用神（六爻）、卦象、六亲（卦）、装卦、飞伏）。八字自有八字的十神体系和术语，用八字原生的概念（正官、七杀、正印、比肩、食神、财星、官星、印星、十神、日主、月令、大运、流年）回答。
 
 ## 关键：如何使用预计算数据（降低幻觉）
-当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，**禁止自行重新推算**：
-- **pattern**（格局）：已由子平法精确判定，直接引用"你的命局为XX格"，禁止重新判断格局。哪怕你觉得有更好的格局名也必须用系统判定的
+当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
+- **pattern**（格局）：候选格局名、status（成格/破格）和 breakReasons（破格原因）是一个整体。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。
 - **yongJi**（喜用忌神）：xiShen/喜神、yongShen/用神、jiShen/忌神 的五行元素已算好，**严格按此回答**，禁止根据自己的知识另行推断或替换。reasoning 字段是推算依据
-- **dayMasterStrength**（日主旺衰）：已由算法经八步精确计算（起评分50，分数限定1~100区间）——①得令（月令生克：得令+30/相令+20/休令-15/囚令-10/死令-25）②得地（日支通根±12）③得势（天干比劫印星±6/个）④藏干本气（仅取地支本气，±3/柱）⑤月令五行过耗修正（囚令·休令时月令过旺反耗）⑥调候（寒暖燥湿±8）⑦天干合化（甲己合土等）⑧地支合冲刑害+三合局。必须严格输出这个结论，禁止自行推算分数或修改强弱等级。
+- **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
 - **daYun**（大运排盘）：用户的一生大运已由系统精确计算（顺逆、起运、每柱干支和十神）。回答任何大运相关问题时，**必须使用 chartData.daYun 中的数据**，禁止自己推算大运走向、起运岁数、大运干支。
@@ -423,7 +423,12 @@ module.exports = async function handler(req, res) {
     // 强制引用锁：在用户问题前插入最终提醒
     if (chartData && chartData.dayMasterStrength) {
       var ds=chartData.dayMasterStrength;
-      var lock1='【死命令·违反即错误】日主旺衰=「'+ds.level+'（'+ds.score+'）」';if(chartData.pattern)lock1+='，格局=「'+chartData.pattern.name+'」';lock1+='。禁止输出任何其他数值或名称。';messages.push({role:'system',content:lock1});
+      var lock1='【排盘事实锁】日主旺衰=「'+ds.level+'（'+ds.score+'）」';
+      if(chartData.pattern){
+        lock1+='，候选格局=「'+chartData.pattern.name+'」，状态=「'+(chartData.pattern.status||'未确认')+'」';
+        if(chartData.pattern.breakReasons&&chartData.pattern.breakReasons.length)lock1+='，原因=「'+chartData.pattern.breakReasons.join('；')+'」';
+      }
+      lock1+='。以上字段来自本次排盘，不另行重算；破格不得写成已成格。';messages.push({role:'system',content:lock1});
     }
 
     // 插入当前问题
@@ -474,25 +479,24 @@ async function callAI(question, chartData, bazi, history, mode) {
   const messages = [{ role: 'system', content: sysPrompt }];
 
   // 当前时间锚定（含流年流月干支）
-  const now = new Date();
-  const thisYear = now.getFullYear();
-  const thisMonth = now.getMonth() + 1;
-  const thisDay = now.getDate();
-  // 节气月份判定（简化：以节气日期为界）
-  const jieQiMonth = getJieQiMonth(thisMonth, thisDay);
-  // 年干五虎遁定月干
-  const yearGanIdx = (thisYear - 4) % 10;
-  const yearGan = '甲乙丙丁戊己庚辛壬癸'[yearGanIdx];
-  // 五虎遁：甲己之年丙作首(丙=2), 乙庚戊为头(戊=4), 丙辛庚为头(庚=6), 丁壬壬为头(壬=8), 戊癸甲为头(甲=0)
-  const wuHuStart = { '甲':2,'己':2,'乙':4,'庚':4,'丙':6,'辛':6,'丁':8,'壬':8,'戊':0,'癸':0 };
-  const startGan = wuHuStart[yearGan] || 0;
-  const monthGanIdx = (startGan + jieQiMonth) % 10;
-  const monthZhiIdx = jieQiMonth; // getJieQiMonth已返回正确地支序
-  const GAN = '甲乙丙丁戊己庚辛壬癸';
-  const ZHI_MONTH = '寅卯辰巳午未申酉戌亥子丑'; // 节气月序（寅=0）
-  const ZHI_YEAR = '子丑寅卯辰巳午未申酉戌亥';   // 年支序（子=0, 公式: (year-4)%12）
-  const liuYueGZ = GAN[monthGanIdx] + ZHI_MONTH[jieQiMonth];
-  messages.push({ role: 'system', content: `当前时间：${thisYear}年${thisMonth}月${thisDay}日。${thisYear}年为${yearGan}${ZHI_YEAR[(thisYear-4)%12]}年，当前流月为${liuYueGZ}月（节气月${ZHI_MONTH[jieQiMonth]}月）。分析流年/流月运势时必须以此为基准。` });
+  const chinaParts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai', year: 'numeric', month: 'numeric', day: 'numeric'
+  }).formatToParts(new Date()).filter(p => p.type !== 'literal').map(p => [p.type, Number(p.value)]));
+  const thisYear = chinaParts.year;
+  const thisMonth = chinaParts.month;
+  const thisDay = chinaParts.day;
+  var timeAnchor = `当前时间（中国标准时间）：${thisYear}年${thisMonth}月${thisDay}日。`;
+  if (chartData && chartData.currentLiuNian && chartData.currentLiuNian.gan && chartData.currentLiuNian.zhi) {
+    timeAnchor += `当前流年为${chartData.currentLiuNian.gan}${chartData.currentLiuNian.zhi}年，该字段由排盘端计算。`;
+  } else {
+    timeAnchor += '未提供 currentLiuNian 时，不得按公历年直接猜立春前的流年干支。';
+  }
+  if (chartData && chartData.currentLiuYue && chartData.currentLiuYue.gan && chartData.currentLiuYue.zhi) {
+    timeAnchor += `当前节气流月为${chartData.currentLiuYue.gan}${chartData.currentLiuYue.zhi}月，该字段由排盘端精确计算。`;
+  } else {
+    timeAnchor += '未提供精确流月字段，不得按固定公历日期自行猜流月干支。';
+  }
+  messages.push({ role: 'system', content: timeAnchor });
 
   // 模式指令
   if (mode === 'simple') {
@@ -521,10 +525,13 @@ async function callAI(question, chartData, bazi, history, mode) {
 
   // 强制引用锁：日主旺衰和格局必须用预计算数据
   if (chartData) {
-    var lock2='【死命令】';
+    var lock2='【排盘事实锁】';
     if (chartData.dayMasterStrength) lock2+='日主旺衰=「'+chartData.dayMasterStrength.level+'（'+chartData.dayMasterStrength.score+'）」';
-    if (chartData.pattern) lock2+=(lock2.length>10?'，':'')+'格局=「'+chartData.pattern.name+'」';
-    if (lock2.length>10) {lock2+='。禁止输出任何其他数值或名称。';messages.push({role:'system',content:lock2});}
+    if (chartData.pattern) {
+      lock2+=(lock2.length>10?'，':'')+'候选格局=「'+chartData.pattern.name+'」，状态=「'+(chartData.pattern.status||'未确认')+'」';
+      if(chartData.pattern.breakReasons&&chartData.pattern.breakReasons.length)lock2+='，原因=「'+chartData.pattern.breakReasons.join('；')+'」';
+    }
+    if (lock2.length>10) {lock2+='。以上字段不另行重算；破格不得写成已成格。';messages.push({role:'system',content:lock2});}
   }
 
   messages.push({ role: 'user', content: question });
@@ -630,7 +637,7 @@ function buildSingleChart(data) {
   if (data.dayMaster) {
     const dm = data.dayMaster;
     ctx += `\n日主：${dm.gan || '?'}(${dm.wuXing || ''}${dm.yinYang || ''})`;
-    if (data.dayMasterStrength) ctx += ` 旺衰：${data.dayMasterStrength}`;
+    if (data.dayMasterStrength && data.dayMasterStrength.level) ctx += ` 旺衰：${data.dayMasterStrength.level}`;
     ctx += '\n';
   }
 
@@ -643,7 +650,7 @@ function buildSingleChart(data) {
   // v3.1: 日主旺衰（结构化）
   if (data.dayMasterStrength) {
     const ds = data.dayMasterStrength;
-    ctx += `\n【权威数据 · 禁止重新推算】日主旺衰评定：${ds.level || '?'}（评分 ${ds.score || '?'}，${ds.label || ''}）。此结论由算法精确计算，你在回答中必须严格引用此数值，绝对禁止给出不同的分数或不同的强弱判断。\n`;
+    ctx += `\n【排盘结构化数据】日主旺衰评定：${ds.level || '?'}（评分 ${ds.score ?? '?'}，${ds.label || ''}）。请以此为本次解读口径，不另行编造分数或替换强弱等级。\n`;
   }
 
   // v3.4: 从格判定
@@ -659,6 +666,8 @@ function buildSingleChart(data) {
     ctx += `命局格局：${pt.name || '?'}`;
     if (pt.type) ctx += `（${pt.type}类）`;
     if (pt.monthWx) ctx += ` 月令五行：${pt.monthWx}`;
+    if (pt.status) ctx += `\n格局状态：${pt.status}`;
+    if (pt.breakReasons && pt.breakReasons.length) ctx += `\n破格原因：${pt.breakReasons.join('；')}`;
     ctx += `\n格局解读：${pt.desc || ''}\n`;
   }
 
@@ -874,39 +883,6 @@ function getServerFingerprint(req) {
   return 'sfp_' + crypto.createHash('sha256').update(ip + '|' + ua).digest('hex').slice(0, 24);
 }
 
-/**
- * 节气月判定：返回地支索引(0=寅...11=丑)
- * 日期为公历，节气日期用近似值（精确到±1天，够用了）
- */
-function getJieQiMonth(month, day) {
-  const jieQi = [
-    { m:2, d:4,  zhi:0 },  // 立春→寅月
-    { m:3, d:6,  zhi:1 },  // 惊蛰→卯月
-    { m:4, d:5,  zhi:2 },  // 清明→辰月
-    { m:5, d:5,  zhi:3 },  // 立夏→巳月
-    { m:6, d:5,  zhi:4 },  // 芒种→午月
-    { m:7, d:7,  zhi:5 },  // 小暑→未月
-    { m:8, d:7,  zhi:6 },  // 立秋→申月
-    { m:9, d:7,  zhi:7 },  // 白露→酉月
-    { m:10,d:8,  zhi:8 },  // 寒露→戌月
-    { m:11,d:7,  zhi:9 },  // 立冬→亥月
-    { m:12,d:7,  zhi:10 }, // 大雪→子月
-    { m:1, d:5,  zhi:11 }, // 小寒→丑月
-  ];
-  // 从第一个节气开始，找当前日期之后最近的那个节气，前一个就是当前月
-  let currentZhi = 11; // 默认丑月(1月1日~立春前)
-  for (let i = 0; i < jieQi.length; i++) {
-    const jq = jieQi[i];
-    if (month < jq.m || (month === jq.m && day < jq.d)) {
-      // 还没到这个节气 → 属于前一个节气月
-      currentZhi = i === 0 ? 11 : jieQi[i - 1].zhi;
-      return currentZhi;
-    }
-  }
-  // 晚于所有节气 → 属于最后一个节气月
-  return jieQi[jieQi.length - 1].zhi;
-}
-
 function generateMockReply(question, chartData, bazi) {
   const hasChart = !!(chartData && (chartData.fourPillars || chartData.person1));
   const q = question.toLowerCase();
@@ -944,7 +920,12 @@ function generateMockReply(question, chartData, bazi) {
       r += `你的八字五行分布：金${wx['金'] || 0}、木${wx['木'] || 0}、水${wx['水'] || 0}、火${wx['火'] || 0}、土${wx['土'] || 0}\n\n`;
       const weak = Object.entries(wx).filter(([, v]) => v === 0);
       const strong = Object.entries(wx).filter(([, v]) => v >= 3);
-      if (weak.length) r += `五行欠缺：${weak.map(([k]) => k).join('、')}，可在名字、职业、方位上补益。\n`;
+      if (weak.length) {
+        r += `五行分布中未直接出现：${weak.map(([k]) => k).join('、')}。缺失不等于喜用，不能据此直接建议“缺什么补什么”。\n`;
+        if (chartData.yongJi) {
+          r += `系统喜神：${(chartData.yongJi.xiShen || []).join('、') || '—'}；用神：${(chartData.yongJi.yongShen || []).join('、') || '—'}；忌神：${(chartData.yongJi.jiShen || []).join('、') || '—'}。\n`;
+        }
+      }
       if (strong.length) r += `五行过旺：${strong.map(([k]) => k).join('、')}，需注意平衡调和。\n`;
     }
     r += '\n五行（金木水火土）贵在均衡流通。《三命通会》曰："五行之性，各有所主。"\n\n※ 命理分析仅供参考，命运掌握在自己手中';

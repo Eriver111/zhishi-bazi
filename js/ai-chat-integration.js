@@ -618,7 +618,24 @@
     // v3.2: 当前流年详情
     var thisYear = new Date().getFullYear();
     data.currentYear = thisYear;
-    if (typeof BaZiCalculator !== 'undefined' && typeof _daYunData !== 'undefined' && _daYunData.list && typeof _currentDaYunIndex !== 'undefined' && _currentDaYunIndex >= 0) {
+    if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calculate) {
+      try {
+        var now = new Date();
+        var nowHour = now.getHours() + now.getMinutes() / 60;
+        var nowShiChen = Math.floor(((now.getHours() + 1) % 24) / 2);
+        var currentChart = BaZiCalculator.calculate(now.getFullYear(), now.getMonth() + 1, now.getDate(), nowShiChen, 'male', nowHour);
+        if (currentChart && currentChart.year) {
+          data.currentLiuNian = {
+            year: now.getFullYear(), gan: currentChart.year.gan, zhi: currentChart.year.zhi,
+            shiShen: _bazi && _bazi.day ? BaZiCalculator.getShiShen(_bazi.day.gan, currentChart.year.gan) : ''
+          };
+        }
+        if (currentChart && currentChart.month) {
+          data.currentLiuYue = { gan: currentChart.month.gan, zhi: currentChart.month.zhi };
+        }
+      } catch(e) {}
+    }
+    if (typeof BaZiCalculator !== 'undefined' && typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list && typeof _currentDaYunIndex !== 'undefined' && _currentDaYunIndex >= 0) {
       try {
         var cd = _daYunData.list[_currentDaYunIndex];
         var dayGanRef = _bazi && _bazi.day ? _bazi.day.gan : '';
@@ -632,10 +649,14 @@
             }
             if (!ln && liuNianList.length > 0) ln = liuNianList[0]; // fallback
             if (ln) {
-              data.currentLiuNian = {
-                year: ln.year, gan: ln.gan, zhi: ln.zhi,
-                shiShen: ln.shiShen || (typeof BaZiCalculator !== 'undefined' ? BaZiCalculator.getShiShen(dayGanRef, ln.gan) : '')
-              };
+              if (!data.currentLiuNian) {
+                data.currentLiuNian = {
+                  year: ln.year, gan: ln.gan, zhi: ln.zhi,
+                  shiShen: ln.shiShen || (typeof BaZiCalculator !== 'undefined' ? BaZiCalculator.getShiShen(dayGanRef, ln.gan) : '')
+                };
+              } else if (!data.currentLiuNian.shiShen) {
+                data.currentLiuNian.shiShen = ln.shiShen || BaZiCalculator.getShiShen(dayGanRef, data.currentLiuNian.gan);
+              }
             }
           }
         }
@@ -662,7 +683,7 @@
   function addGreeting() {
     var cd = buildChartData();
     var g = '🧧 **知时先生已就绪**\n\n';
-    if (cd && cd.dayMaster) { g += '你的日主为**' + cd.dayMaster.gan + '**' + (cd.dayMaster.wuXing ? '（' + cd.dayMaster.wuXing + '）' : '') + (cd.dayMasterStrength ? '，命局**' + cd.dayMasterStrength + '**' : '') + '。\n\n可以问我任何命理问题：\n• 我的喜用神是什么？\n• 财运事业如何？\n• 今年运势怎么样？\n• 婚姻感情如何？'; }
+    if (cd && cd.dayMaster) { g += '你的日主为**' + cd.dayMaster.gan + '**' + (cd.dayMaster.wuXing ? '（' + cd.dayMaster.wuXing + '）' : '') + (cd.dayMasterStrength && cd.dayMasterStrength.level ? '，命局**' + cd.dayMasterStrength.level + '**' : '') + '。\n\n可以问我任何命理问题：\n• 我的喜用神是什么？\n• 财运事业如何？\n• 今年运势怎么样？\n• 婚姻感情如何？'; }
     else { g += '你可以问我任何八字命理问题。'; }
     if (AI.isMonthly) g = '👑 **会员已激活**\n\n' + g;
     if (AI.freeRemaining > 0) g += '\n\n💡 你还有 ' + AI.freeRemaining + ' 次免费提问机会';

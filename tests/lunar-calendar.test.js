@@ -61,3 +61,28 @@ test('every supported solar day round-trips through lunar conversion', () => {
     );
   }
 });
+
+test('known historical and future correction dates match authoritative lunar dates', () => {
+  const calendar = loadCalendar();
+  const cases = [
+    [[1933, 7, 22], { lYear: 1933, lMonth: 5, lDay: 30, isLeap: true }],
+    [[1996, 7, 15], { lYear: 1996, lMonth: 5, lDay: 30, isLeap: false }],
+    [[1996, 9, 12], { lYear: 1996, lMonth: 7, lDay: 30, isLeap: false }],
+    [[2060, 4, 30], { lYear: 2060, lMonth: 4, lDay: 1, isLeap: false }],
+    [[2097, 8, 7], { lYear: 2097, lMonth: 7, lDay: 1, isLeap: false }],
+  ];
+
+  for (const [solar, expected] of cases) {
+    const actual = calendar.solarToLunar(...solar);
+    assert.deepEqual(
+      {
+        lYear: actual.lYear,
+        lMonth: actual.lMonth,
+        lDay: actual.lDay,
+        isLeap: actual.isLeap,
+      },
+      expected,
+      solar.join('-')
+    );
+  }
+});

@@ -91,7 +91,7 @@ var LIXIA_HOUR = {
  * 基于寿星万年历算法简化实现，误差在±1天内
  * 参考: https://github.com/6tail/lunar
  */
-function getJieQiDates(year) {
+function getJieQiDatesLegacy(year) {
     // 12个节的基础参考日期（近似值，以2000年为基准）
     // 每年偏移约0.2422天，4年累计约1天
     const baseJieQi = [
@@ -203,6 +203,74 @@ function getJieQiDates(year) {
         if (year < 2000 && year % 4 !== 0) d += (baseOffset % 2);
         const targetYear = (bq.month === 1) ? year + 1 : year;
         return { name: bq.name, date: new Date(targetYear, bq.month - 1, d) };
+    });
+}
+
+/**
+ * Calculate the twelve monthly boundary terms from apparent solar longitude.
+ * The returned Date stores Beijing civil components so the existing browser-side
+ * pillar code remains deterministic regardless of the machine timezone.
+ */
+function getJieQiDates(year) {
+    var terms = [
+        { name:'立春', month:2, longitude:315 },
+        { name:'惊蛰', month:3, longitude:345 },
+        { name:'清明', month:4, longitude:15 },
+        { name:'立夏', month:5, longitude:45 },
+        { name:'芒种', month:6, longitude:75 },
+        { name:'小暑', month:7, longitude:105 },
+        { name:'立秋', month:8, longitude:135 },
+        { name:'白露', month:9, longitude:165 },
+        { name:'寒露', month:10, longitude:195 },
+        { name:'立冬', month:11, longitude:225 },
+        { name:'大雪', month:12, longitude:255 },
+        { name:'小寒', month:1, longitude:285 }
+    ];
+
+    function normalizeDegrees(value) {
+        value %= 360;
+        return value < 0 ? value + 360 : value;
+    }
+
+    function signedAngle(value, target) {
+        var delta = normalizeDegrees(value - target);
+        return delta > 180 ? delta - 360 : delta;
+    }
+
+    // NOAA/Meeus low-order apparent solar longitude. Across 1900—2100 its
+    // error is well below the minute-level boundary required by this UI.
+    function apparentSolarLongitude(milliseconds) {
+        var jd = milliseconds / 86400000 + 2440587.5;
+        var t = (jd - 2451545.0) / 36525;
+        var l0 = normalizeDegrees(280.46646 + t * (36000.76983 + 0.0003032 * t));
+        var m = normalizeDegrees(357.52911 + t * (35999.05029 - 0.0001537 * t));
+        var mr = m * Math.PI / 180;
+        var c = Math.sin(mr) * (1.914602 - t * (0.004817 + 0.000014 * t)) +
+            Math.sin(2 * mr) * (0.019993 - 0.000101 * t) +
+            Math.sin(3 * mr) * 0.000289;
+        var omega = (125.04 - 1934.136 * t) * Math.PI / 180;
+        return normalizeDegrees(l0 + c - 0.00569 - 0.00478 * Math.sin(omega));
+    }
+
+    function solveTerm(term, targetYear) {
+        // Each term is safely bracketed by day 1 and day 15 of its civil month.
+        var low = Date.UTC(targetYear, term.month - 1, 1, 0, 0, 0);
+        var high = Date.UTC(targetYear, term.month - 1, 15, 23, 59, 59);
+        for (var i = 0; i < 48; i++) {
+            var mid = (low + high) / 2;
+            if (signedAngle(apparentSolarLongitude(mid), term.longitude) < 0) low = mid;
+            else high = mid;
+        }
+        var beijing = new Date((low + high) / 2 + 8 * 3600000);
+        return new Date(
+            beijing.getUTCFullYear(), beijing.getUTCMonth(), beijing.getUTCDate(),
+            beijing.getUTCHours(), beijing.getUTCMinutes(), beijing.getUTCSeconds()
+        );
+    }
+
+    return terms.map(function(term) {
+        var targetYear = term.month === 1 ? year + 1 : year;
+        return { name: term.name, date: solveTerm(term, targetYear) };
     });
 }
 
@@ -446,9 +514,12 @@ function calculateShiShen(relation, sameYinYang, dayYinYang) {
  * 计算纳音
  */
 function getNaYin(yearGanIndex, yearZhiIndex) {
-    const index = (yearGanIndex % 10) * 2;
-    const naYinIndex = (yearZhiIndex + index) % 60;
-    return NA_YIN[Math.floor(naYinIndex / 2)];
+    for (var index = 0; index < 60; index++) {
+        if (index % 10 === yearGanIndex && index % 12 === yearZhiIndex) {
+            return NA_YIN[index];
+        }
+    }
+    return '';
 }
 
 /**
@@ -475,12 +546,15 @@ function getCangGan(zhi) {
 /**
  * 主函数：计算八字
  */
-function calculateBaZi(year, month, day, hour, gender, clock) {
+function calculateBaZi(year, month, day, hour, gender, clock, dayPillarOffset) {
     // 计算四柱
     const yearPillar = getYearPillar(year, month, day, clock || 0);
     const monthPillar = getMonthPillar(year, month, day, hour, (clock != null ? clock : 12));
     
-    const dayForPillar = getDayPillar(year, month, day);
+    var dayPillarDate = new Date(year, month - 1, day + (dayPillarOffset || 0));
+    const dayForPillar = getDayPillar(
+        dayPillarDate.getFullYear(), dayPillarDate.getMonth() + 1, dayPillarDate.getDate()
+    );
     const dayPillar = dayForPillar;
     const hourPillar = getHourPillar(dayPillar.ganIndex, hour);
     
@@ -679,7 +753,7 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     // 出生日期时间：优先使用 preciseClock（精确钟点），否则用时辰中点
     var hourMap = [0,2,4,6,8,10,12,14,16,18,20,22];
     var birthClockHour;
-    if (typeof preciseClock === 'number' && preciseClock > 0) {
+    if (typeof preciseClock === 'number' && isFinite(preciseClock) && preciseClock >= 0) {
         birthClockHour = preciseClock;
     } else {
         birthClockHour = hourMap[birthHour] !== undefined ? hourMap[birthHour] : 0;
@@ -692,7 +766,8 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
         for (const yr of [birthYear, birthYear + 1]) {
             const jqList = getJieQiDates(yr);
             for (const jq of jqList) {
-                const jqDT = birthDateToDecimal(jq.date.getFullYear(), jq.date.getMonth() + 1, jq.date.getDate(), jq.date.getHours());
+                const jqClock = jq.date.getHours() + jq.date.getMinutes() / 60 + jq.date.getSeconds() / 3600;
+                const jqDT = birthDateToDecimal(jq.date.getFullYear(), jq.date.getMonth() + 1, jq.date.getDate(), jqClock);
                 if (jqDT > birthDateTime) { targetJQ = jq; diffDays = jqDT - birthDateTime; break; }
             }
             if (targetJQ) break;
@@ -703,7 +778,8 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
         for (const yr of [birthYear, birthYear - 1]) {
             const jqList = getJieQiDates(yr);
             for (let i = jqList.length - 1; i >= 0; i--) {
-                const jqDT = birthDateToDecimal(jqList[i].date.getFullYear(), jqList[i].date.getMonth() + 1, jqList[i].date.getDate(), jqList[i].date.getHours());
+                const jqClock = jqList[i].date.getHours() + jqList[i].date.getMinutes() / 60 + jqList[i].date.getSeconds() / 3600;
+                const jqDT = birthDateToDecimal(jqList[i].date.getFullYear(), jqList[i].date.getMonth() + 1, jqList[i].date.getDate(), jqClock);
                 if (jqDT < birthDateTime) {
                     targetJQ = jqList[i];
                     diffDays = birthDateTime - jqDT;
@@ -753,7 +829,9 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
             zhiIdx = (monthPillar.zhiIndex - (i + 1) + 120) % 12;
         }
         // 虚岁标签：出生即1岁，立春前出生（属上一年）需额外+1岁
-        var preLiChun = (birthMonth < 2) || (birthMonth === 2 && birthDay < 5);
+        var liChunAtBirthYear = getJieQiDates(birthYear)[0].date;
+        var birthAt = new Date(birthYear, birthMonth - 1, birthDay, Math.floor(birthClockHour), Math.round((birthClockHour % 1) * 60), 0);
+        var preLiChun = birthAt < liChunAtBirthYear;
         var showAge = Math.floor(qiYunAge + 1) + (preLiChun ? 1 : 0) + i * 10;
         const startYearExact = birthYear + qiYunAge + i * 10;
         const startYear = Math.round(startYearExact);
@@ -775,6 +853,7 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
         qiYunAge: qiYunAge,
         timingInfo: timingInfo,
         targetJieQi: targetJQ ? targetJQ.name : null
+        ,targetJieQiTime: targetJQ ? targetJQ.date.getTime() : null
     };
 }
 
@@ -941,9 +1020,13 @@ const SHEN_SHA_DEFS = [
         name: '天赦', type: 'ji-shen',
         desc: '主逢凶化吉，灾消祸散，一生多获天庇',
         find: function(bazi) {
-            // 春戊寅 夏甲午 秋戊申 冬甲子（月支定季节+日支校验）
-            const mz = bazi.month.zhi, dz = bazi.day.zhi;
-            if ((['寅','卯','辰'].includes(mz) && dz === '寅') || (['巳','午','未'].includes(mz) && dz === '午') || (['申','酉','戌'].includes(mz) && dz === '申') || (['亥','子','丑'].includes(mz) && dz === '子')) return ['day'];
+            // 春戊寅、夏甲午、秋戊申、冬甲子：日干与日支须同时符合。
+            const mz = bazi.month.zhi;
+            const dayPillar = bazi.day.gan + bazi.day.zhi;
+            if ((['寅','卯','辰'].includes(mz) && dayPillar === '戊寅') ||
+                (['巳','午','未'].includes(mz) && dayPillar === '甲午') ||
+                (['申','酉','戌'].includes(mz) && dayPillar === '戊申') ||
+                (['亥','子','丑'].includes(mz) && dayPillar === '甲子')) return ['day'];
             return [];
         }
     },
@@ -1953,7 +2036,7 @@ function calcDayMasterStrength(bazi) {
   var mwx = DI_ZHI_WU_XING[bazi.month.zhi];
   // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
   // 壬癸水见丑辰不算真死令
-  var wetEarthAdj = (dgWx === '水' && (mZhi === '丑' || mZhi === '辰')) ? 12 : 0;
+  var wetEarthAdj = (dgWx === '水' && (bazi.month.zhi === '丑' || bazi.month.zhi === '辰')) ? 12 : 0;
   if (mwx === dgWx)            score += 30;
   else if (SHENGWO[dgWx] === mwx) score += 20;
   else if (WOSHENG[dgWx] === mwx) score -= 15;
@@ -2074,16 +2157,17 @@ function calcDayMasterStrength(bazi) {
   // ---------- ⑦ 天干合化修正 ----------
   // 五合：甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火
   var GAN_HE = {'甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊'};
-  var GAN_HE_RES = {'甲己':'土','乙庚':'金','丙辛':'水','丁壬':'木','戊癸':'火'};
+  var GAN_HE_RES = {'甲己':'土','己甲':'土','乙庚':'金','庚乙':'金','丙辛':'水','辛丙':'水','丁壬':'木','壬丁':'木','戊癸':'火','癸戊':'火'};
   var adjPairs = [['year','month'],['month','day'],['day','hour']]; // 相邻柱天干
   var heCount = 0;
   adjPairs.forEach(function(pair) {
     var g1 = bazi[pair[0]].gan, g2 = bazi[pair[1]].gan;
     if (GAN_HE[g1] === g2) {
       heCount++;
-      var key = (g1 < g2 ? g1 + g2 : g2 + g1); // 甲己 = 己甲
+      var key = g1 + g2;
       var heWx = GAN_HE_RES[key] || '';
-      if (heWx) {
+      // 有五合不等于已经化气；月令得化神之气才计入元素转换。
+      if (heWx && DI_ZHI_WU_XING[bazi.month.zhi] === heWx) {
         if (heWx === dgWx) score += 2;         // 合化为日主五行 → 加强
         else if (SHENGWO[dgWx] === heWx) score += 1; // 合化为印星 → 助力
         else if (KEWO[dgWx] === heWx) score -= 1;    // 合化为官杀 → 压制
@@ -2103,7 +2187,7 @@ function calcDayMasterStrength(bazi) {
   var haiMap = {}; HAI.forEach(function(p){haiMap[p[0]]=p[1];haiMap[p[1]]=p[0];});
   // 三刑：动荡不和
   var XING = [['子','卯'],['寅','巳'],['巳','申'],['申','寅'],['丑','戌'],['戌','未'],['未','丑']];
-  var xingMap = {}; XING.forEach(function(p){xingMap[p[0]]=p[1];xingMap[p[1]]=p[0];});
+  var xingMap = {}; XING.forEach(function(p){xingMap[p[0]+p[1]]=true;xingMap[p[1]+p[0]]=true;});
 
   // 地支六合：合化出新五行
   var ZHI_HE = [['子','丑','土'],['寅','亥','木'],['卯','戌','火'],['辰','酉','金'],['巳','申','水'],['午','未','火']];
@@ -2131,14 +2215,14 @@ function calcDayMasterStrength(bazi) {
     }
 
     // 刑：不和
-    if (xingMap[z1] === z2) {
+    if (xingMap[z1 + z2]) {
       if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 2;
       else score -= 1;
     }
 
     // 地支合化：相邻地支合化出新五行
     var heKey = z1 + z2;
-    if (zhiHeScore[heKey]) {
+    if (zhiHeScore[heKey] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[heKey]) {
       var heWx = zhiHeScore[heKey];
       if (heWx === dgWx) score += 2;           // 合化为日主 → 强根
       else if (SHENGWO[dgWx] === heWx) score += 1; // 合化为印 → 助力
@@ -2162,7 +2246,8 @@ function calcDayMasterStrength(bazi) {
     }
     // 半合（只含两支）→ 力量弱一些
     var count = (hasA?1:0)+(hasB?1:0)+(hasC?1:0);
-    if (count === 2 && !(hasA&&hasB&&hasC)) {
+    // 半合须包含三合局的帝旺（中神）；生墓两支只能称拱局，不作化局加权。
+    if (count === 2 && hasB && !(hasA&&hasB&&hasC)) {
       if (wx === dgWx) score += 1;
       else if (SHENGWO[dgWx] === wx) score += 1;
       else if (KEWO[dgWx] === wx) score -= 1;
@@ -2178,7 +2263,7 @@ function calcDayMasterStrength(bazi) {
       if (Math.abs(a-b) === 1) continue; // 相邻柱地支合已在§⑧处理，这里只补跨柱
       var za = bazi[allPositions[a]].zhi, zb = bazi[allPositions[b]].zhi;
       var heKey2 = za + zb;
-      if (zhiHeScore[heKey2]) {
+      if (zhiHeScore[heKey2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[heKey2]) {
         var heWx2 = zhiHeScore[heKey2];
         // 用位置判断涉月令（年月同支时年≠月，不能用值相等判）
         var involvesMonth = (allPositions[a]==='month' || allPositions[b]==='month');
@@ -2223,7 +2308,7 @@ function calcDayMasterStrength(bazi) {
       else if (KEWO[dgWx] === hj.wx) score -= 8;
       else if (WOSHENG[dgWx] === hj.wx) score -= 6;
       else if (WOKE[dgWx] === hj.wx) score -= 4;
-    } else if (fullCount === 2) {
+    } else if (fullCount === 2 && ((has[0] && has[1]) || (has[1] && has[2]))) {
       // 半会 — 力量约等于半合但略强
       var involvesDayHui = hj.zhi.indexOf(bazi.day.zhi) >= 0;
       var involvesMonthHui = hj.zhi.indexOf(bazi.month.zhi) >= 0;
@@ -2243,8 +2328,8 @@ function calcDayMasterStrength(bazi) {
       if (Math.abs(xa-xb) === 1) continue;
       var zxa = bazi[allPositions[xa]].zhi, zxb = bazi[allPositions[xb]].zhi;
       if (chongMap[zxa] === zxb) {
-        var involvesMonthChong = (zxa === bazi.month.zhi || zxb === bazi.month.zhi);
-        var involvesDayChong = (zxa === bazi.day.zhi || zxb === bazi.day.zhi);
+        var involvesMonthChong = (allPositions[xa] === 'month' || allPositions[xb] === 'month');
+        var involvesDayChong = (allPositions[xa] === 'day' || allPositions[xb] === 'day');
         if (involvesMonthChong) {
           score -= 4;  // 月令被跨柱冲，得令不稳
           if (involvesDayChong) score -= 3; // 月日双冲，根气大伤
@@ -2262,19 +2347,19 @@ function calcDayMasterStrength(bazi) {
   // 相邻合
   [['year','month'],['month','day'],['day','hour']].forEach(function(pair) {
     var z1=bazi[pair[0]].zhi, z2=bazi[pair[1]].zhi;
-    if (zhiHeScore[z1+z2]) allHePairs.push({z1:z1, z2:z2, wx:zhiHeScore[z1+z2]});
+    if (zhiHeScore[z1+z2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[z1+z2]) allHePairs.push({z1:z1, z2:z2, wx:zhiHeScore[z1+z2], p1:pair[0], p2:pair[1]});
   });
   // 跨柱合
   for (var xa=0; xa<allPositions.length; xa++) {
     for (var xb=xa+1; xb<allPositions.length; xb++) {
       if (Math.abs(xa-xb)===1) continue;
       var zx1=bazi[allPositions[xa]].zhi, zx2=bazi[allPositions[xb]].zhi;
-      if (zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2]});
+      if (zhiHeScore[zx1+zx2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2], p1:allPositions[xa], p2:allPositions[xb]});
     }
   }
   var dayHeApplied = {}; // 日支同一合化不重复计
   allHePairs.forEach(function(he) {
-    if (he.z1===bazi.day.zhi || he.z2===bazi.day.zhi) {
+    if (he.p1 === 'day' || he.p2 === 'day') {
       var oldWx=DI_ZHI_WU_XING[bazi.day.zhi], newWx=he.wx;
       var heKey = oldWx+'→'+newWx;
       if (dayHeApplied[heKey]) return; dayHeApplied[heKey]=true;
@@ -3018,9 +3103,11 @@ function analyzeFortune(bazi, gender, yongJi) {
     const isStrong = (wangLevel === '极强' || wangLevel === '偏强');
 
     // 身强喜克泄耗（财/官杀/食伤）为好运；身弱喜生扶（印/比劫）为好运
-    const favorableSet = isStrong
-        ? new Set([caiWX, shiShangWX2, guanWX[DAY_WX]])
-        : new Set([helpWX, sameWX]);
+    const favorableSet = yongJi && yongJi.xiShen && yongJi.xiShen.length
+        ? new Set(yongJi.xiShen)
+        : (isStrong
+            ? new Set([caiWX, shiShangWX2, guanWX[DAY_WX]])
+            : new Set([helpWX, sameWX]));
 
     // ========== 每一年分析 ==========
     const CHONG_MAP = { '子午':true,'午子':true,'丑未':true,'未丑':true,'寅申':true,'申寅':true,'卯酉':true,'酉卯':true,'辰戌':true,'戌辰':true,'巳亥':true,'亥巳':true };
@@ -3170,9 +3257,11 @@ function analyzeThisYear(bazi, gender, yongJi) {
     // 使用权威 calcDayMasterStrength（通过 yongJi 参数）
     var wangLevelTA = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '偏强';
     var isStrong = (wangLevelTA === '极强' || wangLevelTA === '偏强');
-    var favorableSet = isStrong
-        ? [caiWX, shiShangWX, guanWX[DAY_WX]]
-        : [helpWX, sameWX];
+    var favorableSet = yongJi && yongJi.xiShen && yongJi.xiShen.length
+        ? yongJi.xiShen.slice()
+        : (isStrong
+            ? [caiWX, shiShangWX, guanWX[DAY_WX]]
+            : [helpWX, sameWX]);
 
     var yrWX = WU_XING[yp.gan];
     var isFavorable = favorableSet.indexOf(yrWX) >= 0;
@@ -3268,6 +3357,11 @@ function analyzeThisYear(bazi, gender, yongJi) {
     }
     if (opportunities.length === 0) opportunities.push('今年稳扎稳打就是最好的策略。日常工作生活按节奏来，别给自己太大压力。');
 
+    var thisYearDaYunInfo = '';
+    if (bazi.birthDate && bazi.birthDate.year) {
+        try { thisYearDaYunInfo = analyzeFortune(bazi, gender, yongJi).dyInfo || ''; } catch(e) {}
+    }
+
     return {
         year: currentYear,
         gan: yp.gan, zhi: yp.zhi,
@@ -3279,7 +3373,7 @@ function analyzeThisYear(bazi, gender, yongJi) {
         healthSummary: healthSummary,
         healthExtra: healthExtra,
         opportunities: opportunities,
-        dyInfo: ''
+        dyInfo: thisYearDaYunInfo
     };
 }
 
@@ -3504,8 +3598,11 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
 
     // 2. 均时差（Equation of Time）
     var monthDays = [0,31,59,90,120,151,181,212,243,273,304,334];
-    var dayOfYear = monthDays[Math.max(0, month - 1)] + day;
-    var B = (dayOfYear - 1) * (360 / 365) * (Math.PI / 180);
+    var isLeapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    var leapDay = isLeapYear && month > 2 ? 1 : 0;
+    var dayOfYear = monthDays[Math.max(0, month - 1)] + leapDay + day;
+    var daysInYear = isLeapYear ? 366 : 365;
+    var B = (dayOfYear - 1) * (360 / daysInYear) * (Math.PI / 180);
     var eotMin = 229.18 * (
         0.000075 +
         0.001868 * Math.cos(B) -
@@ -3520,7 +3617,7 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
     // 4. 精确时间 → 真太阳时
     // 如果有 clock 参数（data-clock），使用精确钟点；否则用时辰中点
     var clockHour, clockMinute;
-    if (clock > 0) {
+    if (typeof clock === 'number' && isFinite(clock)) {
         clockHour = clock;
         clockMinute = minute || 0;
     } else if (minute > 0) {
@@ -3534,8 +3631,9 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
         clockMinute = 0;
     }
 
-    var trueMinutes = clockHour * 60 + clockMinute + totalOffsetMin;
-    trueMinutes = ((trueMinutes % 1440) + 1440) % 1440;
+    var rawTrueMinutes = clockHour * 60 + clockMinute + totalOffsetMin;
+    var dayOffset = Math.floor(rawTrueMinutes / 1440);
+    var trueMinutes = ((rawTrueMinutes % 1440) + 1440) % 1440;
 
     // 5. 真太阳时 → 时辰索引
     var trueHour = Math.floor(trueMinutes / 60);
@@ -3565,6 +3663,7 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
         trueHour: trueHour,             // 真太阳时钟点（用于节气比较）
         trueMinute: trueMin,            // 真太阳时分钟
         solarMinutes: trueMinutes,      // 真太阳时分钟数
+        dayOffset: dayOffset,           // 跨越北京时间日期边界时为 -1 或 +1
         lng: lng,
         lngOffsetMin: Math.round(lngOffsetMin),
         eotMin: Math.round(eotMin),
@@ -3587,6 +3686,59 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
  * 2. 第一个透出的藏干对应的十神即为格局
  * 3. 若都不透，取本气对应的十神
  */
+function finalizePatternStatus(bazi, pattern) {
+    var reasons = [];
+  var chong = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+  var monthZhi = bazi.month.zhi;
+  ['year','day','hour'].forEach(function(pos) {
+    if (chong[monthZhi] === bazi[pos].zhi) reasons.push('月令受' + pos.replace('year','年柱').replace('day','日柱').replace('hour','时柱') + '冲');
+  });
+
+    if (pattern.type === '月令取格') reasons.push('月令用神未透干');
+    if (pattern.name === '杂格') reasons.push('月令取格条件不清');
+
+    var visibleShiShen = ['year','month','hour'].map(function(pos) {
+      return getShiShen(bazi.day.gan, bazi[pos].gan);
+    });
+    var hasVisible = function(name) { return visibleShiShen.indexOf(name) >= 0; };
+    var visibleCount = function(names) {
+      return visibleShiShen.filter(function(name) { return names.indexOf(name) >= 0; }).length;
+    };
+
+    // 只记录各格最关键、无流派争议的阻断条件；其余交给解读层说明。
+    if (pattern.type !== '同柱复合') {
+      if (pattern.name === '正官格') {
+        if (hasVisible('伤官')) reasons.push('伤官克官');
+        if (hasVisible('七杀')) reasons.push('官杀混杂');
+      } else if (pattern.name === '七杀格') {
+        if (!hasVisible('食神') && !hasVisible('正印') && !hasVisible('偏印')) reasons.push('七杀无制化');
+      } else if (pattern.name === '正印格' || pattern.name === '偏印格' || pattern.name === '印绶格') {
+        if (hasVisible('正财') || hasVisible('偏财')) reasons.push('财星破印');
+      } else if (pattern.name === '食神格') {
+        if (hasVisible('偏印')) reasons.push('枭神夺食');
+      } else if (pattern.name === '伤官格') {
+        if (hasVisible('正官')) reasons.push('伤官见官');
+      } else if (pattern.name === '正财格' || pattern.name === '偏财格') {
+        if (visibleCount(['比肩','劫财']) >= 2) reasons.push('比劫过重，财星受夺');
+      } else if (pattern.name === '建禄格') {
+        if (visibleCount(['正财','偏财','正官','七杀']) === 0) reasons.push('禄旺而财官不显');
+      } else if (pattern.name === '羊刃格') {
+        if (visibleCount(['正官','七杀']) === 0) reasons.push('羊刃无制');
+      }
+    }
+
+  var strength = calcDayMasterStrength(bazi);
+  var needsBearing = /财|官|杀|食|伤/.test(pattern.name || '');
+  if (needsBearing && strength.level === '极弱' && !getCongGe(bazi).isCong) {
+    reasons.push('日主极弱，难以承载格局用神');
+  }
+
+  pattern.breakReasons = Array.from(new Set(reasons));
+  pattern.isEstablished = pattern.breakReasons.length === 0;
+  pattern.status = pattern.isEstablished ? '成格' : '破格';
+  return pattern;
+}
+
 function getPattern(bazi) {
   var dayGan = bazi.day.gan;
   var dmWx = WU_XING[dayGan];
@@ -3596,8 +3748,8 @@ function getPattern(bazi) {
 
   // 月支藏干（本气→中气→余气）
   var cangGan = getCangGan(mZhi);
-  // 四柱所有天干
-  var allGan = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
+  // 月令透干只查年、月、时；日干是命主本身，不作月令藏干透出。
+  var allGan = [bazi.year.gan, bazi.month.gan, bazi.hour.gan];
 
   // 单格局描述
   var PATTERNS = {
@@ -3620,7 +3772,7 @@ function getPattern(bazi) {
   var matchedSS = '';
   var matchedGan = '';
   var matchedPillar = '';
-  var pillarNames = ['年','月','日','时'];
+  var pillarNames = ['年','月','时'];
   var matchCangGan = ''; // 记录匹配到的藏干
 
   for (var ci = 0; ci < cangGan.length; ci++) {
@@ -3691,16 +3843,24 @@ function getPattern(bazi) {
 
   if (compound) {
     var cd = PATTERNS[ss] || { name: ss, desc: '' };
-    return {
+    return finalizePatternStatus(bazi, {
       name: compound,
       desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cd.desc,
       type: '同柱复合',
       monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
       source: '月柱' + mGan + mZhi + '：' + ssGan + '(' + mGan + ') + ' + ssZhi + '(' + mZhi + ')'
-    };
+    });
   }
 
   var p = PATTERNS[ss];
+
+  // 建禄与羊刃为月令特别格，不以藏干透出为成格前提。
+  var changShengAtMonth = getChangSheng(dayGan)[mZhi];
+  if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '临官') {
+    p = PATTERNS['建禄'];
+  } else if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '帝旺') {
+    p = PATTERNS['羊刃'];
+  }
 
   // 未匹配到标准格局时，用五行关系兜底
   if (!p) {
@@ -3716,12 +3876,12 @@ function getPattern(bazi) {
     ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
     : '月支' + mZhi + '（' + ss + '）';
 
-  return {
+  return finalizePatternStatus(bazi, {
     name: p.name, desc: p.desc,
-    type: matchedSS ? '透干取格' : '月令取格',
+    type: matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格'),
     monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
     source: source
-  };
+  });
 }
 
 /**
@@ -3960,11 +4120,11 @@ function getPillarRelations(bazi) {
     else rel.gan = '—';
 
     // 地支关系
-    if (sg[z1w] === z2w) { rel.zhi = '生'; rel.details.push(names[i] + '地支' + p1.zhi + '(' + z1w + ') 生 ' + names[i + 1] + '地支' + p2.zhi + '(' + z2w + ')'); }
+    if (CHONG[p1.zhi] === p2.zhi) { rel.zhi = '冲'; rel.details.push(names[i] + '地支' + p1.zhi + ' 与 ' + names[i + 1] + '地支' + p2.zhi + ' 六冲——主变动冲突'); }
+    else if (sg[z1w] === z2w) { rel.zhi = '生'; rel.details.push(names[i] + '地支' + p1.zhi + '(' + z1w + ') 生 ' + names[i + 1] + '地支' + p2.zhi + '(' + z2w + ')'); }
     else if (sg[z2w] === z1w) { rel.zhi = '被生'; rel.details.push(names[i + 1] + '地支' + p2.zhi + '(' + z2w + ') 生 ' + names[i] + '地支' + p1.zhi + '(' + z1w + ')'); }
     else if (ke[z1w] === z2w) { rel.zhi = '克'; rel.details.push(names[i] + '地支' + p1.zhi + '(' + z1w + ') 克 ' + names[i + 1] + '地支' + p2.zhi + '(' + z2w + ')'); }
     else if (ke[z2w] === z1w) { rel.zhi = '被克'; rel.details.push(names[i + 1] + '地支' + p2.zhi + '(' + z2w + ') 克 ' + names[i] + '地支' + p1.zhi + '(' + z1w + ')'); }
-    else if (CHONG[p1.zhi] === p2.zhi) { rel.zhi = '冲'; rel.details.push(names[i] + '地支' + p1.zhi + ' 与 ' + names[i + 1] + '地支' + p2.zhi + ' 六冲——主变动冲突'); }
     else rel.zhi = '—';
 
     relations.push(rel);
@@ -4097,7 +4257,8 @@ function getCongGe(bazi) {
   }
   // 印比帮身检测——有印星或比劫则不能从（不仅看印，比劫也是帮扶）
   var hasGanHelp = false;
-  var allGanCong = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
+  // 日干就是被判断的日主本身，不能把它当成额外透出的比劫帮身。
+  var allGanCong = [bazi.year.gan, bazi.month.gan, bazi.hour.gan];
   for (var gc = 0; gc < allGanCong.length; gc++) {
     var ganWxCong = WU_XING[allGanCong[gc]];
     if (ganWxCong === SHENGWO || ganWxCong === dgWx) { hasGanHelp = true; break; }
@@ -4193,11 +4354,26 @@ function getGanHe(bazi) {
     for (var j = i + 1; j < 4; j++) {
       var pair = bazi[pos[i]].gan + bazi[pos[j]].gan;
       if (heMap[pair]) {
+        var huaWx = wuXingResult[pair];
+        var monthSupports = DI_ZHI_WU_XING[bazi.month.zhi] === huaWx;
+        var hasHuaRoot = monthSupports;
+        var controls = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+        var hasBlocker = false;
+        for (var k = 0; k < 4; k++) {
+          if (k === i || k === j) continue;
+          var otherWx = WU_XING[bazi[pos[k]].gan];
+          if (otherWx === huaWx || DI_ZHI_WU_XING[bazi[pos[k]].zhi] === huaWx) hasHuaRoot = true;
+          if (otherWx === controls[huaWx]) hasBlocker = true;
+        }
+        var isTransformed = monthSupports && hasHuaRoot && !hasBlocker;
         result.push({
           from: names[i], to: names[j],
           gan1: bazi[pos[i]].gan, gan2: bazi[pos[j]].gan,
-          huaWx: wuXingResult[pair],
-          desc: names[i] + '天干' + bazi[pos[i]].gan + ' 合 ' + names[j] + '天干' + bazi[pos[j]].gan + ' → 化' + wuXingResult[pair] + '（合化为情，二人同心之象）'
+          huaWx: huaWx,
+          isTransformed: isTransformed,
+          status: isTransformed ? '合化成功' : '合而不化',
+          desc: names[i] + '天干' + bazi[pos[i]].gan + ' 合 ' + names[j] + '天干' + bazi[pos[j]].gan +
+            (isTransformed ? ' → 化' + huaWx : '（合而不化）')
         });
       }
     }
