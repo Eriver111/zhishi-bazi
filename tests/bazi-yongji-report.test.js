@@ -34,3 +34,32 @@ test('用神属于喜神且忌神不与喜用重叠', () => {
     assert.equal(new Set(result.jiShen).size, result.jiShen.length);
   });
 });
+
+test('喜用忌说明判定方法、格局状态和每个五行的理由', () => {
+  const calculator = loadCalculator();
+  const charts = [
+    calculator.buildFromPillars(pillars(['丙戌', '甲午', '丁巳', '庚午']), 'male'),
+    calculator.buildFromPillars(pillars(['壬子', '癸丑', '己酉', '丙寅']), 'female'),
+    calculator.buildFromPillars(pillars(['辛亥', '丙寅', '甲子', '癸亥']), 'male'),
+  ];
+
+  charts.forEach(chart => {
+    const result = calculator.getYongJi(chart);
+    assert.ok(['从格顺势', '调候优先', '扶抑为主', '格局救应'].includes(result.method));
+    assert.ok(result.primaryReason.length >= 8);
+    assert.ok(result.evidence.some(row => row.category === '旺衰'));
+    assert.ok(result.evidence.some(row => row.category === '格局'));
+    assert.ok(result.evidence.some(row => row.category === '根气/透干'));
+    assert.ok(['成格', '破格'].includes(result.patternStatus.status));
+
+    [...new Set([...result.xiShen, ...result.jiShen])].forEach(wx => {
+      assert.ok(result.elementReasons[wx]);
+      assert.ok(['用神', '喜神', '忌神'].includes(result.elementReasons[wx].role));
+      assert.ok(result.elementReasons[wx].reasons.length > 0);
+    });
+  });
+
+  const winterEarth = calculator.getYongJi(charts[1]);
+  assert.equal(winterEarth.method, '调候优先');
+  assert.ok(winterEarth.evidence.some(row => row.category === '调候'));
+});

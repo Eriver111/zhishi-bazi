@@ -3901,6 +3901,89 @@ function normalizeYongJiLists(xiShen, yongShen, jiShen) {
   return { xiShen: xi, yongShen: yong, jiShen: ji };
 }
 
+function finalizeYongJiResult(bazi, base, context) {
+  var lists = normalizeYongJiLists(base.xiShen, base.yongShen, base.jiShen);
+  var pattern = context.pattern || getPattern(bazi);
+  var method = context.cong && context.cong.isCong ? '从格顺势'
+    : context.tiaoHouNote ? '调候优先'
+    : pattern.status === '破格' ? '格局救应'
+    : '扶抑为主';
+  var primaryReason = method === '从格顺势'
+    ? (context.cong.source + '，取顺势之五行为用。')
+    : method === '调候优先'
+      ? context.tiaoHouNote
+      : method === '格局救应'
+        ? (pattern.name + '条件不足，先取能扶正旺衰并兼顾格局救应的五行。')
+        : ('日主' + context.dmStr.level + '（' + context.dmStr.score + '分），以扶抑平衡为主确定用神。');
+
+  var positions = ['year','month','day','hour'];
+  var positionNames = { year:'年柱', month:'月柱', day:'日柱', hour:'时柱' };
+  var presenceFor = function(wx) {
+    var ganAt = [], zhiAt = [];
+    positions.forEach(function(pos) {
+      if (WU_XING[bazi[pos].gan] === wx) ganAt.push(positionNames[pos] + '天干');
+      if (DI_ZHI_WU_XING[bazi[pos].zhi] === wx) zhiAt.push(positionNames[pos] + '地支');
+    });
+    if (!ganAt.length && !zhiAt.length) return '原局未直接出现';
+    return (ganAt.length ? '透于' + ganAt.join('、') : '')
+      + (ganAt.length && zhiAt.length ? '，' : '')
+      + (zhiAt.length ? '见于' + zhiAt.join('、') : '');
+  };
+  var dayWx = WU_XING[bazi.day.gan];
+  var shengWo = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
+  var woSheng = { '木':'火','火':'土','土':'金','金':'水','水':'木' };
+  var woKe = { '木':'土','火':'金','土':'水','金':'木','水':'火' };
+  var keWo = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+  var relationFor = function(wx) {
+    if (wx === dayWx) return '比劫同类';
+    if (wx === shengWo[dayWx]) return '印星生身';
+    if (wx === woSheng[dayWx]) return '食伤泄秀';
+    if (wx === woKe[dayWx]) return '财星耗身';
+    if (wx === keWo[dayWx]) return '官杀制身';
+    return '五行调节';
+  };
+  var elementReasons = {};
+  Array.from(new Set(lists.xiShen.concat(lists.jiShen))).forEach(function(wx) {
+    var role = lists.yongShen.indexOf(wx) >= 0 ? '用神' : (lists.xiShen.indexOf(wx) >= 0 ? '喜神' : '忌神');
+    var mechanism = role === '用神'
+      ? (method + '：' + relationFor(wx) + '，是本局首要的调节力量')
+      : role === '喜神'
+        ? (relationFor(wx) + '，用于辅助用神并维持命局流通')
+        : (relationFor(wx) + '，会加重当前失衡或破坏已有制化');
+    elementReasons[wx] = { role: role, reasons: [mechanism, presenceFor(wx)] };
+  });
+
+  var evidence = [{ category:'旺衰', title:'日主' + context.dmStr.level, detail:context.dmStr.detail }];
+  if (context.tiaoHouNote) evidence.push({ category:'调候', title:'寒暖燥湿', detail:context.tiaoHouNote });
+  evidence.push({
+    category:'格局', title:pattern.name + '·' + pattern.status,
+    detail:pattern.status === '破格' ? pattern.breakReasons.join('；') : pattern.source
+  });
+  evidence.push({
+    category:'根气/透干', title:'用神在原局的状态',
+    detail:lists.yongShen.map(function(wx) { return wx + '：' + presenceFor(wx); }).join('；')
+  });
+
+  return {
+    dayMasterLevel: base.dayMasterLevel,
+    dayMasterScore: base.dayMasterScore,
+    xiShen: lists.xiShen,
+    yongShen: lists.yongShen,
+    jiShen: lists.jiShen,
+    reasoning: base.reasoning,
+    congGe: base.congGe,
+    method: method,
+    primaryReason: primaryReason,
+    evidence: evidence,
+    elementReasons: elementReasons,
+    patternStatus: {
+      name: pattern.name,
+      status: pattern.status,
+      breakReasons: (pattern.breakReasons || []).slice()
+    }
+  };
+}
+
 function getYongJi(bazi) {
   var dmStr = calcDayMasterStrength(bazi);
   var dmLevel = dmStr.level;
@@ -3925,12 +4008,11 @@ function getYongJi(bazi) {
     reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。⚠️注意：从格判定的喜忌与普通扶抑法相反。举例：木为食伤（泄气），正常身弱忌泄，但此命已弃命从势，故木反为喜。'
       + '喜：' + xiShen.join('、') + '来顺势助旺。'
       + '忌：' + jiShen.join('、') + '来逆势破格。';
-    var congLists = normalizeYongJiLists(xiShen, yongShen, jiShen);
-    return {
+    return finalizeYongJiResult(bazi, {
       dayMasterLevel: dmLevel, dayMasterScore: dmStr.score,
-      xiShen: congLists.xiShen, yongShen: congLists.yongShen, jiShen: congLists.jiShen,
+      xiShen: xiShen, yongShen: yongShen, jiShen: jiShen,
       reasoning: reasoning, congGe: cong
-    };
+    }, { dmStr:dmStr, cong:cong, tiaoHouNote:'', pattern:getPattern(bazi) });
   }
 
   if (dmLevel === '极强' || dmLevel === '偏强') {
@@ -4096,15 +4178,14 @@ function getYongJi(bazi) {
     reasoning += ' 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。';
   }
 
-  var normalizedLists = normalizeYongJiLists(xiShen, yongShen, jiShen);
-  return {
+  return finalizeYongJiResult(bazi, {
     dayMasterLevel: dmLevel,
     dayMasterScore: dmStr.score,
-    xiShen: normalizedLists.xiShen,           // 喜神（包含核心用神）
-    yongShen: normalizedLists.yongShen,       // 用神（最关键的五行）
-    jiShen: normalizedLists.jiShen,           // 忌神（与喜用互斥）
+    xiShen: xiShen,
+    yongShen: yongShen,
+    jiShen: jiShen,
     reasoning: reasoning
-  };
+  }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern });
 }
 
 /**
