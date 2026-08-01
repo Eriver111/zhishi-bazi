@@ -19,7 +19,7 @@ setInterval(function() {
 const http=require('http');const fs=require('fs');const path=require('path');
 const execSync=require('child_process').execSync;
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.gif':'image/gif','.ico':'image/x-icon','.mp4':'video/mp4','.mp3':'audio/mpeg'};
-try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0)process.env[t.slice(0,i).trim()]=t.slice(i+1).trim()}})}catch(_){}
+try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0){const k=t.slice(0,i).trim();if(process.env[k]===undefined)process.env[k]=t.slice(i+1).trim()}}})}catch(_){}
 const DEPLOY_SECRET=process.env.DEPLOY_SECRET||'zhishi-deploy-2026';
 
 // 自动部署：每分钟检查一次 GitHub 是否有新 commit，有则 git pull
