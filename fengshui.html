@@ -611,6 +611,7 @@ function startAnalysis(){
 
   var btn = document.getElementById('btnAnalyze');
   btn.disabled = true; btn.textContent = '分析中...';
+  document.getElementById('loading').style.display = 'block';
   // 轮换提示词
   var tips=['正在根据坐向排布八宅九星...','分析大门与客厅照片形煞...','检查厨房与主卧风水格局...','《八宅明镜》对照大游年歌诀...','逐方位判断吉凶影响...','生成完整风水分析报告...'];
   var tipIdx=0;var tipTimer=setInterval(function(){tipIdx=(tipIdx+1)%tips.length;var el=document.getElementById('loadingText');if(el)el.textContent=tips[tipIdx]},5000);

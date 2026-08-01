@@ -142,8 +142,9 @@
 
     <div class="loading-state" id="loading">
       <div class="loading-dots"><span></span><span></span><span></span></div>
-      <div class="loading-text" id="loadingText">AI 正在读取手掌纹路...</div>
-      <div style="margin-top:6px;font-size:11px;color:var(--tx3);opacity:.6" id="loadingSub">请耐心等待，并非卡住，图片分析约需30-60秒</div>
+      <div class="loading-text" id="loadingText" style="font-size:16px;font-weight:700;letter-spacing:2px">🔍 AI 正在读取手掌纹路...</div>
+      <div style="margin:14px 0;height:8px;background:rgba(201,168,76,.12);border-radius:4px;overflow:hidden;max-width:300px;margin-left:auto;margin-right:auto;box-shadow:inset 0 0 4px rgba(0,0,0,.3)"><div id="loadingBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold-d),var(--gold),var(--gold-l));border-radius:4px;transition:width .4s;box-shadow:0 0 8px rgba(201,168,76,.3)"></div></div>
+      <div style="margin-top:6px;font-size:13px;color:var(--gold);font-weight:600;letter-spacing:2px" id="loadingSub">⏳ 图片分析中，约需 30-60 秒，请勿离开页面</div>
     </div>
 
     <div class="error-msg" id="error"></div>
@@ -233,16 +234,18 @@ function startAnalysis(){
   if(!_imageData) return;
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){Auth.showModal('login');return}
   var btn=document.getElementById('btnAnalyze');btn.disabled=true;btn.textContent='观手中...';
+  document.getElementById('loading').style.display='block';
   var tips=['正在定位生命线与智慧线...','分析五指形态与掌丘...','《神相全编》对照八大掌纹...','识别手部生活痕迹（老茧、痣、伤疤）...','综合判断事业/健康/感情线...','生成手相分析报告...'];
   var tipIdx=0;var tipTimer=setInterval(function(){tipIdx=(tipIdx+1)%tips.length;var el=document.getElementById('loadingText');if(el)el.textContent=tips[tipIdx]},5000);
+  var bar=document.getElementById('loadingBar');var barPct=0;var barTimer=setInterval(function(){barPct+=Math.random()*8+2;if(barPct>90)barPct=90;if(bar)bar.style.width=barPct+'%'},2000);
   document.getElementById('result').style.display='none';document.getElementById('error').style.display='none';
   var scrollEl=document.getElementById('scrollReveal');if(scrollEl)scrollEl.style.display='none';
   var apiP=fetch('/api/palm-reading',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+Auth.getToken()},body:JSON.stringify({image:_imageData})}).then(function(r){return r.json()});
   var scanP=runScanPhase();
-  Promise.all([scanP,apiP]).then(function(rr){clearInterval(tipTimer);var d=rr[1];if(d.error){showError(d.error);btn.disabled=false;btn.textContent='开始观手';return}
+  Promise.all([scanP,apiP]).then(function(rr){clearInterval(tipTimer);clearInterval(barTimer);var bar=document.getElementById('loadingBar');if(bar)bar.style.width='100%';var d=rr[1];if(d.error){showError(d.error);btn.disabled=false;btn.textContent='开始观手';return}
     var html='<div class=scroll-hint>—— 观手结果 ——</div>'+d.reading.replace(/\n/g,'<br>');
     runScrollReveal(html).then(function(){btn.disabled=false;btn.textContent='重新观手';updateCreditsUI()});
-  }).catch(function(){clearInterval(tipTimer);btn.disabled=false;btn.textContent='开始观手';showError('网络错误')});
+  }).catch(function(){clearInterval(tipTimer);clearInterval(barTimer);btn.disabled=false;btn.textContent='开始观手';showError('网络错误')});
 }
 
 function updateCreditsUI(){

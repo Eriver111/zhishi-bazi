@@ -206,6 +206,11 @@ test('both result renderers show broken-pattern status as secondary copy', () =>
   assert.match(result, /p\.status===['"]破格['"]/);
 });
 
+test('the browser result script remains valid JavaScript', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'result.js'), 'utf8');
+  assert.doesNotThrow(() => new vm.Script(source));
+});
+
 test('AI context preserves structured strength and pattern status', () => {
   const api = fs.readFileSync(path.join(__dirname, '..', 'api', 'ai-chat.js'), 'utf8');
   assert.doesNotMatch(api, /\$\{data\.dayMasterStrength\}/);
