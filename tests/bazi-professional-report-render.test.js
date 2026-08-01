@@ -67,6 +67,7 @@ test('专业报告从一份事实对象渲染五个核心证据区域', () => {
   assert.match(rendered.body.innerHTML, /格局成败/);
   assert.match(rendered.body.innerHTML, /喜用忌神/);
   assert.match(rendered.body.innerHTML, /原局作用链/);
+  assert.match(rendered.body.innerHTML, /岁运联动/);
   assert.match(rendered.nodes.reportSummary.innerHTML, /甲日主/);
   assert.match(rendered.nodes.patternAnalysis.innerHTML, /破格/);
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /用神/);
@@ -74,4 +75,6 @@ test('专业报告从一份事实对象渲染五个核心证据区域', () => {
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /忌神/);
   assert.doesNotMatch(rendered.nodes.xiyongAnalysis.innerHTML, /闲神|仇神/);
   assert.notEqual(rendered.nodes.actionChainAnalysis.innerHTML, '');
+  assert.match(rendered.nodes.fortuneInteractionAnalysis.innerHTML, /流年/);
+  assert.match(rendered.nodes.fortuneInteractionAnalysis.innerHTML, /用神|喜神|忌神|中性/);
 });

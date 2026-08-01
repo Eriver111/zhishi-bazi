@@ -80,3 +80,41 @@ test('深度报告事实对同一命盘生成稳定的专业证据链', () => {
   assert.ok(first.actionChains.length >= 2 && first.actionChains.length <= 4);
   assert.equal(first.yongJi.jiShen.filter(wx => first.yongJi.xiShen.includes(wx)).length, 0);
 });
+
+test('流年明确说明触发的是用神、喜神还是忌神', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['乙卯', '辛酉', '甲寅', '戊辰']),
+    'male'
+  );
+  const thisYear = calculator.analyzeThisYear(chart, 'male', {
+    dayMasterLevel: '偏弱',
+    yongShen: ['火'],
+    xiShen: ['火', '木'],
+    jiShen: ['水'],
+    elementReasons: {
+      火: { role: '用神', reasons: ['测试用神依据'] },
+      木: { role: '喜神', reasons: ['测试喜神依据'] },
+      水: { role: '忌神', reasons: ['测试忌神依据'] },
+    },
+  });
+
+  assert.equal(thisYear.triggeredElement, '火');
+  assert.equal(thisYear.triggeredRole, '用神');
+  assert.match(thisYear.triggeredReason, /流年天干丙火/);
+  assert.match(thisYear.triggeredReason, /用神/);
+});
+
+test('专业报告包含岁运与喜用忌的联动结论', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['乙卯', '辛酉', '甲寅', '戊辰']),
+    'female'
+  );
+  const facts = calculator.getProfessionalReportFacts(chart, 'female');
+
+  assert.ok(facts.fortuneInteraction);
+  assert.match(facts.fortuneInteraction.yearPillar, /^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
+  assert.ok(['用神', '喜神', '忌神', '中性'].includes(facts.fortuneInteraction.triggeredRole));
+  assert.ok(facts.fortuneInteraction.triggeredReason.length >= 8);
+});

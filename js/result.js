@@ -163,7 +163,7 @@ function render(data) {
 
     // 日主性格（大白话）
     var reportFacts=null;
-    try{reportFacts=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getProfessionalReportFacts?BaZiCalculator.getProfessionalReportFacts(bazi):null}catch(e){console.log("reportFacts error:",e)}
+    try{reportFacts=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getProfessionalReportFacts?BaZiCalculator.getProfessionalReportFacts(bazi,_params.gender):null}catch(e){console.log("reportFacts error:",e)}
     try{renderPillarAnalysis(bazi)}catch(e){console.log("pillarAnalysis error:",e)}
     try{renderDayMasterPower(bazi,reportFacts)}catch(e){console.log("dayMasterPower error:",e)}
     try{renderPattern(bazi,reportFacts)}catch(e){console.log("pattern error:",e)}

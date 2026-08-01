@@ -102,7 +102,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 ## 关键：如何使用预计算数据（降低幻觉）
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
 - **pattern**（格局）：候选格局名、status（成格/破格）和 breakReasons（破格原因）是一个整体。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。
-- **yongJi**（喜用忌神）：xiShen/喜神、yongShen/用神、jiShen/忌神 的五行元素已算好，**严格按此回答**，禁止根据自己的知识另行推断或替换。reasoning 字段是推算依据
+- **yongJi**（喜用忌神）：只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用，所以同一五行可以同时出现在 yongShen 与 xiShen，但 jiShen 必须与二者互斥。三组五行及 method、primaryReason、evidence、elementReasons 已由系统算好，**严格按此回答**，禁止另设闲神、仇神等类别，也禁止自行推断或替换。
 - **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
@@ -675,10 +675,21 @@ function buildSingleChart(data) {
   if (data.yongJi) {
     const yj = data.yongJi;
     ctx += `\n喜用忌神分析：\n`;
-    ctx += `  喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
     ctx += `  用神：${(yj.yongShen || []).join('、') || '—'}\n`;
+    ctx += `  喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
     ctx += `  忌神：${(yj.jiShen || []).join('、') || '—'}\n`;
-    ctx += `  依据：${yj.reasoning || ''}\n`;
+    ctx += `  取用方法：${yj.method || '—'}\n`;
+    ctx += `  核心依据：${yj.primaryReason || yj.reasoning || ''}\n`;
+    if (yj.evidence && yj.evidence.length) {
+      ctx += `  判定证据：\n`;
+      yj.evidence.forEach(item => { ctx += `    - ${item.category}：${item.detail}\n`; });
+    }
+    if (yj.elementReasons) {
+      ctx += `  五行归类理由：\n`;
+      Object.entries(yj.elementReasons).forEach(([wx, item]) => {
+        ctx += `    - ${item.role}·${wx}：${(item.reasons || []).join('；')}\n`;
+      });
+    }
   }
 
   // v3.1: 四柱生克关系
@@ -899,7 +910,19 @@ function generateMockReply(question, chartData, bazi) {
 
   if (q.includes('喜用') || q.includes('用神') || q.includes('喜忌')) {
     let r = '**关于喜用神**\n\n';
-    if (hasChart && dayGan && dmStrength) {
+    if (hasChart && chartData.yongJi) {
+      const yj = chartData.yongJi;
+      r += `系统判定采用**${yj.method || '综合取用'}**：${yj.primaryReason || yj.reasoning || ''}\n\n`;
+      r += `- 用神：${(yj.yongShen || []).join('、') || '—'}\n`;
+      r += `- 喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
+      r += `- 忌神：${(yj.jiShen || []).join('、') || '—'}\n\n`;
+      if (yj.elementReasons) {
+        Object.entries(yj.elementReasons).forEach(([wx, item]) => {
+          r += `${item.role}·${wx}：${(item.reasons || []).join('；')}\n`;
+        });
+        r += '\n';
+      }
+    } else if (hasChart && dayGan && dmStrength) {
       r += `你的日主为**${dayGan}**（${dayWX}），综合判断为**${dmStrength}**。\n\n`;
       if (dmStrength.includes('强') || dmStrength.includes('旺')) {
         r += '日主偏强，按照子平法"扶抑"原则，**喜克泄耗**：\n- 喜神：官杀（克）、食伤（泄）、财星（耗）\n- 忌神：印星、比劫（生扶）\n\n';

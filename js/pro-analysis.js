@@ -15,7 +15,7 @@
     if(typeof _bazi==='undefined'||!_bazi){setTimeout(init,300);return}
     var bazi=_bazi;
     var facts=null;
-    try{facts=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getProfessionalReportFacts?BaZiCalculator.getProfessionalReportFacts(bazi):null}catch(e){facts=null}
+    try{facts=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getProfessionalReportFacts?BaZiCalculator.getProfessionalReportFacts(bazi,typeof _params!=='undefined'&&_params?_params.gender:null):null}catch(e){facts=null}
     hideShensha();
     try{var sec=document.getElementById('proSection');if(sec)sec.classList.add('drawer-open');var arrow=document.querySelector('#proSection .drawer-arrow');if(arrow)arrow.style.transform='rotate(90deg)'}catch(e){}
     var body=document.querySelector('#proSection .drawer-body');
@@ -44,9 +44,12 @@
         '<div id="xiyongAnalysis"></div></div>'+
       '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px;margin-top:14px">'+
         '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">原局作用链</div>'+
-        '<div id="actionChainAnalysis"></div></div>';
+        '<div id="actionChainAnalysis"></div></div>'+
+      '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px;margin-top:14px">'+
+        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">岁运联动</div>'+
+        '<div id="fortuneInteractionAnalysis"></div></div>';
 
-    renderSummary(facts);renderPillars(bazi);renderPower(bazi,facts);renderPattern(bazi,facts);renderXiyong(bazi,facts);renderActionChains(facts);drawRadar(bazi);
+    renderSummary(facts);renderPillars(bazi);renderPower(bazi,facts);renderPattern(bazi,facts);renderXiyong(bazi,facts);renderActionChains(facts);renderFortuneInteraction(facts);drawRadar(bazi);
   }
 
   function renderSummary(facts){
@@ -263,6 +266,18 @@ function renderPattern(bazi,facts){
     var chains=facts&&facts.actionChains?facts.actionChains:[];
     if(!chains.length){c.innerHTML='<p style="font-size:11px;color:var(--tx3);margin:0">原局作用关系暂不可用</p>';return}
     c.innerHTML=chains.map(function(item,index){return '<div style="display:grid;grid-template-columns:24px 1fr;gap:8px;margin-top:'+(index?'8':'0')+'px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:8px"><span style="color:var(--gold-l);font-size:11px;font-weight:700">'+(index+1)+'</span><div><b style="color:var(--tx);font-size:11px">'+item.title+'</b><div style="color:var(--tx2);font-size:10px;line-height:1.55;margin-top:2px">'+item.detail+'</div></div></div>'}).join('');
+  }
+
+  function renderFortuneInteraction(facts){
+    var c=document.getElementById('fortuneInteractionAnalysis');if(!c)return;
+    var f=facts&&facts.fortuneInteraction?facts.fortuneInteraction:null;
+    if(!f){c.innerHTML='<p style="font-size:11px;color:var(--tx3);margin:0">岁运联动数据暂不可用</p>';return}
+    var roleColor={用神:'#8f6d24',喜神:'#4d7c62',忌神:'#a45b4f',中性:'#777'};
+    var h='<div style="font-size:11px;color:var(--tx);line-height:1.7"><b>'+f.year+'年 '+f.yearPillar+'流年</b> · '+(f.shiShen||'十神待定')+' <span style="display:inline-block;margin-left:4px;padding:1px 8px;border-radius:10px;color:#fff;background:'+(roleColor[f.triggeredRole]||'#777')+'">'+f.triggeredRole+'</span></div>';
+    h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0">'+f.triggeredReason+'</p>';
+    if(f.currentDaYun){h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0"><b style="color:var(--gold-l)">当前大运：</b>'+f.currentDaYun.gan+f.currentDaYun.zhi+'，运干'+f.currentDaYun.ganRole+'、运支'+f.currentDaYun.zhiRole+'。'+f.currentDaYun.triggeredReason+'</p>'}
+    else if(f.dyInfo){h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0">'+f.dyInfo+'</p>'}
+    c.innerHTML=h;
   }
 
 function drawRadar(bazi){

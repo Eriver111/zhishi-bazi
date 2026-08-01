@@ -3049,6 +3049,21 @@ function analyzeWealth(bazi, gender, yongJi) {
 
 
 // ==================== 大运流年运势分析 ====================
+function classifyFortuneElement(wx, yongJi, sourceLabel) {
+    var role = '中性';
+    if (yongJi && (yongJi.yongShen || []).indexOf(wx) >= 0) role = '用神';
+    else if (yongJi && (yongJi.xiShen || []).indexOf(wx) >= 0) role = '喜神';
+    else if (yongJi && (yongJi.jiShen || []).indexOf(wx) >= 0) role = '忌神';
+    var reasons = yongJi && yongJi.elementReasons && yongJi.elementReasons[wx]
+        ? (yongJi.elementReasons[wx].reasons || []) : [];
+    var prefix = (sourceLabel || '岁运五行') + wx;
+    var detail = role === '中性'
+        ? prefix + '不在当前喜用忌三类核心范围内，需结合刑冲合害观察实际作用。'
+        : prefix + '落在命局' + role + '范围。';
+    if (reasons.length) detail += reasons[0];
+    return { element:wx, role:role, reason:detail };
+}
+
 function analyzeFortune(bazi, gender, yongJi) {
     const DAY = bazi.day.gan;
     const DAY_WX = WU_XING[DAY];
@@ -3116,6 +3131,7 @@ function analyzeFortune(bazi, gender, yongJi) {
     const yearResults = years.map(yr => {
         const yrWX = yr.ganWX;
         const isFavorable = favorableSet.has(yrWX);
+        const trigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yr.gan);
         const ss = yr.shiShen;
 
         // 冲克检测
@@ -3218,6 +3234,9 @@ function analyzeFortune(bazi, gender, yongJi) {
             gan: yr.gan,
             zhi: yr.zhi,
             shiShen: ss,
+            triggeredElement: trigger.element,
+            triggeredRole: trigger.role,
+            triggeredReason: trigger.reason,
             isFavorable: isFavorable,
             riskText: riskText,
             oppText: oppText,
@@ -3230,12 +3249,24 @@ function analyzeFortune(bazi, gender, yongJi) {
 
     // 当前大运信息
     let dyInfo = '';
+    let currentDaYun = null;
     if (currentDY) {
         const dySS = getShiShen(DAY, currentDY.gan);
+        const ganWX = WU_XING[currentDY.gan];
+        const zhiWX = DI_ZHI_WU_XING[currentDY.zhi];
+        const ganTrigger = classifyFortuneElement(ganWX, yongJi, '大运天干' + currentDY.gan);
+        const zhiTrigger = classifyFortuneElement(zhiWX, yongJi, '大运地支' + currentDY.zhi);
         dyInfo = '当前正行「' + currentDY.gan + currentDY.zhi + '」大运（' + currentDY.startYear + '-' + currentDY.endYear + '年），运干十神为「' + dySS + '」。';
+        currentDaYun = {
+            gan: currentDY.gan, zhi: currentDY.zhi,
+            startYear: currentDY.startYear, endYear: currentDY.endYear,
+            shiShen: dySS, ganWX: ganWX, zhiWX: zhiWX,
+            ganRole: ganTrigger.role, zhiRole: zhiTrigger.role,
+            triggeredReason: ganTrigger.reason + zhiTrigger.reason
+        };
     }
 
-    return { years: yearResults, dayGan: DAY, dyInfo: dyInfo };
+    return { years: yearResults, dayGan: DAY, dyInfo: dyInfo, currentDaYun: currentDaYun };
 }
 
 // ==================== 今年运势详细分析 ====================
@@ -3265,6 +3296,7 @@ function analyzeThisYear(bazi, gender, yongJi) {
 
     var yrWX = WU_XING[yp.gan];
     var isFavorable = favorableSet.indexOf(yrWX) >= 0;
+    var yearTrigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yp.gan);
 
     // 冲合检测
     var CHONG_MAP = { '子午':true,'午子':true,'丑未':true,'未丑':true,'寅申':true,'申寅':true,'卯酉':true,'酉卯':true,'辰戌':true,'戌辰':true,'巳亥':true,'亥巳':true };
@@ -3358,14 +3390,18 @@ function analyzeThisYear(bazi, gender, yongJi) {
     if (opportunities.length === 0) opportunities.push('今年稳扎稳打就是最好的策略。日常工作生活按节奏来，别给自己太大压力。');
 
     var thisYearDaYunInfo = '';
+    var thisYearDaYun = null;
     if (bazi.birthDate && bazi.birthDate.year) {
-        try { thisYearDaYunInfo = analyzeFortune(bazi, gender, yongJi).dyInfo || ''; } catch(e) {}
+        try { var fortuneData = analyzeFortune(bazi, gender, yongJi); thisYearDaYunInfo = fortuneData.dyInfo || ''; thisYearDaYun = fortuneData.currentDaYun || null; } catch(e) {}
     }
 
     return {
         year: currentYear,
         gan: yp.gan, zhi: yp.zhi,
         shiShen: ss,
+        triggeredElement: yearTrigger.element,
+        triggeredRole: yearTrigger.role,
+        triggeredReason: yearTrigger.reason,
         isFavorable: isFavorable,
         story: story,
         chongWarnings: chongWarnings,
@@ -3373,7 +3409,8 @@ function analyzeThisYear(bazi, gender, yongJi) {
         healthSummary: healthSummary,
         healthExtra: healthExtra,
         opportunities: opportunities,
-        dyInfo: thisYearDaYunInfo
+        dyInfo: thisYearDaYunInfo,
+        currentDaYun: thisYearDaYun
     };
 }
 
@@ -4535,10 +4572,11 @@ function getCangGanDepth(bazi) {
 /**
  * 深度报告的唯一专业事实汇总。只组合已计算结论，不重新判断旺衰或喜用忌。
  */
-function getProfessionalReportFacts(bazi) {
+function getProfessionalReportFacts(bazi, gender) {
   var strength = calcDayMasterStrength(bazi);
   var pattern = getPattern(bazi);
   var yongJi = getYongJi(bazi);
+  var thisYear = analyzeThisYear(bazi, gender || bazi.gender || 'male', yongJi);
   var candidates = [];
 
   var addChain = function(priority, title, detail) {
@@ -4592,7 +4630,17 @@ function getProfessionalReportFacts(bazi) {
     },
     yongJi: yongJi,
     pattern: pattern,
-    actionChains: actionChains
+    actionChains: actionChains,
+    fortuneInteraction: {
+      year: thisYear.year,
+      yearPillar: thisYear.gan + thisYear.zhi,
+      shiShen: thisYear.shiShen,
+      triggeredElement: thisYear.triggeredElement,
+      triggeredRole: thisYear.triggeredRole,
+      triggeredReason: thisYear.triggeredReason,
+      currentDaYun: thisYear.currentDaYun || null,
+      dyInfo: thisYear.dyInfo || ''
+    }
   };
 }
 

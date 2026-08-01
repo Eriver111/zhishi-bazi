@@ -213,6 +213,15 @@ test('AI context preserves structured strength and pattern status', () => {
   assert.match(api, /pt\.breakReasons/);
 });
 
+test('AI context carries the same three-category yongji evidence used by the report', () => {
+  const api = fs.readFileSync(path.join(__dirname, '..', 'api', 'ai-chat.js'), 'utf8');
+  assert.match(api, /yj\.method/);
+  assert.match(api, /yj\.primaryReason/);
+  assert.match(api, /yj\.elementReasons/);
+  assert.match(api, /用神是喜神中的核心取用/);
+  assert.match(api, /只允许使用“用神、喜神、忌神”三类/);
+});
+
 test('AI flow never treats a missing element as an automatic remedy', () => {
   const api = fs.readFileSync(path.join(__dirname, '..', 'api', 'ai-chat.js'), 'utf8');
   assert.doesNotMatch(api, /五行欠缺：[^\n]*补益/);
