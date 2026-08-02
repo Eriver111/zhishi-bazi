@@ -181,7 +181,7 @@ function injectQRModal(){
   if(document.getElementById('qrModal'))return;
   var m=document.createElement('div');m.id='qrModal';
   m.style.cssText='display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
+  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><a id="qrMobileBtn" href="#" target="_self" style="display:none;margin:0 auto 12px;padding:12px 20px;background:#1677FF;color:#fff;font-size:15px;font-weight:600;letter-spacing:2px;border-radius:6px;text-decoration:none;max-width:260px">📱 打开支付宝支付 ¥9.9</a><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
   document.body.appendChild(m);
 }
 
@@ -215,12 +215,19 @@ function startRP(){
     localStorage.setItem('rpt_ord',JSON.stringify(pending));
     var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
     var payUrl=payment.payUrl;
+    var mobileBtn=document.getElementById('qrMobileBtn');
     if(isMobile()&&payUrl){
-      if(status)status.textContent='正在跳转支付...';
-      setTimeout(function(){window.location.href=payUrl},500);
+      // 手机端：显示直接跳转支付宝按钮（保持用户手势上下文）
+      if(mobileBtn){mobileBtn.href=payUrl;mobileBtn.style.display='block';}
+      if(status)status.textContent='点击上方蓝色按钮跳转支付宝支付';
+      // 同时渲染小号二维码做备用
+      if(window.PaymentFlow&&container){
+        payment=window.PaymentFlow.renderQr(container,d,{size:140,failureText:'二维码加载失败，请点击”重新支付”'});
+      }
     } else {
-      if(window.PaymentFlow){
-        payment=window.PaymentFlow.renderQr(container,d,{size:200,failureText:'二维码加载失败，请点击“重新支付”'});
+      if(mobileBtn)mobileBtn.style.display='none';
+      if(window.PaymentFlow&&container){
+        payment=window.PaymentFlow.renderQr(container,d,{size:200,failureText:'二维码加载失败，请点击”重新支付”'});
       }
       if(!payment.qrImageUrl){
         if(status)status.textContent='支付服务未返回可用二维码，请重新支付';
