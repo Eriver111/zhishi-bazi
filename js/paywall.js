@@ -244,7 +244,7 @@ function startRP(){
   });
 }
 
-function startQRPoll(pending){
+function startQRPoll(oid){
   if(!pending||pending.h!==_baziHash)return;
   if(_qrTimer)clearInterval(_qrTimer);
   var n=0;var status=document.getElementById('qrStatus');
