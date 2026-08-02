@@ -206,9 +206,9 @@ function startRP(){
     token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():'',
     amount:9.9,description:'八字完整分析报告'
   };
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
-  .then(function(r){return r.json();})
-  .then(function(d){
+  console.log('[pay]下单',JSON.stringify(orderBody).slice(0,150));fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
+  .then(function(r){console.log('[pay]status',r.status);return r.json().catch(function(e){console.error('[pay]JSON失败',e);throw e});})
+  .then(function(d){console.log('[pay]resp',JSON.stringify(d).slice(0,200));
     if(d.already_unlocked){
       var existingModal=document.getElementById('qrModal');if(existingModal)existingModal.style.display='none';
       unlock({persistLocal:true,persistCloud:false});
