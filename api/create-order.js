@@ -294,6 +294,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (e) {
-    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
+    console.error('[create-order] 500 error:', e.message, e.stack);
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试', detail: e.message });
   }
 };
