@@ -215,9 +215,8 @@ function startRP(){
       return;
     }
     if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
-    var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
-    if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
-    localStorage.setItem('rpt_ord',JSON.stringify(pending));
+    if(!d.out_trade_no){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
+    localStorage.setItem('rpt_ord',d.out_trade_no||'');
     var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
     var payUrl=payment.payUrl;
     if(isMobile()&&payUrl){
@@ -253,7 +252,7 @@ function startQRPoll(pending){
   _qrTimer=setInterval(function(){
     n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
-    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(oid)).then(function(r){return r.json()}).then(function(d){
       if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
         var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     }).catch(function(){});
@@ -261,8 +260,8 @@ function startQRPoll(pending){
 }
 
 function manualUnlock(){
-  var pending=getBaziPending();if(!pending||pending.h!==_baziHash)return;
-  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
+  var oid=localStorage.getItem('rpt_ord');if(!oid)return;
+  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(oid)).then(function(r){return r.json()}).then(function(d){
     if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
