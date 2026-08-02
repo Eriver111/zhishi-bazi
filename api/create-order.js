@@ -234,7 +234,7 @@ module.exports = async function handler(req, res) {
 
     const payAmount = 9.9;
     const orderId = 'bazi_' + Date.now().toString(36) + '_' + crypto.randomBytes(4).toString('hex');
-    await createReportOrder({
+    try { await createReportOrder({
       order_id: orderId,
       user_id: userId,
       report_type: 'bazi',
@@ -242,7 +242,7 @@ module.exports = async function handler(req, res) {
       report_params: normalized,
       label,
       amount: payAmount
-    });
+    }); } catch(e) { console.error('[bazi order] createReportOrder failed:', e.message); }
     var finalOrderId = orderId;
     var baziChannel = (req.body && req.body.channel) || '';
     var baziParams = [];
