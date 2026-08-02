@@ -222,7 +222,7 @@ function startRP(){
     if(isMobile()&&payUrl){
       if(status)status.textContent='正在跳转支付宝...';
       // 自动跳转
-      setTimeout(function(){window.location.href=payUrl},800);
+      window.location.assign(payUrl);
       // 同时放一个手动按钮兜底
       if(container){
         container.innerHTML='<p style="color:var(--gold);font-size:13px;margin:12px 0">正在跳转支付宝...</p><a href="'+payUrl+'" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:24px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">如未跳转，点此手动支付</a>';
