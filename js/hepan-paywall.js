@@ -65,12 +65,14 @@ function hstartPay(retryCount){
     var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
     var mobileBtn=document.getElementById('hepanMobileBtn');
     if(isM&&payment.payUrl){
-      // 手机端：显示直接跳转支付宝按钮（保持用户手势上下文）
+      // 手机端：显示直接跳转按钮（兜底）+ 立即自动跳转支付宝
       if(mobileBtn){mobileBtn.href=payment.payUrl;mobileBtn.style.display='block';}
-      if(status)status.textContent='点击上方蓝色按钮跳转支付宝支付';
+      if(status)status.textContent='正在跳转支付宝...';
       var hepanC=document.getElementById('hepanQrContainer');
       // 同时渲染小号二维码做备用
       if(window.PaymentFlow)payment=window.PaymentFlow.renderQr(hepanC,d,{size:140,failureText:'二维码加载失败，请重新支付'});
+      // 立即跳转（不用setTimeout，保留用户手势上下文）
+      window.location.href=payment.payUrl;
     } else {
       if(mobileBtn)mobileBtn.style.display='none';
       var hepanC=document.getElementById('hepanQrContainer');
