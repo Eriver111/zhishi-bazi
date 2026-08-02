@@ -204,7 +204,6 @@ function startRP(){
   var orderBody={
     mode:'credit_pack',
     name:'八字完整分析报告',
-    token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():''
   };
   console.log('[pay]下单',JSON.stringify(orderBody).slice(0,150));fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
   .then(function(r){console.log('[pay]status',r.status);return r.json().catch(function(e){console.error('[pay]JSON失败',e);throw e});})
