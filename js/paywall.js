@@ -187,7 +187,7 @@ function injectQRModal(){
 
 var _qrTimer=null;
 
-function isMobile(){return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent)}
+function isMobile(){return /Android|iPhone|iPad|iPod|webOS|Mobile|mobile/i.test(navigator.userAgent)||(typeof window.orientation!=='undefined')||(navigator.maxTouchPoints>0)}
 
 function startRP(){
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
@@ -221,8 +221,13 @@ function startRP(){
     var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
     var payUrl=payment.payUrl;
     if(isMobile()&&payUrl){
-      if(status)status.textContent='正在跳转支付...';
-      setTimeout(function(){window.location.href=payUrl},500);
+      if(status)status.textContent='正在跳转支付宝...';
+      // 自动跳转
+      setTimeout(function(){window.location.href=payUrl},800);
+      // 同时放一个手动按钮兜底
+      if(container){
+        container.innerHTML='<p style="color:var(--gold);font-size:13px;margin:12px 0">正在跳转支付宝...</p><a href="'+payUrl+'" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:24px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">如未跳转，点此手动支付</a>';
+      }
     } else {
       if(window.PaymentFlow){
         payment=window.PaymentFlow.renderQr(container,d,{size:200,failureText:'二维码加载失败，请点击“重新支付”'});
