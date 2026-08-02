@@ -196,6 +196,11 @@ function startRP(){
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
+  if(!_baziPayParams||!_baziPayParams.year||!_baziPayParams.gender){
+    if(status)status.textContent='排盘参数不完整，请返回重新排盘';
+    if(retry)retry.style.display='block';
+    return;
+  }
   var orderBody={
     report_params:_baziPayParams,
     token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():'',
