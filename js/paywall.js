@@ -68,7 +68,7 @@ function reportSearchParams(params){
 
 var _accountAccessFailed=false;
 function isAccountLoggedIn(){return typeof Auth!=='undefined'&&Auth.isLoggedIn()}
-function (function(){})(){
+function showAccountAccessGate(){
   var wrap=document.getElementById('unifiedReport');
   if(!wrap||document.getElementById('rptAccessGate'))return;
   var gate=document.createElement('div');gate.id='rptAccessGate';
@@ -77,7 +77,7 @@ function (function(){})(){
   gate.textContent='正在验证购买记录…';
   wrap.appendChild(gate);
 }
-function (function(){})(){var gate=document.getElementById('rptAccessGate');if(gate)gate.remove()}
+function removeAccountAccessGate(){var gate=document.getElementById('rptAccessGate');if(gate)gate.remove()}
 function restoreAccountAccess(){
   if(!isAccountLoggedIn())return Promise.resolve(false);
   var query=reportSearchParams(_baziPayParams);
@@ -106,7 +106,7 @@ function initPaywall(bp){
   _baziHash=makeLocalReportKey(_baziPayParams);
   _accountAccessFailed=false;
   if(!renderPaywall(false,true))return Promise.resolve(false);
-  if(true||!isAccountLoggedIn()){
+  if(!isAccountLoggedIn()){
     if(iru()){unlock({persistLocal:false,persistCloud:false});return Promise.resolve(true)}
     renderPaywall(true);
     return Promise.resolve(false);
@@ -187,7 +187,7 @@ function injectQRModal(){
 
 var _qrTimer=null;
 
-function isMobile(){return /Android|iPhone|iPad|iPod|webOS|Mobile|mobile/i.test(navigator.userAgent)||(typeof window.orientation!=='undefined')||(navigator.maxTouchPoints>0)}
+function isMobile(){return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent)}
 
 function startRP(){
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
@@ -196,36 +196,28 @@ function startRP(){
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
 
-  if(!_baziPayParams||!_baziPayParams.year||!_baziPayParams.gender){
-    if(status)status.textContent='排盘参数不完整，请返回重新排盘';
-    if(retry)retry.style.display='block';
-    return;
-  }
   var orderBody={
-    mode:'credit_pack',
-    name:'八字完整分析报告',
+    report_params:_baziPayParams,
+    token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():'',
+    amount:9.9,description:'八字完整分析报告'
   };
-  console.log('[pay]下单',JSON.stringify(orderBody).slice(0,150));fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
-  .then(function(r){console.log('[pay]status',r.status);return r.json().catch(function(e){console.error('[pay]JSON失败',e);throw e});})
-  .then(function(d){console.log('[pay]resp',JSON.stringify(d).slice(0,200));
+  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
+  .then(function(r){return r.json();})
+  .then(function(d){
     if(d.already_unlocked){
       var existingModal=document.getElementById('qrModal');if(existingModal)existingModal.style.display='none';
       unlock({persistLocal:true,persistCloud:false});
       return;
     }
     if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
-    if(!d.out_trade_no){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
-    localStorage.setItem('rpt_ord',d.out_trade_no||'');
+    var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
+    if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
+    localStorage.setItem('rpt_ord',JSON.stringify(pending));
     var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
     var payUrl=payment.payUrl;
     if(isMobile()&&payUrl){
-      if(status)status.textContent='正在跳转支付宝...';
-      // 自动跳转
-      window.location.assign(payUrl);
-      // 同时放一个手动按钮兜底
-      if(container){
-        container.innerHTML='<p style="color:var(--gold);font-size:13px;margin:12px 0">正在跳转支付宝...</p><a href="'+payUrl+'" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:24px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">如未跳转，点此手动支付</a>';
-      }
+      if(status)status.textContent='正在跳转支付...';
+      setTimeout(function(){window.location.href=payUrl},500);
     } else {
       if(window.PaymentFlow){
         payment=window.PaymentFlow.renderQr(container,d,{size:200,failureText:'二维码加载失败，请点击“重新支付”'});
@@ -244,14 +236,14 @@ function startRP(){
   });
 }
 
-function startQRPoll(oid){
+function startQRPoll(pending){
   if(!pending||pending.h!==_baziHash)return;
   if(_qrTimer)clearInterval(_qrTimer);
   var n=0;var status=document.getElementById('qrStatus');
   _qrTimer=setInterval(function(){
     n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
-    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(oid)).then(function(r){return r.json()}).then(function(d){
+    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
       if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
         var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     }).catch(function(){});
@@ -259,8 +251,8 @@ function startQRPoll(oid){
 }
 
 function manualUnlock(){
-  var oid=localStorage.getItem('rpt_ord');if(!oid)return;
-  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(oid)).then(function(r){return r.json()}).then(function(d){
+  var pending=getBaziPending();if(!pending||pending.h!==_baziHash)return;
+  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
     if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
