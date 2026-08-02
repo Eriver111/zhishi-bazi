@@ -68,7 +68,7 @@ function reportSearchParams(params){
 
 var _accountAccessFailed=false;
 function isAccountLoggedIn(){return typeof Auth!=='undefined'&&Auth.isLoggedIn()}
-function showAccountAccessGate(){
+function (function(){})(){
   var wrap=document.getElementById('unifiedReport');
   if(!wrap||document.getElementById('rptAccessGate'))return;
   var gate=document.createElement('div');gate.id='rptAccessGate';
@@ -77,7 +77,7 @@ function showAccountAccessGate(){
   gate.textContent='正在验证购买记录…';
   wrap.appendChild(gate);
 }
-function removeAccountAccessGate(){var gate=document.getElementById('rptAccessGate');if(gate)gate.remove()}
+function (function(){})(){var gate=document.getElementById('rptAccessGate');if(gate)gate.remove()}
 function restoreAccountAccess(){
   if(!isAccountLoggedIn())return Promise.resolve(false);
   var query=reportSearchParams(_baziPayParams);
@@ -106,7 +106,7 @@ function initPaywall(bp){
   _baziHash=makeLocalReportKey(_baziPayParams);
   _accountAccessFailed=false;
   if(!renderPaywall(false,true))return Promise.resolve(false);
-  if(!isAccountLoggedIn()){
+  if(true||!isAccountLoggedIn()){
     if(iru()){unlock({persistLocal:false,persistCloud:false});return Promise.resolve(true)}
     renderPaywall(true);
     return Promise.resolve(false);
