@@ -1,6 +1,6 @@
 // 知时 Service Worker — 离线缓存 + PWA
 // 策略：只缓存静态资源，HTML 走网络保证用户始终拿到最新版
-const CACHE_NAME = 'zhishi-v7';
+const CACHE_NAME = 'zhishi-v8';
 
 // 只缓存静态资源，不缓存 HTML 页面
 const STATIC_ASSETS = [
@@ -34,11 +34,14 @@ self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// HTML 始终从网络获取，静态资源用缓存回退
+// HTML 始终从网络获取；JS/CSS 网络优先（拿不到再用缓存）；图片/字体缓存优先
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
   if (url.pathname.endsWith('.html') || url.pathname === '/') {
     e.respondWith(fetch(e.request));
+  } else if (/\.(js|css)(\?|$)/.test(url.pathname)) {
+    // JS/CSS 网络优先，失败才用缓存——保证用户永远拿最新代码
+    e.respondWith(fetch(e.request).catch(function(){ return caches.match(e.request); }));
   } else {
     e.respondWith(caches.match(e.request).then(function(r) { return r || fetch(e.request); }));
   }
