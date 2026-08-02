@@ -38,17 +38,27 @@ function hinjectQRModal(){
 
 var _hepanTimer=null;
 
-function hstartPay(){
+function hstartPay(retryCount){
+  retryCount=retryCount||0;
   var modal=document.getElementById('hepanQrModal');if(modal)modal.style.display='flex';
-  var status=document.getElementById('hepanQrStatus');if(status)status.textContent='正在生成...';
+  var status=document.getElementById('hepanQrStatus');if(status)status.textContent=retryCount>0?'正在重试('+(retryCount+1)+'/3)...':'正在生成...';
   var retry=document.getElementById('hepanQrRetry');if(retry)retry.style.display='none';
   var isM=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+  var controller=new AbortController();
+  var timeoutId=setTimeout(function(){controller.abort();},15000);
+
   fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
     hash:_hepanHash,amount:13.9,description:'合盘完整分析报告'
-  })})
-  .then(function(r){return r.json()}).then(function(d){
-    if(d.error){alert(d.error);return}
+  }),signal:controller.signal})
+  .then(function(r){
+    clearTimeout(timeoutId);
+    return r.json().catch(function(){return {error:'支付服务返回异常(HTTP '+r.status+')'};});
+  }).then(function(d){
+    if(d.error){
+      if(retryCount<2){setTimeout(function(){hstartPay(retryCount+1);},1000);if(status)status.textContent='支付服务繁忙，自动重试中('+(retryCount+2)+'/3)...';return;}
+      alert(d.error+(d.detail?' ('+d.detail+')':''));return;
+    }
     var pending={oid:d.out_trade_no,h:_hepanHash,k:d.report_key};
     if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
     localStorage.setItem('hepan_ord',JSON.stringify(pending));
@@ -69,7 +79,13 @@ function hstartPay(){
       if(status)status.textContent='请扫码支付 ¥13.9（支付后自动解锁）';
     }
     hpoll(pending);
-  }).catch(function(e){if(status)status.textContent='网络错误，请重试';var r=document.getElementById('hepanQrRetry');if(r)r.style.display='block'});
+  }).catch(function(e){
+    clearTimeout(timeoutId);
+    if(retryCount<2){setTimeout(function(){hstartPay(retryCount+1);},1000);if(status)status.textContent='网络波动，自动重试中('+(retryCount+2)+'/3)...';return;}
+    var msg=e.name==='AbortError'?'请求超时，请检查网络后重试':'网络错误，请重试';
+    if(status)status.textContent=msg;
+    var r=document.getElementById('hepanQrRetry');if(r)r.style.display='block';
+  });
 }
 
 function hpoll(pending){

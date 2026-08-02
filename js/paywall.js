@@ -189,9 +189,10 @@ var _qrTimer=null;
 
 function isMobile(){return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent)}
 
-function startRP(){
+function startRP(retryCount){
+  retryCount=retryCount||0;
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
-  var status=document.getElementById('qrStatus');if(status)status.textContent='正在连接支付...';
+  var status=document.getElementById('qrStatus');if(status)status.textContent=retryCount>0?'正在重试连接('+(retryCount+1)+'/3)...':'正在连接支付...';
   var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='none';
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
@@ -201,15 +202,33 @@ function startRP(){
     token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():'',
     amount:9.9,description:'八字完整分析报告'
   };
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody)})
-  .then(function(r){return r.json();})
+
+  // 带超时的 fetch（15秒）
+  var controller=new AbortController();
+  var timeoutId=setTimeout(function(){controller.abort();},15000);
+
+  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody),signal:controller.signal})
+  .then(function(r){
+    clearTimeout(timeoutId);
+    return r.json().catch(function(){return {error:'支付服务返回异常(HTTP '+r.status+')'};});
+  })
   .then(function(d){
     if(d.already_unlocked){
       var existingModal=document.getElementById('qrModal');if(existingModal)existingModal.style.display='none';
       unlock({persistLocal:true,persistCloud:false});
       return;
     }
-    if(d.error){if(status)status.textContent='错误: '+d.error;if(retry)retry.style.display='block';return}
+    if(d.error){
+      // 500错误自动重试（最多3次）
+      if(retryCount<2){
+        setTimeout(function(){startRP(retryCount+1);},1000);
+        if(status)status.textContent='支付服务繁忙，自动重试中('+(retryCount+2)+'/3)...';
+        return;
+      }
+      if(status)status.textContent='错误: '+d.error+(d.detail?' ('+d.detail+')':'');
+      if(retry)retry.style.display='block';
+      return;
+    }
     var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
     if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
     localStorage.setItem('rpt_ord',JSON.stringify(pending));
@@ -238,7 +257,15 @@ function startRP(){
     }
     startQRPoll(pending);
   }).catch(function(e){
-    if(status)status.textContent='连接失败，请重试';
+    clearTimeout(timeoutId);
+    // 网络错误或超时，自动重试
+    if(retryCount<2){
+      setTimeout(function(){startRP(retryCount+1);},1000);
+      if(status)status.textContent='网络波动，自动重试中('+(retryCount+2)+'/3)...';
+      return;
+    }
+    var msg=e.name==='AbortError'?'请求超时，请检查网络后重试':'连接失败，请重试';
+    if(status)status.textContent=msg;
     if(retry)retry.style.display='block';
   });
 }
