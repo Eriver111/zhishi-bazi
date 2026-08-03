@@ -1,23 +1,23 @@
-// 知时 Service Worker — 离线缓存 + PWA
-// 策略：只缓存静态资源，HTML 走网络保证用户始终拿到最新版
-const CACHE_NAME = 'zhishi-v10';
-const CACHE_JS_VERSION = 1;
+// 知时 Service Worker v11 — 网络优先策略，确保用户始终拿到最新代码
+var CACHE_NAME = 'zhishi-v11';
 
-// 只缓存静态资源，不缓存 HTML 页面
-const STATIC_ASSETS = [
-  '/css/style.css', '/css/landing.css', '/css/auth.css', '/css/result.css',
-  '/js/auth.js', '/js/result.js', '/js/bazi.js', '/js/main.js',
-  '/js/hepan-core.js', '/js/hepan-paywall.js', '/js/ai-chat-integration.js',
-  '/js/characters.js', '/js/pro-analysis.js', '/js/payment.js', '/js/paywall.js',
-  '/js/mo-xing-he.js', '/js/bg-animation.js', '/js/effects.js', '/js/lunar.js',
-  '/js/region.js', '/js/nav.js',
-  '/js/vendor/html2canvas.min.js', '/js/vendor/jspdf.umd.min.js', '/js/report-pdf.js',
-  '/manifest.json', '/icon.svg', '/icon-192.png', '/icon-512.png'
+// 只预缓存真正存在的静态资源
+var STATIC_ASSETS = [
+  '/css/style.css', '/css/landing.css', '/css/auth.css',
+  '/css/theme-light.css?v=3', '/css/theme-light-results.css?v=2',
+  '/css/interactions.css', '/css/poster.css',
+  '/js/bazi.js?v=1781962250', '/js/mo-xing-he.js?v=1781962250',
+  '/js/ai-chat-integration.js?v=1781962250',
+  '/js/vendor/html2canvas.min.js', '/js/vendor/jspdf.umd.min.js'
 ];
 
 self.addEventListener('install', function(e) {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) { return cache.addAll(STATIC_ASSETS); })
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(STATIC_ASSETS).catch(function(err) {
+        console.warn('[sw] 预缓存部分失败（不影响使用）:', err.message);
+      });
+    })
   );
   self.skipWaiting();
 });
@@ -35,12 +35,48 @@ self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// HTML 始终从网络获取；JS/CSS 网络优先（拿不到再用缓存）；图片/字体缓存优先
+// 策略：HTML始终走网络；JS/CSS网络优先（5秒超时降级缓存）；其他缓存优先
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
-  if (url.pathname.endsWith('.html') || url.pathname === '/') {
+  var path = url.pathname;
+
+  // HTML 始终走网络（保证最新页面结构）
+  if (path.endsWith('.html') || path === '/') {
     e.respondWith(fetch(e.request));
-  } else {
-    e.respondWith(caches.match(e.request).then(function(r) { return r || fetch(e.request); }));
+    return;
   }
+
+  // JS/CSS 网络优先，5秒超时后降级到缓存
+  if (path.endsWith('.js') || path.endsWith('.css')) {
+    e.respondWith(
+      new Promise(function(resolve) {
+        var timedOut = false;
+        var timeout = setTimeout(function() {
+          timedOut = true;
+          caches.match(e.request).then(function(r) { if (r) resolve(r); });
+        }, 5000);
+
+        fetch(e.request).then(function(response) {
+          if (!timedOut) {
+            clearTimeout(timeout);
+            // 更新缓存
+            var clone = response.clone();
+            caches.open(CACHE_NAME).then(function(cache) { cache.put(e.request, clone); });
+            resolve(response);
+          }
+        }).catch(function() {
+          if (!timedOut) {
+            clearTimeout(timeout);
+            caches.match(e.request).then(function(r) { if (r) resolve(r); });
+          }
+        });
+      })
+    );
+    return;
+  }
+
+  // 图片/字体等：缓存优先
+  e.respondWith(
+    caches.match(e.request).then(function(r) { return r || fetch(e.request); })
+  );
 });

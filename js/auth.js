@@ -504,7 +504,7 @@ if (document.readyState === 'loading') {
 
   // 注册 Service Worker（后台静默更新）
   if ('serviceWorker' in navigator) {
-    try { navigator.serviceWorker.register('/sw.js?v=3'); } catch(e) {}
+    try { navigator.serviceWorker.register('/sw.js?v=11'); } catch(e) {}
     // 检测更新并静默升级
     navigator.serviceWorker.ready.then(function(reg) { reg.update(); });
   }
