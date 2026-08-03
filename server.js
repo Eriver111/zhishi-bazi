@@ -1,4 +1,4 @@
-// === 崩溃保护：捕获未处理异常，记录日志但不退�?===
+// === 崩溃保护：捕获未处理异常，记录日志但不退�?===
 process.on('uncaughtException', function(err) {
   try { fs.appendFileSync(path.join(__dirname,'crash.log'), new Date().toISOString()+' uncaughtException: '+err.message+'\n'+err.stack+'\n'); } catch(_) {}
   console.error('[CRASH] uncaughtException:', err.message);
@@ -7,11 +7,11 @@ process.on('unhandledRejection', function(reason) {
   try { fs.appendFileSync(path.join(__dirname,'crash.log'), new Date().toISOString()+' unhandledRejection: '+(reason&&reason.message||reason)+'\n'); } catch(_) {}
   console.error('[CRASH] unhandledRejection:', reason&&reason.message||reason);
 });
-// === 内存上限保护：超�?500MB 主动重启 ===
+// === 内存上限保护：超�?500MB 主动重启 ===
 setInterval(function() {
   var mem = process.memoryUsage();
   if (mem.heapUsed > 500 * 1024 * 1024) {
-    console.error('[OOM] 内存�?500MB, 主动退出以触发守护进程重启');
+    console.error('[OOM] 内存�?500MB, 主动退出以触发守护进程重启');
     process.exit(1);
   }
 }, 30000).unref();
@@ -22,16 +22,16 @@ const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0){const k=t.slice(0,i).trim();if(process.env[k]===undefined)process.env[k]=t.slice(i+1).trim()}}})}catch(_){}
 const DEPLOY_SECRET=process.env.DEPLOY_SECRET||'zhishi-deploy-2026';
 
-// 自动部署：每分钟检查一�?GitHub 是否有新 commit，有�?git pull
+// 自动部署：每分钟检查一�?GitHub 是否有新 commit，有�?git pull
 var _lastPull=Date.now();
 function autoPull(){
   try{
     var dir=__dirname;
-    // 获取远程最�?commit hash
+    // 获取远程最�?commit hash
     var remote=execSync('git ls-remote origin -h refs/heads/main',{cwd:dir,timeout:8000}).toString().trim().split('\t')[0];
     var local=execSync('git rev-parse HEAD',{cwd:dir,timeout:5000}).toString().trim();
     if(remote && local && remote!==local){
-      console.log('[autoPull] 检测到更新 '+local.slice(0,7)+' �?'+remote.slice(0,7));
+      console.log('[autoPull] 检测到更新 '+local.slice(0,7)+' �?'+remote.slice(0,7));
       var out=execSync('git pull origin main 2>&1',{cwd:dir,timeout:30000}).toString();
       console.log('[autoPull] git pull: '+out.trim());
       _lastPull=Date.now();
@@ -42,10 +42,10 @@ function autoPull(){
   }catch(e){ console.error('[autoPull] 失败: '+e.message); }
   return false;
 }
-// 启动�?10 秒做首次检查，之后�?60 秒检�?
+// 启动�?10 秒做首次检查，之后�?60 秒检�?
 setTimeout(function(){ autoPull(); setInterval(autoPull,60000); },10000);
 
-// ===== 页面浏览统计（内存计数，�?0秒刷入Supabase�?====
+// ===== 页面浏览统计（内存计数，�?0秒刷入Supabase�?====
 var _pvCache = {}; // { 'YYYY-MM-DD|path': count }
 var _pvTimer = null;
 function flushPV() {
@@ -73,7 +73,7 @@ function flushPV() {
 function trackPV(path) {
   var today = new Date().toISOString().slice(0,10);
   var p = (path || '/').split('?')[0] || '/';
-  // 排除 API 和资源文�?
+  // 排除 API 和资源文�?
   if (p.startsWith('/api/') || p.includes('.')) return;
   var key = today + '|' + p;
   _pvCache[key] = (_pvCache[key] || 0) + 1;
@@ -168,7 +168,7 @@ function readRequestBody(req, options) {
 const s=http.createServer(async(req,res)=>{
 res.setHeader('Access-Control-Allow-Origin','*');if(req.method==='OPTIONS'){res.writeHead(204);res.end();return}
 
-// 渠道检测：根据 Host 头自动标记渠道来�?
+// 渠道检测：根据 Host 头自动标记渠道来�?
 var host=req.headers.host||'';
 var channel=CHANNEL_DOMAINS[host]||'';
 if(channel){
@@ -185,17 +185,17 @@ if(!pn||pn==='/')pn='/index.html';
 trackPV(pn);
 
 // API
-if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];// 同时清除核心依赖缓存，确�?git pull 后生�?
-['./lib/supabase.js','./lib/auth.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,pn==='/api/feedback'?{maxBytes:4096}:undefined);// 注入渠道标记�?body
+if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];// 同时清除核心依赖缓存，确�?git pull 后生�?
+['./lib/supabase.js','./lib/auth.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,pn==='/api/feedback'?{maxBytes:4096}:undefined);// 注入渠道标记�?body
 if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
 await h(req,res)}catch(e){if(!_sent){if(e&&e.code==='REQUEST_BODY_TOO_LARGE')res.status(413).json({ok:false,error:e.message});else res.json({error:e.message})}}return}
 const fp=__dirname+pn;try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
-// HTML 页面注入渠道持久化脚�?
+// HTML 页面注入渠道持久化脚�?
 if(ct==='text/html'&&channel){
   var injectScript='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';
   b=b.toString().replace('</head>',injectScript+'</head>');
 }
-res.writeHead(200,{'Content-Type':ct,'Cache-Control':ct==='text/html'?'no-cache':ct==='application/javascript'||ct==='text/css'?'public, max-age=300':'public, max-age=86400'});res.end(b);return}catch(e){}
+res.writeHead(200,{'Content-Type':ct,'Cache-Control':ct==='text/html'?'no-cache':ct==='application/javascript'||ct==='text/css'?'public, max-age=3600':'public, max-age=86400'});res.end(b);return}catch(e){}
 if(!path.extname(pn)){try{let b=fs.readFileSync(fp+'.html');if(channel){var injectScript2='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';b=b.toString().replace('</head>',injectScript2+'</head>')}
 res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-cache'});res.end(b);return}catch(e){}}
 res.writeHead(404);res.end('404')});s.listen(process.env.PORT||3000,()=>console.log('OK'));
