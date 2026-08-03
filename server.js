@@ -186,7 +186,7 @@ trackPV(pn);
 
 // API
 if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];// 同时清除核心依赖缓存，确�?git pull 后生�?
-['./lib/supabase.js','./lib/auth.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,pn==='/api/feedback'?{maxBytes:4096}:undefined);// 注入渠道标记�?body
+['./lib/supabase.js','./lib/auth.js','./lib/report-identity.js','./lib/payment-contract.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,pn==='/api/feedback'?{maxBytes:4096}:undefined);// 注入渠道标记�?body
 if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
 await h(req,res)}catch(e){if(!_sent){if(e&&e.code==='REQUEST_BODY_TOO_LARGE')res.status(413).json({ok:false,error:e.message});else res.json({error:e.message})}}return}
 const fp=__dirname+pn;try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
