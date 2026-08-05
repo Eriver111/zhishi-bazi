@@ -548,7 +548,7 @@ async function callAI(question, chartData, bazi, history, mode) {
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
-      body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 2000, stream: false }),
+      body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 4096, stream: false }),
       signal: controller.signal
     });
   } finally { clearTimeout(timeout); }
