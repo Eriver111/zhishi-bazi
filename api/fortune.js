@@ -6,7 +6,7 @@ const crypto = require('crypto');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
+const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-flash';
 
 const _cache = {};
 const TG = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
