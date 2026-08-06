@@ -338,6 +338,150 @@
     }
 
     // ============================================================
+    // 4½. 库冲开库检测（丑未冲/辰戌冲 + 丑未戌三刑）
+    // 库冲不同于普通冲——普通冲是破坏，库冲是释放
+    // 丑(金库) 未(木库) 辰(水库) 戌(火库)
+    // ============================================================
+    var STORAGE_DEF = {
+      '丑': { stores:'金', cang:[{g:'己',w:'土',r:'本气'},{g:'癸',w:'水',r:'正官'},{g:'辛',w:'金',r:'正财'}] },
+      '未': { stores:'木', cang:[{g:'己',w:'土',r:'本气'},{g:'丁',w:'火',r:'劫财'},{g:'乙',w:'木',r:'正印'}] },
+      '辰': { stores:'水', cang:[{g:'戊',w:'土',r:'本气'},{g:'乙',w:'木',r:'正印'},{g:'癸',w:'水',r:'正官'}] },
+      '戌': { stores:'火', cang:[{g:'戊',w:'土',r:'本气'},{g:'辛',w:'金',r:'正财'},{g:'丁',w:'火',r:'劫财'}] }
+    };
+    var STORAGE_CLASH = { '丑':'未','未':'丑','辰':'戌','戌':'辰' };
+
+    // 收集命局中所有库位
+    var storagePos = [];
+    positions.forEach(function(pos) {
+      var z = bazi[pos].zhi;
+      if (STORAGE_DEF[z]) storagePos.push({ pos:pos, zhi:z, idx:positions.indexOf(pos) });
+    });
+
+    var openedStorages = {}; // zhi → { def, openedBy: [{byZhi, type, isAdj}] }
+    if (storagePos.length >= 2) {
+      for (var spi = 0; spi < storagePos.length; spi++) {
+        for (var spj = spi + 1; spj < storagePos.length; spj++) {
+          var sA = storagePos[spi], sB = storagePos[spj];
+          var isClash = STORAGE_CLASH[sA.zhi] === sB.zhi;
+          var isXing = XING_PAIRS[sA.zhi + sB.zhi];
+          var isAdj = Math.abs(sA.idx - sB.idx) === 1;
+
+          if (isClash || isXing) {
+            var openType = isClash ? (isAdj ? '紧贴库冲' : '跨柱库冲') : (isAdj ? '紧贴库刑' : '跨柱库刑');
+            [sA, sB].forEach(function(s) {
+              if (!openedStorages[s.zhi]) openedStorages[s.zhi] = { zhi:s.zhi, def:STORAGE_DEF[s.zhi], openedBy:[] };
+              openedStorages[s.zhi].openedBy.push({ byZhi:(s===sA?sB:sA).zhi, type:openType, pos:s.pos });
+            });
+          }
+        }
+      }
+    }
+
+    if (Object.keys(openedStorages).length > 0) {
+      // 收集被释放的藏干（中气+余气；本气始终活跃）
+      var released = []; // { wx, gan, fromZhi, relationToDay, role }
+      Object.keys(openedStorages).forEach(function(zhi) {
+        var sto = openedStorages[zhi];
+        sto.def.cang.forEach(function(cg, cidx) {
+          if (cidx === 0) return; // 本气不受库锁影响
+          released.push({
+            wx: cg.w, gan: cg.g, fromZhi: zhi,
+            relToDay: simpleRel(cg.w, dgWx), // 与日主的关系
+            role: cg.r
+          });
+        });
+      });
+
+      // 三刑俱全检测
+      var hasAllThree = openedStorages['丑'] && openedStorages['未'] && openedStorages['戌'];
+
+      // 分析释放元素能否形成有用通路
+      var usefulPaths = [];
+      released.forEach(function(el) {
+        var r = el.relToDay;
+
+        // ① 释放的是印星 → 印得库根
+        if (r === 'sheng') {
+          usefulPaths.push({
+            title: '印星得库根',
+            desc: el.fromZhi + '库被冲/刑开，释放' + el.gan + '（印星），' +
+                 '印星从浮泛落地坐实，生身之力增强。',
+            wx: el.wx, priority: 3
+          });
+        }
+        // ② 释放的五行生印星 → 间接生身（如：官→印→身）
+        else if (simpleRel(el.wx, SHENGWO) === 'sheng') {
+          // 确认印星在原局确实存在
+          var hasYinInChart = hasWxAnywhere(bazi, SHENGWO);
+          if (hasYinInChart) {
+            usefulPaths.push({
+              title: '官/杀印通关',
+              desc: el.fromZhi + '库释放' + el.gan + '（' + el.wx + '，' + el.role + '），' +
+                   '生助印星→印再生身，"杀印相生，官印相生，贵气自显"。',
+              wx: el.wx, priority: 3
+            });
+          }
+        }
+        // ③ 释放的是日主同类 → 得库气加持
+        else if (r === 'tong') {
+          usefulPaths.push({
+            title: '日主得库气',
+            desc: el.fromZhi + '库（' + el.wx + '库）释放' + el.gan + '，' +
+                 '日主' + dg + '得同五行库气加持，底气增强。',
+            wx: el.wx, priority: 2
+          });
+        }
+      });
+
+      // ---- 输出 ----
+      if (hasAllThree) {
+        hints.push({
+          type: 'structure',
+          category: '三刑俱全',
+          text: '丑、未、戌三库全现——"恃势之刑"，三库联动。' +
+               (usefulPaths.length > 0
+                 ? '三库同时被撬开，' + usefulPaths.map(function(p) { return p.title; }).join('、') + '。' +
+                   '既有通路释放之利，亦有土旺泄身之弊——贵气有代价。'
+                 : '三库虽开，但所释元素未形成有用通路，土旺泄身力大。')
+        });
+      } else if (Object.keys(openedStorages).length >= 2) {
+        var zhiNames = Object.keys(openedStorages).join('、');
+        hints.push({
+          type: 'structure',
+          category: '库冲开库',
+          text: zhiNames + '三库冲/刑交互，' + zhiNames + '中藏干被释放。' +
+               (usefulPaths.length > 0 ? usefulPaths.map(function(p) { return p.title; }).join('、') + '。' : '')
+        });
+      }
+
+      // 独立成条：每条有用通路
+      usefulPaths.sort(function(a, b) { return b.priority - a.priority; });
+      usefulPaths.forEach(function(p) {
+        hints.push({ type: 'structure', category: p.title, text: p.desc });
+        // 生成调整
+        if (p.title === '官/杀印通关') {
+          adjustments.push({ wx: p.wx, action: 'highlight_ambivalent',
+            reason: '库开释放' + p.wx + '（官杀），官→印→身通路成立，虽克身但转生印，忌中转用' });
+        }
+        if (p.title === '印星得库根') {
+          adjustments.push({ wx: p.wx, action: 'highlight_enhanced',
+            reason: '库开释放印星，印得库根，生身之力质变' });
+        }
+      });
+
+      // 副作用提示：库开同时土被冲/刑旺
+      var hasTuStorage = openedStorages['丑'] || openedStorages['未'] || openedStorages['辰'] || openedStorages['戌'];
+      // 丑未辰戌本气全都是土（丑己/未己/辰戊/戌戊）
+      if (hasTuStorage && usefulPaths.length > 0) {
+        hints.push({
+          type: 'info',
+          category: '库开代价',
+          text: '库冲/刑在释放有利藏干的同时，也冲旺了土（丑未辰戌本气皆土）。土为食伤/财星，泄耗日主之气加重——贵气有成本。'
+        });
+      }
+    }
+
+    // ============================================================
     // 5. 《滴天髓》口诀匹配
     // ============================================================
     if (dgWx === '木' && monthZhiWx === KEWO) {
