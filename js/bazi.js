@@ -2380,6 +2380,33 @@ function calcDayMasterStrength(bazi) {
   });
   score += dayBranchAdj;
 
+  // ---------- ⑧½ 杀印相生结构修正 ----------
+  // 官杀当令克身（死令），但天干有印星贴身通关，日主有长生/禄位根
+  // 子平法："杀印相生，化杀为权"——杀不攻身反生印，印再生身，是贵格结构
+  // 不应按普通扶抑法将 +印星 与 -死令 孤立相加，需给结构的整体价值补偿
+  if (KEWO[dgWx] === mwx) {
+    var _yinAdjacent = false;
+    // 月干或时干有印星贴身透出（紧邻日主，可直接生扶）
+    if (SHENGWO[dgWx] === WU_XING[bazi.month.gan]) _yinAdjacent = true;
+    if (!_yinAdjacent && SHENGWO[dgWx] === WU_XING[bazi.hour.gan]) _yinAdjacent = true;
+    // 日支藏印（坐杀之地，杀转生印，贴身通关）
+    if (!_yinAdjacent) {
+      var _dcg2 = getCangGan(bazi.day.zhi);
+      for (var _dci = 0; _dci < _dcg2.length; _dci++) {
+        if (WU_XING[_dcg2[_dci]] === SHENGWO[dgWx]) { _yinAdjacent = true; break; }
+      }
+    }
+    // 日主有长生根或禄根（有自存之地，不被连根拔起）
+    var _CHANG_SHENG = {'甲':'亥','乙':'午','丙':'寅','丁':'酉','戊':'寅','己':'酉','庚':'巳','辛':'子','壬':'申','癸':'卯'};
+    var _LU = {'甲':'寅','乙':'卯','丙':'巳','丁':'午','戊':'巳','己':'午','庚':'申','辛':'酉','壬':'亥','癸':'子'};
+    var _hasCSL = ['year','month','day','hour'].some(function(_pos) {
+      return bazi[_pos].zhi === _CHANG_SHENG[dg] || bazi[_pos].zhi === _LU[dg];
+    });
+    if (_yinAdjacent && _hasCSL) {
+      score += 13;
+    }
+  }
+
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
   if (score < 1) score = 1;
