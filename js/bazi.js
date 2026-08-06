@@ -4017,6 +4017,16 @@ function finalizeYongJiResult(bazi, base, context) {
     elementReasons[wx] = { role: role, reasons: [mechanism, presenceFor(wx)] };
   });
 
+  // 生克链调整注入 elementReasons
+  if (context.chain && context.chain.adjustments && context.chain.adjustments.length > 0) {
+    context.chain.adjustments.forEach(function(adj) {
+      if (elementReasons[adj.wx]) {
+        elementReasons[adj.wx].chainNote = adj.reason;
+        elementReasons[adj.wx].chainAction = adj.action;
+      }
+    });
+  }
+
   var evidence = [{ category:'旺衰', title:'日主' + context.dmStr.level, detail:context.dmStr.detail }];
   if (context.tiaoHouNote) evidence.push({ category:'调候', title:'寒暖燥湿', detail:context.tiaoHouNote });
   evidence.push({
@@ -4027,6 +4037,12 @@ function finalizeYongJiResult(bazi, base, context) {
     category:'根气/透干', title:'用神在原局的状态',
     detail:lists.yongShen.map(function(wx) { return wx + '：' + presenceFor(wx); }).join('；')
   });
+  // 生克链证据
+  if (context.chain && context.chain.hints && context.chain.hints.length > 0) {
+    context.chain.hints.forEach(function(h) {
+      evidence.push({ category:'生克链·' + (h.category || '结构'), title:h.type === 'warning' ? '⚠ ' + h.category : h.category, detail:h.text });
+    });
+  }
 
   return {
     dayMasterLevel: base.dayMasterLevel,
@@ -4220,6 +4236,18 @@ function getYongJi(bazi) {
 
   if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
 
+  // ---- v5.0 生克链分析 ----
+  var chainHints = [];
+  var chainAdjustments = [];
+  try {
+    if (window.BaZiChain && window.BaZiChain.analyze) {
+      var chainResult = window.BaZiChain.analyze(bazi);
+      chainHints = chainResult.hints || [];
+      chainAdjustments = chainResult.adjustments || [];
+      // 链分析的结构分已在 calcDayMasterStrength 中应用，此处只取 hints/adjustments
+    }
+  } catch(e) { /* 链分析非关键路径，静默降级 */ }
+
   // 格局微调
   var pattern = getPattern(bazi);
   var patternName = pattern.name || '';
@@ -4242,6 +4270,18 @@ function getYongJi(bazi) {
     reasoning += ' 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。';
   }
 
+  // 生克链提示并入 reasoning
+  if (chainHints.length > 0) {
+    reasoning += ' ' + chainHints.filter(function(h) {
+      return h.type === 'structure' || h.type === 'warning';
+    }).map(function(h) { return '【' + h.category + '】' + h.text; }).join(' ');
+  }
+  // 链调整建议并入 context
+  var chainContext = {
+    hints: chainHints,
+    adjustments: chainAdjustments
+  };
+
   return finalizeYongJiResult(bazi, {
     dayMasterLevel: dmLevel,
     dayMasterScore: dmStr.score,
@@ -4249,7 +4289,7 @@ function getYongJi(bazi) {
     yongShen: yongShen,
     jiShen: jiShen,
     reasoning: reasoning
-  }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern });
+  }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern, chain:chainContext });
 }
 
 /**
