@@ -2407,6 +2407,26 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  // ---------- ⑧¾ 宫位远近修正 ----------
+  // 子平法重"提纲"（月柱）+ "归息"（时柱）
+  // 月柱紧贴日元，为一生纲领；时柱为归宿，管晚年
+  // 年柱祖业根基，远离日主，直接影响打折
+  var _posAdj = 0;
+  var _mGanWx = WU_XING[bazi.month.gan];
+  var _hGanWx = WU_XING[bazi.hour.gan];
+  var _yGanWx = WU_XING[bazi.year.gan];
+  // 月干为提纲，作用最强
+  if (SHENGWO[dgWx] === _mGanWx)      _posAdj += 2;  // 提纲印星贴生——近水楼台
+  else if (dgWx === _mGanWx)          _posAdj += 1;  // 提纲比劫帮身
+  else if (KEWO[dgWx] === _mGanWx)    _posAdj -= 1;  // 提纲官杀——近身施压
+  // 时干为归息，身弱有靠则晚运不孤
+  if (SHENGWO[dgWx] === _hGanWx)      _posAdj += 1;
+  else if (dgWx === _hGanWx)          _posAdj += 1;
+  // 年干远离日主，忌神威力打折
+  if (KEWO[dgWx] === _yGanWx)         _posAdj += 1;  // 年官杀远，不如月柱紧迫
+  if (WOKE[dgWx] === _yGanWx)         _posAdj += 1;  // 年财星远，不如月柱耗身
+  score += _posAdj;
+
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
   if (score < 1) score = 1;
@@ -3797,6 +3817,64 @@ function finalizePatternStatus(bazi, pattern) {
     reasons.push('日主极弱，难以承载格局用神');
   }
 
+  // ---- 成格条件清单（正面逐项检查，与破格原因互补）----
+  var conditions = [];
+  var pn = pattern.name, pt = pattern.type;
+  var dmStr2 = calcDayMasterStrength(bazi);
+
+  // 通用条件：日主有承载之力
+  if (pt !== '同柱复合') {
+    conditions.push({
+      condition: '日主有承载格局之力',
+      met: dmStr2.level !== '极弱' || getCongGe(bazi).isCong,
+      detail: '日主' + dmStr2.level + '（' + dmStr2.score + '分），' +
+        (dmStr2.level === '极弱' && !getCongGe(bazi).isCong ? '身太弱难担格局' : '可承载格局')
+    });
+  }
+
+  // 格局专属条件
+  if (pt !== '同柱复合') {
+    if (pn === '正官格') {
+      conditions.push({ condition: '正官透干有根', met: pattern.type === '透干取格', detail: pattern.type === '透干取格' ? '月令正官透出天干' : '月令正官未透干' });
+      conditions.push({ condition: '无伤官克官', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '天干透伤官，克损正官' : '✓' });
+      conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
+    } else if (pn === '七杀格') {
+      conditions.push({ condition: '有食神制杀或印星化杀', met: hasVisible('食神') || hasVisible('正印') || hasVisible('偏印'), detail: hasVisible('食神') ? '食神制杀' : hasVisible('正印')||hasVisible('偏印') ? '印星化杀' : '无制无化' });
+      conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星生杀，助纣为虐' : '✓' });
+    } else if (pn === '正印格' || pn === '偏印格' || pn === '印绶格') {
+      conditions.push({ condition: '无财星破印', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星克印，印格受损' : '✓' });
+      conditions.push({ condition: '日主有根纳印', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身极弱，印来难纳' });
+    } else if (pn === '食神格') {
+      conditions.push({ condition: '无枭神夺食', met: !hasVisible('偏印'), detail: hasVisible('偏印') ? '偏印夺食，才华受阻' : '✓' });
+      conditions.push({ condition: '食神有生财之路', met: hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正财')||hasVisible('偏财')) ? '食神生财，技艺得价' : '缺财星转化，秀而不实' });
+    } else if (pn === '伤官格') {
+      conditions.push({ condition: '无正官被伤', met: !hasVisible('正官'), detail: hasVisible('正官') ? '伤官见官，为祸百端' : '✓' });
+      conditions.push({ condition: '有印星制伤或财星引化', met: hasVisible('正印')||hasVisible('偏印')||hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正印')||hasVisible('偏印')) ? '印星制伤' : (hasVisible('正财')||hasVisible('偏财')) ? '财星引化' : '缺印缺财，伤官无制无化' });
+    } else if (pn === '正财格' || pn === '偏财格') {
+      conditions.push({ condition: '比劫不过重', met: visibleCount(['比肩','劫财']) < 2, detail: visibleCount(['比肩','劫财']) >= 2 ? '比劫重重夺财' : '✓' });
+      conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱不担财，富屋贫人' });
+    } else if (pn === '建禄格') {
+      conditions.push({ condition: '财官透出为用', met: visibleCount(['正财','偏财','正官','七杀']) > 0, detail: visibleCount(['正财','偏财','正官','七杀']) > 0 ? '✓' : '禄旺无财官，英雄无用武之地' });
+    } else if (pn === '羊刃格') {
+      conditions.push({ condition: '官杀制刃', met: visibleCount(['正官','七杀']) > 0, detail: visibleCount(['正官','七杀']) > 0 ? '✓' : '羊刃无制，刚暴自伤' });
+    }
+  }
+
+  // 同柱复合格局的条件
+  if (pt === '同柱复合') {
+    if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0) {
+      conditions.push({ condition: '印星不被财破', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星破印，官杀印通路中断' : '✓' });
+      conditions.push({ condition: '官/杀不被食伤制死', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '伤官克官，官印链断裂' : '✓' });
+    }
+    if (pn.indexOf('食伤生财') >= 0) {
+      conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱，食伤生出的财拿不稳' });
+    }
+    if (pn.indexOf('配印') >= 0) {
+      conditions.push({ condition: '印星有力', met: dmStr2.level !== '极弱' || hasVisible('正印'), detail: (dmStr2.level !== '极弱' || hasVisible('正印')) ? '✓' : '印弱身极弱，配印空悬' });
+    }
+  }
+
+  pattern.establishConditions = conditions;
   pattern.breakReasons = Array.from(new Set(reasons));
   pattern.isEstablished = pattern.breakReasons.length === 0;
   pattern.status = pattern.isEstablished ? '成格' : '破格';
@@ -4044,6 +4122,10 @@ function finalizeYongJiResult(bazi, base, context) {
     });
   }
 
+  // 生克链独立字段（供 AI prompt 使用）
+  var chainHintsOut = (context.chain && context.chain.hints) ? context.chain.hints : [];
+  var chainAdjustmentsOut = (context.chain && context.chain.adjustments) ? context.chain.adjustments : [];
+
   return {
     dayMasterLevel: base.dayMasterLevel,
     dayMasterScore: base.dayMasterScore,
@@ -4056,12 +4138,114 @@ function finalizeYongJiResult(bazi, base, context) {
     primaryReason: primaryReason,
     evidence: evidence,
     elementReasons: elementReasons,
+    chainHints: chainHintsOut,
+    chainAdjustments: chainAdjustmentsOut,
+    yongShenQuality: evaluateYongShenQuality(bazi, {
+      yongShen: lists.yongShen,
+      xiShen: lists.xiShen
+    }),
     patternStatus: {
       name: pattern.name,
       status: pattern.status,
       breakReasons: (pattern.breakReasons || []).slice()
     }
   };
+}
+
+/**
+ * v5.2 用神真假评估 —— 子平法核心："用神有气则吉，无气则庸"
+ * 同一用神，有根有力 vs 虚浮无根，人生层次天差地别
+ */
+function evaluateYongShenQuality(bazi, yongJi) {
+  var dg = bazi.day.gan;
+  var dgWx = WU_XING[dg];
+  var SHENGWO = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
+  var WOSHENG = { '木':'火','火':'土','土':'金','金':'水','水':'木' };
+  var KEWO    = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+  var WOKE    = { '木':'土','火':'金','土':'水','金':'木','水':'火' };
+
+  // 用神根气评分
+  function rootScore(wx, pos) {
+    var score = 0;
+    var details = [];
+    var zhi = bazi[pos].zhi;
+    var cg = getCangGan(zhi);
+    // 本气根 (正根)
+    if (cg[0] && WU_XING[cg[0]] === wx) { score += 2; details.push(zhi + '本气根'); }
+    // 中气根
+    if (cg[1] && WU_XING[cg[1]] === wx) { score += 1; details.push(zhi + '中气根'); }
+    // 余气根
+    if (cg[2] && WU_XING[cg[2]] === wx) { score += 0.5; details.push(zhi + '余气根'); }
+    // 地支同五行（非藏干，但也是根）
+    if (DI_ZHI_WU_XING[zhi] === wx && !cg.some(function(c) { return WU_XING[c] === wx; })) {
+      score += 1; details.push(zhi + '支气通根');
+    }
+    return { score: score, details: details };
+  }
+
+  // 天干透出检测
+  function ganExposed(wx) {
+    var positions = ['year','month','hour'];
+    var found = [];
+    positions.forEach(function(pos) {
+      if (WU_XING[bazi[pos].gan] === wx) found.push(pos);
+    });
+    return found;
+  }
+
+  // 被克检测
+  function isAttacked(wx) {
+    var keWx = { '木':'金','火':'水','土':'木','金':'火','水':'土' }[wx];
+    var attackers = [];
+    ['year','month','hour'].forEach(function(pos) {
+      if (WU_XING[bazi[pos].gan] === keWx) attackers.push({ pos: pos, type: '天干直克', by: bazi[pos].gan });
+    });
+    // 地支根被冲
+    var CHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+    ['year','month','day','hour'].forEach(function(pos) {
+      var zhi = bazi[pos].zhi;
+      if (DI_ZHI_WU_XING[zhi] === wx) {
+        for (var key in CHONG) {
+          if (CHONG[key] === zhi) {
+            var chongZhi = key;
+            ['year','month','day','hour'].forEach(function(p2) {
+              if (bazi[p2].zhi === chongZhi) attackers.push({ pos: pos, type: '地支根被冲', by: chongZhi + '(' + p2 + ')' });
+            });
+          }
+        }
+      }
+    });
+    return attackers;
+  }
+
+  var result = {};
+  var allWx = Array.from(new Set((yongJi.yongShen || []).concat(yongJi.xiShen || [])));
+  allWx.forEach(function(wx) {
+    var totalScore = 0;
+    var rootDetails = [];
+    var positions = ['year','month','day','hour'];
+    positions.forEach(function(pos) {
+      var rs = rootScore(wx, pos);
+      if (rs.score > 0) { totalScore += rs.score; rootDetails = rootDetails.concat(rs.details); }
+    });
+    var ganPositions = ganExposed(wx);
+    if (ganPositions.length > 0) { totalScore += ganPositions.length; rootDetails.push('透干' + ganPositions.join('/')); }
+    var attackers = isAttacked(wx);
+    if (attackers.length > 0) { totalScore -= attackers.length; rootDetails.push('被克：' + attackers.map(function(a) { return a.by + a.type; }).join('；')); }
+
+    var quality;
+    if (totalScore >= 4) quality = '真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高';
+    else if (totalScore >= 2) quality = '偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑';
+    else if (totalScore >= 0.5) quality = '弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用';
+    else quality = '假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地';
+
+    result[wx] = {
+      score: totalScore,
+      quality: quality,
+      roots: rootDetails
+    };
+  });
+  return result;
 }
 
 function getYongJi(bazi) {
@@ -4544,10 +4728,10 @@ function getCongGe(bazi) {
  * 甲己合土/乙庚合金/丙辛化水/丁壬合木/戊癸合火
  */
 function getGanHe(bazi) {
-  var heMap = { '甲己':1,'己甲':1,'乙庚':1,'庚乙':1,'丙辛':1,'辛丙':1,'丁壬':1,'壬丁':1,'戊癸':1,'癸戊':1 };
-  var wuXingResult = { '甲己':'土','己甲':'土','乙庚':'金','庚乙':'金','丙辛':'水','辛丙':'水','丁壬':'木','壬丁':'木','戊癸':'火','癸戊':'火' };
-  var pos = ['year','month','day','hour'];
-  var names = ['年柱','月柱','日柱','时柱'];
+  var heMap = { "甲己":1,"己甲":1,"乙庚":1,"庚乙":1,"丙辛":1,"辛丙":1,"丁壬":1,"壬丁":1,"戊癸":1,"癸戊":1 };
+  var wuXingResult = { "甲己":"土","己甲":"土","乙庚":"金","庚乙":"金","丙辛":"水","辛丙":"水","丁壬":"木","壬丁":"木","戊癸":"火","癸戊":"火" };
+  var pos = ["year","month","day","hour"];
+  var names = ["年柱","月柱","日柱","时柱"];
   var result = [];
 
   for (var i = 0; i < 4; i++) {
@@ -4555,25 +4739,73 @@ function getGanHe(bazi) {
       var pair = bazi[pos[i]].gan + bazi[pos[j]].gan;
       if (heMap[pair]) {
         var huaWx = wuXingResult[pair];
+        var isAdjacent = (j - i === 1);
+
         var monthSupports = DI_ZHI_WU_XING[bazi.month.zhi] === huaWx;
+
         var hasHuaRoot = monthSupports;
-        var controls = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+        for (var k = 0; k < 4; k++) {
+          if (DI_ZHI_WU_XING[bazi[pos[k]].zhi] === huaWx) hasHuaRoot = true;
+        }
+
+        var controls = { "木":"金","火":"水","土":"木","金":"火","水":"金" };
         var hasBlocker = false;
+        var blockerDetail = "";
         for (var k = 0; k < 4; k++) {
           if (k === i || k === j) continue;
           var otherWx = WU_XING[bazi[pos[k]].gan];
-          if (otherWx === huaWx || DI_ZHI_WU_XING[bazi[pos[k]].zhi] === huaWx) hasHuaRoot = true;
-          if (otherWx === controls[huaWx]) hasBlocker = true;
+          if (otherWx === controls[huaWx]) { hasBlocker = true; blockerDetail = names[k] + bazi[pos[k]].gan; }
         }
-        var isTransformed = monthSupports && hasHuaRoot && !hasBlocker;
+
+        var hasContention = false;
+        var contentionDetail = "";
+        for (var k = 0; k < 4; k++) {
+          if (k === i || k === j) continue;
+          if (heMap[bazi[pos[i]].gan + bazi[pos[k]].gan] || heMap[bazi[pos[k]].gan + bazi[pos[i]].gan]) {
+            hasContention = true; contentionDetail = bazi[pos[i]].gan + "被" + bazi[pos[k]].gan + "争合";
+          }
+          if (heMap[bazi[pos[j]].gan + bazi[pos[k]].gan] || heMap[bazi[pos[k]].gan + bazi[pos[j]].gan]) {
+            hasContention = true; contentionDetail = bazi[pos[j]].gan + "被" + bazi[pos[k]].gan + "争合";
+          }
+        }
+
+        var dayInvolved = (i === 2 || j === 2);
+
+        var isTransformed, status, detail;
+        if (hasContention) {
+          isTransformed = false; status = "争合不化";
+          detail = contentionDetail + "——情不专一，化气不成";
+        } else if (!isAdjacent) {
+          isTransformed = false; status = "隔柱不化";
+          detail = names[i] + "与" + names[j] + "相距太远，合力微弱";
+        } else if (monthSupports && hasHuaRoot && !hasBlocker) {
+          isTransformed = true; status = "合化成功";
+          detail = "月令" + bazi.month.zhi + "为" + huaWx + "当令化神有根，化气真确";
+        } else if (monthSupports && !hasBlocker) {
+          isTransformed = true; status = "合化待时";
+          detail = "月令支持但根气不足，待大运流年补" + huaWx + "根则真化";
+        } else if (hasBlocker) {
+          isTransformed = false; status = "合而不化";
+          detail = blockerDetail + "克" + huaWx + "阻挠，化气被破";
+        } else {
+          isTransformed = false; status = "合而不化";
+          detail = "月令不助化神，只合不化，以互相牵绊论";
+        }
+
+        if (dayInvolved && isTransformed) {
+          detail += "。⚠日主参与合化——命主性情、五行喜忌均受化气影响";
+        }
+
         result.push({
           from: names[i], to: names[j],
           gan1: bazi[pos[i]].gan, gan2: bazi[pos[j]].gan,
           huaWx: huaWx,
+          isAdjacent: isAdjacent,
           isTransformed: isTransformed,
-          status: isTransformed ? '合化成功' : '合而不化',
-          desc: names[i] + '天干' + bazi[pos[i]].gan + ' 合 ' + names[j] + '天干' + bazi[pos[j]].gan +
-            (isTransformed ? ' → 化' + huaWx : '（合而不化）')
+          hasContention: hasContention,
+          dayInvolved: dayInvolved,
+          status: status,
+          desc: names[i] + bazi[pos[i]].gan + " + " + names[j] + bazi[pos[j]].gan + " → " + status + "（化" + huaWx + "）：" + detail
         });
       }
     }
@@ -4634,6 +4866,121 @@ function getCangGanDepth(bazi) {
     result[p] = { name: names[i], zhi: bazi[p].zhi, cangGan: items };
   });
   return result;
+}
+
+
+/**
+ * v5.2 日支专项分析
+ * 日支（夫妻宫）是四柱中唯一与日主同柱的地支——
+ * 既代表配偶宫，又是日主自身的根基所在。
+ * 子平法日支为"坐下"，盲派重日支为"主位"。
+ */
+function analyzeDayBranch(bazi) {
+  var dg = bazi.day.gan;
+  var dz = bazi.day.zhi;
+  var dgWx = WU_XING[dg];
+  var dzWx = DI_ZHI_WU_XING[dz];
+  var cg = getCangGan(dz);
+  var pos = ["year","month","hour"];
+  var posNames = { year: "年柱", month: "月柱", hour: "时柱" };
+
+  // 1. 日支十神（藏干本气对日主的关系）
+  var mainSS = getShiShen(dg, cg[0]);
+  var ssDesc = {
+    "正官": "配偶有责任感、守规矩",
+    "七杀": "配偶性格强势、有魄力",
+    "正财": "配偶务实、管钱、旺财",
+    "偏财": "配偶慷慨、不拘小节",
+    "正印": "配偶包容温柔、照顾你",
+    "偏印": "配偶思维独特、理工气质",
+    "食神": "配偶温和会享受、有口福",
+    "伤官": "配偶聪明有才但嘴不饶人",
+    "比肩": "配偶独立平等、像战友",
+    "劫财": "配偶行动力强但易争执"
+  };
+
+  // 2. 日支是日主什么根
+  var rootType = "";
+  var LU = { "甲":"寅","乙":"卯","丙":"巳","丁":"午","戊":"巳","己":"午","庚":"申","辛":"酉","壬":"亥","癸":"子" };
+  var WANG = { "甲":"卯","乙":"寅","丙":"午","丁":"巳","戊":"午","己":"巳","庚":"酉","辛":"申","壬":"子","癸":"亥" };
+  var CHANG_SHENG = { "甲":"亥","乙":"午","丙":"寅","丁":"酉","戊":"寅","己":"酉","庚":"巳","辛":"子","壬":"申","癸":"卯" };
+  var rootScore = 0;
+  if (LU[dg] === dz) { rootType = "禄位（临官）"; rootScore = 3; }
+  else if (WANG[dg] === dz) { rootType = "帝旺"; rootScore = 3; }
+  else if (CHANG_SHENG[dg] === dz) { rootType = "长生"; rootScore = 2; }
+  else if (cg.some(function(c) { return WU_XING[c] === dgWx; })) {
+    var matchCg = cg.filter(function(c) { return WU_XING[c] === dgWx; })[0];
+    var level = cg.indexOf(matchCg);
+    rootType = "藏干" + (level === 0 ? "本气" : level === 1 ? "中气" : "余气") + "根";
+    rootScore = level === 0 ? 2 : level === 1 ? 1 : 0.5;
+  } else if (dzWx === dgWx) { rootType = "地支同气"; rootScore = 1.5; }
+  else { rootType = "无根"; rootScore = 0; }
+
+  // 3. 日支被冲/合/刑/害
+  var CHONG = { "子":"午","午":"子","丑":"未","未":"丑","寅":"申","申":"寅","卯":"酉","酉":"卯","辰":"戌","戌":"辰","巳":"亥","亥":"巳" };
+  var HE = { "子":"丑","丑":"子","寅":"亥","亥":"寅","卯":"戌","戌":"卯","辰":"酉","酉":"辰","巳":"申","申":"巳","午":"未","未":"午" };
+  var HAI = { "子":"未","未":"子","丑":"午","午":"丑","寅":"巳","巳":"寅","卯":"辰","辰":"卯","申":"亥","亥":"申","酉":"戌","戌":"酉" };
+  var XING = { "寅":["巳"],"巳":["寅","申"],"申":["寅","巳"],"丑":["戌","未"],"戌":["丑","未"],"未":["丑","戌"],"子":["卯"],"卯":["子"] };
+  var interactions = [];
+  pos.forEach(function(p) {
+    var z = bazi[p].zhi;
+    if (CHONG[dz] === z) interactions.push({ type: "冲", with: posNames[p], detail: dz + z + "冲——配偶宫被冲，感情多变动，自身根基不稳" });
+    if (HE[dz] === z) interactions.push({ type: "合", with: posNames[p], detail: dz + z + "合——配偶宫被合，感情易受外界牵绊" });
+    if (HAI[dz] === z) interactions.push({ type: "害", with: posNames[p], detail: dz + z + "害——暗中不利，配偶间有隐情或小人" });
+    if ((XING[dz] || []).indexOf(z) >= 0) interactions.push({ type: "刑", with: posNames[p], detail: dz + z + "刑——配偶宫有刑伤，需防矛盾升级" });
+  });
+
+  // 4. 日支在三合三会中的角色
+  var SAN_HE = [["寅","午","戌","火"],["亥","卯","未","木"],["申","子","辰","水"],["巳","酉","丑","金"]];
+  var heRole = "";
+  SAN_HE.forEach(function(tri) {
+    var inT = tri.slice(0,3).indexOf(dz) >= 0;
+    var others = pos.filter(function(p) { return tri.slice(0,3).indexOf(bazi[p].zhi) >= 0 && bazi[p].zhi !== dz; });
+    if (inT && others.length >= 1) heRole = dz + "参与" + tri[3] + "局（" + others.map(function(p){return bazi[p].zhi}).join("") + "），日支有合局之助";
+    else if (inT) heRole = dz + "为" + tri[3] + "局之一，待大运/流年补全";
+  });
+  var SAN_HUI = [["寅","卯","辰","木"],["巳","午","未","火"],["申","酉","戌","金"],["亥","子","丑","水"]];
+  var huiRole = "";
+  SAN_HUI.forEach(function(hui) {
+    var inH = hui.slice(0,3).indexOf(dz) >= 0;
+    if (inH) huiRole = dz + "属" + hui[3] + "方，为三会局成员";
+  });
+
+  // 5. 配偶宫稳定度综合评分
+  var stabilityScore = 5;
+  interactions.forEach(function(intr) {
+    if (intr.type === "冲") stabilityScore -= 2;
+    else if (intr.type === "害" || intr.type === "刑") stabilityScore -= 1;
+    else if (intr.type === "合") stabilityScore -= 0.5;
+  });
+  if (rootScore >= 2) stabilityScore += 1;
+  var stability;
+  if (stabilityScore >= 5) stability = "稳固——配偶宫根基扎实，感情稳定";
+  else if (stabilityScore >= 3) stability = "偏稳——偶有波折，但总体可控";
+  else if (stabilityScore >= 1) stability = "偏动——感情起伏较大，需双方经营";
+  else stability = "动荡——配偶宫不宁，婚姻是人生重大课题";
+
+  // 6. 藏干详析
+  var cgAnalysis = cg.map(function(c, idx) {
+    var ss = getShiShen(dg, c);
+    var level = idx === 0 ? "本气" : idx === 1 ? "中气" : "余气";
+    return { gan: c, shiShen: ss, level: level, desc: level + ss + "——" + (ssDesc[ss] || "") };
+  });
+
+  return {
+    branch: dz, wuXing: dzWx,
+    mainShiShen: mainSS,
+    ssDesc: ssDesc[mainSS] || "",
+    rootType: rootType, rootScore: rootScore,
+    interactions: interactions,
+    heRole: heRole, huiRole: huiRole,
+    stabilityScore: stabilityScore,
+    stability: stability,
+    cangGan: cgAnalysis,
+    summary: "日支" + dz + "为" + mainSS + "，" + rootType + "。" + stability + "。"
+      + (interactions.length > 0 ? interactions.map(function(i){return i.detail}).join("；") : "无冲合刑害。")
+      + (heRole ? "；" + heRole : "")
+  };
 }
 
 /**
@@ -4739,6 +5086,7 @@ window.BaZiCalculator = {
     getGanHe: getGanHe,
     getSanHui: getSanHui,
     getCangGanDepth: getCangGanDepth,
+    analyzeDayBranch: analyzeDayBranch,
     getProfessionalReportFacts: getProfessionalReportFacts,
     analyzeCharacter: analyzeCharacter,
     analyzeWealth: analyzeWealth,

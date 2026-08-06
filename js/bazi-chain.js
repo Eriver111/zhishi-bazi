@@ -482,43 +482,251 @@
     }
 
     // ============================================================
-    // 5. 《滴天髓》口诀匹配
+    // 5. 《滴天髓》十天干口诀匹配
     // ============================================================
-    if (dgWx === '木' && monthZhiWx === KEWO) {
-      // 秋木
-      if (zhiChain[1].zhi === '申' || zhiChain[1].zhi === '酉') {
-        var hasFire = hasWxAnywhere(bazi, '火');
-        var hasEarth = hasWxAnywhere(bazi, '土');
-        var earthStrong = false;
-        // 土是否"重"：统计土在天干+地支出现次数
-        var earthCount = 0;
-        positions.forEach(function(pos) {
-          if (window.WU_XING[bazi[pos].gan] === '土') earthCount++;
-          if (window.DI_ZHI_WU_XING[bazi[pos].zhi] === '土') earthCount++;
-        });
-        earthStrong = earthCount >= 2;
+    var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+    var diTianSuiHints = [];
+    var monthNum = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'].indexOf(monthZhi);
+    var season = monthNum >= 2 && monthNum <= 4 ? '春' : monthNum >= 5 && monthNum <= 7 ? '夏' : monthNum >= 8 && monthNum <= 10 ? '秋' : '冬';
 
-        var diTianSuiHints = [];
-        if (!hasFire) {
-          diTianSuiHints.push('「脱胎要火」——秋木凋零，无火则木不秀发');
-        }
-        if (earthStrong) {
-          diTianSuiHints.push('「秋不容土」——秋木杀重，再见厚土则财党杀攻身');
-        }
-        if (diTianSuiHints.length > 0) {
-          hints.push({
-            type: 'info',
-            category: '滴天髓',
-            text: '《滴天髓》甲木章：' + diTianSuiHints.join('；') + '。'
-          });
-          if (!hasFire && earthStrong) {
-            // 既有秋不容土（土财重），又无火暖局 → 土比火更忌
-            adjustments.push({ wx: '土', action: 'upgrade_ji', reason: '《滴天髓》"秋不容土"：秋木杀重，土财党杀为大忌' });
-            // 火虽然名义上忌（泄身），但秋木需火 → 忌降为中性
-            adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》"脱胎要火"：秋木需火暖局发荣，虽泄身但调候所需' });
-          }
+    // ---- 甲木章 ----
+    if (dg === '甲') {
+      if (season === '秋') {
+        var hasFireJ = hasWxAnywhere(bazi, '火');
+        var earthCountJ = positions.reduce(function(s, pos) {
+          return s + (window.WU_XING[bazi[pos].gan] === '土' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[pos].zhi] === '土' ? 1 : 0);
+        }, 0);
+        if (!hasFireJ) diTianSuiHints.push('「脱胎要火」——秋木凋零，无火则木不秀发');
+        if (earthCountJ >= 2) diTianSuiHints.push('「秋不容土」——秋木杀重，再见厚土则财党杀攻身');
+        if (!hasFireJ && earthCountJ >= 2) {
+          adjustments.push({ wx: '土', action: 'upgrade_ji', reason: '《滴天髓》甲木"秋不容土"：秋木杀重，土财党杀为大忌' });
+          adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》甲木"脱胎要火"：秋木需火暖局，虽泄身但调候所需' });
         }
       }
+      if (season === '春') {
+        var hasMetalSpr = positions.some(function(p) { return window.WU_XING[bazi[p].gan] === '金' || window.DI_ZHI_WU_XING[bazi[p].zhi] === '金'; });
+        if (hasMetalSpr) diTianSuiHints.push('「春不容金」——春木嫩，金来克之伤残');
+      }
+      if (hasWxAnywhere(bazi, '火') && hasWxAnywhere(bazi, '水')) {
+        diTianSuiHints.push('「地润天和」——水火既济，甲木得润得暖，根基深厚');
+      }
+    }
+
+    // ---- 乙木章 ----
+    if (dg === '乙') {
+      // 刲羊解牛：乙木在未/丑月有根，不怕土重
+      if (monthZhi === '未' || monthZhi === '丑') {
+        diTianSuiHints.push('「刲羊解牛」——乙木坐未/丑月，柔木能制旺土，不惧财重');
+      }
+      // 怀丁抱丙：冬月乙木需火暖局
+      if (season === '冬') {
+        var hasFireYi = hasWxAnywhere(bazi, '火');
+        if (!hasFireYi) diTianSuiHints.push('「怀丁抱丙」——冬木寒湿，无火则不荣');
+        if (hasFireYi) {
+          adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》乙木"怀丁抱丙"：冬木需火暖局，火泄身反为吉' });
+        }
+      }
+      // 虚湿之地，骑马亦忧：亥子丑月水多，即使午火也难救
+      if (monthZhi === '亥' || monthZhi === '子' || monthZhi === '丑') {
+        var waterHeavy = positions.reduce(function(s, p) {
+          return s + (window.WU_XING[bazi[p].gan] === '水' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[p].zhi] === '水' ? 1 : 0);
+        }, 0);
+        if (waterHeavy >= 3) diTianSuiHints.push('「虚湿之地，骑马亦忧」——水多木漂，虽有午火亦难救，宜燥土制水');
+      }
+      // 藤萝系甲：乙见甲，可春可秋
+      var hasJia = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('甲') >= 0;
+      if (hasJia) diTianSuiHints.push('「藤萝系甲」——乙见甲木如藤附大树，春不畏金秋不畏土');
+      // 跨凤乘猴：酉申月需甲/火
+      if ((monthZhi === '申' || monthZhi === '酉') && !hasJia) {
+        diTianSuiHints.push('「跨凤乘猴」——乙木在申酉绝地，无甲则藤无所附，宜见火制金');
+        if (!hasWxAnywhere(bazi, '火')) {
+          adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》乙木"跨凤乘猴"需火制金护木' });
+        }
+      }
+    }
+
+    // ---- 丙火章 ----
+    if (dg === '丙') {
+      if (season === '冬') {
+        diTianSuiHints.push('「欺霜侮雪」——丙火猛烈，冬月亦不畏寒，调候需求远低于丁火');
+      }
+      // 逢辛反怯：丙遇辛金合住
+      if ([bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('辛') >= 0) {
+        diTianSuiHints.push('「逢辛反怯」——丙火遇辛金合，烈性被羁，光辉不显');
+        adjustments.push({ wx: '金', action: 'highlight_ambivalent', reason: '《滴天髓》"逢辛反怯"：辛合丙，财来合身反失其烈' });
+      }
+      // 土众成慈：土多泄火
+      var earthCountBing = positions.reduce(function(s, p) {
+        return s + (window.WU_XING[bazi[p].gan] === '土' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[p].zhi] === '土' ? 1 : 0);
+      }, 0);
+      if (earthCountBing >= 3) diTianSuiHints.push('「土众成慈」——土多泄火过甚，丙火烈性转温和，但泄身太过需制土');
+      // 水猖显节：水多时水火既济
+      var waterCountBing = positions.reduce(function(s, p) {
+        return s + (window.WU_XING[bazi[p].gan] === '水' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[p].zhi] === '水' ? 1 : 0);
+      }, 0);
+      if (waterCountBing >= 2) {
+        diTianSuiHints.push('「水猖显节」——水旺克火反显丙火之节操，水火既济为贵');
+      }
+      // 虎马犬乡：寅午戌三合火局
+      var hasSanHeHuo = allZhi.indexOf('寅') >= 0 && allZhi.indexOf('午') >= 0 && allZhi.indexOf('戌') >= 0;
+      if (hasSanHeHuo) {
+        var hasJiaBing = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('甲') >= 0;
+        if (hasJiaBing) diTianSuiHints.push('「虎马犬乡，甲木来焚」——三合火局炎上，甲木生火则火炎土燥，物被焚灭');
+      }
+    }
+
+    // ---- 丁火章 ----
+    if (dg === '丁') {
+      diTianSuiHints.push('「旺而不烈，衰而不穷」——丁火柔中，不似丙火刚暴，根基不易灭');
+      // 如有嫡母，可秋可冬：甲木生丁
+      var hasJiaDing = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('甲') >= 0;
+      if (hasJiaDing && (season === '秋' || season === '冬')) {
+        diTianSuiHints.push('「如有嫡母，可秋可冬」——甲木（嫡母）生丁火，秋冬有甲则不熄');
+        adjustments.push({ wx: '木', action: 'highlight_enhanced', reason: '《滴天髓》丁火"如有嫡母"：甲木生丁，秋冬印星尤为珍贵' });
+      }
+      // 抱乙而孝：乙木生丁
+      var hasYiDing = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('乙') >= 0;
+      if (hasYiDing) diTianSuiHints.push('「抱乙而孝」——乙木偏印生丁火，如子得母');
+      // 冬月无甲
+      if (season === '冬' && !hasJiaDing) {
+        diTianSuiHints.push('冬月丁火，无甲木生扶则灯火飘摇，宜有甲木暖根');
+      }
+    }
+
+    // ---- 戊土章 ----
+    if (dg === '戊') {
+      // 水润物生，火燥物病
+      if (season === '夏') {
+        var hasWaterWu = hasWxAnywhere(bazi, '水');
+        if (!hasWaterWu) diTianSuiHints.push('「火燥物病」——夏土焦裂，无水润泽则万物不生');
+        if (hasWaterWu) {
+          adjustments.push({ wx: '水', action: 'downgrade_ji', reason: '《滴天髓》戊土"水润物生"：夏土喜水滋润，财星反成调候之宝' });
+        }
+      }
+      // 若在艮坤，怕冲宜静：寅(艮)申(坤)月
+      if ((monthZhi === '寅' || monthZhi === '申') && CHONG[monthZhi]) {
+        var hasChong = positions.some(function(p) { return bazi[p].zhi === CHONG[monthZhi]; });
+        if (hasChong) diTianSuiHints.push('「若在艮坤，怕冲宜静」——寅申月戊土逢冲，根基动摇');
+      }
+      diTianSuiHints.push('「既中且正」——戊土敦厚诚信，承载万物，喜水润火暖土助');
+    }
+
+    // ---- 己土章 ----
+    if (dg === '己') {
+      diTianSuiHints.push('「不愁木盛，不畏水狂」——己土卑湿柔韧，木克不倒水冲不散');
+      // 火少火晦
+      var hasFireJi = positions.filter(function(p) { return window.WU_XING[bazi[p].gan] === '火'; }).length;
+      if (hasFireJi <= 0) diTianSuiHints.push('「火少火晦」——无火生土则己土暗昧，宜丙火照暖');
+      // 金多金光
+      var metalCountJi = positions.reduce(function(s, p) {
+        return s + (window.WU_XING[bazi[p].gan] === '金' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[p].zhi] === '金' ? 1 : 0);
+      }, 0);
+      if (metalCountJi >= 3) diTianSuiHints.push('「金多金光」——金多泄土，但己土生金，反显光华，宜辩证看待');
+      diTianSuiHints.push('「宜助宜帮」——己土喜丙火生、戊土帮，得助则万物茂盛');
+    }
+
+    // ---- 庚金章 ----
+    if (dg === '庚') {
+      // 得水而清
+      if (hasWxAnywhere(bazi, '水')) {
+        diTianSuiHints.push('「得水而清」——水洗庚金，锋芒更利，食伤泄秀为贵');
+      }
+      // 得火而锐
+      if (hasWxAnywhere(bazi, '火')) {
+        diTianSuiHints.push('「得火而锐」——火炼庚金成器，官杀制身反成栋梁');
+        adjustments.push({ wx: '火', action: 'highlight_ambivalent', reason: '《滴天髓》庚金"得火而锐"：火炼金刚，官杀虽克身却能成器' });
+      }
+      // 土润则生，土干则脆
+      if (season === '夏' || monthZhi === '未' || monthZhi === '戌') {
+        var hasWaterGen = hasWxAnywhere(bazi, '水');
+        if (!hasWaterGen) diTianSuiHints.push('「土干则脆」——燥土不生金反脆金，夏月无水土焦金碎');
+      }
+      // 能赢甲兄，输于乙妹
+      var hasYiGen = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('乙') >= 0;
+      if (hasYiGen) diTianSuiHints.push('「输于乙妹」——庚遇乙木合，刚金被柔木牵绊，锐气内敛');
+    }
+
+    // ---- 辛金章 ----
+    if (dg === '辛') {
+      // 畏土之叠
+      var earthCountXin = positions.reduce(function(s, p) {
+        return s + (window.WU_XING[bazi[p].gan] === '土' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[p].zhi] === '土' ? 1 : 0);
+      }, 0);
+      if (earthCountXin >= 4) diTianSuiHints.push('「畏土之叠」——土多埋金，辛金珠玉之光被掩');
+      // 乐水之盈
+      if (hasWxAnywhere(bazi, '水')) {
+        diTianSuiHints.push('「乐水之盈」——水淘辛金，珠玉愈发光洁，食伤泄秀为美');
+      }
+      // 热则喜母，寒则喜丁
+      if (season === '夏') {
+        diTianSuiHints.push('「热则喜母」——夏金销熔，喜湿土（辰丑）生金护金');
+      }
+      if (season === '冬') {
+        var hasDingXin = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('丁') >= 0;
+        if (!hasDingXin) diTianSuiHints.push('「寒则喜丁」——冬金寒凝，宜丁火暖局炼金');
+        if (hasDingXin) {
+          adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》辛金"寒则喜丁"：冬金需丁火暖局，火克金反成调候之功' });
+        }
+      }
+    }
+
+    // ---- 壬水章 ----
+    if (dg === '壬') {
+      // 通根透癸
+      var hasGui = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('癸') >= 0;
+      var hasWaterRoot = positions.some(function(p) {
+        return window.DI_ZHI_WU_XING[bazi[p].zhi] === '水';
+      });
+      if (hasGui && hasWaterRoot) {
+        diTianSuiHints.push('「通根透癸，冲天奔地」——壬水有根又透癸，水势浩荡，需戊土堤防');
+        if (!hasWxAnywhere(bazi, '土')) {
+          adjustments.push({ wx: '土', action: 'downgrade_ji', reason: '《滴天髓》壬水"冲天奔地"需戊土堤防，土制水反为用' });
+        }
+      }
+      // 化则有情：丁壬合化木
+      var hasDingRen = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('丁') >= 0;
+      if (hasDingRen) diTianSuiHints.push('「化则有情」——丁壬合化木，合则有情有义，化气为贵');
+      diTianSuiHints.push('「刚中之德，周流不滞」——壬水通达，适应力强，顺势而为');
+    }
+
+    // ---- 癸水章 ----
+    if (dg === '癸') {
+      diTianSuiHints.push('「至弱达于天津」——癸水至柔，但能润泽万物，柔中带刚');
+      // 得龙而运：见辰则通
+      if (allZhi.indexOf('辰') >= 0) {
+        diTianSuiHints.push('「得龙而运」——癸水见辰（龙）为水库，得库则运化通神');
+      }
+      diTianSuiHints.push('「不愁火土，不论庚辛」——癸水至柔，不畏火土之克，不拘庚辛之生');
+      // 合戊见火
+      var hasWuGui = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('戊') >= 0;
+      if (hasWuGui && hasWxAnywhere(bazi, '火')) {
+        diTianSuiHints.push('「合戊见火，化象斯真」——戊癸合，见火则化火成真，格局为贵');
+      }
+    }
+
+    // ============================================================
+    // 滴天髓通用：调候季月速查 (all stems, supplemental to above)
+    // ============================================================
+    // 夏月通用
+    if (season === '夏') {
+      if ((dgWx === '金' || dgWx === '土') && !hasWxAnywhere(bazi, '水')) {
+        diTianSuiHints.push('《滴天髓》调候：夏月' + dgWx + '燥渴，无水润泽则金脆土焦');
+      }
+    }
+    // 冬月通用
+    if (season === '冬') {
+      if ((dgWx === '木' || dgWx === '金') && !hasWxAnywhere(bazi, '火')) {
+        diTianSuiHints.push('《滴天髓》调候：冬月' + dgWx + '寒凝，无火暖局则不荣不锐');
+      }
+    }
+
+    // 输出滴天髓 hints
+    if (diTianSuiHints.length > 0) {
+      hints.push({
+        type: 'classic',
+        category: '滴天髓',
+        text: '《滴天髓》' + dg + dgWx + '章：' + diTianSuiHints.join('；') + '。'
+      });
     }
 
     // ============================================================
@@ -543,11 +751,299 @@
     };
   }
 
+  /**
+   * 大运喜用忌联动分析
+   * 原局的喜用忌是静态的，大运介入后每个元素的作用会变化
+   * 例：原局忌金，但走水运时金生水→水生木，金反成水源
+   */
+  function analyzeFortuneImpact(bazi, daYunList, yongJi) {
+    var dg = bazi.day.gan;
+    var dgWx = window.WU_XING[dg];
+    var di = WXL.indexOf(dgWx);
+    var SHENGWO = WXL[(di + 4) % 5];
+    var WOSHENG = WXL[(di + 1) % 5];
+    var KEWO    = WXL[(di + 3) % 5];
+    var WOKE    = WXL[(di + 2) % 5];
+
+    var xiSet = (yongJi && yongJi.xiShen) ? yongJi.xiShen.slice() : [];
+    var jiSet = (yongJi && yongJi.jiShen) ? yongJi.jiShen.slice() : [];
+    var yongSet = (yongJi && yongJi.yongShen) ? yongJi.yongShen.slice() : [];
+
+    // 判断某五行在当前喜用忌分类中的角色
+    function wxRole(wx) {
+      if (yongSet.indexOf(wx) >= 0) return '用神';
+      if (xiSet.indexOf(wx) >= 0) return '喜神';
+      if (jiSet.indexOf(wx) >= 0) return '忌神';
+      return '中性';
+    }
+
+    // 某五行与日主的关系名
+    function relName(wx) {
+      if (wx === dgWx) return '比劫';
+      if (wx === SHENGWO) return '印星';
+      if (wx === WOSHENG) return '食伤';
+      if (wx === WOKE) return '财星';
+      if (wx === KEWO) return '官杀';
+      return '五行';
+    }
+
+    var positions = ['year','month','day','hour'];
+    var periods = [];
+
+    if (!daYunList || !daYunList.length) return { periods: [], summary: '无大运数据' };
+
+    daYunList.forEach(function(dy, idx) {
+      var ganWx = window.WU_XING[dy.gan];
+      var zhiWx = window.DI_ZHI_WU_XING[dy.zhi];
+      var ganRole = wxRole(ganWx);
+      var zhiRole = wxRole(zhiWx);
+
+      // 大运与日主关系
+      var ganRel = simpleRel(ganWx, dgWx);
+      var zhiRel = simpleRel(zhiWx, dgWx);
+
+      // 检测大运与原局的特殊互动
+      var interactions = [];
+      // 大运冲原局月柱地支（提纲被冲）
+      if (CHONG[dy.zhi] === bazi.month.zhi) {
+        interactions.push({ type: 'warning', text: '大运冲提纲（月支' + bazi.month.zhi + '）——十年根基动摇' });
+      }
+      // 大运冲原局日支（夫妻/自身根基被冲）
+      if (CHONG[dy.zhi] === bazi.day.zhi) {
+        interactions.push({ type: 'warning', text: '大运冲日支（夫妻宫/自身根基）——十年动荡' });
+      }
+      // 大运与原局三合
+      var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+      var SAN_HE_TRI = [['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
+      SAN_HE_TRI.forEach(function(tri) {
+        var needed = [tri[0], tri[1], tri[2]];
+        var present = needed.filter(function(z) { return allZhi.indexOf(z) >= 0 || z === dy.zhi; });
+        if (present.length === 3 && allZhi.indexOf(dy.zhi) < 0) {
+          // 大运补齐了三合局!
+          var heWx = tri[3];
+          interactions.push({ type: 'structure', text: '大运' + dy.zhi + '补全三合' + heWx + '局——全局五行格局因运而变' });
+        }
+      });
+
+      // 评估大运喜忌
+      var verdict;
+      var ganXi = ganRole === '用神' || ganRole === '喜神';
+      var zhiXi = zhiRole === '用神' || zhiRole === '喜神';
+      var ganJi = ganRole === '忌神';
+      var zhiJi = zhiRole === '忌神';
+
+      if (ganXi && zhiXi) verdict = '喜运';
+      else if (ganJi && zhiJi) verdict = '忌运';
+      else if (ganXi || zhiXi) verdict = '偏喜';
+      else if (ganJi || zhiJi) verdict = '偏忌';
+      else verdict = '中性';
+
+      // 若大运与原局有重大冲合，调整 verdict
+      if (interactions.some(function(i) { return i.type === 'structure'; })) {
+        verdict = verdict === '忌运' ? '偏忌' : (verdict === '偏忌' ? '中性' : verdict);
+      }
+
+      // 生成运程摘要
+      var summary = '大运' + dy.gan + dy.zhi + '（' + (dy.displayAge || dy.startYear) + '-' + (dy.endYear || '') + '），';
+      summary += '天干' + ganWx + relName(ganWx) + '（' + ganRole + '），';
+      summary += '地支' + zhiWx + '（' + zhiRole + '）。';
+      if (ganXi && zhiXi) summary += '此运喜用双全，人生上升期。';
+      else if (ganJi && zhiJi) summary += '此运忌神当道，宜守不宜攻。';
+      else if (ganXi && zhiJi) summary += '天干有喜但地支为忌——表面风光，暗流涌动。';
+      else if (ganJi && zhiXi) summary += '天干为忌但地支有喜——内里有靠，低调蓄力。';
+      else summary += '此运中和，稳扎稳打。';
+
+      periods.push({
+        gan: dy.gan, zhi: dy.zhi,
+        ganWx: ganWx, zhiWx: zhiWx,
+        ganRole: ganRole, zhiRole: zhiRole,
+        age: dy.displayAge || dy.startYear,
+        startYear: dy.startYear, endYear: dy.endYear,
+        interactions: interactions,
+        verdict: verdict,
+        summary: summary
+      });
+    });
+
+    // 生成全局大运总结
+    var allVer = periods.map(function(p) { return p.verdict; });
+    var xiCount = allVer.filter(function(v) { return v === '喜运' || v === '偏喜'; }).length;
+    var jiCount = allVer.filter(function(v) { return v === '忌运' || v === '偏忌'; }).length;
+    var summaryText = '一生' + periods.length + '步大运中，喜运' + xiCount + '步，忌运' + jiCount + '步。';
+    if (xiCount >= jiCount + 2) summaryText += '整体运程偏吉，中晚年可期。';
+    else if (jiCount >= xiCount + 2) summaryText += '运途多有波折，宜守不宜攻。';
+    else summaryText += '吉凶参半，运势随大运切换而起伏。';
+
+    return { periods: periods, summary: summaryText };
+  }
+
+  /**
+   * v5.2 流年→大运→原局三方互动
+   * 子平法核心：岁运局三者关系决定一年的真实吉凶
+   */
+  function analyzeLiuNianImpact(bazi, daYun, liuNian, yongJi) {
+    if (!daYun || !liuNian) return { triggers: [], verdict: "neutral", summary: "大运或流年数据缺失" };
+
+    var dg = bazi.day.gan;
+    var dgWx = window.WU_XING[dg];
+    var dz = bazi.day.zhi;
+    var triggers = [];
+    var dangerScore = 0;
+    var opportunityScore = 0;
+
+    var dyGan = daYun.gan, dyZhi = daYun.zhi;
+    var lnGan = liuNian.gan, lnZhi = liuNian.zhi;
+    var dyGanWx = window.WU_XING[dyGan] || '';
+    var lnGanWx = window.WU_XING[lnGan] || '';
+    var lnZhiWx = window.DI_ZHI_WU_XING[lnZhi] || '';
+
+    var CHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+    var KEX_MAP = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+
+    // === 1. 岁运并临 ===
+    if (dyGan === lnGan && dyZhi === lnZhi) {
+      var isXi = (yongJi && yongJi.yongShen && yongJi.yongShen.indexOf(dyGanWx) >= 0) ||
+                 (yongJi && yongJi.xiShen && yongJi.xiShen.indexOf(dyGanWx) >= 0);
+      triggers.push({
+        type: '岁运并临', severity: 'high',
+        detail: dyGan + dyZhi + '岁运并临——大运与流年干支完全相同。' + (isXi ? '喜用神到位，吉事加倍' : '忌神当道，凶事加倍'),
+        isGood: isXi
+      });
+      if (isXi) opportunityScore += 4; else dangerScore += 4;
+    }
+
+    // === 2. 天克地冲 ===
+    // 2a. 流年与日柱天克地冲
+    if (lnGanWx === KEX_MAP[dgWx] && CHONG[lnZhi] === dz) {
+      triggers.push({
+        type: '天克地冲', severity: 'critical',
+        detail: '流年' + lnGan + lnZhi + '与日柱' + dg + dz + '天克地冲——今年是人生重大关口，婚姻/事业/健康必有大变',
+        isGood: false
+      });
+      dangerScore += 5;
+    }
+    // 2b. 流年与月柱天克地冲
+    if (CHONG[lnZhi] === bazi.month.zhi) {
+      var mGanWx = window.WU_XING[bazi.month.gan];
+      if (lnGanWx === KEX_MAP[mGanWx]) {
+        triggers.push({ type: '天克地冲', severity: 'high', detail: '流年与月柱（提纲）天克地冲——事业/家庭根基动摇', isGood: false });
+        dangerScore += 3;
+      } else {
+        triggers.push({ type: '地冲月提', severity: 'medium', detail: '流年' + lnZhi + '冲月支' + bazi.month.zhi + '——工作环境/家庭变动', isGood: false });
+        dangerScore += 2;
+      }
+    }
+    // 2c. 流年与大运天克地冲
+    if (lnGanWx === KEX_MAP[dyGanWx] && CHONG[lnZhi] === dyZhi) {
+      triggers.push({ type: '岁运天克地冲', severity: 'high', detail: '流年与大运天克地冲——运势转折之年，旧运已断新运未稳', isGood: false });
+      dangerScore += 3;
+    }
+
+    // === 3. 伤官见官 ===
+    if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getShiShen) {
+      var lnSS = BaZiCalculator.getShiShen(dg, lnGan);
+      var allZhiPos = ['year','month','hour'];
+      if (lnSS === '伤官') {
+        var hasZhengGuan = allZhiPos.some(function(p) {
+          return BaZiCalculator.getShiShen(dg, bazi[p].gan) === '正官';
+        }) || BaZiCalculator.getShiShen(dg, dyGan) === '正官';
+        if (hasZhengGuan) {
+          triggers.push({ type: '伤官见官', severity: 'high', detail: '流年伤官' + lnGan + '见原局/大运正官——今年谨防口舌官非、工作变动、与上级冲突', isGood: false });
+          dangerScore += 3;
+        }
+      }
+      if (lnSS === '正官') {
+        var hasShangGuan = allZhiPos.some(function(p) {
+          return BaZiCalculator.getShiShen(dg, bazi[p].gan) === '伤官';
+        });
+        if (hasShangGuan) {
+          triggers.push({ type: '官逢伤官', severity: 'medium', detail: '流年正官被原局伤官克制——虽有机会但易节外生枝', isGood: false });
+          dangerScore += 2;
+        }
+      }
+    }
+
+    // === 4. 流年合日主 ===
+    var GAN_HE = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' };
+    if (GAN_HE[dg] === lnGan) {
+      triggers.push({ type: '流年合日主', severity: 'medium', detail: '流年' + lnGan + '与日主' + dg + '相合——今年易有与己相关的大事（婚姻/合作/新事业），身不由己', isGood: true });
+      opportunityScore += 2;
+    }
+
+    // === 5. 流年合日支 ===
+    var ZHI_HE = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' };
+    if (ZHI_HE[lnZhi] === dz) {
+      triggers.push({ type: '流年合日支', severity: 'medium', detail: '流年' + lnZhi + '合日支' + dz + '——今年感情/家庭方面有大事件，或因配偶得财/损财', isGood: true });
+      opportunityScore += 1;
+    }
+
+    // === 6. 三刑补齐 ===
+    var allZhiFull = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi, dyZhi, lnZhi];
+    var chouWeiXu = ['丑','未','戌'].filter(function(z) { return allZhiFull.indexOf(z) >= 0; });
+    var yinSiShen = ['寅','巳','申'].filter(function(z) { return allZhiFull.indexOf(z) >= 0; });
+    if (chouWeiXu.length === 3) {
+      triggers.push({ type: '三刑俱全', severity: 'high', detail: '流年补齐丑未戌恃势之刑——今年易有官非、合作破裂、仗势欺人之事', isGood: false });
+      dangerScore += 2;
+    }
+    if (yinSiShen.length === 3) {
+      triggers.push({ type: '三刑俱全', severity: 'high', detail: '流年补齐寅巳申无恩之刑——今年防恩将仇报、交通事故、手脚伤灾', isGood: false });
+      dangerScore += 2;
+    }
+
+    // === 7. 伏吟 ===
+    if (lnZhi === dz) {
+      triggers.push({ type: '伏吟', severity: 'low', detail: '流年地支与日支相同（' + lnZhi + '伏吟）——今年重复旧事，或停滞不前', isGood: false });
+    }
+
+    // === 8. 综合判词 ===
+    var lnIsXi = (yongJi && yongJi.yongShen && yongJi.yongShen.indexOf(lnGanWx) >= 0) ||
+                 (yongJi && yongJi.xiShen && yongJi.xiShen.indexOf(lnGanWx) >= 0);
+    var lnIsJi = (yongJi && yongJi.jiShen && yongJi.jiShen.indexOf(lnGanWx) >= 0);
+
+    var verdict, summary;
+    if (dangerScore >= 5) {
+      verdict = '大凶';
+      summary = '今年多事之秋，' + triggers.filter(function(t){return !t.isGood}).length + '个凶兆触发。凡事低调，以守为主。';
+    } else if (dangerScore >= 2) {
+      verdict = '偏凶';
+      var criticalTriggers = triggers.filter(function(t){return t.type==='天克地冲'||t.type==='伤官见官'||t.type==='三刑俱全'});
+      summary = '流年有挑战但非不可控。' + (criticalTriggers.length > 0 ? criticalTriggers.map(function(t){return t.detail}).join('；') : '宜谨慎行事。');
+    } else if (opportunityScore >= 3) {
+      verdict = '大吉';
+      summary = '流年喜用神当道，吉星高照。积极进取，把握良机。';
+    } else if (opportunityScore >= 1) {
+      verdict = '偏吉';
+      summary = '流年总体平稳向吉，小事可成。';
+    } else if (lnIsXi) {
+      verdict = '偏吉';
+      summary = '流年天干为喜神' + lnGanWx + '，虽无大事件触发，但大体顺遂。';
+    } else if (lnIsJi) {
+      verdict = '偏凶';
+      summary = '流年天干为忌神' + lnGanWx + '，行事多阻。';
+    } else {
+      verdict = '中性';
+      summary = '流年平稳，无大吉大凶之兆。';
+    }
+
+    return {
+      liuNianGan: lnGan, liuNianZhi: lnZhi,
+      daYunGan: dyGan, daYunZhi: dyZhi,
+      triggers: triggers,
+      dangerScore: dangerScore,
+      opportunityScore: opportunityScore,
+      verdict: verdict,
+      summary: summary
+    };
+  }
+
+
   // ============================================================
   // 公开 API
   // ============================================================
   window.BaZiChain = {
     analyze: analyzeChains,
+    analyzeFortune: analyzeFortuneImpact,
+    analyzeLiuNian: analyzeLiuNianImpact,
     CHANG_SHENG: CHANG_SHENG,
     LIN_GUAN: LIN_GUAN,
     CHONG: CHONG,

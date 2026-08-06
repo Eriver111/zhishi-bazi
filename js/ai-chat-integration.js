@@ -663,6 +663,89 @@
       } catch(e) {}
     }
     if (typeof _nativeShenSha !== 'undefined' && _nativeShenSha) data.shenSha = _nativeShenSha.map(function(s) { return { name: s.name || s, type: s.type || '', desc: s.desc || '' }; });
+
+    // v5.0: 宫位远近分析
+    if (typeof _bazi !== 'undefined' && _bazi && _bazi.day) {
+      try {
+        var _dgWx2 = _bazi.day.wuXing ? _bazi.day.wuXing.gan : '';
+        var SHENGWO2 = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
+        var KEWO2   = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
+        var WOKE2   = { '木':'土','火':'金','土':'水','金':'木','水':'火' };
+        var _yinWx = SHENGWO2[_dgWx2];
+        var _shaWx = KEWO2[_dgWx2];
+        var _caiWx = WOKE2[_dgWx2];
+
+        var _mGanWx = _bazi.month.gan ? (typeof WU_XING !== 'undefined' ? WU_XING[_bazi.month.gan] : '') : '';
+        var _mZhiWx = _bazi.month.zhi ? (typeof DI_ZHI_WU_XING !== 'undefined' ? DI_ZHI_WU_XING[_bazi.month.zhi] : '') : '';
+        var _hGanWx = _bazi.hour.gan ? (typeof WU_XING !== 'undefined' ? WU_XING[_bazi.hour.gan] : '') : '';
+        var _yGanWx = _bazi.year.gan ? (typeof WU_XING !== 'undefined' ? WU_XING[_bazi.year.gan] : '') : '';
+
+        var monthDesc = '月柱' + _bazi.month.gan + _bazi.month.zhi + '（提纲），';
+        if (_mGanWx === _yinWx) monthDesc += '印星坐提纲，月令生身——得天时之助，贵人之地。';
+        else if (_mGanWx === _dgWx2) monthDesc += '比劫当令，自身有力——根基稳固。';
+        else if (_mGanWx === _shaWx) monthDesc += '官杀当令克身——压力重重，但若有制化反成权威。';
+        else if (_mGanWx === _caiWx) monthDesc += '财星当令耗身——求财心切，但需身强方能担财。';
+        else monthDesc += '食伤当令泄秀——才华外露，创意旺盛。';
+
+        var hourDesc = '时柱' + _bazi.hour.gan + _bazi.hour.zhi + '（归息），';
+        if (_hGanWx === _yinWx) hourDesc += '晚岁得印星庇护——老来有靠，福泽绵长。';
+        else if (_hGanWx === _dgWx2) hourDesc += '比劫归时——晚运平稳，自力更生。';
+        else if (_hGanWx === _shaWx) hourDesc += '晚年仍有压力——需防健康，宜早作安排。';
+        else if (_hGanWx === _caiWx) hourDesc += '晚岁财星——老来财运，但须身强。';
+        else hourDesc += '晚年食伤——儿孙缘厚，晚年享乐。';
+
+        var yearDesc = '年柱' + _bazi.year.gan + _bazi.year.zhi + '（祖业），';
+        if (_yGanWx === _yinWx) yearDesc += '祖上印星——家学渊源，长辈庇护。';
+        else if (_yGanWx === _shaWx) yearDesc += '祖上官杀——家规严苛或祖上有权威传承。';
+        else if (_yGanWx === _caiWx) yearDesc += '祖上财星——家底殷实，但自身需能守成。';
+        else yearDesc += '祖业一般，需自身奋斗。';
+
+        var summary = '';
+        if (_mGanWx === _yinWx) summary += '提纲为印生身，得月令天时之利；';
+        if (_mGanWx === _shaWx && _hGanWx === _yinWx) summary += '提纲官杀制身但归息印星解围——先难后易之命；';
+        if (_mGanWx === _shaWx && _hGanWx !== _yinWx) summary += '提纲官杀攻身无印化解——一生压力随身；';
+
+        data.palaceAnalysis = {
+          monthDesc: monthDesc,
+          hourDesc: hourDesc,
+          yearDesc: yearDesc,
+          summary: summary || '各宫位分布均衡，无特殊宫位偏颇。'
+        };
+      } catch(e) { /* 宫位分析非关键路径 */ }
+    }
+
+    // v5.0: 大运喜用忌联动分析
+    if (typeof _bazi !== 'undefined' && _bazi && typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list) {
+      try {
+        if (window.BaZiChain && window.BaZiChain.analyzeFortune) {
+          var _yj = data.yongJi || (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
+          var _dyList = _daYunData.list.map(function(dy) {
+            return { gan: dy.gan, zhi: dy.zhi, displayAge: dy.displayAge, startYear: dy.startYear, endYear: dy.endYear };
+          });
+          data.fortuneAnalysis = window.BaZiChain.analyzeFortune(_bazi, _dyList, _yj);
+        }
+      } catch(e) { /* 大运联动分析非关键路径 */ }
+    }
+
+    // v5.2: 日支专项分析
+    if (typeof _bazi !== 'undefined' && _bazi && _bazi.day) {
+      try {
+        if (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.analyzeDayBranch) {
+          data.dayBranchAnalysis = BaZiCalculator.analyzeDayBranch(_bazi);
+        }
+      } catch(e) { /* 日支分析非关键路径 */ }
+    }
+
+    // v5.2: 流年三方互动分析
+    if (typeof _bazi !== 'undefined' && _bazi && data.currentDaYun && data.currentLiuNian) {
+      try {
+        if (window.BaZiChain && window.BaZiChain.analyzeLiuNian) {
+          var _yj2 = data.yongJi || (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
+          data.liuNianAnalysis = window.BaZiChain.analyzeLiuNian(_bazi, data.currentDaYun, data.currentLiuNian, _yj2);
+        }
+      } catch(e) { /* 流年互动分析非关键路径 */ }
+    }
+
     return data;
   }
 

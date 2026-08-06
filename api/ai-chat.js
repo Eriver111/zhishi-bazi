@@ -74,6 +74,9 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - 《渊海子平》：宋代徐大升著，十神系统之源。"提纲挈领，以月令为主"
 
 ### 四、分析维度
+- **生克链追踪**（v5.0 核心）：从月令出发，沿天干地支逐段追踪生克路径——财党杀、杀印相生、食伤制杀、比劫夺财。每一条链揭示命局的深层流通与阻断；《滴天髓》十天干口诀（脱胎要火、秋不容土等）经结构化后匹配到具体柱位干支。
+- **宫位远近**：提纲（月柱）作用最强，是命局总纲；归息（时柱）管晚运，为归宿；祖业（年柱）距日主最远，影响力需打折。同一十神因宫位不同效力悬殊。
+- **大运喜忌联动**：原局喜用忌是静态剖面，大运介入后元素角色动态变化——原忌可能因运化凶为吉（如忌金→走水运→金生水→水生身），原喜可能在忌运中无用武之地。
 - 婚姻感情：男命看财星及日支，女命看官杀及日支。配偶宫逢冲多感情波折。
 - 事业财运：官杀主事业地位，财星主财富。食伤生财者技艺致富，官印相生者仕途稳进。
 - 健康分析：五行偏枯对应五脏六腑。木弱肝胆易病，火衰心血不足，土虚脾胃不调。
@@ -107,6 +110,14 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
 - **daYun**（大运排盘）：用户的一生大运已由系统精确计算（顺逆、起运、每柱干支和十神）。回答任何大运相关问题时，**必须使用 chartData.daYun 中的数据**，禁止自己推算大运走向、起运岁数、大运干支。
+- **pattern.establishConditions**（格局成败清单）：逐项列出该格局的成立条件及✅/❌状态。成格条件不是装饰——每一条❌都代表命局的一个结构性缺陷，必须在分析中明确指出哪些条件满足、哪些缺失，以及缺失对命局层次的影响。
+- **yongJi.chainHints**（生克链分析）：系统通过天干地支路径追踪（如财→杀→印→身的流向）发现的深层结构关系与《滴天髓》口诀匹配。这些不是泛泛之谈，而是原局具体干支的互动路径。直接引用链分析的发现，用来解释"为什么某个五行喜/忌"以及"格局搭配的优劣"。当链分析与基础旺衰取用有微妙差异时，链分析代表更精细的判断，应在分析中体现出来。
+- **yongJi.chainAdjustments**（生克链修正）：链分析对五行喜忌的程度修正（如 downgrade_ji=忌但程度减轻，upgrade_ji=比原判更忌）。这些修正代表链分析在原局中发现的"反例"或"转圜通路"——例如财虽为忌，但财生杀→杀生印→印生身的通路让财忌中有喜。在讨论五行喜忌时必须提及这些修正。
+- **palaceAnalysis**（宫位远近）：不同柱位（提纲/归息/祖业）对日主的作用力不同。月柱为提纲力量最强，时柱为归息管晚年，年柱为祖业距日主最远。分析十神力量时需考虑宫位——同一十神在月柱比在年柱作用更强。
+- **fortuneAnalysis**（大运联动）：系统对每步大运的喜用忌动态评估。原局的喜用忌是静态的，但大运介入后元素角色会变化（如原局忌金，但走水运时金生水→水生木，金反成水源）。分析运势时必须结合 fortuneAnalysis 的每步大运判词（喜运/忌运/偏喜/偏忌）和互动标注（冲提纲/补三合等），不能脱离大运语境谈流年。
+- **yongJi.yongShenQuality**（用神真假评估）：系统评估每个用神/喜神的根气强弱（真用神/偏真/弱/假）。用神真假直接影响命局层次——真用神有力则一生层次高，假用神虚浮则需大运补根方显其用。在分析五行喜忌时必须结合用神真假，不可把假用神当作真用来论。
+- **dayBranchAnalysis**（日支夫妻宫专项）：日支是配偶宫+日主根基的双重所在。系统已分析日支十神类型、日主根气深浅、冲合刑害状态、三合三会角色、配偶宫稳定度。分析婚姻感情时必须引用此数据；分析日主旺衰时注意日支根气分。
+- **liuNianAnalysis**（流年三方互动）：系统分析当前流年干支+大运干支+原局四柱的三方关系——包括岁运并临、天克地冲、伤官见官、流年合日主、三刑补齐等关键触发。每个触发标注吉凶（✅吉/⚠凶）和严重度（critical/high/medium/low），以及综合判词（大吉/偏吉/中性/偏凶/大凶）。分析今年运势时必须以此为准，不可脱离具体触发泛泛而谈。
 - **currentDaYun**（当前所处大运）：已精确计算，直接引用其干支和十神
 - **currentLiuNian**（当前流年）：已精确计算，结合大运分析流年运势时以此为准。若 chartData 中有当前大运和当前流年数据，直接使用，不要自行推算。
 - 大运/流年排算是算法强项，你不需要也不能替代它。如果 chartData 中没有大运数据，明确告知用户"请先通过排盘获取大运信息"，不要凭空编造。
@@ -668,6 +679,12 @@ function buildSingleChart(data) {
     if (pt.monthWx) ctx += ` 月令五行：${pt.monthWx}`;
     if (pt.status) ctx += `\n格局状态：${pt.status}`;
     if (pt.breakReasons && pt.breakReasons.length) ctx += `\n破格原因：${pt.breakReasons.join('；')}`;
+    if (pt.establishConditions && pt.establishConditions.length) {
+      ctx += `\n格局成立条件清单：\n`;
+      pt.establishConditions.forEach(function(c) {
+        ctx += `  ${c.met ? '✅' : '❌'} ${c.condition}${c.detail ? ' —— ' + c.detail : ''}\n`;
+      });
+    }
     ctx += `\n格局解读：${pt.desc || ''}\n`;
   }
 
@@ -690,6 +707,28 @@ function buildSingleChart(data) {
         ctx += `    - ${item.role}·${wx}：${(item.reasons || []).join('；')}\n`;
       });
     }
+    // v5.0 生克链分析证据（来自 bazi-chain.js）
+    if (yj.chainHints && yj.chainHints.length) {
+      ctx += `  生克链分析：\n`;
+      yj.chainHints.forEach(function(h) {
+        ctx += `    - [${h.type || 'info'}] ${h.category || ''}：${h.text || ''}\n`;
+      });
+    }
+    if (yj.chainAdjustments && yj.chainAdjustments.length) {
+      ctx += `  生克链修正：\n`;
+      yj.chainAdjustments.forEach(function(a) {
+        ctx += `    - [${a.action}] ${a.wx || ''}：${a.reason || ''}\n`;
+      });
+    }
+    // v5.2 用神真假评估
+    if (yj.yongShenQuality) {
+      ctx += `  用神真假评估：\n`;
+      Object.entries(yj.yongShenQuality).forEach(function(entry) {
+        var wx = entry[0], q = entry[1];
+        ctx += `    - ${wx}：${q.quality}（根气得分${q.score}）\n`;
+        if (q.roots && q.roots.length) ctx += `      根气详情：${q.roots.join('；')}\n`;
+      });
+    }
   }
 
   // v3.1: 四柱生克关系
@@ -703,6 +742,52 @@ function buildSingleChart(data) {
     });
   }
 
+  // v5.0: 宫位远近分析
+  if (data.palaceAnalysis) {
+    var pa = data.palaceAnalysis;
+    ctx += `\n宫位远近分析：\n`;
+    ctx += `  提纲(月柱)：${pa.monthDesc || '—'}\n`;
+    ctx += `  归息(时柱)：${pa.hourDesc || '—'}\n`;
+    ctx += `  祖业(年柱)：${pa.yearDesc || '—'}\n`;
+    if (pa.scoreAdjustment !== undefined) ctx += `  宫位修正分：${pa.scoreAdjustment > 0 ? '+' : ''}${pa.scoreAdjustment}\n`;
+    ctx += `  宫位解读：${pa.summary || '无特殊宫位影响'}\n`;
+  }
+
+
+  // v5.2: 日支专项分析
+  if (data.dayBranchAnalysis) {
+    var dba = data.dayBranchAnalysis;
+    ctx += '\n日支（夫妻宫）专项分析：\n';
+    ctx += '  日支' + dba.branch + '（' + dba.wuXing + '），' + dba.mainShiShen + '——' + (dba.ssDesc || '') + '\n';
+    ctx += '  日主根气：' + dba.rootType + '（根气分' + dba.rootScore + '）\n';
+    if (dba.interactions && dba.interactions.length) {
+      ctx += '  日支互动：\n';
+      dba.interactions.forEach(function(ix) {
+        ctx += '    - ' + ix.type + '·' + ix.with + '：' + ix.detail + '\n';
+      });
+    }
+    ctx += '  稳定度：' + dba.stability + '\n';
+    if (dba.heRole) ctx += '  三合角色：' + dba.heRole + '\n';
+    if (dba.huiRole) ctx += '  三会角色：' + dba.huiRole + '\n';
+    if (dba.cangGan && dba.cangGan.length) {
+      ctx += '  藏干详析：' + dba.cangGan.map(function(c) { return c.level + c.gan + '(' + c.shiShen + ')' + '——' + c.desc; }).join(' | ') + '\n';
+    }
+    ctx += '  综合：' + dba.summary + '\n';
+  }
+
+  // v5.2: 流年三方互动
+  if (data.liuNianAnalysis) {
+    var lna = data.liuNianAnalysis;
+    ctx += '\n流年' + lna.liuNianGan + lna.liuNianZhi + '三方互动分析：\n';
+    ctx += '  判词：' + lna.verdict + '（凶兆分' + (lna.dangerScore || 0) + '，吉兆分' + (lna.opportunityScore || 0) + '）\n';
+    if (lna.triggers && lna.triggers.length) {
+      lna.triggers.forEach(function(tr) {
+        ctx += '  ' + (tr.isGood ? '✅' : '⚠') + ' [' + tr.severity + '] ' + tr.type + '：' + tr.detail + '\n';
+      });
+    }
+    ctx += '  总结：' + lna.summary + '\n';
+  }
+
   // 大运
   if (data.daYun) {
     const dy = data.daYun;
@@ -713,6 +798,25 @@ function buildSingleChart(data) {
         if (c.shiShen) ctx += ` (${c.shiShen})`;
         if (c.startYear) ctx += ` ${c.startYear}-${c.endYear}年`;
         ctx += '\n';
+      });
+    }
+  }
+
+  // v5.0: 大运喜用忌联动分析
+  if (data.fortuneAnalysis) {
+    var fa = data.fortuneAnalysis;
+    ctx += `\n大运喜用忌联动分析：\n`;
+    ctx += `  ${fa.summary || ''}\n`;
+    if (fa.periods && fa.periods.length) {
+      fa.periods.forEach(function(p) {
+        ctx += `  ${p.gan}${p.zhi}（${p.age || p.startYear}-${p.endYear || ''}岁）：`;
+        ctx += `天干${p.ganWx}为${p.ganRole}，地支${p.zhiWx}为${p.zhiRole}`;
+        ctx += ` → 综合判定：${p.verdict}`;
+        if (p.interactions && p.interactions.length) {
+          ctx += ` [${p.interactions.map(function(i) { return i.text; }).join('；')}]`;
+        }
+        ctx += '\n';
+        ctx += `    运程：${p.summary}\n`;
       });
     }
   }
