@@ -125,3 +125,12 @@ test('empty-palace copy states borrowing evidence without inferring strength or 
   assert.match(analysisSource, /借对宫主星作为参照/);
   assert.doesNotMatch(analysisSource, /缘分较弱|晚婚|依靠配偶|一生/);
 });
+
+test('Ziwei time scopes and brightness come directly from iztro', () => {
+  const renderSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
+  assert.doesNotMatch(renderSource, /lnByZhi|MINOR_B|ZA_B|function getBright/);
+  assert.match(renderSource, /ZiweiProfessional\.getCurrentHoroscope\(zi/);
+  assert.match(renderSource, /p\.decadal\s*&&\s*p\.decadal\.range/);
+  assert.match(renderSource, /p\.ages\s*\|\|\s*\[\]/);
+  assert.match(renderSource, /yearly\.palaceNames\[p\.index\]/);
+});
