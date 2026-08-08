@@ -35,6 +35,26 @@ test('follow-up pages retain their contextual AI destinations', () => {
   assert.match(read('liuren.html'), /lr-ai-chat\.html/);
 });
 
+test('Ziwei follow-up carries explicit context and cache-busts repaired bundles', () => {
+  const ziweiPage = read('ziwei.html');
+  const ziweiAnalysis = read('js/ziwei-analysis.js');
+  assert.match(ziweiPage, /js\/ziwei-professional\.js\?v=2/);
+  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=5/);
+  assert.match(ziweiPage, /js\/ziwei-analysis\.js\?v=2/);
+  assert.match(ziweiAnalysis, /zw-ai-chat\.html\?t=zw&v=2/);
+});
+
+test('Ziwei chat always submits Ziwei mode and unlocks after missing chart data', () => {
+  const chat = read('zw-ai-chat.html');
+  assert.match(chat, /body\.mode\s*=\s*['"]ziwei['"]/);
+  assert.doesNotMatch(chat, /sp2\.get\(['"]t['"]\)\s*===\s*['"]zw['"]/);
+  const missingChart = chat.match(/if\s*\(!body\.chartData\)\s*\{([\s\S]*?)\n\s*\}/);
+  assert.ok(missingChart, 'missing-chart branch must exist');
+  assert.match(missingChart[1], /hideThinking\(\)/);
+  assert.match(missingChart[1], /AI\.isWaiting\s*=\s*false/);
+  assert.match(missingChart[1], /sendBtn['"]\)\.disabled\s*=\s*false/);
+});
+
 test('one-shot tools do not gain follow-up chat routes', () => {
   for (const page of ['liuyao.html', 'meihua.html', 'face.html', 'palm.html', 'fengshui.html', 'fortune.html']) {
     assert.doesNotMatch(read(page), /(?:ai-chat|zw-ai-chat|lr-ai-chat)\.html/, `${page} gained a follow-up route`);

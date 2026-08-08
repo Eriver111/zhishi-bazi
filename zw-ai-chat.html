@@ -189,17 +189,14 @@ function send(){
   addMsg('user',text);showThinking();
 
   var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
-  // 检测紫微/八字模式
-  var zwMode=false;try{var sp2=new URLSearchParams(window.location.search);zwMode=sp2.get('t')==='zw'}catch(e){}
-  // 附加上次保存的排盘数据
-  try { var cd2=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_ziwei_data'); if(cd2) {body.chartData=JSON.parse(cd2);if(zwMode)body.mode='ziwei';} } catch(ex) {}
+  // 这是紫微专用对话页，不依赖查询参数判断专业模式。
+  body.mode='ziwei';
+  // 附加上次保存的紫微排盘数据
+  try { var cd2=localStorage.getItem('ai_ziwei_data'); if(cd2) body.chartData=JSON.parse(cd2); } catch(ex) {}
   // 无排盘数据时提醒
   if(!body.chartData){
-    if(zwMode){
-      addMsg('ai','⚠️ 未检测到紫微排盘数据。请先在<a href=\"ziwei.html\">紫微斗数排盘</a>页面完成排盘，再向我提问，分析会更精准。');
-    } else {
-      addMsg('ai','⚠️ 未检测到排盘数据。建议先通过<a href=\"paipan.html\">八字排盘</a>获取完整命盘，再向我提问，分析会更精准。');
-    }
+    addMsg('ai','⚠️ 未检测到紫微排盘数据。请先在<a href=\"ziwei.html\">紫微斗数排盘</a>页面完成排盘，再向我提问，分析会更精准。');
+    hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     return;
   }
   if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}

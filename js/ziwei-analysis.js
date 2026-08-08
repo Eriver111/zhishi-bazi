@@ -181,7 +181,7 @@
     aiFollowup.className = 'zw-ai-hook';
     aiFollowup.style.cssText = 'display:block;width:100%;margin-top:16px;padding:12px 14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.28);border-radius:10px;text-align:center;cursor:pointer;font:inherit;font-size:13px;color:var(--gold);letter-spacing:1px';
     aiFollowup.textContent = '基于当前命盘继续提问 →';
-    aiFollowup.addEventListener('click', function () { window.location.href = 'zw-ai-chat.html'; });
+    aiFollowup.addEventListener('click', function () { window.location.href = 'zw-ai-chat.html?t=zw&v=2'; });
     container.appendChild(aiFollowup);
   }
 
