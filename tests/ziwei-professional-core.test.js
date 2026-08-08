@@ -109,3 +109,19 @@ test('Ziwei renderer and saved AI data use the shared complete transformation li
   assert.match(renderSource, /sihua:\s*window\._sihuaCol\s*\|\|\s*\[\]/);
   assert.match(renderSource, /minor:\s*\(p\.minorStars\s*\|\|\s*\[\]\)\.map[\s\S]*?mutagen:\s*s\.mutagen\s*\|\|\s*["']{2}/);
 });
+
+test('Ziwei analysis is evidence based instead of fixed good-bad scoring', () => {
+  const analysisSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-analysis.js'), 'utf8');
+  assert.doesNotMatch(analysisSource, /ZW_GOOD|ZW_BAD|scorePalaceQuality|scoreTriadAxis/);
+  assert.doesNotMatch(analysisSource, /晚婚更利|伴侣或合作伙伴的力量开拓事业|命宫综合评分|大吉|中平/);
+  assert.match(analysisSource, /ZiweiProfessional\.getBorrowedOpposite/);
+  assert.match(analysisSource, /ZiweiProfessional\.getSurroundedEvidence/);
+  assert.match(analysisSource, /三方四正/);
+});
+
+test('empty-palace copy states borrowing evidence without inferring strength or timing', () => {
+  const analysisSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-analysis.js'), 'utf8');
+  assert.match(analysisSource, /空宫本身不直接等同于吉、凶、强或弱/);
+  assert.match(analysisSource, /借对宫主星作为参照/);
+  assert.doesNotMatch(analysisSource, /缘分较弱|晚婚|依靠配偶|一生/);
+});
