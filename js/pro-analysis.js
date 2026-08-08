@@ -167,6 +167,10 @@ function renderPower(bazi,facts){
                   辰:'辰月·春土当令',巳:'巳月·夏火当令',午:'午月·夏火当令',未:'未月·夏土当令',
                   申:'申月·秋金当令',酉:'酉月·秋金当令',戌:'戌月·秋土当令',亥:'亥月·冬水当令'};
 
+    // ---- v5.3 确保 _siLing 已设置（calcDayMasterStrength 的副作用）----
+    if(typeof calcDayMasterStrength==="function"&&!bazi._siLing){
+      calcDayMasterStrength(bazi);
+    }
     // ---- 子平法：得令·得地·得势 评分 ----
     var dm=facts&&facts.strength?facts.strength:(typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和",evidence:[]});var l=dm.score||50;
     var lb=dm.level||'中和';
