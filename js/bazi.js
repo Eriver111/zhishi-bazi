@@ -2072,6 +2072,61 @@ function calculateSpouseAge(bazi, peiSS) {
  * @param {Object} bazi - { year:{gan,zhi}, month:{gan,zhi}, day:{gan,zhi}, hour:{gan,zhi} }
  * @returns {{ level:string, label:string, score:number }}
  */
+// ═══════════════════════════════════════════════════════════════
+// v5.3 人元司令分野（《渊海子平》版本，经问真软件验证修正）
+// 节气当天 = day 1，逐日累计匹配对应的司令藏干
+// ═══════════════════════════════════════════════════════════════
+var REN_YUAN_SI_LING = {
+  '寅': [{ d:7, g:'戊', w:'土' }, { d:7, g:'丙', w:'火' }, { d:16, g:'甲', w:'木' }],
+  '卯': [{ d:10, g:'甲', w:'木' }, { d:20, g:'乙', w:'木' }],
+  '辰': [{ d:9, g:'乙', w:'木' }, { d:3, g:'癸', w:'水' }, { d:18, g:'戊', w:'土' }],
+  '巳': [{ d:7, g:'戊', w:'土' }, { d:9, g:'庚', w:'金' }, { d:14, g:'丙', w:'火' }],  // 巳月戊7日←实测修正
+  '午': [{ d:10, g:'丙', w:'火' }, { d:9, g:'己', w:'土' }, { d:11, g:'丁', w:'火' }],
+  '未': [{ d:9, g:'丁', w:'火' }, { d:3, g:'乙', w:'木' }, { d:18, g:'己', w:'土' }],
+  '申': [{ d:7, g:'戊', w:'土' }, { d:7, g:'壬', w:'水' }, { d:16, g:'庚', w:'金' }],
+  '酉': [{ d:10, g:'庚', w:'金' }, { d:20, g:'辛', w:'金' }],
+  '戌': [{ d:9, g:'辛', w:'金' }, { d:3, g:'丁', w:'火' }, { d:18, g:'戊', w:'土' }],
+  '亥': [{ d:7, g:'戊', w:'土' }, { d:5, g:'甲', w:'木' }, { d:18, g:'壬', w:'水' }],
+  '子': [{ d:10, g:'壬', w:'水' }, { d:20, g:'癸', w:'水' }],
+  '丑': [{ d:9, g:'癸', w:'水' }, { d:3, g:'辛', w:'金' }, { d:18, g:'己', w:'土' }]
+};
+
+var MONTH_TO_JIEQI = { '寅':'立春','卯':'惊蛰','辰':'清明','巳':'立夏','午':'芒种','未':'小暑','申':'立秋','酉':'白露','戌':'寒露','亥':'立冬','子':'大雪','丑':'小寒' };
+
+/** 计算出生日距离当月节气的天数（节气当天=d1） */
+function getDaysFromJieQi(birthYear, birthMonth, birthDay, monthZhi) {
+  var jqName = MONTH_TO_JIEQI[monthZhi];
+  if (!jqName) return -1;
+  // 尝试两年：小寒等跨年节气可能在上一年数据中
+  for (var yTry = birthYear; yTry >= birthYear - 1; yTry--) {
+    var jieQiList = getJieQiDatesLegacy(yTry);
+    for (var i = 0; i < jieQiList.length; i++) {
+      if (jieQiList[i].name === jqName) {
+        var jqD = jieQiList[i].date;
+        var birth = new Date(birthYear, birthMonth - 1, birthDay);
+        var jq = new Date(jqD.getFullYear(), jqD.getMonth(), jqD.getDate());
+        var diff = Math.floor((birth - jq) / 86400000) + 1; // +1: 节气当天=d1
+        if (diff >= 1 && diff <= 31) return diff; // 正常范围（一个月内）
+      }
+    }
+  }
+  return -1;
+}
+
+/** 获取人元司令：给定月支和节气后天数，返回当令的藏干 + 五行 */
+function getRenYuanSiLing(monthZhi, daysFromJieQi) {
+  var segs = REN_YUAN_SI_LING[monthZhi];
+  if (!segs) return null;
+  var acc = 0;
+  for (var i = 0; i < segs.length; i++) {
+    acc += segs[i].d;
+    if (daysFromJieQi <= acc) return { gan: segs[i].g, wx: segs[i].w, seg: i };
+  }
+  // 超出总天数 → 返回最后一段
+  var last = segs[segs.length - 1];
+  return { gan: last.g, wx: last.w, seg: segs.length - 1 };
+}
+
 function calcDayMasterStrength(bazi) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -2100,6 +2155,33 @@ function calcDayMasterStrength(bazi) {
   else if (WOSHENG[dgWx] === mwx) score -= 15;
   else if (WOKE[dgWx] === mwx)   score -= 10;
   else if (KEWO[dgWx] === mwx)   score -= (25 - wetEarthAdj); // 湿土克水：-25→-13
+
+  // --- v5.3 人元司令分野（独立计算，不覆盖本气得令，仅作参考标注）---
+  var _siLingWx = null, _siLingGan = null, _siLingSeg = null, _siLingDays = -1, _siLingDiff = 0;
+  if (bazi.birthDate) {
+    _siLingDays = getDaysFromJieQi(bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.month.zhi);
+    if (_siLingDays > 0) {
+      var _sl = getRenYuanSiLing(bazi.month.zhi, _siLingDays);
+      if (_sl) { _siLingWx = _sl.wx; _siLingGan = _sl.gan; _siLingSeg = _sl.seg; }
+    }
+  }
+  // 司令分值：仅用于对比展示，不参与实际得分
+  if (_siLingWx) {
+    if (_siLingWx === dgWx)            _siLingDiff = 30;
+    else if (SHENGWO[dgWx] === _siLingWx) _siLingDiff = 20;
+    else if (WOSHENG[dgWx] === _siLingWx) _siLingDiff = -15;
+    else if (WOKE[dgWx] === _siLingWx)   _siLingDiff = -10;
+    else if (KEWO[dgWx] === _siLingWx)   _siLingDiff = -(25 - wetEarthAdj);
+  }
+  bazi._siLing = {
+    benQiWx: mwx,              // 本气五行（实际参与得分）
+    siLingWx: _siLingWx,       // 人元司令分野五行
+    siLingGan: _siLingGan,     // 人元司令当令天干
+    siLingSeg: _siLingSeg,     // 第几段（0/1/2）
+    siLingDays: _siLingDays,   // 节气后第几天
+    siLingDiff: _siLingDiff,   // 司令若参与得令的分数（仅供对比）
+    sameAsBenQi: _siLingWx === mwx  // 司令与本气是否一致
+  };
 
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
@@ -5154,5 +5236,9 @@ window.BaZiCalculator = {
     analyzeThisYear: analyzeThisYear,
     analyzeStudy: analyzeStudy,
     getTrueSolarHour: getTrueSolarHour,
-    PROVINCE_LNG: PROVINCE_LNG
+    PROVINCE_LNG: PROVINCE_LNG,
+    getDaysFromJieQi: getDaysFromJieQi,
+    getRenYuanSiLing: getRenYuanSiLing,
+    REN_YUAN_SI_LING: REN_YUAN_SI_LING,
+    MONTH_TO_JIEQI: MONTH_TO_JIEQI
 };
