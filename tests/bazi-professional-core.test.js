@@ -49,7 +49,7 @@ test('2024 LiQiu switches the month pillar at the actual minute, not at 20:00', 
   assert.equal(after.month.gan + after.month.zhi, '壬申');
 });
 
-test('wet earth adjustment is applied before month-command scoring', () => {
+test('wet earth adjustment remains effective after the later position weighting', () => {
   const { calculator } = loadCalculatorWithInternals();
   const chart = {
     year: { gan: '庚', zhi: '申' },
@@ -57,7 +57,8 @@ test('wet earth adjustment is applied before month-command scoring', () => {
     day: { gan: '癸', zhi: '卯' },
     hour: { gan: '丁', zhi: '巳' },
   };
-  assert.equal(calculator.calcDayMasterStrength(chart).score, 33);
+  // 湿土修正后的阶段分为33；月干己土紧贴癸水再按位置权重扣1分。
+  assert.equal(calculator.calcDayMasterStrength(chart).score, 32);
 });
 
 test('the day stem itself does not block a weak following pattern', () => {
@@ -122,10 +123,20 @@ test('true solar time reports a calendar-day offset when longitude correction cr
   assert.ok(adjusted.solarMinutes >= 0 && adjusted.solarMinutes < 1440);
 });
 
-test('result processing consumes true-solar day offsets without using Zi-hour to shift year/month', () => {
-  const result = fs.readFileSync(path.join(__dirname, '..', 'js', 'result.js'), 'utf8');
-  assert.match(result, /solarInfo\.dayOffset/);
-  assert.doesNotMatch(result, /if \(_params\.zishi === '1'[\s\S]{0,300}_params\.year = nextDay/);
+test('shared birth normalization separates true-solar civil-date changes from Zi-hour pillar changes', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  const solar = calculator.normalizeBirthInput({
+    year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 10,
+    gender: 'male', location: '新疆', trueSolarTime: true, ziHourNextDay: false,
+  });
+  const ziHour = calculator.normalizeBirthInput({
+    year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 0,
+    gender: 'male', trueSolarTime: false, ziHourNextDay: true,
+  });
+  assert.deepEqual({ year: solar.year, month: solar.month, day: solar.day }, { year: 2024, month: 1, day: 14 });
+  assert.equal(solar.dayPillarOffset, 0);
+  assert.deepEqual({ year: ziHour.year, month: ziHour.month, day: ziHour.day }, { year: 2024, month: 1, day: 15 });
+  assert.equal(ziHour.dayPillarOffset, 1);
 });
 
 test('heavenly-stem combination distinguishes combination from successful transformation', () => {
@@ -140,8 +151,8 @@ test('heavenly-stem combination distinguishes combination from successful transf
   assert.match(unsupported.desc, /合而不化/);
 
   const supported = calculator.getGanHe({
-    year: { gan: '甲', zhi: '子' },
-    month: { gan: '戊', zhi: '辰' },
+    year: { gan: '戊', zhi: '子' },
+    month: { gan: '甲', zhi: '辰' },
     day: { gan: '己', zhi: '酉' },
     hour: { gan: '丙', zhi: '午' },
   }).find(item => item.gan1 === '甲' && item.gan2 === '己');

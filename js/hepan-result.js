@@ -52,24 +52,7 @@
   }
 
   function parsePersonParams(params, prefix) {
-    var y = parseInt(params[prefix + 'y']);
-    var m = parseInt(params[prefix + 'm']);
-    var d = parseInt(params[prefix + 'd']);
-    var h = parseInt(params[prefix + 'h']);
-    var clock = params[prefix + 'clock'] !== undefined ? parseInt(params[prefix + 'clock']) : h;
-    var min = params[prefix + 'min'] !== undefined ? parseInt(params[prefix + 'min']) : 0;
-    var g = params[prefix + 'g'];
-    var cal = params[prefix + 'cal'] || 'solar';
-
-    if (isNaN(y) || isNaN(m) || isNaN(d) || isNaN(h) || !g) {
-      return null;
-    }
-
-    return {
-      year: y, month: m, day: d,
-      hour: h, clock: isNaN(clock) ? h : clock,
-      minute: min, gender: g, cal: cal
-    };
+    return HepanPersonBuilder.parsePersonParams(params, prefix);
   }
 
   // =====================================================
@@ -339,13 +322,14 @@
   }
 
   function renderXiyongCard(name, xiShen, yongShen, jiShen) {
+    var xsStr = Array.isArray(xiShen) ? xiShen.join('、') : (xiShen || '');
     var ysStr = Array.isArray(yongShen) ? yongShen.join('、') : (yongShen || '');
     var jsStr = Array.isArray(jiShen) ? jiShen.join('、') : (jiShen || '');
 
     return '' +
       '<div class="hp-xiyong-card">' +
         '<div class="hp-xiyong-name">' + escapeHtml(name) + '</div>' +
-        '<div class="hp-xiyong-row"><span class="hp-xiyong-tag xi">喜神</span><span>' + escapeHtml(xiShen || '-') + '</span></div>' +
+        '<div class="hp-xiyong-row"><span class="hp-xiyong-tag xi">喜神</span><span>' + escapeHtml(xsStr || '-') + '</span></div>' +
         '<div class="hp-xiyong-row"><span class="hp-xiyong-tag yong">用神</span><span>' + escapeHtml(ysStr || '-') + '</span></div>' +
         '<div class="hp-xiyong-row"><span class="hp-xiyong-tag ji">忌神</span><span>' + escapeHtml(jsStr || '-') + '</span></div>' +
       '</div>';
@@ -828,7 +812,7 @@
     }
 
     // 3. 检查依赖是否加载
-    if (typeof calculateBaZi !== 'function') {
+    if (typeof BaZiCalculator === 'undefined' || typeof BaZiCalculator.calculateFromBirthInput !== 'function') {
       showError('八字计算模块未加载，请刷新页面重试。');
       return;
     }
@@ -839,17 +823,8 @@
 
     try {
       // 4. 构建人物对象
-      var person1 = buildPerson(
-        '甲方',
-        p1Params.year, p1Params.month, p1Params.day,
-        p1Params.hour, p1Params.clock, p1Params.gender
-      );
-
-      var person2 = buildPerson(
-        '乙方',
-        p2Params.year, p2Params.month, p2Params.day,
-        p2Params.hour, p2Params.clock, p2Params.gender
-      );
+      var person1 = HepanPersonBuilder.buildPerson('甲方', p1Params, BaZiCalculator);
+      var person2 = HepanPersonBuilder.buildPerson('乙方', p2Params, BaZiCalculator);
 
       // 5. 执行合盘分析
       var result = analyzeHePan(person1, person2, relationType);

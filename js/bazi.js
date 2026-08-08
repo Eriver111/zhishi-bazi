@@ -638,6 +638,64 @@ function calculateBaZi(year, month, day, hour, gender, clock, dayPillarOffset) {
 }
 
 /**
+ * Normalize one calendar birth input before building the four pillars.
+ * This is the shared boundary used by personal results and Hepan.
+ */
+function normalizeBirthInput(params) {
+    params = params || {};
+    var normalized = {
+        year: Number(params.year),
+        month: Number(params.month),
+        day: Number(params.day),
+        hour: Number(params.hour),
+        clock: params.clock === undefined || params.clock === null ? 0 : Number(params.clock),
+        minute: params.minute === undefined || params.minute === null ? 0 : Number(params.minute),
+        gender: params.gender,
+        dayPillarOffset: 0,
+        solarInfo: null
+    };
+    if (![normalized.year, normalized.month, normalized.day, normalized.hour, normalized.clock, normalized.minute].every(Number.isFinite)) {
+        throw new TypeError('Invalid birth input');
+    }
+    if (normalized.hour < 0 || normalized.hour > 11 || normalized.minute < 0 || normalized.minute > 59) {
+        throw new RangeError('Invalid birth time');
+    }
+
+    if (params.trueSolarTime !== false) {
+        var location = params.location || params.city || params.dist || params.prov || '';
+        if (location) {
+            var solarInfo = getTrueSolarHour(
+                normalized.hour, location, normalized.year, normalized.month, normalized.day,
+                normalized.minute, normalized.clock
+            );
+            normalized.solarInfo = solarInfo;
+            normalized.hour = solarInfo.hourIndex;
+            normalized.clock = solarInfo.trueHour + (solarInfo.trueMinute || 0) / 60;
+            if (solarInfo.dayOffset) {
+                var solarDate = new Date(normalized.year, normalized.month - 1, normalized.day + solarInfo.dayOffset);
+                normalized.year = solarDate.getFullYear();
+                normalized.month = solarDate.getMonth() + 1;
+                normalized.day = solarDate.getDate();
+            }
+        }
+    }
+
+    if (params.ziHourNextDay === true && normalized.hour === 0) normalized.dayPillarOffset = 1;
+    return normalized;
+}
+
+function calculateFromBirthInput(params) {
+    var normalized = normalizeBirthInput(params);
+    var bazi = calculateBaZi(
+        normalized.year, normalized.month, normalized.day, normalized.hour,
+        normalized.gender, normalized.clock, normalized.dayPillarOffset
+    );
+    bazi.originalHour = Number(params.hour);
+    bazi.solarInfo = normalized.solarInfo;
+    return { bazi: bazi, normalized: normalized };
+}
+
+/**
  * 由已知四柱建立命盘。用于无可用出生日期的基础命盘，也保留可选出生日期。
  */
 function buildBaZiFromPillars(pillars, gender, birthDate) {
@@ -4776,8 +4834,8 @@ function getGanHe(bazi) {
           isTransformed = false; status = "争合不化";
           detail = contentionDetail + "——情不专一，化气不成";
         } else if (!isAdjacent) {
-          isTransformed = false; status = "隔柱不化";
-          detail = names[i] + "与" + names[j] + "相距太远，合力微弱";
+          isTransformed = false; status = "合而不化";
+          detail = "隔柱不化：" + names[i] + "与" + names[j] + "相距太远，合力微弱";
         } else if (monthSupports && hasHuaRoot && !hasBlocker) {
           isTransformed = true; status = "合化成功";
           detail = "月令" + bazi.month.zhi + "为" + huaWx + "当令化神有根，化气真确";
@@ -5060,6 +5118,8 @@ function getProfessionalReportFacts(bazi, gender) {
 
 window.BaZiCalculator = {
     calculate: calculateBaZi,
+    normalizeBirthInput: normalizeBirthInput,
+    calculateFromBirthInput: calculateFromBirthInput,
     buildFromPillars: buildBaZiFromPillars,
     calculateDaYun: calculateDaYun,
     calculateLiuNian: calculateLiuNian,

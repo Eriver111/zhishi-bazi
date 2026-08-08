@@ -30,6 +30,8 @@ function getUrlParams() {
         gender: p.get('gender'),
         cal: p.get('cal') || '',
         prov: p.get('prov') || '',
+        city: p.get('city') || '',
+        dist: p.get('dist') || '',
         minute: parseInt(p.get('minute')) || 0,
         clock: parseInt(p.get('clock')) || 0,
         solar: p.get('solar') || '',
@@ -1283,35 +1285,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // --- 真太阳时纠正（默认开启，solar=0 时跳过）---
+    // --- 统一出生时间归一化（个人排盘与合盘共用）---
     var originalHour = _params.hour;
     var solarInfo = null;
     if (!isDirect) {
         // 确保 _params.hour 始终是时辰索引（0-11），不是钟点（0-23）
-        if (_params.hour >= 12) _params.hour = Math.floor(_params.hour / 2) % 12;
-
-        if (_params.prov && _params.solar !== '0') {
-            solarInfo = window.BaZiCalculator.getTrueSolarHour(
-                _params.hour, _params.city || _params.dist || _params.prov, _params.year, _params.month, _params.day, _params.minute, _params.clock
-            );
-            _params.hour = solarInfo.hourIndex;
-            // 也更新 clock 为真太阳时钟点，确保年柱/月柱的节气比较使用真太阳时
-            if (solarInfo.trueHour !== undefined) {
-                _params.clock = solarInfo.trueHour + (solarInfo.trueMinute || 0) / 60;
-            }
-            // 真太阳时跨过午夜时，年/月/日柱都必须使用校正后的民用日期。
-            if (solarInfo.dayOffset) {
-                var solarDate = new Date(_params.year, _params.month - 1, _params.day + solarInfo.dayOffset);
-                _params.year = solarDate.getFullYear();
-                _params.month = solarDate.getMonth() + 1;
-                _params.day = solarDate.getDate();
-            }
-        }
-
-        // 子时换日只改变日柱及由日干派生的时柱，不改变年柱、月柱和起运出生日期。
-        if (_params.zishi === '1' && _params.hour === 0) {
-            _params.dayPillarOffset = 1;
-        }
+        if (_params.hour >= 12) _params.hour = _params.hour === 23 ? 0 : Math.floor((_params.hour + 1) / 2) % 12;
+        originalHour = _params.hour;
+        var normalizedBirth = window.BaZiCalculator.normalizeBirthInput({
+            year:_params.year, month:_params.month, day:_params.day, hour:_params.hour,
+            clock:_params.clock, minute:_params.minute, gender:_params.gender,
+            location:_params.city || _params.dist || _params.prov || '',
+            trueSolarTime:_params.solar !== '0', ziHourNextDay:_params.zishi === '1'
+        });
+        _params.year=normalizedBirth.year;_params.month=normalizedBirth.month;_params.day=normalizedBirth.day;
+        _params.hour=normalizedBirth.hour;_params.clock=normalizedBirth.clock;
+        _params.dayPillarOffset=normalizedBirth.dayPillarOffset;
+        solarInfo=normalizedBirth.solarInfo;
     }
 
     const resultData = buildResultData(_params);

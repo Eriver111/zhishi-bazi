@@ -472,10 +472,14 @@ function analyzeDayGanStrength(p1, p2) {
 
 // 使用 BaZiCalculator 统一算法
 function calcDayGanStrength(person) {
+  if (person._professionalFacts && person._professionalFacts.strength) {
+    var factsStrength = person._professionalFacts.strength;
+    return { level: factsStrength.level, label: factsStrength.label || factsStrength.level, score: factsStrength.score };
+  }
   // 如果有完整 bazi 对象，直接用 BaZiCalculator
   if (person._bazi && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calcDayMasterStrength) {
     var result = BaZiCalculator.calcDayMasterStrength(person._bazi);
-    return { level: result.level, label: result.label, score: result.score };
+    return { level: result.level, label: result.label || result.level, score: result.score };
   }
   // 回退到旧的合盘独立算法
   return _legacyCalcDayGanStrength(person);
@@ -552,18 +556,20 @@ function analyzeXiyong(p1, p2) {
 
   var detail = '';
   // 看喜用神是否互补
-  var p1XiMatch = x2.yongShen.indexOf(x1.xiShen) !== -1 || x2.xiShen === x1.xiShen;
-  var p2XiMatch = x1.yongShen.indexOf(x2.xiShen) !== -1 || x1.xiShen === x2.xiShen;
+  var intersect = function(a,b){return (a||[]).some(function(wx){return (b||[]).indexOf(wx)>=0;});};
+  var p1XiMatch = intersect(x1.xiShen, (x2.yongShen||[]).concat(x2.xiShen||[]));
+  var p2XiMatch = intersect(x2.xiShen, (x1.yongShen||[]).concat(x1.xiShen||[]));
+  var x1Text=(x1.xiShen||[]).join('、'),x2Text=(x2.xiShen||[]).join('、');
 
   if (p1XiMatch && p2XiMatch) {
-    detail = '你们俩的喜用神互相支持，这是非常好的信号！' + p1.name + '需要' + x1.xiShen + '来平衡，而' + p2.name + '身上有这种属性；反过来' + p2.name + '需要' + x2.xiShen + '，' + p1.name + '也能提供。你们在一起自然就能帮对方平衡气场，相处起来彼此都舒服。';
+    detail = '你们俩的喜用神互相支持，这是非常好的信号！' + p1.name + '偏向' + x1Text + '来平衡，' + p2.name + '偏向' + x2Text + '。两人的有利五行存在交集，相处时更容易找到彼此都舒服的节奏。';
   } else if (p1XiMatch || p2XiMatch) {
     detail = '你们俩的喜用神有一部分是互补的。';
-    if (p1XiMatch) detail += p1.name + '的喜神' + x1.xiShen + '能从' + p2.name + '身上获得，这对' + p1.name + '很有好处。';
-    if (p2XiMatch) detail += p2.name + '的喜神' + x2.xiShen + '能从' + p1.name + '身上获得，这对' + p2.name + '很有好处。';
+    if (p1XiMatch) detail += p1.name + '的喜神' + x1Text + '与' + p2.name + '的有利五行存在交集。';
+    if (p2XiMatch) detail += p2.name + '的喜神' + x2Text + '与' + p1.name + '的有利五行存在交集。';
     detail += ' 虽然不是完全互补，但也能在一定程度上帮到对方。';
   } else {
-    detail = '你们俩的喜用神方向不太一致，' + p1.name + '需要' + x1.xiShen + '来平衡，而' + p2.name + '需要' + x2.xiShen + '。这说明你们各自适合的环境和方式不太一样，在日常生活中需要注意协调彼此的节奏，找到都能舒服的中间地带。';
+    detail = '你们俩的喜用神方向不太一致，' + p1.name + '偏向' + x1Text + '，而' + p2.name + '偏向' + x2Text + '。这说明你们各自适合的环境和方式不太一样，在日常生活中需要注意协调彼此的节奏，找到都能舒服的中间地带。';
   }
 
   return {
@@ -574,36 +580,19 @@ function analyzeXiyong(p1, p2) {
 }
 
 function calcXiyong(person) {
-  var str = calcDayGanStrength(person);
-  var dgWx = person.dmWuxing || HP_GWX[person.dayGan];
-  var score = str.score;
-  var xiShen, yongShen, jiShen;
-
-  if (score >= 65) {
-    // 身旺: 喜克泄耗
-    xiShen = HP_WXBK[dgWx];      // 官杀(克我者)
-    yongShen = [HP_WXS[dgWx]];    // 食伤(我生者)
-    if (HP_WXK[dgWx]) yongShen.push(HP_WXK[dgWx]); // 财(我克者)
-    jiShen = [HP_WXBS[dgWx], dgWx]; // 忌印星和比劫
-  } else if (score <= 35) {
-    // 身弱: 喜生扶
-    xiShen = HP_WXBS[dgWx];    // 印星(生我者)
-    yongShen = [dgWx];              // 比劫(同我者)
-    jiShen = [HP_WXBK[dgWx]];     // 忌官杀(克我者)
-  } else {
-    // 中和: 看具体倾向
-    if (score > 45) {
-      xiShen = HP_WXBK[dgWx];
-      yongShen = [HP_WXS[dgWx]];
-      jiShen = [HP_WXBS[dgWx]];
-    } else {
-      xiShen = HP_WXBS[dgWx];
-      yongShen = [dgWx];
-      jiShen = [HP_WXBK[dgWx]];
-    }
+  if (person._professionalFacts && person._professionalFacts.yongJi) {
+    var facts = person._professionalFacts.yongJi;
+    return {
+      xiShen: (facts.xiShen || []).slice(),
+      yongShen: (facts.yongShen || []).slice(),
+      jiShen: (facts.jiShen || []).slice()
+    };
   }
-
-  return { xiShen: xiShen, yongShen: yongShen, jiShen: jiShen };
+  if (person._bazi && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getProfessionalReportFacts) {
+    person._professionalFacts = BaZiCalculator.getProfessionalReportFacts(person._bazi, person.gender);
+    return calcXiyong(person);
+  }
+  throw new Error('合盘缺少个人排盘专业事实，已停止简化喜用忌判定');
 }
 
 // =====================================================
