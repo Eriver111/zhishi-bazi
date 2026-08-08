@@ -2127,6 +2127,48 @@ function getRenYuanSiLing(monthZhi, daysFromJieQi) {
   return { gan: last.g, wx: last.w, seg: segs.length - 1 };
 }
 
+/**
+ * 人元司令分野旁证。它只解释月令内部气势，不参与旺衰、格局或喜用忌计算。
+ */
+function getRenYuanEvidence(bazi) {
+  var hidden = {
+    visible: false, days: -1, stem: '', element: '', tenGod: '',
+    status: '', scoreDelta: 0, text: ''
+  };
+  if (!bazi || !bazi.birthDate || !bazi.month || !bazi.day) return hidden;
+  if (!bazi._siLing) calcDayMasterStrength(bazi);
+  var sl = bazi._siLing;
+  if (!sl || sl.siLingDays < 1 || !sl.siLingGan || !sl.siLingWx || sl.sameAsBenQi) return hidden;
+
+  var dayWx = WU_XING[bazi.day.gan];
+  var relation = getWuXingRelation(dayWx, sl.siLingWx);
+  var statusMap = {
+    same: { status:'旺', phrase:'同我者旺' },
+    produced: { status:'相', phrase:'生我者相' },
+    produce: { status:'休', phrase:'我生者休' },
+    control: { status:'囚', phrase:'我克者囚' },
+    controlled: { status:'死', phrase:'克我者死' }
+  };
+  var relationInfo = statusMap[relation] || { status:'', phrase:'关系待参' };
+  var tenGod = getShiShen(bazi.day.gan, sl.siLingGan);
+  var delta = Number(sl.siLingDiff) || 0;
+  var signedDelta = (delta > 0 ? '+' : '') + delta;
+
+  return {
+    visible: true,
+    days: sl.siLingDays,
+    stem: sl.siLingGan,
+    element: sl.siLingWx,
+    tenGod: tenGod,
+    status: relationInfo.status,
+    scoreDelta: delta,
+    text: '※ 人元司令分野：节气后第' + sl.siLingDays + '天，' + sl.siLingGan + sl.siLingWx
+      + '（' + tenGod + '）当令。若单以司令法衡量，' + bazi.day.gan + dayWx + '日主'
+      + '处“' + relationInfo.phrase + '”，司令参考为 ' + signedDelta
+      + ' 分；与' + bazi.month.zhi + '月本气' + sl.benQiWx + '得令不同，仅作月令内部气势参考。'
+  };
+}
+
 function calcDayMasterStrength(bazi) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -5133,6 +5175,7 @@ function analyzeDayBranch(bazi) {
  */
 function getProfessionalReportFacts(bazi, gender) {
   var strength = calcDayMasterStrength(bazi);
+  var renYuan = getRenYuanEvidence(bazi);
   var pattern = getPattern(bazi);
   var yongJi = getYongJi(bazi);
   var thisYear = analyzeThisYear(bazi, gender || bazi.gender || 'male', yongJi);
@@ -5187,6 +5230,7 @@ function getProfessionalReportFacts(bazi, gender) {
       detail: strength.detail,
       evidence: yongJi.evidence.filter(function(item) { return item.category === '旺衰' || item.category === '调候'; })
     },
+    renYuan: renYuan,
     yongJi: yongJi,
     pattern: pattern,
     actionChains: actionChains,
@@ -5244,6 +5288,7 @@ window.BaZiCalculator = {
     PROVINCE_LNG: PROVINCE_LNG,
     getDaysFromJieQi: getDaysFromJieQi,
     getRenYuanSiLing: getRenYuanSiLing,
+    getRenYuanEvidence: getRenYuanEvidence,
     REN_YUAN_SI_LING: REN_YUAN_SI_LING,
     MONTH_TO_JIEQI: MONTH_TO_JIEQI
 };

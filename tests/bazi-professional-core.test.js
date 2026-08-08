@@ -268,3 +268,45 @@ test('half seasonal combinations require adjacent branches', () => {
   assert.match(source, /has\[0\]\s*&&\s*has\[1\]/);
   assert.match(source, /has\[1\]\s*&&\s*has\[2\]/);
 });
+
+test('renyuan seasonal command is exposed as reference evidence without changing strength', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  const chart = calculator.calculate(2025, 2, 5, 3, 'female', 6);
+  const before = calculator.calcDayMasterStrength(chart);
+  const evidence = calculator.getRenYuanEvidence(chart);
+  const after = calculator.calcDayMasterStrength(chart);
+
+  assert.equal(evidence.visible, true);
+  assert.equal(evidence.days, 3);
+  assert.equal(evidence.stem, '戊');
+  assert.equal(evidence.element, '土');
+  assert.equal(evidence.tenGod, '正财');
+  assert.equal(evidence.status, '囚');
+  assert.equal(evidence.scoreDelta, -10);
+  assert.match(evidence.text, /节气后第3天/);
+  assert.match(evidence.text, /仅作月令内部气势参考/);
+  assert.deepEqual(after, before);
+});
+
+test('renyuan note is hidden when it agrees with benqi or lacks a real date', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  const sameElement = calculator.calculate(2025, 2, 17, 3, 'female', 6);
+  calculator.calcDayMasterStrength(sameElement);
+  assert.equal(calculator.getRenYuanEvidence(sameElement).visible, false);
+
+  const directPillars = calculator.buildFromPillars({
+    year: { gan: '乙', zhi: '巳' },
+    month: { gan: '戊', zhi: '寅' },
+    day: { gan: '乙', zhi: '巳' },
+    hour: { gan: '己', zhi: '卯' },
+  }, 'female');
+  assert.equal(calculator.getRenYuanEvidence(directPillars).visible, false);
+});
+
+test('professional facts reuse the same renyuan evidence contract', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  const chart = calculator.calculate(2025, 2, 5, 3, 'female', 6);
+  const facts = calculator.getProfessionalReportFacts(chart, 'female');
+  assert.deepEqual(facts.renYuan, calculator.getRenYuanEvidence(chart));
+  assert.equal(facts.strength.level, calculator.calcDayMasterStrength(chart).level);
+});
