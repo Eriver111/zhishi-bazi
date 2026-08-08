@@ -1,12 +1,24 @@
 /**
  * bazi-chain.js — 生克链分析引擎
- * v1.0 MVP: 四条核心链检测 + 旺衰修正 + 喜用忌调整建议
+ * v2.0: 结构证据、岁运触发与喜用忌联动（不改写核心旺衰结论）
  *
- * 依赖: bazi.js（WU_XING, DI_ZHI_WU_XING, getCangGan）
+ * 依赖: bazi.js 导出的 BaZiCalculator 公共五行、藏干与十神 API
  * 必须在 bazi.js 之后加载
  */
-(function() {
+(function(root) {
   'use strict';
+
+  var BaZiCalculator = root && root.BaZiCalculator;
+  if (!BaZiCalculator || !BaZiCalculator.WU_XING || !BaZiCalculator.DI_ZHI_WU_XING || !BaZiCalculator.getCangGan) {
+    throw new Error('BaZiChain requires the public BaZiCalculator element and hidden-stem APIs');
+  }
+  // Keep the legacy implementation isolated from browser globals: every dependency
+  // below is an adapter over BaZiCalculator's public API, not a top-level const.
+  var window = {
+    WU_XING: BaZiCalculator.WU_XING,
+    DI_ZHI_WU_XING: BaZiCalculator.DI_ZHI_WU_XING,
+    getCangGan: BaZiCalculator.getCangGan
+  };
 
   var WXL = ['木','火','土','金','水'];
 
@@ -81,9 +93,14 @@
   /**
    * 主入口：分析八字的生克链
    * @param {Object} bazi - 八字对象 { year, month, day, hour } 每柱 { gan, zhi }
-   * @returns {{ bonuses: {structural: number}, adjustments: Array, hints: Array, ganChain: Array, zhiChain: Array }}
+   * @returns {{ adjustments: Array, hints: Array, ganChain: Array, zhiChain: Array }}
    */
   function analyzeChains(bazi) {
+    var requiredPillars = ['year', 'month', 'day', 'hour'];
+    var complete = bazi && requiredPillars.every(function(pos) {
+      return bazi[pos] && BaZiCalculator.WU_XING[bazi[pos].gan] && BaZiCalculator.DI_ZHI_WU_XING[bazi[pos].zhi];
+    });
+    if (!complete) throw new TypeError('BaZiChain requires complete year, month, day, and hour pillars');
     var dg = bazi.day.gan;
     var dgWx = window.WU_XING[dg];
     var di = WXL.indexOf(dgWx);
@@ -98,7 +115,6 @@
 
     var hints = [];
     var adjustments = [];
-    var bonuses = { structural: 0 };
 
     // ============================================================
     // 1. 构建天干链和地支链
@@ -133,19 +149,30 @@
 
     if (shaInMonth && (yinAdjacentGan || yinInDayZhi)) {
       // 月令杀 + 有印贴身 → 杀印相生
+      var monthMainGan = window.getCangGan(bazi.month.zhi)[0];
+      var monthOfficerRole = BaZiCalculator.getShiShen(dg, monthMainGan) || '官杀';
+      var sealSource;
+      if (yinAdjacentGan) {
+        sealSource = '月干' + monthGan + monthGanWx + (BaZiCalculator.getShiShen(dg, monthGan) || '印星');
+      } else {
+        var daySealGan = window.getCangGan(bazi.day.zhi).find(function(gan) {
+          return window.WU_XING[gan] === SHENGWO;
+        });
+        sealSource = '日支' + bazi.day.zhi + '中藏' + daySealGan + SHENGWO
+          + (BaZiCalculator.getShiShen(dg, daySealGan) || '印星');
+      }
       var hasRoot = false;
       positions.forEach(function(pos) {
         if (bazi[pos].zhi === CHANG_SHENG[dg] || bazi[pos].zhi === LIN_GUAN[dg]) {
           hasRoot = true;
         }
       });
-      bonuses.structural = hasRoot ? 13 : 8;
-
       hints.push({
         type: 'structure',
         category: '杀印相生',
-        text: '月令七杀当权（申金），但' + (yinAdjacentGan ? '月干' + monthGan + '水印星贴身通关' : '日支申中藏壬水印星通关') + '——「杀印相生，化杀为权」。' +
-             (hasRoot ? '日主有长生/禄根，格局成立。' : '日主根气稍弱，杀印虽通但底气不足。')
+        text: '月令' + bazi.month.zhi + '主气' + monthMainGan + monthZhiWx + '为' + monthOfficerRole
+          + '，并见' + sealSource + '贴近日主，形成杀印相生的通关路径。'
+          + (hasRoot ? '日主另有长生/禄根，结构承接较稳。' : '日主根气稍弱，仍需结合全局强弱判断。')
       });
     }
 
@@ -156,6 +183,9 @@
     var yearZhiToMonth = simpleRel(zhiChain[0].wx, monthZhiWx);    // 年支→月支
     var yearIsCai = (ganChain[0].wx === WOKE || zhiChain[0].wx === WOKE); // 年柱带财
     var monthIsSha = (monthZhiWx === KEWO || monthGanWx === KEWO); // 月柱带杀
+    function formatGanEvidence(gan) {
+      return gan + '（' + window.WU_XING[gan] + '，' + (BaZiCalculator.getShiShen(dg, gan) || '十神未定') + '）';
+    }
 
     // 财→杀 生助路径存在
     var caiShengSha = false;
@@ -163,35 +193,43 @@
     if (yearGanToMonth === 'sheng' && monthGanWx === KEWO) {
       // 年干生月干(杀) — 紧贴，最强
       caiShengSha = true;
-      caiShengShaPath = '年干' + ganChain[0].gan + '（' + ganChain[0].wx + '）生月干' + monthGan + '（' + monthGanWx + '）';
+      caiShengShaPath = '年干' + formatGanEvidence(ganChain[0].gan) + '生月干' + formatGanEvidence(monthGan);
     } else if (yearZhiToMonth === 'sheng' && monthZhiWx === KEWO) {
       // 年支生月支(杀)
       caiShengSha = true;
-      caiShengShaPath = '年支' + zhiChain[0].zhi + '（' + zhiChain[0].wx + '）生月支' + zhiChain[1].zhi + '（金）';
+      caiShengShaPath = '年支' + zhiChain[0].zhi + '（' + zhiChain[0].wx + '）生月支' + zhiChain[1].zhi + '（' + monthZhiWx + '）';
     } else if (simpleRel(ganChain[0].wx, monthZhiWx) === 'sheng' && monthZhiWx === KEWO) {
       // 年干生月支(杀) — 跨通道
       caiShengSha = true;
-      caiShengShaPath = '年干' + ganChain[0].gan + '（' + ganChain[0].wx + '）生月支' + zhiChain[1].zhi + '（金）';
+      caiShengShaPath = '年干' + formatGanEvidence(ganChain[0].gan) + '生月支' + zhiChain[1].zhi + '（' + monthZhiWx + '）';
     } else if (simpleRel(zhiChain[0].wx, monthGanWx) === 'sheng' && monthGanWx === KEWO) {
       caiShengSha = true;
-      caiShengShaPath = '年支' + zhiChain[0].zhi + '（' + zhiChain[0].wx + '）生月干' + monthGan + '（' + monthGanWx + '）';
+      caiShengShaPath = '年支' + zhiChain[0].zhi + '（' + zhiChain[0].wx + '）生月干' + formatGanEvidence(monthGan);
     }
 
     if (caiShengSha && yearIsCai && monthIsSha) {
       // 财生杀 → 这是"财党杀"
       if (yinAdjacentGan || yinInDayZhi || yinInHourGan) {
-        // 有印截留 → 财生杀但杀转生印，印再生身 → 不凶反吉
+        var chainSealSource;
+        if (yinAdjacentGan) {
+          chainSealSource = '月干' + formatGanEvidence(monthGan);
+        } else if (yinInDayZhi) {
+          var chainDaySealGan = window.getCangGan(bazi.day.zhi).find(function(gan) {
+            return window.WU_XING[gan] === SHENGWO;
+          });
+          chainSealSource = '日支' + bazi.day.zhi + '中藏' + chainDaySealGan + SHENGWO
+            + (BaZiCalculator.getShiShen(dg, chainDaySealGan) || '印星');
+        } else {
+          chainSealSource = '时干' + formatGanEvidence(bazi.hour.gan);
+        }
         hints.push({
           type: 'structure',
           category: '财生杀印截',
-          text: caiShengShaPath + '→ 财虽生杀，但杀有印星通关（' +
-               (yinAdjacentGan ? '月干壬水印星' : yinInDayZhi ? '日支藏壬水印星' : '时干印星') +
-               '截留），化敌为友。' + ganChain[0].gan + '土财表面上生杀为忌，实际经通关后最终生身。'
+          text: caiShengShaPath + '，同时见' + chainSealSource
+            + '，存在官杀生印、印再生身的通关路径；能否有效转化仍须结合旺衰、透干与受制情况。'
         });
-        // 土(财)本来忌，但在此局中忌中有转圜 → 降半级
-        adjustments.push({ wx: WOKE, action: 'downgrade_ji', reason: '财虽生杀但被印截，忌中有转圜通路' });
-        // 金(杀)虽克身但有印化 → 标记为"忌中转"
-        adjustments.push({ wx: KEWO, action: 'highlight_ambivalent', reason: '杀虽克身但转生印，最终生身' });
+        adjustments.push({ wx: WOKE, action: 'highlight_ambivalent', reason: '财生官杀，同时存在官杀生印的候选通路，须结合全局判断能否通关' });
+        adjustments.push({ wx: KEWO, action: 'highlight_ambivalent', reason: '官杀克身但同时存在生印路径，实际作用取决于印星承接与全局旺衰' });
       } else {
         // 无印截留 → 真正的财党杀
         hints.push({
@@ -295,58 +333,46 @@
     // 4. 通根深度检测：日主的根气
     // ============================================================
     var rootDetails = [];
+    var MU = { '甲':'未','乙':'戌','丙':'戌','丁':'丑','戊':'辰','己':'未','庚':'丑','辛':'辰','壬':'辰','癸':'未' };
     positions.forEach(function(pos) {
       var zhi = bazi[pos].zhi;
-      // 禄位
       if (zhi === LIN_GUAN[dg]) {
-        rootDetails.push(posNames[pos] + '地支' + zhi + '为日主禄位（强根，+12）');
+        rootDetails.push(posNames[pos] + '地支' + zhi + '为日主禄位（强根）');
       }
-      // 长生位
       if (zhi === CHANG_SHENG[dg]) {
         rootDetails.push(posNames[pos] + '地支' + zhi + '为日主长生之位（有气之根，靠印滋养）');
       }
-      // 墓库
-      var MU = { '甲':'未','乙':'戌','丙':'戌','丁':'丑','戊':'辰','己':'未','庚':'丑','辛':'辰','壬':'辰','癸':'未' };
       if (zhi === MU[dg]) {
-        rootDetails.push(posNames[pos] + '地支' + zhi + '为日主墓库（弱根，入库待冲）');
+        rootDetails.push(posNames[pos] + '地支' + zhi + '为日主墓库（弱根，是否发动需看冲合）');
       }
-    });
-    if (rootDetails.length === 0) {
-      // 检查藏干本气
-      var foundRoot = false;
-      positions.forEach(function(pos) {
-        var cg = window.getCangGan(bazi[pos].zhi);
-        if (cg.length > 0 && window.WU_XING[cg[0]] === dgWx) {
-          rootDetails.push(posNames[pos] + '藏干本气' + cg[0] + '为日主通根（地支有根）');
-          foundRoot = true;
-        }
+      window.getCangGan(zhi).forEach(function(hiddenGan, hiddenIndex) {
+        if (window.WU_XING[hiddenGan] !== dgWx) return;
+        var depth = hiddenIndex === 0 ? '本气强根' : (hiddenIndex === 1 ? '中气根' : '余气根');
+        rootDetails.push(posNames[pos] + '地支' + zhi + '藏' + hiddenGan + dgWx + '（' + depth + '）');
       });
-      if (!foundRoot) {
-        hints.push({
-          type: 'warning',
-          category: '日主无根',
-          text: '日主' + dg + '木在原局无禄位、无长生、无墓库、无藏干本气根——"无根之木，浮于水上"，根基浅薄。'
-        });
-      }
-    }
+    });
     if (rootDetails.length > 0) {
       hints.push({
         type: 'info',
         category: '日主根气',
         text: rootDetails.join('；')
       });
+    } else {
+      hints.push({
+        type: 'warning',
+        category: '日主无根',
+        text: '日主' + dg + dgWx + '在原局未见禄位、长生、墓库或同五行藏干，根气较浅，仍需结合天干生扶与月令判断。'
+      });
     }
 
     // ============================================================
     // 4½. 库冲开库检测（丑未冲/辰戌冲 + 丑未戌三刑）
-    // 库冲不同于普通冲——普通冲是破坏，库冲是释放
+    // 库冲按“藏干受引动”记录；是否真正成事仍需结合透干、月令与喜忌。
     // 丑(金库) 未(木库) 辰(水库) 戌(火库)
     // ============================================================
     var STORAGE_DEF = {
-      '丑': { stores:'金', cang:[{g:'己',w:'土',r:'本气'},{g:'癸',w:'水',r:'正官'},{g:'辛',w:'金',r:'正财'}] },
-      '未': { stores:'木', cang:[{g:'己',w:'土',r:'本气'},{g:'丁',w:'火',r:'劫财'},{g:'乙',w:'木',r:'正印'}] },
-      '辰': { stores:'水', cang:[{g:'戊',w:'土',r:'本气'},{g:'乙',w:'木',r:'正印'},{g:'癸',w:'水',r:'正官'}] },
-      '戌': { stores:'火', cang:[{g:'戊',w:'土',r:'本气'},{g:'辛',w:'金',r:'正财'},{g:'丁',w:'火',r:'劫财'}] }
+      '丑': { stores:'金' }, '未': { stores:'木' },
+      '辰': { stores:'水' }, '戌': { stores:'火' }
     };
     var STORAGE_CLASH = { '丑':'未','未':'丑','辰':'戌','戌':'辰' };
 
@@ -378,16 +404,17 @@
     }
 
     if (Object.keys(openedStorages).length > 0) {
-      // 收集被释放的藏干（中气+余气；本气始终活跃）
-      var released = []; // { wx, gan, fromZhi, relationToDay, role }
+      // 收集受冲刑引动的藏干（中气+余气；本气始终参与原局判断）
+      var activatedHiddenStems = []; // { wx, gan, fromZhi, relationToDay, role }
       Object.keys(openedStorages).forEach(function(zhi) {
         var sto = openedStorages[zhi];
-        sto.def.cang.forEach(function(cg, cidx) {
+        window.getCangGan(zhi).forEach(function(hiddenGan, cidx) {
           if (cidx === 0) return; // 本气不受库锁影响
-          released.push({
-            wx: cg.w, gan: cg.g, fromZhi: zhi,
-            relToDay: simpleRel(cg.w, dgWx), // 与日主的关系
-            role: cg.r
+          var hiddenWx = window.WU_XING[hiddenGan];
+          activatedHiddenStems.push({
+            wx: hiddenWx, gan: hiddenGan, fromZhi: zhi,
+            relToDay: simpleRel(hiddenWx, dgWx),
+            role: BaZiCalculator.getShiShen(dg, hiddenGan) || '十神未定'
           });
         });
       });
@@ -395,39 +422,39 @@
       // 三刑俱全检测
       var hasAllThree = openedStorages['丑'] && openedStorages['未'] && openedStorages['戌'];
 
-      // 分析释放元素能否形成有用通路
+      // 分析受引动元素是否存在可用通路
       var usefulPaths = [];
-      released.forEach(function(el) {
+      activatedHiddenStems.forEach(function(el) {
         var r = el.relToDay;
 
-        // ① 释放的是印星 → 印得库根
+        // ① 受引动的是印星 → 记录印星根气候选证据
         if (r === 'sheng') {
           usefulPaths.push({
             title: '印星得库根',
-            desc: el.fromZhi + '库被冲/刑开，释放' + el.gan + '（印星），' +
-                 '印星从浮泛落地坐实，生身之力增强。',
+            desc: el.fromZhi + '库受冲/刑，藏干' + el.gan + '（印星）受到引动，'
+                 + '是否形成有效生身仍需看透干与全局承接。',
             wx: el.wx, priority: 3
           });
         }
-        // ② 释放的五行生印星 → 间接生身（如：官→印→身）
+        // ② 受引动五行生印星 → 记录间接生身候选路径（如：官→印→身）
         else if (simpleRel(el.wx, SHENGWO) === 'sheng') {
           // 确认印星在原局确实存在
           var hasYinInChart = hasWxAnywhere(bazi, SHENGWO);
           if (hasYinInChart) {
             usefulPaths.push({
               title: '官/杀印通关',
-              desc: el.fromZhi + '库释放' + el.gan + '（' + el.wx + '，' + el.role + '），' +
-                   '生助印星→印再生身，"杀印相生，官印相生，贵气自显"。',
+              desc: el.fromZhi + '库藏' + el.gan + '（' + el.wx + '，' + el.role + '）受到引动，'
+                   + '存在生印、印再生身的通关可能。',
               wx: el.wx, priority: 3
             });
           }
         }
-        // ③ 释放的是日主同类 → 得库气加持
+        // ③ 受引动的是日主同类 → 记录同类根气候选证据
         else if (r === 'tong') {
           usefulPaths.push({
             title: '日主得库气',
-            desc: el.fromZhi + '库（' + el.wx + '库）释放' + el.gan + '，' +
-                 '日主' + dg + '得同五行库气加持，底气增强。',
+            desc: el.fromZhi + '库藏' + el.gan + '受到引动，与日主同五行，'
+                 + '可作为根气增强的候选证据。',
             wx: el.wx, priority: 2
           });
         }
@@ -441,15 +468,15 @@
           text: '丑、未、戌三库全现——"恃势之刑"，三库联动。' +
                (usefulPaths.length > 0
                  ? '三库同时被撬开，' + usefulPaths.map(function(p) { return p.title; }).join('、') + '。' +
-                   '既有通路释放之利，亦有土旺泄身之弊——贵气有代价。'
-                 : '三库虽开，但所释元素未形成有用通路，土旺泄身力大。')
+                   '既见潜在通路，也须同时评估土气变化与日主承受能力。'
+                 : '三库虽受引动，但藏干能否透出发挥作用，仍须结合全局判断。')
         });
       } else if (Object.keys(openedStorages).length >= 2) {
         var zhiNames = Object.keys(openedStorages).join('、');
         hints.push({
           type: 'structure',
           category: '库冲开库',
-          text: zhiNames + '三库冲/刑交互，' + zhiNames + '中藏干被释放。' +
+          text: zhiNames + '库支发生冲/刑，相关藏干受到引动。' +
                (usefulPaths.length > 0 ? usefulPaths.map(function(p) { return p.title; }).join('、') + '。' : '')
         });
       }
@@ -461,11 +488,11 @@
         // 生成调整
         if (p.title === '官/杀印通关') {
           adjustments.push({ wx: p.wx, action: 'highlight_ambivalent',
-            reason: '库开释放' + p.wx + '（官杀），官→印→身通路成立，虽克身但转生印，忌中转用' });
+            reason: '库支受冲刑后，' + p.wx + '（官杀）存在官杀生印、印再生身的通关可能；能否转化须看透干、旺衰及全局承接' });
         }
         if (p.title === '印星得库根') {
           adjustments.push({ wx: p.wx, action: 'highlight_enhanced',
-            reason: '库开释放印星，印得库根，生身之力质变' });
+            reason: '库支受冲刑后印星藏干受到引动，可作为印星根气增强的候选证据，仍须结合透干与受制情况' });
         }
       });
 
@@ -476,7 +503,7 @@
         hints.push({
           type: 'info',
           category: '库开代价',
-          text: '库冲/刑在释放有利藏干的同时，也冲旺了土（丑未辰戌本气皆土）。土为食伤/财星，泄耗日主之气加重——贵气有成本。'
+          text: '库支发生冲/刑时，除藏干受到引动外，也会改变土气的稳定状态。土在本命中所对应的十神及其喜忌，须与相关藏干一并权衡。'
         });
       }
     }
@@ -486,8 +513,12 @@
     // ============================================================
     var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
     var diTianSuiHints = [];
-    var monthNum = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'].indexOf(monthZhi);
-    var season = monthNum >= 2 && monthNum <= 4 ? '春' : monthNum >= 5 && monthNum <= 7 ? '夏' : monthNum >= 8 && monthNum <= 10 ? '秋' : '冬';
+    var monthZhi = bazi.month.zhi;
+    var seasonByMonth = {
+      '寅':'春','卯':'春','辰':'春', '巳':'夏','午':'夏','未':'夏',
+      '申':'秋','酉':'秋','戌':'秋', '亥':'冬','子':'冬','丑':'冬'
+    };
+    var season = seasonByMonth[monthZhi];
 
     // ---- 甲木章 ----
     if (dg === '甲') {
@@ -743,7 +774,6 @@
     }
 
     return {
-      bonuses: bonuses,
       adjustments: finalAdjustments,
       hints: hints,
       ganChain: ganChain,
@@ -821,7 +851,17 @@
         if (present.length === 3 && allZhi.indexOf(dy.zhi) < 0) {
           // 大运补齐了三合局!
           var heWx = tri[3];
-          interactions.push({ type: 'structure', text: '大运' + dy.zhi + '补全三合' + heWx + '局——全局五行格局因运而变' });
+          var heRole = wxRole(heWx);
+          var heIsGood = heRole === '用神' || heRole === '喜神'
+            ? true
+            : (heRole === '忌神' ? false : null);
+          interactions.push({
+            type: 'structure',
+            formedWx: heWx,
+            role: heRole,
+            isGood: heIsGood,
+            text: '大运' + dy.zhi + '补全三合' + heWx + '局，所化五行在本命喜忌中为' + heRole + '；是否成化仍需结合月令、透干与受制情况判断。'
+          });
         }
       });
 
@@ -838,10 +878,7 @@
       else if (ganJi || zhiJi) verdict = '偏忌';
       else verdict = '中性';
 
-      // 若大运与原局有重大冲合，调整 verdict
-      if (interactions.some(function(i) { return i.type === 'structure'; })) {
-        verdict = verdict === '忌运' ? '偏忌' : (verdict === '偏忌' ? '中性' : verdict);
-      }
+      // 三合只是结构变化证据，且尚有成化条件；不可脱离所化五行喜忌直接改判运势。
 
       // 生成运程摘要
       var summary = '大运' + dy.gan + dy.zhi + '（' + (dy.displayAge || dy.startYear) + '-' + (dy.endYear || '') + '），';
@@ -906,7 +943,7 @@
                  (yongJi && yongJi.xiShen && yongJi.xiShen.indexOf(dyGanWx) >= 0);
       triggers.push({
         type: '岁运并临', severity: 'high',
-        detail: dyGan + dyZhi + '岁运并临——大运与流年干支完全相同。' + (isXi ? '喜用神到位，吉事加倍' : '忌神当道，凶事加倍'),
+        detail: dyGan + dyZhi + '岁运并临——大运与流年干支完全相同，相关五行作用容易集中显现。' + (isXi ? '该五行属喜用，可关注有利议题的放大' : '该五行不属喜用，宜留意压力议题的放大'),
         isGood: isXi
       });
       if (isXi) opportunityScore += 4; else dangerScore += 4;
@@ -917,7 +954,7 @@
     if (lnGanWx === KEX_MAP[dgWx] && CHONG[lnZhi] === dz) {
       triggers.push({
         type: '天克地冲', severity: 'critical',
-        detail: '流年' + lnGan + lnZhi + '与日柱' + dg + dz + '天克地冲——今年是人生重大关口，婚姻/事业/健康必有大变',
+        detail: '流年' + lnGan + lnZhi + '与日柱' + dg + dz + '天克地冲，个人关系、事业节奏或身心状态更容易出现明显波动，宜结合具体处境谨慎应对。',
         isGood: false
       });
       dangerScore += 5;
@@ -966,33 +1003,37 @@
     // === 4. 流年合日主 ===
     var GAN_HE = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' };
     if (GAN_HE[dg] === lnGan) {
-      triggers.push({ type: '流年合日主', severity: 'medium', detail: '流年' + lnGan + '与日主' + dg + '相合——今年易有与己相关的大事（婚姻/合作/新事业），身不由己', isGood: true });
-      opportunityScore += 2;
+      triggers.push({ type: '流年合日主', severity: 'medium', detail: '流年' + lnGan + '与日主' + dg + '相合，表示相关人事议题容易被牵动；合而能否化、最终利弊均须结合月令与喜忌，不直接定吉凶。', isGood: null });
     }
 
     // === 5. 流年合日支 ===
     var ZHI_HE = { '子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午' };
     if (ZHI_HE[lnZhi] === dz) {
-      triggers.push({ type: '流年合日支', severity: 'medium', detail: '流年' + lnZhi + '合日支' + dz + '——今年感情/家庭方面有大事件，或因配偶得财/损财', isGood: true });
-      opportunityScore += 1;
+      triggers.push({ type: '流年合日支', severity: 'medium', detail: '流年' + lnZhi + '合日支' + dz + '，表示关系、家庭或日常环境议题容易被牵动；合的结果须结合全局喜忌，不直接定吉凶。', isGood: null });
     }
 
     // === 6. 三刑补齐 ===
-    var allZhiFull = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi, dyZhi, lnZhi];
-    var chouWeiXu = ['丑','未','戌'].filter(function(z) { return allZhiFull.indexOf(z) >= 0; });
-    var yinSiShen = ['寅','巳','申'].filter(function(z) { return allZhiFull.indexOf(z) >= 0; });
-    if (chouWeiXu.length === 3) {
-      triggers.push({ type: '三刑俱全', severity: 'high', detail: '流年补齐丑未戌恃势之刑——今年易有官非、合作破裂、仗势欺人之事', isGood: false });
+    var beforeAnnualZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi, dyZhi];
+    var allZhiFull = beforeAnnualZhi.concat(lnZhi);
+    function annualCompletes(branches) {
+      return branches.indexOf(lnZhi) >= 0
+        && branches.every(function(z) { return allZhiFull.indexOf(z) >= 0; })
+        && !branches.every(function(z) { return beforeAnnualZhi.indexOf(z) >= 0; });
+    }
+    if (annualCompletes(['丑','未','戌'])) {
+      triggers.push({ type: '三刑俱全', severity: 'high', detail: '流年' + lnZhi + '补齐丑未戌恃势之刑，相关合作、规则与压力议题容易被触发，需结合喜忌判断。', isGood: false });
       dangerScore += 2;
     }
-    if (yinSiShen.length === 3) {
-      triggers.push({ type: '三刑俱全', severity: 'high', detail: '流年补齐寅巳申无恩之刑——今年防恩将仇报、交通事故、手脚伤灾', isGood: false });
+    if (annualCompletes(['寅','巳','申'])) {
+      triggers.push({ type: '三刑俱全', severity: 'high', detail: '流年' + lnZhi + '补齐寅巳申无恩之刑，关系摩擦与行动风险容易放大，宜谨慎应对。', isGood: false });
       dangerScore += 2;
     }
 
-    // === 7. 伏吟 ===
-    if (lnZhi === dz) {
-      triggers.push({ type: '伏吟', severity: 'low', detail: '流年地支与日支相同（' + lnZhi + '伏吟）——今年重复旧事，或停滞不前', isGood: false });
+    // === 7. 伏吟 / 地支重复 ===
+    if (lnGan === dg && lnZhi === dz) {
+      triggers.push({ type: '伏吟', severity: 'medium', detail: '流年' + lnGan + lnZhi + '与日柱完全相同，属于日柱伏吟，既有议题容易重复或加深。', isGood: false });
+    } else if (lnZhi === dz) {
+      triggers.push({ type: '地支重复', severity: 'low', detail: '流年地支与日支同为' + lnZhi + '，属于地支重复，并非整柱伏吟。', isGood: null });
     }
 
     // === 8. 综合判词 ===
@@ -1003,14 +1044,14 @@
     var verdict, summary;
     if (dangerScore >= 5) {
       verdict = '大凶';
-      summary = '今年多事之秋，' + triggers.filter(function(t){return !t.isGood}).length + '个凶兆触发。凡事低调，以守为主。';
+      summary = '本年有' + triggers.filter(function(t){return t.isGood === false}).length + '项高强度结构触发，波动概率较高。重要决定宜留有余地，并结合现实信息审慎判断。';
     } else if (dangerScore >= 2) {
       verdict = '偏凶';
       var criticalTriggers = triggers.filter(function(t){return t.type==='天克地冲'||t.type==='伤官见官'||t.type==='三刑俱全'});
       summary = '流年有挑战但非不可控。' + (criticalTriggers.length > 0 ? criticalTriggers.map(function(t){return t.detail}).join('；') : '宜谨慎行事。');
     } else if (opportunityScore >= 3) {
       verdict = '大吉';
-      summary = '流年喜用神当道，吉星高照。积极进取，把握良机。';
+      summary = '流年喜用力量较集中，有利条件相对增多；仍需结合实际资源与时机稳步推进。';
     } else if (opportunityScore >= 1) {
       verdict = '偏吉';
       summary = '流年总体平稳向吉，小事可成。';
@@ -1040,7 +1081,7 @@
   // ============================================================
   // 公开 API
   // ============================================================
-  window.BaZiChain = {
+  root.BaZiChain = {
     analyze: analyzeChains,
     analyzeFortune: analyzeFortuneImpact,
     analyzeLiuNian: analyzeLiuNianImpact,
@@ -1050,4 +1091,4 @@
     HAI: HAI
   };
 
-})();
+})(typeof window !== 'undefined' ? window : globalThis);

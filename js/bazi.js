@@ -4568,9 +4568,14 @@ function getYongJi(bazi) {
       var chainResult = window.BaZiChain.analyze(bazi);
       chainHints = chainResult.hints || [];
       chainAdjustments = chainResult.adjustments || [];
-      // 链分析的结构分已在 calcDayMasterStrength 中应用，此处只取 hints/adjustments
+      // 生克链只提供结构证据与建议标注，不重复修改旺衰分。
     }
-  } catch(e) { /* 链分析非关键路径，静默降级 */ }
+  } catch(e) {
+    // 生克链不是基础排盘的阻断项，但异常必须留痕，避免专业证据悄然缺失而无法排查。
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[BaZiChain] analysis failed; using core bazi result only:', e);
+    }
+  }
 
   // 格局微调
   var pattern = getPattern(bazi);
