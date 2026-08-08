@@ -212,6 +212,15 @@ function renderPower(bazi,facts){
       dtQuote='📖 《滴天髓》论'+dayGan+dayGan+'：参见滴天髓十天干章。';
     }
 
+    // ---- v5.3 人元司令分野（与本气不同时显示为小字参考）----
+    var siLingHtml='';
+    if(bazi._siLing&&!bazi._siLing.sameAsBenQi&&bazi._siLing.siLingGan){
+      var _s=bazi._siLing;
+      var _relCN=_s.siLingDiff>=20?'得令':_s.siLingDiff>=0?'相令':_s.siLingDiff>=-10?'囚令':_s.siLingDiff>=-15?'休令':'死令';
+      siLingHtml='<div style="margin-top:6px;padding:4px 8px;background:rgba(255,255,255,.03);border-radius:4px;font-size:9px;color:var(--tx3);line-height:1.5">※ 人元司令分野：节气后第'+_s.siLingDays+'天，<b>'+_s.siLingGan+'('+_s.siLingWx+')</b>当令'+
+        '，若按司令法论则为<b>'+_relCN+'</b>（与本气得令'+(_s.benQiWx)+'不同），仅供参考</div>';
+    }
+
     c.innerHTML=''+
       '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+emoji+'</span>'+
       '<div style="font-size:22px;font-weight:900;color:'+co+';margin:4px 0">'+lb+'（'+l+'分）</div></div>'+
@@ -219,6 +228,7 @@ function renderPower(bazi,facts){
       '<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:'+l+'%;height:100%;background:linear-gradient(90deg,#5b9fd4,#c9a84c,#e07050);border-radius:3px"></div></div>'+
       '<span style="font-size:9px;color:var(--tx3)">强</span><span style="font-weight:700;color:'+co+';font-size:12px">'+l+'%</span></div>'+
       '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;font-size:10px;color:var(--tx2);line-height:1.5">'+detail+'</div>'+
+      siLingHtml+
       evidenceHtml+
       '<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-style:italic">'+dtQuote+'</div>';
 }
