@@ -663,6 +663,9 @@ function buildSingleChart(data) {
     const ds = data.dayMasterStrength;
     ctx += `\n【排盘结构化数据】日主旺衰评定：${ds.level || '?'}（评分 ${ds.score ?? '?'}，${ds.label || ''}）。请以此为本次解读口径，不另行编造分数或替换强弱等级。\n`;
   }
+  if (data.renYuan && data.renYuan.visible && data.renYuan.text) {
+    ctx += `人元司令旁证：${data.renYuan.text} 此项仅作月令内部气势参考，不改写日主旺衰、格局或喜用忌。\n`;
+  }
 
   // v3.4: 从格判定
   if (data.congGe && data.congGe.isCong) {
