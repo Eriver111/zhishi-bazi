@@ -199,7 +199,7 @@ function render(data) {
         });
         if(_bazi.day&&_bazi.day.gan)d.dayMaster={gan:_bazi.day.gan,wuXing:(_bazi.day.wuXing||{}).gan||''};
         if(typeof BaZiCalculator!=='undefined'){
-          try{d.dayMasterStrength=BaZiCalculator.calcDayMasterStrength(_bazi)}catch(e){}
+          try{d.dayMasterStrength=BaZiCalculator.calcDayMasterStrength(_bazi);if(_bazi._siLing)d.dayMasterStrength._siLing=_bazi._siLing;}catch(e){}
           try{d.renYuan=BaZiCalculator.getRenYuanEvidence(_bazi)}catch(e){}
           try{d.pattern=BaZiCalculator.getPattern(_bazi)}catch(e){}
           try{d.yongJi=BaZiCalculator.getYongJi(_bazi)}catch(e){}

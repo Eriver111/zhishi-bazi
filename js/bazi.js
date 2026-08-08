@@ -2143,16 +2143,15 @@ function getRenYuanEvidence(bazi) {
   var dayWx = WU_XING[bazi.day.gan];
   var relation = getWuXingRelation(dayWx, sl.siLingWx);
   var statusMap = {
-    same: { status:'旺', phrase:'同我者旺' },
-    produced: { status:'相', phrase:'生我者相' },
-    produce: { status:'休', phrase:'我生者休' },
-    control: { status:'囚', phrase:'我克者囚' },
-    controlled: { status:'死', phrase:'克我者死' }
+    same: { status:'旺' },
+    produced: { status:'相' },
+    produce: { status:'休' },
+    control: { status:'囚' },
+    controlled: { status:'死' }
   };
-  var relationInfo = statusMap[relation] || { status:'', phrase:'关系待参' };
+  var relationInfo = statusMap[relation] || { status:'' };
   var tenGod = getShiShen(bazi.day.gan, sl.siLingGan);
   var delta = Number(sl.siLingDiff) || 0;
-  var signedDelta = (delta > 0 ? '+' : '') + delta;
 
   return {
     visible: true,
@@ -2162,10 +2161,9 @@ function getRenYuanEvidence(bazi) {
     tenGod: tenGod,
     status: relationInfo.status,
     scoreDelta: delta,
-    text: '※ 人元司令分野：节气后第' + sl.siLingDays + '天，' + sl.siLingGan + sl.siLingWx
-      + '（' + tenGod + '）当令。若单以司令法衡量，' + bazi.day.gan + dayWx + '日主'
-      + '处“' + relationInfo.phrase + '”，司令参考为 ' + signedDelta
-      + ' 分；与' + bazi.month.zhi + '月本气' + sl.benQiWx + '得令不同，仅作月令内部气势参考。'
+    text: '※ 人元司令分野：节气后第' + sl.siLingDays + '天，' + sl.siLingGan
+      + '(' + sl.siLingWx + ')当令，若按司令法论则为' + relationInfo.status
+      + '令（与本气得令' + sl.benQiWx + '不同），仅供参考'
   };
 }
 

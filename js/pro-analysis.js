@@ -167,6 +167,10 @@ function renderPower(bazi,facts){
                   辰:'辰月·春土当令',巳:'巳月·夏火当令',午:'午月·夏火当令',未:'未月·夏土当令',
                   申:'申月·秋金当令',酉:'酉月·秋金当令',戌:'戌月·秋土当令',亥:'亥月·冬水当令'};
 
+    // ---- v5.3 确保 _siLing 已设置（calcDayMasterStrength 的副作用）----
+    if(typeof calcDayMasterStrength==="function"&&!bazi._siLing){
+      calcDayMasterStrength(bazi);
+    }
     // ---- 子平法：得令·得地·得势 评分 ----
     var dm=facts&&facts.strength?facts.strength:(typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和",evidence:[]});var l=dm.score||50;
     var lb=dm.level||'中和';
@@ -212,6 +216,13 @@ function renderPower(bazi,facts){
       dtQuote='📖 《滴天髓》论'+dayGan+dayGan+'：参见滴天髓十天干章。';
     }
 
+    // ---- v5.3 人元司令分野（与本气不同时显示为小字参考）----
+    var siLingHtml='';
+    var renYuan=facts&&facts.renYuan;
+    if(renYuan&&renYuan.visible&&renYuan.text){
+      siLingHtml='<div class="renyuan-note" style="margin-top:6px;padding:4px 8px;background:rgba(255,255,255,.03);border-radius:4px;font-size:9px;color:var(--tx3);line-height:1.5">'+renYuan.text+'</div>';
+    }
+
     c.innerHTML=''+
       '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+emoji+'</span>'+
       '<div style="font-size:22px;font-weight:900;color:'+co+';margin:4px 0">'+lb+'（'+l+'分）</div></div>'+
@@ -219,6 +230,7 @@ function renderPower(bazi,facts){
       '<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:'+l+'%;height:100%;background:linear-gradient(90deg,#5b9fd4,#c9a84c,#e07050);border-radius:3px"></div></div>'+
       '<span style="font-size:9px;color:var(--tx3)">强</span><span style="font-weight:700;color:'+co+';font-size:12px">'+l+'%</span></div>'+
       '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px;font-size:10px;color:var(--tx2);line-height:1.5">'+detail+'</div>'+
+      siLingHtml+
       evidenceHtml+
       '<div style="font-size:9px;color:var(--tx3);margin-top:4px;font-style:italic">'+dtQuote+'</div>';
 }

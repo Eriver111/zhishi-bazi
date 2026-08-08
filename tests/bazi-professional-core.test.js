@@ -284,7 +284,7 @@ test('renyuan seasonal command is exposed as reference evidence without changing
   assert.equal(evidence.status, '囚');
   assert.equal(evidence.scoreDelta, -10);
   assert.match(evidence.text, /节气后第3天/);
-  assert.match(evidence.text, /仅作月令内部气势参考/);
+  assert.match(evidence.text, /仅供参考/);
   assert.deepEqual(after, before);
 });
 
