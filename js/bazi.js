@@ -4217,7 +4217,8 @@ function normalizeYongJiLists(xiShen, yongShen, jiShen) {
       return valid.indexOf(wx) >= 0;
     })));
   };
-  var yong = unique(yongShen).slice(0, 2);
+  // 对外只保留一个核心用神；其余有利五行继续归入喜神，避免并列用神造成取用含混。
+  var yong = unique(yongShen).slice(0, 1);
   var xi = unique(yong.concat(xiShen));
   var ji = unique(jiShen).filter(function(wx) { return xi.indexOf(wx) < 0; });
   return { xiShen: xi, yongShen: yong, jiShen: ji };

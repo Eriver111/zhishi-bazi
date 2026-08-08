@@ -139,6 +139,8 @@ function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById
   var used=parseInt(localStorage.getItem('ai_free_used')||'0');
   AI.freeRemaining=Math.max(0,2-used);
   updateCreditsUI();
+  // 登录用户需要从账户读取会员/积分，不能只依赖本地兑换码。
+  syncUserCredits();
 
   // 恢复会话
   var savedCode=localStorage.getItem('ai_chat_code');
@@ -155,6 +157,20 @@ function hideThinking(){clearInterval(_thinkTimer);var t=document.getElementById
     if(d.success){AI.freeRemaining=1;localStorage.setItem('ai_free_used','0');updateCreditsUI();addMsg('ai','朋友邀请你来的！你获得了 1 次额外免费提问。')}
   })}
 })();
+
+function syncUserCredits(){
+  if(typeof Auth==='undefined'){setTimeout(syncUserCredits,1000);return}
+  Auth.ready(function(){
+    if(!Auth.isLoggedIn())return;
+    fetch('/api/auth/profile',{headers:{'Authorization':'Bearer '+Auth.getToken()}})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d.error)return;
+      if(d.is_monthly){AI.isMonthly=true;updateCreditsUI();return}
+      if(d.credits>0){AI.credits=d.credits;updateCreditsUI()}
+    });
+  });
+}
 
 function updateCreditsUI(){
   var el=document.getElementById('creditsLabel');
@@ -202,7 +218,9 @@ function send(){
   if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}
   else{body.code=AI.code}
 
-  fetch('/api/ai-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  var headers={'Content-Type':'application/json'};
+  if(typeof Auth!=='undefined'&&Auth.isLoggedIn())headers['Authorization']='Bearer '+Auth.getToken();
+  fetch('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
   .then(function(r){return r.json()}).then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}

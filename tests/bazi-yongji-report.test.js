@@ -16,7 +16,14 @@ function pillars(values) {
   return { year: records[0], month: records[1], day: records[2], hour: records[3] };
 }
 
-test('用神属于喜神且忌神不与喜用重叠', () => {
+test('所有八字入口加载同一版核心取用脚本', () => {
+  for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
+    const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
+    assert.match(html, /js\/bazi\.js\?v=20260808c/, `${page} must load the single-core-yongshen bundle`);
+  }
+});
+
+test('只保留一个核心用神，且用神属于喜神、忌神不与喜用重叠', () => {
   const calculator = loadCalculator();
   const charts = [
     calculator.buildFromPillars(pillars(['丙辰', '辛酉', '甲寅', '戊辰']), 'male'),
@@ -26,7 +33,7 @@ test('用神属于喜神且忌神不与喜用重叠', () => {
 
   charts.forEach(chart => {
     const result = calculator.getYongJi(chart);
-    assert.ok(result.yongShen.length >= 1 && result.yongShen.length <= 2);
+    assert.equal(result.yongShen.length, 1);
     result.yongShen.forEach(wx => assert.ok(result.xiShen.includes(wx)));
     assert.equal(result.jiShen.filter(wx => result.xiShen.includes(wx)).length, 0);
     assert.equal(new Set(result.xiShen).size, result.xiShen.length);

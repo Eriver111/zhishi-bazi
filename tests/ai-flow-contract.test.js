@@ -55,6 +55,17 @@ test('Ziwei chat always submits Ziwei mode and unlocks after missing chart data'
   assert.match(missingChart[1], /sendBtn['"]\)\.disabled\s*=\s*false/);
 });
 
+test('Ziwei chat synchronizes account entitlement and authenticates AI requests', () => {
+  const chat = read('zw-ai-chat.html');
+  assert.match(chat, /syncUserCredits\(\)/);
+  assert.match(chat, /\/api\/auth\/profile/);
+  assert.match(chat, /Auth\.ready\s*\(/);
+  assert.match(chat, /AI\.isMonthly\s*=\s*true/);
+  assert.match(chat, /AI\.credits\s*=\s*d\.credits/);
+  assert.match(chat, /headers\[['"]Authorization['"]\]\s*=\s*['"]Bearer ['"]\s*\+\s*Auth\.getToken\(\)/);
+  assert.match(chat, /fetch\(['"]\/api\/ai-chat['"],\{method:['"]POST['"],headers:headers/);
+});
+
 test('one-shot tools do not gain follow-up chat routes', () => {
   for (const page of ['liuyao.html', 'meihua.html', 'face.html', 'palm.html', 'fengshui.html', 'fortune.html']) {
     assert.doesNotMatch(read(page), /(?:ai-chat|zw-ai-chat|lr-ai-chat)\.html/, `${page} gained a follow-up route`);
