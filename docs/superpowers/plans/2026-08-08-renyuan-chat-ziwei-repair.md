@@ -121,9 +121,8 @@
 - [ ] **Step 1: Add failing tests that reject manual flow-year mapping and fabricated brightness fallbacks.**
 - [ ] **Step 2: Run the focused test and verify failure.**
 - [ ] **Step 3: Render decadal and age values from palace data and current annual context from `zi.horoscope(new Date())`; use only library-provided brightness.**
-- [ ] **Step 4: Run syntax checks and focused Bazi/Ziwei/chat tests.**
-- [ ] **Step 5: Run the complete Node test suite and confirm there are no new failures beyond the five documented pre-existing PDF/payment UI failures.**
-- [ ] **Step 6: Browser-check the result page and all three chat pages at 390x844 and 412x915, including focused textareas and horizontal overflow.**
-- [ ] **Step 7: Confirm `git diff --name-only origin/main...HEAD` contains no payment or environment files.**
+- [x] **Step 4: Run syntax checks and focused Bazi/Ziwei/chat tests.**
+- [x] **Step 5: Run the complete Node test suite and confirm there are no new failures beyond the five documented pre-existing PDF/payment UI failures.**
+- [x] **Step 6: Browser-check the result page and all three chat pages at 390x844 and 412x915, including focused textareas and horizontal overflow.**
+- [x] **Step 7: Confirm `git diff --name-only origin/main...HEAD` contains no payment or environment files.**
 - [ ] **Step 8: Fetch the remote, integrate any safe upstream changes without force-pushing, and push the verified branch to `main`.**
-
