@@ -175,6 +175,14 @@
     });
     cards += '</div><p style="font-size:10px;color:var(--tx3);margin:10px 0 0">以上为盘面证据汇总，不以固定加减分替代综合判断。</p>';
     container.appendChild(buildSection('三方四正', cards, '#5b9fd4'));
+
+    var aiFollowup = document.createElement('button');
+    aiFollowup.type = 'button';
+    aiFollowup.className = 'zw-ai-hook';
+    aiFollowup.style.cssText = 'display:block;width:100%;margin-top:16px;padding:12px 14px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.28);border-radius:10px;text-align:center;cursor:pointer;font:inherit;font-size:13px;color:var(--gold);letter-spacing:1px';
+    aiFollowup.textContent = '基于当前命盘继续提问 →';
+    aiFollowup.addEventListener('click', function () { window.location.href = 'zw-ai-chat.html'; });
+    container.appendChild(aiFollowup);
   }
 
   root.renderZwAnalysis = renderZwAnalysis;
