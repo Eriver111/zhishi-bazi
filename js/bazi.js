@@ -662,7 +662,7 @@ function normalizeBirthInput(params) {
     }
 
     if (params.trueSolarTime !== false) {
-        var location = params.location || params.city || params.dist || params.prov || '';
+        var location = params.location || params.dist || params.city || params.prov || '';
         if (location) {
             var solarInfo = getTrueSolarHour(
                 normalized.hour, location, normalized.year, normalized.month, normalized.day,
