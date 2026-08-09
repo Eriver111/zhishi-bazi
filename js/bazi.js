@@ -666,7 +666,8 @@ function normalizeBirthInput(params) {
         if (location) {
             var solarInfo = getTrueSolarHour(
                 normalized.hour, location, normalized.year, normalized.month, normalized.day,
-                normalized.minute, normalized.clock
+                normalized.minute, normalized.clock,
+                params.city || '', params.prov || ''
             );
             normalized.solarInfo = solarInfo;
             normalized.hour = solarInfo.hourIndex;
@@ -3863,15 +3864,23 @@ var BEIJING_LNG = 120;
  * @param {number} year, month, day - 出生日期（用于均时差）
  * @returns {object} { hourIndex, solarMinutes, lng, lngOffsetMin, eotMin, method }
  */
-function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
+function getTrueSolarHour(hour, province, year, month, day, minute, clock, fallbackCity, fallbackProv) {
     // 优先城市经度，其次省份经度，最后默认北京 120°
     // 兼容「湖北省」「湖北」「襄阳市」等多种写法（去掉末尾省/市后缀再试）
-    var place = province || '';
-    var lng = (CITY_LNG && CITY_LNG[place]) || PROVINCE_LNG[place] || null;
-    if (!lng && (place.endsWith('省')||place.endsWith('市')||place.endsWith('县')||place.endsWith('区'))) {
-      var stripped = place.slice(0,-1);
-      lng = (CITY_LNG && CITY_LNG[stripped]) || PROVINCE_LNG[stripped] || null;
+    // v5.5: 支持多级回退 — 区县未命中时自动回退到市→省，避免小地名直接跳到北京
+    function resolveLng(name) {
+      if (!name) return null;
+      var v = (CITY_LNG && CITY_LNG[name]) || PROVINCE_LNG[name] || null;
+      if (!v && (name.endsWith('省')||name.endsWith('市')||name.endsWith('县')||name.endsWith('区'))) {
+        v = (CITY_LNG && CITY_LNG[name.slice(0,-1)]) || PROVINCE_LNG[name.slice(0,-1)] || null;
+      }
+      return v;
     }
+
+    var place = province || '';
+    var lng = resolveLng(place);
+    if (!lng && fallbackCity) lng = resolveLng(fallbackCity);
+    if (!lng && fallbackProv) lng = resolveLng(fallbackProv);
     if (!lng) lng = BEIJING_LNG;
 
     // 1. 经度差：每差1度 = 4分钟
