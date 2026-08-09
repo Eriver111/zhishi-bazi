@@ -3783,6 +3783,8 @@ var CITY_LNG = {
     '齐齐哈尔':123.9,'牡丹江':129.6,'佳木斯':130.3,'大庆':125.0,
     '伊春':128.8,'鸡西':130.9,'鹤岗':130.3,'双鸭山':131.2,'七台河':131.0,
     '黑河':127.5,'绥化':127.0,'大兴安岭':124.1,
+    '望奎':126.5,'望奎县':126.5,'肇东':125.9,'安达':125.3,'海伦':126.9,
+    '兰西':126.3,'青冈':126.1,'庆安':127.5,'明水':125.9,'绥棱':127.1,
     '三亚':109.5,'儋州':109.6,'三沙':112.3,
     '阿里':80.1,'日喀则':88.9,'那曲':92.1,'昌都':97.2,'林芝':94.4,
     '山南':91.8,'拉萨':91.1,
@@ -3851,7 +3853,7 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
     // 兼容「湖北省」「湖北」「襄阳市」等多种写法（去掉末尾省/市后缀再试）
     var place = province || '';
     var lng = (CITY_LNG && CITY_LNG[place]) || PROVINCE_LNG[place] || null;
-    if (!lng && (place.endsWith('省')||place.endsWith('市'))) {
+    if (!lng && (place.endsWith('省')||place.endsWith('市')||place.endsWith('县')||place.endsWith('区'))) {
       var stripped = place.slice(0,-1);
       lng = (CITY_LNG && CITY_LNG[stripped]) || PROVINCE_LNG[stripped] || null;
     }
