@@ -1297,6 +1297,7 @@ document.addEventListener('DOMContentLoaded', function() {
             year:_params.year, month:_params.month, day:_params.day, hour:_params.hour,
             clock:_params.clock, minute:_params.minute, gender:_params.gender,
             location:_params.dist || _params.city || _params.prov || '',
+            city:_params.city || '', prov:_params.prov || '',
             trueSolarTime:_params.solar !== '0', ziHourNextDay:_params.zishi === '1'
         });
         _params.year=normalizedBirth.year;_params.month=normalizedBirth.month;_params.day=normalizedBirth.day;
