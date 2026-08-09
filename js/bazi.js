@@ -2186,7 +2186,20 @@ function calcDayMasterStrength(bazi) {
   var score = 50; // 基准分
 
   // ---------- ① 得令：月令地支本气与日主关系 (权重最大) ----------
-  var mwx = DI_ZHI_WU_XING[bazi.month.zhi];
+  // v5.4: 三会局改写月令 — 寅卯辰/巳午未/申酉戌/亥子丑成局时，月支参与则五行按会局重算
+  var _allZhiForHui = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+  var HUI_MONTH_OVERRIDE = null;
+  [
+    { zhi: ['寅','卯','辰'], wx: '木' },
+    { zhi: ['巳','午','未'], wx: '火' },
+    { zhi: ['申','酉','戌'], wx: '金' },
+    { zhi: ['亥','子','丑'], wx: '水' }
+  ].forEach(function(hj) {
+    if (hj.zhi.every(function(z) { return _allZhiForHui.indexOf(z) >= 0; }) && hj.zhi.indexOf(bazi.month.zhi) >= 0) {
+      HUI_MONTH_OVERRIDE = hj.wx;
+    }
+  });
+  var mwx = HUI_MONTH_OVERRIDE || DI_ZHI_WU_XING[bazi.month.zhi];
   // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
   // 壬癸水见丑辰不算真死令
   var wetEarthAdj = (dgWx === '水' && (bazi.month.zhi === '丑' || bazi.month.zhi === '辰')) ? 12 : 0;
@@ -2482,7 +2495,9 @@ function calcDayMasterStrength(bazi) {
     var has = hj.zhi.map(function(z){ return allZhiArr.indexOf(z) >= 0; });
     var fullCount = has.filter(Boolean).length;
     if (fullCount === 3) {
-      // 三会成局，力量压倒性（会局>三合，扣/加分更高）
+      // 月支参与成局 → 得令已在①环节按会局五行重算，此处不重复计分
+      if (hj.zhi.indexOf(bazi.month.zhi) >= 0) return;
+      // 三会成局但月支不参与 → 额外调整
       if (hj.wx === dgWx) score += 8;
       else if (SHENGWO[dgWx] === hj.wx) score += 5;
       else if (KEWO[dgWx] === hj.wx) score -= 8;
