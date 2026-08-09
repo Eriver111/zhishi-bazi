@@ -53,7 +53,7 @@
     var calculated = calculator.calculateFromBirthInput({
       year: params.year, month: params.month, day: params.day, hour: params.hour,
       clock: params.clock, minute: params.minute, gender: params.gender,
-      location: params.city || params.dist || params.prov || '',
+      location: params.dist || params.city || params.prov || '',
       trueSolarTime: params.trueSolarTime,
       ziHourNextDay: params.ziHourNextDay,
     });
