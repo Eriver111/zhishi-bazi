@@ -13,7 +13,8 @@ test('bazi input retains every calculation control and script', () => {
   }
   for (const script of ['js/lunar.js','js/region.js','js/main.js']) assert.ok(html.includes(script));
   assert.match(html, /name=["']gender["']/);
-  assert.match(html, /<input[^>]+id=["']zishiHuanri["'][^>]+checked/, 'Zi-hour rollover must default on');
+  const ziHourInput = html.match(/<input[^>]+id=["']zishiHuanri["'][^>]*>/)?.[0] || '';
+  assert.doesNotMatch(ziHourInput, /\bchecked\b/, 'Zi-hour rollover must default off');
 });
 
 test('face and palm retain their file inputs and submit handlers', () => {
