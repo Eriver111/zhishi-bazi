@@ -7,3 +7,9 @@ system-commandline-sentinel-files/
 .claude/
 ai-chat-dev.html
 子平真诠精解.txt
+
+# 媒体文件（不提交到仓库）
+*.mp4
+*.mov
+promo_screenshots/
+zhishi-demo/
