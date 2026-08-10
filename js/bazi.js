@@ -681,7 +681,12 @@ function normalizeBirthInput(params) {
         }
     }
 
-    if (params.ziHourNextDay === true && normalized.hour === 0) normalized.dayPillarOffset = 1;
+    // 早子时换日（子初换日）：日始于子初(23:00)
+    // 晚子时(23:00-00:00)：日柱取下一日历日（+1）
+    // 早子时(00:00-01:00)：日柱取当日历日（+0），因为新日已在前一天23:00开始
+    if (params.ziHourNextDay === true && normalized.hour === 0 && normalized.clock >= 23) {
+        normalized.dayPillarOffset = 1;
+    }
     return normalized;
 }
 
