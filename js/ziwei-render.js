@@ -1,74 +1,3 @@
-var PROV_LNG = {
-  北京市: 116.4,
-  天津市: 117.2,
-  上海市: 121.5,
-  重庆市: 106.5,
-  河北省: 114.5,
-  山西省: 112.5,
-  内蒙古: 111.7,
-  辽宁省: 123.4,
-  吉林省: 125.3,
-  黑龙江省: 126.6,
-  江苏省: 118.8,
-  浙江省: 120.2,
-  安徽省: 117.3,
-  福建省: 119.3,
-  江西省: 115.9,
-  山东省: 117.0,
-  河南省: 113.7,
-  湖北省: 114.3,
-  湖南省: 113.0,
-  广东省: 113.3,
-  广西: 108.3,
-  海南省: 110.3,
-  四川省: 104.1,
-  贵州省: 106.7,
-  云南省: 102.7,
-  西藏: 91.1,
-  陕西省: 108.9,
-  甘肃省: 103.8,
-  青海省: 101.8,
-  宁夏: 106.3,
-  新疆: 87.6,
-  台湾省: 121.5,
-  香港特别行政区: 114.2,
-  澳门特别行政区: 113.5,
-};
-var CITY_LNG = {
-  北京市: 116.4,
-  天津市: 117.2,
-  上海市: 121.5,
-  重庆市: 106.5,
-  石家庄市: 114.5,
-  太原市: 112.5,
-  呼和浩特市: 111.7,
-  沈阳市: 123.4,
-  长春市: 125.3,
-  哈尔滨市: 126.6,
-  南京市: 118.8,
-  杭州市: 120.2,
-  合肥市: 117.3,
-  福州市: 119.3,
-  南昌市: 115.9,
-  济南市: 117.0,
-  郑州市: 113.7,
-  武汉市: 114.3,
-  长沙市: 113.0,
-  广州市: 113.3,
-  南宁市: 108.3,
-  海口市: 110.3,
-  成都市: 104.1,
-  贵阳市: 106.7,
-  昆明市: 102.7,
-  拉萨市: 91.13,
-  西安市: 108.9,
-  兰州市: 103.8,
-  西宁市: 101.8,
-  银川市: 106.3,
-  乌鲁木齐市: 87.6,
-  台北市: 121.5,
-  保定市: 115.5,
-};
 function pad(n) {
   return (n < 10 ? "0" : "") + n;
 }
@@ -104,6 +33,20 @@ var sc = {
   天机: "#6db86d",
 };
 var tg = { 0: [0, 4, 8], 1: [1, 5, 9], 2: [2, 6, 10], 3: [3, 7, 11] };
+var currentZwCalendar = "solar";
+
+function switchZwCalendar(mode) {
+  if (mode !== "solar" && mode !== "lunar") return;
+  currentZwCalendar = mode;
+  document.querySelectorAll("[data-zw-calendar]").forEach(function (tab) {
+    tab.classList.toggle("active", tab.getAttribute("data-zw-calendar") === mode);
+  });
+  var solarPanel = document.getElementById("zwSolarPanel");
+  var lunarPanel = document.getElementById("zwLunarPanel");
+  if (solarPanel) solarPanel.classList.toggle("active", mode === "solar");
+  if (lunarPanel) lunarPanel.classList.toggle("active", mode === "lunar");
+}
+
 (function () {
   var bj = new Date(Date.now() + 8 * 60 * 60 * 1000);
   function fill(id, from, to, cur) {
@@ -116,10 +59,50 @@ var tg = { 0: [0, 4, 8], 1: [1, 5, 9], 2: [2, 6, 10], 3: [3, 7, 11] };
       s.appendChild(o);
     }
   }
-  fill("zwY", 1960, bj.getUTCFullYear(), 2000);
+  fill("zwY", 1900, bj.getUTCFullYear(), 2000);
   fill("zwM", 1, 12, bj.getUTCMonth() + 1);
   fill("zwD", 1, 31, bj.getUTCDate());
   fill("zwMin", 0, 59, 0);
+  fill("zwLY", 1900, bj.getUTCFullYear(), 2000);
+
+  var lunarYear = document.getElementById("zwLY");
+  var lunarMonth = document.getElementById("zwLM");
+  var lunarDay = document.getElementById("zwLD");
+  function updateLunarMonths() {
+    var year = parseInt(lunarYear.value, 10);
+    lunarMonth.innerHTML = "";
+    var leap = LunarCalendar.leapMonth(year);
+    for (var month = 1; month <= 12; month++) {
+      var option = document.createElement("option");
+      option.value = month;
+      option.textContent = LunarCalendar.LUNAR_MONTH[month - 1];
+      lunarMonth.appendChild(option);
+      if (month === leap) {
+        var leapOption = document.createElement("option");
+        leapOption.value = "r" + month;
+        leapOption.textContent = "闰" + LunarCalendar.LUNAR_MONTH[month - 1];
+        lunarMonth.appendChild(leapOption);
+      }
+    }
+    updateLunarDays();
+  }
+  function updateLunarDays() {
+    var year = parseInt(lunarYear.value, 10);
+    var value = lunarMonth.value;
+    var isLeap = value.charAt(0) === "r";
+    var month = parseInt(isLeap ? value.slice(1) : value, 10);
+    var days = LunarCalendar.lunarMonthDays(year, month, isLeap);
+    lunarDay.innerHTML = "";
+    for (var day = 1; day <= days; day++) {
+      var option = document.createElement("option");
+      option.value = day;
+      option.textContent = LunarCalendar.LUNAR_DAY[day];
+      lunarDay.appendChild(option);
+    }
+  }
+  lunarYear.addEventListener("change", updateLunarMonths);
+  lunarMonth.addEventListener("change", updateLunarDays);
+  updateLunarMonths();
   var DZ_H = [
     "子",
     "丑",
@@ -184,9 +167,27 @@ var tg = { 0: [0, 4, 8], 1: [1, 5, 9], 2: [2, 6, 10], 3: [3, 7, 11] };
   uc();
 })();
 function doPaipan() {
-  var y = parseInt(document.getElementById("zwY").value),
-    m = parseInt(document.getElementById("zwM").value),
-    d = parseInt(document.getElementById("zwD").value);
+  var y, m, d;
+  if (currentZwCalendar === "lunar") {
+    var lunarYear = parseInt(document.getElementById("zwLY").value, 10);
+    var lunarMonthValue = document.getElementById("zwLM").value;
+    var lunarDay = parseInt(document.getElementById("zwLD").value, 10);
+    var isLeapMonth = lunarMonthValue.charAt(0) === "r";
+    var lunarMonth = parseInt(isLeapMonth ? lunarMonthValue.slice(1) : lunarMonthValue, 10);
+    try {
+      var solarDate = LunarCalendar.lunarToSolar(lunarYear, lunarMonth, lunarDay, isLeapMonth);
+      y = solarDate.year;
+      m = solarDate.month;
+      d = solarDate.day;
+    } catch (error) {
+      alert(error.message || "农历日期转换失败");
+      return;
+    }
+  } else {
+    y = parseInt(document.getElementById("zwY").value, 10);
+    m = parseInt(document.getElementById("zwM").value, 10);
+    d = parseInt(document.getElementById("zwD").value, 10);
+  }
   var h = parseInt(document.getElementById("zwH").value),
     min = parseInt(document.getElementById("zwMin").value) || 0;
   var prov = document.getElementById("zwProv").value || "北京市",
@@ -209,7 +210,6 @@ function doPaipan() {
     alert("出生日期或时间无效");
     return;
   }
-  var lng = CITY_LNG[city] || PROV_LNG[prov] || 116.4;
   var normalized;
   try {
     normalized = ZiweiInput.normalizeBirth({
@@ -218,8 +218,11 @@ function doPaipan() {
       day: d,
       hour: h,
       minute: min,
-      longitude: lng,
-      useTrueSolarTime: true,
+      gender: isMale ? "male" : "female",
+      location: city || dist || prov,
+      calculator: window.BaZiCalculator,
+      useTrueSolarTime: document.getElementById("zwSolarEnabled").checked,
+      ziHourNextDay: document.getElementById("zwZishiHuanri").checked,
     });
   } catch (err) {
     alert(err.message || "出生时间校正失败");
@@ -243,6 +246,9 @@ function doPaipan() {
     prov: prov,
     city: city,
     dist: dist,
+    calendar: currentZwCalendar,
+    useTrueSolarTime: document.getElementById("zwSolarEnabled").checked,
+    ziHourNextDay: document.getElementById("zwZishiHuanri").checked,
   };
   setTimeout(function () {
     try {
@@ -490,16 +496,9 @@ function renderChart(zi, y, m, d, h, min, ti, isMale, th, tm2, normalized) {
     DZ[ti % 12] +
     "时</div><div class=c-info style=font-size:9px>农历 " +
     yearGz +
-    "年</div><div class=c-info style=font-size:9px>真太阳时 " +
-    pad(th) +
-    ":" +
-    pad(tm2) +
-    " · 钟表 " +
-    h +
-    ":" +
-    pad(min) +
-    (normalized && normalized.dayOffset ? " · 跨日校正" : "") +
-    "</div>" +
+    "年</div><div class=c-info style=font-size:9px>" +
+    (normalized && normalized.summary ? normalized.summary : "排盘时间 " + pad(th) + ":" + pad(tm2)) +
+    " · 钟表 " + h + ":" + pad(min) + "</div>" +
     sihuaLine +
     "<div class=c-info>命主 " +
     zi.soul +

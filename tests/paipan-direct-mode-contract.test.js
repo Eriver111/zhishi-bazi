@@ -260,9 +260,19 @@ test('an invalid resubmission dismisses a stale candidate chooser', () => {
 
 test('candidate chooser and pillar controls keep responsive touch targets', () => {
   const css = read('css/theme-light-forms.css');
-  assert.match(css, /\.pillar-grid[\s\S]*?\.pillar-column[\s\S]*?\.pillar-candidates/);
-  assert.match(css, /@media\s*\(max-width:\s*768px\)[\s\S]*?\.pillar-grid[\s\S]*?repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /\.pillar-grid[\s\S]*?\.pillar-column[\s\S]*?\.pillar-control[\s\S]*?\.pillar-candidates/);
+  assert.match(css, /@media\s*\(max-width:\s*768px\)[\s\S]*?\.pillar-grid[\s\S]*?repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(css, /@media\s*\(max-width:\s*420px\)[\s\S]*?\.pillar-column select[\s\S]*?min-height:\s*44px/);
+});
+
+test('direct-pillar markup preserves four columns and emphasizes the day pillar', () => {
+  const html = read('paipan.html');
+  assert.match(html, /css\/theme-light-forms\.css\?v=2/, 'page must bust the old two-column form stylesheet cache');
+  assert.match(html, /class=["'][^"']*pillar-column[^"']*pillar-day[^"']*["']\s+data-pillar=["']day["']/);
+  assert.equal((html.match(/class=["']pillar-control["']/g) || []).length, 8);
+  const css = read('css/theme-light-forms.css');
+  assert.match(css, /\.pillar-day[\s\S]*?var\(--zh-vermilion\)/);
+  assert.match(css, /@media\s*\(max-width:\s*420px\)[\s\S]*?\.pillar-grid[\s\S]*?overflow:\s*visible/);
 });
 
 test('calendar-only rows stay visually absent when direct mode sets hidden', () => {

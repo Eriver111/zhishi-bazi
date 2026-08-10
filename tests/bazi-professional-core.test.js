@@ -139,6 +139,17 @@ test('shared birth normalization separates true-solar civil-date changes from Zi
   assert.equal(ziHour.dayPillarOffset, 1);
 });
 
+test('Zi-hour rollover affects only branch index zero when enabled', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  for (let hour = 0; hour < 12; hour += 1) {
+    const normalized = calculator.normalizeBirthInput({
+      year: 2024, month: 6, day: 15, hour, clock: hour === 0 ? 23 : hour * 2,
+      minute: 0, gender: 'male', trueSolarTime: false, ziHourNextDay: true,
+    });
+    assert.equal(normalized.dayPillarOffset, hour === 0 ? 1 : 0, `branch index ${hour}`);
+  }
+});
+
 test('heavenly-stem combination distinguishes combination from successful transformation', () => {
   const { calculator } = loadCalculatorWithInternals();
   const unsupported = calculator.getGanHe({

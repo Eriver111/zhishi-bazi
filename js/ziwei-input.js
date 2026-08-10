@@ -1,9 +1,10 @@
 (function(root, factory) {
-  var api = factory();
+  var api = factory(root);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) root.ZiweiInput = api;
-})(typeof window !== 'undefined' ? window : globalThis, function() {
+})(typeof window !== 'undefined' ? window : globalThis, function(root) {
   var YANG_STEMS = ['甲', '丙', '戊', '庚', '壬'];
+  var BRANCH_NAMES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 
   function validateSolarDate(year, month, day) {
     if (![year, month, day].every(Number.isInteger)) return false;
@@ -17,15 +18,8 @@
     return hour === 23 ? 0 : Math.floor((hour + 1) / 2);
   }
 
-  function equationOfTimeMinutes(year, month, day) {
-    var date = new Date(year, month - 1, day);
-    var dayOfYear = Math.floor((date - new Date(year, 0, 0)) / 86400000);
-    var angle = 360 / 365 * (dayOfYear - 81) * Math.PI / 180;
-    return 9.87 * Math.sin(2 * angle) - 7.53 * Math.cos(angle) - 1.5 * Math.sin(angle);
-  }
-
-  function formatSolarDate(date) {
-    return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+  function formatSolarDate(year, month, day) {
+    return year + '-' + month + '-' + day;
   }
 
   function normalizeBirth(input) {
@@ -36,32 +30,56 @@
       throw new RangeError('出生时间无效');
     }
 
-    var rawMinutes = hour * 60 + minute;
-    var eotMinutes = 0;
-    var longitudeOffsetMinutes = 0;
-    if (input.useTrueSolarTime !== false) {
-      var longitude = Number.isFinite(Number(input.longitude)) ? Number(input.longitude) : 120;
-      longitudeOffsetMinutes = (longitude - 120) * 4;
-      eotMinutes = equationOfTimeMinutes(year, month, day);
-      rawMinutes += longitudeOffsetMinutes + eotMinutes;
+    var calculator = input.calculator || (root && root.BaZiCalculator);
+    if (!calculator || typeof calculator.normalizeBirthInput !== 'function') {
+      throw new Error('八字出生时间计算模块未加载');
     }
-
-    var dayOffset = Math.floor(rawMinutes / 1440);
-    var solarMinutes = ((rawMinutes % 1440) + 1440) % 1440;
-    var trueHour = Math.floor(solarMinutes / 60);
-    var trueMinute = Math.floor(solarMinutes % 60);
-    var adjustedDate = new Date(year, month - 1, day + dayOffset);
-    var timeIndex = trueHour === 23 ? 12 : clockHourToBranchIndex(trueHour);
+    var useTrueSolarTime = input.useTrueSolarTime !== false;
+    var normalized = calculator.normalizeBirthInput({
+      year: year,
+      month: month,
+      day: day,
+      hour: clockHourToBranchIndex(hour),
+      clock: hour,
+      minute: minute,
+      gender: input.gender,
+      location: input.location || input.dist || input.city || input.prov || '',
+      trueSolarTime: useTrueSolarTime,
+      ziHourNextDay: input.ziHourNextDay === true,
+    });
+    var solarInfo = normalized.solarInfo;
+    var trueHour = solarInfo ? solarInfo.trueHour : hour;
+    var trueMinute = solarInfo ? solarInfo.trueMinute : minute;
+    var solarMinutes = solarInfo ? solarInfo.solarMinutes : hour * 60 + minute;
+    var dayOffset = solarInfo ? solarInfo.dayOffset : 0;
+    var timeIndex = normalized.hour === 0 && normalized.dayPillarOffset && trueHour === 23 ? 12 : normalized.hour;
+    var chartDate = new Date(normalized.year, normalized.month - 1, normalized.day);
+    if (normalized.hour === 0 && normalized.dayPillarOffset && trueHour !== 23) {
+      chartDate.setDate(chartDate.getDate() + 1);
+    }
+    var summary = (useTrueSolarTime && solarInfo ? '真太阳时 ' : '北京时间 ')
+      + String(trueHour).padStart(2, '0') + ':' + String(trueMinute).padStart(2, '0')
+      + ' · ' + BRANCH_NAMES[normalized.hour] + '时'
+      + (normalized.dayPillarOffset ? ' · 已启用子时换日' : '')
+      + (dayOffset ? ' · 跨日校正' : '');
 
     return {
-      solarDate: formatSolarDate(adjustedDate),
+      year: normalized.year,
+      month: normalized.month,
+      day: normalized.day,
+      solarDate: formatSolarDate(chartDate.getFullYear(), chartDate.getMonth() + 1, chartDate.getDate()),
       timeIndex: timeIndex,
+      branchIndex: normalized.hour,
       trueHour: trueHour,
       trueMinute: trueMinute,
       solarMinutes: solarMinutes,
       dayOffset: dayOffset,
-      longitudeOffsetMinutes: longitudeOffsetMinutes,
-      eotMinutes: eotMinutes,
+      dayPillarOffset: normalized.dayPillarOffset,
+      isZiHour: normalized.hour === 0,
+      longitudeOffsetMinutes: solarInfo ? solarInfo.lngOffsetMin : 0,
+      eotMinutes: solarInfo ? solarInfo.eotMin : 0,
+      solarInfo: solarInfo,
+      summary: summary,
     };
   }
 
@@ -81,7 +99,6 @@
   return {
     validateSolarDate: validateSolarDate,
     clockHourToBranchIndex: clockHourToBranchIndex,
-    equationOfTimeMinutes: equationOfTimeMinutes,
     normalizeBirth: normalizeBirth,
     getSoulBodyBranches: getSoulBodyBranches,
     getGenderDesignation: getGenderDesignation,

@@ -23,6 +23,14 @@
 .submit-btn.loading,
 button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
 .calendar-only-fields[hidden] { display: none !important; }
+.mode-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 10px; }
+.mode-tab { flex: 1; border: 0; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.mode-panel { display: none; }
+.mode-panel.active { display: block; }
+.zw-calendar-tabs { max-width: 360px; margin: 0 auto 18px; }
+.zw-check { display: inline-flex !important; align-items: center; gap: 6px; margin: 0 !important; cursor: pointer; }
+.zw-check input { width: 16px; height: 16px; accent-color: var(--zh-vermilion); }
+.zw-default-hint { color: var(--tx3); font-size: 10px; }
 
 .pillar-intro {
   margin: 0 0 16px;
@@ -34,13 +42,17 @@ button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
 .pillar-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 .pillar-column {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 8px;
+  padding: 12px 10px 8px;
+  background: rgba(255,253,248,.5);
+  border: 1px solid rgba(122,93,55,.18);
+  border-radius: 12px;
 }
 .pillar-column .pillar-label {
   color: var(--zh-vermilion);
@@ -49,10 +61,43 @@ button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
   letter-spacing: 3px;
   text-align: center;
 }
+.pillar-control {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.pillar-control span {
+  color: var(--tx3);
+  font-size: 9px;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
 .pillar-column select {
   width: 100%;
   min-height: 44px;
+  padding: 8px 24px 8px 8px;
+  color: var(--tx);
+  background-color: rgba(255,253,248,.78);
+  border-color: rgba(122,93,55,.24);
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 700;
   text-align: center;
+  text-align-last: center;
+}
+.pillar-day {
+  border-color: rgba(132,54,47,.38);
+  background: rgba(132,54,47,.045);
+}
+.pillar-day .pillar-label,
+.pillar-day select { color: var(--zh-vermilion); }
+.pillar-day select { border-color: rgba(132,54,47,.3); }
+.pillar-column:focus-within {
+  border-color: rgba(54,93,80,.38);
+  box-shadow: 0 8px 24px rgba(54,93,80,.06);
 }
 .pillar-error {
   min-height: 2.8em;
@@ -112,15 +157,21 @@ button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
 }
 @media (max-width: 768px) {
   select, input, textarea, button, .radio, .mode-tab { min-height: 44px; }
-  .pillar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pillar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .pillar-column { padding: 10px 6px 7px; }
 }
 @media (max-width: 420px) {
   .pillar-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    overflow: visible;
   }
-  .pillar-column { gap: 6px; }
-  .pillar-column select { min-height: 44px; padding-left: 8px; padding-right: 26px; }
+  .pillar-intro { margin-bottom: 12px; font-size: 12px; }
+  .pillar-column { gap: 5px; padding: 8px 3px 6px; border-radius: 9px; }
+  .pillar-column .pillar-label { font-size: 12px; letter-spacing: 1px; }
+  .pillar-control span { font-size: 8px; letter-spacing: 1px; }
+  .pillar-column select { min-height: 44px; padding-left: 3px; padding-right: 16px; font-size: 18px; }
+  .pillar-error { min-height: 2.4em; font-size: 9px; }
   .pillar-candidates { padding: 12px; }
   .pillar-candidate-actions { grid-template-columns: 1fr; }
 }

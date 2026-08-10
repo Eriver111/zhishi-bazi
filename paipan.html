@@ -884,7 +884,7 @@ body.has-mobile-nav{padding-bottom:60px}
   body.has-mobile-nav{padding-bottom:60px}
   
 }
-</style><style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style><link rel="stylesheet" href="css/theme-light.css?v=3"><link rel="stylesheet" href="css/theme-light-forms.css?v=1"></head>
+</style><style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style><link rel="stylesheet" href="css/theme-light.css?v=3"><link rel="stylesheet" href="css/theme-light-forms.css?v=2"></head>
 <body>
 <div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 <div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#181612 0%,#0e0c0a 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
@@ -981,26 +981,26 @@ body.has-mobile-nav{padding-bottom:60px}
         <div class="pillar-grid">
           <div class="pillar-column" data-pillar="year">
             <span class="pillar-label">年柱</span>
-            <select id="pYearGan" aria-label="年柱天干" required><option value="">天干</option></select>
-            <select id="pYearZhi" aria-label="年柱地支" required><option value="">地支</option></select>
+            <label class="pillar-control"><select id="pYearGan" aria-label="年柱天干" required><option value="">天干</option></select><span>天干</span></label>
+            <label class="pillar-control"><select id="pYearZhi" aria-label="年柱地支" required><option value="">地支</option></select><span>地支</span></label>
             <span class="pillar-error" data-error-for="year" aria-live="polite"></span>
           </div>
           <div class="pillar-column" data-pillar="month">
             <span class="pillar-label">月柱</span>
-            <select id="pMonthGan" aria-label="月柱天干" required><option value="">天干</option></select>
-            <select id="pMonthZhi" aria-label="月柱地支" required><option value="">地支</option></select>
+            <label class="pillar-control"><select id="pMonthGan" aria-label="月柱天干" required><option value="">天干</option></select><span>天干</span></label>
+            <label class="pillar-control"><select id="pMonthZhi" aria-label="月柱地支" required><option value="">地支</option></select><span>地支</span></label>
             <span class="pillar-error" data-error-for="month" aria-live="polite"></span>
           </div>
-          <div class="pillar-column" data-pillar="day">
+          <div class="pillar-column pillar-day" data-pillar="day">
             <span class="pillar-label">日柱</span>
-            <select id="pDayGan" aria-label="日柱天干" required><option value="">天干</option></select>
-            <select id="pDayZhi" aria-label="日柱地支" required><option value="">地支</option></select>
+            <label class="pillar-control"><select id="pDayGan" aria-label="日柱天干" required><option value="">天干</option></select><span>天干</span></label>
+            <label class="pillar-control"><select id="pDayZhi" aria-label="日柱地支" required><option value="">地支</option></select><span>地支</span></label>
             <span class="pillar-error" data-error-for="day" aria-live="polite"></span>
           </div>
           <div class="pillar-column" data-pillar="hour">
             <span class="pillar-label">时柱</span>
-            <select id="pHourGan" aria-label="时柱天干" required><option value="">天干</option></select>
-            <select id="pHourZhi" aria-label="时柱地支" required><option value="">地支</option></select>
+            <label class="pillar-control"><select id="pHourGan" aria-label="时柱天干" required><option value="">天干</option></select><span>天干</span></label>
+            <label class="pillar-control"><select id="pHourZhi" aria-label="时柱地支" required><option value="">地支</option></select><span>地支</span></label>
             <span class="pillar-error" data-error-for="hour" aria-live="polite"></span>
           </div>
         </div>
@@ -1010,14 +1010,14 @@ body.has-mobile-nav{padding-bottom:60px}
       <div class="row calendar-only-fields">
         <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
-            <input type="checkbox" id="zishiHuanri" value="1" style="width:16px;height:16px">
+            <input type="checkbox" id="zishiHuanri" value="1" checked style="width:16px;height:16px">
             子时换日
           </label>
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
             <input type="checkbox" id="solarEnabled" checked value="1" style="width:16px;height:16px">
             真太阳时
           </label>
-          <span style="font-size:10px;color:var(--tx3)">默认：子时换日关 · 真太阳时开</span>
+          <span style="font-size:10px;color:var(--tx3)">默认：子时换日开 · 真太阳时开</span>
         </div>
       </div>
 

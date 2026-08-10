@@ -13,6 +13,7 @@ test('bazi input retains every calculation control and script', () => {
   }
   for (const script of ['js/lunar.js','js/region.js','js/main.js']) assert.ok(html.includes(script));
   assert.match(html, /name=["']gender["']/);
+  assert.match(html, /<input[^>]+id=["']zishiHuanri["'][^>]+checked/, 'Zi-hour rollover must default on');
 });
 
 test('face and palm retain their file inputs and submit handlers', () => {
@@ -49,7 +50,7 @@ test('every tool input page loads the form light theme after the shared light th
   for (const page of pages) {
     const html = read(page);
     const sharedTheme = html.indexOf('css/theme-light.css?v=2');
-    const formTheme = html.indexOf('css/theme-light-forms.css?v=1');
+    const formTheme = html.search(/css\/theme-light-forms\.css\?v=\d+/);
     assert.ok(formTheme > sharedTheme, `${page} must load the form theme after the shared theme`);
   }
 });

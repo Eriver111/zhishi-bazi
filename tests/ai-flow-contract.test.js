@@ -39,7 +39,7 @@ test('Ziwei follow-up carries explicit context and cache-busts repaired bundles'
   const ziweiPage = read('ziwei.html');
   const ziweiAnalysis = read('js/ziwei-analysis.js');
   assert.match(ziweiPage, /js\/ziwei-professional\.js\?v=2/);
-  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=5/);
+  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=6/);
   assert.match(ziweiPage, /js\/ziwei-analysis\.js\?v=2/);
   assert.match(ziweiAnalysis, /zw-ai-chat\.html\?t=zw&v=2/);
 });

@@ -2,10 +2,20 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const iztro = require('iztro');
 
 const modulePath = path.join(__dirname, '..', 'js', 'ziwei-input.js');
 const professionalPath = path.join(__dirname, '..', 'js', 'ziwei-professional.js');
+const baziPath = path.join(__dirname, '..', 'js', 'bazi.js');
+
+function loadBaziCalculator() {
+  const context = { console };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(baziPath, 'utf8'), context);
+  return context.BaZiCalculator;
+}
 
 function loadInput() {
   assert.ok(fs.existsSync(modulePath), 'Ziwei input normalization module must exist');
@@ -28,28 +38,96 @@ test('maps every clock hour to the traditional two-hour branch', () => {
 
 test('distinguishes late Zi hour from early Zi hour for iztro', () => {
   const input = loadInput();
-  const early = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 0, minute: 30, longitude: 120, useTrueSolarTime: false });
-  const late = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 23, minute: 30, longitude: 120, useTrueSolarTime: false });
+  const calculator = loadBaziCalculator();
+  const early = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 0, minute: 30, calculator, useTrueSolarTime: false, ziHourNextDay: true });
+  const late = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 23, minute: 30, calculator, useTrueSolarTime: false, ziHourNextDay: true });
 
   assert.equal(early.timeIndex, 0);
   assert.equal(late.timeIndex, 12);
+  assert.equal(early.solarDate, '2000-1-2');
   assert.equal(late.solarDate, '2000-1-1');
+  assert.equal(early.dayPillarOffset, 1);
+  assert.equal(late.dayPillarOffset, 1);
 
   const earlyChart = iztro.astro.bySolar(early.solarDate, early.timeIndex, 'male', true, 'zh-CN');
   const lateChart = iztro.astro.bySolar(late.solarDate, late.timeIndex, 'male', true, 'zh-CN');
-  assert.notEqual(earlyChart.chineseDate, lateChart.chineseDate);
+  assert.equal(earlyChart.chineseDate, lateChart.chineseDate);
+
+  const disabled = input.normalizeBirth({
+    year: 2000, month: 1, day: 1, hour: 23, minute: 30,
+    calculator, useTrueSolarTime: false, ziHourNextDay: false,
+  });
+  assert.equal(disabled.timeIndex, 0);
+  assert.equal(disabled.solarDate, '2000-1-1');
+  assert.notEqual(iztro.astro.bySolar(disabled.solarDate, disabled.timeIndex, 'male', true, 'zh-CN').chineseDate, lateChart.chineseDate);
 });
 
 test('moves the civil date when true solar time crosses midnight', () => {
   const input = loadInput();
+  const calculator = loadBaziCalculator();
   const normalized = input.normalizeBirth({
     year: 2000, month: 1, day: 1, hour: 1, minute: 0,
-    longitude: 75.9, useTrueSolarTime: true,
+    location: '新疆', calculator, useTrueSolarTime: true,
   });
 
   assert.equal(normalized.dayOffset, -1);
   assert.equal(normalized.solarDate, '1999-12-31');
   assert.equal(normalized.timeIndex, 11);
+});
+
+test('Ziwei normalization is an adapter over the BaZi birth boundary', () => {
+  const input = loadInput();
+  const calculator = loadBaziCalculator();
+  const source = {
+    year: 2024, month: 6, day: 15, hour: 8, minute: 25,
+    location: '喀什市', calculator, useTrueSolarTime: true, ziHourNextDay: true,
+  };
+  const actual = input.normalizeBirth(source);
+  const expected = calculator.normalizeBirthInput({
+    year: source.year, month: source.month, day: source.day,
+    hour: input.clockHourToBranchIndex(source.hour), clock: source.hour, minute: source.minute,
+    location: source.location, trueSolarTime: true, ziHourNextDay: true,
+  });
+
+  assert.deepEqual(
+    { year: actual.year, month: actual.month, day: actual.day, branchIndex: actual.branchIndex, dayPillarOffset: actual.dayPillarOffset },
+    { year: expected.year, month: expected.month, day: expected.day, branchIndex: expected.hour, dayPillarOffset: expected.dayPillarOffset },
+  );
+  assert.equal(actual.trueHour, expected.solarInfo.trueHour);
+  assert.equal(actual.trueMinute, expected.solarInfo.trueMinute);
+  assert.match(actual.summary, /真太阳时/);
+});
+
+test('Ziwei page loads the BaZi calculator before its normalization adapter', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'ziwei.html'), 'utf8');
+  const bazi = html.indexOf('js/bazi.js');
+  const input = html.indexOf('js/ziwei-input.js');
+  assert.ok(bazi >= 0 && input > bazi);
+  assert.match(html, /js\/ziwei-input\.js\?v=2/);
+  assert.match(html, /js\/ziwei-render\.js\?v=6/);
+  const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
+  assert.doesNotMatch(render, /var\s+(?:PROV_LNG|CITY_LNG)\s*=/);
+});
+
+test('Ziwei exposes public and lunar input without a direct-pillar mode', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'ziwei.html'), 'utf8');
+  for (const value of ['solar', 'lunar']) assert.match(html, new RegExp(`data-zw-calendar=["']${value}["']`));
+  for (const id of ['zwSolarPanel', 'zwLunarPanel', 'zwLY', 'zwLM', 'zwLD']) {
+    assert.match(html, new RegExp(`id=["']${id}["']`), `missing ${id}`);
+  }
+  assert.doesNotMatch(html, /data-zw-calendar=["']pillars["']/);
+  assert.ok(html.indexOf('js/lunar.js') < html.indexOf('js/ziwei-render.js'));
+});
+
+test('Ziwei correction controls share the BaZi defaults', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'ziwei.html'), 'utf8');
+  assert.match(html, /<input[^>]+id=["']zwZishiHuanri["'][^>]+checked/);
+  assert.match(html, /<input[^>]+id=["']zwSolarEnabled["'][^>]+checked/);
+  const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
+  assert.match(render, /LunarCalendar\.lunarToSolar/);
+  assert.match(render, /LunarCalendar\.LUNAR_DAY\[day\]/, 'lunar day labels must use the one-based calendar table');
+  assert.match(render, /location:\s*city\s*\|\|\s*dist\s*\|\|\s*prov/, 'Ziwei must use the same location precedence as BaZi');
+  assert.match(render, /ziHourNextDay:\s*document\.getElementById\(["']zwZishiHuanri["']\)\.checked/);
 });
 
 test('reads current iztro soul/body fields and derives Yin-Yang gender label', () => {
