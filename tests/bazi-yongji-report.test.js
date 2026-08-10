@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260808c/, `${page} must load the single-core-yongshen bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260810b/, `${page} must load the single-core-yongshen bundle`);
   }
 });
 
