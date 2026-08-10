@@ -4144,8 +4144,14 @@ function getPattern(bazi) {
     }
     if (matchedSS) break;
   }
+  // v5.6: 若月支为日主临官/帝旺，直接定建禄/羊刃格
+  // 同五行透干不可覆盖十二长生判定（否则丁巳月会被错误判定为建禄格）
+  var changShengAtMonth = getChangSheng(dayGan)[mZhi];
+  var isLinGuanOrDiWang = changShengAtMonth && (changShengAtMonth.stage === '临官' || changShengAtMonth.stage === '帝旺');
+
   // 若未匹配到符合条件的透干，不降级匹配同五行，直接取本气十神
-  if (!matchedSS) {
+  // 但建禄/羊刃月令时跳过同五行逻辑，避免劫财/比肩覆盖正确的十二长生判定
+  if (!matchedSS && !isLinGuanOrDiWang) {
     for (var gi = 0; gi < allGan.length; gi++) {
       if (WU_XING[allGan[gi]] === benQiWx && allGan[gi] !== benQi) {
         matchedSS = getShiShen(dayGan, benQi);
@@ -4203,7 +4209,6 @@ function getPattern(bazi) {
   var p = PATTERNS[ss];
 
   // 建禄与羊刃为月令特别格，不以藏干透出为成格前提。
-  var changShengAtMonth = getChangSheng(dayGan)[mZhi];
   if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '临官') {
     p = PATTERNS['建禄'];
   } else if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '帝旺') {
