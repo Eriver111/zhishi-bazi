@@ -662,11 +662,12 @@ function normalizeBirthInput(params) {
     }
 
     if (params.trueSolarTime !== false) {
-        var location = params.location || params.city || params.dist || params.prov || '';
+        var location = params.location || params.dist || params.city || params.prov || '';
         if (location) {
             var solarInfo = getTrueSolarHour(
                 normalized.hour, location, normalized.year, normalized.month, normalized.day,
-                normalized.minute, normalized.clock
+                normalized.minute, normalized.clock,
+                params.city || '', params.prov || ''
             );
             normalized.solarInfo = solarInfo;
             normalized.hour = solarInfo.hourIndex;
@@ -2186,7 +2187,20 @@ function calcDayMasterStrength(bazi) {
   var score = 50; // 基准分
 
   // ---------- ① 得令：月令地支本气与日主关系 (权重最大) ----------
-  var mwx = DI_ZHI_WU_XING[bazi.month.zhi];
+  // v5.4: 三会局改写月令 — 寅卯辰/巳午未/申酉戌/亥子丑成局时，月支参与则五行按会局重算
+  var _allZhiForHui = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+  var HUI_MONTH_OVERRIDE = null;
+  [
+    { zhi: ['寅','卯','辰'], wx: '木' },
+    { zhi: ['巳','午','未'], wx: '火' },
+    { zhi: ['申','酉','戌'], wx: '金' },
+    { zhi: ['亥','子','丑'], wx: '水' }
+  ].forEach(function(hj) {
+    if (hj.zhi.every(function(z) { return _allZhiForHui.indexOf(z) >= 0; }) && hj.zhi.indexOf(bazi.month.zhi) >= 0) {
+      HUI_MONTH_OVERRIDE = hj.wx;
+    }
+  });
+  var mwx = HUI_MONTH_OVERRIDE || DI_ZHI_WU_XING[bazi.month.zhi];
   // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
   // 壬癸水见丑辰不算真死令
   var wetEarthAdj = (dgWx === '水' && (bazi.month.zhi === '丑' || bazi.month.zhi === '辰')) ? 12 : 0;
@@ -2482,7 +2496,9 @@ function calcDayMasterStrength(bazi) {
     var has = hj.zhi.map(function(z){ return allZhiArr.indexOf(z) >= 0; });
     var fullCount = has.filter(Boolean).length;
     if (fullCount === 3) {
-      // 三会成局，力量压倒性（会局>三合，扣/加分更高）
+      // 月支参与成局 → 得令已在①环节按会局五行重算，此处不重复计分
+      if (hj.zhi.indexOf(bazi.month.zhi) >= 0) return;
+      // 三会成局但月支不参与 → 额外调整
       if (hj.wx === dgWx) score += 8;
       else if (SHENGWO[dgWx] === hj.wx) score += 5;
       else if (KEWO[dgWx] === hj.wx) score -= 8;
@@ -3783,6 +3799,8 @@ var CITY_LNG = {
     '齐齐哈尔':123.9,'牡丹江':129.6,'佳木斯':130.3,'大庆':125.0,
     '伊春':128.8,'鸡西':130.9,'鹤岗':130.3,'双鸭山':131.2,'七台河':131.0,
     '黑河':127.5,'绥化':127.0,'大兴安岭':124.1,
+    '望奎':126.5,'望奎县':126.5,'肇东':125.9,'安达':125.3,'海伦':126.9,
+    '兰西':126.3,'青冈':126.1,'庆安':127.5,'明水':125.9,'绥棱':127.1,
     '三亚':109.5,'儋州':109.6,'三沙':112.3,
     '阿里':80.1,'日喀则':88.9,'那曲':92.1,'昌都':97.2,'林芝':94.4,
     '山南':91.8,'拉萨':91.1,
@@ -3846,15 +3864,23 @@ var BEIJING_LNG = 120;
  * @param {number} year, month, day - 出生日期（用于均时差）
  * @returns {object} { hourIndex, solarMinutes, lng, lngOffsetMin, eotMin, method }
  */
-function getTrueSolarHour(hour, province, year, month, day, minute, clock) {
+function getTrueSolarHour(hour, province, year, month, day, minute, clock, fallbackCity, fallbackProv) {
     // 优先城市经度，其次省份经度，最后默认北京 120°
     // 兼容「湖北省」「湖北」「襄阳市」等多种写法（去掉末尾省/市后缀再试）
-    var place = province || '';
-    var lng = (CITY_LNG && CITY_LNG[place]) || PROVINCE_LNG[place] || null;
-    if (!lng && (place.endsWith('省')||place.endsWith('市'))) {
-      var stripped = place.slice(0,-1);
-      lng = (CITY_LNG && CITY_LNG[stripped]) || PROVINCE_LNG[stripped] || null;
+    // v5.5: 支持多级回退 — 区县未命中时自动回退到市→省，避免小地名直接跳到北京
+    function resolveLng(name) {
+      if (!name) return null;
+      var v = (CITY_LNG && CITY_LNG[name]) || PROVINCE_LNG[name] || null;
+      if (!v && (name.endsWith('省')||name.endsWith('市')||name.endsWith('县')||name.endsWith('区'))) {
+        v = (CITY_LNG && CITY_LNG[name.slice(0,-1)]) || PROVINCE_LNG[name.slice(0,-1)] || null;
+      }
+      return v;
     }
+
+    var place = province || '';
+    var lng = resolveLng(place);
+    if (!lng && fallbackCity) lng = resolveLng(fallbackCity);
+    if (!lng && fallbackProv) lng = resolveLng(fallbackProv);
     if (!lng) lng = BEIJING_LNG;
 
     // 1. 经度差：每差1度 = 4分钟
@@ -4118,8 +4144,14 @@ function getPattern(bazi) {
     }
     if (matchedSS) break;
   }
+  // v5.6: 若月支为日主临官/帝旺，直接定建禄/羊刃格
+  // 同五行透干不可覆盖十二长生判定（否则丁巳月会被错误判定为建禄格）
+  var changShengAtMonth = getChangSheng(dayGan)[mZhi];
+  var isLinGuanOrDiWang = changShengAtMonth && (changShengAtMonth.stage === '临官' || changShengAtMonth.stage === '帝旺');
+
   // 若未匹配到符合条件的透干，不降级匹配同五行，直接取本气十神
-  if (!matchedSS) {
+  // 但建禄/羊刃月令时跳过同五行逻辑，避免劫财/比肩覆盖正确的十二长生判定
+  if (!matchedSS && !isLinGuanOrDiWang) {
     for (var gi = 0; gi < allGan.length; gi++) {
       if (WU_XING[allGan[gi]] === benQiWx && allGan[gi] !== benQi) {
         matchedSS = getShiShen(dayGan, benQi);
@@ -4177,7 +4209,6 @@ function getPattern(bazi) {
   var p = PATTERNS[ss];
 
   // 建禄与羊刃为月令特别格，不以藏干透出为成格前提。
-  var changShengAtMonth = getChangSheng(dayGan)[mZhi];
   if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '临官') {
     p = PATTERNS['建禄'];
   } else if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '帝旺') {

@@ -1240,7 +1240,7 @@ function renderSolarTime(year, month, day, birthHour) {
     // 优先使用已计算好的 solarInfo（含经度+均时差调整）
     var solarInfo = (_bazi && _bazi.solarInfo) || null;
     if (!solarInfo) {
-        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, _params.city || _params.dist || _params.prov || '', year, month, day);
+        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, _params.dist || _params.city || _params.prov || '', year, month, day, 0, 0, _params.city || '', _params.prov || '');
     }
 
     // 用 solarMinutes 直接取真太阳时间
@@ -1296,7 +1296,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var normalizedBirth = window.BaZiCalculator.normalizeBirthInput({
             year:_params.year, month:_params.month, day:_params.day, hour:_params.hour,
             clock:_params.clock, minute:_params.minute, gender:_params.gender,
-            location:_params.city || _params.dist || _params.prov || '',
+            location:_params.dist || _params.city || _params.prov || '',
+            city:_params.city || '', prov:_params.prov || '',
             trueSolarTime:_params.solar !== '0', ziHourNextDay:_params.zishi === '1'
         });
         _params.year=normalizedBirth.year;_params.month=normalizedBirth.month;_params.day=normalizedBirth.day;
