@@ -244,12 +244,13 @@ function renderPattern(bazi,facts){
 
     var source=p.source||('月令'+p.monthZhi+' · 五行'+p.monthWx);
     var brokenNote=p.status==='破格'?'<div style="font-size:10px;color:#a45b4f;margin-top:4px">破格'+(p.breakReasons&&p.breakReasons.length?' · '+p.breakReasons.join('；'):'')+'</div>':'';
-    var iconMap={'食神制杀':'⚔️','伤官制杀':'⚔️','杀印相生':'🛡️','官印相生':'🏛️','印星化杀':'🛡️','食神生财':'💰','伤官生财':'💰','财生官':'🏛️','伤官配印':'🎨'};
+    var iconMap={'食神制杀':'⚔️','伤官制杀':'⚔️','杀印相生':'🛡️','官印相生':'🏛️','印星化杀':'🛡️','食神生财':'💰','伤官生财':'💰','财生官':'🏛️','伤官配印':'🎨','从强格':'👑','从杀格':'🗡️','从财格':'💰','从儿格':'🌱','假从势格':'⚖️'};
     var icon=iconMap[p.name]||'🔮';
+    var congBadge=p.congGe?'<span style="display:inline-block;font-size:9px;font-weight:700;color:#1a1408;background:#e8c05a;border-radius:8px;padding:1px 7px;margin-left:5px;vertical-align:2px">从格</span>':'';
 
     c.innerHTML=''+
       '<div style="text-align:center;margin-bottom:6px"><span style="font-size:24px">'+icon+'</span>'+
-      '<div style="font-size:18px;font-weight:900;color:var(--gold-l);margin:4px 0">'+p.name+'</div>'+
+      '<div style="font-size:18px;font-weight:900;color:var(--gold-l);margin:4px 0">'+p.name+congBadge+'</div>'+
       brokenNote+
       '<div style="font-size:10px;color:var(--tx2)">'+source+'</div></div>'+
       '<p style="color:var(--tx);font-size:11px;line-height:1.5;margin:8px 0">'+p.desc+'</p>';

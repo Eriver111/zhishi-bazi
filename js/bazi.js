@@ -4266,12 +4266,28 @@ function getPattern(bazi) {
     ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
     : '月支' + mZhi + '（' + ss + '）';
 
-  return finalizePatternStatus(bazi, {
+  var pResult = finalizePatternStatus(bazi, {
     name: p.name, desc: p.desc,
     type: matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格'),
     monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
     source: source
   });
+  // 从格优先于正格：从格成立时不论月令正格（"从格成则舍正格而从之"）
+  var cong = getCongGe(bazi);
+  if (cong.isCong) {
+    return Object.assign({}, pResult, {
+      name: cong.name,
+      status: '成格',
+      isEstablished: true,
+      breakReasons: [],
+      desc: cong.desc,
+      source: cong.source + '（原局' + pResult.name + '，既成从格，以从格论）',
+      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。' }],
+      congGe: true,
+      basePattern: pResult.name + '·' + pResult.status
+    });
+  }
+  return pResult;
 }
 
 /**
