@@ -2215,7 +2215,10 @@ function calcDayMasterStrength(bazi) {
     var _tuSeason = { '未':30, '戌':12, '丑':-8, '辰':-5 };
     score += (dgWx === '土' && _tuSeason[bazi.month.zhi] !== undefined) ? _tuSeason[bazi.month.zhi] : 30;
   }
-  else if (SHENGWO[dgWx] === mwx) score += 20;
+  else if (SHENGWO[dgWx] === mwx) {
+    // 燥土不生金：金日主生未/戌月，火炎土燥，土印不得令（金被埋脆）
+    if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 20;
+  }
   else if (WOSHENG[dgWx] === mwx) score -= 15;
   else if (WOKE[dgWx] === mwx)   score -= 10;
   else if (KEWO[dgWx] === mwx)   score -= (25 - wetEarthAdj); // 湿土克水：-25→-13
@@ -2250,7 +2253,10 @@ function calcDayMasterStrength(bazi) {
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
   if (dayZhiWx === dgWx)          score += 12; // 日支同五行（自坐强根）
-  else if (SHENGWO[dgWx] === dayZhiWx) score += 8;  // 日支生日主（印星）
+  else if (SHENGWO[dgWx] === dayZhiWx) {
+    // 燥土不生金：金日主生未/戌月，日支燥土印不记得地
+    if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 8;
+  }
   else if (KEWO[dgWx] === dayZhiWx)   score -= 10; // 日支克日主（官杀攻身）
   else if (WOKE[dgWx] === dayZhiWx)   score -= 6;  // 日主克日支（我克为财，耗力）
   else if (WOSHENG[dgWx] === dayZhiWx) score -= 7;  // 日主生日支（我生为泄，泄气）
@@ -2260,7 +2266,10 @@ function calcDayMasterStrength(bazi) {
   ['year','month','hour'].forEach(function(pos) {
     var gwx = WU_XING[bazi[pos].gan];
     if (gwx === dgWx)            score += 6;  // 比肩劫财
-    else if (SHENGWO[dgWx] === gwx) score += 4;  // 印星
+    else if (SHENGWO[dgWx] === gwx) {
+      // 燥土不生金：金日主生未/戌月，天干土印不记得势
+      if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 4;
+    }
     else if (KEWO[dgWx] === gwx)   score -= 4;  // 官杀
     else if (WOSHENG[dgWx] === gwx) score -= 3;  // 食伤（泄）
     else if (WOKE[dgWx] === gwx)   score -= 5;  // 财星（耗）
@@ -2274,7 +2283,10 @@ function calcDayMasterStrength(bazi) {
     var g = cg[0]; // 只取本气
     var gwx = WU_XING[g];
     if (gwx === dgWx)            score += 3;  // 本气比肩（通根）
-    else if (SHENGWO[dgWx] === gwx) score += 2;  // 本气印星
+    else if (SHENGWO[dgWx] === gwx) {
+      // 燥土不生金：金日主生未/戌月，藏干土印不记
+      if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 2;
+    }
     else if (KEWO[dgWx] === gwx)   score -= 2;  // 本气官杀
     else if (WOSHENG[dgWx] === gwx) score -= 1;  // 本气食伤
     else if (WOKE[dgWx] === gwx)   score -= 2;  // 本气财星
@@ -2297,6 +2309,10 @@ function calcDayMasterStrength(bazi) {
     if (WOKE[dgWx] === mwx) score -= (mwxCount - 1) * 8;   // 囚令：日主克月令反被耗（如金克木，木多金缺）
     else if (WOSHENG[dgWx] === mwx) score -= (mwxCount - 1) * 4; // 休令：日主生月令泄气过重
   }
+
+  // ---------- ⑤½ 土多金埋修正（未戌燥土月） ----------
+  // 土重埋金（母旺灭子）：金日主生未/戌月且盘面土≥3（干+支），厚土埋金，金气不舒
+  if (dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0 && mwxCount >= 3) score -= 8;
 
   // ---------- ⑥ 调候（滴天髓：寒暖燥湿） ----------
   var mZhi = bazi.month.zhi;
@@ -3991,6 +4007,8 @@ function finalizePatternStatus(bazi, pattern) {
     var reasons = [];
   var chong = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   var monthZhi = bazi.month.zhi;
+  // 燥土不生金：金日主生未/戌月，土印虚浮无力（不化杀、不配印）
+  var dryEarthYin = WU_XING[bazi.day.gan] === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0;
   ['year','day','hour'].forEach(function(pos) {
     if (chong[monthZhi] === bazi[pos].zhi) reasons.push('月令受' + pos.replace('year','年柱').replace('day','日柱').replace('hour','时柱') + '冲');
   });
@@ -4013,6 +4031,8 @@ function finalizePatternStatus(bazi, pattern) {
         if (hasVisible('七杀')) reasons.push('官杀混杂');
       } else if (pattern.name === '七杀格') {
         if (!hasVisible('食神') && !hasVisible('正印') && !hasVisible('偏印')) reasons.push('七杀无制化');
+        // 燥土不生金：印星虚浮不化杀（如金日主生未戌月，土印无力化杀）
+        if (!hasVisible('食神') && (hasVisible('正印') || hasVisible('偏印')) && dryEarthYin) reasons.push('印星为燥土，虚浮不化杀');
       } else if (pattern.name === '正印格' || pattern.name === '偏印格' || pattern.name === '印绶格') {
         if (hasVisible('正财') || hasVisible('偏财')) reasons.push('财星破印');
       } else if (pattern.name === '食神格') {
@@ -4056,7 +4076,7 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '无伤官克官', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '天干透伤官，克损正官' : '✓' });
       conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
     } else if (pn === '七杀格') {
-      conditions.push({ condition: '有食神制杀或印星化杀', met: hasVisible('食神') || hasVisible('正印') || hasVisible('偏印'), detail: hasVisible('食神') ? '食神制杀' : hasVisible('正印')||hasVisible('偏印') ? '印星化杀' : '无制无化' });
+      conditions.push({ condition: '有食神制杀或印星化杀', met: hasVisible('食神') || ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin), detail: hasVisible('食神') ? '食神制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '无制无化' });
       conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星生杀，助纣为虐' : '✓' });
     } else if (pn === '正印格' || pn === '偏印格' || pn === '印绶格') {
       conditions.push({ condition: '无财星破印', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星克印，印格受损' : '✓' });
@@ -4082,6 +4102,8 @@ function finalizePatternStatus(bazi, pattern) {
     if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0) {
       conditions.push({ condition: '印星不被财破', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星破印，官杀印通路中断' : '✓' });
       conditions.push({ condition: '官/杀不被食伤制死', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '伤官克官，官印链断裂' : '✓' });
+      conditions.push({ condition: '印星有力（非燥土虚浮）', met: !dryEarthYin, detail: dryEarthYin ? '金日主生未戌燥土月，燥土不生金，印虚不化杀' : '✓' });
+      if (dryEarthYin) reasons.push('燥土印虚浮，不化杀生身');
     }
     if (pn.indexOf('食伤生财') >= 0) {
       conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱，食伤生出的财拿不稳' });
@@ -4522,6 +4544,14 @@ function getYongJi(bazi) {
     reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），遵循子平法"弱则宜生宜扶"原则。'
       + '喜：' + xiShen.join('、') + '来生扶，补足元气。'
       + '忌：' + jiShen.join('、') + '再来克泄耗，元气更伤。';
+    // 金日主生未/戌燥土月：燥土不生金、土多埋金，印星虚浮无效——
+    // 按《穷通宝鉴》取水为用（制杀+润局+使燥土转生金），弃土用金水（"先用壬水，次取庚金佐之"）
+    if (dmWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0) {
+      xiShen  = ['水', '金'];
+      yongShen = ['水'];
+      jiShen  = ['火', '木', '土'];
+      reasoning = '辛金生未戌燥土月，火炎土燥、土多埋金，燥土不生金，印星虚浮无效。《穷通宝鉴》：六月辛金"先用壬水，次取庚金佐之"。故取水为用：水制七杀（伤官制杀）、润燥土（燥土得润方能生金）、调候降温，一水三用；喜金比劫帮身，忌火木土（杀旺、财党杀、燥土埋金）。';
+    }
   } else {
     // 中和 — 根据实际分数倾向给出更有意义的建议
     if (dmStr.score < 50) {
