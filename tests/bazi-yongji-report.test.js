@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260810b/, `${page} must load the single-core-yongshen bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260813a/, `${page} must load the single-core-yongshen bundle`);
   }
 });
 
@@ -52,7 +52,7 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
 
   charts.forEach(chart => {
     const result = calculator.getYongJi(chart);
-    assert.ok(['从格顺势', '调候优先', '扶抑为主', '格局救应'].includes(result.method));
+    assert.ok(['从格顺势', '扶抑为主·调候辅助', '扶抑为主', '格局救应'].includes(result.method));
     assert.ok(result.primaryReason.length >= 8);
     assert.ok(result.evidence.some(row => row.category === '旺衰'));
     assert.ok(result.evidence.some(row => row.category === '格局'));
@@ -67,7 +67,7 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
   });
 
   const winterEarth = calculator.getYongJi(charts[1]);
-  assert.equal(winterEarth.method, '调候优先');
+  assert.equal(winterEarth.method, '扶抑为主·调候辅助');
   assert.ok(winterEarth.evidence.some(row => row.category === '调候'));
 });
 

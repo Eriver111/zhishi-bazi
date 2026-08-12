@@ -2209,7 +2209,12 @@ function calcDayMasterStrength(bazi) {
   // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
   // 壬癸水见丑辰不算真死令
   var wetEarthAdj = (dgWx === '水' && (bazi.month.zhi === '丑' || bazi.month.zhi === '辰')) ? 12 : 0;
-  if (mwx === dgWx)            score += 30;
+  if (mwx === dgWx) {
+    // 土日主生土月按季节旺相休囚死折算：未月土旺+30、戌月土休+12、丑月土囚-8、辰月土死-5
+    // 木火金水日主不受影响（其本气月即其旺季，辰戌丑未之外月支本气非土）
+    var _tuSeason = { '未':30, '戌':12, '丑':-8, '辰':-5 };
+    score += (dgWx === '土' && _tuSeason[bazi.month.zhi] !== undefined) ? _tuSeason[bazi.month.zhi] : 30;
+  }
   else if (SHENGWO[dgWx] === mwx) score += 20;
   else if (WOSHENG[dgWx] === mwx) score -= 15;
   else if (WOKE[dgWx] === mwx)   score -= 10;
@@ -2251,7 +2256,8 @@ function calcDayMasterStrength(bazi) {
   else if (WOSHENG[dgWx] === dayZhiWx) score -= 7;  // 日主生日支（我生为泄，泄气）
 
   // ---------- ③ 得势：各柱天干比劫/印星 vs 克泄耗 ----------
-  ['year','month','day','hour'].forEach(function(pos) {
+  // 不含日干自身：基准50已代表日主，再自加比劫+6属重复计分
+  ['year','month','hour'].forEach(function(pos) {
     var gwx = WU_XING[bazi[pos].gan];
     if (gwx === dgWx)            score += 6;  // 比肩劫财
     else if (SHENGWO[dgWx] === gwx) score += 4;  // 印星
@@ -4118,8 +4124,9 @@ function getPattern(bazi) {
     '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》' }
   };
 
-  // 透干取格：只取与本气同五行的透干，或本气本身
-  // 余气透干不取为格（如寅月戊土透→仍取甲木本气为正财格）
+  // 透干取格：《子平真诠》杂气月（辰戌丑未）"透干会支，方成其格"——
+  // 本气不透时依次取中气、余气之透干者为格；
+  // 四生四正月（寅申巳亥子午卯酉）仍只认本气（或本气同五行的透干，如寅月透戊仍取甲木本气）
   var benQi = cangGan[0]; // 本气
   var benQiWx = WU_XING[benQi];
   var matchedSS = '';
@@ -4127,6 +4134,7 @@ function getPattern(bazi) {
   var matchedPillar = '';
   var pillarNames = ['年','月','时'];
   var matchCangGan = ''; // 记录匹配到的藏干
+  var isZaQiMonth = ['辰','戌','丑','未'].indexOf(mZhi) >= 0;
 
   for (var ci = 0; ci < cangGan.length; ci++) {
     var cg = cangGan[ci];
@@ -4134,8 +4142,9 @@ function getPattern(bazi) {
     for (var gi = 0; gi < allGan.length; gi++) {
       if (allGan[gi] === cg) {
         matchCangGan = cg;
-        // 只有本气或与本气同五行的透干才取为格
-        if (ci === 0 || cgWx === benQiWx) {
+        // 杂气月：任何藏干透出皆可取格（按本气→中气→余气顺序优先）
+        // 四生四正月：只取本气或与本气同五行的透干
+        if (isZaQiMonth || ci === 0 || cgWx === benQiWx) {
           matchedSS = getShiShen(dayGan, cg);
           matchedGan = cg;
           matchedPillar = pillarNames[gi] + '柱';
@@ -4144,7 +4153,7 @@ function getPattern(bazi) {
       }
     }
     if (matchCangGan && !matchedSS) {
-      // 透出的是余气且五行不同→不取，继续找
+      // 非杂气月透出余气且五行不同→不取，继续找
       matchCangGan = '';
     }
     if (matchedSS) break;
@@ -4172,7 +4181,8 @@ function getPattern(bazi) {
 
   // ---- 同柱复合格局检测（月干+月支搭配） ----
   var ssGan = getShiShen(dayGan, bazi.month.gan);
-  var ssZhi = getShiShen(dayGan, (cangGan && cangGan[0]) || '');
+  // 月支格神：透干取格成立时用所取藏干之十神（杂气月透辛取官格），否则用本气十神
+  var ssZhi = matchedSS || getShiShen(dayGan, (cangGan && cangGan[0]) || '');
   var compound = null;
 
   // 官印相生 / 杀印相生：月干印 + 月支官杀（同一柱）
@@ -4264,12 +4274,12 @@ function finalizeYongJiResult(bazi, base, context) {
   var lists = normalizeYongJiLists(base.xiShen, base.yongShen, base.jiShen);
   var pattern = context.pattern || getPattern(bazi);
   var method = context.cong && context.cong.isCong ? '从格顺势'
-    : context.tiaoHouNote ? '调候优先'
+    : context.tiaoHouNote ? '扶抑为主·调候辅助'
     : pattern.status === '破格' ? '格局救应'
     : '扶抑为主';
   var primaryReason = method === '从格顺势'
     ? (context.cong.source + '，取顺势之五行为用。')
-    : method === '调候优先'
+    : method === '扶抑为主·调候辅助'
       ? context.tiaoHouNote
       : method === '格局救应'
         ? (pattern.name + '条件不足，先取能扶正旺衰并兼顾格局救应的五行。')
@@ -4529,7 +4539,8 @@ function getYongJi(bazi) {
     }
   }
 
-  // ---- v4.2 调候修正（穷通宝鉴：寒暖燥湿优先于扶抑）----
+  // ---- v4.2 调候修正（穷通宝鉴：寒暖燥湿兼顾扶抑）----
+  // 调候只作辅助：入喜神、出忌神，不顶替用神——用神由扶抑/格局确定
   var mz = bazi.month.zhi;
   var dg = bazi.day.gan;
   var hasWxGlobal = function(wx) {
@@ -4538,20 +4549,19 @@ function getYongJi(bazi) {
     });
   };
   var tiaoHouNote = '';
+  // 调候神从忌神转入喜神（列喜神末位，不喧宾夺主）
+  var tiaoHouAdd = function(wx) {
+    if (jiShen.indexOf(wx) >= 0) { jiShen.splice(jiShen.indexOf(wx), 1); }
+    if (xiShen.indexOf(wx) < 0) { xiShen.push(wx); }
+  };
 
   // 冬土（丑月）：冻土需火暖局，火从忌转喜
   if (dmWx === '土' && mz === '丑') {
+    tiaoHouAdd('火');
     if (!hasWxGlobal('火')) {
-      // 原局无火 — 火为调候第一用神
-      if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-      if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
-      if (yongShen.indexOf('火') < 0) { yongShen.unshift('火'); }
       tiaoHouNote = '《穷通宝鉴》：己土冬生，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
     } else {
-      // 原局有火 — 火已为喜
-      if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-      if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
-      tiaoHouNote = '原局有火暖局（' + (hasWxGlobal('火')?'如丁火透出':'') + '），寒谷回春，调候已得。';
+      tiaoHouNote = '原局有火暖局，寒谷回春，调候已得。';
     }
   }
 
@@ -4566,72 +4576,55 @@ function getYongJi(bazi) {
 
   // 冬水（亥子月）：冻水不流，需火暖局
   if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
-    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
-    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouAdd('火');
     tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
   }
 
   // 夏火（巳午未月）：炎火需水调候
   if (dmWx === '火' && ['巳','午','未'].indexOf(mz) >= 0) {
-    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
-    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
-    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouAdd('水');
     tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
   }
 
   // 冬木（亥子丑月）：寒木需火暖局，否则木不发育
   if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
-    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
-    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouAdd('火');
     tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
   }
 
   // 秋金（申酉戌月）：金旺无火则顽金不器
   if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmLevel.indexOf('强') >= 0) {
-    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
+    tiaoHouAdd('火');
     tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
   }
 
   // 辰月湿土（土/火/水日主）：辰为水库，阴湿之气重，需火烘干方能发育
   if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
-    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
-    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouAdd('火');
     tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
   }
 
   // 戌月燥土（火土日主）：戌为火库，土燥木枯，需水润局
   if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
-    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
-    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
-    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouAdd('水');
     tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
   }
 
   // 冬金（亥子丑月）：金寒水冷，冻金不锐，需火暖局
   if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
-    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-    if (xiShen.indexOf('火') < 0) { xiShen.unshift('火'); }
-    if (yongShen.indexOf('火') < 0 && yongShen.length > 0) { yongShen[0] = '火'; }
+    tiaoHouAdd('火');
     tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
   }
 
   // 巳午月燥土（火土日主）：夏火炎土燥，需水润局
   if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
-    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
-    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
-    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouAdd('水');
     tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
   }
 
   // 未月燥土（火土日主）：夏末火炎土燥，需水润局
   if ((dmWx === '火' || dmWx === '土') && mz === '未') {
-    if (jiShen.indexOf('水') >= 0) { jiShen.splice(jiShen.indexOf('水'), 1); }
-    if (xiShen.indexOf('水') < 0) { xiShen.unshift('水'); }
-    if (yongShen.indexOf('水') < 0 && yongShen.length > 0) { yongShen[0] = '水'; }
+    tiaoHouAdd('水');
     tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
   }
 
