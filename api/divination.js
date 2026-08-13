@@ -152,6 +152,7 @@ module.exports = async function handler(req, res) {
     }
 
     var aiData = await aiResp.json();
+    console.log("[divination] respModel=" + (aiData.model || "?"));
     var reading = aiData.choices?.[0]?.message?.content || '';
 
     // 清理常见免责尾巴和 JSON 包裹

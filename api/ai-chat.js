@@ -570,6 +570,7 @@ async function callAI(question, chartData, bazi, history, mode) {
   }
 
   const aiData = await aiResp.json();
+  console.log("[ai-chat] respModel=" + (aiData.model || "?"));
   const reply = aiData.choices?.[0]?.message?.content || '';
   if (!reply || reply.length < 20) throw new Error('AI 返回内容为空或过短（未扣次数）');
   return reply;

@@ -195,6 +195,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:800, temperature:0.3 })
     });
     var aiData = await aiResp.json();
+    console.log("[fortune] respModel=" + (aiData.model || "?"));
     var content = aiData.choices?.[0]?.message?.content || '';
     // 去除可能的免责声明
     content = content.replace(/以上[^。]*生成[^。]*参考[^。]*[\n。]/g, '').replace(/以上[^。]*由[^。]*生成[^。]*/g, '').replace(/(本文|此内容|以上内容)[^。]*免责[^。]*[。\n]/g, '').replace(/\n*---\n.*$/s, '').replace(/（以上[^）]*）/, '').trim();
