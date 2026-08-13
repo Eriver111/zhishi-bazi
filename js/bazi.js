@@ -2308,8 +2308,8 @@ function calcDayMasterStrength(bazi) {
   // 囚令·休令时，月令五行过旺会过度消耗日主
   // 死令不额外扣分（-25已足够）
   if (mwxCount >= 2) {
-    if (WOKE[dgWx] === mwx) score -= (mwxCount - 1) * 8;   // 囚令：日主克月令反被耗（如金克木，木多金缺）
-    else if (WOSHENG[dgWx] === mwx) score -= (mwxCount - 1) * 4; // 休令：日主生月令泄气过重
+    if (WOKE[dgWx] === mwx) score -= (mwxCount - 1) * 4;   // 囚令：日主克月令反被耗（如金克木，木多金缺）
+    else if (WOSHENG[dgWx] === mwx) score -= (mwxCount - 1) * 2; // 休令：日主生月令泄气过重
   }
 
   // ---------- ⑤½ 土多金埋修正（未戌燥土月） ----------
