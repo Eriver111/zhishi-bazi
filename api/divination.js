@@ -141,6 +141,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: DIVINATION_SYSTEM },
           { role: 'user', content: prompt }
         ],
+        thinking: { type: 'disabled' },
         max_tokens: 1500,
         temperature: 0.3
       })

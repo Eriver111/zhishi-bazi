@@ -193,7 +193,7 @@ module.exports = async function handler(req, res) {
 
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
-      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], max_tokens:800, temperature:0.3 })
+      body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], thinking:{type:'disabled'}, max_tokens:800, temperature:0.3 })
     });
     var aiData = await aiResp.json();
     console.log("[fortune] respModel=" + (aiData.model || "?") + " at=" + new Date().toISOString());

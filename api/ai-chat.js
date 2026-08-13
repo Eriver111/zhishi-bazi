@@ -561,7 +561,7 @@ async function callAI(question, chartData, bazi, history, mode) {
     var aiResp = await fetch(AI_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
-      body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.7, max_tokens: 4096, stream: false }),
+      body: JSON.stringify({ model: AI_MODEL, messages, thinking: { type: 'disabled' }, temperature: 0.7, max_tokens: 4096, stream: false }),
       signal: controller.signal
     });
   } finally { clearTimeout(timeout); }
@@ -572,8 +572,11 @@ async function callAI(question, chartData, bazi, history, mode) {
   }
 
   const aiData = await aiResp.json();
-  console.log("[ai-chat] respModel=" + (aiData.model || "?") + " at=" + new Date().toISOString());
-  const reply = aiData.choices?.[0]?.message?.content || '';
+  var choice = aiData.choices?.[0] || {};
+  var message = choice.message || {};
+  const reply = message.content || '';
+  var reasoningLength = String(message.reasoning_content || '').length;
+  console.log('[ai-chat] respModel=' + (aiData.model || '?') + ' finish=' + (choice.finish_reason || '?') + ' contentLen=' + reply.length + ' reasoningLen=' + reasoningLength + ' at=' + new Date().toISOString());
   if (!reply || reply.length < 20) throw new Error('AI 返回内容为空或过短（未扣次数）');
   return reply;
 }

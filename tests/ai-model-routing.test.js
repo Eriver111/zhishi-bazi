@@ -93,6 +93,11 @@ test('stale PM2 pro environment cannot route text AI endpoints to the pro model'
       'deepseek-v4-flash',
       'deepseek-v4-flash'
     ]);
+    assert.deepEqual(payloads.map(item => item.thinking), [
+      { type: 'disabled' },
+      { type: 'disabled' },
+      { type: 'disabled' }
+    ]);
   } finally {
     if (previous.AI_MODEL === undefined) delete process.env.AI_MODEL; else process.env.AI_MODEL = previous.AI_MODEL;
     if (previous.AI_API_KEY === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = previous.AI_API_KEY;
