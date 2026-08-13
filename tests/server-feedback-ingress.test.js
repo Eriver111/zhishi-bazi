@@ -82,12 +82,12 @@ function request(body, route, headers = {}) {
   });
 }
 
-function responseBeforeRequestEnds({ headers, firstChunk }) {
+function responseBeforeRequestEnds({ headers, firstChunk, route = '/api/feedback' }) {
   return new Promise((resolve, reject) => {
     const req = http.request({
       host: '127.0.0.1',
       port: serverPort,
-      path: '/api/feedback',
+      path: route,
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -173,4 +173,32 @@ test('other API routes retain request bodies larger than 4096 bytes', async () =
 
   assert.equal(response.statusCode, 200);
   assert.equal(JSON.parse(response.body).ok, true);
+});
+
+test('ordinary API routes reject a declared body larger than 1 MiB before buffering', async () => {
+  const statusCode = await responseBeforeRequestEnds({
+    route: '/api/ping',
+    headers: { 'content-length': String(1024 * 1024 + 1) }
+  });
+
+  assert.equal(statusCode, 413);
+});
+
+test('single-image routes allow 10 MiB but reject anything larger before buffering', async () => {
+  for (const route of ['/api/face-reading', '/api/palm-reading']) {
+    const statusCode = await responseBeforeRequestEnds({
+      route,
+      headers: { 'content-length': String(10 * 1024 * 1024 + 1) }
+    });
+    assert.equal(statusCode, 413, route);
+  }
+});
+
+test('multi-image fengshui route rejects anything larger than 30 MiB before buffering', async () => {
+  const statusCode = await responseBeforeRequestEnds({
+    route: '/api/fengshui-reading',
+    headers: { 'content-length': String(30 * 1024 * 1024 + 1) }
+  });
+
+  assert.equal(statusCode, 413);
 });

@@ -37,6 +37,14 @@ module.exports = async function handler(req, res) {
     var changed = oldHash !== newHash;
     console.log('[deploy] ' + (changed ? ('UPDATED ' + oldHash.slice(0, 7) + ' → ' + newHash.slice(0, 7)) : 'NO CHANGE') + ' | ' + pullOut);
 
+    // Let the HTTP response leave first, then replace the process so newly
+    // pulled modules are loaded exactly once by a clean PM2 worker.
+    if (changed) {
+      setTimeout(function () {
+        try { execSync('pm2 restart zhishi 2>&1', { cwd: dir, timeout: 5000 }); } catch (_) {}
+      }, 250).unref();
+    }
+
     return res.status(200).json({
       ok: true,
       changed: changed,

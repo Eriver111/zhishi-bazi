@@ -1,21 +1,3 @@
-// === 崩溃保护：捕获未处理异常，记录日志但不退�?===
-process.on('uncaughtException', function(err) {
-  try { fs.appendFileSync(path.join(__dirname,'crash.log'), new Date().toISOString()+' uncaughtException: '+err.message+'\n'+err.stack+'\n'); } catch(_) {}
-  console.error('[CRASH] uncaughtException:', err.message);
-});
-process.on('unhandledRejection', function(reason) {
-  try { fs.appendFileSync(path.join(__dirname,'crash.log'), new Date().toISOString()+' unhandledRejection: '+(reason&&reason.message||reason)+'\n'); } catch(_) {}
-  console.error('[CRASH] unhandledRejection:', reason&&reason.message||reason);
-});
-// === 内存上限保护：超�?500MB 主动重启 ===
-setInterval(function() {
-  var mem = process.memoryUsage();
-  if (mem.heapUsed > 500 * 1024 * 1024) {
-    console.error('[OOM] 内存�?500MB, 主动退出以触发守护进程重启');
-    process.exit(1);
-  }
-}, 30000).unref();
-
 const http=require('http');const fs=require('fs');const path=require('path');
 const execSync=require('child_process').execSync;
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.gif':'image/gif','.ico':'image/x-icon','.mp4':'video/mp4','.mp3':'audio/mpeg'};
@@ -23,6 +5,14 @@ try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.f
 // .env.local 本地覆盖（不入 git），优先级高于 .env
 try{const e=fs.readFileSync(path.join(__dirname,'.env.local'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0){const k=t.slice(0,i).trim();process.env[k]=t.slice(i+1).trim()}}})}catch(_){}
 const DEPLOY_SECRET=process.env.DEPLOY_SECRET||'zhishi-deploy-2026';
+
+// Fatal errors are intentionally left to Node/PM2: Node prints the stack and
+// exits, then PM2 starts a clean process instead of keeping corrupted state.
+// Periodic memory telemetry makes gradual growth visible without log spam.
+setInterval(function() {
+  var mem=process.memoryUsage();
+  console.log('[memory] rssMB='+Math.round(mem.rss/1048576)+' heapMB='+Math.round(mem.heapUsed/1048576)+' externalMB='+Math.round(mem.external/1048576));
+},300000).unref();
 
 // 自动部署：每分钟检查一�?GitHub 是否有新 commit，有�?git pull
 var _lastPull=Date.now();
@@ -90,6 +80,18 @@ class RequestBodyTooLargeError extends Error {
     this.code = 'REQUEST_BODY_TOO_LARGE';
     this.maxBytes = maxBytes;
   }
+}
+
+const API_BODY_LIMITS={
+  '/api/feedback':4096,
+  '/api/face-reading':10*1024*1024,
+  '/api/palm-reading':10*1024*1024,
+  '/api/fengshui-reading':30*1024*1024
+};
+const DEFAULT_API_BODY_LIMIT=1024*1024;
+
+function apiBodyLimit(pathname) {
+  return API_BODY_LIMITS[pathname] || DEFAULT_API_BODY_LIMIT;
 }
 
 function drainRequest(req) {
@@ -187,8 +189,7 @@ if(!pn||pn==='/')pn='/index.html';
 trackPV(pn);
 
 // API
-if(pn.startsWith('/api/')){const n=pn.slice(5);try{delete require.cache[require.resolve('./api/'+n+'.js')];// 同时清除核心依赖缓存，确�?git pull 后生�?
-['./lib/supabase.js','./lib/auth.js','./lib/report-identity.js','./lib/payment-contract.js'].forEach(function(d){try{delete require.cache[require.resolve(d)]}catch(e){}});const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,pn==='/api/feedback'?{maxBytes:4096}:undefined);// 注入渠道标记�?body
+if(pn.startsWith('/api/')){const n=pn.slice(5);try{const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,{maxBytes:apiBodyLimit(pn)});// 注入渠道标记�?body
 if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
 await h(req,res)}catch(e){if(!_sent){if(e&&e.code==='REQUEST_BODY_TOO_LARGE')res.status(413).json({ok:false,error:e.message});else res.json({error:e.message})}}return}
 const fp=__dirname+pn;try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
