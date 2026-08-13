@@ -12,7 +12,9 @@ const { requireAuth } = require('../lib/auth.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-flash';
+// Text generation is intentionally pinned: a stale PM2 AI_MODEL value must not
+// silently switch production traffic back to the much more expensive pro tier.
+const AI_MODEL = 'deepseek-v4-flash';
 
 const now2 = new Date();
 const currentYear2 = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(now2));
