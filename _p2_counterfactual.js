@@ -115,13 +115,15 @@ fs.readFileSync(path.join(ROOT, '_baseline_22.csv'), 'utf-8').split('\n').slice(
   var gz = cells[1].split(/\s+/);
   if (gz.length === 4) charts.push({ id: cells[0], gz: gz });
 });
-// 读 P1.5 六盘
+// 只取 P1.5 六盘永久回归样本（注意：_p15_charts.txt 含 20 盘，不能全载）
+var SIX_IDS = ['P15-03','P15-09','P15-12','P15-14','P15-15','P15-16'];
 fs.readFileSync(path.join(ROOT, '_p15_charts.txt'), 'utf-8').split('\n').forEach(function(line) {
   line = line.trim();
   if (!line || line[0] === '#') return;
   var parts = line.split(/\s+/);
-  if (parts.length === 5) charts.push({ id: parts[0], gz: parts.slice(1) });
+  if (parts.length === 5 && SIX_IDS.indexOf(parts[0]) >= 0) charts.push({ id: parts[0], gz: parts.slice(1) });
 });
+if (charts.length !== 28) throw new Error('样本数异常：' + charts.length + '≠28（预期22基线+六盘）');
 
 function toBazi(gz) {
   return {
@@ -163,7 +165,7 @@ function runChart(eng, c) {
     global.calcDayMasterStrength(b);
     return { id: c.id, t8: global.__T8.length >= 2 ? global.__T8[1] - global.__T8[0] : null };
   });
-  console.log('—— BASE ⑧段合计罚分分布（28盘）——');
+  console.log('—— BASE ⑧段合计罚分分布（' + charts.length + '盘）——');
   t8rows.filter(function(r) { return r.t8 !== null && r.t8 < 0; }).sort(function(a,b){return a.t8-b.t8;})
     .forEach(function(r) { console.log('  ' + r.id + ' ' + r.t8); });
   console.log('  —— ⑧段合计为正（合化利好）：');
@@ -191,7 +193,7 @@ Object.keys(VARIANT_PATCHES).forEach(function(key) {
       csv.push([key, c.id, c.gz.join(' '), base.score, r.score, d, base.level, r.level, base.yong, r.yong]);
     }
   });
-  console.log('===== ' + key + '（波及 ' + changed.length + '/28 盘）=====');
+  console.log('===== ' + key + '（波及 ' + changed.length + '/' + charts.length + ' 盘）=====');
   changed.forEach(function(x) {
     var lv = x.base.level === x.r.level ? '' : '  ⚠旺衰 ' + x.base.level + '→' + x.r.level;
     var ys = x.base.yong === x.r.yong ? '' : '  ⚠用神 ' + x.base.yong + '→' + x.r.yong;
