@@ -2413,7 +2413,7 @@ function calcDayMasterStrength(bazi) {
   var xingMap = {}; XING.forEach(function(p){xingMap[p[0]+p[1]]=true;xingMap[p[1]+p[0]]=true;});
 
   // 地支六合：合化出新五行
-  var ZHI_HE = [['子','丑','土'],['寅','亥','木'],['卯','戌','火'],['辰','酉','金'],['巳','申','水'],['午','未','火']];
+  var ZHI_HE = [['子','丑','土'],['寅','亥','木'],['卯','戌','火'],['辰','酉','金'],['巳','申','水'],['午','未','土']]; // P2.1：午未合土（经典口径，GPT 第四轮裁决）
   var zhiHeScore = {};
   ZHI_HE.forEach(function(t){zhiHeScore[t[0]+t[1]]=t[2];zhiHeScore[t[1]+t[0]]=t[2];});
 
@@ -2566,43 +2566,73 @@ function calcDayMasterStrength(bazi) {
   }
 
   // 日支被合化 → 得地根基重构（如辰酉合金→辰土变金印）
-  // 遍历所有合（相邻+跨柱），若日支参与合化且新五行≠原五行，调整得地分
+  // P2.1（GPT 第四轮裁决冻结实装）：qualification v1 资格分层 + M-A 烈度；六合口径随 ZHI_HE 经典化（午未合土）
+  // 资格：S1 月支五行===化神 / S2 化神在月令旺·相 / S0 休囚死；T2 月·时干透 / T1 仅年干透 / T0 无透；
+  //       R1 合局成员遭第三支六冲 / R2 月令受冲 → 仅将真化候选降一级；刑、害只记录不参与资格；多合仅增强证据、实体转换一次。
+  // 判定：S1+T2+无R → 真化；其余 S1 → 趋化；S2 → 趋化；S0 → 合而不化。
+  // 烈度（M-A）：originalResidual = 原支保留比例，newElementEffect = 新化神作用比例；退还 = 1 - originalResidual。
+  //       真化 0.50/0.75；趋化 0.75/0.50；合而不化 1/0（不转换）。
   var dayBranchAdj = 0;
   var allHePairs = [];
   // 相邻合
   [['year','month'],['month','day'],['day','hour']].forEach(function(pair) {
     var z1=bazi[pair[0]].zhi, z2=bazi[pair[1]].zhi;
-    if (zhiHeScore[z1+z2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[z1+z2]) allHePairs.push({z1:z1, z2:z2, wx:zhiHeScore[z1+z2], p1:pair[0], p2:pair[1]});
+    if (zhiHeScore[z1+z2]) allHePairs.push({z1:z1, z2:z2, wx:zhiHeScore[z1+z2], p1:pair[0], p2:pair[1]});
   });
   // 跨柱合
   for (var xa=0; xa<allPositions.length; xa++) {
     for (var xb=xa+1; xb<allPositions.length; xb++) {
       if (Math.abs(xa-xb)===1) continue;
       var zx1=bazi[allPositions[xa]].zhi, zx2=bazi[allPositions[xb]].zhi;
-      if (zhiHeScore[zx1+zx2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2], p1:allPositions[xa], p2:allPositions[xb]});
+      if (zhiHeScore[zx1+zx2]) allHePairs.push({z1:zx1, z2:zx2, wx:zhiHeScore[zx1+zx2], p1:allPositions[xa], p2:allPositions[xb]});
     }
   }
-  var dayHeApplied = {}; // 日支同一合化不重复计
-  allHePairs.forEach(function(he) {
-    if (he.p1 === 'day' || he.p2 === 'day') {
-      var oldWx=DI_ZHI_WU_XING[bazi.day.zhi], newWx=he.wx;
-      var heKey = oldWx+'→'+newWx;
-      if (dayHeApplied[heKey]) return; dayHeApplied[heKey]=true;
-      if (oldWx!==newWx) {
-        // 退还旧五行得地分，计入新五行得地分
-        if (oldWx===dgWx) dayBranchAdj-=12;
-        else if (SHENGWO[dgWx]===oldWx) dayBranchAdj-=8;
-        else if (KEWO[dgWx]===oldWx) dayBranchAdj+=10;
-        else if (WOSHENG[dgWx]===oldWx) dayBranchAdj+=7;
-        else if (WOKE[dgWx]===oldWx) dayBranchAdj+=6;
-        if (newWx===dgWx) dayBranchAdj+=12;
-        else if (SHENGWO[dgWx]===newWx) dayBranchAdj+=8;
-        else if (KEWO[dgWx]===newWx) dayBranchAdj-=10;
-        else if (WOSHENG[dgWx]===newWx) dayBranchAdj-=7;
-        else if (WOKE[dgWx]===newWx) dayBranchAdj-=6;
-      }
-    }
-  });
+  var dayHePairs = allHePairs.filter(function(he){ return he.p1==='day'||he.p2==='day'; });
+  if (dayHePairs.length) {
+    // —— qualification v1（冻结规格）——
+    var huaWx = dayHePairs[0].wx;
+    var monthWx = DI_ZHI_WU_XING[bazi.month.zhi];
+    var WXS_M = {
+      '木': {'木':'旺','火':'相','水':'休','金':'囚','土':'死'},
+      '火': {'火':'旺','土':'相','木':'休','水':'囚','金':'死'},
+      '金': {'金':'旺','水':'相','土':'休','火':'囚','木':'死'},
+      '水': {'水':'旺','木':'相','金':'休','土':'囚','火':'死'},
+      '土': {'土':'旺','金':'相','火':'休','木':'囚','水':'死'}
+    };
+    var huaState = WXS_M[monthWx][huaWx];
+    var qualS = (monthWx === huaWx) ? 1 : ((huaState === '旺' || huaState === '相') ? 2 : 0);
+    var qualT = (WU_XING[bazi.month.gan] === huaWx || WU_XING[bazi.hour.gan] === huaWx) ? 2 : (WU_XING[bazi.year.gan] === huaWx ? 1 : 0);
+    var qualR1 = false, qualR2 = false;
+    dayHePairs.forEach(function(h) {
+      allPositions.forEach(function(p) {
+        var z = bazi[p].zhi;
+        if (chongMap[z] === h.z1 || chongMap[z] === h.z2) qualR1 = true;
+        if (chongMap[z] === bazi.month.zhi) qualR2 = true;
+      });
+    });
+    var heClass = (qualS === 1 && qualT === 2 && !qualR1 && !qualR2) ? '真化' : ((qualS === 1 || qualS === 2) ? '趋化' : '合而不化');
+    // —— M-A 烈度（GPT 最终裁决）——
+    var heCoeff = heClass === '真化' ? [0.5, 0.75] : (heClass === '趋化' ? [0.75, 0.5] : [1, 0]);
+    var originalResidual = heCoeff[0], newElementEffect = heCoeff[1];
+    var dayHeApplied = {}; // 同一日支状态转换只执行一次（多合事件可多条）
+    dayHePairs.forEach(function(he) {
+      var oldWx = DI_ZHI_WU_XING[bazi.day.zhi], newWx = he.wx;
+      var heKey = oldWx + '→' + newWx;
+      if (dayHeApplied[heKey]) return; dayHeApplied[heKey] = true;
+      if (oldWx === newWx) return;
+      // 被转化部分退还旧五行得地分（退还比例 = 1 - originalResidual），新五行按 newElementEffect 计分
+      if (oldWx === dgWx) dayBranchAdj -= 12 * (1 - originalResidual);
+      else if (SHENGWO[dgWx] === oldWx) dayBranchAdj -= 8 * (1 - originalResidual);
+      else if (KEWO[dgWx] === oldWx) dayBranchAdj += 10 * (1 - originalResidual);
+      else if (WOSHENG[dgWx] === oldWx) dayBranchAdj += 7 * (1 - originalResidual);
+      else if (WOKE[dgWx] === oldWx) dayBranchAdj += 6 * (1 - originalResidual);
+      if (newWx === dgWx) dayBranchAdj += 12 * newElementEffect;
+      else if (SHENGWO[dgWx] === newWx) dayBranchAdj += 8 * newElementEffect;
+      else if (KEWO[dgWx] === newWx) dayBranchAdj -= 10 * newElementEffect;
+      else if (WOSHENG[dgWx] === newWx) dayBranchAdj -= 7 * newElementEffect;
+      else if (WOKE[dgWx] === newWx) dayBranchAdj -= 6 * newElementEffect;
+    });
+  }
   score += dayBranchAdj;
 
   // ---------- ⑧½ 杀印相生结构修正 ----------
