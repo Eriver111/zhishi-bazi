@@ -2657,8 +2657,62 @@ function calcDayMasterStrength(bazi) {
     var _hasCSL = ['year','month','day','hour'].some(function(_pos) {
       return bazi[_pos].zhi === _CHANG_SHENG[dg] || bazi[_pos].zhi === _LU[dg];
     });
-    if (_yinAdjacent && _hasCSL) {
-      score += 13;
+    if (_hasCSL) {
+      // P2.3 四档分级：结构补偿按介入有效性分档，不再二元（旧规则：贴身印+CSL 一律 +13）
+      // A +13：贴身印且无明显受破（强介入，化杀为权成立）
+      // B +6 ：年干印有根或得生（有效年干印，遥通关）
+      // C +3 ：年干弱印，或贴身印受破（合绊/坐地受冲，介入明显削弱）
+      // D 0  ：无有效印
+      var _SHENG_CYCLE = {'木':'火','火':'土','土':'金','金':'水','水':'木'};
+      var _CHONG_PAIR = {'子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳'};
+      var _yinWx = SHENGWO[dgWx];
+      var _hePo = false, _chongPo = false;
+      // 受破A：贴身印干被天干五合合绊（合日主除外——印来合身是加强不是破）
+      var _HE_PAIRS = [['甲','己'],['乙','庚'],['丙','辛'],['丁','壬'],['戊','癸']];
+      ['month','hour'].forEach(function(_pos) {
+        var _g = bazi[_pos].gan;
+        if (WU_XING[_g] !== _yinWx) return;
+        _HE_PAIRS.forEach(function(_hp) {
+          var _other = null;
+          if (_hp[0] === _g) _other = _hp[1];
+          else if (_hp[1] === _g) _other = _hp[0];
+          if (_other && _other !== dg) {
+            ['year','month','day','hour'].forEach(function(_p2) {
+              if (bazi[_p2].gan === _other) _hePo = true;
+            });
+          }
+        });
+      });
+      // 受破B：日支藏印路径时日支被六冲（印之坐地受冲，通关被破）
+      var _opp = _CHONG_PAIR[bazi.day.zhi];
+      if (_opp) {
+        ['year','month','hour'].forEach(function(_p3) {
+          if (bazi[_p3].zhi === _opp) _chongPo = true;
+        });
+      }
+      var _dayYin = false;
+      var _dcgYin = getCangGan(bazi.day.zhi);
+      for (var _di2 = 0; _di2 < _dcgYin.length; _di2++) {
+        if (WU_XING[_dcgYin[_di2]] === _yinWx) _dayYin = true;
+      }
+      var _po = (_hePo || (_dayYin && _chongPo));
+      if (_yinAdjacent && !_po) {
+        score += 13; // A 档：强介入贴身印，无明显受破
+      } else {
+        var _yGanYin = (WU_XING[bazi.year.gan] === _yinWx);
+        var _yinRoot = false;
+        ['year','month','day','hour'].forEach(function(_p4) {
+          var _cg3 = getCangGan(bazi[_p4].zhi);
+          for (var _i3 = 0; _i3 < _cg3.length; _i3++) {
+            if (WU_XING[_cg3[_i3]] === _yinWx) _yinRoot = true;
+          }
+        });
+        if (_yGanYin && (_yinRoot || _SHENG_CYCLE[mwx] === _yinWx)) {
+          score += 6; // B 档：年干有效印
+        } else if (_yGanYin || (_yinAdjacent && _po)) {
+          score += 3; // C 档：年干弱印，或贴身印受破
+        }
+      }
     }
   }
 

@@ -1,0 +1,1033 @@
+✓ 天姚 → 午: function(g,z,m,h){ return (z+10)%12; }
+✓ 红鸾 → 未: function(g,z,m,h){ var t=[3,2,1,0,11,10,9,8,7,6,5,4]; return t[z]; }
+✓ 天刑 → 寅: function(g,z,m,h){ return (9+m-1)%12; }
+✓ 天哭 → 戌: function(g,z,m,h){ return (z+2)%12; }
+✓ 天虚 → 寅: function(g,z,m,h){ return (z+6)%12; }
+✓ 天喜 → 丑: function(g,z,m,h){ return (DZ.indexOf(known['红鸾']||'?')+6)%12; }
+C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\_za_test.js:100
+  function(g,z,m,h){ var xk={0:[6,7],1:[8,9],2:[10,11],3:[0,1],4:[2,3],5:[4,5],6:[6,7],7:[8,9],8:[10,11],9:[0,1]}; var v=xk[g]; return v?DZ.indexOf(ref.indexOf('旬空')===-1?'?':ref['旬空']):0; },
+                                                                                                                                                        ^
+
+TypeError: ref.indexOf is not a function
+    at C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\_za_test.js:100:153
+    at C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\_za_test.js:40:11
+    at Array.forEach (<anonymous>)
+    at testStar (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\_za_test.js:38:12)
+    at Object.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\_za_test.js:99:1)
+    at Module._compile (node:internal/modules/cjs/loader:1854:14)
+    at Object..js (node:internal/modules/cjs/loader:1985:10)
+    at Module.load (node:internal/modules/cjs/loader:1577:32)
+    at Module._load (node:internal/modules/cjs/loader:1379:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+
+Node.js v24.16.0
+✖ _za_test.js (84.4612ms)
+✔ follow-up pages retain their contextual AI destinations (6.6835ms)
+✔ Ziwei follow-up carries explicit context and cache-busts repaired bundles (0.8939ms)
+✔ Ziwei chat always submits Ziwei mode and unlocks after missing chart data (0.8886ms)
+✔ Ziwei chat synchronizes account entitlement and authenticates AI requests (0.8276ms)
+✔ one-shot tools do not gain follow-up chat routes (2.3612ms)
+✔ result skin preserves the floating AI entry as a visible interactive control (0.5012ms)
+[ai-chat] respModel=? finish=? contentLen=61 reasoningLen=0 at=2026-08-13T16:13:08.657Z
+[divination] respModel=? at=2026-08-13T16:13:08.659Z
+[fortune] respModel=? at=2026-08-13T16:13:08.662Z
+✔ stale PM2 pro environment cannot route text AI endpoints to the pro model (41.4737ms)
+✔ browser-loaded chain uses the public BaZiCalculator API and returns evidence (20.636ms)
+✔ chain rejects an incomplete four-pillar chart with a clear error (4.7034ms)
+✔ DiTianSui rules use 寅卯辰 as spring months (4.4374ms)
+✔ Sha-Yin evidence names the actual month branch and hidden seal stem (4.5815ms)
+✔ wealth-to-officer-to-seal chain names the actual stems, elements, and Ten Gods (9.4622ms)
+✔ root evidence recognizes secondary hidden stems and uses the real day element (5.6298ms)
+✔ chain evidence does not expose an unconsumed structural score (4.1906ms)
+✔ storage interaction derives Ten-God roles from the current day stem and uses cautious wording (4.4451ms)
+✔ an unrelated annual branch is not credited with completing an existing three-punishment set (9.3764ms)
+✔ same annual branch alone is branch repetition rather than full-pillar FuYin (8.8932ms)
+✔ a DaYun trine completed into a Ji element does not improve the verdict (4.6397ms)
+✔ annual stem and branch combinations are neutral triggers without transformation evidence (4.1311ms)
+✔ storage evidence describes activation as conditional rather than guaranteed release (4.1723ms)
+✔ adverse annual interactions avoid deterministic disaster claims (4.797ms)
+✔ core analysis degrades safely but reports chain failures for diagnosis (15.9314ms)
+✔ all chain entry pages request the repaired script version (2.5144ms)
+✔ all sixty valid stem-branch pairs use the canonical NaYin mapping (10.0902ms)
+✔ 2024 LiQiu switches the month pillar at the actual minute, not at 20:00 (12.0862ms)
+✔ wet earth adjustment remains effective after the later position weighting (6.532ms)
+✔ the day stem itself does not block a weak following pattern (3.9721ms)
+✔ a neutral-but-strong chart uses the same favorable elements in annual analysis (42.7432ms)
+✔ this-year analysis includes the actual current DaYun when timing exists (29.0396ms)
+✔ a direct branch clash takes precedence over generic five-element control (4.5679ms)
+✔ professional displays do not redefine the core strength thresholds (1.445ms)
+✔ true solar time reports a calendar-day offset when longitude correction crosses midnight (4.6856ms)
+✖ shared birth normalization separates true-solar civil-date changes from Zi-hour pillar changes (6.409ms)
+✔ Zi-hour rollover affects only branch index zero when enabled (3.8488ms)
+✔ heavenly-stem combination distinguishes combination from successful transformation (3.9718ms)
+✔ pattern output records established or broken status and the break reason (6.6681ms)
+✔ month-command special patterns distinguish JianLu from YangRen (4.9414ms)
+✔ major canonical blockers mark an otherwise named pattern as broken (5.3896ms)
+✔ both result renderers show broken-pattern status as secondary copy (1.1329ms)
+✔ the browser result script remains valid JavaScript (2.3905ms)
+✔ AI context preserves structured strength and pattern status (0.7832ms)
+✔ AI context carries the same three-category yongji evidence used by the report (0.7396ms)
+✔ AI flow never treats a missing element as an automatic remedy (0.7417ms)
+✔ direct-pillar AI context safely handles absent DaYun timing (0.5744ms)
+✔ TianShe requires the complete seasonal day pillar, not only its branch (6.9824ms)
+✔ half seasonal combinations require adjacent branches (4.9154ms)
+✔ renyuan seasonal command is exposed as reference evidence without changing strength (8.7349ms)
+✔ renyuan note is hidden when it agrees with benqi or lacks a real date (8.2779ms)
+✔ professional facts reuse the same renyuan evidence contract (37.4039ms)
+✔ 专业报告从一份事实对象渲染五个核心证据区域 (46.3979ms)
+✖ 所有八字入口加载同一版核心取用脚本 (2.4288ms)
+✔ 只保留一个核心用神，且用神属于喜神、忌神不与喜用重叠 (23.6475ms)
+✔ 喜用忌说明判定方法、格局状态和每个五行的理由 (10.6178ms)
+✔ 深度报告事实对同一命盘生成稳定的专业证据链 (28.2126ms)
+✔ 流年明确说明触发的是用神、喜神还是忌神 (4.7271ms)
+✔ 专业报告包含岁运与喜用忌的联动结论 (7.7744ms)
+✔ #6 候选评分后水成为用神——木不再因根气强而机械第一 (19.3736ms)
+✔ #9 杀印相生成格身强侧不给印加分——火不升第一 (6.585ms)
+✔ A3 机械第一被消除——用神不再是无理由的官杀木 (5.4972ms)
+✔ B2 财成势身弱——比劫帮身分财进入第一（L2 结构需求） (10.9259ms)
+✔ #9 ±3 中性带——中和盘无断崖式喜忌切割 (5.4308ms)
+✔ candidateScores 输出五元素 L1/L2/L3/L4/S_need/根气质量/最终角色 (7.3261ms)
+✔ #1 极旺甲木保真——用神仍为金 (6.8671ms)
+✔ #3 原局无水但用神仍为水——需求决定谁是用神，根气只定质量 (5.2726ms)
+✔ B5 用神保持水（保真锚点） (5.4723ms)
+✔ B6 冬火调候不顶替结构用神（F8 封顶铁律） (5.5649ms)
+✔ P1 后输出契约不变：用神恒1、用神∈喜神、喜忌不重叠 (42.4724ms)
+✔ buildFromPillars preserves entered pillars and derives dependent fields (10.6807ms)
+✔ buildFromPillars keeps a null birth date for a base chart (3.4797ms)
+✔ direct result query restores all entered pillars and timing metadata (4.6415ms)
+✔ matched direct result keeps entered chart while candidate timing drives DaYun (2.0484ms)
+✔ unknown direct timing renders base chart and hides timing-only sections (2.9014ms)
+✔ unknown direct initialization leaves timing data absent for AI consumers (2.2527ms)
+✔ live AI context omits fabricated timing only for unknown direct charts (6.9351ms)
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+✔ feedback API stores normalized legacy/profile payload through shared storage without filesystem append (6.3018ms)
+▶ feedback API rejects invalid field types, lengths, page syntax, and context shape before storage
+  ✔ missing message (0.2914ms)
+  ✔ non-string message (0.1578ms)
+  ✔ blank message (0.2352ms)
+  ✔ message over 500 characters (0.1678ms)
+  ✔ non-string contact (0.1235ms)
+  ✔ contact over 100 characters (0.1429ms)
+  ✔ non-string page (0.1338ms)
+  ✔ page over 32 characters (0.1747ms)
+  ✔ page with unsupported characters (0.3099ms)
+  ✔ array context (0.1655ms)
+  ✔ null context (0.1226ms)
+  ✔ context over 1000 UTF-8 bytes (0.0882ms)
+✔ feedback API rejects invalid field types, lengths, page syntax, and context shape before storage (4.5752ms)
+▶ feedback API returns 413 when the raw, declared, or serialized body exceeds 4096 UTF-8 bytes
+  ✔ raw body (0.2123ms)
+  ✔ content length (0.0803ms)
+  ✔ serialized body (0.0853ms)
+✔ feedback API returns 413 when the raw, declared, or serialized body exceeds 4096 UTF-8 bytes (1.1294ms)
+✔ feedback API accepts exact field and context limits after trimming (0.538ms)
+✔ feedback API rate limits the sixth accepted attempt in a rolling ten-minute window (0.4877ms)
+▶ feedback API returns 503 when production durable storage is unavailable or rejects the write
+  ✔ unavailable during recent count (0.4519ms)
+  ✔ unavailable during create (0.3388ms)
+✔ feedback API returns 503 when production durable storage is unavailable or rejects the write (1.1838ms)
+✔ local feedback fallback remains process-memory only and counts the same rolling window (1.5646ms)
+✔ production feedback storage fails closed when Supabase is not configured (1.8526ms)
+✔ memory feedback storage atomically refuses concurrent attempts beyond the limit (1.5861ms)
+✔ configured feedback storage counts through the table and atomically inserts through Supabase RPC (1.829ms)
+✔ bazi input retains every calculation control and script (2.0941ms)
+✔ face and palm retain their file inputs and submit handlers (1.634ms)
+✔ fengshui retains dynamic photo input creation and analysis request (0.6441ms)
+✔ form light theme covers selected controls, uploads, disabled states and touch targets (0.6542ms)
+✔ every tool input page loads the form light theme after the shared light theme (5.0762ms)
+✔ calendar preview handlers tolerate pages without the optional preview node (1.5976ms)
+✔ shared birth normalization preserves true-solar cross-day semantics (20.0514ms)
+✖ Zi-hour day change affects only day/hour pillars at the shared boundary (10.6027ms)
+✔ Hepan parser retains every timing option used by personal charts (1.5744ms)
+✔ Hepan uses the exact personal professional facts for the same chart (62.9083ms)
+✔ Hepan person keeps ShenSha in the string format consumed by the analysis engine (19.8336ms)
+✔ Hepan strength copy uses the personal professional level without undefined fields (21.4558ms)
+✔ homepage scripts do not reference removed hexagram loader nodes (1.6682ms)
+✔ homepage keeps the agreed intro duration (2.2881ms)
+✖ homepage uses v3 mobile artwork while preserving the v2 desktop artwork (6.3609ms)
+✔ mobile hero fits the portrait artwork to the viewport without intrinsic-size cropping (1.5917ms)
+✔ homepage presents the generated artwork without grey post-processing (0.7206ms)
+✔ homepage has mobile navigation hooks and a two-column mobile feature grid (0.3811ms)
+✔ hero description uses a stronger readable color (0.2263ms)
+✔ every public page loads the light theme after existing styles (15.7499ms)
+✔ light theme defines the approved palette and light color scheme (0.9615ms)
+✔ shared light theme suppresses dynamic background canvas while the homepage restores its restrained canvas (8.5894ms)
+✔ light theme covers the real chat composer controls and states (1.2102ms)
+✔ light page theme overrides the real Zhishi chat surfaces (1.0998ms)
+✔ light page theme keeps secondary Zhishi chat content legible (0.4412ms)
+✔ all Zhishi chat pages preserve the runtime message class creation path (1.0929ms)
+✔ light page theme keeps the Zhishi share pricing link readable (0.5059ms)
+✔ inline legacy navigations expose a light-theme hook and light dropdown (2.4445ms)
+✔ homepage exposes the approved ten uniform tools and no standalone AI consultation CTA (4.1943ms)
+✔ homepage navigation uses five practical categories and retains every tool route (2.4718ms)
+✔ homepage more menu uses a semantic button with an explicit ARIA relationship (1.4823ms)
+✔ homepage more menu script supports keyboard, outside click, focus, mouse and touch-safe click hooks (1.1999ms)
+✔ homepage adds three usage steps before the four trust cards and keeps two direct bottom CTAs (1.9029ms)
+✔ homepage loads a dedicated responsive light stylesheet after the shared theme (1.5568ms)
+✔ light UI has keyboard focus, mobile touch, and intentional table scrolling (1.2982ms)
+✔ decorative reduced-motion rules do not remove the intro contract (1.5254ms)
+✔ 2013 lunar new year converts back to 2013-02-10 (3.3191ms)
+✔ rejects a leap-month flag when that year has no matching leap month (1.6459ms)
+✔ rejects a lunar day beyond that month length (2.3732ms)
+✔ reports the day count for the selected ordinary or leap lunar month (1.1933ms)
+✔ rejects non-numeric lunar date fields (1.4111ms)
+✔ every supported solar day round-trips through lunar conversion (507.1403ms)
+✔ known historical and future correction dates match authoritative lunar dates (1.585ms)
+✔ lunar day selector honors the selected leap-month state (11.2674ms)
+✔ all chat pages use the shared visual viewport height and mobile-safe input type (3.219ms)
+✔ viewport helper tracks visualViewport changes and keeps messages at the latest item (1.4982ms)
+✔ real report builder resolves every configured result.html section in export order (35.7358ms)
+✖ result page loads local PDF dependencies in order and exposes one accessible action sheet (1.9695ms)
+✔ mobile generation opens immediately and prepares the current report with progress (4.0018ms)
+✔ mobile export entry prepares in-page without printing or opening a new tab (1.9087ms)
+✔ prepared PDF downloads only from its dedicated enabled button (2.3168ms)
+✔ share re-checks support for the exact prepared file before invoking Web Share (10.8427ms)
+✔ generation failure keeps a visible HTML fallback and usable close control (3.2572ms)
+✔ share cancellation leaves the prepared PDF ready for download (3.9048ms)
+✔ share stays disabled when the browser has no share action (2.2395ms)
+✔ closing and reopening ignores an older success and its stale progress (4.5847ms)
+✔ a stale rejection cannot clear a newer prepared PDF (3.4139ms)
+✔ closing active generation aborts work and resets actions without showing a failure (2.3475ms)
+✔ closing a completed generation releases its file and disables later download or share (2.948ms)
+✔ replacement aborts and settles the previous pipeline before another one starts (5.3158ms)
+✔ open sheet traps focus and suppresses then restores background interaction (2.1321ms)
+✔ desktop export retains the existing new-tab print-to-PDF route (2.0033ms)
+✖ service worker rolls the mobile PDF cache to v7 and precaches all local PDF scripts (1.1331ms)
+✔ paipan exposes a direct-pillar mode without location controls inside it (2.8968ms)
+✖ direct-pillar dependencies load in calculation order before main (1.1885ms)
+✔ direct-pillar mode scopes calendar corrections and maps all three panels (2.9668ms)
+✔ matched candidates serialize pillars plus the selected candidate timing (3.8512ms)
+✔ base-chart continuation keeps pillars and omits every fabricated date field (1.7909ms)
+✔ switching modes executes panel, tab, required-field, and calendar-control state changes (2.4149ms)
+✔ clicking a rendered candidate executes direct-result navigation without calendar fields (2.2591ms)
+✔ an invalid resubmission dismisses a stale candidate chooser (1.8591ms)
+✔ candidate chooser and pillar controls keep responsive touch targets (0.6642ms)
+✔ direct-pillar markup preserves four columns and emphasizes the day pillar (1.2131ms)
+✔ calendar-only rows stay visually absent when direct mode sets hidden (0.4646ms)
+✔ direct pillar selects meet the 44px target before mobile overrides apply (0.4286ms)
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+[callback] 积分写入成功: credit10_u12_abc_123 → HHYBPCSV
+[callback] 写入重试 1/3: credit10_u12_abc_123
+[callback] 写入重试 2/3: credit10_u12_abc_123
+[callback] 写入重试 3/3: credit10_u12_abc_123
+[callback] 积分写入失败（已重试3次）: credit10_u12_abc_123 7ZKLXD5Z
+[callback] 订单金额不匹配: credit10_u12_abc_123 0.01
+[callback] report order amount mismatch: bazi_example_abcdef 0.01
+✔ create-order preserves the gateway QR content and QR image as different fields (12.2031ms)
+✔ create-order reports a gateway failure instead of turning mapi.php into a payment QR (2.4959ms)
+✔ create-order converts a Chinese hepan identity into a safe short gateway order number (2.3834ms)
+✔ create-order ignores a browser-supplied BaZi report price and charges the fixed server price (8.5993ms)
+✔ unknown-timing direct-pillar order returns to the complete entered chart identity (2.7268ms)
+✔ matched direct-pillar order returns with pillars and matched timing fields (1.6237ms)
+✔ logged-in BaZi order is stored against the authenticated account (1.7538ms)
+✔ already-owned BaZi report returns without calling the gateway (0.9426ms)
+✔ guest BaZi order remains allowed with a null user_id (1.7322ms)
+✔ callback signature verification ignores empty fields documented as unsigned (2.1037ms)
+✔ callback asks the gateway to retry when a paid credit order cannot be stored (1.8015ms)
+✔ callback never grants credits for a signed transaction that is not successful (0.9114ms)
+✔ callback refuses to grant a product whose paid amount does not match its fixed price (0.9191ms)
+✔ callback requires an explicit TRADE_SUCCESS status before granting credits (0.7956ms)
+✔ valid current Hepan callback acknowledges success without a persisted report row (0.7625ms)
+✔ signed paid BaZi callback marks its report order paid (0.9242ms)
+✔ report callback with wrong amount does not grant access (0.9498ms)
+✔ check-order never mints credits from polling when the callback record is missing (1.5202ms)
+✔ paid report polling repairs a missed callback (1.5749ms)
+✔ report polling does not repair a pending order stored with a different report type (1.0546ms)
+✔ check-order rejects an unsupported legacy report order without querying the gateway (0.8505ms)
+✔ check-order restores a paid legacy Hepan report only with its exact product name and price (1.2767ms)
+✔ check-order refuses a legacy Hepan order with an unrelated product name (0.9909ms)
+✔ check-order only unlocks a paid BaZi report at its fixed price (0.9234ms)
+✔ check-order refuses a paid report whose gateway amount is wrong (0.8533ms)
+✔ check-order requires the gateway to return the exact report order number (0.83ms)
+✔ check-order refuses to unlock a different report type (0.7864ms)
+✔ browser payment resolver displays a gateway QR image without encoding the image URL (1.4854ms)
+✔ browser payment resolver encodes QR content exactly once when no image is supplied (0.3149ms)
+✔ browser payment resolver refuses the mapi API endpoint as a customer payment destination (0.1569ms)
+✖ desktop report payment renders the gateway QR image instead of treating QR content as an image (4.331ms)
+✔ purchased account access removes the report paywall before any new order is created (2.4453ms)
+✔ lunar result URL keeps calendar identity in the logged-in report access request (3.0122ms)
+✔ logged-in local guest unlock still checks account access before granting report access (2.534ms)
+✔ account access verification shows a blocking gate while its request is pending (1.5919ms)
+✔ rejected or timed-out account access replaces the gate with a locked paywall (1.4152ms)
+✔ rejected account access replaces the gate with a locked paywall (1.4718ms)
+✔ guest unlocks for direct pillar charts remain isolated by all four pillars (1.5665ms)
+✔ ordinary report local keys ignore absent and explicit default calendar fields (1.4125ms)
+✔ guest ordinary reports restore old pipe keys but direct pillars never do (1.6371ms)
+✖ hepan deep report creates a hepan order instead of falling through to the generic report branch (2.0597ms)
+✔ payment pages load the shared QR resolver before their payment code (1.5216ms)
+✔ each deep-report paywall polls and unlocks only its own report type (0.7379ms)
+✖ service worker rolls the static cache so deployed payment scripts replace stale copies (2.5412ms)
+✔ bazi paywall sends account credentials and supports account report recovery (0.9533ms)
+✔ html2canvas stays exactly pinned and its local bundle matches installed bytes (1.6191ms)
+✔ jspdf stays exactly pinned and its local bundle matches installed bytes (1.1563ms)
+✔ normalizes four legal sexagenary pairs from strings and objects (2.8322ms)
+✔ rejects an impossible yin-yang pair by pillar position (1.1348ms)
+✔ serializes and restores only the shared direct-pillar query keys (1.8086ms)
+✔ finds a known source date and returns at most two newest matches (4228.8153ms)
+✔ finds a pre-Li-Chun date whose year pillar belongs to the preceding solar year (3869.1188ms)
+✔ zi hour uses a midnight midpoint and an explicit cross-day label (0.15ms)
+✔ never returns a future or older-than-200-year candidate (3860.8377ms)
+✔ limits a normal 200-year search to fewer than 5,000 calculator calls (3898.8938ms)
+✔ homepage dependency traversal follows root-relative local scripts, styles, and imports (10.6121ms)
+✔ pure Node WebP container inspection extracts VP8, VP8L, and VP8X dimensions (0.5587ms)
+✔ browser decoder validates every poster asset and rejects a structurally headered WebP stub (1805.4899ms)
+✔ pure Node WebP container inspection rejects corrupt signatures and truncated containers (0.43ms)
+✔ pure Node WebP container inspection rejects non-zero RIFF chunk padding (0.2013ms)
+✔ pure Node WebP container inspection rejects invalid VP8X reserved fields and canvas area (0.2637ms)
+✔ pure Node WebP container inspection rejects zero and contradictory image dimensions (0.233ms)
+✔ pure Node WebP container inspection rejects truncated VP8 family bitstreams (0.3211ms)
+✔ pure Node WebP container inspection rejects duplicate, late, or animated VP8X headers (0.29ms)
+✔ poster manifest provides one safe local asset for each day-master and gender (6.0145ms)
+✔ homepage dependency graph excludes poster implementation and assets (3.78ms)
+✔ configuration defers every poster resource until the first open, then renders only the selected background once (1.9288ms)
+✔ a new configuration serializes a fresh selected render so a stale render cannot win (2.2481ms)
+✔ a missing or malformed selected entry is a typed retry failure without rendering or leaving the result page (1.7212ms)
+✔ ships the two poster WOFF2 assets and both SIL OFL notices (2.5906ms)
+✔ poster font files are non-empty complete WOFF2 files (1.221ms)
+✔ defines ZhishiBrush and ZhishiSerif with local poster asset URLs only (1.9801ms)
+✔ both poster fonts cover every character rendered by the poster templates (73.2394ms)
+✔ renders the fixed poster after image and font readiness in the required draw order (6.1079ms)
+✔ returns typed readiness failures without drawing (2.3663ms)
+✔ returns the first readiness failure even when the other readiness task never settles (1.4436ms)
+✔ loads the poster font declarations and glyphs before awaiting browser font readiness (1.7851ms)
+✔ exports WebP first and falls back to JPEG while cleaning temporary download resources (1.8589ms)
+✔ keeps an explicit export filename when WebP succeeds (1.4745ms)
+✔ returns EXPORT_FAILED when neither export format produces a blob (2.6052ms)
+✔ returns RENDER_FAILED for unavailable or throwing canvas contexts (1.3924ms)
+✔ result page adds one isolated poster entry and dialog without changing the report structure (4.637ms)
+✔ result page loads poster dependencies in order before existing result integrations (0.9072ms)
+✔ result render configures the poster from the assigned bazi, gender, and computed pattern (0.8582ms)
+✔ configure resolves and stores the model without fetching, loading, or rendering (2.3954ms)
+✔ open lazily resolves only the selected background and renders it once (1.9058ms)
+✔ successful render hides the status so the canvas is the only visible preview item (1.289ms)
+✔ typed render failure shows retry and retry can recover without closing the result page (6.2294ms)
+✔ close and Escape restore focus and the previous body scroll state (1.7199ms)
+✔ repeated open reuses one in-flight render and never duplicates listeners (2.0776ms)
+✔ reconfiguration during an in-flight render serializes the new selected render (2.1418ms)
+✔ typed download failure keeps the modal open and preserves retry/close controls (1.7629ms)
+✔ synchronous download exceptions become typed failures and restore the download control (1.8833ms)
+✔ Tab and Shift+Tab keep keyboard focus within the open modal controls (1.3333ms)
+✔ poster controls remain touch-sized and the preview is capped to the viewport (0.5319ms)
+✔ resolves every supported day-master and pattern pair to complete unique copy (5.6244ms)
+✔ keeps the approved 乙木正官 copy verbatim (1.1701ms)
+✔ accepts the computed pattern object used by the live result page (2.0282ms)
+✔ returns deterministic core copy across repeated calls and genders (1.5159ms)
+✔ normalizes empty and unknown patterns while resolving future keyword names deterministically (1.4376ms)
+✔ treats Object prototype property names and ordinary unknown names as 杂格 (1.1624ms)
+✔ uses gender only for the identity label and background variant (1.2834ms)
+✔ source contract excludes random, seeded, hashed, cycling and refresh-based variation (1.072ms)
+✔ professional analysis waits while chart data is null (2.6687ms)
+✔ customer service card stays in normal page flow outside account-rendered content (3.6094ms)
+✔ copyProfileWechat copies through Clipboard API and restores the action label (2.9172ms)
+✔ copyProfileWechat falls back to a temporary textarea when Clipboard API rejects (1.4721ms)
+✔ rapid repeated copy always restores the original action label after the latest timer (1.4004ms)
+✔ feedback dialog exposes labelled accessible fields, controls, and inline status (1.4357ms)
+✔ empty or whitespace-only feedback stays local and explains what is required (1.8292ms)
+✔ valid guest feedback posts the exact profile payload and shows success (1.4986ms)
+✔ network, non-2xx, and API error responses show the fallback without rejecting (3.4375ms)
+✔ duplicate submit attempts share one in-flight request and expose submitting state (1.4171ms)
+✔ dialog opens only on demand, focuses the message, closes on Escape, and restores opener focus (1.7239ms)
+✔ dialog wraps Tab and Shift+Tab among visible enabled controls (1.4007ms)
+✔ explicit close restores prior background state and opener focus (1.3316ms)
+✔ successful submission keeps confirmation visible, clears fields, and leaves manual close available (1.3826ms)
+✔ purchased reports escape fields and restore normalized parameters in their own result URLs (13.7495ms)
+✔ a rejected report request leaves credits and saved charts visible (2.6814ms)
+✔ a normalized solar report maps enabled timing settings to result URL flags (2.6827ms)
+✔ a rejected credits request leaves reports and saved charts visible (2.1605ms)
+✔ a rejected saved charts request leaves credits and reports visible (2.1671ms)
+✔ result chart data stores the shared renyuan evidence (1.9246ms)
+✖ result page cache-busts the repaired renderer bundle (4.0155ms)
+✔ strength renderer appends the shared note after the canonical detail (0.5838ms)
+✔ the visible professional card uses the same shared renyuan evidence (0.3535ms)
+✔ AI context receives the exact shared renyuan text as reference-only evidence (0.4446ms)
+✔ report access rejects a missing token with 401 (6.9809ms)
+✔ report access returns true only for the authenticated canonical key (3.2669ms)
+✔ report access returns false with 200 for a valid report that is not purchased (0.8963ms)
+✔ report access rejects invalid parameters with 400 (2.9833ms)
+✔ report list returns only the safe paid-row shape (1.2382ms)
+✔ the api/reports compatibility entry serves the report list handler (1.8117ms)
+✔ report list rejects a missing token with 401 (4.3415ms)
+✔ equivalent BaZi parameters produce one stable key (2.1755ms)
+✔ every calculation-affecting field changes the report key (0.7026ms)
+✔ legacy zishi and solar URL parameters map to calculation settings and change the report key (0.3308ms)
+✔ a normalized lunar report keeps its key when normalized again (0.2724ms)
+✔ direct-pillar reports are keyed by entered pillars and gender (1.4394ms)
+✔ direct-pillar report keys ignore timing metadata, including matched time changes (0.4675ms)
+✔ invalid gender or incomplete pillars are rejected (0.6776ms)
+[store] 已从文件加载 0 条兑换码记录
+[store] 已从文件加载 0 条兑换码记录
+✔ createReportOrder stores a pending row without overwriting a paid row (5.4353ms)
+✔ markReportOrderPaid is idempotent (1.2858ms)
+✔ concurrent markReportOrderPaid preserves the first paid_at (2.3926ms)
+✔ hasPaidReport requires the same user, type and key (0.6412ms)
+✔ renders report blocks in DOM order and reports 100 percent progress (4.8442ms)
+✔ slices a tall canvas across A4 pages without distorting any slice (1.4382ms)
+✔ aborting after html2canvas stops later block renders and releases canvas and iframe state (5.5698ms)
+✔ aborting between tall-canvas slices stops PDF insertion and releases slice state (1.2851ms)
+✔ an already-aborted signal rejects before creating an iframe (0.5783ms)
+✔ an abort racing with html2canvas rejection remains abort-classified (0.5208ms)
+✔ production JPEG boundary creates a real application/pdf blob with jsPDF (63.586ms)
+✔ removes the export iframe and wraps rendering errors in Chinese (0.2554ms)
+✔ downloads through a temporary anchor and revokes the object URL after a delay (0.2921ms)
+✔ bazi result retains the complete ordered long-report structure (3.3683ms)
+✔ bazi result loads direct-pillar parsing before result initialization (0.7712ms)
+✔ hepan result keeps its existing result and AI integration hooks (0.7194ms)
+✔ result-capable pages load the result skin after every existing stylesheet (3.6122ms)
+✔ result skin is additive and cannot convert or hide the existing layout (0.8723ms)
+✔ result skin uses opaque paper cells and readable ink text (0.5164ms)
+✔ result skin overrides legacy child ink and scopes opaque chart surfaces (0.5855ms)
+✔ result skin repairs actual drawer surfaces, subdued text, and past-state legibility (0.5453ms)
+✔ result skin gives Ziwei and Liuren emitted children semantic dark ink (0.5901ms)
+✔ result skin directly repairs every remaining Hepan, Ziwei, and Liuren child cascade (0.7126ms)
+✔ feedback rejects an oversized Content-Length before the request body is buffered (63.7619ms)
+✔ feedback rejects a chunked request as soon as streamed bytes cross 4096 (2.6206ms)
+✔ feedback parses and invokes its handler for an exactly 4096-byte body (4.4181ms)
+✔ other API routes retain request bodies larger than 4096 bytes (3.3476ms)
+✔ ordinary API routes reject a declared body larger than 1 MiB before buffering (3.2334ms)
+✔ single-image routes allow 10 MiB but reject anything larger before buffering (6.962ms)
+✔ multi-image fengshui route rejects anything larger than 30 MiB before buffering (2.5321ms)
+✔ production API requests reuse loaded modules instead of recreating module timers (1.1164ms)
+✔ fatal process errors are logged and allowed to terminate for PM2 recovery (0.3722ms)
+✔ webhook deployment restarts PM2 after pulling changed code (0.2181ms)
+✔ solar submit retains the original parameter names (1.3643ms)
+✔ ordinary result initialization still uses calculate then calculateDaYun (0.9208ms)
+✖ static assets have correct content type and browser caching (96.0788ms)
+✔ server.js serves site media with explicit MIME types (0.9427ms)
+✔ dev-server.js serves site media with explicit MIME types (0.4305ms)
+✔ face-reading.js never emits an API key prefix in diagnostic logs (1.1834ms)
+✔ palm-reading.js never emits an API key prefix in diagnostic logs (0.3178ms)
+✔ rejects impossible Gregorian dates before chart generation (2.171ms)
+✔ maps every clock hour to the traditional two-hour branch (0.972ms)
+✖ distinguishes late Zi hour from early Zi hour for iztro (6.3798ms)
+✔ moves the civil date when true solar time crosses midnight (2.8283ms)
+✔ Ziwei normalization is an adapter over the BaZi birth boundary (2.9555ms)
+✔ Ziwei page loads the BaZi calculator before its normalization adapter (0.899ms)
+✔ Ziwei exposes public and lunar input without a direct-pillar mode (0.4837ms)
+✔ Ziwei corrections keep true solar time on and Zi-hour rollover off by default (0.7423ms)
+✔ reads current iztro soul/body fields and derives Yin-Yang gender label (43.8628ms)
+✔ collects four transformations from both major and minor stars (112.5037ms)
+✔ surrounded evidence includes target, two trines, and opposite palace (26.7801ms)
+✔ empty-palace borrowing returns opposite evidence without a deterministic conclusion (175.2804ms)
+✔ Ziwei renderer and saved AI data use the shared complete transformation list (1.0108ms)
+✔ Ziwei analysis is evidence based instead of fixed good-bad scoring (0.5593ms)
+✔ empty-palace copy states borrowing evidence without inferring strength or timing (0.4418ms)
+✔ Ziwei time scopes and brightness come directly from iztro (0.6125ms)
+ℹ tests 374
+ℹ suites 0
+ℹ pass 360
+ℹ fail 14
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16259.7495
+
+✖ failing tests:
+
+test at _za_test.js:1:1
+✖ _za_test.js (84.4612ms)
+  'test failed'
+
+test at tests\bazi-professional-core.test.js:126:1
+✖ shared birth normalization separates true-solar civil-date changes from Zi-hour pillar changes (6.409ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\bazi-professional-core.test.js:139:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\bazi-yongji-report.test.js:19:1
+✖ 所有八字入口加载同一版核心取用脚本 (2.4288ms)
+  AssertionError [ERR_ASSERTION]: paipan.html must load the single-core-yongshen bundle
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\bazi-yongji-report.test.js:22:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.start (node:internal/test_runner/test:1177:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: `<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>知时 - 传统文化探索工具</title>\n<meta name="description" content="知时，传统文化探索工具。输入生日，获取你的性格倾向、人生节奏参考。仅供娱乐交流。">\n<style>\n/* ============================================\n   知时 — 墨渊星汉 · AI 命理\n   深空蓝黑 · 流金辉光 · 玻璃质感 · 星河流转\n   ============================================ */\n\n*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}\n:root{\n  --ink:#0e0c0a;\n  --paper:#181612;\n  --card:rgba(28,26,22,.82);\n  --gold:#c9a84c;\n  --gold-l:#e8cf70;\n  --gold-d:#8a6d28;\n  --gold-glow:rgba(201,168,76,.14);\n  --star:#8a8070;\n  --star-dim:#5a5045;\n  --star-glow:rgba(180,160,140,.1);\n  --mist:rgba(170,160,145,.35);\n  --mist-dim:rgba(160,150,135,.16);\n  --tx:#d8d0c0;\n  --tx2:#a89880;\n  --tx3:#8a8078;\n  --bd:rgba(180,160,140,.08);\n  --bd2:rgba(180,160,140,.2);\n  --bd-star:rgba(180,160,140,.08);\n  --radius:12px;\n  --red:#c41e3a;\n}\nhtml{font-size:16px;-webkit-font-smoothing:antialiased}\nbody{\n  font-family:'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;\n  background:var(--ink);\n  color:var(--tx);\n  min-height:100vh;overflow-x:hidden;\n}\nbody::before{\n  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;\n  background:\n    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(180,160,140,.03) 0%, transparent 60%),\n    radial-gradient(ellipse 50% 40% at 70% 70%, rgba(201,168,76,.02) 0%, transparent 50%);\n  opacity:.7;\n}\n\n/* === Background Canvas === */\n.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none}\n#bgCanvas{width:100%;height:100%;opacity:.6}\n.bg-overlay{\n  position:absolute;inset:0;\n  background:\n    radial-gradient(ellipse 80% 50% at 50% 20%,rgba(201,168,76,.04) 0%,transparent 60%),\n    radial-gradient(ellipse 60% 60% at 50% 80%,rgba(10,8,4,.9) 0%,transparent 50%),\n    linear-gradient(180deg,var(--ink) 0%,var(--paper) 100%);\n}\n\n/* === App Shell === */\n.app{\n  position:relative;z-index:1;\n  max-width:1000px;margin:0 auto;\n  padding:40px 20px 60px;\n  display:flex;flex-direction:column;align-items:center;\n  min-height:100vh;\n  animation:fadeUp 1s ease-out;\n}\n@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}\n\n/* === Header === */\n.header{text-align:center;margin-bottom:32px;width:100%}\n.header-line{\n  width:88px;height:1px;\n  background:linear-gradient(90deg,transparent,var(--gold-d),transparent);\n  margin:0 auto 22px;opacity:.6;\n}\n.header h1{\n  font-size:48px;font-weight:900;letter-spacing:22px;\n  background:linear-gradient(180deg,var(--gold-l) 0%,var(--gold) 50%,var(--gold-d) 100%);\n  -webkit-background-clip:text;-webkit-text-fill-color:transparent;\n  background-clip:text;\n  filter:drop-shadow(0 0 32px var(--gold-glow));\n  margin-bottom:10px;\n}\n.header h1 a{color:inherit;text-decoration:none}\n.tagline{\n  font-size:14px;color:var(--mist);letter-spacing:8px;font-weight:400;\n}\n\n/* === Top Bar: Credits + Buy === */\n.topbar{\n  width:100%;display:flex;justify-content:flex-end;align-items:center;gap:12px;\n  margin-bottom:24px;\n}\n.credits-badge{\n  display:flex;align-items:center;gap:6px;\n  background:var(--card);border:1px solid var(--bd);border-radius:20px;\n  padding:8px 18px;font-size:14px;\n}\n.credits-badge .count{color:var(--gold-l);font-weight:700;font-size:1.1em}\n.btn{\n  display:inline-flex;align-items:center;gap:6px;\n  padding:10px 22px;border-radius:20px;border:none;\n  font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;\n  transition:all .3s;letter-spacing:2px;\n}\n.btn-gold{\n  background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 50%,var(--gold-l) 100%);\n  background-size:200% 100%;\n  color:var(--ink);\n  box-shadow:0 4px 18px rgba(201,168,76,.2);\n  animation:shimmer 3s ease-in-out infinite;\n}\n@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}\n.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(201,168,76,.3)}\n.btn-gold:disabled{opacity:.4;cursor:not-allowed;transform:none;animation:none}\n.btn-outline{background:transparent;border:1px solid var(--bd2);color:var(--gold-l)}\n.btn-outline:hover{background:rgba(201,168,76,.06)}\n.btn-sm{padding:6px 14px;font-size:12px;letter-spacing:1px}\n.btn-full{width:100%;justify-content:center;padding:14px 24px;font-size:16px}\n\n/* === Main Layout: two columns === */\n.main-layout{\n  width:100%;display:grid;\n  grid-template-columns:380px 1fr;\n  gap:24px;align-items:start;\n}\n\n/* === Card === */\n.card{\n  background:var(--card);\n  border:1px solid var(--bd);\n  border-radius:var(--radius);\n  padding:28px 24px;\n  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);\n  box-shadow:0 0 80px rgba(0,0,0,.5),0 0 0 1px rgba(201,168,76,.04) inset;\n  position:relative;overflow:hidden;\n}\n.card::before{\n  content:'';position:absolute;top:0;left:0;right:0;height:1px;\n  background:linear-gradient(90deg,transparent,rgba(201,168,76,.15),transparent);\n}\n.card-title{\n  font-size:14px;color:var(--gold-l);letter-spacing:6px;font-weight:600;\n  margin-bottom:20px;text-align:center;\n}\n\n/* === Side Panel === */\n.side-panel{display:flex;flex-direction:column;gap:20px}\n\n/* === Bazi Input Form === */\n.mode-tabs{\n  display:flex;gap:4px;margin-bottom:20px;\n  background:rgba(255,255,255,.02);border-radius:8px;padding:3px;\n}\n.mode-tab{\n  flex:1;padding:10px 0;\n  background:none;border:none;border-radius:6px;\n  color:var(--tx3);font-size:13px;font-weight:600;\n  letter-spacing:4px;cursor:pointer;font-family:inherit;\n  transition:all .3s;\n}\n.mode-tab:hover{color:var(--tx2)}\n.mode-tab.active{\n  color:var(--gold-l);\n  background:rgba(201,168,76,.08);\n  box-shadow:0 0 16px rgba(201,168,76,.06);\n}\n.mode-panel{display:none;animation:panelIn .4s ease-out}\n.mode-panel.active{display:block}\n@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}\n\n/* === Form Rows === */\n.row{display:flex;gap:12px;margin-bottom:14px}\n.row.two .field{flex:1}\n.field{flex:1;min-width:0}\n.field label{\n  display:block;font-size:10px;color:var(--mist);letter-spacing:3px;\n  margin-bottom:6px;font-weight:500;\n}\n.field select{\n  width:100%;padding:12px 34px 12px 12px;\n  font-size:14px;font-family:inherit;font-weight:500;\n  color:var(--tx);background:rgba(30,28,24,.6);\n  border:1px solid rgba(200,190,170,.06);border-radius:8px;\n  cursor:pointer;\n  appearance:none;-webkit-appearance:none;\n  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23989880' opacity='.4'/%3E%3C/svg%3E");\n  background-repeat:no-repeat;background-position:right 12px center;\n  transition:all .3s;\n}\n.field select:hover{border-color:rgba(255,255,255,.1);background:rgba(24,24,42,.7)}\n.field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 20px var(--gold-glow)}\n.field select:disabled{opacity:.3;cursor:not-allowed}\n.field select option{background:#141428;color:var(--tx)}\n\n.minute-inp{\n  width:100%;padding:12px 14px;\n  font-size:14px;font-family:inherit;font-weight:500;\n  color:var(--tx);background:rgba(30,28,24,.6);\n  border:1px solid rgba(200,190,170,.06);border-radius:8px;\n  text-align:center;letter-spacing:2px;\n  transition:all .3s;\n  -moz-appearance:textfield;\n}\n.minute-inp::-webkit-inner-spin-button,.minute-inp::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}\n.minute-inp:focus{outline:none;border-color:var(--gold);box-shadow:0 0 20px var(--gold-glow)}\n.minute-inp::placeholder{color:var(--tx3);opacity:.4}\n.minute-hint{display:block;font-size:10px;color:var(--tx3);opacity:.4;margin-top:3px;text-align:center}\n\n/* Radio */\n.radio-group{display:flex;gap:6px}\n.radio{\n  flex:1;display:flex;align-items:center;justify-content:center;\n  padding:11px 6px;\n  background:rgba(30,28,24,.5);border:1px solid rgba(200,190,170,.05);border-radius:8px;\n  cursor:pointer;transition:all .35s;font-size:13px;color:var(--mist);\n}\n.radio:hover{border-color:rgba(255,255,255,.1)}\n.radio input{display:none}\n.radio:has(input:checked){\n  border-color:var(--gold);background:rgba(201,168,76,.08);\n  color:var(--gold-l);box-shadow:0 0 24px var(--gold-glow);\n}\n.radio span{pointer-events:none;letter-spacing:1px}\n\n/* paipan.html 的起盘推演按钮 */\n.submit{\n  width:100%;padding:16px;margin-top:12px;\n  font-family:inherit;font-size:17px;font-weight:700;letter-spacing:10px;\n  color:var(--ink);\n  background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 40%,var(--gold-l) 100%);\n  background-size:200% 100%;\n  border:none;border-radius:8px;cursor:pointer;\n  transition:all .4s;\n  box-shadow:0 4px 24px rgba(201,168,76,.2);\n  animation:shimmer 3s ease-in-out infinite;\n}\n.submit:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.3)}\n.submit:active{transform:translateY(0);box-shadow:0 2px 12px rgba(201,168,76,.15)}\n.submit.loading{pointer-events:none;opacity:.65}\n\n.submit-btn{\n  width:100%;padding:14px;margin-top:8px;\n  font-family:inherit;font-size:15px;font-weight:700;letter-spacing:8px;\n  color:var(--ink);\n  background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 40%,var(--gold-l) 100%);\n  background-size:200% 100%;\n  border:none;border-radius:8px;cursor:pointer;\n  transition:all .4s;\n  box-shadow:0 4px 24px rgba(201,168,76,.2);\n  animation:shimmer 3s ease-in-out infinite;\n}\n.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(201,168,76,.3)}\n.submit-btn:active{transform:translateY(0)}\n\n/* === Buy Card === */\n.buy-card{text-align:center}\n.buy-card .price{\n  font-size:2.8rem;font-weight:900;color:var(--gold-l);margin:8px 0;\n  letter-spacing:2px;\n}\n.buy-card .price small{font-size:.35em;color:var(--tx2);font-weight:400}\n.buy-card .buy-desc{color:var(--tx2);font-size:13px;margin-bottom:18px;letter-spacing:1px}\n.buy-card .features{\n  list-style:none;text-align:left;margin-bottom:20px;font-size:13px;\n}\n.buy-card .features li{\n  padding:4px 0;padding-left:18px;position:relative;color:var(--tx2);\n}\n.buy-card .features li::before{\n  content:`... 37778 more characters,
+    expected: /js\/bazi\.js\?v=20260813c/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\hepan-professional-consistency.test.js:47:1
+✖ Zi-hour day change affects only day/hour pillars at the shared boundary (10.6027ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      '癸卯',
+      '乙丑',
+  +   '戊寅',
+  +   '壬子'
+  -   '己卯',
+  -   '甲子'
+    ]
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\hepan-professional-consistency.test.js:55:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '癸卯', '乙丑', '戊寅', '壬子' ],
+    expected: [ '癸卯', '乙丑', '己卯', '甲子' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\homepage-visual-contract.test.js:14:1
+✖ homepage uses v3 mobile artwork while preserving the v2 desktop artwork (6.3609ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(fs.existsSync(path.join(root, 'images', 'zhishi-hero-ink-mobile-v3.png')))
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\homepage-visual-contract.test.js:18:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\mobile-report-pdf.test.js:263:1
+✖ result page loads local PDF dependencies in order and exposes one accessible action sheet (1.9695ms)
+  AssertionError [ERR_ASSERTION]: result page must load /js/vendor/html2canvas.min.js
+      at C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\mobile-report-pdf.test.js:274:12
+      at Array.forEach (<anonymous>)
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\mobile-report-pdf.test.js:273:11)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\mobile-report-pdf.test.js:658:1
+✖ service worker rolls the mobile PDF cache to v7 and precaches all local PDF scripts (1.1331ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\mobile-report-pdf.test.js:660:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\paipan-direct-mode-contract.test.js:26:1
+✖ direct-pillar dependencies load in calculation order before main (1.1885ms)
+  AssertionError [ERR_ASSERTION]: js/bazi.js?v=20260810b must load after the preceding dependency
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\paipan-direct-mode-contract.test.js:39:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\payment-ui-contract.test.js:106:1
+✖ desktop report payment renders the gateway QR image instead of treating QR content as an image (4.331ms)
+  ReferenceError: AbortController is not defined
+      at Object.startRP (evalmachine.<anonymous>:207:18)
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\payment-ui-contract.test.js:151:11)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.start (node:internal/test_runner/test:1177:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+
+test at tests\payment-ui-contract.test.js:429:1
+✖ hepan deep report creates a hepan order instead of falling through to the generic report branch (2.0597ms)
+  ReferenceError: AbortController is not defined
+      at Object.hstartPay (evalmachine.<anonymous>:48:18)
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\payment-ui-contract.test.js:479:11)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests\payment-ui-contract.test.js:522:1
+✖ service worker rolls the static cache so deployed payment scripts replace stale copies (2.5412ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'zhishi-v12'
+  - 'zhishi-v7'
+             ^
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\payment-ui-contract.test.js:554:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'zhishi-v12',
+    expected: 'zhishi-v7',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\renyuan-presentation.test.js:17:1
+✖ result page cache-busts the repaired renderer bundle (4.0155ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /js\/result\.js\?v=5/. Input:
+  
+  '<!DOCTYPE html>\n' +
+    '<html lang="zh-CN">\n' +
+    '<head>\n' +
+    '    <meta charset="UTF-8">\n' +
+    '    <meta name="view-transition" content="same-origin">\n' +
+    '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '    <title>知时 - 传统文化分析报告 | knowbazi.online</title>\n' +
+    '    <meta name="robots" content="noindex">\n' +
+    '<link rel="stylesheet" href="css/style.css?v=2">\n' +
+    '<link rel="stylesheet" href="css/landing.css?v=2">\n' +
+    '    <style>\n' +
+    '/* ============================================\n' +
+    '   知时 - 结果页样式 v2\n' +
+    '   字体统一 · 神煞 · 流年\n' +
+    '   ============================================ */\n' +
+    '\n' +
+    '.result-container {\n' +
+    '    position: relative;\n' +
+    '    z-index: 1;\n' +
+    '    max-width: 1200px;\n' +
+    '    margin: 0 auto;\n' +
+    '    padding: 20px 16px 60px;\n' +
+    '}\n' +
+    '\n' +
+    '/* ---- 顶部信息 ---- */\n' +
+    '.result-header {\n' +
+    '    text-align: center;\n' +
+    '    padding: 20px 0 25px;\n' +
+    '    border-bottom: 1px solid var(--border-gold);\n' +
+    '    margin-bottom: 25px;\n' +
+    '}\n' +
+    '\n' +
+    '.back-link {\n' +
+    '    display: inline-block;\n' +
+    '    font-size: 13px;\n' +
+    '    color: var(--text-secondary);\n' +
+    '    text-decoration: none;\n' +
+    '    letter-spacing: 2px;\n' +
+    '    margin-bottom: 15px;\n' +
+    '    transition: color 0.3s;\n' +
+    '}\n' +
+    '.back-link:hover { color: var(--gold); }\n' +
+    '\n' +
+    '.result-title {\n' +
+    "    font-family: 'STKaiti','KaiTi','FangSong',cursive;\n" +
+    '    font-size: 36px;\n' +
+    '    color: var(--gold);\n' +
+    '    letter-spacing: 8px;\n' +
+    '    text-shadow: 0 0 15px var(--gold-glow);\n' +
+    '    margin-bottom: 12px;\n' +
+    '}\n' +
+    '.result-title a{color:inherit;text-decoration:none}\n' +
+    '\n' +
+    '.birth-info {\n' +
+    '    font-size: 14px;\n' +
+    '    color: var(--text-secondary);\n' +
+    '    letter-spacing: 2px;\n' +
+    '}\n' +
+    '\n' +
+    '.info-sep { margin: 0 8px; opacity: 0.3; }\n' +
+    '\n' +
+    '.nayin-info {\n' +
+    '    font-size: 13px;\n' +
+    '    color: var(--text-dim);\n' +
+    '    margin-top: 6px;\n' +
+    '    letter-spacing: 1px;\n' +
+    '}\n' +
+    '\n' +
+    '.share-btn {\n' +
+    '    display: inline-block;\n' +
+    '    margin-top: 12px;\n' +
+    '    padding: 5px 16px;\n' +
+    '    font-size: 12px; color: var(--gold);\n' +
+    '    background: rgba(212,175,55,0.06);\n' +
+    '    border: 1px solid rgba(212,175,55,0.15);\n' +
+    '    border-radius: 2px; cursor: pointer;\n' +
+    '    letter-spacing: 1px; transition: all 0.2s;\n' +
+    '    font-family: inherit;\n' +
+    '}\n' +
+    '.share-btn:hover { background: rgba(212,175,55,0.14); }\n' +
+    '.share-btn.copied { color: #4ade80; border-color: rgba(74,222,128,0.3); }\n' +
+    '.download-btn-old { display:none; }\n' +
+    '\n' +
+    '/* ---- 报告下载横幅 ---- */\n' +
+    '.download-banner {\n' +
+    '  margin: 20px auto 0; max-width: 420px;\n' +
+    '  padding: 20px 24px;\n' +
+    '  background: linear-gradient(135deg, rgba(212,175,55,.08), rgba(212,175,55,.02));\n' +
+    '  border: 1px solid rgba(212,175,55,.2); border-radius: 12px;\n' +
+    '  text-align: center;\n' +
+    '  animation: bannerIn .4s ease-out;\n' +
+    '}\n' +
+    '@keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}\n' +
+    '.dl-banner-title{font-size:17px;color:var(--gold);font-weight:700;letter-spacing:3px;margin-bottom:16px}\n' +
+    '.dl-banner-btns{display:flex;gap:10px}\n' +
+    '.dl-btn{flex:1;padding:14px 8px;font-size:15px;font-weight:700;font-family:inherit;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .25s;border:1px solid transparent}\n' +
+    '.dl-btn-pdf{background:rgba(100,180,140,.15);color:#a0d8b0;border-color:rgba(100,180,140,.3)}\n' +
+    '.dl-btn-pdf:hover{background:rgba(100,180,140,.25);transform:translateY(-1px)}\n' +
+    '.dl-btn-html{background:rgba(212,175,55,.12);color:var(--gold);border-color:rgba(212,175,55,.25)}\n' +
+    '.dl-btn-html:hover{background:rgba(212,175,55,.2);transform:translateY(-1px)}\n' +
+    '\n' +
+    '/* ---- 抽屉式 Section ---- */\n' +
+    '.section-drawer {\n' +
+    '    margin-bottom: 20px;\n' +
+    '    border: 1px solid rgba(212,175,55,0.2);\n' +
+    '    border-radius: 10px;\n' +
+    '    overflow: hidden;\n' +
+    '    background: rgba(20,18,15,.5);\n' +
+    '}\n' +
+    '\n' +
+    '.drawer-toggle {\n' +
+    '    display: flex;\n' +
+    '    align-items: center;\n' +
+    '    gap: 10px;\n' +
+    '    padding: 14px 18px;\n' +
+    '    cursor: pointer;\n' +
+    '    user-select: none;\n' +
+    '    background: rgba(212,175,55,0.04);\n' +
+    '    transition: background 0.3s;\n' +
+    '    border-bottom: 1px solid rgba(212,175,55,0.12);\n' +
+    '}\n' +
+    '\n' +
+    '.drawer-toggle:hover {\n' +
+    '    background: rgba(212,175,55,0.08);\n' +
+    '}\n' +
+    '\n' +
+    '.drawer-arrow {\n' +
+    '    display: inline-block;\n' +
+    '    font-size: 10px;\n' +
+    '    color: var(--gold);\n' +
+    '    transition: transform 0.35s ease;\n' +
+    '    flex-shrink: 0;\n' +
+    '}\n' +
+    '\n' +
+    '.section-drawer.drawer-open .drawer-arrow {\n' +
+    '    transform: rotate(90deg);\n' +
+    '}\n' +
+    '\n' +
+    '.drawer-toggle h2 {\n' +
+    "    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;\n" +
+    '    font-size: 18px;\n' +
+    '    font-weight: 400;\n' +
+    '    color: var(--gold);\n' +
+    '    letter-spacing: 4px;\n' +
+    '    margin: 0;\n' +
+    '    line-height: 1;\n' +
+    '}\n' +
+    '\n' +
+    '.drawer-body {\n' +
+    '    max-height: 0; overflow: hidden;\n' +
+    '    transition: max-height 0.5s ease;\n' +
+    '    background: rgba(15,13,10,.35);\n' +
+    '    padding: 0 18px;\n' +
+    '}\n' +
+    '\n' +
+    '.section-drawer.drawer-open .drawer-body {\n' +
+    '    max-height: 4000px; padding: 16px 18px;\n' +
+    '}\n' +
+    '\n' +
+    '.section-sub {\n' +
+    '    font-size: 12px;\n' +
+    '    color: #8a7e6a;\n' +
+    '    margin-left: 4px;\n' +
+    '}\n' +
+    '\n' +
+    '/* ============================\n' +
+    '   大运\n' +
+    '   ============================ */\n' +
+    '.section-dayun {\n' +
+    '    margin-bottom: 28px;\n' +
+    '    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));\n' +
+    '    border: 1px solid rgba(201,168,76,.18);\n' +
+    '    border-radius: 14px;\n' +
+    '    overflow: hidden;\n' +
+    '    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);\n' +
+    '}\n' +
+    '\n' +
+    '.dayun-scroll-wrapper {\n' +
+    '    overflow-x: auto;\n' +
+    '    -webkit-overflow-scrolling: touch;\n' +
+    '    padding: 0 0 12px;\n' +
+    '}\n' +
+    '\n' +
+    '.dayun-scroll-wrapper::-webkit-scrollbar { height: 4px; }\n' +
+    '.dayun-scroll-wrapper::-webkit-scrollbar-track { background: rgba(201,168,76,0.04); }\n' +
+    '.dayun-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 2px; }\n' +
+    '\n' +
+    '.dayun-table {\n' +
+    '    display: flex;\n' +
+    '    min-width: max-content;\n' +
+    '    margin: 0 2px;\n' +
+    '}\n' +
+    '\n' +
+    '.dayun-col {\n' +
+    '    flex: 0 0 80px;\n' +
+    '    text-align: center;\n' +
+    '    cursor: pointer;\n' +
+    '    transition: all 0.3s;\n' +
+    '    background: rgba(20,18,26,.5);\n' +
+    '    border-right: 1px solid rgba(201,168,76,.06);\n' +
+    '    margin-right: 1px;\n' +
+    '    border-radius: 3px;\n' +
+    '    padding: 4px 0 6px;\n' +
+    '}\n' +
+    '.dayun-col:last-child { border-right: none; margin-right: 0; }\n' +
+    '.dayun-col.current { background: rgba(201,168,76,.12); box-shadow: inset 0 0 12px rgba(201,168,76,.08); }\n' +
+    '.dayun-col.past { opacity: 0.4; }\n' +
+    '.dayun-col.active { background: rgba(201,168,76,.2); box-shadow: 0 0 16px rgba(201,168,76,.15); }\n' +
+    '\n' +
+    '.dayun-age {\n' +
+    '    font-size: 11px;\n' +
+    '    color: rgba(180,170,150,.45);\n' +
+    '    padding: 6px 0 4px;\n' +
+    '    border-bottom: 1px solid rgba(201,168,76,.08);\n' +
+    '    margin: 0 8px;\n' +
+    '}\n' +
+    '\n' +
+    '.dayun-gz {\n' +
+    "    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;\n" +
+    '    font-size: 20px;\n' +
+    '    font-weight: 700;\n' +
+    '    color: #e0d8c8;\n' +
+    '    padding: 10px 0;\n' +
+    '    border-bottom: 1px solid rgba(201,168,76,.08);\n' +
+    '    letter-spacing: 3px;\n' +
+    '    margin: 0 8px;\n' +
+    '}\n' +
+    '.dayun-col.current .dayun-gz { color: var(--gold); }\n' +
+    '.dayun-col.active .dayun-gz { color: var(--gold); text-shadow: 0 0 12px rgba(201,168,76,.35); }\n' +
+    '\n' +
+    '.dayun-ss {\n' +
+    '    font-size: 11px;\n' +
+    '    color: rgba(180,170,150,.35);\n' +
+    '    padding: 6px 0;\n' +
+    '    margin: 0 8px;\n' +
+    '}\n' +
+    '.dayun-col.current .dayun-ss { color: rgba(201,168,76,.7); }\n' +
+    '\n' +
+    '/* === 核芯区域头部（大运/流年/四柱）=== */\n' +
+    '.section-dayun .section-header,\n' +
+    '.section-liunian .section-header,\n' +
+    '.section-sizhu .section-header {\n' +
+    '    padding: 16px 20px 12px;\n' +
+    '    border-bottom: 1px solid rgba(201,168,76,.1);\n' +
+    '    background: rgba(201,168,76,.03);\n' +
+    '}\n' +
+    '.section-dayun .section-header h2,\n' +
+    '.section-liunian .section-header h2,\n' +
+    '.section-sizhu .section-header h2 {\n' +
+    '    font-size: 18px; font-weight: 600; color: var(--gold);\n' +
+    '    letter-spacing: 5px;\n' +
+    '    margin-bottom: 4px;\n' +
+    '    text-shadow: 0 0 12px rgba(201,168,76,.2);\n' +
+    '}\n' +
+    '.section-dayun .section-sub,\n' +
+    '.section-liunian .section-sub,\n' +
+    '.section-sizhu .section-sub {\n' +
+    '    font-size: 12px; color: rgba(180,170,150,.35); letter-spacing: 2px;\n' +
+    '}\n' +
+    '\n' +
+    '/* ============================\n' +
+    '   流年\n' +
+    '   ============================ */\n' +
+    '.section-liunian {\n' +
+    '    margin-bottom: 28px;\n' +
+    '    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));\n' +
+    '    border: 1px solid rgba(201,168,76,.18);\n' +
+    '    border-radius: 14px;\n' +
+    '    overflow: hidden;\n' +
+    '    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);\n' +
+    '}\n' +
+    '\n' +
+    '.liunian-scroll-wrapper {\n' +
+    '    overflow-x: auto;\n' +
+    '    -webkit-overflow-scrolling: touch;\n' +
+    '    padding: 0 0 12px;\n' +
+    '}\n' +
+    '.liunian-scroll-wrapper::-webkit-scrollbar { height: 4px; }\n' +
+    '.liunian-scroll-wrapper::-webkit-scrollbar-track { background: rgba(201,168,76,.04); }\n' +
+    '.liunian-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(201,168,76,.25); border-radius: 2px; }\n' +
+    '\n' +
+    '.liunian-table {\n' +
+    '    display: flex;\n' +
+    '    min-width: max-content;\n' +
+    '    margin: 0 2px;\n' +
+    '}\n' +
+    '\n' +
+    '.liunian-col {\n' +
+    '    flex: 0 0 72px;\n' +
+    '    text-align: center;\n' +
+    '    cursor: pointer;\n' +
+    '    transition: all .3s;\n' +
+    '    background: rgba(20,18,26,.5);\n' +
+    '    border-right: 1px solid rgba(201,168,76,.06);\n' +
+    '    margin-right: 1px;\n' +
+    '    border-radius: 3px;\n' +
+    '    padding: 3px 0 5px;\n' +
+    '}\n' +
+    '.liunian-col:last-child { border-right: none; margin-right: 0; }\n' +
+    '.liunian-col.current-year { background: rgba(201,168,76,.14); box-shadow: inset 0 0 10px rgba(201,168,76,.06); }\n' +
+    '.liunian-col.past-year { opacity: 0.35; }\n' +
+    '.liunian-col.active-ln {\n' +
+    '    background: rgba(201,168,76,.22);\n' +
+    '    box-shadow: 0 0 20px rgba(201,168,76,.2), inset 0 0 12px rgba(201,168,76,.12);\n' +
+    '}\n' +
+    '.liunian-col.active-ln .liunian-gz { color: var(--gold) !important; text-shadow: 0 0 10px rgba(201,168,76,.3); }\n' +
+    '.liunian-col.active-ln .liunian-ss { color: rgba(201,168,76,.8); }\n' +
+    '\n' +
+    '.liunian-year-label {\n' +
+    '    font-size: 11px;\n' +
+    '    color: rgba(180,170,150,.4);\n' +
+    '    padding: 5px 0 3px;\n' +
+    '    border-bottom: 1px solid rgba(201,168,76,.08);\n' +
+    '    margin: 0 6px;\n' +
+    '}\n' +
+    '\n' +
+    '.liunian-gz {\n' +
+    "    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;\n" +
+    '    font-size: 17px;\n' +
+    '    font-weight: 700;\n' +
+    '    color: #e0d8c8;\n' +
+    '    padding: 8px 0;\n' +
+    '    border-bottom: 1px solid rgba(201,168,76,.08);\n' +
+    '    letter-spacing: 2px;\n' +
+    '    margin: 0 6px;\n' +
+    '}\n' +
+    '.liunian-col.current-year .liunian-gz { color: var(--gold); }\n' +
+    '\n' +
+    '.liunian-ss {\n' +
+    '    font-size: 10px;\n' +
+    '    color: rgba(180,170,150,.3);\n' +
+    '    padding: 5px 0;\n' +
+    '    margin: 0 6px;\n' +
+    '}\n' +
+    '\n' +
+    '/* ============================\n' +
+    '   四柱主盘表格（统一字体）\n' +
+    '   ============================ */\n' +
+    '.section-sizhu {\n' +
+    '    margin-bottom: 28px;\n' +
+    '    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));\n' +
+    '    border: 1px solid rgba(201,168,76,.18);\n' +
+    '    border-radius: 14px;\n' +
+    '    overflow: hidden;\n' +
+    '    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);\n' +
+    '}\n' +
+    '\n' +
+    '.paipa'... 84916 more characters
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\renyuan-presentation.test.js:18:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: `<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n    <meta charset="UTF-8">\n    <meta name="view-transition" content="same-origin">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>知时 - 传统文化分析报告 | knowbazi.online</title>\n    <meta name="robots" content="noindex">\n<link rel="stylesheet" href="css/style.css?v=2">\n<link rel="stylesheet" href="css/landing.css?v=2">\n    <style>\n/* ============================================\n   知时 - 结果页样式 v2\n   字体统一 · 神煞 · 流年\n   ============================================ */\n\n.result-container {\n    position: relative;\n    z-index: 1;\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 20px 16px 60px;\n}\n\n/* ---- 顶部信息 ---- */\n.result-header {\n    text-align: center;\n    padding: 20px 0 25px;\n    border-bottom: 1px solid var(--border-gold);\n    margin-bottom: 25px;\n}\n\n.back-link {\n    display: inline-block;\n    font-size: 13px;\n    color: var(--text-secondary);\n    text-decoration: none;\n    letter-spacing: 2px;\n    margin-bottom: 15px;\n    transition: color 0.3s;\n}\n.back-link:hover { color: var(--gold); }\n\n.result-title {\n    font-family: 'STKaiti','KaiTi','FangSong',cursive;\n    font-size: 36px;\n    color: var(--gold);\n    letter-spacing: 8px;\n    text-shadow: 0 0 15px var(--gold-glow);\n    margin-bottom: 12px;\n}\n.result-title a{color:inherit;text-decoration:none}\n\n.birth-info {\n    font-size: 14px;\n    color: var(--text-secondary);\n    letter-spacing: 2px;\n}\n\n.info-sep { margin: 0 8px; opacity: 0.3; }\n\n.nayin-info {\n    font-size: 13px;\n    color: var(--text-dim);\n    margin-top: 6px;\n    letter-spacing: 1px;\n}\n\n.share-btn {\n    display: inline-block;\n    margin-top: 12px;\n    padding: 5px 16px;\n    font-size: 12px; color: var(--gold);\n    background: rgba(212,175,55,0.06);\n    border: 1px solid rgba(212,175,55,0.15);\n    border-radius: 2px; cursor: pointer;\n    letter-spacing: 1px; transition: all 0.2s;\n    font-family: inherit;\n}\n.share-btn:hover { background: rgba(212,175,55,0.14); }\n.share-btn.copied { color: #4ade80; border-color: rgba(74,222,128,0.3); }\n.download-btn-old { display:none; }\n\n/* ---- 报告下载横幅 ---- */\n.download-banner {\n  margin: 20px auto 0; max-width: 420px;\n  padding: 20px 24px;\n  background: linear-gradient(135deg, rgba(212,175,55,.08), rgba(212,175,55,.02));\n  border: 1px solid rgba(212,175,55,.2); border-radius: 12px;\n  text-align: center;\n  animation: bannerIn .4s ease-out;\n}\n@keyframes bannerIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}\n.dl-banner-title{font-size:17px;color:var(--gold);font-weight:700;letter-spacing:3px;margin-bottom:16px}\n.dl-banner-btns{display:flex;gap:10px}\n.dl-btn{flex:1;padding:14px 8px;font-size:15px;font-weight:700;font-family:inherit;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .25s;border:1px solid transparent}\n.dl-btn-pdf{background:rgba(100,180,140,.15);color:#a0d8b0;border-color:rgba(100,180,140,.3)}\n.dl-btn-pdf:hover{background:rgba(100,180,140,.25);transform:translateY(-1px)}\n.dl-btn-html{background:rgba(212,175,55,.12);color:var(--gold);border-color:rgba(212,175,55,.25)}\n.dl-btn-html:hover{background:rgba(212,175,55,.2);transform:translateY(-1px)}\n\n/* ---- 抽屉式 Section ---- */\n.section-drawer {\n    margin-bottom: 20px;\n    border: 1px solid rgba(212,175,55,0.2);\n    border-radius: 10px;\n    overflow: hidden;\n    background: rgba(20,18,15,.5);\n}\n\n.drawer-toggle {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    padding: 14px 18px;\n    cursor: pointer;\n    user-select: none;\n    background: rgba(212,175,55,0.04);\n    transition: background 0.3s;\n    border-bottom: 1px solid rgba(212,175,55,0.12);\n}\n\n.drawer-toggle:hover {\n    background: rgba(212,175,55,0.08);\n}\n\n.drawer-arrow {\n    display: inline-block;\n    font-size: 10px;\n    color: var(--gold);\n    transition: transform 0.35s ease;\n    flex-shrink: 0;\n}\n\n.section-drawer.drawer-open .drawer-arrow {\n    transform: rotate(90deg);\n}\n\n.drawer-toggle h2 {\n    font-family: 'STKaiti','KaiTi','FangSong','Source Han Serif SC',serif;\n    font-size: 18px;\n    font-weight: 400;\n    color: var(--gold);\n    letter-spacing: 4px;\n    margin: 0;\n    line-height: 1;\n}\n\n.drawer-body {\n    max-height: 0; overflow: hidden;\n    transition: max-height 0.5s ease;\n    background: rgba(15,13,10,.35);\n    padding: 0 18px;\n}\n\n.section-drawer.drawer-open .drawer-body {\n    max-height: 4000px; padding: 16px 18px;\n}\n\n.section-sub {\n    font-size: 12px;\n    color: #8a7e6a;\n    margin-left: 4px;\n}\n\n/* ============================\n   大运\n   ============================ */\n.section-dayun {\n    margin-bottom: 28px;\n    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));\n    border: 1px solid rgba(201,168,76,.18);\n    border-radius: 14px;\n    overflow: hidden;\n    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);\n}\n\n.dayun-scroll-wrapper {\n    overflow-x: auto;\n    -webkit-overflow-scrolling: touch;\n    padding: 0 0 12px;\n}\n\n.dayun-scroll-wrapper::-webkit-scrollbar { height: 4px; }\n.dayun-scroll-wrapper::-webkit-scrollbar-track { background: rgba(201,168,76,0.04); }\n.dayun-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 2px; }\n\n.dayun-table {\n    display: flex;\n    min-width: max-content;\n    margin: 0 2px;\n}\n\n.dayun-col {\n    flex: 0 0 80px;\n    text-align: center;\n    cursor: pointer;\n    transition: all 0.3s;\n    background: rgba(20,18,26,.5);\n    border-right: 1px solid rgba(201,168,76,.06);\n    margin-right: 1px;\n    border-radius: 3px;\n    padding: 4px 0 6px;\n}\n.dayun-col:last-child { border-right: none; margin-right: 0; }\n.dayun-col.current { background: rgba(201,168,76,.12); box-shadow: inset 0 0 12px rgba(201,168,76,.08); }\n.dayun-col.past { opacity: 0.4; }\n.dayun-col.active { background: rgba(201,168,76,.2); box-shadow: 0 0 16px rgba(201,168,76,.15); }\n\n.dayun-age {\n    font-size: 11px;\n    color: rgba(180,170,150,.45);\n    padding: 6px 0 4px;\n    border-bottom: 1px solid rgba(201,168,76,.08);\n    margin: 0 8px;\n}\n\n.dayun-gz {\n    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;\n    font-size: 20px;\n    font-weight: 700;\n    color: #e0d8c8;\n    padding: 10px 0;\n    border-bottom: 1px solid rgba(201,168,76,.08);\n    letter-spacing: 3px;\n    margin: 0 8px;\n}\n.dayun-col.current .dayun-gz { color: var(--gold); }\n.dayun-col.active .dayun-gz { color: var(--gold); text-shadow: 0 0 12px rgba(201,168,76,.35); }\n\n.dayun-ss {\n    font-size: 11px;\n    color: rgba(180,170,150,.35);\n    padding: 6px 0;\n    margin: 0 8px;\n}\n.dayun-col.current .dayun-ss { color: rgba(201,168,76,.7); }\n\n/* === 核芯区域头部（大运/流年/四柱）=== */\n.section-dayun .section-header,\n.section-liunian .section-header,\n.section-sizhu .section-header {\n    padding: 16px 20px 12px;\n    border-bottom: 1px solid rgba(201,168,76,.1);\n    background: rgba(201,168,76,.03);\n}\n.section-dayun .section-header h2,\n.section-liunian .section-header h2,\n.section-sizhu .section-header h2 {\n    font-size: 18px; font-weight: 600; color: var(--gold);\n    letter-spacing: 5px;\n    margin-bottom: 4px;\n    text-shadow: 0 0 12px rgba(201,168,76,.2);\n}\n.section-dayun .section-sub,\n.section-liunian .section-sub,\n.section-sizhu .section-sub {\n    font-size: 12px; color: rgba(180,170,150,.35); letter-spacing: 2px;\n}\n\n/* ============================\n   流年\n   ============================ */\n.section-liunian {\n    margin-bottom: 28px;\n    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));\n    border: 1px solid rgba(201,168,76,.18);\n    border-radius: 14px;\n    overflow: hidden;\n    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);\n}\n\n.liunian-scroll-wrapper {\n    overflow-x: auto;\n    -webkit-overflow-scrolling: touch;\n    padding: 0 0 12px;\n}\n.liunian-scroll-wrapper::-webkit-scrollbar { height: 4px; }\n.liunian-scroll-wrapper::-webkit-scrollbar-track { background: rgba(201,168,76,.04); }\n.liunian-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(201,168,76,.25); border-radius: 2px; }\n\n.liunian-table {\n    display: flex;\n    min-width: max-content;\n    margin: 0 2px;\n}\n\n.liunian-col {\n    flex: 0 0 72px;\n    text-align: center;\n    cursor: pointer;\n    transition: all .3s;\n    background: rgba(20,18,26,.5);\n    border-right: 1px solid rgba(201,168,76,.06);\n    margin-right: 1px;\n    border-radius: 3px;\n    padding: 3px 0 5px;\n}\n.liunian-col:last-child { border-right: none; margin-right: 0; }\n.liunian-col.current-year { background: rgba(201,168,76,.14); box-shadow: inset 0 0 10px rgba(201,168,76,.06); }\n.liunian-col.past-year { opacity: 0.35; }\n.liunian-col.active-ln {\n    background: rgba(201,168,76,.22);\n    box-shadow: 0 0 20px rgba(201,168,76,.2), inset 0 0 12px rgba(201,168,76,.12);\n}\n.liunian-col.active-ln .liunian-gz { color: var(--gold) !important; text-shadow: 0 0 10px rgba(201,168,76,.3); }\n.liunian-col.active-ln .liunian-ss { color: rgba(201,168,76,.8); }\n\n.liunian-year-label {\n    font-size: 11px;\n    color: rgba(180,170,150,.4);\n    padding: 5px 0 3px;\n    border-bottom: 1px solid rgba(201,168,76,.08);\n    margin: 0 6px;\n}\n\n.liunian-gz {\n    font-family: 'Source Han Serif SC','Noto Serif SC','PingFang SC','Songti SC','SimSun',serif;\n    font-size: 17px;\n    font-weight: 700;\n    color: #e0d8c8;\n    padding: 8px 0;\n    border-bottom: 1px solid rgba(201,168,76,.08);\n    letter-spacing: 2px;\n    margin: 0 6px;\n}\n.liunian-col.current-year .liunian-gz { color: var(--gold); }\n\n.liunian-ss {\n    font-size: 10px;\n    color: rgba(180,170,150,.3);\n    padding: 5px 0;\n    margin: 0 6px;\n}\n\n/* ============================\n   四柱主盘表格（统一字体）\n   ============================ */\n.section-sizhu {\n    margin-bottom: 28px;\n    background: linear-gradient(135deg, rgba(201,168,76,.04), rgba(15,12,8,.5));\n    border: 1px solid rgba(201,168,76,.18);\n    border-radius: 14px;\n    overflow: hidden;\n    box-shadow: 0 0 30px rgba(201,168,76,.04), inset 0 0 30px rgba(201,168,76,.02);\n}\n\n.paipa`... 84916 more characters,
+    expected: /js\/result\.js\?v=5/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\static-headers.test.js:6:1
+✖ static assets have correct content type and browser caching (96.0788ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\static-headers.test.js:26:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\ziwei-professional-core.test.js:39:1
+✖ distinguishes late Zi hour from early Zi hour for iztro (6.3798ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '2000-1-1'
+  - '2000-1-2'
+            ^
+  
+      at TestContext.<anonymous> (C:\Users\86132\AppData\Roaming\TRAE SOLO CN\ModularData\ai-agent\work-mode-projects\6a1da361a249f99333326881\bazi-website-ai\tests\ziwei-professional-core.test.js:47:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '2000-1-1',
+    expected: '2000-1-2',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
