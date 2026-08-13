@@ -68,7 +68,7 @@ function csvQ(s) { return '"' + String(s).replace(/"/g, '""') + '"'; }
 function r2(n) { return Math.round(n * 100) / 100; }
 
 // —— 逐盘输出 ——
-var csv = ['标签,八字,排盘校验,终分,旺衰,格局,从格,五行,与日主关系,成势,L1,L2,L3,L4,S_need,根气分,根气质量,角色,用神,喜神,忌神,method,tiebreak'];
+var csv = ['标签,八字,排盘校验,终分,旺衰,格局,从格,五行,与日主关系,成势,L1,L2,L3,L4,S_need,根气分,根气质量,角色,用神,喜神,忌神,method,tiebreak,破格原因,成格条件清单'];
 var badCharts = [];
 
 charts.forEach(function(parts) {
@@ -79,6 +79,11 @@ charts.forEach(function(parts) {
   var dm = calcDayMasterStrength(b);
   var cong = getCongGe(b);
   var pat = getPattern(b);
+  // 结构检测现状采集（供 GPT 五状态对照：评分体现/establishConditions检测/breakReasons检测/漏检/检测未消费）
+  var brStr = (pat.breakReasons || []).join('；');
+  var condStr = (pat.establishConditions || []).map(function(c) {
+    return (c.met ? '✅' : '❌') + c.condition + '（' + c.detail + '）';
+  }).join('；');
   var yj = getYongJi(b);
   var cs = yj.candidateScores;
   var tb = yj.tiebreak;
@@ -98,6 +103,7 @@ charts.forEach(function(parts) {
     '  喜:' + yj.xiShen.join('、') +
     '  忌:' + (yj.jiShen.length ? yj.jiShen.join('、') : '无') +
     '  [' + yj.method + ']');
+  console.log('  结构: 破格原因=' + (brStr || '无') + '  成格条件=' + (condStr || '无'));
 
   if (cs) {
     var ctx = calcCandidateScores(b, dm, pat);
@@ -110,7 +116,8 @@ charts.forEach(function(parts) {
         e.wx, e.relation,
         ctx.counts[e.wx] >= 3 ? '是(' + ctx.counts[e.wx] + ')' : '否',
         r2(e.L1), r2(e.L2), r2(e.L3), r2(e.L4), r2(e.SNeed), r2(e.rootScore), e.rootQuality, e.role,
-        yj.yongShen.join('、'), yj.xiShen.join('、'), yj.jiShen.join('、'), yj.method, tbStr
+        yj.yongShen.join('、'), yj.xiShen.join('、'), yj.jiShen.join('、'), yj.method, tbStr,
+        brStr, condStr
       ].map(csvQ).join(','));
     });
     if (tb && tb.used) console.log('  tiebreak: ' + tbStr + ' → 用神=' + tb.winner);
@@ -119,7 +126,8 @@ charts.forEach(function(parts) {
     csv.push([label, gz.join(' '), invalid || '合格',
       dm.score, dm.level, pat.name + '·' + pat.status, cong.isCong ? cong.name : '否',
       '', '', '', '', '', '', '', '', '', '', '', '',
-      yj.yongShen.join('、'), yj.xiShen.join('、'), yj.jiShen.join('、'), yj.method, tbStr
+      yj.yongShen.join('、'), yj.xiShen.join('、'), yj.jiShen.join('、'), yj.method, tbStr,
+      brStr, condStr
     ].map(csvQ).join(','));
   }
   console.log('');
