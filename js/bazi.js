@@ -60,6 +60,7 @@ var LICHUN_HOUR = {
 
 // 小寒近似时刻（北京时间小时数）— 子/丑月分界
 var XIAOHAN_HOUR = {
+    2003:8,2004:14,2008:13,
     2009:19,2010:0,2011:6,2012:12,2013:18,2014:0,2015:6,2016:12,2017:18,2018:23,
     2019:5,2020:11,2021:17,2022:23,2023:4,2024:10,2025:16,2026:22,2027:4,2028:10,2029:15,2030:21
 };
@@ -132,27 +133,27 @@ function getJieQiDatesLegacy(year) {
         1997: [4, 5, 5, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         1998: [4, 6, 5, 6, 6, 7, 8, 8, 8, 7, 7, 6],
         1999: [4, 6, 5, 6, 6, 7, 8, 8, 9, 8, 7, 6],
-        2000: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 6],
+        2000: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2001: [4, 5, 5, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2002: [4, 6, 5, 5, 6, 7, 8, 8, 8, 7, 7, 6],
         2003: [4, 6, 5, 5, 6, 7, 8, 8, 9, 8, 7, 6],
-        2004: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 6],
+        2004: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2005: [4, 5, 5, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2006: [4, 6, 5, 5, 6, 7, 8, 8, 8, 7, 7, 6],
         2007: [4, 6, 5, 5, 6, 7, 8, 8, 9, 8, 7, 6],
-        2008: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 6],
+        2008: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2009: [4, 5, 5, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2010: [4, 6, 5, 5, 6, 7, 8, 8, 8, 7, 7, 6],
         2011: [4, 6, 5, 5, 6, 7, 8, 8, 8, 8, 7, 6],
-        2012: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 6],
+        2012: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2013: [4, 5, 5, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2014: [4, 6, 5, 5, 6, 7, 8, 8, 8, 7, 7, 6],
         2015: [4, 6, 5, 5, 6, 7, 8, 8, 8, 8, 7, 6],
-        2016: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 6],
+        2016: [4, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2017: [3, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2018: [4, 5, 5, 5, 6, 7, 7, 8, 8, 7, 7, 5],
         2019: [4, 6, 5, 6, 6, 7, 8, 8, 8, 8, 7, 6],
-        2020: [4, 5, 4, 5, 5, 6, 7, 7, 8, 7, 7, 6],
+        2020: [4, 5, 4, 5, 5, 6, 7, 7, 8, 7, 7, 5],
         2021: [3, 5, 4, 5, 5, 7, 7, 7, 8, 7, 7, 5],
         2022: [4, 5, 5, 5, 6, 7, 7, 7, 8, 7, 7, 5],
         2023: [4, 6, 5, 6, 6, 7, 8, 8, 8, 8, 7, 6],
@@ -827,7 +828,9 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     let targetJQ = null, diffDays = 0;
 
     if (isForward) {
-        for (const yr of [birthYear, birthYear + 1]) {
+        // 注意：getJieQiDates(y) 的小寒存放在 y+1 年 1 月，
+        // 因此 1 月（小寒前）出生者需先查 birthYear-1 的表，否则会跳过小寒直接命中立春
+        for (const yr of [birthYear - 1, birthYear, birthYear + 1]) {
             const jqList = getJieQiDates(yr);
             for (const jq of jqList) {
                 const jqClock = jq.date.getHours() + jq.date.getMinutes() / 60 + jq.date.getSeconds() / 3600;
@@ -861,7 +864,7 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     // 起运年龄：3天折1岁
     const qiYunAge = Math.max(0.1, Math.round(diffDays / 3 * 10) / 10);
 
-    // ===== 传统换算：整岁 + 余天×4=月 + 余时辰×10=天 =====
+    // ===== 传统换算：整岁 + 余天×4=月 + 余时×5=天（1时辰=10天 → 1小时=5天）=====
     // 将天数差拆分为整3天组(岁) + 余天 + 余时辰
     const totalHours = diffDays * 24;
     const threeDayHours = 3 * 24;
@@ -869,10 +872,9 @@ function calculateDaYun(monthPillar, yearPillar, gender, birthYear, birthMonth, 
     const remainHours = totalHours - wholeYears * threeDayHours;
     const remainDays = Math.floor(remainHours / 24);
     const remainHourRemainder = remainHours - remainDays * 24;
-    const remainShiChen = Math.floor(remainHourRemainder / 2); // 1时辰=2小时
 
-    const calcMonths = remainDays * 4;           // 1天 = 4个月
-    const calcDays = remainShiChen * 10;         // 1时辰 = 10天
+    const calcMonths = remainDays * 4 + Math.floor(remainHourRemainder * 5 / 30); // 余时折天后进位到月
+    const calcDays = Math.floor(remainHourRemainder * 5) % 30;                    // 1时辰=10天 → 1小时=5天
 
     const timingInfo = {
         years: wholeYears,
@@ -4391,7 +4393,7 @@ function finalizeYongJiResult(bazi, base, context) {
   var chainHintsOut = (context.chain && context.chain.hints) ? context.chain.hints : [];
   var chainAdjustmentsOut = (context.chain && context.chain.adjustments) ? context.chain.adjustments : [];
 
-  return {
+  var result = {
     dayMasterLevel: base.dayMasterLevel,
     dayMasterScore: base.dayMasterScore,
     xiShen: lists.xiShen,
@@ -4415,6 +4417,12 @@ function finalizeYongJiResult(bazi, base, context) {
       breakReasons: (pattern.breakReasons || []).slice()
     }
   };
+  // P1 候选评分透传（GPT 对账用；从格/穷通特例短路时为空）
+  if (context.candidateScores) {
+    result.candidateScores = context.candidateScores.candidates;
+    result.tiebreak = context.candidateScores.tiebreak;
+  }
+  return result;
 }
 
 /**
@@ -4513,6 +4521,248 @@ function evaluateYongShenQuality(bazi, yongJi) {
   return result;
 }
 
+/**
+ * P1 候选五行评分引擎（2026-08-13 双AI对账·GPT裁决修订版）
+ * 核心原则（F7）：需求定用神、根气定质量——"某五行有根有力"不进入主评分
+ *   S_base = L1 方向基准 + L2 结构需求×门控 + L3 格局修正（方向门控） → 定用神（F4/F5/F6）
+ *   S_need = S_base + L4 调候 → 定喜忌归属，±3 内部中性带（F8/F10）
+ *   根气仅作严格并列时的 tiebreak 第四顺位与质量报告（F11）
+ */
+function calcCandidateScores(bazi, dmStr, pattern) {
+  var WX = ['木','火','土','金','水'];
+  var score = dmStr.score;
+  var d = Math.max(-1, Math.min(1, (score - 50) / 50));
+  var dmWx = WU_XING[bazi.day.gan];
+  var di = WX.indexOf(dmWx);
+  var WO_SHENG = WX[(di + 1) % 5]; // 食伤
+  var WO_KE    = WX[(di + 2) % 5]; // 财
+  var KE_WO    = WX[(di + 3) % 5]; // 官杀
+  var SHENG_WO = WX[(di + 4) % 5]; // 印
+  var TONG     = dmWx;             // 比劫
+  var mz = bazi.month.zhi;
+  var zeroMap = function() { return { '木':0,'火':0,'土':0,'金':0,'水':0 }; };
+  var l2Details = [], l3Details = [], l4Details = [];
+
+  // —— 8 位置表层计数（成势判定；日干位置不计比劫）——
+  var countMap = zeroMap();
+  ['year','month','day','hour'].forEach(function(pos) {
+    var gWx = WU_XING[bazi[pos].gan];
+    var zWx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    if (pos !== 'day' || gWx !== TONG) countMap[gWx] += 1;
+    countMap[zWx] += 1;
+  });
+  var chengShi = function(wx) { return countMap[wx] >= 3; };
+
+  // —— L1 方向基准：生扶组 -50d，克泄耗组 +50d（F4）——
+  var L1 = zeroMap();
+  WX.forEach(function(wx) {
+    L1[wx] = (wx === SHENG_WO || wx === TONG) ? -50 * d : 50 * d;
+  });
+
+  // —— L2 结构需求 × 门控 g1 = min(1, 2|d|)（F5）——
+  var g1 = Math.min(1, 2 * Math.abs(d));
+  var L2 = zeroMap();
+  var addL2 = function(wx, val, note) {
+    L2[wx] += val * g1;
+    if (val * g1 !== 0) l2Details.push({ wx: wx, val: val * g1, note: note });
+  };
+  if (d < 0) {
+    if (chengShi(KE_WO))    { addL2(SHENG_WO, 12, '官杀成势，印星化杀生身'); addL2(TONG, 4, '官杀成势，比劫帮身抗杀'); }
+    if (chengShi(WO_KE))    { addL2(TONG, 10, '财多成势，比劫帮身分财'); addL2(SHENG_WO, 6, '财多成势，印星生身'); }
+    if (chengShi(WO_SHENG)) { addL2(SHENG_WO, 12, '食伤成势，印星制食伤生身'); }
+  } else if (d > 0) {
+    if (chengShi(TONG))     { addL2(KE_WO, 10, '比劫成势，官杀制比劫'); addL2(WO_SHENG, 4, '比劫成势，食伤泄秀'); }
+    if (chengShi(SHENG_WO)) { addL2(WO_KE, 10, '印星成势，财星制印调结构'); addL2(WO_SHENG, 6, '印星成势，食伤泄秀'); }
+  }
+
+  // —— L3 格局修正（成格项 + 破格救应；杀印/官印方向门控 F6）——
+  var L3 = zeroMap();
+  var jiuYing = zeroMap(); // 救应分单独记账（tiebreak 第三顺位）
+  var addL3 = function(wx, val, note) {
+    L3[wx] += val;
+    if (val !== 0) l3Details.push({ wx: wx, val: val, note: note });
+  };
+  var addJiuYing = function(wx, val, note) {
+    jiuYing[wx] += val;
+    addL3(wx, val, note);
+  };
+  var pn = pattern.name || '';
+  var isPo = pattern.status === '破格';
+  var factor = isPo ? 0.4 : 1;
+  if (pn === '杀印相生格' || pn === '官印相生格' || pn === '印星化杀格') {
+    // F6 方向门控：身弱侧 + 官杀成势 + 印未成势 → 印加分；
+    // 身强/中和偏强侧或印已成势 → 不给印加分（财/食伤的加权由 L2 身强+印成势规则承担）
+    if (d < 0 && chengShi(KE_WO) && !chengShi(SHENG_WO)) {
+      addL3(SHENG_WO, 10 * factor, '杀/官印相生，印星化杀生身（方向门控通过）');
+    } else {
+      l3Details.push({ wx: SHENG_WO, val: 0, note: '杀/官印成格但方向门控不通过（身强侧或印已成势），印不加分' });
+    }
+  } else if (pn === '伤官配印格') {
+    addL3(SHENG_WO, 10 * factor, '伤官配印，印星制伤护身');
+  } else if (pn === '食神制杀格' || pn === '伤官制杀格') {
+    addL3(WO_SHENG, 10 * factor, '食伤制杀成格');
+  } else if (pn === '食神生财格' || pn === '伤官生财格') {
+    addL3(WO_KE, 6 * factor, '食伤生财，财为归宿');
+    addL3(WO_SHENG, 4 * factor, '食伤生财，食伤为源头');
+  } else if (pn === '财生官格') {
+    addL3(KE_WO, 6 * factor, '财生官，官为归宿');
+    addL3(WO_KE, 4 * factor, '财生官，财为源头');
+  } else if (pn === '建禄格' || pn === '羊刃格') {
+    addL3(KE_WO, 4 * factor, '建禄/羊刃喜财官制化');
+  }
+  if (isPo) {
+    var reasons = pattern.breakReasons || [];
+    // 月令受冲 → 两冲支通关五行 +6
+    var CHONG_PAIR = { '寅':'申','申':'寅','子':'午','午':'子','卯':'酉','酉':'卯','巳':'亥','亥':'巳' };
+    var TONG_GUAN = { '寅':'水','申':'水','子':'木','午':'木','卯':'水','酉':'水','巳':'木','亥':'木' };
+    var hasChong = reasons.some(function(r) { return r.indexOf('月令受') >= 0 && r.indexOf('冲') >= 0; });
+    var chongWx = TONG_GUAN[mz];
+    if (hasChong && chongWx) addJiuYing(chongWx, 6, '月令受冲，' + chongWx + '通关泄化');
+    reasons.forEach(function(r) {
+      if (r === '伤官克官' || r === '伤官见官') { addJiuYing(SHENG_WO, 6, '伤官克官，印星制伤护官'); addJiuYing(WO_KE, 3, '伤官克官，财星化伤生官'); }
+      else if (r === '枭神夺食') { addJiuYing(WO_KE, 6, '枭神夺食，财星制枭护食'); }
+      else if (r === '财星破印') { addJiuYing(TONG, 6, '财星破印，比劫制财护印'); }
+      else if (r === '七杀无制化') { addJiuYing(WO_SHENG, 3, '七杀无制化，食伤制杀'); addJiuYing(SHENG_WO, 3, '七杀无制化，印星化杀'); }
+    });
+  }
+
+  // —— L4 调候（现状 11 条规则转写为加分；同元素多规则命中取最大，防重复计分）——
+  var L4 = zeroMap();
+  var tiaoHouNote = '';
+  var addL4 = function(wx, val, note) {
+    if (val > L4[wx]) { L4[wx] = val; l4Details.push({ wx: wx, val: val, note: note }); }
+  };
+  var hasWxGlobal = function(wx) {
+    return ['year','month','day','hour'].some(function(p) {
+      return WU_XING[bazi[p].gan] === wx || DI_ZHI_WU_XING[bazi[p].zhi] === wx;
+    });
+  };
+  if (dmWx === '土' && mz === '丑') {
+    addL4('火', 8, '冬土冻土，火暖局');
+    tiaoHouNote = hasWxGlobal('火')
+      ? '原局有火暖局，寒谷回春，调候已得。'
+      : '《穷通宝鉴》：己土冬生，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
+  }
+  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    addL4('火', 8, '冬火微弱，火暖局扶身');
+    addL4('木', 6, '冬火微弱，木生火暖局');
+    tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
+  }
+  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
+    addL4('火', 6, '冬水寒凝，火暖局');
+    tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
+  }
+  if (dmWx === '火' && ['巳','午','未'].indexOf(mz) >= 0) {
+    addL4('水', 8, '夏火炎炎，水润局');
+    tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
+  }
+  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    addL4('火', 6, '冬木寒湿，火暖局');
+    tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
+  }
+  if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmStr.level.indexOf('强') >= 0) {
+    addL4('火', 6, '秋金当令过旺，火炼金成器');
+    tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
+  }
+  if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
+    addL4('火', 6, '辰月湿土，火暖局');
+    tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
+  }
+  if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
+    addL4('水', 6, '戌月燥土，水润局');
+    tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
+  }
+  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
+    addL4('水', 6, '巳午月火炎土燥，水润局');
+    tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
+  }
+  if ((dmWx === '火' || dmWx === '土') && mz === '未') {
+    addL4('水', 6, '未月火土燥烈，水润局');
+    tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
+  }
+  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    addL4('火', 6, '冬金寒冻，火暖局');
+    tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
+  }
+
+  // —— S_base / S_need ——
+  var S_base = zeroMap();
+  var S_need = zeroMap();
+  WX.forEach(function(wx) {
+    S_base[wx] = L1[wx] + L2[wx] + L3[wx];
+    S_need[wx] = S_base[wx] + L4[wx];
+  });
+
+  // —— 根气质量（F7：不参与主评分，仅并列 tiebreak 与质量报告）——
+  var rootQ = evaluateYongShenQuality(bazi, { yongShen: WX.slice(), xiShen: [] });
+
+  // —— 用神 = argmax S_base；严格并列时按 F11 链决胜 ——
+  var maxBase = -Infinity;
+  WX.forEach(function(wx) { if (S_base[wx] > maxBase) maxBase = S_base[wx]; });
+  var top = WX.filter(function(wx) { return S_base[wx] === maxBase; });
+  // F11 决胜链：①结构需求分(L2) → ②调候急迫 → ③通关/救应分 → ④根气质量 → ⑤固定序兜底
+  // ②停用说明：F8 铁律"普通调候不顶替核心用神"——若允许 L4 决胜，B6 等盘的火调候会顶替结构用神木印
+  var chainSteps = [
+    { name: '结构需求分', get: function(wx) { return L2[wx]; } },
+    { name: '通关/救应价值', get: function(wx) { return jiuYing[wx]; } },
+    { name: '根气质量', get: function(wx) { return rootQ[wx] ? rootQ[wx].score : 0; } },
+    { name: '固定序', get: function(wx) { return -WX.indexOf(wx); } }
+  ];
+  var tiebreak = { used: top.length > 1, steps: [], winner: top[0] };
+  var pool = top.slice();
+  for (var ci = 0; ci < chainSteps.length && pool.length > 1; ci++) {
+    var best = -Infinity, bestList = [];
+    pool.forEach(function(wx) {
+      var v = chainSteps[ci].get(wx);
+      if (v > best) { best = v; bestList = [wx]; }
+      else if (v === best) { bestList.push(wx); }
+    });
+    tiebreak.steps.push({
+      step: chainSteps[ci].name,
+      values: pool.map(function(wx) { return wx + '=' + chainSteps[ci].get(wx); }).join('，'),
+      advance: bestList.slice()
+    });
+    pool = bestList;
+  }
+  var yongWx = pool[0];
+  tiebreak.winner = yongWx;
+
+  // —— 候选明细（GPT 对账用）——
+  var candidates = WX.map(function(wx) {
+    var role = wx === yongWx ? '用神' : (S_need[wx] > 3 ? '喜神' : (S_need[wx] < -3 ? '忌神' : '中性'));
+    var relation = wx === TONG ? '比劫' : wx === WO_SHENG ? '食伤' : wx === WO_KE ? '财' : wx === KE_WO ? '官杀' : '印';
+    return {
+      wx: wx,
+      relation: relation,
+      L1: L1[wx],
+      L2: L2[wx],
+      L3: L3[wx],
+      L4: L4[wx],
+      SBase: S_base[wx],
+      SNeed: S_need[wx],
+      rootScore: rootQ[wx] ? rootQ[wx].score : 0,
+      rootQuality: rootQ[wx] ? rootQ[wx].quality : '',
+      role: role
+    };
+  });
+
+  return {
+    d: d,
+    g1: g1,
+    counts: countMap,
+    L1: L1, L2: L2, L3: L3, L4: L4,
+    SBase: S_base,
+    SNeed: S_need,
+    l2Details: l2Details,
+    l3Details: l3Details,
+    l4Details: l4Details,
+    tiaoHouNote: tiaoHouNote,
+    yongWx: yongWx,
+    candidates: candidates,
+    tiebreak: tiebreak
+  };
+}
+
 function getYongJi(bazi) {
   var dmStr = calcDayMasterStrength(bazi);
   var dmLevel = dmStr.level;
@@ -4544,137 +4794,37 @@ function getYongJi(bazi) {
     }, { dmStr:dmStr, cong:cong, tiaoHouNote:'', pattern:getPattern(bazi) });
   }
 
-  if (dmLevel === '极强' || dmLevel === '偏强') {
-    // 身强 — 喜克泄耗（官杀/食伤/财星）
-    xiShen  = [KE_WO, WO_SHENG, WO_KE];
-    yongShen = [KE_WO, WO_SHENG]; // 官杀制身、食伤泄秀为用
-    jiShen  = [SHENG_WO, TONG];    // 忌印比生扶
-    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），遵循子平法"旺则宜克宜泄"原则。'
-      + '喜：' + xiShen.join('、') + '来克泄耗，平衡过旺之气。'
-      + '忌：' + jiShen.join('、') + '再来生扶，过犹不及。';
-  } else if (dmLevel === '极弱' || dmLevel === '偏弱') {
-    // 身弱 — 喜生扶（印星/比劫）
-    xiShen  = [SHENG_WO, TONG];
-    yongShen = [SHENG_WO];         // 印星生身为首选用神
-    jiShen  = [KE_WO, WO_SHENG, WO_KE]; // 忌克泄耗
-    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），遵循子平法"弱则宜生宜扶"原则。'
-      + '喜：' + xiShen.join('、') + '来生扶，补足元气。'
-      + '忌：' + jiShen.join('、') + '再来克泄耗，元气更伤。';
-    // 金日主生未/戌燥土月：燥土不生金、土多埋金，印星虚浮无效——
-    // 按《穷通宝鉴》取水为用（制杀+润局+使燥土转生金），弃土用金水（"先用壬水，次取庚金佐之"）
-    if (dmWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0) {
-      xiShen  = ['水', '金'];
-      yongShen = ['水'];
-      jiShen  = ['火', '木', '土'];
-      reasoning = '辛金生未戌燥土月，火炎土燥、土多埋金，燥土不生金，印星虚浮无效。《穷通宝鉴》：六月辛金"先用壬水，次取庚金佐之"。故取水为用：水制七杀（伤官制杀）、润燥土（燥土得润方能生金）、调候降温，一水三用；喜金比劫帮身，忌火木土（杀旺、财党杀、燥土埋金）。';
-    }
-  } else {
-    // 中和 — 根据实际分数倾向给出更有意义的建议
-    if (dmStr.score < 50) {
-      // 中和偏弱：略偏柔，宜适当生扶
-      xiShen = [SHENG_WO, TONG];
-      yongShen = [SHENG_WO];
-      jiShen = [KE_WO, WO_SHENG, WO_KE];
-      reasoning = '日主中和偏弱（' + dmStr.score + '分）。元气虽均衡但略有不足，宜适当生扶。喜：' + xiShen.join('、') + '来补足元气。忌：克泄耗太过则元气难支。';
-    } else {
-      // 中和偏强：略偏旺，宜适当克泄耗
-      xiShen = [KE_WO, WO_SHENG, WO_KE];
-      yongShen = [KE_WO, WO_SHENG];
-      jiShen = [SHENG_WO, TONG];
-      reasoning = '日主中和偏强（' + dmStr.score + '分）。元气充足略有过旺之象，宜适当克泄耗以求平衡。喜：克泄耗来平衡。忌：印比再来生扶。';
-    }
-  }
-
-  // ---- v4.2 调候修正（穷通宝鉴：寒暖燥湿兼顾扶抑）----
-  // 调候只作辅助：入喜神、出忌神，不顶替用神——用神由扶抑/格局确定
-  var mz = bazi.month.zhi;
-  var dg = bazi.day.gan;
-  var hasWxGlobal = function(wx) {
-    return ['year','month','day','hour'].some(function(p) {
-      return WU_XING[bazi[p].gan] === wx || DI_ZHI_WU_XING[bazi[p].zhi] === wx;
-    });
-  };
+  // ---- v5.7 P1 穷通宝鉴金日主未/戌月特例短路（保留 v4.2 前置规则，F9）----
+  // 金日主生未/戌燥土月：燥土不生金、土多埋金，印星虚浮无效——
+  // 按《穷通宝鉴》取水为用（制杀+润局+使燥土转生金），弃土用金水（"先用壬水，次取庚金佐之"）
+  var pattern = getPattern(bazi);
   var tiaoHouNote = '';
-  // 调候神从忌神转入喜神（列喜神末位，不喧宾夺主）
-  var tiaoHouAdd = function(wx) {
-    if (jiShen.indexOf(wx) >= 0) { jiShen.splice(jiShen.indexOf(wx), 1); }
-    if (xiShen.indexOf(wx) < 0) { xiShen.push(wx); }
-  };
-
-  // 冬土（丑月）：冻土需火暖局，火从忌转喜
-  if (dmWx === '土' && mz === '丑') {
-    tiaoHouAdd('火');
-    if (!hasWxGlobal('火')) {
-      tiaoHouNote = '《穷通宝鉴》：己土冬生，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
-    } else {
-      tiaoHouNote = '原局有火暖局，寒谷回春，调候已得。';
-    }
+  var cs = null;
+  var qiongTong = dmWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0 && (dmLevel === '极弱' || dmLevel === '偏弱');
+  if (qiongTong) {
+    xiShen  = ['水', '金'];
+    yongShen = ['水'];
+    jiShen  = ['火', '木', '土'];
+    reasoning = '辛金生未戌燥土月，火炎土燥、土多埋金，燥土不生金，印星虚浮无效。《穷通宝鉴》：六月辛金"先用壬水，次取庚金佐之"。故取水为用：水制七杀（伤官制杀）、润燥土（燥土得润方能生金）、调候降温，一水三用；喜金比劫帮身，忌火木土（杀旺、财党杀、燥土埋金）。';
+  } else {
+    // ---- v5.7 P1 候选五行评分（GPT 裁决修订版：F4/F5/F6/F7/F8/F10/F11）----
+    // 连续旺衰权重 d 取代 50 分二元 if/else：需求定用神、根气定质量
+    cs = calcCandidateScores(bazi, dmStr, pattern);
+    tiaoHouNote = cs.tiaoHouNote;
+    yongShen = [cs.yongWx];
+    xiShen = WX.filter(function(wx) { return cs.SNeed[wx] > 3 && wx !== cs.yongWx; })
+      .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; });
+    jiShen = WX.filter(function(wx) { return cs.SNeed[wx] < -3 && wx !== cs.yongWx; })
+      .sort(function(a, b) { return cs.SNeed[a] - cs.SNeed[b]; });
+    var yongReasons = cs.l2Details.concat(cs.l3Details).concat(cs.l4Details).filter(function(dt) {
+      return dt.wx === cs.yongWx && dt.val > 0;
+    }).map(function(dt) { return dt.note; });
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），候选五行评分后取' + cs.yongWx + '为用神'
+      + (yongReasons.length > 0 ? '：' + yongReasons.join('；') : '。')
+      + ' 喜：' + [cs.yongWx].concat(xiShen).join('、')
+      + '。忌：' + (jiShen.length > 0 ? jiShen.join('、') : '无') + '。';
+    if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
   }
-
-  // 冬火（亥子丑月）：火弱如烛，需木火双扶
-  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
-    if (jiShen.indexOf('木') >= 0) { jiShen.splice(jiShen.indexOf('木'), 1); }
-    if (xiShen.indexOf('木') < 0) { xiShen.push('木'); }
-    if (jiShen.indexOf('火') >= 0) { jiShen.splice(jiShen.indexOf('火'), 1); }
-    if (xiShen.indexOf('火') < 0) { xiShen.push('火'); }
-    tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
-  }
-
-  // 冬水（亥子月）：冻水不流，需火暖局
-  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
-    tiaoHouAdd('火');
-    tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
-  }
-
-  // 夏火（巳午未月）：炎火需水调候
-  if (dmWx === '火' && ['巳','午','未'].indexOf(mz) >= 0) {
-    tiaoHouAdd('水');
-    tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
-  }
-
-  // 冬木（亥子丑月）：寒木需火暖局，否则木不发育
-  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
-    tiaoHouAdd('火');
-    tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
-  }
-
-  // 秋金（申酉戌月）：金旺无火则顽金不器
-  if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmLevel.indexOf('强') >= 0) {
-    tiaoHouAdd('火');
-    tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
-  }
-
-  // 辰月湿土（土/火/水日主）：辰为水库，阴湿之气重，需火烘干方能发育
-  if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
-    tiaoHouAdd('火');
-    tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
-  }
-
-  // 戌月燥土（火土日主）：戌为火库，土燥木枯，需水润局
-  if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
-    tiaoHouAdd('水');
-    tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
-  }
-
-  // 冬金（亥子丑月）：金寒水冷，冻金不锐，需火暖局
-  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
-    tiaoHouAdd('火');
-    tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
-  }
-
-  // 巳午月燥土（火土日主）：夏火炎土燥，需水润局
-  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
-    tiaoHouAdd('水');
-    tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
-  }
-
-  // 未月燥土（火土日主）：夏末火炎土燥，需水润局
-  if ((dmWx === '火' || dmWx === '土') && mz === '未') {
-    tiaoHouAdd('水');
-    tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
-  }
-
-  if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
 
   // ---- v5.0 生克链分析 ----
   var chainHints = [];
@@ -4694,7 +4844,6 @@ function getYongJi(bazi) {
   }
 
   // 格局微调
-  var pattern = getPattern(bazi);
   var patternName = pattern.name || '';
   // 根据格局名判断类型（简化匹配）
   var isGuanSha = patternName.indexOf('官') >= 0 || patternName.indexOf('杀') >= 0;
@@ -4734,7 +4883,7 @@ function getYongJi(bazi) {
     yongShen: yongShen,
     jiShen: jiShen,
     reasoning: reasoning
-  }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern, chain:chainContext });
+  }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern, chain:chainContext, candidateScores: cs });
 }
 
 /**
