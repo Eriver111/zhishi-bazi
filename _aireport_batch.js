@@ -100,6 +100,10 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   if (shaChainL !== shaChainR) throw new Error('❌ 线上 bazi-chain.js ≠ 本地(LF): ' + shaChainR);
   console.log('✅ 字节零漂移：bazi.js / structural.js / bazi-chain.js');
 
+  // 等 Webhook 部署（服务器 60 秒轮询 + PM2 重启），给足 90 秒
+  console.log('⏳ 等待 Webhook 部署新 api/ai-chat.js（90s）…');
+  await sleep(90000);
+
   // ---- 引擎加载（与页面一致） ----
   global.window = global;
   global.document = {};
@@ -668,6 +672,9 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
         continue;
       }
       fs.writeFileSync(path.join(OUT_DIR, id + '-report.md'), '## ' + id + ' · AI 报告原文（线上真实调用，mode=pro）\n\n### 请求\n\n- 问题：' + QUESTION + '\n- history：[]（新会话首问）\n- 兑换码：' + TEST_CODE + '\n\n### AI 回复（' + new Date().toISOString() + '）\n\n' + reply.reply + '\n', 'utf8');
+      if (!Array.isArray(reply.validation_warnings)) {
+        throw new Error(id + ' 响应缺 validation_warnings 字段——线上 ai-chat.js 未部署新代码，请等待后重跑');
+      }
       var vw = reply.validation_warnings || [];
       if (vw.length) {
         fs.appendFileSync(path.join(OUT_DIR, id + '-report.md'), '\n### V1 validator warnings（qa_debug 透出；服务端仅检测、不修改正文）\n\n' + vw.map(function (x) { return '- ' + x; }).join('\n') + '\n', 'utf8');
