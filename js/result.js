@@ -204,6 +204,14 @@ function render(data) {
           try{d.pattern=BaZiCalculator.getPattern(_bazi)}catch(e){}
           try{d.yongJi=BaZiCalculator.getYongJi(_bazi)}catch(e){}
         }
+        // P3-A3 结构层（新增解释层，不覆盖不修改上述既有字段；两层不污染）
+        if(typeof StructuralAnalysis!=='undefined'){
+          try{
+            var sa=StructuralAnalysis.evaluate(_bazi);
+            d.relationEvents=sa.relationEvents;
+            d.structuralRisks=sa.structuralRisks;
+          }catch(e){}
+        }
       }
       localStorage.setItem('ai_chart_data',JSON.stringify(d));
     }catch(e){console.log('auto-save chartData failed:',e)}

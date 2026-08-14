@@ -596,6 +596,14 @@
           try { data.cangGanDepth = BaZiCalculator.getCangGanDepth(_bazi); } catch(e) {}
         }
       }
+      // P3-A3 结构层（新增解释层，不覆盖上述既有字段；两层不污染）
+      if (typeof StructuralAnalysis !== 'undefined') {
+        try {
+          var sa = StructuralAnalysis.evaluate(_bazi);
+          data.relationEvents = sa.relationEvents;
+          data.structuralRisks = sa.structuralRisks;
+        } catch(e) {}
+      }
     }
     // 大运
     if (typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list) {
