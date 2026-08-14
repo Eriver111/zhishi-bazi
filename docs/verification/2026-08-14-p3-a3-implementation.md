@@ -91,3 +91,12 @@
 | 验收前不 push、不部署 | ✅ 仅本地提交于 `p3-a3` |
 
 **→ P3-A3 达标。待 GPT 裁 CLOSED / 部署。**
+
+## 8. GPT P3-A3 最终裁决（2026-08-14）：CLOSED
+
+1. **P3-A 正式 CLOSED**。依据：P1/P2 对 53 盘零漂移；正式 relationEvents 与 A2-final 271 events 全等；正式 structuralRisks 与 A2-final 59 risks 全等；#9 黄金样本、K2-final 四盘、#8/B1 节点恢复全部命中；全量测试与基准 A/B 失败集一致，A3 新增失败 0。
+2. **Schema 备注批准当前正式实现，不返工**：structuralRisk v1 正式字段采用冻结产物 `type / severity / parties / why / mitigations / triggerHint / evidence / partyEvidence`。**`partyEvidence` 为 structuralPresence 的正式承载字段**；structuralRisk v1 不设通用 target/source，具体作用双方及方向由 `parties / why / evidence` 表达（规格在收敛过程中发生的合理 schema 简化，非漏字段）。relationEvents 中非对称关系仍保留真实 source→target，对称关系 source/target 仅 canonical ordering。
+3. **冻结清单（不在部署前扩展）**：exposedUnrooted vs hiddenMainRoot 排序；d2 合绊自动降级；七杀坐禄但非本气根节点；藏干官杀混杂；中余气财印冲；任何新 structuralRisk 类型。
+4. **允许部署 p3-a3**：fetch 检查 origin/main → merge（真实 merge）→ 确认只带入 A3 白名单 → push main → webhook 部署 → 线上验证 js/bazi.js 与 P2 冻结 blob 字节一致、js/structural.js 与 merge blob 字节一致。
+5. **线上最小验收**：#9（51 中和/用木/喜木/忌空/8 events/3 risks/伤官见官=潜在/子午冲 why 含"印星之根"不含"日主之禄"/财印冲=潜在）；K2（A6=存在/P15-03 不输出/H05=潜在/H13 不输出/#8/B1 恢复）；再选一个零 structuralRisk 盘验证五行层零漂移。
+6. 验收通过后 **P3-A = CLOSED + deployed**，不再修改 P3-A 规则。下一阶段先做 P3 总体收口判断（P3-B nonDayBranchRoot 是否值得独立开 P2.4 / structuralRisks 如何进入最终报告 UI / 是否进入最终盲测），**不默认 P3-B 一定要实现**。
