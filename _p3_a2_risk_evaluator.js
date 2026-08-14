@@ -1,13 +1,21 @@
-// P3-A2（2026-08-14）：structuralRiskEvaluator 收敛版 —— 依据 GPT 二次裁决 12 条 + 交接规格（p3-a2-handoff-2026-08-14）。
+// P3-A2-final（2026-08-14）：structuralRiskEvaluator 收敛版 —— GPT 二次裁决 12 条 + GPT P3-A2 最终裁决 10 条（A2-final）。
 // 相对 A1 原型（_p3_a1_relation_events.js，f23eb1b 冻结、本脚本不动 A1 文件）的变更：
 //   ① 节点清单 v2：删"日主之禄"；无条件 = 印星之根 + 用神节点（同五行/用神干之禄）；
 //     条件触发 = 格局核心十神之根（从 pat.name 解析十神词→五行，去重；与无条件印根合并去重）。
-//   ② presenceEvidence 五档：exposedRooted/exposedUnrooted/hiddenMainRoot/hiddenSecondaryRoot/absent
-//     （强弱序按 GPT 二次裁决列序执行——exposedUnrooted 强于 hiddenMainRoot，定序理由 GPT 未给，执行口径待复核）。
+//     A2-final 补（最终裁决第 4 条）：透干七杀坐支之根（七杀透干且同柱地支主气/支五行===杀五行，仅该同柱根，
+//     不恢复泛化全盘七杀之根；本气根严格口径，禄位坐支如戊坐巳不满足——执行口径）。
+//   ② presenceEvidence 五档：exposedRooted/exposedUnrooted/hiddenMainRoot/hiddenSecondaryRoot/absent。
+//     语义 = structuralPresence（结构显现度），非旺衰强弱：透而无根的结构角色比潜伏主气更易形成可见结构冲突。
+//     最终裁决第 1 条批准列序并冻结语义：本序列禁用于任何"哪五行实际更强"的旺衰比较。
 //   ③ 伤官见官/财破印/枭夺食 全 pair 枚举后聚合成一条 risk；合绊 mitigation 按合绊对柱位距离 1强/2中/3弱（文案带 d 值）。
-//   ④ 官杀混杂仅双透判；杀被五合绊仍判混杂、合绊入 mitigation（与伤官见官一致，执行口径待 GPT 复核）；
-//     severity：双透未合且贴邻→存在，否则潜在（执行口径）。
-//   ⑤ 杀重无制 A/B：risks.csv 保留 K1（A1 口径冻结）；K2 证据式另出 _p3_a2_sha_ab.csv 对账，不参数搜索。
+//   ④ 官杀混杂仅双透判（最终裁决第 2 条冻结）：双透即 detector 命中；被五合不取消混杂事实、只进 mitigation/severity；
+//     severity：双透未合且贴邻→存在，否则潜在。
+//   ⑤ 杀重无制 K2-final（最终裁决第 3/5/6/7 条）：risks.csv 直接采用 K2-final（A/B 已收敛）；
+//     证据 e1 当令/e2 本气强根/e3 多现/e4 全三合三会（半合半会不入 e4）；
+//     有效制化=印/食伤透干∧(本气根∨禄∨中气根)（中气根=藏干中气与本干同字，元素级中气不承认，防辛借巳中庚充根；余气不计）；
+//     合绊=独立 mitigation（非制化）：d1 强可 存在→潜在，d2 中仅记录不自动降级（"另有缓解"在 K2 内暂无第二机制，待 A3 措辞），d3 弱不改变 severity；
+//     severity：证据≥2∧无制化∧无强合绊=存在；证据≥2∧无制化∧强合绊=潜在；证据=1∧无制化=潜在；否则不输出。
+//     K1 列仍保留于 _p3_a2_sha_ab.csv 作 A/B 历史对照。
 //   ⑥ triggerHints v2：十神角色具体化；硬断言 禁"必凶"、禁"任一"、必含"若"或"可能"。
 // 纪律：不改 P1/P2 分数、不改引擎、不 push；relationEvents 事实层照抄 A1 冻结版本（逐字）。
 var fs = require('fs'), cp = require('child_process'), path = require('path');
@@ -132,12 +140,12 @@ function huiMonthOverride(b) {
 }
 function monthWx(b) { return huiMonthOverride(b) || ZHI_WX[b.month.zhi]; } // 得令判定用本气/三会改写，不用司令分野（js/bazi.js:2228 司令仅参考不参与）
 
-// ---------- presenceEvidence 五档（GPT 二次裁决第 2 条）----------
-// 强弱序（执行口径，按 GPT 列序）：exposedRooted > exposedUnrooted > hiddenMainRoot > hiddenSecondaryRoot > absent
+// ---------- presenceEvidence 五档 = structuralPresence（结构显现度；GPT 最终裁决第 1 条冻结）----------
+// 显序（结构显现度排序，非旺衰强弱；禁用于旺衰比较）：exposedRooted > exposedUnrooted > hiddenMainRoot > hiddenSecondaryRoot > absent
 //   exposedRooted = 透干∧(本气根∨禄位)；exposedUnrooted = 透干无根；hiddenMainRoot = 不透但本气根；
 //   hiddenSecondaryRoot = 仅中余气藏干；absent = 全无。
 // 本气根口径 = 任一地支主气（CANG[z][0]）五行 === 目标五行（12 支支五行恒等于主气五行，两支口径等价）。
-var PRESENCE_RANK = { exposedRooted: 4, exposedUnrooted: 3, hiddenMainRoot: 2, hiddenSecondaryRoot: 1, absent: 0 };
+var STRUCTURAL_PRESENCE_RANK = { exposedRooted: 4, exposedUnrooted: 3, hiddenMainRoot: 2, hiddenSecondaryRoot: 1, absent: 0 }; // 仅作显序标注，v2 各检测器 severity 不使用显序比较
 function hasMainRoot(b, wxTarget) {
   return POS.some(function (p) { return GAN_WX[CANG[b[p].zhi][0]] === wxTarget; });
 }
@@ -210,7 +218,7 @@ function heBanMap(b, gv) {
 function risk(type, severity, parties, why, mitigations, triggerHint, evidence, partyEvidence) {
   return { type: type, severity: severity, parties: parties, why: why, mitigations: mitigations, triggerHint: triggerHint, evidence: evidence, partyEvidence: partyEvidence };
 }
-function evaluateStructuralRisks(b, events, wx) {
+function evaluateStructuralRisks(b, events, wx, ab) {
   var risks = [];
   var gv = ganVisible(b);
   var has = function (shen) { return gv.filter(function (g) { return g.shen === shen; }); };
@@ -218,6 +226,10 @@ function evaluateStructuralRisks(b, events, wx) {
   var dgWx = GAN_WX[b.day.gan];
   var yongWx = wx.yongWx;
   var he = heBanMap(b, gv);
+  // ④ 透干七杀坐支之根（GPT 最终裁决第 4 条）：可见七杀 ∧ 其同柱地支支五行===七杀五行；仅该同柱根，非泛化全盘杀根
+  var shaWx0 = kEWO(dgWx);
+  var shaSatZhis = {};
+  sha.forEach(function (g) { if (ZHI_WX[b[g.pos].zhi] === shaWx0) shaSatZhis[b[g.pos].zhi] = 1; });
 
   // ===== 1) 伤官见官 v2：全 pair 枚举聚合成一条（裁决第 8 条）=====
   if (shang.length && guan.length) {
@@ -319,30 +331,23 @@ function evaluateStructuralRisks(b, events, wx) {
       '天干同透正官与七杀（双透口径；藏干不透不判混杂）',
       miti4.length ? miti4.join('；') : '无',
       '若正官' + guan[0].gan + '或七杀' + sha[0].gan + '进一步增强而制化不足，官杀混杂的反复/压力感可能加重。',
-      'v2：仅双透判（裁决第 6 条）；杀被五合绊仍判混杂、合绊入 mitigation（执行口径待 GPT 复核）；severity=双透未合且贴邻→存在，否则潜在',
+      'v2：仅双透判（裁决第 6 条）；杀被五合绊仍判混杂、合绊入 mitigation（GPT 最终裁决第 2 条冻结）；severity=双透未合且贴邻→存在，否则潜在',
       pe4.join('；')));
   }
-  // ===== 5) 杀重无制 K1（A1 口径冻结；K2 证据式见 shaAB，仅出 _p3_a2_sha_ab.csv 对账）=====
-  if (sha.length >= 2 && !shang.length && !shi.length && !zhengYin.length && !xiao.length) {
+  // ===== 5) 杀重无制 K2-final（GPT 最终裁决第 5/6/7 条直接采用；K1 仅留 _p3_a2_sha_ab.csv 历史对照）=====
+  if (ab && ab.k2) {
     var pe5 = [];
     sha.forEach(function (g) { var t = POS_NAME[g.pos] + g.gan + '七杀:' + presenceEvidence(b, GAN_WX[g.gan], g.gan); if (pe5.indexOf(t) < 0) pe5.push(t); });
-    risks.push(risk('杀重无制', '存在',
+    risks.push(risk('杀重无制', ab.k2,
       sha.map(function (g) { return POS_NAME[g.pos] + g.gan; }).join('、'),
-      '七杀透干' + sha.length + '处且天干无食伤制杀、无印化杀', '无',
-      '若七杀' + sha[0].gan + '再得根增强而天干无食伤制杀、无印化杀，杀重无制之势可能加重；出现印化杀或食伤制杀则风险可能解除。',
-      'K1（A1 口径冻结）：杀透≥2 ∧ 无食伤∧无印透；K2 证据式对照见 _p3_a2_sha_ab.csv',
+      '七杀透干' + sha.length + '处；证据 ' + ab.evCount + ' 项（' + ab.evDetail + '）' + (ab.shaHeDesc ? '；' + ab.shaHeDesc : ''),
+      ab.shaHeDesc || '无',
+      '若七杀' + sha[0].gan + '再得根增强而制化不足，杀重无制之势可能加重；出现印化杀或食伤制杀则风险可能解除。',
+      'K2-final（GPT 最终裁决第 5/6/7 条）：证据≥2∧无制化∧无强合绊=存在；强合绊(d1)→潜在；证据=1→潜在；制化含中气根；K1 对照见 _p3_a2_sha_ab.csv',
       pe5.join('；')));
-  } else if (sha.length === 1 && !shang.length && !shi.length && !zhengYin.length && !xiao.length) {
-    var pe5b = [POS_NAME[sha[0].pos] + sha[0].gan + '七杀:' + presenceEvidence(b, GAN_WX[sha[0].gan], sha[0].gan)];
-    risks.push(risk('杀重无制', '潜在',
-      POS_NAME[sha[0].pos] + sha[0].gan,
-      '七杀透干一处且无制化（单杀不判重，仅记潜在）', '无',
-      '若七杀' + sha[0].gan + '再得根增强而无制化，杀势可能加重。',
-      'K1（A1 口径冻结）：单杀无制仅记潜在',
-      pe5b.join('；')));
   }
   // ===== 6) 关键用神/格局节点受冲 v2：节点清单 v2 =====
-  // 无条件：印星之根（支五行===印 或 主气===印）+ 用神节点（支五行===用神 / 用神干之禄）。
+  // 无条件：印星之根（支五行===印 或 主气===印）+ 用神节点（支五行===用神 / 用神干之禄）+ 透干七杀坐支之根（裁决第 4 条补入）。
   // 条件触发：格局核心十神之根（pat.name 含词才加；与无条件印根合并去重）。
   // 已删：日主之禄（裁决第 1 条；纯冲禄只留事实层）。
   var yinWx = shENGWO(dgWx);
@@ -352,6 +357,7 @@ function evaluateStructuralRisks(b, events, wx) {
     if (ZHI_WX[z] === yinWx || GAN_WX[CANG[z][0]] === yinWx) arr.push('印星之根');
     if (ZHI_WX[z] === yongWx) arr.push('用神同五行');
     yongGans.forEach(function (g) { if (LU[g] === z) arr.push('用神干' + g + '之禄'); });
+    if (shaSatZhis[z]) arr.push('透干七杀坐支之根');
     coreWxs.forEach(function (o) {
       if (ZHI_WX[z] === o.wx || GAN_WX[CANG[z][0]] === o.wx) arr.push('格局核心' + o.word + '之根');
     });
@@ -376,7 +382,7 @@ function evaluateStructuralRisks(b, events, wx) {
         '六冲' + za + zb + '命中' + (hitA ? hitA : '') + (hitB ? '；' + hitB : '') + '，位距' + d6 + (e.involvesMonth ? '、涉月令' : '') + (e.involvesDay ? '、涉日支' : ''),
         '无',
         hint6,
-        'v2：节点清单=印星之根+用神节点（无条件）∪格局核心十神之根（条件）；已删日主之禄',
+        'v2：节点清单=印星之根+用神节点+透干七杀坐支之根（无条件）∪格局核心十神之根（条件）；已删日主之禄',
         pe6.join('；')));
     }
   });
@@ -412,12 +418,14 @@ function evaluateStructuralRisks(b, events, wx) {
   return risks;
 }
 
-// ---------- 杀重无制 K2（证据式，裁决第 10 条；仅对账，不进 risks.csv）----------
+// ---------- 杀重无制 K2-final（GPT 最终裁决第 3/5/6/7 条；risks.csv 直接采用，K1 仅留 sha_ab.csv 对照）----------
 // 证据（盘级、按杀五行）：e1 当令（月令五行===杀，三会改写月令按 js/bazi.js:2197 镜像；湿土调候不计——执行口径）
 //   e2 本气强根（任一地支主气===杀五行）/ e3 多现（透杀≥2 ∨ (透杀≥1∧本气根) ∨ 本气根≥2处）
-//   e4 三合或三会（relationEvents 全三合局/全三会方局五行===杀五行；半合半会不计——执行口径）
-// 有效制化（落地口径）：印透干∧(印本气根∨印干之禄) 或 食伤透干∧(食伤本气根∨食伤干之禄)。
-// 判定：透杀≥1∧证据≥2∧无有效制化=存在；证据=1∧无有效制化=潜在；否则不输出。
+//   e4 全三合局或全三会方局五行===杀（半合半会不入 e4——最终裁决第 3 条）。
+// 有效制化（最终裁决第 5 条）：印/食伤透干 ∧ (本气根 ∨ 禄 ∨ 中气根)；
+//   中气根 = 任一地支藏干中气（CANG[z][1]）与本干同字（如庚在巳中庚），元素级中气不承认（防辛借巳中庚充根），余气不计。
+// 合绊 mitigation（最终裁决第 6 条，独立于制化）：杀被五合 d1 强→可将 存在 降 潜在；d2 中仅记录不自动降级；d3 弱不改变 severity。
+// severity：证据≥2∧无制化∧无强合绊=存在；证据≥2∧无制化∧强合绊=潜在；证据=1∧无制化=潜在；否则不输出。
 function shaAB(b, events) {
   var gv = ganVisible(b);
   var dgWx = GAN_WX[b.day.gan];
@@ -437,25 +445,45 @@ function shaAB(b, events) {
     return (e.type === '三合局' && e.elements[1] === '合' + shaWx) || (e.type === '三会方' && e.elements[1] === '会' + shaWx);
   }) ? 1 : 0;
   var evCount = e1 + e2 + e3 + e4;
-  // 有效制化
-  function rooted(g) { return hasMainRoot(b, GAN_WX[g.gan]) || POS.some(function (p) { return b[p].zhi === LU[g.gan]; }); }
+  var evDetail = [e1 ? 'e1当令' : '', e2 ? 'e2本气强根' : '', e3 ? 'e3多现' : '', e4 ? 'e4三合三会' : ''].filter(Boolean).join('、');
+  // 有效制化（中气根=藏干中气与本干同字；禄=LU；本气根=元素级主气）
+  function rooted(g) {
+    return hasMainRoot(b, GAN_WX[g.gan])
+      || POS.some(function (p) { return b[p].zhi === LU[g.gan]; })
+      || POS.some(function (p) { return CANG[b[p].zhi][1] === g.gan; });
+  }
+  function rootLabel(g) {
+    if (POS.some(function (p) { return b[p].zhi === LU[g.gan]; })) return '·禄';
+    if (hasMainRoot(b, GAN_WX[g.gan])) return '·本气根';
+    return '·中气根';
+  }
   var yinZhi = yinGans.filter(rooted), shiZhi = shiGans.filter(rooted);
   var zhihuaDesc = [];
-  if (yinZhi.length) zhihuaDesc.push('印:' + yinZhi.map(function (g) { return g.gan + '(' + g.shen + (POS.some(function (p) { return b[p].zhi === LU[g.gan]; }) ? '·禄' : '·本气根') + ')'; }).join(','));
-  if (shiZhi.length) zhihuaDesc.push('食伤:' + shiZhi.map(function (g) { return g.gan + '(' + g.shen + (POS.some(function (p) { return b[p].zhi === LU[g.gan]; }) ? '·禄' : '·本气根') + ')'; }).join(','));
+  // 多根干用「、」分隔（ASCII 逗号会破坏 CSV 列）
+  if (yinZhi.length) zhihuaDesc.push('印:' + yinZhi.map(function (g) { return g.gan + '(' + g.shen + rootLabel(g) + ')'; }).join('、'));
+  if (shiZhi.length) zhihuaDesc.push('食伤:' + shiZhi.map(function (g) { return g.gan + '(' + g.shen + rootLabel(g) + ')'; }).join('、'));
   var zhihua = zhihuaDesc.length > 0;
-  // K1（A1 口径冻结）
+  // 杀合绊（最终裁决第 6 条：五合绊与印化/食伤制分列）
+  var he = heBanMap(b, gv);
+  var shaHe = [];
+  sha.forEach(function (g) { if (he[g.gan]) shaHe.push({ gan: g.gan, partner: he[g.gan].partner, d: he[g.gan].d }); });
+  var shaHeDesc = shaHe.map(function (h) { return '七杀' + h.gan + '被' + h.partner + '合绊(d' + h.d + '，' + heStrength(h.d) + ')'; }).join('；');
+  var strongMit = shaHe.some(function (h) { return h.d === 1; });
+  // K1（A1 口径冻结，仅 sha_ab.csv 历史对照）
   var k1 = '';
   if (sha.length >= 2 && !shiGans.length && !yinGans.length) k1 = '存在';
   else if (sha.length === 1 && !shiGans.length && !yinGans.length) k1 = '潜在';
-  // K2
+  // K2-final
   var k2 = '';
-  if (sha.length >= 1 && !zhihua && evCount >= 2) k2 = '存在';
-  else if (sha.length >= 1 && !zhihua && evCount === 1) k2 = '潜在';
+  if (sha.length >= 1 && !zhihua) {
+    if (evCount >= 2) k2 = strongMit ? '潜在' : '存在';
+    else if (evCount === 1) k2 = '潜在';
+  }
   return {
     shaGans: sha.map(function (g) { return POS_NAME[g.pos] + g.gan + '(七杀)'; }).join('、'),
-    k1: k1, k2: k2, e1: e1, e2: e2, e3: e3, e4: e4, evCount: evCount,
+    k1: k1, k2: k2, e1: e1, e2: e2, e3: e3, e4: e4, evCount: evCount, evDetail: evDetail,
     zhihua: zhihua, zhihuaDesc: zhihuaDesc.join('；'),
+    shaHeDesc: shaHeDesc, strongMit: strongMit,
     diff: k1 !== k2 ? (k1 || '不输出') + '→' + (k2 || '不输出') : ''
   };
 }
@@ -524,8 +552,8 @@ ALL.forEach(function (c) {
   var b = toBazi(c.gz);
   var events = relationEvents(b);
   var wx = wuxingLayer(b);
-  var risks = evaluateStructuralRisks(b, events, wx);
   var ab = shaAB(b, events);
+  var risks = evaluateStructuralRisks(b, events, wx, ab);
   risks.forEach(function (r) {
     riskTypeCount[r.type] = (riskTypeCount[r.type] || 0) + 1;
     riskRows.push([c.set, c.id, c.gz.join(' '), wx.score, wx.level, wx.yong.join('、'), wx.xi.join('、'), wx.ji.join('、'), wx.pattern, r.type, r.severity, r.parties, r.why, r.mitigations, r.triggerHint, r.evidence, r.partyEvidence]);
@@ -535,18 +563,18 @@ ALL.forEach(function (c) {
     if (r.triggerHint.indexOf('可能') < 0 && r.triggerHint.indexOf('若') < 0) { console.error('❌ triggerHint 非条件语言: ' + c.id + ' ' + r.type + ' → ' + r.triggerHint); process.exit(1); }
     if (!r.partyEvidence) { console.error('❌ partyEvidence 缺失: ' + c.id + ' ' + r.type); process.exit(1); }
   });
-  shaRows.push([c.set, c.id, c.gz.join(' '), ab.shaGans, ab.k1, ab.k2, ab.e1, ab.e2, ab.e3, ab.e4, ab.evCount, ab.zhihua ? '有' : '无', ab.zhihuaDesc, ab.diff]);
+  shaRows.push([c.set, c.id, c.gz.join(' '), ab.shaGans, ab.k1, ab.k2, ab.e1, ab.e2, ab.e3, ab.e4, ab.evCount, ab.zhihua ? '有' : '无', ab.zhihuaDesc, ab.diff, ab.shaHeDesc]);
 });
 fs.writeFileSync(path.join(ROOT, '_p3_a2_risks.csv'), [['set', 'id', 'gz', 'score', 'level', 'yong', 'xi', 'ji', 'pattern', 'riskType', 'severity', 'parties', 'why', 'mitigations', 'triggerHint', 'evidence', 'partyEvidence'].join(',')].concat(riskRows.map(function (r) { return r.join(','); })).join('\n'), 'utf8');
-fs.writeFileSync(path.join(ROOT, '_p3_a2_sha_ab.csv'), [['set', 'id', 'gz', 'shaGans', 'K1', 'K2', 'e1当令', 'e2本气强根', 'e3多现', 'e4三合三会', '证据数', '有效制化', '制化明细', 'K1K2差异'].join(',')].concat(shaRows.map(function (r) { return r.join(','); })).join('\n'), 'utf8');
+fs.writeFileSync(path.join(ROOT, '_p3_a2_sha_ab.csv'), [['set', 'id', 'gz', 'shaGans', 'K1', 'K2', 'e1当令', 'e2本气强根', 'e3多现', 'e4三合三会', '证据数', '有效制化', '制化明细', 'K1K2差异', '杀合绊'].join(',')].concat(shaRows.map(function (r) { return r.join(','); })).join('\n'), 'utf8');
 console.log('✅ _p3_a2_risks.csv（' + riskRows.length + ' 风险行）/ _p3_a2_sha_ab.csv（' + shaRows.length + ' 盘行）已写');
 
 // ---------- 覆盖统计 ----------
 console.log('\n===== structuralRiskEvaluator v2 全样本覆盖（53 盘）=====');
 Object.keys(riskTypeCount).sort().forEach(function (t) { console.log('  ' + t + ': ' + riskTypeCount[t]); });
 
-// ---------- K1/K2 对账（裁决第 10 条：只看差异与明显漏报误报，不参数搜索）----------
-console.log('\n===== 杀重无制 K1/K2 A/B 对账 =====');
+// ---------- K1/K2 对账（A2-final：K2-final 已为 risks.csv 采用口径；K1 仅历史对照，不参数搜索）----------
+console.log('\n===== 杀重无制 K1/K2 A/B 对账（risks.csv 采用 K2-final）=====');
 var cnt = { k1c: 0, k2c: 0, k1only: 0, k2only: 0, both: 0, k1q_k2c: 0, k1c_k2q: 0 };
 var leak = [], falsePos = [], k1cRows = [], k2cRows = [];
 shaRows.forEach(function (r) {
@@ -565,14 +593,17 @@ falsePos.forEach(function (r) { console.log('    → ' + r[1] + ' ' + r[2] + ' |
 console.log('  K2=存在∧K1≠存在（单杀极旺被K1漏报候选）: ' + cnt.k2only);
 leak.forEach(function (r) { console.log('    → ' + r[1] + ' ' + r[2] + ' | K1=' + (r[4] || '不输出') + ' K2存在 | 杀=' + r[3] + ' | e=' + r[6] + r[7] + r[8] + r[9] + ' | 制化=' + r[11] + ' ' + r[12]); });
 console.log('  K1潜在→K2存在（K1低估）: ' + cnt.k1q_k2c + ' | K1存在→K2潜在（K1高估）: ' + cnt.k1c_k2q);
+var k2qHe = shaRows.filter(function (r) { return r[5] === '潜在' && r[14]; });
+console.log('  K2=潜在∧杀被强合绊（裁决第 6 条降级）: ' + k2qHe.length);
+k2qHe.forEach(function (r) { console.log('    → ' + r[1] + ' ' + r[2] + ' | 杀=' + r[3] + ' | 合绊=' + r[14] + ' | e=' + r[6] + r[7] + r[8] + r[9]); });
 
 // ---------- #9 黄金样本 v2 断言（裁决第 5/8 条 + 交接规格）----------
 console.log('\n===== #9 黄金样本 v2 甲子 丁卯 己未 庚午 =====');
 var b9 = toBazi(['甲子', '丁卯', '己未', '庚午']);
 var wx9 = wuxingLayer(b9);
 var ev9 = relationEvents(b9);
-var risk9 = evaluateStructuralRisks(b9, ev9, wx9);
 var ab9 = shaAB(b9, ev9);
+var risk9 = evaluateStructuralRisks(b9, ev9, wx9, ab9);
 
 var fail = 0;
 function assert(cond, msg) { if (!cond) { fail++; console.error('  ❌ ' + msg); } else { console.log('  ✅ ' + msg); } }
@@ -613,7 +644,21 @@ assert(rCY.partyEvidence.indexOf('hiddenMainRoot') >= 0 && rCY.partyEvidence.ind
 assert(t9.indexOf('官杀混杂') < 0 && t9.indexOf('杀重无制') < 0 && t9.indexOf('枭夺食') < 0 && t9.indexOf('财破印') < 0, '官杀混杂/杀重无制/枭夺食/财破印 不触发（无乙杀/无辛食/无财透）');
 risk9.forEach(function (r) { assert(r.severity === '存在' || r.severity === '潜在', '风险分级合法: ' + r.type + '=' + r.severity); });
 // C5. #9 K1/K2 对账（无杀透 → 双方不输出）
-assert(ab9.k1 === '' && ab9.k2 === '', '#9 杀重无制 K1/K2 均不输出（无七杀透干）');
+assert(ab9.k1 === '' && ab9.k2 === '', '#9 杀重无制 K1/K2-final 均不输出（无七杀透干）');
+// C6. A2-final 四盘预期（GPT 最终裁决第 7 条）+ #8/B1 节点风险恢复（裁决第 4 条）
+function chartOf(id) { for (var i = 0; i < ALL.length; i++) if (ALL[i].id === id) return ALL[i]; return null; }
+function shaOf(id) { var c = chartOf(id); var bb = toBazi(c.gz); return shaAB(bb, relationEvents(bb)); }
+var aA6 = shaOf('A6'), aP15 = shaOf('P15-03'), aH05 = shaOf('H05'), aH13 = shaOf('H13');
+assert(aA6.k2 === '存在' && aA6.evCount >= 2 && !aA6.zhihua && !aA6.strongMit, 'A6 癸酉 乙卯 己丑 己巳：K2-final=存在（单杀当令+本气根，无制化无合绊）');
+assert(aP15.k2 === '' && aP15.zhihua, 'P15-03 乙丑 戊寅 己巳 庚午：K2-final=不输出（庚伤官中气根在巳计入有效制化——裁决第 5 条）');
+assert(aH05.k2 === '潜在' && aH05.strongMit, 'H05 庚子 乙酉 甲辰 甲子：K2-final=潜在（杀庚被乙合绊d1强降级——裁决第 6 条）');
+assert(aH13.k2 === '' && aH13.evCount === 0, 'H13 壬寅 丙午 丙戌 辛卯：K2-final=不输出（壬杀无根 e=0000）');
+var node8Rows = ['#8', 'B1'].map(function (id) {
+  var c = chartOf(id), bb = toBazi(c.gz), ev = relationEvents(bb);
+  var ab = shaAB(bb, ev);
+  return evaluateStructuralRisks(bb, ev, wuxingLayer(bb), ab).filter(function (r) { return r.type === '关键用神/格局节点受冲'; });
+});
+assert(node8Rows.every(function (rows) { return rows.length >= 1 && rows.some(function (r) { return r.why.indexOf('透干七杀坐支之根') >= 0; }); }), '#8/B1 庚申 壬午 甲午 丙寅：申寅冲节点风险恢复（两 id 行 why 均含"透干七杀坐支之根"——裁决第 4 条）');
 // D. 两层不污染
 var wx9After = wuxingLayer(b9);
 assert(JSON.stringify(wx9) === JSON.stringify(wx9After), '关系/结构层评价后五行层输出逐字节一致（不污染）');
@@ -622,5 +667,5 @@ assert(wx9.ji.join('') === '', '结构风险未写入忌神（忌神仍为空）
 var curSrc2 = fs.readFileSync(path.join(ROOT, 'js/bazi.js'), 'utf8').replace(/\r\n/g, '\n');
 assert(curSrc2 === deployed, 'js/bazi.js 全程未被改动（仍是 63fafaa）');
 
-console.log(fail === 0 ? '\n🎉 #9 v2 黄金样本验证全部通过（两层不污染，3 新挑点口径已按交接执行）' : '\n💥 失败断言 ' + fail + ' 条');
+console.log(fail === 0 ? '\n🎉 #9 v2 黄金样本验证全部通过（两层不污染；GPT 最终裁决 10 条已全量落地）' : '\n💥 失败断言 ' + fail + ' 条');
 process.exit(fail === 0 ? 0 : 1);
