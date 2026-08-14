@@ -74,12 +74,12 @@ function dataOf(c) {
 // ============================================================
 // A 层：引擎字节冻结 + 53 盘五行层（分数/旺衰/喜用忌/格局/从格）零漂移
 // ============================================================
-test('A层：js/bazi.js 与部署 blob 63fafaa 逐字节一致（sha256 + git show 双重断言）', function () {
+test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双重断言）', function () {
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '87f3255b0b130855fabd416379cbf60819336132e827bbd5ff38f278bc9d934d',
-    'js/bazi.js sha256 与 A3 开工快照一致'
+    '33916b61e75e5885b50b1e192b9c0910d27d947c5c8b2e69fe0d3ff190423377',
+    'js/bazi.js sha256 与 P4-A 补丁后冻结一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show 63fafaa:js/bazi.js', { cwd: ROOT }).toString('utf8');

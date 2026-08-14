@@ -1,9 +1,9 @@
-// P2.3 线上最小验收（2026-08-14）：拉取 zhishi.online 实际部署的 js/bazi.js，
-// 校验 sha256 === merge blob 62143475...，再用线上字节在内存跑 7 盘硬断言。
+// P4-A 线上最小验收（2026-08-14）：拉取 zhishi.online 实际部署的 js/bazi.js，
+// 校验 sha256 === P4-A 补丁后 merge blob 7c7af8bd...，再用线上字节在内存跑 7 盘硬断言。
 var https = require('https');
 var crypto = require('crypto');
 
-var EXPECT_SHA = '6214347502646dc3bdc6854b986cb0d5248db312a6736b07e3e872ab8e4368c1';
+var EXPECT_SHA = '7c7af8bd25f0c4f519df7a21256e49aeaf4e949445502f4c704fbafb2f57a528';
 
 function get(url) {
   return new Promise(function (res, rej) {
@@ -20,7 +20,7 @@ function get(url) {
   var sha = crypto.createHash('sha256').update(buf).digest('hex');
   console.log('线上 sha256: ' + sha);
   if (sha !== EXPECT_SHA) { console.error('❌ 线上文件与 merge blob 不一致'); process.exit(1); }
-  console.log('✅ 线上 js/bazi.js === merge blob 62143475…');
+  console.log('✅ 线上 js/bazi.js === merge blob 7c7af8bd…');
 
   global.window = global;
   global.document = {};

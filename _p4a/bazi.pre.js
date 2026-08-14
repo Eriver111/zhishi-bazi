@@ -4318,50 +4318,24 @@ function getPattern(bazi) {
     compound = ssZhi === '食神' ? '食神生财格' : '伤官生财格';
   }
 
-  // 从格优先于正格：从格成立时不论月令正格（"从格成则舍正格而从之"）。
-  // 同柱复合与月令正格两条路径共用本收口——P4-A(A2)：compound 不得提前 return 绕过从格替换
-  // （原缺陷：M14 伤官生财格与假从势格同盘并存）。
-  function applyCongGePriority(bazi, pResult) {
-    var cong = getCongGe(bazi);
-    if (!cong.isCong) return pResult;
-    return Object.assign({}, pResult, {
-      name: cong.name,
-      status: '成格',
-      isEstablished: true,
-      breakReasons: [],
-      desc: cong.desc,
-      source: cong.source + '（原局' + pResult.name + '，既成从格，以从格论）',
-      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。' }],
-      congGe: true,
-      basePattern: pResult.name + '·' + pResult.status
-    });
-  }
-
   if (compound) {
     var cd = PATTERNS[ss] || { name: ss, desc: '' };
-    return applyCongGePriority(bazi, finalizePatternStatus(bazi, {
+    return finalizePatternStatus(bazi, {
       name: compound,
       desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cd.desc,
       type: '同柱复合',
       monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
       source: '月柱' + mGan + mZhi + '：' + ssGan + '(' + mGan + ') + ' + ssZhi + '(' + mZhi + ')'
-    }));
+    });
   }
 
   var p = PATTERNS[ss];
 
   // 建禄与羊刃为月令特别格，不以藏干透出为成格前提。
-  // P4-A(A1)：帝旺（羊刃）月支本气为比劫（如甲刃在卯、卯本气乙劫财）时，比劫无 PATTERNS 定义，
-  // 原 !matchedSS 守卫会让十二长生特判失效、落入下方"同五行→建禄"兜底，把羊刃位（帝旺）误判成禄位。
-  // 比劫透干不得覆盖十二长生判定（v5.6 注释原意）；临官分支守卫保持原样（兜底建禄格名称正确，不扩大改动面）。
-  var matchedIsBiJie = matchedSS === '比肩' || matchedSS === '劫财';
-  var specialGrid = false;
   if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '临官') {
     p = PATTERNS['建禄'];
-    specialGrid = true;
-  } else if ((!matchedSS || matchedIsBiJie) && changShengAtMonth && changShengAtMonth.stage === '帝旺') {
+  } else if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '帝旺') {
     p = PATTERNS['羊刃'];
-    specialGrid = true;
   }
 
   // 未匹配到标准格局时，用五行关系兜底
@@ -4374,21 +4348,32 @@ function getPattern(bazi) {
     }
   }
 
-  // 帝旺+比劫透走十二长生特判的盘，来源与类型按"月令特别格"口径（与 !matchedSS 特判盘一致）
-  var source = specialGrid
-    ? '月支' + mZhi + '（' + ss + '）'
-    : matchedSS
-      ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
-      : '月支' + mZhi + '（' + ss + '）';
+  var source = matchedSS
+    ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
+    : '月支' + mZhi + '（' + ss + '）';
 
   var pResult = finalizePatternStatus(bazi, {
     name: p.name, desc: p.desc,
-    type: specialGrid ? '月令特别格' : (matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格')),
+    type: matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格'),
     monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
     source: source
   });
   // 从格优先于正格：从格成立时不论月令正格（"从格成则舍正格而从之"）
-  return applyCongGePriority(bazi, pResult);
+  var cong = getCongGe(bazi);
+  if (cong.isCong) {
+    return Object.assign({}, pResult, {
+      name: cong.name,
+      status: '成格',
+      isEstablished: true,
+      breakReasons: [],
+      desc: cong.desc,
+      source: cong.source + '（原局' + pResult.name + '，既成从格，以从格论）',
+      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。' }],
+      congGe: true,
+      basePattern: pResult.name + '·' + pResult.status
+    });
+  }
+  return pResult;
 }
 
 /**
