@@ -22,6 +22,13 @@
     return year + '-' + month + '-' + day;
   }
 
+  function formatChartBirth(normalized) {
+    var match = String(normalized && normalized.solarDate || '').match(/^(\d+)-(\d+)-(\d+)$/);
+    if (!match) return '';
+    return match[1] + '年' + Number(match[2]) + '月' + Number(match[3]) + '日 '
+      + (BRANCH_NAMES[normalized.branchIndex] || '') + '时';
+  }
+
   function normalizeBirth(input) {
     var year = Number(input.year), month = Number(input.month), day = Number(input.day);
     var hour = Number(input.hour), minute = Number(input.minute || 0);
@@ -43,7 +50,9 @@
       clock: hour,
       minute: minute,
       gender: input.gender,
-      location: input.location || input.dist || input.city || input.prov || '',
+      location: input.dist || input.city || input.prov || input.location || '',
+      city: input.city || '',
+      prov: input.prov || '',
       trueSolarTime: useTrueSolarTime,
       ziHourNextDay: input.ziHourNextDay === true,
     });
@@ -99,6 +108,7 @@
   return {
     validateSolarDate: validateSolarDate,
     clockHourToBranchIndex: clockHourToBranchIndex,
+    formatChartBirth: formatChartBirth,
     normalizeBirth: normalizeBirth,
     getSoulBodyBranches: getSoulBodyBranches,
     getGenderDesignation: getGenderDesignation,

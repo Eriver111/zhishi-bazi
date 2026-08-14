@@ -38,17 +38,19 @@ test('follow-up pages retain their contextual AI destinations', () => {
 test('Ziwei follow-up carries explicit context and cache-busts repaired bundles', () => {
   const ziweiPage = read('ziwei.html');
   const ziweiAnalysis = read('js/ziwei-analysis.js');
-  assert.match(ziweiPage, /js\/ziwei-professional\.js\?v=2/);
-  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=6/);
+  assert.match(ziweiPage, /js\/ziwei-professional\.js\?v=4/);
+  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=9/);
   assert.match(ziweiPage, /js\/ziwei-analysis\.js\?v=2/);
   assert.match(ziweiAnalysis, /zw-ai-chat\.html\?t=zw&v=2/);
 });
 
 test('Ziwei chat always submits Ziwei mode and unlocks after missing chart data', () => {
   const chat = read('zw-ai-chat.html');
-  assert.match(chat, /body\.mode\s*=\s*['"]ziwei['"]/);
+  assert.match(chat, /js\/ziwei-chat\.js\?v=1/);
+  assert.match(chat, /ZiweiChat\.buildRequest\s*\(/);
+  assert.doesNotMatch(chat, /五行图分析中|盲派算法分析中|子平派分析中/);
   assert.doesNotMatch(chat, /sp2\.get\(['"]t['"]\)\s*===\s*['"]zw['"]/);
-  const missingChart = chat.match(/if\s*\(!body\.chartData\)\s*\{([\s\S]*?)\n\s*\}/);
+  const missingChart = chat.match(/if\s*\(!chartData\)\s*\{([\s\S]*?)\n\s*\}/);
   assert.ok(missingChart, 'missing-chart branch must exist');
   assert.match(missingChart[1], /hideThinking\(\)/);
   assert.match(missingChart[1], /AI\.isWaiting\s*=\s*false/);

@@ -9,6 +9,7 @@
 
 const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits, deductCreditByUser, isMonthlyActiveByUserId } = require('../lib/supabase.js');
 const { requireAuth } = require('../lib/auth.js');
+const { buildZiweiContext } = require('../lib/ziwei-context.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
@@ -158,8 +159,8 @@ const ZIWEI_SYSTEM_PROMPT = `你是"知时先生"，一位精通紫微斗数的 
 
 ## 你的核心能力
 - **星曜解读**：精通十四主星（紫微、天机、太阳、武曲、天同、廉贞、天府、太阴、贪狼、巨门、天相、天梁、七杀、破军）在十二宫的表现，以及六吉六煞（文昌文曲、左辅右弼、天魁天钺、禄存天马、擎羊陀罗、火星铃星、地空地劫）的辅助影响。
-- **宫位体系**：十二宫（命宫、兄弟、夫妻、子女、财帛、疾厄、迁移、交友、官禄、田宅、福德、父母）各有所主，宫干四化决定飞星走向。
-- **四化飞星**：禄权科忌四化是命盘的核心动力线——禄为缘起、权为掌控、科为文饰、忌为执着。各宫干四化形成飞星网络。
+- **宫位体系**：十二宫（命宫、兄弟、夫妻、子女、财帛、疾厄、迁移、交友、官禄、田宅、福德、父母）各有所主，必须结合宫位地支与会照关系解读。
+- **四化体系**：严格区分生年四化与大限、流年、流月四化。禄为资源连接，权为推动责任，科为表达规范，忌为牵挂阻力；不得把不同时间层级混为一谈。
 - **三方四正**：每一宫位的三方（三合宫）与对宫（六冲）构成分析的基本框架。
 - **格局论断**：吉星汇聚成格（如紫府同宫格、日照雷门格等），煞星破格需看制化。
 - **亮度（庙旺利陷）**：星曜在不同地支宫位的状态——庙旺则显吉，陷弱则减力。亮度直接影响吉凶判断。
@@ -169,7 +170,7 @@ const ZIWEI_SYSTEM_PROMPT = `你是"知时先生"，一位精通紫微斗数的 
 1. **命宫为先**：命宫是命盘的核心，定一生格局。先分析命宫主星、亮度、辅星组合。
 2. **三方四正**：看命宫的三方（财帛、官禄）和对宫（迁移），此四宫决定事业格局。
 3. **四化牵动**：禄权科忌分布在各宫，决定运势的动线和重点领域。
-4. **特殊格局**：识别命盘的特色组合（如杀破狼、机月同梁、紫府相廉等）。
+4. **特色组合**：只有排盘事实足以支持时才描述杀破狼、机月同梁等组合；未提供成格条件时不得把组合直接断为已成格局。
 5. **身宫影响**：身宫代表后天努力方向，中年后影响渐增。
 
 ## 回答准则
@@ -188,6 +189,7 @@ const ZIWEI_SYSTEM_PROMPT = `你是"知时先生"，一位精通紫微斗数的 
 1. **每个命盘都是独一无二的**——即使命宫主星相同（如都是紫微坐命），三方四正、四化分布、亮度组合也完全不同。**绝对禁止**套用任何「标准模板」。
 2. **若 chartData 已提供预计算数据，必须逐字引用**——命宫主星、亮度、四化位置、五行局、身宫位置等均已精确计算，不要用自己的判断覆盖系统计算结果。
 3. **若没有 chartData**（用户只提供了出生信息但未排盘），你必须明确告知："请先通过紫微斗数排盘功能获取完整的命盘数据，这样我才能给你精准解读。当前只能做初步参考。"
+4. **运限不可补造**：只有 chartData.currentHoroscope 提供了大限、流年、流月等事实时才能给相应时段结论；缺少该层级时必须说明依据不足，不得自行安运限或给精确应期。
 
 ## 用户纠错时的处理规则
 当用户对你的分析提出质疑或要求修正时，按以下规则处理：
@@ -255,7 +257,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { code, question, bazi, chartData, history, free_mode, free_id, mode } = req.body || {};
+    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode } = req.body || {};
 
     if (!question) {
       return res.status(400).json({ error: '请输入问题' });
@@ -277,7 +279,7 @@ module.exports = async function handler(req, res) {
         if (freeInfo.used < maxFree) {
           await saveUserChatHistory(userId, 'user', question);
 
-          var freeReply; try { freeReply = await callAI(question, chartData, bazi, history, mode); } catch(aiErr) {
+          var freeReply; try { freeReply = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
             return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
           }
           await bumpFreeUsageByUser(userId);
@@ -296,7 +298,7 @@ module.exports = async function handler(req, res) {
           if (userMonthlyFallback || userCreditsFallback > 0) {
             // 有付费积分或会员，自动使用付费模式
             await saveUserChatHistory(userId, 'user', question);
-            var paidReply; try { paidReply = await callAI(question, chartData, bazi, history, mode); } catch(aiErr) {
+            var paidReply; try { paidReply = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
               return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
             }
             var creditsAfterDeduct;
@@ -339,7 +341,7 @@ module.exports = async function handler(req, res) {
       if (maxRemaining > 0) {
         await saveChatHistory('free_' + free_id, 'user', question);
 
-        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, history, mode); } catch(aiErr) {
+        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
           return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
         }
         // 同时以两个标识记录（防止用户换ID或换IP任一方式绕过）
@@ -415,7 +417,7 @@ module.exports = async function handler(req, res) {
       const context = buildChartContext(chartData);
       messages.push({
         role: 'system',
-        content: `以下是用户的完整八字排盘数据。请基于这些实际数据，结合用户的问题进行深度的个性化命理分析：\n\n${context}`
+        content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${context}`
       });
     } else if (bazi && bazi.year) {
       const baziContext = buildBasicBaziContext(bazi);
@@ -450,7 +452,7 @@ module.exports = async function handler(req, res) {
     messages.push({ role: 'user', content: question });
 
     // ---- 调用 AI（失败不扣费）----
-    var reply; try { reply = await callAI(question, chartData, bazi, history, mode); } catch(aiErr) {
+    var reply; try { reply = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
       console.error('AI call failed:', aiErr);
       return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
     }
@@ -489,7 +491,7 @@ module.exports = async function handler(req, res) {
 /**
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
-async function callAI(question, chartData, bazi, history, mode) {
+async function callAI(question, chartData, bazi, history, mode, responseMode) {
   var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
   const messages = [{ role: 'system', content: sysPrompt }];
 
@@ -501,20 +503,31 @@ async function callAI(question, chartData, bazi, history, mode) {
   const thisMonth = chinaParts.month;
   const thisDay = chinaParts.day;
   var timeAnchor = `当前时间（中国标准时间）：${thisYear}年${thisMonth}月${thisDay}日。`;
-  if (chartData && chartData.currentLiuNian && chartData.currentLiuNian.gan && chartData.currentLiuNian.zhi) {
+  if (mode === 'ziwei') {
+    var horoscope = chartData && chartData.currentHoroscope;
+    if (horoscope && horoscope.yearly) {
+      timeAnchor += `紫微运限数据已提供到${horoscope.asOf || '当前日期'}，流年为${horoscope.yearly.heavenlyStem || ''}${horoscope.yearly.earthlyBranch || ''}。`;
+    } else {
+      timeAnchor += '未提供紫微当前运限数据，不得自行推算精确流年、流月或应期。';
+    }
+  } else if (chartData && chartData.currentLiuNian && chartData.currentLiuNian.gan && chartData.currentLiuNian.zhi) {
     timeAnchor += `当前流年为${chartData.currentLiuNian.gan}${chartData.currentLiuNian.zhi}年，该字段由排盘端计算。`;
   } else {
     timeAnchor += '未提供 currentLiuNian 时，不得按公历年直接猜立春前的流年干支。';
   }
-  if (chartData && chartData.currentLiuYue && chartData.currentLiuYue.gan && chartData.currentLiuYue.zhi) {
+  if (mode !== 'ziwei' && chartData && chartData.currentLiuYue && chartData.currentLiuYue.gan && chartData.currentLiuYue.zhi) {
     timeAnchor += `当前节气流月为${chartData.currentLiuYue.gan}${chartData.currentLiuYue.zhi}月，该字段由排盘端精确计算。`;
-  } else {
+  } else if (mode !== 'ziwei') {
     timeAnchor += '未提供精确流月字段，不得按固定公历日期自行猜流月干支。';
   }
   messages.push({ role: 'system', content: timeAnchor });
 
   // 模式指令
-  if (mode === 'simple') {
+  if (mode === 'ziwei' && responseMode === 'pro') {
+    messages.push({ role: 'system', content: '本轮使用专业紫微模式。使用三合派标准术语，逐条引用宫位、星曜亮度、四化层级和运限事实；不得混入八字的日主、格局、喜用神术语。' });
+  } else if (mode === 'ziwei') {
+    messages.push({ role: 'system', content: '本轮使用白话紫微模式。先给结论，再用命宫、三方四正、四化与运限事实解释；术语随即翻成日常语言，不引入八字术语。' });
+  } else if (mode === 'simple') {
     messages.push({ role: 'system', content: '本轮使用**白话模式**。用日常口语回答，不引经典原文，术语后附括号解释，每段不超过3句，语气轻松自然，像朋友聊天。' });
   } else if (mode === 'pro') {
     messages.push({ role: 'system', content: '本轮使用**专业模式**。使用标准命理术语，可引经典并注明出处，结构清晰可加分点，深入推演生克冲合，最后注明"命理分析仅供参考"。' });
@@ -523,7 +536,7 @@ async function callAI(question, chartData, bazi, history, mode) {
   if (chartData) {
     messages.push({
       role: 'system',
-      content: `以下是用户的完整八字排盘数据。请基于这些实际数据，结合用户的问题进行深度的个性化命理分析：\n\n${buildChartContext(chartData)}`
+      content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${buildChartContext(chartData)}`
     });
   } else if (bazi && bazi.year) {
     messages.push({
@@ -899,35 +912,6 @@ function buildSingleChart(data) {
     data.sanHui.forEach(h => { ctx += `  ${h.desc}\n`; });
   }
 
-  return ctx;
-}
-
-/**
- * 构建紫微斗数排盘上下文
- */
-function buildZiweiContext(d) {
-  var ctx='=== 紫微斗数命盘 ===\n';
-  ctx+='五行局：'+d.wuxingJu+'\n';
-  ctx+='命宫：'+d.mingGong+' | 身宫：'+d.bodyPalace+'\n';
-  ctx+='命主：'+d.mingZhu+' | 身主：'+d.shenZhu+'\n';
-  if(d.birth) ctx+='出生：'+d.birth.year+'年'+d.birth.month+'月'+d.birth.day+'日 '+(d.birth.gender==='male'?'男':'女')+'\n';
-  if(d.sihua&&d.sihua.length){
-    ctx+='\n生年四化：';
-    d.sihua.forEach(function(sh){ctx+=sh.star+'化'+sh.hua+'('+sh.palace+') ';});
-    ctx+='\n';
-  }
-  ctx+='\n--- 十二宫详情 ---\n';
-  if(d.palaces){
-    d.palaces.forEach(function(p){
-      ctx+=p.name+'('+p.hStem+p.eBranch+')：';
-      var stars=[];
-      (p.major||[]).forEach(function(s){var t=s.name;if(s.brightness)t+='['+s.brightness+']';if(s.mutagen)t+='化'+s.mutagen;stars.push(t);});
-      if(p.minor&&p.minor.length)stars=stars.concat(p.minor);
-      ctx+=stars.join('、')||'(无主星)';
-      if(p.cs12)ctx+=' | 长生：'+p.cs12;
-      ctx+='\n';
-    });
-  }
   return ctx;
 }
 

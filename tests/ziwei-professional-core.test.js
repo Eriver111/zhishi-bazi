@@ -36,7 +36,7 @@ test('maps every clock hour to the traditional two-hour branch', () => {
   assert.deepEqual(Array.from({ length: 24 }, (_, hour) => input.clockHourToBranchIndex(hour)), expected);
 });
 
-test('distinguishes late Zi hour from early Zi hour for iztro', () => {
+test('keeps early Zi on the civil day and maps late Zi to iztro late-Zi scope', () => {
   const input = loadInput();
   const calculator = loadBaziCalculator();
   const early = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 0, minute: 30, calculator, useTrueSolarTime: false, ziHourNextDay: true });
@@ -44,14 +44,14 @@ test('distinguishes late Zi hour from early Zi hour for iztro', () => {
 
   assert.equal(early.timeIndex, 0);
   assert.equal(late.timeIndex, 12);
-  assert.equal(early.solarDate, '2000-1-2');
+  assert.equal(early.solarDate, '2000-1-1');
   assert.equal(late.solarDate, '2000-1-1');
-  assert.equal(early.dayPillarOffset, 1);
+  assert.equal(early.dayPillarOffset, 0);
   assert.equal(late.dayPillarOffset, 1);
 
   const earlyChart = iztro.astro.bySolar(early.solarDate, early.timeIndex, 'male', true, 'zh-CN');
   const lateChart = iztro.astro.bySolar(late.solarDate, late.timeIndex, 'male', true, 'zh-CN');
-  assert.equal(earlyChart.chineseDate, lateChart.chineseDate);
+  assert.notEqual(earlyChart.chineseDate, lateChart.chineseDate);
 
   const disabled = input.normalizeBirth({
     year: 2000, month: 1, day: 1, hour: 23, minute: 30,
@@ -59,7 +59,22 @@ test('distinguishes late Zi hour from early Zi hour for iztro', () => {
   });
   assert.equal(disabled.timeIndex, 0);
   assert.equal(disabled.solarDate, '2000-1-1');
-  assert.notEqual(iztro.astro.bySolar(disabled.solarDate, disabled.timeIndex, 'male', true, 'zh-CN').chineseDate, lateChart.chineseDate);
+  assert.equal(iztro.astro.bySolar(disabled.solarDate, disabled.timeIndex, 'male', true, 'zh-CN').chineseDate, earlyChart.chineseDate);
+});
+
+test('falls back from an unsupported district and city to the selected province longitude', () => {
+  const input = loadInput();
+  const calculator = loadBaziCalculator();
+  const normalized = input.normalizeBirth({
+    year: 2000, month: 1, day: 1, hour: 1, minute: 30,
+    prov: '新疆', city: '乌鲁木齐市', dist: '天山区',
+    calculator, useTrueSolarTime: true,
+  });
+
+  assert.equal(normalized.longitudeOffsetMinutes, -130);
+  assert.equal(normalized.trueHour, 23);
+  assert.equal(normalized.dayOffset, -1);
+  assert.equal(normalized.solarDate, '1999-12-31');
 });
 
 test('moves the civil date when true solar time crosses midnight', () => {
@@ -73,6 +88,19 @@ test('moves the civil date when true solar time crosses midnight', () => {
   assert.equal(normalized.dayOffset, -1);
   assert.equal(normalized.solarDate, '1999-12-31');
   assert.equal(normalized.timeIndex, 11);
+});
+
+test('displays the effective chart date when true solar time crosses into the previous day', () => {
+  const input = loadInput();
+  const calculator = loadBaziCalculator();
+  const normalized = input.normalizeBirth({
+    year: 2025, month: 2, day: 5, hour: 1, minute: 10,
+    prov: '新疆', city: '乌鲁木齐市', dist: '天山区',
+    calculator, useTrueSolarTime: true,
+  });
+
+  assert.equal(normalized.solarDate, '2025-2-4');
+  assert.equal(input.formatChartBirth(normalized), '2025年2月4日 亥时');
 });
 
 test('Ziwei normalization is an adapter over the BaZi birth boundary', () => {
@@ -103,8 +131,8 @@ test('Ziwei page loads the BaZi calculator before its normalization adapter', ()
   const bazi = html.indexOf('js/bazi.js');
   const input = html.indexOf('js/ziwei-input.js');
   assert.ok(bazi >= 0 && input > bazi);
-  assert.match(html, /js\/ziwei-input\.js\?v=2/);
-  assert.match(html, /js\/ziwei-render\.js\?v=6/);
+  assert.match(html, /js\/ziwei-input\.js\?v=4/);
+  assert.match(html, /js\/ziwei-render\.js\?v=9/);
   const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
   assert.doesNotMatch(render, /var\s+(?:PROV_LNG|CITY_LNG)\s*=/);
 });
@@ -127,7 +155,7 @@ test('Ziwei corrections keep true solar time on and Zi-hour rollover off by defa
   const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
   assert.match(render, /LunarCalendar\.lunarToSolar/);
   assert.match(render, /LunarCalendar\.LUNAR_DAY\[day\]/, 'lunar day labels must use the one-based calendar table');
-  assert.match(render, /location:\s*city\s*\|\|\s*dist\s*\|\|\s*prov/, 'Ziwei must use the same location precedence as BaZi');
+  assert.match(render, /prov:\s*prov[\s\S]*?city:\s*city[\s\S]*?dist:\s*dist/, 'Ziwei must preserve all location fallback levels');
   assert.match(render, /ziHourNextDay:\s*document\.getElementById\(["']zwZishiHuanri["']\)\.checked/);
 });
 
@@ -185,8 +213,59 @@ test('Ziwei renderer and saved AI data use the shared complete transformation li
   const pageSource = fs.readFileSync(path.join(__dirname, '..', 'ziwei.html'), 'utf8');
   assert.match(pageSource, /ziwei-professional\.js/);
   assert.match(renderSource, /ZiweiProfessional\.collectMutagens\(zi\)/);
-  assert.match(renderSource, /sihua:\s*window\._sihuaCol\s*\|\|\s*\[\]/);
-  assert.match(renderSource, /minor:\s*\(p\.minorStars\s*\|\|\s*\[\]\)\.map[\s\S]*?mutagen:\s*s\.mutagen\s*\|\|\s*["']{2}/);
+  assert.match(renderSource, /ZiweiProfessional\.buildChatData\(zi,\s*bd,\s*normalized,\s*currentHoroscope\)/);
+});
+
+test('builds reproducible AI chart data with palace branches, full star facts and current scopes', () => {
+  const professional = require(professionalPath);
+  const chart = iztro.astro.bySolar('2004-8-14', 1, 'male', true, 'zh-CN');
+  const asOf = new Date('2026-08-14T12:00:00+08:00');
+  const horoscope = chart.horoscope(asOf);
+  const data = professional.buildChatData(chart, {
+    y: 2004, m: 8, d: 14, h: 1, min: 30, isMale: true,
+    prov: '四川', city: '成都市', dist: '锦江区', calendar: 'solar',
+    useTrueSolarTime: true, ziHourNextDay: false,
+  }, {
+    solarDate: '2004-8-14', trueHour: 0, trueMinute: 26,
+    summary: '真太阳时 00:26 · 子时',
+  }, horoscope);
+
+  assert.equal(data.type, 'ziwei');
+  assert.equal(data.mingGong, '午');
+  assert.equal(data.bodyPalace, '福德');
+  assert.equal(data.bodyPalaceZhi, '申');
+  assert.equal(data.birth.effectiveSolarDate, '2004-8-14');
+  assert.equal(data.birth.calendar, 'solar');
+  assert.equal(data.birth.dist, '锦江区');
+  assert.ok(data.palaces.some((palace) => palace.name === '田宅' && palace.cs12 && palace.minor.some((star) => star.name === '文昌')));
+  assert.equal(data.currentHoroscope.yearly.heavenlyStem + data.currentHoroscope.yearly.earthlyBranch, '丙午');
+  assert.equal(data.currentHoroscope.monthly.heavenlyStem + data.currentHoroscope.monthly.earthlyBranch, '丙申');
+  assert.ok(data.currentHoroscope.decadal.palaceNames.includes('命宫'));
+});
+
+test('normalizes the only palace name that already includes the 宫 suffix', () => {
+  const professional = require(professionalPath);
+  const chart = iztro.astro.bySolar('2013-2-10', 6, 'male', true, 'zh-CN');
+  const data = professional.buildChatData(chart, {
+    y: 2013, m: 2, d: 10, h: 12, min: 0, isMale: true,
+  }, { solarDate: '2013-2-10' }, null);
+
+  assert.equal(chart.palaces.find((palace) => palace.earthlyBranch === chart.earthlyBranchOfBodyPalace).name, '命宫');
+  assert.equal(professional.normalizePalaceName('命宫'), '命');
+  assert.equal(data.bodyPalace, '命');
+});
+
+test('uses the four canonical palace triads in the explanatory cards', () => {
+  const professional = require(professionalPath);
+  assert.deepEqual(
+    professional.getPalaceTriadGroups().map((item) => item.palaces),
+    [
+      ['命宫', '财帛', '官禄'],
+      ['兄弟', '疾厄', '田宅'],
+      ['夫妻', '迁移', '福德'],
+      ['子女', '仆役', '父母'],
+    ],
+  );
 });
 
 test('Ziwei analysis is evidence based instead of fixed good-bad scoring', () => {

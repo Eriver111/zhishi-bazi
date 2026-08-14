@@ -219,7 +219,9 @@ function doPaipan() {
       hour: h,
       minute: min,
       gender: isMale ? "male" : "female",
-      location: city || dist || prov,
+      prov: prov,
+      city: city,
+      dist: dist,
       calculator: window.BaZiCalculator,
       useTrueSolarTime: document.getElementById("zwSolarEnabled").checked,
       ziHourNextDay: document.getElementById("zwZishiHuanri").checked,
@@ -275,8 +277,9 @@ function renderChart(zi, y, m, d, h, min, ti, isMale, th, tm2, normalized) {
   var sb = ZiweiInput.getSoulBodyBranches(zi),
     mingZhi = sb.soul,
     shenZhi = sb.body;
-  var mingPal = b2p[mingZhi] ? b2p[mingZhi].name : "",
-    shenPal = b2p[shenZhi] ? b2p[shenZhi].name : "";
+  var mingPal = mingZhi ? mingZhi + "宫" : "",
+    shenPalName = b2p[shenZhi] ? ZiweiProfessional.normalizePalaceName(b2p[shenZhi].name) : "",
+    shenPal = shenZhi ? shenZhi + "宫" + (shenPalName ? "（" + shenPalName + "宫）" : "") : "";
   var genderName = ZiweiInput.getGenderDesignation(
     zi.chineseDate,
     isMale ? "male" : "female",
@@ -487,14 +490,8 @@ function renderChart(zi, y, m, d, h, min, ti, isMale, th, tm2, normalized) {
     "<div class=c-title>" +
     zi.fiveElementsClass.replace("局", "") +
     "<br>局</div><div class=c-info style=font-size:9px>" +
-    y +
-    "年" +
-    m +
-    "月" +
-    d +
-    "日 " +
-    DZ[ti % 12] +
-    "时</div><div class=c-info style=font-size:9px>农历 " +
+    ZiweiInput.formatChartBirth(normalized) +
+    "</div><div class=c-info style=font-size:9px>农历 " +
     yearGz +
     "年</div><div class=c-info style=font-size:9px>" +
     (normalized && normalized.summary ? normalized.summary : "排盘时间 " + pad(th) + ":" + pad(tm2)) +
@@ -509,37 +506,16 @@ function renderChart(zi, y, m, d, h, min, ti, isMale, th, tm2, normalized) {
     "</div>";
   grid.appendChild(center);
   var td = document.getElementById("triads");
-  [
-    {
-      name: "命财官线",
-      p: "命宫 · 财帛 · 官禄",
-      s: "事业成就与人生格局的核心轴线",
-    },
-    {
-      name: "兄疾田线",
-      p: "兄弟 · 疾厄 · 田宅",
-      s: "家庭健康与内在安全感的根基",
-    },
-    {
-      name: "夫子友线",
-      p: "夫妻 · 子女 · 仆役",
-      s: "婚姻子息与人际关系的情感世界",
-    },
-    {
-      name: "迁福母线",
-      p: "迁移 · 福德 · 父母",
-      s: "外出发展与精神福报的外在支持",
-    },
-  ].forEach(function (t) {
+  ZiweiProfessional.getPalaceTriadGroups().forEach(function (t) {
     var card = document.createElement("div");
     card.className = "triad-card";
     card.innerHTML =
       "<div class=t-name>" +
       t.name +
       "</div><div class=t-palaces>" +
-      t.p +
+      t.palaces.join(" · ") +
       "</div><div class=t-summary>" +
-      t.s +
+      t.summary +
       "</div>";
     td.appendChild(card);
   });
@@ -547,20 +523,11 @@ function renderChart(zi, y, m, d, h, min, ti, isMale, th, tm2, normalized) {
   document.getElementById("zwModeBar").style.display = "flex";
   setTimeout(function () {
     renderZwAnalysis(zi);
-    saveZwData(zi);
+    saveZwData(zi, normalized, currentHoroscope);
   }, 100);
 }
-function saveZwData(zi) {
+function saveZwData(zi, normalized, currentHoroscope) {
   var bd = window._zwBirth || {};
-  var mp = null;
-  zi.palaces.forEach(function (p) {
-    if (p.earthlyBranch === zi.earthlyBranchOfSoulPalace) mp = p;
-  });
-  var mn = mp ? mp.name : "";
-  var bp = null;
-  zi.palaces.forEach(function (p) {
-    if (p.earthlyBranch === zi.earthlyBranchOfBodyPalace) bp = p;
-  });
   var rp =
     "y=" +
     bd.y +
@@ -577,9 +544,17 @@ function saveZwData(zi) {
     "&prov=" +
     encodeURIComponent(bd.prov || "") +
     "&city=" +
-    encodeURIComponent(bd.city || "");
+    encodeURIComponent(bd.city || "") +
+    "&dist=" +
+    encodeURIComponent(bd.dist || "") +
+    "&cal=" +
+    encodeURIComponent(bd.calendar || "solar") +
+    "&solar=" +
+    (bd.useTrueSolarTime === false ? "0" : "1") +
+    "&zishi=" +
+    (bd.ziHourNextDay ? "1" : "0");
   var lb =
-    (bd.isMale ? "乾造" : "坤造") +
+    (bd.isMale ? "男命" : "女命") +
     " · " +
     bd.y +
     "年" +
@@ -587,49 +562,7 @@ function saveZwData(zi) {
     "月" +
     bd.d +
     "日";
-  var zd = {
-    type: "ziwei",
-    birth: {
-      year: bd.y,
-      month: bd.m,
-      day: bd.d,
-      hour: bd.h,
-      minute: bd.min || 0,
-      gender: bd.isMale ? "male" : "female",
-      prov: bd.prov || "",
-      city: bd.city || "",
-    },
-    mingGong: mn,
-    bodyPalace: (bp || {}).name || "",
-    wuxingJu: zi.fiveElementsClass,
-    mingZhu: zi.soul,
-    shenZhu: zi.body,
-    sihua: window._sihuaCol || [],
-    palaces: zi.palaces.map(function (p) {
-      return {
-        name: p.name,
-        hStem: p.heavenlyStem,
-        eBranch: p.earthlyBranch,
-        major: (p.majorStars || []).map(function (s) {
-          return {
-            name: s.name,
-            brightness: s.brightness || "",
-            mutagen: s.mutagen || "",
-          };
-        }),
-        minor: (p.minorStars || []).map(function (s) {
-          return {
-            name: s.name,
-            brightness: s.brightness || "",
-            mutagen: s.mutagen || "",
-          };
-        }),
-        adj: (p.adjectiveStars || []).map(function (s) {
-          return s.name;
-        }),
-      };
-    }),
-  };
+  var zd = ZiweiProfessional.buildChatData(zi, bd, normalized, currentHoroscope);
   localStorage.setItem("ai_ziwei_data", JSON.stringify(zd));
   localStorage.setItem("last_ziwei_params", rp);
   if (typeof Auth !== "undefined" && typeof Auth.syncData === "function") {
@@ -646,7 +579,7 @@ function saveZwData(zi) {
         c.unshift({
           label: lb,
           params: rp,
-          mingGong: mn,
+          mingGong: zd.mingGong,
           saved_at: new Date().toISOString(),
         });
         if (c.length > 20) c = c.slice(0, 20);
