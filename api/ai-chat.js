@@ -127,6 +127,14 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **structuralRisks**（条件性结构风险）：系统按冻结规则判定的风险列表（type/severity/parties/why/mitigations/triggerHint/partyEvidence；severity 仅"存在/潜在"两档）。**structuralRisks 不是喜用忌结论**：喜用忌（yongJi）是五行总体需求，structuralRisks 是条件性结构风险——**不得把 risk 中出现的十神/五行元素重新解释成忌神**，不得用 risk 覆盖日主旺衰或格局判断。引用 risk 时必须用条件语言（"若…可能…"），不得断言必发。
 - 大运/流年排算是算法强项，你不需要也不能替代它。如果 chartData 中没有大运数据，明确告知用户"请先通过排盘获取大运信息"，不要凭空编造。
 
+## 事实锁（2026-08-14 冻结清单，违反即幻觉）
+1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止用近义词换级**——「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
+2. **relationEvents 优先**：四柱关系以 relationEvents 结构化事件表为唯一事实源。若其他自然语言摘要（如夫妻宫综合行、宫位解读）与事件表冲突（摘要写"无冲合刑害"而事件表有涉日支的冲/合/刑/害/三合/三会），一律以事件表为准，只写事件表给出的关系，禁止复述冲突的否定摘要。
+3. **关系成员校验（写关系前必核）**：① 天干五合只有五对——甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火，其余干支组合不得写成"X合Y"；② 三会需三支齐（寅卯辰会木、巳午未会火、申酉戌会金、亥子丑会水），只有两支只能写"半会"；三合需三支齐（申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金），只有两支只能写"半合"；③ 五行相生顺序：木生火→火生土→土生金→金生水→水生木；相克顺序：木克土→土克水→水克火→火克金→金克木——写"A生B/A克B"前先核对方向。
+4. **十神逐柱对照**：每柱干支与藏干的十神映射已在排盘数据中给出，引用十神时**必须对照排盘映射**，不得凭记忆重推（如把印星写成食神、把七杀写成正官）。当映射与你的直觉不符时，以映射为准。
+5. **breakReasons 唯一性**：breakReasons 是破格的正式依据清单，其他结构说明（establishConditions 的❌项、structuralRisks、生克链注释等）不得被表述成「破格原因」；要引用破格原因时只引用 breakReasons 原文。
+6. **机制分离（制杀/化杀/通关）**：描述制杀、化杀、通关等复合机制时，必须逐步写清每一步的「A克B / A生B」方向，不得把不同路线拼成同一条因果链；若 chainHints/chainAdjustments 已有对应链路，优先照用其原文表述。
+
 **回答逻辑链**：先引用预计算结论 → 再用经典验证/补充 → 最后给出白话建议
 
 ## 回答模式
@@ -257,7 +265,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode } = req.body || {};
+    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode, qa_debug } = req.body || {};
 
     if (!question) {
       return res.status(400).json({ error: '请输入问题' });
@@ -445,14 +453,15 @@ module.exports = async function handler(req, res) {
         lock1+='，候选格局=「'+chartData.pattern.name+'」，状态=「'+(chartData.pattern.status||'未确认')+'」';
         if(chartData.pattern.breakReasons&&chartData.pattern.breakReasons.length)lock1+='，原因=「'+chartData.pattern.breakReasons.join('；')+'」';
       }
-      lock1+='。以上字段来自本次排盘，不另行重算；破格不得写成已成格。';messages.push({role:'system',content:lock1});
+      lock1+='。以上字段来自本次排盘，不另行重算；破格不得写成已成格；旺衰档位、格局状态、risk severity 均为冻结标签，禁止近义词换级。';messages.push({role:'system',content:lock1});
     }
 
     // 插入当前问题
     messages.push({ role: 'user', content: question });
 
     // ---- 调用 AI（失败不扣费）----
-    var reply; try { reply = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
+    var reply; var aiMeta = {};
+    try { reply = await callAI(question, chartData, bazi, history, mode, response_mode, aiMeta); } catch(aiErr) {
       console.error('AI call failed:', aiErr);
       return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
     }
@@ -475,12 +484,15 @@ module.exports = async function handler(req, res) {
 
     // 月度会员返回特殊标记，次数制返回剩余次数
     const creditsLeft = monthlyActive ? -1 : (credits ? credits.credits : 0);
-    return res.status(200).json({
+    const resp = {
       reply: reply,
       credits_left: creditsLeft,
       is_monthly: monthlyActive ? true : undefined,
       monthly_expires: monthlyActive ? monthlyActive.expires_at : undefined
-    });
+    };
+    // QA 回归专用：透出 V1 validator warnings（生产用户请求不带 qa_debug，行为不变）
+    if (qa_debug) resp.validation_warnings = aiMeta.warnings || [];
+    return res.status(200).json(resp);
 
   } catch (e) {
     console.error('AI 对话失败:', e);
@@ -491,7 +503,7 @@ module.exports = async function handler(req, res) {
 /**
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
-async function callAI(question, chartData, bazi, history, mode, responseMode) {
+async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut) {
   var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
   const messages = [{ role: 'system', content: sysPrompt }];
 
@@ -559,7 +571,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode) {
       lock2+=(lock2.length>10?'，':'')+'候选格局=「'+chartData.pattern.name+'」，状态=「'+(chartData.pattern.status||'未确认')+'」';
       if(chartData.pattern.breakReasons&&chartData.pattern.breakReasons.length)lock2+='，原因=「'+chartData.pattern.breakReasons.join('；')+'」';
     }
-    if (lock2.length>10) {lock2+='。以上字段不另行重算；破格不得写成已成格。';messages.push({role:'system',content:lock2});}
+    if (lock2.length>10) {lock2+='。以上字段不另行重算；破格不得写成已成格；旺衰档位、格局状态、risk severity 均为冻结标签，禁止近义词换级。';messages.push({role:'system',content:lock2});}
   }
 
   messages.push({ role: 'user', content: question });
@@ -593,7 +605,154 @@ async function callAI(question, chartData, bazi, history, mode, responseMode) {
   var reasoningLength = String(message.reasoning_content || '').length;
   console.log('[ai-chat] respModel=' + (aiData.model || '?') + ' finish=' + (choice.finish_reason || '?') + ' contentLen=' + reply.length + ' reasoningLen=' + reasoningLength + ' at=' + new Date().toISOString());
   if (!reply || reply.length < 20) throw new Error('AI 返回内容为空或过短（未扣次数）');
+
+  // V1 回复校验（GPT终裁 2026-08-14：仅检测并记 validation warnings，不修改 AI 正文）
+  var validationWarnings = [];
+  if (mode !== 'ziwei' && mode !== 'liuren') {
+    validationWarnings = runReplyValidation(chartData, reply);
+    validationWarnings.forEach(function(w) { console.log('[ai-validator] ' + w); });
+  }
+  if (metaOut) metaOut.warnings = validationWarnings;
   return reply;
+}
+
+/**
+ * V1 回复校验器（GPT终裁 2026-08-14：仅检测，不修改 AI 正文）
+ * 四查：①冻结档位漂移（E4） ②"无冲合刑害"vs relationEvents（E2）
+ *      ③标准关系表错误：五合/三会三合缺员/生克方向（E1） ④干支+十神映射冲突（E1）
+ * 命中只返回 warning 字符串数组；callAI 负责 console.log 与响应透出（qa_debug 时）。
+ * 本函数为纯函数，不依赖外部状态。
+ */
+function runReplyValidation(chartData, reply) {
+  var warnings = [];
+  if (!chartData || !reply) return warnings;
+  if (chartData.type === 'ziwei' || chartData.type === 'liuren') return warnings;
+
+  var GAN = '甲乙丙丁戊己庚辛壬癸';
+  var ZHI = '子丑寅卯辰巳午未申酉戌亥';
+  var WX = '金木水火土';
+  var m;
+
+  // ---------- ① 冻结档位漂移（E4） ----------
+  var ds = chartData.dayMasterStrength;
+  if (ds && ds.level && !(chartData.congGe && chartData.congGe.isCong)) {
+    var famMap = { '极强': 'strong', '偏强': 'strong', '中和': 'neutral', '偏弱': 'weak', '极弱': 'weak' };
+    var fam = famMap[ds.level];
+    if (fam) {
+      var others = fam === 'strong' ? [/身弱/, /偏弱/, /极弱/, /身衰/, /偏衰/, /中和/]
+                 : fam === 'weak' ? [/身强/, /偏强/, /极强/, /身旺/, /偏旺/, /中和/]
+                 : [/身强/, /偏强/, /极强/, /身旺/, /偏旺/, /身弱/, /偏弱/, /极弱/, /身衰/, /偏衰/];
+      var seen = {};
+      others.forEach(function(re) {
+        var mm = reply.match(re);
+        if (mm && !seen[mm[0]]) {
+          seen[mm[0]] = true;
+          var i = reply.indexOf(mm[0]);
+          warnings.push('E4-档位漂移：系统档位=「' + ds.level + '」，回复出现「' + mm[0] + '」——' + reply.slice(Math.max(0, i - 15), i + 15).replace(/\n/g, ' '));
+        }
+      });
+    }
+  }
+
+  // ---------- ② "无冲合刑害" vs relationEvents（E2） ----------
+  if (/无冲合刑害|无冲无合|无冲、?无合|不见冲合/.test(reply)) {
+    var evts = chartData.relationEvents || [];
+    var dayEvts = evts.filter(function(e) { return e.involvesDay || (e.pillars && Array.isArray(e.pillars) && e.pillars.indexOf('day') >= 0); });
+    if (dayEvts.length) {
+      warnings.push('E2-关系否定冲突：回复含「无冲合刑害」类否定语，但 relationEvents 有 ' + dayEvts.length + ' 条涉日支事件（' + dayEvts.map(function(e) { return e.type + ':' + e.pillars.join('+'); }).join('；') + '）');
+    }
+  }
+
+  // ---------- ③ 标准关系表错误（E1） ----------
+  // 天干五合：只有五对
+  var validHe = ['甲己', '乙庚', '丙辛', '丁壬', '戊癸'];
+  var heRe = new RegExp('([' + GAN + '])([' + GAN + '])(?:相)?合', 'g');
+  while ((m = heRe.exec(reply)) !== null) {
+    if (validHe.indexOf([m[1], m[2]].sort().join('')) < 0) {
+      warnings.push('E1-五合错误：回复出现「' + m[0] + '」，五合只有甲己/乙庚/丙辛/丁壬/戊癸五对');
+    }
+  }
+  // 五行生克方向
+  var shengValid = ['木火', '火土', '土金', '金水', '水木'];
+  var keValid = ['金木', '木土', '土水', '水火', '火金'];
+  var shengRe = new RegExp('([' + WX + '])(?:能|可以|来)?生([' + WX + '])', 'g');
+  while ((m = shengRe.exec(reply)) !== null) {
+    if (shengValid.indexOf(m[1] + m[2]) < 0) {
+      warnings.push('E1-生克方向：回复出现「' + m[0] + '」，相生顺序为木生火→火生土→土生金→金生水→水生木');
+    }
+  }
+  var keRe = new RegExp('([' + WX + '])(?:能|可以|来)?克([' + WX + '])', 'g');
+  while ((m = keRe.exec(reply)) !== null) {
+    if (keValid.indexOf(m[1] + m[2]) < 0) {
+      warnings.push('E1-生克方向：回复出现「' + m[0] + '」，相克顺序为木克土→土克水→水克火→火克金→金克木');
+    }
+  }
+  // 三会/三合成员校验（缺员即E1；大运/流年支可补，一并计入在场支）
+  var branchSet = { '三会木': '寅卯辰', '三会火': '巳午未', '三会金': '申酉戌', '三会水': '亥子丑',
+                    '三合水': '申子辰', '三合木': '亥卯未', '三合火': '寅午戌', '三合金': '巳酉丑' };
+  var present = [];
+  if (chartData.fourPillars) {
+    ['year', 'month', 'day', 'hour'].forEach(function(pos) {
+      var p = chartData.fourPillars[pos];
+      if (p && p.zhi) present.push(p.zhi);
+    });
+  }
+  if (chartData.currentDaYun && chartData.currentDaYun.zhi) present.push(chartData.currentDaYun.zhi);
+  if (chartData.currentLiuNian && chartData.currentLiuNian.zhi) present.push(chartData.currentLiuNian.zhi);
+  var dirWX = { '东': '木', '南': '火', '西': '金', '北': '水' };
+  var huiRe = /(三会|三合|会成|合成)(东|南|西|北)?(?:方)?([木火金水])(?:方|局)?/g;
+  while ((m = huiRe.exec(reply)) !== null) {
+    var kind = m[1] === '会成' ? '三会' : m[1] === '合成' ? '三合' : m[1];
+    var el = m[3];
+    if (m[2] && dirWX[m[2]] !== el) {
+      warnings.push('E1-方位五行错配：回复出现「' + m[0] + '」，' + m[2] + '方对应五行是' + dirWX[m[2]] + '而非' + el);
+      continue;
+    }
+    var key = kind + el;
+    if (!branchSet[key]) continue;
+    var missing = branchSet[key].split('').filter(function(b) { return present.indexOf(b) < 0; });
+    if (missing.length) {
+      var halfName = kind === '三会' ? '半会' : '半合';
+      warnings.push('E1-合局缺员：回复出现「' + m[0] + '」（' + kind + '），在场支为[' + present.join('') + ']，缺「' + missing.join('') + '」' + (missing.length === 1 ? '（两支应写' + halfName + '，除非大运/流年补入）' : ''));
+    }
+  }
+
+  // ---------- ④ 干支+十神映射冲突（E1） ----------
+  var SS = ['比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '偏官', '正官', '偏印', '枭神', '正印'];
+  function normSS(v) {
+    if (!v) return '';
+    for (var i = 0; i < SS.length; i++) {
+      if (v.indexOf(SS[i]) >= 0) { return SS[i] === '枭神' ? '偏印' : SS[i] === '七杀' ? '偏官' : SS[i]; }
+    }
+    return '';
+  }
+  var map = {};
+  function addMap(g, v) { var n = normSS(v); if (g && n) map[g] = n; }
+  if (chartData.fourPillars) {
+    ['year', 'month', 'day', 'hour'].forEach(function(pos) {
+      var p = chartData.fourPillars[pos];
+      if (!p) return;
+      if (p.gan) addMap(p.gan, p.shiShenGan);
+      if (p.zhi) addMap(p.zhi, p.shiShenZhi);
+      if (p.cangGan && p.cangGan.length) p.cangGan.forEach(function(c) { addMap(c.gan, c.shiShen); });
+    });
+  }
+  if (chartData.daYun && chartData.daYun.cycles) {
+    chartData.daYun.cycles.forEach(function(c) { if (c.gan) addMap(c.gan, c.shiShen); });
+  }
+  if (chartData.currentDaYun && chartData.currentDaYun.gan) addMap(chartData.currentDaYun.gan, chartData.currentDaYun.shiShen);
+  if (chartData.currentLiuNian && chartData.currentLiuNian.gan) addMap(chartData.currentLiuNian.gan, chartData.currentLiuNian.shiShen);
+  var ssRe = new RegExp('([' + GAN + ZHI + '])([' + WX + '])?(?:为|是|属|作)?(比肩|劫财|食神|伤官|偏财|正财|七杀|偏官|正官|偏印|枭神|正印)', 'g');
+  while ((m = ssRe.exec(reply)) !== null) {
+    var expect = map[m[1]];
+    if (!expect) continue;
+    var claimed = normSS(m[3]);
+    if (claimed && claimed !== expect) {
+      warnings.push('E1-十神映射冲突：回复称「' + m[0] + '」，排盘映射 ' + m[1] + '→' + expect);
+    }
+  }
+
+  return warnings;
 }
 
 /**
@@ -792,6 +951,15 @@ function buildSingleChart(data) {
   }
 
 
+  // GPT终裁 2026-08-14：relationEvents 有涉日支事件时，夫妻宫综合行不得再带"无冲合刑害"否定语
+  // （引擎字节不动，仅在 context 组装层剥除冲突短语）
+  var dayHasRelation = false;
+  if (data.relationEvents && Array.isArray(data.relationEvents)) {
+    data.relationEvents.forEach(function(e) {
+      if (e.involvesDay || (e.pillars && Array.isArray(e.pillars) && e.pillars.indexOf('day') >= 0)) dayHasRelation = true;
+    });
+  }
+
   // v5.2: 日支专项分析
   if (data.dayBranchAnalysis) {
     var dba = data.dayBranchAnalysis;
@@ -810,7 +978,18 @@ function buildSingleChart(data) {
     if (dba.cangGan && dba.cangGan.length) {
       ctx += '  藏干详析：' + dba.cangGan.map(function(c) { return c.level + c.gan + '(' + c.shiShen + ')' + '——' + c.desc; }).join(' | ') + '\n';
     }
-    ctx += '  综合：' + dba.summary + '\n';
+    var dbaSummary = dba.summary || '';
+    if (dayHasRelation) {
+      dbaSummary = dbaSummary
+        .replace(/无冲合刑害[。；;]*/g, '')
+        .replace(/无冲、?无合[。；;]*/g, '')
+        .replace(/；；+/g, '；')
+        .replace(/。；/g, '；')
+        .replace(/^；+/, '')
+        .trim();
+      if (!dbaSummary) dbaSummary = '日支关系以四柱关系事件表为准';
+    }
+    ctx += '  综合：' + dbaSummary + '\n';
   }
 
   // v5.2: 流年三方互动

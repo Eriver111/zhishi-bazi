@@ -1,13 +1,14 @@
-// AI 报告验证 · 全量批（2026-08-14）：9 盘正式（S07/S08/BND02/BND04/PAT01/PAT07/TH01/R06/X04）
-// + PAT04 表达专项（成绩单列，不计正式通过率）。GPT 冒烟终裁 PASS 后启动。
+// AI 报告验证 · 同13盘回归（2026-08-14）：GPT 终裁三修复（context 剥除 / SYSTEM_PROMPT 事实锁 / V1 validator）后重跑
+// 原13盘 = 冒烟3盘（S04/TH07/R01）+ 全量批9盘（S07/S08/BND02/BND04/PAT01/PAT07/TH01/R06/X04）+ PAT04 表达专项。
+// 通过门槛（GPT 终裁）：A层13/13红线0、E1=0、E2=0、E3=0、E4=0，纯文风瑕疵可接受。
 // 纪律：AI 报告走线上网站真实调用（zhishi.online /api/ai-chat，生产 DeepSeek）；
 // 本地离线仅用于构建与生产前端完全一致的 chartData（同一冻结引擎字节）。
 // 流程：
 //  ① sha 验证线上 bazi.js / structural.js（冻结字节）+ bazi-chain.js（与本地 LF 一致）
 //  ② 由四柱反查出生日期（引擎自身 calculate 全匹配）→ 复刻 buildResultContext 生产逻辑
-//  ③ 插入测试兑换码 AISMOKE02（credits=DISKS.length, channel=qa）→ 真实 POST /api/ai-chat（mode=pro）
-//  ④ 每盘后查 supabase chat_history 验证报告保存（user/assistant 行、内容一致）
-//  ⑤ 验证扣减 10→0，最后删除测试码（chat_history 证据行保留并报告）
+//  ③ 插入测试兑换码 AISMOKE03（credits=DISKS.length, channel=qa）→ 真实 POST /api/ai-chat（mode=pro, qa_debug）
+//  ④ 每盘后查 supabase chat_history 验证报告保存（user/assistant 行、内容一致）+ 记录服务端 V1 validator warnings
+//  ⑤ 验证扣减 13→0，最后删除测试码（chat_history 证据行保留并报告）
 var https = require('https');
 var crypto = require('crypto');
 var fs = require('fs');
@@ -15,10 +16,13 @@ var path = require('path');
 
 var EXPECT_SHA_BAZI = '6214347502646dc3bdc6854b986cb0d5248db312a6736b07e3e872ab8e4368c1';
 var EXPECT_SHA_STRUCT = '96b8370dafc89453c1c63792f9f212934369d166682f8551f0f8d78984b5f8f7';
-var TEST_CODE = 'AISMOKE02';
-var OUT_DIR = path.join(__dirname, '_aireport_batch');
+var TEST_CODE = 'AISMOKE03';
+var OUT_DIR = path.join(__dirname, '_aireport_regression');
 
 var DISKS = [
+  ['S04', '壬子', '壬子', '丁酉', '辛亥'],
+  ['TH07', '丁未', '丁未', '辛丑', '戊子'],
+  ['R01', '甲子', '丁卯', '己亥', '庚午'],
   ['S07', '庚申', '乙酉', '庚申', '乙酉'],
   ['S08', '丁巳', '乙巳', '辛亥', '甲午'],
   ['BND02', '辛未', '丁酉', '丁亥', '癸卯'],
@@ -445,6 +449,13 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       ctx += '  祖业(年柱)：' + (pa.yearDesc || '—') + '\n';
       ctx += '  宫位解读：' + (pa.summary || '无特殊宫位影响') + '\n';
     }
+    // GPT终裁 2026-08-14：relationEvents 有涉日支事件时，夫妻宫综合行不得再带"无冲合刑害"否定语（与线上 ai-chat.js 一致）
+    var dayHasRelation = false;
+    if (data.relationEvents && Array.isArray(data.relationEvents)) {
+      data.relationEvents.forEach(function (e) {
+        if (e.involvesDay || (e.pillars && Array.isArray(e.pillars) && e.pillars.indexOf('day') >= 0)) dayHasRelation = true;
+      });
+    }
     if (data.dayBranchAnalysis) {
       var dba = data.dayBranchAnalysis;
       ctx += '\n日支（夫妻宫）专项分析：\n';
@@ -462,7 +473,18 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       if (dba.cangGan && dba.cangGan.length) {
         ctx += '  藏干详析：' + dba.cangGan.map(function (c) { return c.level + c.gan + '(' + c.shiShen + ')' + '——' + c.desc; }).join(' | ') + '\n';
       }
-      ctx += '  综合：' + dba.summary + '\n';
+      var dbaSummary = dba.summary || '';
+      if (dayHasRelation) {
+        dbaSummary = dbaSummary
+          .replace(/无冲合刑害[。；;]*/g, '')
+          .replace(/无冲、?无合[。；;]*/g, '')
+          .replace(/；；+/g, '；')
+          .replace(/。；/g, '；')
+          .replace(/^；+/, '')
+          .trim();
+        if (!dbaSummary) dbaSummary = '日支关系以四柱关系事件表为准';
+      }
+      ctx += '  综合：' + dbaSummary + '\n';
     }
     if (data.liuNianAnalysis) {
       var lna = data.liuNianAnalysis;
@@ -574,7 +596,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       lock2 += (lock2.length > 10 ? '，' : '') + '候选格局=「' + chartData.pattern.name + '」，状态=「' + (chartData.pattern.status || '未确认') + '」';
       if (chartData.pattern.breakReasons && chartData.pattern.breakReasons.length) lock2 += '，原因=「' + chartData.pattern.breakReasons.join('；') + '」';
     }
-    if (lock2.length > 10) { lock2 += '。以上字段不另行重算；破格不得写成已成格。'; msgs.push({ role: 'system', content: lock2 }); }
+    if (lock2.length > 10) { lock2 += '。以上字段不另行重算；破格不得写成已成格；旺衰档位、格局状态、risk severity 均为冻结标签，禁止近义词换级。'; msgs.push({ role: 'system', content: lock2 }); }
     msgs.push({ role: 'user', content: question });
     return msgs;
   }
@@ -626,7 +648,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       for (var attempt = 1; attempt <= 3; attempt++) {
         try {
           resp = await postJson('https://zhishi.online/api/ai-chat', {
-            question: QUESTION, chartData: chartData, history: [], mode: 'pro', code: TEST_CODE
+            question: QUESTION, chartData: chartData, history: [], mode: 'pro', code: TEST_CODE, qa_debug: true
           });
           var parsed = JSON.parse(resp.text);
           if (resp.status === 200 && parsed.reply) { reply = parsed; break; }
@@ -646,7 +668,13 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
         continue;
       }
       fs.writeFileSync(path.join(OUT_DIR, id + '-report.md'), '## ' + id + ' · AI 报告原文（线上真实调用，mode=pro）\n\n### 请求\n\n- 问题：' + QUESTION + '\n- history：[]（新会话首问）\n- 兑换码：' + TEST_CODE + '\n\n### AI 回复（' + new Date().toISOString() + '）\n\n' + reply.reply + '\n', 'utf8');
-      console.log('✅ ' + id + ' AI 回复已抓取（' + reply.reply.length + ' 字符，credits_left=' + reply.credits_left + '）');
+      var vw = reply.validation_warnings || [];
+      if (vw.length) {
+        fs.appendFileSync(path.join(OUT_DIR, id + '-report.md'), '\n### V1 validator warnings（qa_debug 透出；服务端仅检测、不修改正文）\n\n' + vw.map(function (x) { return '- ' + x; }).join('\n') + '\n', 'utf8');
+      } else {
+        fs.appendFileSync(path.join(OUT_DIR, id + '-report.md'), '\n### V1 validator warnings\n\n（无）\n', 'utf8');
+      }
+      console.log('✅ ' + id + ' AI 回复已抓取（' + reply.reply.length + ' 字符，credits_left=' + reply.credits_left + '，validator warnings=' + vw.length + '）');
 
       // 验证 DB 保存
       var { data: rows, error: chErr } = await db.from('chat_history').select('role,content,created_at').eq('code', TEST_CODE).order('created_at', { ascending: true });
@@ -656,32 +684,33 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       var last = savedAssistant[savedAssistant.length - 1];
       var savedOk = rows.length === expectRows && last && last.content === reply.reply;
       console.log((savedOk ? '✅' : '❌') + ' chat_history 保存验证：期望 ' + expectRows + ' 行，实际 ' + rows.length + ' 行；assistant 内容与回复' + (last && last.content === reply.reply ? '一致' : '不一致'));
-      log.push({ id: id, status: 'OK', replyLen: reply.reply.length, creditsLeft: reply.credits_left, dbRows: rows.length, dbSaved: savedOk, birth: bd });
+      log.push({ id: id, status: 'OK', replyLen: reply.reply.length, creditsLeft: reply.credits_left, dbRows: rows.length, dbSaved: savedOk, birth: bd, vw: vw.length });
 
       await sleep(5000);
     }
   } finally {
     // ---- ⑤ 扣减终态 + 清理测试码 ----
     var { data: finalCred } = await db.from('user_credits').select('credits,total_used').eq('code', TEST_CODE).single();
-    console.log('\n测试码终态：credits=' + (finalCred ? finalCred.credits : '?') + ' total_used=' + (finalCred ? finalCred.total_used : '?') + '（期望 0 / 3）');
+    console.log('\n测试码终态：credits=' + (finalCred ? finalCred.credits : '?') + ' total_used=' + (finalCred ? finalCred.total_used : '?') + '（期望 0 / ' + DISKS.length + '）');
     var { error: delErr } = await db.from('user_credits').delete().eq('code', TEST_CODE);
     console.log('测试码清理：' + (delErr ? '❌ ' + delErr.message : '✅ 已删除（chat_history 证据行保留）'));
   }
 
   // ---- 汇总 ----
-  var sum = '# AI 报告全量批汇总（2026-08-14）\n\n';
-  sum += '> 线上真实调用 zhishi.online /api/ai-chat（生产 DeepSeek，model 由服务端钉死），mode=pro，新会话首问（history=[]）。\n';
-  sum += '> 测试兑换码 AISMOKE02（qa 专用，' + DISKS.length + ' 次额度），调用完成后已删除；chat_history 证据行保留（code=AISMOKE02）。\n';
+  var sum = '# AI 报告同13盘回归汇总（2026-08-14，GPT 终裁三修复后）\n\n';
+  sum += '> 线上真实调用 zhishi.online /api/ai-chat（生产 DeepSeek，model 由服务端钉死），mode=pro，新会话首问（history=[]），qa_debug 透出 V1 validator warnings。\n';
+  sum += '> 测试兑换码 AISMOKE03（qa 专用，' + DISKS.length + ' 次额度），调用完成后已删除；chat_history 证据行保留（code=AISMOKE03）。\n';
+  sum += '> 通过门槛（GPT 终裁）：A层 13/13 红线 0；E1=0、E2=0、E3=0、E4=0；纯文风瑕疵可接受。\n';
   sum += '> 性别：统一男命（乾造）。盲测盘未定义性别，大运顺逆按乾造计算。\n';
   sum += '> 出生日期：50 盘盲测只冻结四柱；出生日期由引擎四柱反查合成（优先 1940-2010 在世年，其次 1900-1939，未来年份仅兜底），供大运/流年做生产级计算。\n';
   sum += '> PAT04 为表达专项（第 13 盘），成绩单列、不计入 12 盘正式通过率。\n\n';
-  sum += '| 盘 | 状态 | 回复长度 | 剩余额度 | DB行数 | 保存一致 |\n|---|---|---|---|---|---|\n';
+  sum += '| 盘 | 状态 | 回复长度 | 剩余额度 | DB行数 | 保存一致 | validator |\n|---|---|---|---|---|---|---|\n';
   log.forEach(function (l) {
-    sum += '| ' + l.id + ' | ' + l.status + ' | ' + (l.replyLen || '-') + ' | ' + (l.creditsLeft !== undefined ? l.creditsLeft : '-') + ' | ' + (l.dbRows || 0) + ' | ' + (l.dbSaved === undefined ? '-' : (l.dbSaved ? '✅' : '❌')) + ' |\n';
+    sum += '| ' + l.id + ' | ' + l.status + ' | ' + (l.replyLen || '-') + ' | ' + (l.creditsLeft !== undefined ? l.creditsLeft : '-') + ' | ' + (l.dbRows || 0) + ' | ' + (l.dbSaved === undefined ? '-' : (l.dbSaved ? '✅' : '❌')) + ' | ' + (l.vw === undefined ? '-' : l.vw) + ' |\n';
   });
   fs.writeFileSync(path.join(OUT_DIR, '00-summary.md'), sum, 'utf8');
   console.log('\n✅ 汇总已落盘 ' + OUT_DIR + '/00-summary.md');
 })().catch(function (e) {
-  console.error('❌ 冒烟中止：' + e.message);
+  console.error('❌ 回归中止：' + e.message);
   process.exit(1);
 });
