@@ -205,8 +205,9 @@
   <div id="aiReading"></div>
 </div>
 
-<script src="js/liuyao-core.js?v=6"></script>
-<script src="js/yijing-db.js?v=6"></script>
+<script src="js/bazi.js?v=liuyao-calendar-1"></script>
+<script src="js/liuyao-core.js?v=7"></script>
+<script src="js/yijing-db.js?v=7"></script>
 <script src="js/auth.js?v=6"></script>
 <script>
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
@@ -297,30 +298,21 @@ function doAnalyze(){
 
   var today=getBeijingTime();
   var nY=today.getUTCFullYear(), nM=today.getUTCMonth()+1, nD=today.getUTCDate(), nH=today.getUTCHours();
-  var noonUTC=Date.UTC(nY,nM-1,nD,12,0,0), baseUTC=Date.UTC(1900,0,1,12,0,0);
-  var dDays=Math.round((noonUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
-  var dayGanIdx=dIdx%10;
-  var monthZhi=DZ[(today.getUTCMonth()+1)%12]||'子';
+  var calendar=LIUYAO.getCalendarContext(nY,nM,nD,nH);
+  var dayGanIdx=calendar.dayGanIdx;
+  var monthZhi=calendar.monthZhi;
   try{ var zg=LIUYAO.zhuangGua(lines, dayGanIdx, monthZhi); }
   catch(e){ res.innerHTML='<div class="card"><p style="text-align:center;color:#e07050">装卦出错：'+e.message+'</p></div>'; return; }
 
   var movingLines=[], chgLines=lines.slice();
   lineTypes.forEach(function(lt,i){ if(lt.changing){ movingLines.push(i+1); chgLines[i]=chgLines[i]===0?1:0; } });
-  var chgZg=movingLines.length?LIUYAO.zhuangGua(chgLines, dayGanIdx, monthZhi):null;
+  var chgZg=movingLines.length?LIUYAO.zhuangGua(chgLines, dayGanIdx, monthZhi,{liuQinGongWX:zg.gongWX}):null;
   var origDB=findGua(zg.guaName), chgDB=chgZg?findGua(chgZg.guaName):null;
 
-  var TGarr=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  var yGIdx=(nY-4)%10, yZIdx=(nY-4)%12;
-  var mGIdx=(yGIdx*2+nM)%10, mZIdx=nM%12;
-  var dG=TGarr[dIdx%10], dZ=DZ[dIdx%12];
-  var yearGZ=TGarr[yGIdx]+DZ[yZIdx], monthGZ=TGarr[mGIdx%10]+DZ[mZIdx];
-  var XUN_KONG={'甲子':['戌','亥'],'甲戌':['申','酉'],'甲申':['午','未'],'甲午':['辰','巳'],'甲辰':['寅','卯'],'甲寅':['子','丑']};
-  var xunHead={'甲子':0,'甲戌':10,'甲申':20,'甲午':30,'甲辰':40,'甲寅':50};
-  var xunStart=Math.floor(dIdx/10)*10, xunKey='';
-  for(var k in xunHead){if(xunHead[k]===xunStart){xunKey=k;break;}}
-  var xunKong=xunKey?XUN_KONG[xunKey]:['?','?'];
-  var yuePo=DZ[(DZ.indexOf(zg.monthZhi)+6)%12];
-  var monthMap={寅:'正月',卯:'二月',辰:'三月',巳:'四月',午:'五月',未:'六月',申:'七月',酉:'八月',戌:'九月',亥:'十月',子:'十一月',丑:'十二月'};
+  var dG=calendar.dayGan, dZ=calendar.dayZhi;
+  var yearGZ=calendar.yearGan+calendar.yearZhi, monthGZ=calendar.monthGan+calendar.monthZhi;
+  var xunKong=calendar.xunKong;
+  var yuePo=calendar.yuePo;
 
   // ====== 构建卦象英雄区 ======
   var hero='<div class="card">';
@@ -387,7 +379,7 @@ function doAnalyze(){
 
   // 本卦+变卦并排表格
   function makeTable(z,name,lx,isRight){
-    var t='<div style="min-width:200px;flex:1"><table class="detail-table"><tr><th>六神</th><th>六亲</th><th>干支</th><th>五行</th><th>旺</th><th style="text-align:center">'+name+'</th></tr>';
+    var t='<div style="min-width:200px;flex:1"><table class="detail-table"><tr><th>六神</th><th>六亲</th><th>干支</th><th>五行</th><th>月令</th><th style="text-align:center">'+name+'</th></tr>';
     for(var i=5;i>=0;i--){
       var mv='',mc=''; if(isRight&&movingLines.indexOf(i+1)>=0){mv=' ◯';mc='dong-mark';}
       var sm=''; if(i+1===z.shiYao) sm='<span class="shi-mark">世</span>';
@@ -398,7 +390,7 @@ function doAnalyze(){
       t+='<td style="font-size:14px">'+z.liuqin[i]+'</td>';
       t+='<td style="font-size:13px">'+z.yaoGan[i]+z.yaoDZ[i]+'</td>';
       t+='<td style="font-size:14px;color:'+(wxCol[z.yaoWX[i]]||'#fff')+'">'+z.yaoWX[i]+'</td>';
-      t+='<td style="font-size:12px">'+(z.wangShuai?z.wangShuai[i]:'')+'</td>';
+      t+='<td style="font-size:12px">'+(z.monthState?z.monthState[i]:(z.wangShuai?z.wangShuai[i]:''))+'</td>';
       t+='<td class="'+mc+'" style="font-family:monospace;font-size:14px">'+(lx[i]?'━━━':'━ ━')+mv+km+sm+ym+'</td>';
       t+='</tr>';
     }
@@ -411,13 +403,13 @@ function doAnalyze(){
   detail+='</div>';
 
   // 飞伏神
-  var fData=LIUYAO.getFuShen?LIUYAO.getFuShen(zg.guaName,zg.liuqin):[];
+  var fData=LIUYAO.getFuShen?LIUYAO.getFuShen(zg.guaName,zg.liuqin,zg.yaoWX):[];
   if(fData.length){
     detail+='<div style="margin-top:8px;font-size:11px;color:var(--tx2);line-height:2.2"><b style="color:var(--gold-l)">飞伏神</b>&nbsp;';
     fData.forEach(function(f){
       detail+='第'+f.yaoIdx+'爻伏<span style="color:var(--gold-l)">'+f.qin+'</span>'+f.ganZhi+f.wx+' ';
       detail+='飞神'+f.feiQin+' ';
-      var rt=f.rel==='相生'?'得助易透':f.rel==='比和'?'伏神不弱':'受制难出';
+      var rt={飞来生伏:'飞生伏·得助易透',伏去生飞:'伏生飞·自身泄气',飞来克伏:'飞克伏·受制难出',伏克飞神:'伏克飞·待冲透出',比和:'飞伏比和'}[f.rel]||f.rel;
       detail+='<span style="color:#e8a040">'+rt+'</span> ';
       if(xunKong.indexOf(f.ganZhi.charAt(1))>=0) detail+='<span style="color:#e07050">旬空</span>';
       detail+='<br>';
@@ -429,11 +421,7 @@ function doAnalyze(){
   if(movingLines.length){
     detail+='<div style="margin-top:6px;font-size:11px;color:var(--tx2);line-height:2"><b style="color:var(--gold-l)">动爻化象</b>&nbsp;';
     movingLines.forEach(function(ml){
-      var hua=''; var s={'木':'火','火':'土','土':'金','金':'水','水':'木'};
-      if(zg.yaoWX[ml-1]===chgZg.yaoWX[ml-1]) hua='比和';
-      else if(s[zg.yaoWX[ml-1]]===chgZg.yaoWX[ml-1]) hua='化泄气';
-      else if(s[chgZg.yaoWX[ml-1]]===zg.yaoWX[ml-1]) hua='化回头生';
-      else hua='化回头克';
+      var hua=LIUYAO.getHuaRelation(zg.yaoWX[ml-1],chgZg.yaoWX[ml-1]);
       detail+='第'+ml+'爻 '+zg.liuqin[ml-1]+zg.yaoGan[ml-1]+zg.yaoDZ[ml-1]+'→'+(chgZg?chgZg.liuqin[ml-1]+chgZg.yaoGan[ml-1]+chgZg.yaoDZ[ml-1]:'?')+' <span style="color:var(--gold-l)">'+hua+'</span><br>';
     });
     detail+='</div>';
@@ -451,12 +439,12 @@ function doAnalyze(){
     '<p style="font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p></div>';
 
   res.innerHTML=hero+detail+guaCi+aiBtn;
-  res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._chgDB=chgDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines;
+  res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._chgDB=chgDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines; res._calendar=calendar; res._fData=fData;
   }catch(e){ document.getElementById('result').innerHTML='<div class="card"><p style="text-align:center;color:#e07050">装卦异常：'+e.message+'</p></div>'; }
 }
 
 window.doAIReading=function(){
-  var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, chgDB=res._chgDB, moving=res._movingLines;
+  var res=document.getElementById('result'); var zg=res._zg, chgZg=res._chgZg, origDB=res._origDB, chgDB=res._chgDB, moving=res._movingLines, calendar=res._calendar, fData=res._fData||[];
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ Auth.showModal('login'); return; }
 
   var readingDiv=document.getElementById('aiReading');
@@ -469,49 +457,12 @@ window.doAIReading=function(){
   if(origDB) dbAnchor+='本卦《'+origDB.name+'》卦辞曰"'+origDB.judgment+'"；彖传："'+(origDB.tuan||'')+'"，解读：'+origDB.meaning+'。\n';
   if(chgDB) dbAnchor+='变卦《'+chgDB.name+'》卦辞曰"'+chgDB.judgment+'"；解读：'+chgDB.meaning+'。\n';
 
-  var wxKe={'木':'土','土':'水','水':'火','火':'金','金':'木'};
-  var wxSheng={'木':'火','火':'土','土':'金','金':'水','水':'木'};
-  var dongYaoDetail='';
-  if(moving.length){
-    dongYaoDetail='动爻：\n';
-    moving.forEach(function(ml){
-      var o=zg.liuqin[ml-1]+' '+zg.yaoGan[ml-1]+zg.yaoDZ[ml-1]+'('+zg.yaoWX[ml-1]+')';
-      var c=chgZg?chgZg.liuqin[ml-1]+' '+chgZg.yaoGan[ml-1]+chgZg.yaoDZ[ml-1]+'('+chgZg.yaoWX[ml-1]+')':'?';
-      var bWX=zg.yaoWX[ml-1], cWX=chgZg?chgZg.yaoWX[ml-1]:'?';
-      var huaRel='';
-      if(bWX===cWX) huaRel='比和';
-      else if(wxSheng[bWX]===cWX) huaRel='化泄气';
-      else if(wxSheng[cWX]===bWX) huaRel='化回头生';
-      else if(wxKe[bWX]===cWX) huaRel='化回头克';
-      else if(wxKe[cWX]===bWX) huaRel='化出所克';
-      else huaRel='待定';
-      dongYaoDetail+='第'+ml+'爻动：'+o+' → '+c+' —— '+huaRel+'\n';
-    });
-  }
-
-  var today=getBeijingTime();
-  var nY=today.getUTCFullYear(), nM=today.getUTCMonth()+1, nD=today.getUTCDate();
-  var noonUTC=Date.UTC(nY,nM-1,nD,12,0,0), baseUTC=Date.UTC(1900,0,1,12,0,0);
-  var dDays=Math.round((noonUTC-baseUTC)/86400000), dIdx=((10+dDays)%60+60)%60;
-  var TGarr=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  var dG=TGarr[dIdx%10], dZ=DZ[dIdx%12];
-  var monthMap={寅:'正月',卯:'二月',辰:'三月',巳:'四月',午:'五月',未:'六月',申:'七月',酉:'八月',戌:'九月',亥:'十月',子:'十一月',丑:'十二月'};
+  var professionalFacts=LIUYAO.formatProfessionalFacts({original:zg,changed:chgZg,movingLines:moving,calendar:calendar,hidden:fData});
 
   var prompt='';
   prompt+='【用户的问题】'+userQuestion+'\n\n';
   prompt+='【必读经典原文】\n'+dbAnchor+'\n';
-  prompt+='本卦：'+zg.guaName+'（'+zg.gong+'宫·属'+zg.gongWX+'·'+zg.guaType+'卦）\n';
-  prompt+='变卦：'+(chgZg?chgZg.guaName+'（'+chgZg.gong+'宫·属'+chgZg.gongWX+'·'+chgZg.guaType+'卦）':'无')+'\n';
-  prompt+='月建：'+zg.monthZhi+'月（'+zg.monthWX+'）'+(monthMap[zg.monthZhi]?'即农历'+monthMap[zg.monthZhi]:'')+' | 日辰：'+dG+dZ+'\n';
-  prompt+='世爻第'+zg.shiYao+'爻 | 应爻第'+zg.yingYao+'爻\n\n';
-  prompt+='【六爻数据】\n';
-  for(var i=0;i<6;i++){
-    var mvMark=moving.indexOf(i+1)>=0?' ★动爻':'';
-    prompt+='第'+(i+1)+'爻：'+zg.liuqin[i]+' '+zg.yaoGan[i]+zg.yaoDZ[i]+'('+zg.yaoWX[i]+') 六神：'+zg.liushen[i]+' 旺衰：'+zg.wangShuai[i];
-    if(i+1===zg.shiYao) prompt+='【世】'; if(i+1===zg.yingYao) prompt+='【应】';
-    prompt+=mvMark+'\n';
-  }
-  prompt+='\n'+dongYaoDetail+'\n';
+  prompt+='【排盘专业数据——必须逐项引用，不得自行改盘】\n'+professionalFacts+'\n';
   prompt+='用户问："'+userQuestion+'"——请直接回答。格式：\n';
   prompt+='1. 结论：能不能成？好还是坏？什么时候？（2-3句，不许含糊）\n';
   prompt+='2. 卦象分析：锁定用神（问财看妻财、问事业看官鬼、问感情看妻财/官鬼+应爻），用具体爻数据说明。\n';
