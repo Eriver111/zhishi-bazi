@@ -1,5 +1,5 @@
-// V1 validator + context 剥除逻辑 单元测试（2026-08-14，GPT终裁落地自检）
-// 从 api/ai-chat.js 抽取两个纯函数直接测试，不启动服务。
+// V1 validator + context 剥除 + V2 触发器分类 单元测试（2026-08-14，GPT终裁落地自检）
+// 从 api/ai-chat.js 抽取四个纯函数直接测试，不启动服务。
 var fs = require('fs');
 var path = require('path');
 var src = fs.readFileSync(path.join(__dirname, '..', 'api', 'ai-chat.js'), 'utf8');
@@ -12,6 +12,8 @@ function extract(name) {
 }
 var runReplyValidation = extract('runReplyValidation');
 var buildSingleChart = extract('buildSingleChart');
+var isHardWarning = extract('isHardWarning');
+var buildV2Instruction = extract('buildV2Instruction');
 
 var pass = 0, fail = 0;
 function T(desc, cond) {
@@ -154,6 +156,19 @@ var allStrip = {
 };
 var ctx3 = buildSingleChart(allStrip);
 T('整行只剩否定语 → 回退为事件表提示语', ctx3.indexOf('无冲合刑害') < 0 && ctx3.indexOf('关系事件表') >= 0);
+
+// ---------- V2 触发器分类 + 修正指令 ----------
+console.log('\n[V2 hard/soft 分类 + 修正指令]');
+T('E4 档位漂移 → soft（不触发 V2）', isHardWarning('E4-档位漂移：系统档位=「中和」，回复出现「身弱」') === false);
+T('E1 合局缺员 → hard（可触发 V2）', isHardWarning('E1-合局缺员：回复出现「三会火局」（三会），在场支为[亥寅辰巳酉午]，缺「未」') === true);
+T('E1 五合错误 → hard', isHardWarning('E1-五合错误：丙癸相合') === true);
+T('E1 生克方向 → hard', isHardWarning('E1-生克方向：水生土') === true);
+T('E1 十神映射 → hard', isHardWarning('E1-十神映射冲突：甲→正印 被写成食神') === true);
+T('E2 否定冲突 → hard', isHardWarning('E2-否定冲突：relationEvents 涉日支却写无冲合刑害') === true);
+var v2instr = buildV2Instruction(['E1-合局缺员：回复出现「三会火局」（三会），在场支为[亥寅辰巳酉午]，缺「未」']);
+T('V2 指令逐条列出 hard 警告', v2instr.indexOf('三会火局') >= 0 && v2instr.indexOf('缺「未」') >= 0);
+T('V2 指令要求只修错句', v2instr.indexOf('只修正涉及上述错误的句子') >= 0);
+T('V2 指令禁止改冻结结论（旺衰/格局/用喜忌/risks）', v2instr.indexOf('旺衰档位') >= 0 && v2instr.indexOf('成格/破格') >= 0 && v2instr.indexOf('喜神/忌神') >= 0 && v2instr.indexOf('structuralRisks') >= 0);
 
 console.log('\n========== 结果：' + pass + ' PASS / ' + fail + ' FAIL ==========');
 if (fail > 0) process.exit(1);

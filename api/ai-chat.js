@@ -130,7 +130,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 ## 事实锁（2026-08-14 冻结清单，违反即幻觉）
 1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止用近义词换级**——「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
 2. **relationEvents 优先**：四柱关系以 relationEvents 结构化事件表为唯一事实源。若其他自然语言摘要（如夫妻宫综合行、宫位解读）与事件表冲突（摘要写"无冲合刑害"而事件表有涉日支的冲/合/刑/害/三合/三会），一律以事件表为准，只写事件表给出的关系，禁止复述冲突的否定摘要。
-3. **关系成员校验（写关系前必核）**：① 天干五合只有五对——甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火，其余干支组合不得写成"X合Y"；② 三会需三支齐（寅卯辰会木、巳午未会火、申酉戌会金、亥子丑会水），只有两支只能写"半会"；三合需三支齐（申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金），只有两支只能写"半合"；③ 五行相生顺序：木生火→火生土→土生金→金生水→水生木；相克顺序：木克土→土克水→水克火→火克金→金克木——写"A生B/A克B"前先核对方向。
+3. **关系成员校验（写关系前必核）**：① 天干五合只有五对——甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火，其余干支组合不得写成"X合Y"；② 三合局只有四组固定成员：申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金；三会方只有四组固定成员：亥子丑会水、寅卯辰会木、巳午未会火、申酉戌会金。三支齐方可称完整三合/三会，两支只能称半合/半会或具备相应趋势；不在上述八组内的任意三支组合（如寅巳午）不是任何三合或三会，禁止自创组合；③ 五行相生顺序：木生火→火生土→土生金→金生水→水生木；相克顺序：木克土→土克水→水克火→火克金→金克木——写"A生B/A克B"前先核对方向。
 4. **十神逐柱对照**：每柱干支与藏干的十神映射已在排盘数据中给出，引用十神时**必须对照排盘映射**，不得凭记忆重推（如把印星写成食神、把七杀写成正官）。当映射与你的直觉不符时，以映射为准。
 5. **breakReasons 唯一性**：breakReasons 是破格的正式依据清单，其他结构说明（establishConditions 的❌项、structuralRisks、生克链注释等）不得被表述成「破格原因」；要引用破格原因时只引用 breakReasons 原文。
 6. **机制分离（制杀/化杀/通关）**：描述制杀、化杀、通关等复合机制时，必须逐步写清每一步的「A克B / A生B」方向，不得把不同路线拼成同一条因果链；若 chainHints/chainAdjustments 已有对应链路，优先照用其原文表述。
@@ -490,8 +490,8 @@ module.exports = async function handler(req, res) {
       is_monthly: monthlyActive ? true : undefined,
       monthly_expires: monthlyActive ? monthlyActive.expires_at : undefined
     };
-    // QA 回归专用：透出 V1 validator warnings（生产用户请求不带 qa_debug，行为不变）
-    if (qa_debug) resp.validation_warnings = aiMeta.warnings || [];
+    // QA 回归专用：透出 V1 validator warnings + V2 触发标记（生产用户请求不带 qa_debug，行为不变）
+    if (qa_debug) { resp.validation_warnings = aiMeta.warnings || []; resp.v2_applied = !!aiMeta.v2Applied; }
     return res.status(200).json(resp);
 
   } catch (e) {
@@ -601,18 +601,38 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   const aiData = await aiResp.json();
   var choice = aiData.choices?.[0] || {};
   var message = choice.message || {};
-  const reply = message.content || '';
+  let reply = message.content || '';
   var reasoningLength = String(message.reasoning_content || '').length;
   console.log('[ai-chat] respModel=' + (aiData.model || '?') + ' finish=' + (choice.finish_reason || '?') + ' contentLen=' + reply.length + ' reasoningLen=' + reasoningLength + ' at=' + new Date().toISOString());
   if (!reply || reply.length < 20) throw new Error('AI 返回内容为空或过短（未扣次数）');
 
-  // V1 回复校验（GPT终裁 2026-08-14：仅检测并记 validation warnings，不修改 AI 正文）
+  // V1 回复校验 + V2 定向自修正（GPT终裁 2026-08-14）
+  // 两级拆分：hard（确定性事实错误——E1 五合/三合三会/生克/十神映射、E2 relationEvents 否定冲突）
+  // 可触发 V2 一次；soft（E4 档位关键词扫描，误报率高）只记录 warning，永不为 V2 触发器。
   var validationWarnings = [];
+  var v2Applied = false;
   if (mode !== 'ziwei' && mode !== 'liuren') {
     validationWarnings = runReplyValidation(chartData, reply);
     validationWarnings.forEach(function(w) { console.log('[ai-validator] ' + w); });
+    var hardWarnings = validationWarnings.filter(isHardWarning);
+    if (hardWarnings.length) {
+      console.log('[ai-validator] hard 错误 ' + hardWarnings.length + ' 条，触发 V2 定向自修正（最多一次）');
+      var corrected = await v2SelfCorrect(messages, reply, hardWarnings);
+      if (corrected) {
+        var vw2 = runReplyValidation(chartData, corrected);
+        vw2.forEach(function(w) { console.log('[ai-validator-v2] ' + w); });
+        var hard2 = vw2.filter(isHardWarning);
+        if (hard2.length < hardWarnings.length) {
+          reply = corrected;
+          validationWarnings = vw2;
+          v2Applied = true;
+          console.log('[ai-validator-v2] ✅ 已采用修正稿（hard ' + hardWarnings.length + ' → ' + hard2.length + '）');
+        }
+        if (hard2.length) console.log('[ai-validator-v2] ⚠ 修正后仍有 hard 错误 ' + hard2.length + ' 条——按终裁不循环，记录异常');
+      }
+    }
   }
-  if (metaOut) metaOut.warnings = validationWarnings;
+  if (metaOut) { metaOut.warnings = validationWarnings; metaOut.v2Applied = v2Applied; }
   return reply;
 }
 
@@ -753,6 +773,61 @@ function runReplyValidation(chartData, reply) {
   }
 
   return warnings;
+}
+
+/**
+ * V2 触发器分类（GPT终裁 2026-08-14）：hard = 确定性机械可验证的事实错误，可触发 V2 定向自修正一次；
+ * soft = E4 档位关键词扫描（误报率高，回归 11 命中 10 误报），只记录 warning，永不为 V2 触发器。
+ * 当前只有 E4 前缀为 soft，其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突）均为 hard。
+ */
+function isHardWarning(w) {
+  return w.indexOf('E4') !== 0;
+}
+
+/**
+ * V2 修正指令（纯函数，供单测）：只修被指出的错误句子及其直接推论，保持其余回答不变，
+ * 不得改冻结结论（旺衰档位/格局名与成破/用喜忌清单/structuralRisks 及 severity）。
+ */
+function buildV2Instruction(hardWarnings) {
+  return '检测到你的上一份回答存在确定性结构事实错误，请逐条核实：\n' +
+    hardWarnings.map(function(w) { return '- ' + w; }).join('\n') +
+    '\n\n要求：只修正涉及上述错误的句子及其直接推论，保持其余回答逐字不变；' +
+    '不得修改系统冻结的日主旺衰档位、格局名与成格/破格状态、用神/喜神/忌神清单、structuralRisks 及其 severity；' +
+    '不要新增其他分析，直接输出完整修正稿。';
+}
+
+/**
+ * V2 定向自修正（GPT终裁 2026-08-14）：仅 hard 命中时调用，最多一次。
+ * 原 messages + 原回答 + 修正指令 送回同模型；低温 0.3 做外科式修改。
+ * 失败（网络/超时/空返回）返回 null，主回复原样返回，不影响扣费与保存。
+ */
+async function v2SelfCorrect(baseMessages, originalReply, hardWarnings) {
+  var v2Messages = baseMessages.slice();
+  v2Messages.push({ role: 'assistant', content: originalReply });
+  v2Messages.push({ role: 'user', content: buildV2Instruction(hardWarnings) });
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    var v2Resp;
+    try {
+      v2Resp = await fetch(AI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
+        body: JSON.stringify({ model: AI_MODEL, messages: v2Messages, thinking: { type: 'disabled' }, temperature: 0.3, max_tokens: 4096, stream: false }),
+        signal: controller.signal
+      });
+    } finally { clearTimeout(timeout); }
+    if (!v2Resp.ok) { console.log('[ai-validator-v2] ⚠ 修正调用失败 HTTP ' + v2Resp.status); return null; }
+    const v2Data = await v2Resp.json();
+    var v2Msg = (v2Data.choices?.[0] || {}).message || {};
+    var v2Reply = v2Msg.content || '';
+    console.log('[ai-validator-v2] 修正调用完成 contentLen=' + v2Reply.length);
+    if (!v2Reply || v2Reply.length < 20) { console.log('[ai-validator-v2] ⚠ 修正稿为空或过短，放弃采用'); return null; }
+    return v2Reply;
+  } catch (e) {
+    console.log('[ai-validator-v2] ⚠ 修正调用异常：' + e.message);
+    return null;
+  }
 }
 
 /**
