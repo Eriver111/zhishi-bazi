@@ -122,6 +122,8 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **liuNianAnalysis**（流年三方互动）：系统分析当前流年干支+大运干支+原局四柱的三方关系——包括岁运并临、天克地冲、伤官见官、流年合日主、三刑补齐等关键触发。每个触发标注吉凶（✅吉/⚠凶）和严重度（critical/high/medium/low），以及综合判词（大吉/偏吉/中性/偏凶/大凶）。分析今年运势时必须以此为准，不可脱离具体触发泛泛而谈。
 - **currentDaYun**（当前所处大运）：已精确计算，直接引用其干支和十神
 - **currentLiuNian**（当前流年）：已精确计算，结合大运分析流年运势时以此为准。若 chartData 中有当前大运和当前流年数据，直接使用，不要自行推算。
+- **relationEvents**（四柱关系事件）：系统枚举的天干五合、天干克、六冲、六害、刑、六合、三合局、半合、三会方、半会等事实层事件。对称关系（五合/六冲/六害/刑/六合）的 source/target 仅为规范排序、不赋因果语义；天干克保留真实克方方向。引用时按事件类型与柱位描述即可。
+- **structuralRisks**（条件性结构风险）：系统按冻结规则判定的风险列表（type/severity/parties/why/mitigations/triggerHint/partyEvidence；severity 仅"存在/潜在"两档）。**structuralRisks 不是喜用忌结论**：喜用忌（yongJi）是五行总体需求，structuralRisks 是条件性结构风险——**不得把 risk 中出现的十神/五行元素重新解释成忌神**，不得用 risk 覆盖日主旺衰或格局判断。引用 risk 时必须用条件语言（"若…可能…"），不得断言必发。
 - 大运/流年排算是算法强项，你不需要也不能替代它。如果 chartData 中没有大运数据，明确告知用户"请先通过排盘获取大运信息"，不要凭空编造。
 
 **回答逻辑链**：先引用预计算结论 → 再用经典验证/补充 → 最后给出白话建议
@@ -738,6 +740,20 @@ function buildSingleChart(data) {
         if (q.roots && q.roots.length) ctx += `      根气详情：${q.roots.join('；')}\n`;
       });
     }
+  }
+
+  // P3-A3: 关系事件（事实层）与条件性结构风险（新增解释层；非喜用忌，不改写旺衰/格局）
+  if (data.relationEvents && Array.isArray(data.relationEvents) && data.relationEvents.length) {
+    ctx += `\n四柱关系事件（事实层枚举）：\n`;
+    data.relationEvents.forEach(function(e) {
+      ctx += `  - ${e.type}：${e.pillars.join('+')}（${(e.elements || []).join('')}）${e.involvesMonth || e.involvesDay ? '，涉月令/日支' : ''}\n`;
+    });
+  }
+  if (data.structuralRisks && Array.isArray(data.structuralRisks) && data.structuralRisks.length) {
+    ctx += `\n条件性结构风险（解释层；severity 仅存在/潜在；不是喜用忌结论，不得据此把风险元素解释成忌神）：\n`;
+    data.structuralRisks.forEach(function(r) {
+      ctx += `  - ${r.type}[${r.severity}]：${r.parties}。${r.why}。缓解：${r.mitigations || '无'}。${r.triggerHint} 结构显现：${r.partyEvidence || ''}\n`;
+    });
   }
 
   // v3.1: 四柱生克关系
