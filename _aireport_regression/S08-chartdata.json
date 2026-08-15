@@ -114,6 +114,9 @@
     "name": "假从势格",
     "desc": "日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。",
     "type": "透干取格",
+    "matchMode": "same-element",
+    "matchedGan": "丁",
+    "matchedPillar": "年柱",
     "monthWx": "火",
     "monthZhi": "巳",
     "monthGan": "乙",
@@ -122,7 +125,8 @@
       {
         "condition": "从格成立",
         "met": true,
-        "detail": "弃命从势，日主弱极顺势而从。"
+        "detail": "弃命从势，日主弱极顺势而从。",
+        "category": "INFO"
       }
     ],
     "breakReasons": [],

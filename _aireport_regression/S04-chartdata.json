@@ -94,6 +94,9 @@
     "name": "从杀格",
     "desc": "日主弱极，官杀成势，不得不从。\"弃命从杀，杀旺为贵。\"喜财官杀顺势，忌印比破格。",
     "type": "透干取格",
+    "matchMode": "same-element",
+    "matchedGan": "壬",
+    "matchedPillar": "年柱",
     "monthWx": "水",
     "monthZhi": "子",
     "monthGan": "壬",
@@ -102,7 +105,8 @@
       {
         "condition": "从格成立",
         "met": true,
-        "detail": "弃命从杀，日主弱极顺势而从。"
+        "detail": "弃命从杀，日主弱极顺势而从。",
+        "category": "INFO"
       }
     ],
     "breakReasons": [],

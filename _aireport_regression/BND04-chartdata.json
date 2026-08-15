@@ -114,6 +114,9 @@
     "name": "正财格",
     "desc": "月令透财，务实稳健善理财。财宜食伤来生、官星来护。",
     "type": "透干取格",
+    "matchMode": "exact-canggan",
+    "matchedGan": "乙",
+    "matchedPillar": "年柱",
     "monthWx": "土",
     "monthZhi": "未",
     "monthGan": "癸",
@@ -122,17 +125,20 @@
       {
         "condition": "日主有承载格局之力",
         "met": true,
-        "detail": "日主偏弱（32分），可承载格局"
+        "detail": "日主偏弱（32分），可承载格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "比劫不过重",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "日主能担财",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "HARD_BREAK"
       }
     ],
     "breakReasons": [

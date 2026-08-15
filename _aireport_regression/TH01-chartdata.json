@@ -110,25 +110,31 @@
     "name": "正印格",
     "desc": "月令透印，温厚善良学识渊博。印喜官杀来生，忌财星破印。",
     "type": "透干取格",
+    "matchMode": "same-element",
+    "matchedGan": "壬",
+    "matchedPillar": "年柱",
     "monthWx": "水",
     "monthZhi": "子",
     "monthGan": "壬",
-    "source": "月支子藏壬，透于年柱(同水透) → 正印",
+    "source": "月支子本气癸，为日主甲之正印；年柱透壬，同属水气，强化月令正印之势 → 取正印格",
     "establishConditions": [
       {
         "condition": "日主有承载格局之力",
         "met": true,
-        "detail": "日主偏强（75分），可承载格局"
+        "detail": "日主偏强（75分），可承载格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "无财星破印",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "日主有根纳印",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "QUALITY"
       }
     ],
     "breakReasons": [

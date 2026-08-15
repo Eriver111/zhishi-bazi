@@ -106,17 +106,20 @@
       {
         "condition": "印星不被财破",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "QUALITY"
       },
       {
         "condition": "官/杀不被食伤制死",
         "met": false,
-        "detail": "伤官克官，官印链断裂"
+        "detail": "伤官克官，官印链断裂",
+        "category": "QUALITY"
       },
       {
         "condition": "印星有力（非燥土虚浮）",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "HARD_BREAK"
       }
     ],
     "breakReasons": [

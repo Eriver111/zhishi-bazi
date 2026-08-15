@@ -98,10 +98,18 @@
     "monthZhi": "酉",
     "monthGan": "丁",
     "source": "月柱丁酉：食神(丁) + 七杀(酉)",
-    "establishConditions": [],
+    "establishConditions": [
+      {
+        "condition": "制神有效制杀",
+        "met": false,
+        "detail": "食神虚透，制杀无力",
+        "category": "HARD_BREAK"
+      }
+    ],
     "breakReasons": [
       "月令受年柱冲",
-      "月令受时柱冲"
+      "月令受时柱冲",
+      "食神虚透，制杀无力"
     ],
     "isEstablished": false,
     "status": "破格"
@@ -133,7 +141,7 @@
       {
         "category": "格局",
         "title": "食神制杀格·破格",
-        "detail": "月令受年柱冲；月令受时柱冲"
+        "detail": "月令受年柱冲；月令受时柱冲；食神虚透，制杀无力"
       },
       {
         "category": "根气/透干",
@@ -254,7 +262,8 @@
       "status": "破格",
       "breakReasons": [
         "月令受年柱冲",
-        "月令受时柱冲"
+        "月令受时柱冲",
+        "食神虚透，制杀无力"
       ]
     },
     "candidateScores": [

@@ -114,6 +114,9 @@
     "name": "伤官格",
     "desc": "月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。",
     "type": "透干取格",
+    "matchMode": "exact-canggan",
+    "matchedGan": "癸",
+    "matchedPillar": "月柱",
     "monthWx": "土",
     "monthZhi": "丑",
     "monthGan": "癸",
@@ -122,17 +125,20 @@
       {
         "condition": "日主有承载格局之力",
         "met": true,
-        "detail": "日主中和（54分），可承载格局"
+        "detail": "日主中和（54分），可承载格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "无正官被伤",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "有印星制伤或财星引化",
         "met": false,
-        "detail": "缺印缺财，伤官无制无化"
+        "detail": "缺印缺财，伤官无制无化",
+        "category": "QUALITY"
       }
     ],
     "breakReasons": [],

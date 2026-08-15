@@ -106,30 +106,37 @@
     "name": "正官格",
     "desc": "月令透官，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
     "type": "透干取格",
+    "matchMode": "same-element",
+    "matchedGan": "庚",
+    "matchedPillar": "时柱",
     "monthWx": "金",
     "monthZhi": "酉",
     "monthGan": "己",
-    "source": "月支酉藏庚，透于时柱(同金透) → 正官",
+    "source": "月支酉本气辛，为日主甲之正官；时柱透庚，同属金气，强化月令正官之势 → 取正官格",
     "establishConditions": [
       {
         "condition": "日主有承载格局之力",
         "met": false,
-        "detail": "日主极弱（10.5分），身太弱难担格局"
+        "detail": "日主极弱（10.5分），身太弱难担格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "正官透干有根",
-        "met": true,
-        "detail": "月令正官透出天干"
+        "met": false,
+        "detail": "月支酉本气辛为正官，未透干；时柱透庚，为日主之七杀，不视为正官本星透干",
+        "category": "QUALITY"
       },
       {
         "condition": "无伤官克官",
         "met": false,
-        "detail": "天干透伤官，克损正官"
+        "detail": "天干透伤官，克损正官",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "无官杀混杂",
         "met": false,
-        "detail": "天干透七杀，官杀混杂"
+        "detail": "天干透七杀，官杀混杂",
+        "category": "HARD_BREAK"
       }
     ],
     "breakReasons": [

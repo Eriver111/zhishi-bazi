@@ -106,6 +106,9 @@
     "name": "羊刃格",
     "desc": "日主得帝旺之位气势极强。\"羊刃驾杀，威震边疆。\"——《滴天髓》",
     "type": "月令特别格",
+    "matchMode": "",
+    "matchedGan": "",
+    "matchedPillar": "",
     "monthWx": "金",
     "monthZhi": "酉",
     "monthGan": "乙",
@@ -114,12 +117,14 @@
       {
         "condition": "日主有承载格局之力",
         "met": true,
-        "detail": "日主极强（100分），可承载格局"
+        "detail": "日主极强（100分），可承载格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "官杀制刃",
         "met": false,
-        "detail": "羊刃无制，刚暴自伤"
+        "detail": "羊刃无制，刚暴自伤",
+        "category": "HARD_BREAK"
       }
     ],
     "breakReasons": [

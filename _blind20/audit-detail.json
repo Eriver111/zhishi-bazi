@@ -19,6 +19,9 @@
       "name": "从杀格",
       "desc": "日主弱极，官杀成势，不得不从。\"弃命从杀，杀旺为贵。\"喜财官杀顺势，忌印比破格。",
       "type": "透干取格",
+      "matchMode": "same-element",
+      "matchedGan": "壬",
+      "matchedPillar": "年柱",
       "monthWx": "水",
       "monthZhi": "子",
       "monthGan": "壬",
@@ -27,7 +30,8 @@
         {
           "condition": "从格成立",
           "met": true,
-          "detail": "弃命从杀，日主弱极顺势而从。"
+          "detail": "弃命从杀，日主弱极顺势而从。",
+          "category": "INFO"
         }
       ],
       "breakReasons": [],
@@ -177,6 +181,9 @@
       "name": "羊刃格",
       "desc": "日主得帝旺之位气势极强。\"羊刃驾杀，威震边疆。\"——《滴天髓》",
       "type": "月令特别格",
+      "matchMode": "",
+      "matchedGan": "",
+      "matchedPillar": "",
       "monthWx": "金",
       "monthZhi": "酉",
       "monthGan": "乙",
@@ -185,12 +192,14 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主极强（100分），可承载格局"
+          "detail": "日主极强（100分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "官杀制刃",
           "met": false,
-          "detail": "羊刃无制，刚暴自伤"
+          "detail": "羊刃无制，刚暴自伤",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [
@@ -405,6 +414,9 @@
       "name": "假从势格",
       "desc": "日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。",
       "type": "透干取格",
+      "matchMode": "same-element",
+      "matchedGan": "丁",
+      "matchedPillar": "年柱",
       "monthWx": "火",
       "monthZhi": "巳",
       "monthGan": "乙",
@@ -413,7 +425,8 @@
         {
           "condition": "从格成立",
           "met": true,
-          "detail": "弃命从势，日主弱极顺势而从。"
+          "detail": "弃命从势，日主弱极顺势而从。",
+          "category": "INFO"
         }
       ],
       "breakReasons": [],
@@ -582,6 +595,9 @@
       "name": "偏财格",
       "desc": "月令透财，慷慨大方，商业嗅觉敏锐，适合投资经营。",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "辛",
+      "matchedPillar": "年柱",
       "monthWx": "金",
       "monthZhi": "酉",
       "monthGan": "丁",
@@ -590,17 +606,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": false,
-          "detail": "日主极弱（20分），身太弱难担格局"
+          "detail": "日主极弱（20分），身太弱难担格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "比劫不过重",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "日主能担财",
           "met": false,
-          "detail": "身弱不担财，富屋贫人"
+          "detail": "身弱不担财，富屋贫人",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [
@@ -834,6 +853,9 @@
       "name": "正财格",
       "desc": "月令透财，务实稳健善理财。财宜食伤来生、官星来护。",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "乙",
+      "matchedPillar": "年柱",
       "monthWx": "土",
       "monthZhi": "未",
       "monthGan": "癸",
@@ -842,17 +864,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主偏弱（32分），可承载格局"
+          "detail": "日主偏弱（32分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "比劫不过重",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "日主能担财",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [
@@ -987,6 +1012,9 @@
       "name": "七杀格",
       "desc": "月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "甲",
+      "matchedPillar": "月柱",
       "monthWx": "木",
       "monthZhi": "寅",
       "monthGan": "甲",
@@ -995,17 +1023,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主中和（45分），可承载格局"
+          "detail": "日主中和（45分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "有食神制杀或印星化杀",
           "met": true,
-          "detail": "印星化杀"
+          "detail": "印星化杀",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无财星党杀",
           "met": false,
-          "detail": "财星生杀，助纣为虐"
+          "detail": "财星生杀，助纣为虐；局有食制/印化，财党杀暂作提示不翻成破（待3×3分层裁定）",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [],
@@ -1242,6 +1273,9 @@
       "name": "伤官格",
       "desc": "月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "癸",
+      "matchedPillar": "月柱",
       "monthWx": "土",
       "monthZhi": "丑",
       "monthGan": "癸",
@@ -1250,17 +1284,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主中和（54分），可承载格局"
+          "detail": "日主中和（54分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无正官被伤",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "有印星制伤或财星引化",
           "met": false,
-          "detail": "缺印缺财，伤官无制无化"
+          "detail": "缺印缺财，伤官无制无化",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [],
@@ -1501,25 +1538,31 @@
       "name": "正印格",
       "desc": "月令透印，温厚善良学识渊博。印喜官杀来生，忌财星破印。",
       "type": "透干取格",
+      "matchMode": "same-element",
+      "matchedGan": "壬",
+      "matchedPillar": "年柱",
       "monthWx": "水",
       "monthZhi": "子",
       "monthGan": "壬",
-      "source": "月支子藏壬，透于年柱(同水透) → 正印",
+      "source": "月支子本气癸，为日主甲之正印；年柱透壬，同属水气，强化月令正印之势 → 取正印格",
       "establishConditions": [
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主偏强（75分），可承载格局"
+          "detail": "日主偏强（75分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无财星破印",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "日主有根纳印",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [
@@ -1739,6 +1782,9 @@
       "name": "七杀格",
       "desc": "月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "丁",
+      "matchedPillar": "年柱",
       "monthWx": "土",
       "monthZhi": "未",
       "monthGan": "丁",
@@ -1747,17 +1793,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主偏弱（31分），可承载格局"
+          "detail": "日主偏弱（31分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "有食神制杀或印星化杀",
           "met": false,
-          "detail": "印为燥土，虚浮不化杀"
+          "detail": "印为燥土，虚浮不化杀",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无财星党杀",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [
@@ -1901,17 +1950,20 @@
         {
           "condition": "印星不被财破",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "QUALITY"
         },
         {
           "condition": "官/杀不被食伤制死",
           "met": false,
-          "detail": "伤官克官，官印链断裂"
+          "detail": "伤官克官，官印链断裂",
+          "category": "QUALITY"
         },
         {
           "condition": "印星有力（非燥土虚浮）",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [
@@ -2145,10 +2197,18 @@
       "monthZhi": "酉",
       "monthGan": "丁",
       "source": "月柱丁酉：食神(丁) + 七杀(酉)",
-      "establishConditions": [],
+      "establishConditions": [
+        {
+          "condition": "制神有效制杀",
+          "met": false,
+          "detail": "食神虚透，制杀无力",
+          "category": "HARD_BREAK"
+        }
+      ],
       "breakReasons": [
         "月令受年柱冲",
-        "月令受时柱冲"
+        "月令受时柱冲",
+        "食神虚透，制杀无力"
       ],
       "isEstablished": false,
       "status": "破格"
@@ -2180,7 +2240,7 @@
         {
           "category": "格局",
           "title": "食神制杀格·破格",
-          "detail": "月令受年柱冲；月令受时柱冲"
+          "detail": "月令受年柱冲；月令受时柱冲；食神虚透，制杀无力"
         },
         {
           "category": "根气/透干",
@@ -2252,7 +2312,8 @@
         "status": "破格",
         "breakReasons": [
           "月令受年柱冲",
-          "月令受时柱冲"
+          "月令受时柱冲",
+          "食神虚透，制杀无力"
         ]
       },
       "candidateScores": [
@@ -2352,6 +2413,9 @@
       "name": "七杀格",
       "desc": "月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "戊",
+      "matchedPillar": "年柱",
       "monthWx": "土",
       "monthZhi": "辰",
       "monthGan": "丙",
@@ -2360,17 +2424,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": false,
-          "detail": "日主极弱（7分），身太弱难担格局"
+          "detail": "日主极弱（7分），身太弱难担格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "有食神制杀或印星化杀",
           "met": true,
-          "detail": "印星化杀"
+          "detail": "印星化杀",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无财星党杀",
           "met": false,
-          "detail": "财星生杀，助纣为虐"
+          "detail": "财星生杀，助纣为虐；局有食制/印化，财党杀暂作提示不翻成破（待3×3分层裁定）",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [
@@ -2587,30 +2654,37 @@
       "name": "正官格",
       "desc": "月令透官，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
       "type": "透干取格",
+      "matchMode": "same-element",
+      "matchedGan": "庚",
+      "matchedPillar": "时柱",
       "monthWx": "金",
       "monthZhi": "酉",
       "monthGan": "己",
-      "source": "月支酉藏庚，透于时柱(同金透) → 正官",
+      "source": "月支酉本气辛，为日主甲之正官；时柱透庚，同属金气，强化月令正官之势 → 取正官格",
       "establishConditions": [
         {
           "condition": "日主有承载格局之力",
           "met": false,
-          "detail": "日主极弱（10.5分），身太弱难担格局"
+          "detail": "日主极弱（10.5分），身太弱难担格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "正官透干有根",
-          "met": true,
-          "detail": "月令正官透出天干"
+          "met": false,
+          "detail": "月支酉本气辛为正官，未透干；时柱透庚，为日主之七杀，不视为正官本星透干",
+          "category": "QUALITY"
         },
         {
           "condition": "无伤官克官",
           "met": false,
-          "detail": "天干透伤官，克损正官"
+          "detail": "天干透伤官，克损正官",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无官杀混杂",
           "met": false,
-          "detail": "天干透七杀，官杀混杂"
+          "detail": "天干透七杀，官杀混杂",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [
@@ -2818,17 +2892,26 @@
       "detail": "综合评定身极弱（1分）。命局中克泄耗力量偏重，日主需印比扶助。"
     },
     "pattern": {
-      "name": "伤官生财格",
-      "desc": "月干偏财 + 月支伤官——伤官生财格，月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。",
+      "name": "假从势格",
+      "desc": "日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。",
       "type": "同柱复合",
       "monthWx": "火",
       "monthZhi": "午",
       "monthGan": "戊",
-      "source": "月柱戊午：偏财(戊) + 伤官(午)",
-      "establishConditions": [],
+      "source": "弃命从势（原局伤官生财格，既成从格，以从格论）",
+      "establishConditions": [
+        {
+          "condition": "从格成立",
+          "met": true,
+          "detail": "弃命从势，日主弱极顺势而从。",
+          "category": "INFO"
+        }
+      ],
       "breakReasons": [],
       "isEstablished": true,
-      "status": "成格"
+      "status": "成格",
+      "congGe": true,
+      "basePattern": "伤官生财格·成格"
     },
     "yongJi": {
       "dayMasterLevel": "极弱",
@@ -2871,8 +2954,8 @@
         },
         {
           "category": "格局",
-          "title": "伤官生财格·成格",
-          "detail": "月柱戊午：偏财(戊) + 伤官(午)"
+          "title": "假从势格·成格",
+          "detail": "弃命从势（原局伤官生财格，既成从格，以从格论）"
         },
         {
           "category": "根气/透干",
@@ -2951,7 +3034,7 @@
         }
       },
       "patternStatus": {
-        "name": "伤官生财格",
+        "name": "假从势格",
         "status": "成格",
         "breakReasons": []
       }
@@ -2989,28 +3072,35 @@
       "detail": "综合评定身偏强（78分）。命局中帮扶力量较强，日主底气充足。"
     },
     "pattern": {
-      "name": "建禄格",
-      "desc": "月令为日主禄位（同五行），自身强旺。",
-      "type": "透干取格",
+      "name": "羊刃格",
+      "desc": "日主得帝旺之位气势极强。\"羊刃驾杀，威震边疆。\"——《滴天髓》",
+      "type": "月令特别格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "乙",
+      "matchedPillar": "月柱",
       "monthWx": "木",
       "monthZhi": "卯",
       "monthGan": "乙",
-      "source": "月支卯藏乙，透于月柱 → 劫财",
+      "source": "月支卯（劫财）",
       "establishConditions": [
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主偏强（78分），可承载格局"
+          "detail": "日主偏强（78分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
-          "condition": "财官透出为用",
-          "met": true,
-          "detail": "✓"
+          "condition": "官杀制刃",
+          "met": false,
+          "detail": "羊刃无制，刚暴自伤",
+          "category": "HARD_BREAK"
         }
       ],
-      "breakReasons": [],
-      "isEstablished": true,
-      "status": "成格"
+      "breakReasons": [
+        "羊刃无制"
+      ],
+      "isEstablished": false,
+      "status": "破格"
     },
     "yongJi": {
       "dayMasterLevel": "偏强",
@@ -3028,8 +3118,8 @@
         "水"
       ],
       "reasoning": "日主偏强（78分），候选五行评分后取金为用神：建禄/羊刃喜财官制化 喜：金、火、土。忌：木、水。",
-      "method": "扶抑为主",
-      "primaryReason": "日主偏强（78分），以扶抑平衡为主确定用神。",
+      "method": "格局救应",
+      "primaryReason": "羊刃格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
       "evidence": [
         {
           "category": "旺衰",
@@ -3038,8 +3128,8 @@
         },
         {
           "category": "格局",
-          "title": "建禄格·成格",
-          "detail": "月支卯藏乙，透于月柱 → 劫财"
+          "title": "羊刃格·破格",
+          "detail": "羊刃无制"
         },
         {
           "category": "根气/透干",
@@ -3051,7 +3141,7 @@
         "金": {
           "role": "用神",
           "reasons": [
-            "扶抑为主：官杀制身，是本局首要的调节力量",
+            "格局救应：官杀制身，是本局首要的调节力量",
             "原局未直接出现"
           ]
         },
@@ -3114,9 +3204,11 @@
         }
       },
       "patternStatus": {
-        "name": "建禄格",
-        "status": "成格",
-        "breakReasons": []
+        "name": "羊刃格",
+        "status": "破格",
+        "breakReasons": [
+          "羊刃无制"
+        ]
       },
       "candidateScores": [
         {
@@ -3163,10 +3255,10 @@
           "relation": "官杀",
           "L1": 28.000000000000004,
           "L2": 0,
-          "L3": 4,
+          "L3": 1.6,
           "L4": 0,
-          "SBase": 32,
-          "SNeed": 32,
+          "SBase": 29.600000000000005,
+          "SNeed": 29.600000000000005,
           "rootScore": 0.5,
           "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
           "role": "用神"
@@ -3215,6 +3307,9 @@
       "name": "食神格",
       "desc": "月令透食，温和聪慧有才华。\"食神有气胜财官。\"——《渊海子平》",
       "type": "月令取格",
+      "matchMode": "",
+      "matchedGan": "",
+      "matchedPillar": "",
       "monthWx": "木",
       "monthZhi": "寅",
       "monthGan": "庚",
@@ -3223,17 +3318,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": false,
-          "detail": "日主极弱（19分），身太弱难担格局"
+          "detail": "日主极弱（19分），身太弱难担格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无枭神夺食",
           "met": false,
-          "detail": "偏印夺食，才华受阻"
+          "detail": "偏印夺食，才华受阻",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "食神有生财之路",
           "met": true,
-          "detail": "食神生财，技艺得价"
+          "detail": "食神生财，技艺得价",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [
@@ -3445,6 +3543,9 @@
       "name": "羊刃格",
       "desc": "日主得帝旺之位气势极强。\"羊刃驾杀，威震边疆。\"——《滴天髓》",
       "type": "月令特别格",
+      "matchMode": "",
+      "matchedGan": "",
+      "matchedPillar": "",
       "monthWx": "火",
       "monthZhi": "午",
       "monthGan": "戊",
@@ -3453,12 +3554,14 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主偏强（74分），可承载格局"
+          "detail": "日主偏强（74分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "官杀制刃",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [],
@@ -3677,6 +3780,9 @@
       "name": "食神格",
       "desc": "月令透食，温和聪慧有才华。\"食神有气胜财官。\"——《渊海子平》",
       "type": "透干取格",
+      "matchMode": "exact-canggan",
+      "matchedGan": "乙",
+      "matchedPillar": "年柱",
       "monthWx": "木",
       "monthZhi": "卯",
       "monthGan": "己",
@@ -3685,17 +3791,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": false,
-          "detail": "日主极弱（6分），身太弱难担格局"
+          "detail": "日主极弱（6分），身太弱难担格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无枭神夺食",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "食神有生财之路",
           "met": true,
-          "detail": "食神生财，技艺得价"
+          "detail": "食神生财，技艺得价",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [
@@ -3932,30 +4041,37 @@
       "name": "正官格",
       "desc": "月令透官，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
       "type": "透干取格",
+      "matchMode": "same-element",
+      "matchedGan": "壬",
+      "matchedPillar": "时柱",
       "monthWx": "水",
       "monthZhi": "子",
       "monthGan": "戊",
-      "source": "月支子藏壬，透于时柱(同水透) → 正官",
+      "source": "月支子本气癸，为日主丙之正官；时柱透壬，同属水气，强化月令正官之势 → 取正官格",
       "establishConditions": [
         {
           "condition": "日主有承载格局之力",
           "met": false,
-          "detail": "日主极弱（21分），身太弱难担格局"
+          "detail": "日主极弱（21分），身太弱难担格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "正官透干有根",
-          "met": true,
-          "detail": "月令正官透出天干"
+          "met": false,
+          "detail": "月支子本气癸为正官，未透干；时柱透壬，为日主之七杀，不视为正官本星透干",
+          "category": "QUALITY"
         },
         {
           "condition": "无伤官克官",
           "met": true,
-          "detail": "✓"
+          "detail": "✓",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无官杀混杂",
           "met": false,
-          "detail": "天干透七杀，官杀混杂"
+          "detail": "天干透七杀，官杀混杂",
+          "category": "HARD_BREAK"
         }
       ],
       "breakReasons": [
@@ -4170,6 +4286,9 @@
       "name": "七杀格",
       "desc": "月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。",
       "type": "月令取格",
+      "matchMode": "",
+      "matchedGan": "",
+      "matchedPillar": "",
       "monthWx": "金",
       "monthZhi": "申",
       "monthGan": "戊",
@@ -4178,17 +4297,20 @@
         {
           "condition": "日主有承载格局之力",
           "met": true,
-          "detail": "日主偏弱（30分），可承载格局"
+          "detail": "日主偏弱（30分），可承载格局",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "有食神制杀或印星化杀",
           "met": true,
-          "detail": "食神制杀"
+          "detail": "食神制杀",
+          "category": "HARD_BREAK"
         },
         {
           "condition": "无财星党杀",
           "met": false,
-          "detail": "财星生杀，助纣为虐"
+          "detail": "财星生杀，助纣为虐；局有食制/印化，财党杀暂作提示不翻成破（待3×3分层裁定）",
+          "category": "QUALITY"
         }
       ],
       "breakReasons": [

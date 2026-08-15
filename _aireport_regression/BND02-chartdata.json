@@ -102,6 +102,9 @@
     "name": "偏财格",
     "desc": "月令透财，慷慨大方，商业嗅觉敏锐，适合投资经营。",
     "type": "透干取格",
+    "matchMode": "exact-canggan",
+    "matchedGan": "辛",
+    "matchedPillar": "年柱",
     "monthWx": "金",
     "monthZhi": "酉",
     "monthGan": "丁",
@@ -110,17 +113,20 @@
       {
         "condition": "日主有承载格局之力",
         "met": false,
-        "detail": "日主极弱（20分），身太弱难担格局"
+        "detail": "日主极弱（20分），身太弱难担格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "比劫不过重",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "日主能担财",
         "met": false,
-        "detail": "身弱不担财，富屋贫人"
+        "detail": "身弱不担财，富屋贫人",
+        "category": "HARD_BREAK"
       }
     ],
     "breakReasons": [

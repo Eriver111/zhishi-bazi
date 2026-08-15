@@ -1,6 +1,6 @@
-# 盲测冒烟批 · 线上引擎结果（2026-08-14）
+# 盲测冒烟批 · 线上引擎结果（2026-08-15）
 
-> 数据源：zhishi.online 部署字节。bazi.js sha256 `6214347502646dc3…`（P2 冻结 blob ✓）
+> 数据源：zhishi.online 部署字节。bazi.js sha256 `b8e9ebaa8a9fcf6b…`（P5-A2A blob ✓）
 > structural.js sha256 `96b8370dafc89453…`（merge blob ✓）。
 > 时序：本结果在 Claude 独立断盘冻结稿 commit e51cc6c 之后生成，三方对账以本文档为引擎侧唯一依据。
 
