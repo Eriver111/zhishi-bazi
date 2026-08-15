@@ -1,5 +1,7 @@
 // AI_REPORT_LAYER 正式回归（2026-08-15 P5-B 收口）：14 盘存证报告重放——新 validator 对生产回复全文复算，
-// 与报告中记录的 warnings 逐条对账。预期唯一差异：TH07/PAT07 的 E1-生克方向（晦火生金）误报消失。
+// 与报告中记录的 warnings 逐条对账。预期差异（两个 validator 边界修复的 FP 消失）：
+// ① TH07/PAT07 的 E1-生克方向（晦火生金）误报；② R01/PAT04 的 E1-五合错误（合法对甲己合，sort 码点 bug）误报。
+// 逃逸风险由单元测试守卫（tests/e1-boundary.test.js 非法生克仍抓 + tests/e1-wuhe.test.js 非法五合仍抓）。
 // 用法：node _aireport_regression/replay-validator-new.js
 var fs = require('fs');
 var path = require('path');
@@ -29,11 +31,11 @@ DISKS.forEach(function (name) {
   var same = JSON.stringify(recorded) === JSON.stringify(now);
   var removed = recorded.filter(function (w) { return now.indexOf(w) < 0; });
   var added = now.filter(function (w) { return recorded.indexOf(w) < 0; });
-  var status = same ? 'OK-identical' : (added.length === 0 && removed.every(function (w) { return w.indexOf('E1-生克方向') === 0; }) ? 'OK-E1FP-removed' : 'DIFF');
+  var status = same ? 'OK-identical' : (added.length === 0 && removed.every(function (w) { return /^E1-(生克方向|五合错误)/.test(w); }) ? 'OK-E1FP-removed' : 'DIFF');
   if (status === 'DIFF') fail++;
   console.log(name + ' [' + status + '] recorded=' + recorded.length + ' now=' + now.length
     + (removed.length ? ' removed=' + JSON.stringify(removed) : '')
     + (added.length ? ' added=' + JSON.stringify(added) : ''));
 });
-console.log(fail === 0 ? '\nRESULT: PASS（唯一预期差异=E1晦火生金误报消失，无任何新差异）' : '\nRESULT: FAIL ' + fail);
+console.log(fail === 0 ? '\nRESULT: PASS（预期差异=E1晦火生金/甲己合两误报消失，无任何新差异）' : '\nRESULT: FAIL ' + fail);
 process.exit(fail === 0 ? 0 : 1);

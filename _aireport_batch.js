@@ -712,7 +712,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   } finally {
     // ---- ⑤ 扣减终态 + 清理测试码 ----
     var { data: finalCred } = await db.from('user_credits').select('credits,total_used').eq('code', TEST_CODE).single();
-    console.log('\n测试码终态：credits=' + (finalCred ? finalCred.credits : '?') + ' total_used=' + (finalCred ? finalCred.total_used : '?') + '（期望 0 / ' + DISKS.length + '）');
+    console.log('\n测试码终态：credits=' + (finalCred ? finalCred.credits : '?') + ' total_used=' + (finalCred ? finalCred.total_used : '?') + '（插入 2×缓冲，期望 credits=' + DISKS.length + '（缓冲未用）/ total_used=' + DISKS.length + '，无重扣）');
     var { error: delErr } = await db.from('user_credits').delete().eq('code', TEST_CODE);
     console.log('测试码清理：' + (delErr ? '❌ ' + delErr.message : '✅ 已删除（chat_history 证据行保留）'));
   }
