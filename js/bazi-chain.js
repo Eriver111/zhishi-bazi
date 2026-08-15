@@ -205,9 +205,15 @@
     } else if (simpleRel(zhiChain[0].wx, monthGanWx) === 'sheng' && monthGanWx === KEWO) {
       caiShengSha = true;
       caiShengShaPath = '年支' + zhiChain[0].zhi + '（' + zhiChain[0].wx + '）生月干' + formatGanEvidence(monthGan);
+    } else if (simpleRel(monthZhiWx, monthGanWx) === 'sheng' && monthZhiWx === WOKE && monthGanWx === KEWO) {
+      // P5-B(B1) 同柱路径：月支(财)生月干(杀)——「财生官格」复合的杀路径（如己丑壬申丙午壬辰：申金生壬杀）。
+      // 原链B只查年→月生成，漏掉月柱同柱内部的财生杀，故补。
+      caiShengSha = true;
+      caiShengShaPath = '月支' + zhiChain[1].zhi + '（' + monthZhiWx + '）生月干' + formatGanEvidence(monthGan);
     }
 
-    if (caiShengSha && yearIsCai && monthIsSha) {
+    // yearIsCai 仅覆盖年柱带财的路径；同柱路径的财在月支，守卫放宽为「路径源头为财」。
+    if (caiShengSha && monthIsSha && (yearIsCai || monthZhiWx === WOKE)) {
       // 财生杀 → 这是"财党杀"
       if (yinAdjacentGan || yinInDayZhi || yinInHourGan) {
         var chainSealSource;

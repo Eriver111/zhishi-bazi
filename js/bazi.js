@@ -4402,8 +4402,12 @@ function getPattern(bazi) {
     compound = '印星化杀格';
   }
   // 财生官杀：月干官杀 + 月支财星
+  // P5-B：格名沿用历史称谓「财生官格」（L3 加分与海报模板 keyed 此名，暂不重命名），
+  // 新增 mechanism 表达真实十神关系：七杀为「财生杀」，正官为「财生官」。
+  var mechanism = null;
   if ((ssGan === '正官' || ssGan === '七杀') && (ssZhi === '正财' || ssZhi === '偏财')) {
     compound = '财生官格';
+    mechanism = ssGan === '七杀' ? '财生杀' : '财生官';
   }
   // 食伤生财：月干财 + 月支食神/伤官
   if ((ssGan === '正财' || ssGan === '偏财') && (ssZhi === '食神' || ssZhi === '伤官')) {
@@ -4425,7 +4429,8 @@ function getPattern(bazi) {
       source: cong.source + '（原局' + pResult.name + '，既成从格，以从格论）',
       establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。', category: 'INFO' }],
       congGe: true,
-      basePattern: pResult.name + '·' + pResult.status
+      basePattern: pResult.name + '·' + pResult.status,
+      mechanism: null
     });
   }
 
@@ -4436,6 +4441,7 @@ function getPattern(bazi) {
       desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cd.desc,
       type: '同柱复合',
       monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
+      mechanism: mechanism,
       source: '月柱' + mGan + mZhi + '：' + ssGan + '(' + mGan + ') + ' + ssZhi + '(' + mZhi + ')'
     }));
   }
@@ -4583,6 +4589,22 @@ function finalizeYongJiResult(bazi, base, context) {
     context.chain.hints.forEach(function(h) {
       evidence.push({ category:'生克链·' + (h.category || '结构'), title:h.type === 'warning' ? '⚠ ' + h.category : h.category, detail:h.text });
     });
+  }
+  // P5-B(B1) 候选对比证据：只解释已有评分、不重算（GPT 裁决「只解释已有结果」）。
+  // 从 candidateScores 的 SNeed 组装「取X弃Y」结构化说明——落选元素此前无负面证据。
+  if (context.candidateScores && context.candidateScores.candidates) {
+    var cands = context.candidateScores.candidates.slice().sort(function(a, b) { return b.SNeed - a.SNeed; });
+    var pickedC = cands.filter(function(c) { return c.role === '用神'; });
+    var droppedC = cands.filter(function(c) { return c.role !== '用神'; });
+    if (pickedC.length && droppedC.length) {
+      var pickedLine = pickedC.map(function(c) {
+        return c.wx + '（' + c.relation + '，综合分 ' + c.SNeed.toFixed(1) + '）';
+      }).join('、');
+      var droppedLine = droppedC.map(function(c) {
+        return c.wx + '（' + c.relation + '，' + c.SNeed.toFixed(1) + '）';
+      }).join('、');
+      evidence.push({ category:'候选对比', title:'五行候选评分对比', detail:'取' + pickedLine + '；未取' + droppedLine });
+    }
   }
 
   // 生克链独立字段（供 AI prompt 使用）
