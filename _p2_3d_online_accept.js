@@ -3,7 +3,7 @@
 var https = require('https');
 var crypto = require('crypto');
 
-var EXPECT_SHA = '7c7af8bd25f0c4f519df7a21256e49aeaf4e949445502f4c704fbafb2f57a528';
+var EXPECT_SHA = 'f792041b6abe2be4e7f18cc6ce7b05e454f5fa75e3ca81cc1f756a6d87c92141';
 
 function get(url) {
   return new Promise(function (res, rej) {

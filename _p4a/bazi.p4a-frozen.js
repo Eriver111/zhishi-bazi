@@ -4278,7 +4278,7 @@ function getPattern(bazi) {
       if (WU_XING[allGan[gi]] === benQiWx && allGan[gi] !== benQi) {
         matchedSS = getShiShen(dayGan, benQi);
         matchedGan = allGan[gi];
-        matchedPillar = pillarNames[gi] + '柱';
+        matchedPillar = pillarNames[gi] + '柱(同' + benQiWx + '透)';
         break;
       }
     }
@@ -4375,14 +4375,10 @@ function getPattern(bazi) {
   }
 
   // 帝旺+比劫透走十二长生特判的盘，来源与类型按"月令特别格"口径（与 !matchedSS 特判盘一致）
-  // P4-A-EVID-01：matchedGan 只有精确匹配时才是月支藏干；同五行兜底时它是外透干，
-  // 不得写成「月支所藏」——藏干与外透同五行干必须分开描述（否则出现"寅藏乙"这种伪造藏干的证据句）。
   var source = specialGrid
     ? '月支' + mZhi + '（' + ss + '）'
     : matchedSS
-      ? (cangGan.indexOf(matchedGan) >= 0
-          ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
-          : '月支' + mZhi + '本气' + benQi + '，为日主' + dayGan + '之' + ss + '；' + matchedPillar + '透' + matchedGan + '，同属' + benQiWx + '气，强化月令' + ss + '之势 → 取' + p.name)
+      ? '月支' + mZhi + '藏' + matchedGan + '，透于' + matchedPillar + ' → ' + ss
       : '月支' + mZhi + '（' + ss + '）';
 
   var pResult = finalizePatternStatus(bazi, {

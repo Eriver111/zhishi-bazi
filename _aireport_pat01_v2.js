@@ -7,7 +7,7 @@ var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
-var EXPECT_SHA_BAZI = '7c7af8bd25f0c4f519df7a21256e49aeaf4e949445502f4c704fbafb2f57a528';
+var EXPECT_SHA_BAZI = 'f792041b6abe2be4e7f18cc6ce7b05e454f5fa75e3ca81cc1f756a6d87c92141';
 var EXPECT_SHA_STRUCT = '96b8370dafc89453c1c63792f9f212934369d166682f8551f0f8d78984b5f8f7';
 var TEST_CODE = 'AISMOKE05';
 var OUT_DIR = path.join(__dirname, '_aireport_pat01_v2');
