@@ -1,8 +1,11 @@
-// P5-B diff（2026-08-15）：pre=git HEAD js/bazi.js（b8e9ebaa blob）vs post=工作区 bazi.js。
+// P5-B diff（2026-08-15）：pre=git HEAD js/bazi.js vs post=工作区 bazi.js。
 // 白名单（P5-B 仅新增输出层字段，判定零漂移）：
 //   ① getPattern 新增 mechanism 键（财生官格盘=财生杀/财生官，其余盘=null）；
 //   ② getYongJi.evidence 新增「候选对比」条目（有 candidateScores 的盘）；
 //   ③ getYongJi.chainHints/chainAdjustments 为空数组时的差异（本 diff 两引擎均不加载 bazi-chain，应同为 []）。
+// 改名阶段（2026-08-15 GPT 终裁批准「财生杀格」拆名）：文本归一化后比较——
+//   财生杀→财生官（格名/mechanism/desc/L3文案）、杀为归宿→官为归宿（L3 note）。
+//   硬门禁：candidateScores/用神/喜神/忌神/tiebreak 逐字段一致（语义重命名，用神评分禁止变化）。
 // 白名单之外任何字段差异 = 判定漂移，脚本报错退出非零。
 var fs = require('fs');
 var path = require('path');
@@ -67,12 +70,13 @@ BLIND50.forEach(function (d) {
 });
 Object.keys(dedup).forEach(function (gz) { final.push(dedup[gz]); });
 DISKS = final;
-['00-P5A1-格局攻击集.md', '00-P5A2-格局成败攻击集.md'].forEach(function (f) {
+var ATTACK_SETS = { '00-P5A1-格局攻击集.md': 120, '00-P5A2-格局成败攻击集.md': 120, '00-P5A3-财党杀攻击集.md': 61 };
+Object.keys(ATTACK_SETS).forEach(function (f) {
   var md = fs.readFileSync(path.join(ROOT, '_p5', f), 'utf8').replace(/^﻿/, '');
   var re = /^\| (\d+) \| [^|]+ \| [^|]+ \| ([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥] [甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥] [甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥] [甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]) \|/gm;
   var m, n = 0;
   while ((m = re.exec(md)) !== null) { DISKS.push({ id: f.replace(/\.md$/, '') + '#' + m[1], gz: m[2], set: '攻击集' }); n++; }
-  if (n !== 120) throw new Error(f + ' 解析数量异常: ' + n);
+  if (n !== ATTACK_SETS[f]) throw new Error(f + ' 解析数量异常: ' + n);
 });
 
 // P4-A 定向 32 盘（A1 24 + A2 8，与 a2a_diff 同口径）
@@ -99,6 +103,7 @@ function stripPatternWhitelist(pt) {
 }
 
 var total = 0, drift = 0, mechCount = 0, candCount = 0, mechBad = [];
+var gateBad = [], renamed = [];
 DISKS.forEach(function (d) {
   total++;
   var bPre, bPost;
@@ -108,10 +113,15 @@ DISKS.forEach(function (d) {
   var cgPre = PRE.getCongGe(bPre), cgPost = POST.getCongGe(bPost);
   var yjPre = PRE.getYongJi(bPre), yjPost = POST.getYongJi(bPost);
 
-  // ① mechanism 键合法性：财生官格必须有值（财生杀/财生官）；其余格局一律 null/undefined
-  if (ptPost.name === '财生官格') {
-    if (ptPost.mechanism === '财生杀' || ptPost.mechanism === '财生官') mechCount++;
-    else mechBad.push(d.id + ': name=' + ptPost.name + ' mechanism=' + ptPost.mechanism);
+  // ① mechanism 键合法性（改名后）：财生官格→财生官、财生杀格→财生杀；其余格局一律 null/undefined
+  if (ptPost.name === '财生官格' || ptPost.name === '财生杀格') {
+    var want = ptPost.name === '财生杀格' ? '财生杀' : '财生官';
+    if (ptPost.mechanism === want) {
+      mechCount++;
+      if (ptPost.name === '财生杀格' && ptPre.name === '财生官格') renamed.push(d.id + ' ' + d.gz);
+    } else {
+      mechBad.push(d.id + ': name=' + ptPost.name + ' mechanism=' + ptPost.mechanism + ' 应为' + want);
+    }
   } else if (ptPost.mechanism !== null && ptPost.mechanism !== undefined) {
     mechBad.push(d.id + ': name=' + ptPost.name + ' mechanism应为null实际=' + ptPost.mechanism);
   }
@@ -122,18 +132,30 @@ DISKS.forEach(function (d) {
   if (hasCand && hasCandScores) candCount++;
   else if (hasCand !== hasCandScores) mechBad.push(d.id + ': 候选对比条目与 candidateScores 存在性不一致');
 
-  // ③ 白名单外零漂移
-  if (JSON.stringify(stripPatternWhitelist(ptPre)) !== JSON.stringify(stripPatternWhitelist(ptPost)) ||
+  // ③ 白名单外零漂移（改名归一化后比较：财生杀→财生官、杀为归宿→官为归宿）
+  var norm = function (o) {
+    return JSON.stringify(o).split('财生杀').join('财生官').split('杀为归宿').join('官为归宿');
+  };
+  if (norm(stripPatternWhitelist(ptPre)) !== norm(stripPatternWhitelist(ptPost)) ||
       JSON.stringify(cgPre) !== JSON.stringify(cgPost) ||
-      JSON.stringify(stripYongJiWhitelist(yjPre)) !== JSON.stringify(stripYongJiWhitelist(yjPost))) {
+      norm(stripYongJiWhitelist(yjPre)) !== norm(stripYongJiWhitelist(yjPost))) {
     drift++;
     console.log('漂移: ' + d.id + ' ' + d.gz + ' [' + d.set + ']');
   }
+
+  // ④ GPT 验收硬门禁：candidateScores / 用神 / 喜神 / 忌神 / tiebreak 逐字段一致
+  var yjPreF = stripYongJiWhitelist(yjPre), yjPostF = stripYongJiWhitelist(yjPost);
+  ['candidateScores', 'yongShen', 'xiShen', 'jiShen', 'tiebreak'].forEach(function (k) {
+    if (JSON.stringify(yjPreF[k]) !== JSON.stringify(yjPostF[k])) gateBad.push(d.id + ':' + k);
+  });
 });
 
 console.log('总盘数: ' + total);
 console.log('mechanism 合法盘: ' + mechCount + ' / mechanism 异常: ' + mechBad.length);
+console.log('改名盘（财生官格→财生杀格）: ' + renamed.length);
+renamed.forEach(function (x) { console.log('  改名: ' + x); });
 console.log('候选对比条目盘: ' + candCount);
 console.log('白名单外漂移: ' + drift);
-if (mechBad.length) { mechBad.forEach(function (x) { console.log('  异常: ' + x); }); }
-process.exit((drift === 0 && mechBad.length === 0) ? 0 : 1);
+console.log('硬门禁异常（candidateScores/用神/喜神/忌神/tiebreak）: ' + gateBad.length);
+if (mechBad.length || gateBad.length) { mechBad.concat(gateBad).forEach(function (x) { console.log('  异常: ' + x); }); }
+process.exit((drift === 0 && mechBad.length === 0 && gateBad.length === 0) ? 0 : 1);

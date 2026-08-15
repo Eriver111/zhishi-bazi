@@ -206,7 +206,7 @@
       caiShengSha = true;
       caiShengShaPath = '年支' + zhiChain[0].zhi + '（' + zhiChain[0].wx + '）生月干' + formatGanEvidence(monthGan);
     } else if (simpleRel(monthZhiWx, monthGanWx) === 'sheng' && monthZhiWx === WOKE && monthGanWx === KEWO) {
-      // P5-B(B1) 同柱路径：月支(财)生月干(杀)——「财生官格」复合的杀路径（如己丑壬申丙午壬辰：申金生壬杀）。
+      // P5-B(B1) 同柱路径：月支(财)生月干(杀)——「财生杀格」复合的杀路径（如己丑壬申丙午壬辰：申金生壬杀）。
       // 原链B只查年→月生成，漏掉月柱同柱内部的财生杀，故补。
       caiShengSha = true;
       caiShengShaPath = '月支' + zhiChain[1].zhi + '（' + monthZhiWx + '）生月干' + formatGanEvidence(monthGan);

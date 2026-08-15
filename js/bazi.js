@@ -4402,11 +4402,11 @@ function getPattern(bazi) {
     compound = '印星化杀格';
   }
   // 财生官杀：月干官杀 + 月支财星
-  // P5-B：格名沿用历史称谓「财生官格」（L3 加分与海报模板 keyed 此名，暂不重命名），
-  // 新增 mechanism 表达真实十神关系：七杀为「财生杀」，正官为「财生官」。
+  // P5-B 终裁（GPT 批准拆名）：财+正官→「财生官格」，财+七杀→「财生杀格」——
+  // 全站复合格均区分官/杀，此项不再合并；L3 加分已改 mechanism 驱动，海报模板按新格名 keyed。
   var mechanism = null;
   if ((ssGan === '正官' || ssGan === '七杀') && (ssZhi === '正财' || ssZhi === '偏财')) {
-    compound = '财生官格';
+    compound = ssGan === '七杀' ? '财生杀格' : '财生官格';
     mechanism = ssGan === '七杀' ? '财生杀' : '财生官';
   }
   // 食伤生财：月干财 + 月支食神/伤官
@@ -4822,9 +4822,12 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   } else if (pn === '食神生财格' || pn === '伤官生财格') {
     addL3(WO_KE, 6 * factor, '食伤生财，财为归宿');
     addL3(WO_SHENG, 4 * factor, '食伤生财，食伤为源头');
-  } else if (pn === '财生官格') {
-    addL3(KE_WO, 6 * factor, '财生官，官为归宿');
-    addL3(WO_KE, 4 * factor, '财生官，财为源头');
+  } else if (pattern.mechanism === '财生官' || pattern.mechanism === '财生杀') {
+    // GPT 终裁：L3 消除格名驱动评分，改 mechanism 判断（覆盖财生官格/财生杀格两个新格名）；
+    // 数值不变（官杀 +6 / 财 +4），仅文案随 mechanism 分官/杀（不再把七杀泛化成官）。
+    var caiShaIsSha = pattern.mechanism === '财生杀';
+    addL3(KE_WO, 6 * factor, caiShaIsSha ? '财生杀，杀为归宿' : '财生官，官为归宿');
+    addL3(WO_KE, 4 * factor, caiShaIsSha ? '财生杀，财为源头' : '财生官，财为源头');
   } else if (pn === '建禄格' || pn === '羊刃格') {
     addL3(KE_WO, 4 * factor, '建禄/羊刃喜财官制化');
   }
