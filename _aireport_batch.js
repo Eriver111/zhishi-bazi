@@ -14,7 +14,7 @@ var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
-var EXPECT_SHA_BAZI = '677a95f39d017c4683f37be44de5a72ff1a92e8e6d34d822585a742cf108e37f';
+var EXPECT_SHA_BAZI = 'e3f9f67ada904819afd211d289991ade7712581be5d84ba74c923a522e3e21ab';
 var EXPECT_SHA_STRUCT = '96b8370dafc89453c1c63792f9f212934369d166682f8551f0f8d78984b5f8f7';
 var TEST_CODE = 'AISMOKE03';
 var OUT_DIR = path.join(__dirname, '_aireport_regression');
