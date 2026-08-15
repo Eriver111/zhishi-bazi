@@ -6,6 +6,8 @@ node_modules
 .vercel
 system-commandline-sentinel-files/
 .claude/
+.worktrees/
+.superpowers/sdd/
 ai-chat-dev.html
 子平真诠精解.txt
 
