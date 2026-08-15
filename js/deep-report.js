@@ -100,6 +100,196 @@
     return result;
   }
 
+  function selectStudyRoles(occurrences, roles) {
+    return list(occurrences).filter(function (item) {
+      return roles.indexOf(item && item.role) >= 0;
+    });
+  }
+
+  function studyOccurrenceEvidence(occurrences) {
+    return list(occurrences).map(function (item) {
+      return item.pillarLabel + item.layer + '出现' + item.gan + item.role +
+        (item.element ? '（' + item.element + '）' : '');
+    });
+  }
+
+  function studyElementRole(occurrences, core) {
+    var roles = list(occurrences).map(function (item) {
+      return classifyElementRole(item.element, core && core.yongJi);
+    });
+    if (roles.indexOf('用神') >= 0) return '用神';
+    if (roles.indexOf('喜神') >= 0) return '喜神';
+    if (roles.indexOf('忌神') >= 0) return '忌神';
+    return roles.length ? roles[0] : '中性';
+  }
+
+  function studyActionText(core) {
+    var pattern = core && core.pattern || {};
+    return list(core && core.actionChains).map(textOf).concat([
+      textOf(pattern),
+      pattern.status,
+      list(pattern.breakReasons).map(textOf).join(' '),
+      textOf(core && core.chain),
+    ]).filter(Boolean).join(' ');
+  }
+
+  function buildAbsorptionFacts(seals, core) {
+    var role = studyElementRole(seals, core);
+    var evidenceRows = studyOccurrenceEvidence(seals);
+    var patternText = studyActionText(core);
+    if (!seals.length) {
+      return evidence('待建立', '原局未见明确印星承接证据，吸收理解更依赖兴趣、方法和外部支持，需要把输入拆成可复习的步骤。', 'limited', ['印星未显'], role);
+    }
+    if (role === '忌神') {
+      return evidence('需转化', '印星数量或存在感不等于天然学业好；印为忌时容易停在思虑、囤积资料或过度依赖理解，需用行动、练习和输出把知识转化。', 'strong', evidenceRows.concat(['印星被核心喜忌标为忌神']), role);
+    }
+    if (/枭神夺食/.test(patternText)) {
+      return evidence('输入与输出拉扯', '印星承接与食伤输出之间有拉扯，理解阶段宜设置明确的复述、练习和交付节点。', 'medium', evidenceRows.concat(['已见枭神夺食结构提示']), role);
+    }
+    return evidence('有承接', '印星提供一定的知识吸收和理解承接，仍需通过复述、练习与应用确认真正掌握。', 'medium', evidenceRows, role);
+  }
+
+  function buildExpressionFacts(outputs, core) {
+    var role = studyElementRole(outputs, core);
+    var evidenceRows = studyOccurrenceEvidence(outputs);
+    var hasFood = outputs.some(function (item) { return item.role === '食神'; });
+    var hasWound = outputs.some(function (item) { return item.role === '伤官'; });
+    var patternText = studyActionText(core);
+    if (!outputs.length) {
+      return evidence('待建立', '表达输出证据较少，建议用写作、讲解、题后复盘或作品交付把理解外化。', 'limited', ['食伤未显'], role);
+    }
+    if (/伤官见官/.test(patternText) && hasWound) {
+      return evidence('创新输出', '伤官提供质疑、拆解和创新表达；在标准化考试或规则环境中需校准表达方式，不把结构摩擦直接等同于考试能力不足。', 'medium', evidenceRows.concat(['已见伤官见官结构提示']), role);
+    }
+    if (hasFood && hasWound) {
+      return evidence('复合输出', '食神的稳定表达与伤官的创新表达并见，适合在稳定练习和开放创作之间切换。', 'medium', evidenceRows, role);
+    }
+    return evidence(hasWound ? '创新输出' : '稳定输出', hasWound
+      ? '伤官偏向拆解、创新和观点表达，宜通过项目、讲解或作品验证理解。'
+      : '食神偏向稳定、持续的表达输出，宜通过固定练习和复盘形成可重复的方法。', 'medium', evidenceRows, role);
+  }
+
+  function buildDisciplineFacts(officers, core) {
+    var role = studyElementRole(officers, core);
+    var evidenceRows = studyOccurrenceEvidence(officers);
+    var patternText = studyActionText(core);
+    var mixed = officers.some(function (item) { return item.role === '正官'; }) &&
+      officers.some(function (item) { return item.role === '七杀'; });
+    if (/官印相生|杀印相生/.test(patternText)) {
+      return evidence('可借规则转化', '官杀与印形成承接或转化链路，适合把长期目标拆成计划、检查点和阶段性认证；执行仍需现实投入。', 'strong', evidenceRows.concat([/杀印相生/.test(patternText) ? '杀印相生结构提示' : '官印相生结构提示']), role);
+    }
+    if (mixed || /官杀混杂/.test(patternText)) {
+      return evidence('规则切换', '官杀信号并见或规则要求较多，纪律与应试状态容易受环境切换影响，宜减少并行目标并明确优先级。', 'medium', evidenceRows.concat(['官杀混杂或混合规则提示']), role);
+    }
+    if (!officers.length) {
+      return evidence('需外部节奏', '原局官杀纪律证据较少，长期学习更适合借助固定作息、截止时间、同伴监督或可见进度来维持执行。', 'limited', ['官杀未显'], role);
+    }
+    return evidence('有规则承接', '官杀提供一定的规则意识与长期执行线索，适合用固定计划和阶段检查维持应试节奏。', 'medium', evidenceRows, role);
+  }
+
+  function buildApplicationFacts(tenGods, core) {
+    var outputs = selectStudyRoles(tenGods, ['食神', '伤官']);
+    var wealth = selectStudyRoles(tenGods, ['正财', '偏财']);
+    var evidenceRows = studyOccurrenceEvidence(outputs).concat(studyOccurrenceEvidence(wealth));
+    var role = studyElementRole(outputs.concat(wealth), core);
+    if (outputs.length && wealth.length) {
+      return evidence('学以致用', '食伤与财星同时出现，适合把学习落到技能、项目、作品或可交付成果，边做边校准理解。', 'medium', evidenceRows, role);
+    }
+    if (outputs.length) {
+      return evidence('实践转化', '已有食伤输出线索，适合通过实验、项目、作品或讲解把知识变成可验证的能力。', 'medium', evidenceRows, role);
+    }
+    return evidence('需要应用', '实践转化证据尚不集中，建议为每个学习主题设置小练习、真实任务或复盘产物，避免只停留在记忆层面。', 'limited', evidenceRows.concat(['食伤与财星的应用链路不明显']), role);
+  }
+
+  function deriveStudyPath(core, seals, outputs, officers) {
+    var text = studyActionText(core);
+    var pattern = textOf(core && core.pattern);
+    var combined = text + ' ' + pattern;
+    var type;
+    var reason;
+    if (/伤官配印/.test(combined)) {
+      type = '研究创作型';
+      reason = '伤官配印把理解、拆解与表达连接起来，适合研究、创作、写作或需要形成观点的学习路径。';
+    } else if (/官印相生|杀印相生/.test(combined)) {
+      type = '考试型';
+      reason = '官印相生或杀印相生提供规则、长期目标与知识承接的链路，适合阶段计划清晰的考试、认证或深造路径。';
+    } else if (outputs.some(function (item) { return item.role === '伤官'; }) && outputs.length) {
+      type = '创作型';
+      reason = '伤官输出线索较明显，适合以项目、作品、观点表达和开放题目检验学习成果。';
+    } else if (outputs.length && selectStudyRoles(outputs, ['食神']).length) {
+      type = '技术型';
+      reason = '食神提供持续、可重复的输出线索，适合通过技能训练、实验和稳定练习形成能力。';
+    } else if (seals.length && officers.length) {
+      type = '复合型';
+      reason = '印与官杀同时提供输入和纪律线索，适合把系统学习与阶段性实践、检查结合起来。';
+    } else if (outputs.length) {
+      type = '实践型';
+      reason = '输出线索比纯输入更清晰，适合边做边学，以真实任务和反馈形成学习闭环。';
+    } else {
+      type = '复合型';
+      reason = '单一学习信号不足，适合先用小目标测试吸收、输出、纪律和实践四个环节，再收敛到更匹配的路径。';
+    }
+    return {
+      type: type,
+      conclusion: reason,
+      evidence: [textOf(core && core.pattern)].concat(list(core && core.actionChains).map(textOf)).filter(Boolean),
+      confidence: /伤官配印|官印相生|杀印相生/.test(combined) ? 'strong' : 'medium',
+      conditions: ['路径是学习方式倾向，不代表确定学历、学校层次或录取结果'],
+    };
+  }
+
+  function selectStudyRisks(risks) {
+    return list(risks).filter(function (risk) {
+      return /财破印|枭神夺食|伤官见官|官杀混杂|杀重|印星|食伤/.test(textOf(risk));
+    }).map(function (risk) {
+      return {
+        type: risk.type || risk.name || risk.category || '学习结构风险',
+        conclusion: textOf(risk.conclusion || risk.detail || risk.why || risk),
+        evidence: structuralRiskEvidence(risk),
+        confidence: 'medium',
+        conditions: ['仅在相关结构被岁运或现实条件引动时提高关注'],
+      };
+    });
+  }
+
+  function buildStudyAuxiliary(bazi, calculator) {
+    var rows = [];
+    if (calculator && typeof calculator.calculateShenSha === 'function') {
+      try { rows = list(calculator.calculateShenSha(bazi)); } catch (error) { rows = []; }
+    }
+    if (!rows.length && bazi && Array.isArray(bazi.shenSha)) rows = bazi.shenSha;
+    return rows.filter(function (item) {
+      return /文昌|学堂/.test(textOf(item));
+    }).map(function (item) {
+      return {
+        name: item.name || item.type || textOf(item),
+        positions: item.positions || item.posText || [],
+        conclusion: '仅作辅助提示，不能单独决定学习路径或学业结果。',
+        confidence: 'limited',
+        evidence: [textOf(item)].filter(Boolean),
+      };
+    });
+  }
+
+  function buildStudyFacts(bazi, core, calculator) {
+    if (!bazi || !bazi.day || !calculator) throw new Error('学业事实缺少有效命盘或计算器');
+    core = core || {};
+    var tenGods = collectTenGodOccurrences(bazi, calculator, function () { return true; });
+    var seals = selectStudyRoles(tenGods, ['正印', '偏印']);
+    var outputs = selectStudyRoles(tenGods, ['食神', '伤官']);
+    var officers = selectStudyRoles(tenGods, ['正官', '七杀']);
+    return {
+      absorption: buildAbsorptionFacts(seals, core),
+      expression: buildExpressionFacts(outputs, core),
+      discipline: buildDisciplineFacts(officers, core),
+      application: buildApplicationFacts(tenGods, core),
+      path: deriveStudyPath(core, seals, outputs, officers),
+      obstacles: selectStudyRisks(list(core.structuralRisks).concat(list(core.relationEvents))),
+      auxiliary: buildStudyAuxiliary(bazi, calculator),
+      timing: null,
+    };
+  }
+
   function evidence(state, conclusion, confidence, conditions, elementRole) {
     return {
       state: state,
@@ -1013,6 +1203,7 @@
     };
     facts.relationship = buildRelationshipFacts(bazi, gender, core, deps.calculator);
     facts.wealth = buildWealthFacts(bazi, core, deps.calculator);
+    facts.study = buildStudyFacts(bazi, core, deps.calculator);
     var timingCore = Object.assign({}, core, { wealth: facts.wealth });
     facts.fiveYear = buildFiveYearFacts(
       bazi, timingCore, deps.calculator, deps.chain, facts.anchorYear, gender
@@ -1026,6 +1217,7 @@
     buildFacts: buildFacts,
     buildWealthFacts: buildWealthFacts,
     buildRelationshipFacts: buildRelationshipFacts,
+    buildStudyFacts: buildStudyFacts,
     deriveDayPillarInteraction: deriveDayPillarInteraction,
     buildAnnualFacts: buildAnnualFacts,
     buildFiveYearFacts: buildFiveYearFacts,
