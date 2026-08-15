@@ -4199,62 +4199,6 @@ function finalizePatternStatus(bazi, pattern) {
     if (pn.indexOf('配印') >= 0) {
       conditions.push({ condition: '印星有力', met: dmStr2.level !== '极弱' || hasVisible('正印'), detail: (dmStr2.level !== '极弱' || hasVisible('正印')) ? '✓' : '印弱身极弱，配印空悬' });
     }
-    // P5-A2A：制杀有效性（GPT 终裁批准的外科范围——仅食神/伤官制杀格）。
-    // K2 语义冲突修复：有制神 ≠ 制杀有效。三级 effective/partial/ineffective，
-    // 仅 ineffective 进 breakReason；partial 保守保持成格、以条件解释提示（合绊/根冲/杀重制轻均为降级证据，非硬破）。
-    if (pn === '食神制杀格' || pn === '伤官制杀格') {
-      var HE_GAN = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' };
-      var cGan = bazi.month.gan, cWx = WU_XING[cGan];
-      var shaWx = DI_ZHI_WU_XING[bazi.month.zhi];
-      var hasRootWx = function (wx) {
-        return ['year','month','day','hour'].some(function (p) {
-          return getCangGan(bazi[p].zhi).some(function (g) { return WU_XING[g] === wx; });
-        });
-      };
-      var rootCountWx = function (wx) {
-        return ['year','month','day','hour'].filter(function (p) {
-          return getCangGan(bazi[p].zhi).some(function (g) { return WU_XING[g] === wx; });
-        }).length;
-      };
-      var effLevel = 'effective', effNotes = [], effReason = '';
-      // 1) 枭夺食（食神制杀）：偏印明透即断制杀链（与食神格 HARD 同口径）
-      if (pn === '食神制杀格' && hasVisible('偏印')) {
-        effLevel = 'ineffective'; effReason = '制神受枭夺，制杀链中断';
-      } else if (!hasRootWx(cWx)) {
-        // 2) 虚透无根：制神无同五行藏干根气
-        effLevel = 'ineffective'; effReason = (pn === '食神制杀格' ? '食神虚透，制杀无力' : '伤官虚透，制杀无力');
-      } else {
-        // 3) 制神被邻干五合（年/时干；合绊为降级证据非硬破——合绊保守原则）
-        if (HE_GAN[bazi.year.gan] === cGan || HE_GAN[bazi.hour.gan] === cGan) {
-          effLevel = 'partial'; effNotes.push('制神被合，制杀力受牵');
-        }
-        // 4) 制神根气全被冲
-        var anyRoot = false, allRootsChonged = true;
-        ['year','month','day','hour'].forEach(function (p) {
-          var z = bazi[p].zhi;
-          if (!getCangGan(z).some(function (g) { return WU_XING[g] === cWx; })) return;
-          anyRoot = true;
-          if (chong[z] && ['year','month','day','hour'].map(function (q) { return bazi[q].zhi; }).indexOf(chong[z]) < 0) allRootsChonged = false;
-        });
-        if (anyRoot && allRootsChonged) { effLevel = 'partial'; effNotes.push('制神根气受冲，制杀力减'); }
-        // 5) 印制伤（伤官制杀）：印明透克伤官，制杀力受牵（非硬破）
-        if (pn === '伤官制杀格' && (hasVisible('正印') || hasVisible('偏印'))) {
-          effLevel = 'partial'; effNotes.push('印星制伤，制杀力受牵');
-        }
-        // 6) 杀重制轻：杀势（透干数+同气根数）重于制势（食伤透干数+根数）
-        var shaVisibleCnt = visibleShiShen.filter(function (s) { return s === '七杀'; }).length;
-        var zhiVisibleCnt = visibleShiShen.filter(function (s) { return s === '食神' || s === '伤官'; }).length;
-        if (shaVisibleCnt + rootCountWx(shaWx) > zhiVisibleCnt + rootCountWx(cWx)) {
-          effLevel = 'partial'; effNotes.push('杀重制轻，制杀力有不逮');
-        }
-      }
-      if (effLevel === 'ineffective') {
-        reasons.push(effReason);
-        conditions.push({ condition: '制神有效制杀', met: false, detail: effReason });
-      } else {
-        conditions.push({ condition: '制神有效制杀', met: true, detail: effLevel === 'effective' ? '制神有根有力，制杀得力' : '制杀有情但力不足——' + effNotes.join('；') });
-      }
-    }
   }
 
   // P5-A2B condition schema 分类：HARD_BREAK=与 breakReasons 对齐的硬条件；QUALITY=层次/配置条件（不驱动成破）；
@@ -4280,8 +4224,7 @@ function finalizePatternStatus(bazi, pattern) {
     '印星不被财破': 'QUALITY',
     '官/杀不被食伤制死': 'QUALITY',
     '印星有力（非燥土虚浮）': 'HARD_BREAK',
-    '印星有力': 'QUALITY',
-    '制神有效制杀': 'HARD_BREAK'
+    '印星有力': 'QUALITY'
   };
   conditions.forEach(function (c) {
     c.category = CONDITION_CATEGORIES[c.condition] || 'INFO';
