@@ -4800,22 +4800,9 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     L3[wx] += val;
     if (val !== 0) l3Details.push({ wx: wx, val: val, note: note });
   };
-  var jiuYingQuality = {}; // P5-C06：救应质量系数缓存（按元素）
   var addJiuYing = function(wx, val, note) {
-    // P5-C06（GPT 终裁）：救应「方向优先 → 质量缩放」——L1 方向错不加分；方向对按根气质量缩放。
-    // qualityFactor 复用 evaluateYongShenQuality 已有 rootScore 分类：真用神(>=4)=1 / 偏真(>=2)=0.7 / 弱·假(<2)=0.3
-    if (jiuYingQuality[wx] === undefined) {
-      var qr = evaluateYongShenQuality(bazi, { yongShen: [wx], xiShen: [] });
-      var rs = (qr[wx] && qr[wx].score) || 0;
-      jiuYingQuality[wx] = rs >= 4 ? 1 : (rs >= 2 ? 0.7 : 0.3);
-    }
-    if (L1[wx] < 0) {
-      l3Details.push({ wx: wx, val: 0, note: note + '（方向门控不通过，救应不加分）' });
-    } else {
-      var v = val * jiuYingQuality[wx];
-      jiuYing[wx] += v;
-      addL3(wx, v, note);
-    }
+    jiuYing[wx] += val;
+    addL3(wx, val, note);
   };
   var pn = pattern.name || '';
   var isPo = pattern.status === '破格';
