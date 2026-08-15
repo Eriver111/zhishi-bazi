@@ -7,6 +7,303 @@
 
   var SCHEMA_VERSION = '2.0.0';
 
+  var PILLARS = ['year', 'month', 'day', 'hour'];
+  var PILLAR_LABELS = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
+  var STORAGE_ELEMENTS = { '丑': '金', '未': '木', '辰': '水', '戌': '火' };
+  var STORAGE_CLASH = { '丑': '未', '未': '丑', '辰': '戌', '戌': '辰' };
+
+  function list(value) {
+    if (Array.isArray(value)) return value;
+    if (value == null || value === '') return [];
+    return [value];
+  }
+
+  function textOf(value) {
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    return [value.title, value.name, value.type, value.category, value.detail, value.desc, value.text,
+      value.conclusion, value.source, value.target, value.pillars, value.elements].filter(Boolean).join(' ');
+  }
+
+  function includeElement(values, element) {
+    return list(values).some(function (value) {
+      return value === element || (value && value.element === element);
+    });
+  }
+
+  function classifyElementRole(element, yongJi) {
+    yongJi = yongJi || {};
+    if (includeElement(yongJi.yongShen, element) || includeElement(yongJi.useful, element)) return '用神';
+    if (includeElement(yongJi.xiShen, element) || includeElement(yongJi.favorable, element)) return '喜神';
+    if (includeElement(yongJi.jiShen, element) || includeElement(yongJi.avoid, element)) return '忌神';
+    if (yongJi.elementReasons && yongJi.elementReasons[element]) {
+      return yongJi.elementReasons[element].role || '中性';
+    }
+    return '中性';
+  }
+
+  function getStemRole(dayGan, gan, calculator) {
+    if (!gan) return '十神未定';
+    if (calculator && typeof calculator.getShiShen === 'function') {
+      return calculator.getShiShen(dayGan, gan) || '十神未定';
+    }
+    if (calculator && typeof calculator.getTenGod === 'function') {
+      return calculator.getTenGod(dayGan, gan) || '十神未定';
+    }
+    return '十神未定';
+  }
+
+  function getHiddenStems(pillar, calculator) {
+    if (!pillar) return [];
+    if (Array.isArray(pillar.cangGan)) return pillar.cangGan;
+    if (Array.isArray(pillar.hiddenStems)) return pillar.hiddenStems;
+    if (calculator && typeof calculator.getCangGan === 'function') {
+      return calculator.getCangGan(pillar.zhi) || [];
+    }
+    return [];
+  }
+
+  function collectTenGodOccurrences(bazi, calculator, predicate) {
+    var dayGan = bazi && bazi.day && bazi.day.gan;
+    var wuXing = (calculator && calculator.WU_XING) || {};
+    var result = [];
+    PILLARS.forEach(function (pillarName) {
+      var pillar = bazi && bazi[pillarName];
+      if (!pillar) return;
+      var exposedRole = getStemRole(dayGan, pillar.gan, calculator);
+      if (predicate(exposedRole, pillar.gan, pillarName, '天干')) {
+        result.push({
+          pillar: pillarName,
+          pillarLabel: PILLAR_LABELS[pillarName],
+          layer: '天干',
+          gan: pillar.gan,
+          role: exposedRole,
+          element: wuXing[pillar.gan] || '',
+        });
+      }
+      getHiddenStems(pillar, calculator).forEach(function (gan, index) {
+        var layer = index === 0 ? '本气' : (index === 1 ? '中气' : '余气');
+        var role = getStemRole(dayGan, gan, calculator);
+        if (!predicate(role, gan, pillarName, layer)) return;
+        result.push({
+          pillar: pillarName,
+          pillarLabel: PILLAR_LABELS[pillarName],
+          layer: layer,
+          gan: gan,
+          role: role,
+          element: wuXing[gan] || '',
+        });
+      });
+    });
+    return result;
+  }
+
+  function evidence(state, conclusion, confidence, conditions, elementRole) {
+    return {
+      state: state,
+      method: state,
+      conclusion: conclusion,
+      confidence: confidence || 'medium',
+      conditions: conditions || [],
+      elementRole: elementRole || '中性',
+      evidence: (conditions || []).slice(),
+    };
+  }
+
+  function buildResourceQuality(occurrences, bazi, core, calculator, wealthElement) {
+    var exposed = occurrences.filter(function (item) { return item.layer === '天干'; });
+    var hidden = occurrences.filter(function (item) { return item.layer !== '天干'; });
+    var role = classifyElementRole(wealthElement, core.yongJi);
+    var conditions = [];
+    if (exposed.length) conditions.push('财星透干：' + exposed.map(function (item) { return item.gan + item.pillarLabel; }).join('、'));
+    if (hidden.length) conditions.push('财星藏于：' + hidden.map(function (item) { return item.gan + item.pillarLabel + item.layer; }).join('、'));
+    if (!occurrences.length) {
+      return {
+        state: '不显',
+        conclusion: '原局未见明确正财或偏财十神，资源议题需结合岁运和现实路径观察。',
+        confidence: 'limited',
+        elementRole: role,
+        visibleCount: 0,
+        hiddenCount: 0,
+        evidence: [],
+      };
+    }
+    return {
+      state: exposed.length ? '显现' : '潜藏',
+      conclusion: exposed.length
+        ? '财星有透干证据，资源机会较容易被看见，但能否转化仍取决于承载与结构路径。'
+        : '财星主要以藏干形式出现，资源线索较隐性，需要结合根气、引动和实际通路观察。',
+      confidence: exposed.length && hidden.length ? 'strong' : 'medium',
+      elementRole: role,
+      visibleCount: exposed.length,
+      hiddenCount: hidden.length,
+      evidence: conditions,
+    };
+  }
+
+  function buildWealthPathways(core) {
+    var chains = list(core && core.actionChains);
+    var risks = list(core && core.structuralRisks);
+    var rows = [];
+    var definitions = [
+      { type: '食伤生财', pattern: /食神|伤官|食伤.*财|生财/, conclusion: '已有食伤与财星的链路证据，可关注表达、技能或产出向资源转化的条件。' },
+      { type: '财生官', pattern: /财.*官|财.*杀|官.*财/, conclusion: '已有财与官杀相连的证据，资源可能与责任、规则或组织位置同步出现。' },
+      { type: '财官印连续流通', pattern: /财.*官.*印|财生杀印|财官印/, conclusion: '已有财、官杀、印连续流通的证据，转化效果取决于各环节是否承接。' },
+      { type: '财配印', pattern: /财.*印|印.*财/, conclusion: '已有财印同场证据，资源与学习、资质或支持系统之间存在联动条件。' },
+      { type: '比劫与财并见', pattern: /比劫.*财|财.*比劫|劫财/, conclusion: '已有比劫与财并见证据，获取机会与资源分流需同时评估。' },
+      { type: '财党杀', pattern: /财党杀|财.*杀/, conclusion: '已有财党杀证据，资源议题可能伴随责任、竞争或压力，不能单独视为利好。' },
+      { type: '财破印', pattern: /财破印|财.*破.*印/, conclusion: '已有财破印证据，资源投入可能牵动学习、资质或支持系统，需要保留缓冲。' },
+    ];
+    definitions.forEach(function (definition) {
+      var matched = chains.filter(function (chain) { return definition.pattern.test(textOf(chain)); });
+      var riskMatched = risks.filter(function (risk) { return definition.pattern.test(textOf(risk)); });
+      if (!matched.length && !riskMatched.length) return;
+      rows.push({
+        type: definition.type,
+        conclusion: definition.conclusion,
+        confidence: matched.length ? 'strong' : 'medium',
+        evidence: matched.concat(riskMatched).map(textOf).filter(Boolean),
+      });
+    });
+    return rows;
+  }
+
+  function buildWealthRetention(core, wealthElement) {
+    var risks = list(core && core.structuralRisks);
+    var events = list(core && core.relationEvents);
+    var source = risks.concat(events);
+    var rows = [];
+    var definitions = [
+      { type: '比劫分流', pattern: /比劫|劫财/, text: '比劫相关证据提示资源分流或竞争条件，需要明确边界与分配规则。' },
+      { type: '财破印', pattern: /财破印/, text: '财破印证据提示资源投入可能牵动学习、资质或支持系统，留存稳定性取决于是否有替代支持。' },
+      { type: '财印冲', pattern: /财印冲|财.*印.*冲|印.*财.*冲/, text: '财印冲证据提示资源安排与支持系统之间存在张力，应结合实际结构调整。' },
+      { type: '财党杀', pattern: /财党杀/, text: '财党杀证据提示资源与责任压力同向增加，留存需要控制杠杆与承诺范围。' },
+    ];
+    definitions.forEach(function (definition) {
+      var matched = source.filter(function (item) { return definition.pattern.test(textOf(item)); });
+      if (!matched.length) return;
+      rows.push({ type: definition.type, conclusion: definition.text, evidence: matched.map(textOf).filter(Boolean) });
+    });
+    var role = classifyElementRole(wealthElement, core && core.yongJi);
+    return {
+      state: rows.length ? '需管理' : '待观察',
+      conclusion: rows.length ? '留存与风险需分开观察，当前已有结构证据提示管理重点。' : '未见明确留存风险证据，仍需结合实际路径和岁运条件观察。',
+      elementRole: role,
+      risks: rows,
+      evidence: rows.reduce(function (all, row) { return all.concat(row.evidence); }, []),
+    };
+  }
+
+  function hasStorageActivation(zhi, bazi, core) {
+    var paired = STORAGE_CLASH[zhi];
+    var texts = list(core && core.relationEvents).concat(list(core && core.actionChains));
+    if (texts.some(function (item) {
+      var text = textOf(item);
+      return text.indexOf(zhi) >= 0 && (text.indexOf('冲') >= 0 || text.indexOf('刑') >= 0 || text.indexOf('合') >= 0);
+    })) return true;
+    if (!paired || !bazi) return false;
+    return PILLARS.some(function (pillarName) {
+      return bazi[pillarName] && bazi[pillarName].zhi === paired;
+    }) && texts.some(function (item) {
+      var text = textOf(item);
+      return text.indexOf(paired) >= 0 && (text.indexOf('冲') >= 0 || text.indexOf('刑') >= 0 || text.indexOf('合') >= 0);
+    });
+  }
+
+  function buildWealthStorage(bazi, core, wealthElement, calculator) {
+    var candidates = [];
+    PILLARS.forEach(function (pillarName) {
+      var pillar = bazi && bazi[pillarName];
+      if (!pillar || !STORAGE_ELEMENTS[pillar.zhi]) return;
+      var hidden = getHiddenStems(pillar, calculator).map(function (gan, index) {
+        return { gan: gan, layer: index === 0 ? '本气' : (index === 1 ? '中气' : '余气'), element: (calculator.WU_XING || {})[gan] || '' };
+      }).filter(function (item) { return item.element === wealthElement; });
+      if (!hidden.length) return;
+      candidates.push({
+        pillar: pillarName,
+        pillarLabel: PILLAR_LABELS[pillarName],
+        zhi: pillar.zhi,
+        storedElement: STORAGE_ELEMENTS[pillar.zhi],
+        hidden: hidden,
+        activated: hasStorageActivation(pillar.zhi, bazi, core),
+      });
+    });
+    var activated = candidates.filter(function (item) { return item.activated; });
+    var evidenceRows = activated.reduce(function (all, item) {
+      return all.concat(item.hidden.map(function (hidden) {
+        return item.pillarLabel + item.zhi + '藏' + hidden.gan + '（' + hidden.layer + '）为财星，相关库气受到引动。';
+      }));
+    }, []);
+    if (!candidates.length) {
+      return { present: false, activated: false, confidence: 'limited', conclusion: '未发现库支中真实藏有对应财星，不能仅以库支出现判定财库。', candidates: [], evidence: [] };
+    }
+    if (!activated.length) {
+      return { present: false, activated: false, confidence: 'limited', conclusion: '发现库支中真实藏有财星，但尚未见相关冲、刑、合或岁运引动证据。', candidates: candidates, evidence: candidates.map(function (item) { return item.pillarLabel + item.zhi + '藏有财星'; }) };
+    }
+    return {
+      present: true,
+      activated: true,
+      confidence: 'medium',
+      conclusion: evidenceRows.join('') + '这只表示藏干或库气被触动，是否形成实际资源仍需结合透干、月令、喜忌和承载条件。',
+      candidates: candidates,
+      evidence: evidenceRows,
+    };
+  }
+
+  function deriveWealthSummaryLevel(capacity, occurrences, core) {
+    if (capacity.state === '承压') return '承压';
+    if (capacity.state === '顺势') return '较强';
+    if (!occurrences.length) return '待时';
+    if (capacity.state === '可承接') return '稳健';
+    return '中等';
+  }
+
+  function buildWealthFacts(bazi, core, calculator) {
+    if (!bazi || !bazi.day || !calculator) throw new Error('财富事实缺少有效命盘或计算器');
+    core = core || {};
+    var wuXing = calculator.WU_XING || {};
+    var dayWx = wuXing[bazi.day.gan];
+    var cycle = ['木', '火', '土', '金', '水'];
+    var wealthIndex = cycle.indexOf(dayWx);
+    var wealthWx = wealthIndex >= 0 ? cycle[(wealthIndex + 2) % cycle.length] : '';
+    var occurrences = collectTenGodOccurrences(bazi, calculator, function (role) {
+      return role === '正财' || role === '偏财';
+    });
+    var elementRole = classifyElementRole(wealthWx, core.yongJi);
+    var patternName = core.pattern && (core.pattern.name || core.pattern.label || '');
+    var isCongCai = !!(core.congGe && /从财/.test(patternName));
+    var strength = core.strength || {};
+    var strengthText = strength.level || strength.label || '';
+    var weak = /弱/.test(strengthText);
+    var capacity;
+    if (isCongCai) {
+      capacity = evidence('顺势', '从财格成立，财星按冻结的从格结论顺势解释。', 'strong', ['从财格'], elementRole);
+      capacity.method = '从格顺势';
+    } else if (weak && elementRole === '忌神') {
+      capacity = evidence('承压', '财星力量明显，但日主承载条件有限，机会与资源压力可能同时增加。', 'strong', ['身弱', '财为忌'], elementRole);
+    } else if (elementRole === '用神' || elementRole === '喜神') {
+      capacity = evidence('可承接', '财星属于冻结核心中的有利元素，具备资源调动的候选条件，仍需结合承载和路径。', 'medium', ['财为' + elementRole], elementRole);
+    } else {
+      capacity = evidence('平衡观察', '财星作用需结合日主承载、格局路径和结构风险判断，不以数量直接等同结果。', 'medium', [], elementRole);
+    }
+    return {
+      wealthElement: wealthWx,
+      wealthRole: ['正财', '偏财'],
+      occurrences: occurrences,
+      resource: buildResourceQuality(occurrences, bazi, core, calculator, wealthWx),
+      capacity: capacity,
+      pathways: buildWealthPathways(core),
+      retention: buildWealthRetention(core, wealthWx),
+      storage: buildWealthStorage(bazi, core, wealthWx, calculator),
+      timing: null,
+      summaryLevel: deriveWealthSummaryLevel(capacity, occurrences, core),
+      evidence: [capacity].concat(occurrences.map(function (item) {
+        return { label: item.pillarLabel + item.layer, text: item.gan + '为' + item.role + '（' + item.element + '）' };
+      })),
+    };
+  }
+
   function buildFacts(bazi, gender, options) {
     options = options || {};
     var host = typeof window !== 'undefined' ? window : globalThis;
@@ -34,7 +331,7 @@
       structuralRisks: structural.structuralRisks || [],
       chain: chain,
     });
-    return {
+    var facts = {
       schemaVersion: SCHEMA_VERSION,
       anchorYear: Number(options.anchorYear),
       chartIdentity: [bazi.year, bazi.month, bazi.day, bazi.hour]
@@ -47,7 +344,9 @@
       currentYear: null,
       fiveYear: null,
     };
+    facts.wealth = buildWealthFacts(bazi, core, deps.calculator);
+    return facts;
   }
 
-  return { SCHEMA_VERSION: SCHEMA_VERSION, buildFacts: buildFacts };
+  return { SCHEMA_VERSION: SCHEMA_VERSION, buildFacts: buildFacts, buildWealthFacts: buildWealthFacts };
 }));
