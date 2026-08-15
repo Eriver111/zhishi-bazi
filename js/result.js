@@ -93,6 +93,7 @@ let _liunianShenSha = []; // 流年柱神煞
 let _params = null;       // URL参数（供后续函数使用）
 let _reportYear = 0;      // 只读购买年份，不进入报告/订单身份
 let _reportAnchorYear = 0;
+let _deepReportFacts = null;
 
 function reportAnchorKey(params) {
     var key = {
@@ -110,6 +111,7 @@ function reportAnchorKey(params) {
 function render(data) {
     const bazi = data.bazi;
     _bazi = bazi;  // 存储供 renderPaidContent 使用
+    _deepReportFacts = null;
     const dayGan = bazi.day.gan;
     const currentYear = new Date().getFullYear();
     var isDirect = _params && _params.mode === 'pillars';
@@ -239,22 +241,169 @@ function render(data) {
     }
 }
 
-// ---- 付费内容渲染 (由 paywall 在解锁后调用) ----
+// ---- 付费内容渲染：五个栏目只消费同一份深度报告事实 ----
+function reportEsc(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function reportText(value) {
+    if (value == null) return '';
+    if (typeof value === 'string' || typeof value === 'number') return String(value);
+    if (Array.isArray(value)) return value.map(reportText).filter(Boolean).join('；');
+    return String(value.text || value.conclusion || value.detail || value.label || value.name || '');
+}
+
+function reportRows(rows) {
+    return (Array.isArray(rows) ? rows : []).map(function(row) {
+        var label = row && (row.label || row.type || row.field || row.name) || '依据';
+        var text = row && (row.text || row.conclusion || row.detail || row.evidence) || '';
+        return '<li><strong>' + reportEsc(label) + '</strong>：' + reportEsc(reportText(text)) + '</li>';
+    }).join('');
+}
+
+function reportConditions(value) {
+    var rows = Array.isArray(value) ? value : [];
+    if (!rows.length) return '';
+    return '<div class="deep-report-conditions"><strong>条件与限制</strong><ul>' + reportRows(rows.map(function(row) { return { text: row }; })) + '</ul></div>';
+}
+
+function reportEvidence(value) {
+    var rows = Array.isArray(value) ? value : [];
+    if (!rows.length) return '';
+    return '<div class="deep-report-evidence"><strong>依据</strong><ul>' + reportRows(rows) + '</ul></div>';
+}
+
+function reportCard(title, fact) {
+    if (!fact) return '';
+    var titleHtml = '<h3>' + reportEsc(title) + '</h3>';
+    var state = fact.state ? '<span class="deep-report-state">' + reportEsc(fact.state) + '</span>' : '';
+    var conclusion = fact.conclusion ? '<p>' + reportEsc(reportText(fact.conclusion)) + '</p>' : '';
+    return '<article class="deep-report-card">' + titleHtml + state + conclusion + reportEvidence(fact.evidence) + reportConditions(fact.conditions) + '</article>';
+}
+
+function openPaidSection(id) {
+    var section = document.getElementById(id);
+    if (!section) return;
+    section.classList.add('drawer-open');
+    section.style.display = 'block';
+}
+
+function renderDeepReportError(message) {
+    var html = '<div class="deep-report-error"><strong>专业报告暂时无法生成</strong><p>' + reportEsc(message || '请稍后重试。') + '</p><button type="button" onclick="renderPaidContent()">重试</button></div>';
+    ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent'].forEach(function(id) {
+        var node = document.getElementById(id);
+        if (node) node.innerHTML = html;
+    });
+    ['thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'].forEach(openPaidSection);
+}
+
+function resolveDeepReportAnchor(params) {
+    var resolved = Number(_reportAnchorYear || _reportYear);
+    if (resolved >= 1900 && resolved <= 2200) return resolved;
+    var anchor = typeof window !== 'undefined' && window.DeepReportAnchor;
+    if (anchor && typeof anchor.resolve === 'function') {
+        return anchor.resolve({ reportYear: _reportYear, chartKey: reportAnchorKey(params || {}), storage: window.localStorage });
+    }
+    return Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date()));
+}
+
+function renderDeepCurrentYear(facts) {
+    var node = document.getElementById('thisYearContent');
+    if (!node) return;
+    var year = facts && facts.year ? reportEsc(facts.year) : '';
+    var pillar = facts && (facts.pillar || facts.yearPillar) || {};
+    var html = '<div class="deep-report-overview"><strong>' + year + '年</strong> · ' + reportEsc(reportText(pillar.gan) + reportText(pillar.zhi)) + '</div>';
+    html += reportCard('事业与节奏', facts && facts.career);
+    html += reportCard('本年财富激活', facts && facts.wealth);
+    html += reportCard('关系议题', facts && facts.relationship);
+    html += reportCard('学习安排', facts && facts.study);
+    html += reportCard('身心管理', facts && facts.wellbeing);
+    html += reportCard('实际触发风险', { evidence: facts && facts.triggeredRisks, conditions: facts && facts.reliefs });
+    node.innerHTML = html;
+    openPaidSection('thisYearSection');
+}
+
+function renderDeepRelationship(facts) {
+    var node = document.getElementById('marriageContent');
+    if (!node) return;
+    var html = reportCard('夫妻宫互动', facts && facts.interaction);
+    html += reportCard('配偶星证据', facts && facts.spouseStar);
+    html += reportCard('远近倾向', facts && facts.distance);
+    html += reportCard('年龄远近倾向', facts && facts.age);
+    html += reportCard('外在气质参考', facts && facts.appearance);
+    html += reportCard('稳定性与限制', facts && facts.stability);
+    node.innerHTML = html;
+    openPaidSection('marriageSection');
+}
+
+function renderDeepWealth(facts) {
+    var node = document.getElementById('wealthContent');
+    if (!node) return;
+    var html = '<div class="deep-report-overview"><strong>资源承接：' + reportEsc(facts && facts.summaryLevel) + '</strong></div>';
+    html += reportCard('资源质量', facts && facts.resource);
+    html += reportCard('承载能力', facts && facts.capacity);
+    html += '<article class="deep-report-card"><h3>转化路径</h3><ul>' + reportRows(facts && facts.pathways) + '</ul></article>';
+    html += reportCard('留存与风险', facts && facts.retention);
+    html += reportCard('库气与引动', facts && facts.storage);
+    html += reportEvidence(facts && facts.evidence);
+    node.innerHTML = html;
+    openPaidSection('wealthSection');
+}
+
+function renderDeepStudy(facts) {
+    var node = document.getElementById('studyContent');
+    if (!node) return;
+    var html = reportCard('吸收理解', facts && facts.absorption);
+    html += reportCard('表达输出', facts && facts.expression);
+    html += reportCard('纪律应试', facts && facts.discipline);
+    html += reportCard('实践转化', facts && facts.application);
+    html += reportCard('学习路径：' + reportText(facts && facts.path && facts.path.type), facts && facts.path);
+    html += '<article class="deep-report-card"><h3>辅助提示</h3><ul>' + reportRows(facts && facts.auxiliary) + '</ul></article>';
+    html += '<article class="deep-report-card"><h3>障碍与建议</h3><ul>' + reportRows(facts && facts.obstacles) + '</ul></article>';
+    node.innerHTML = html;
+    openPaidSection('studySection');
+}
+
+function renderDeepFiveYear(facts) {
+    var node = document.getElementById('fortuneContent');
+    if (!node) return;
+    var html = '<div class="deep-report-overview"><strong>五年观察：' + reportEsc(facts && facts.anchorYear) + '—' + reportEsc(Number(facts && facts.anchorYear) + 4) + '</strong></div>';
+    html += reportCard('整体趋势', facts && facts.trend);
+    if (facts && facts.limitation) html += '<p class="deep-report-limitation">' + reportEsc(facts.limitation) + '</p>';
+    html += '<div class="deep-report-years">' + ((facts && facts.years) || []).map(function(year) {
+        var pillar = year.pillar || year.yearPillar || {};
+        var card = '<article class="deep-report-year"><h3>' + reportEsc(year.year) + '年 · ' + reportEsc(reportText(pillar.gan) + reportText(pillar.zhi)) + '</h3>';
+        card += reportCard('事业', year.career);
+        card += reportCard('财富激活', year.wealth);
+        card += reportCard('关系', year.relationship);
+        card += reportCard('学习', year.study);
+        card += reportEvidence(year.triggeredRisks);
+        return card + '</article>';
+    }).join('') + '</div>';
+    node.innerHTML = html;
+    openPaidSection('fortuneSection');
+}
+
 function renderPaidContent() {
     if (!_bazi || !_params) return;
-    renderThisYear(_bazi, _params.gender);var ts=document.getElementById("thisYearSection");if(ts){ts.classList.add("drawer-open");ts.style.display="block"}
-    renderMarriage(_bazi, _params.gender);
-    var el=document.getElementById('marriageSection');if(el){el.classList.add('drawer-open');el.style.display='block'}
-    document.getElementById('marriageSection').classList.add('drawer-open');
-    renderWealth(_bazi, _params.gender);
-    var el2=document.getElementById('wealthSection');if(el2){el2.classList.add('drawer-open');el2.style.display='block'}
-    document.getElementById('wealthSection').classList.add('drawer-open');
-    renderStudy(_bazi);
-    var el3=document.getElementById('studySection');if(el3){el3.classList.add('drawer-open');el3.style.display='block'}
-    document.getElementById('studySection').classList.add('drawer-open');
-    renderFortune(_bazi, _params.gender);
-    var el4=document.getElementById('fortuneSection');if(el4){el4.classList.add('drawer-open');el4.style.display='block'}
-    document.getElementById('fortuneSection').classList.add('drawer-open');
+    try {
+        if (!_deepReportFacts) {
+            if (!window.DeepReport || typeof window.DeepReport.buildFacts !== 'function') throw new Error('缺少深度报告事实模块');
+            var anchorYear = resolveDeepReportAnchor(_params);
+            _deepReportFacts = window.DeepReport.buildFacts(_bazi, _params.gender, { anchorYear: anchorYear });
+        }
+        renderDeepCurrentYear(_deepReportFacts.currentYear);
+        renderDeepRelationship(_deepReportFacts.relationship);
+        renderDeepWealth(_deepReportFacts.wealth);
+        renderDeepStudy(_deepReportFacts.study);
+        renderDeepFiveYear(_deepReportFacts.fiveYear);
+    } catch (error) {
+        console.error('[deep-report]', error);
+        _deepReportFacts = null;
+        renderDeepReportError('请稍后重试。');
+    }
 }
 
 // ==================== 大运渲染 ====================
