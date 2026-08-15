@@ -137,3 +137,14 @@ test('hasPaidReport requires the same user, type and key', async () => {
   assert.equal(await store.hasPaidReport(7, 'bazi', 'a'.repeat(64)), true);
   assert.equal(await store.hasPaidReport(8, 'bazi', 'a'.repeat(64)), false);
 });
+
+test('getPaidReportAccess exposes paid_at without changing the access decision', async () => {
+  assert.deepEqual(await store.getPaidReportAccess(7, 'bazi', 'a'.repeat(64)), {
+    unlocked: true,
+    paid_at: '2026-07-30T12:00:00.000Z'
+  });
+  assert.deepEqual(await store.getPaidReportAccess(8, 'bazi', 'a'.repeat(64)), {
+    unlocked: false,
+    paid_at: null
+  });
+});

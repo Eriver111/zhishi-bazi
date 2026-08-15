@@ -58,7 +58,10 @@ test('report access returns true only for the authenticated canonical key', asyn
   const handler = loadHandler(
     'api/reports/access.js',
     { requireAuth: () => ({ uid: 7 }) },
-    { hasPaidReport: async (...args) => { received = args; return true; } }
+    { getPaidReportAccess: async (...args) => {
+      received = args;
+      return { unlocked: true, paid_at: '2026-07-30T12:00:00.000Z' };
+    } }
   );
   const res = response();
 
@@ -69,8 +72,9 @@ test('report access returns true only for the authenticated canonical key', asyn
   }, res);
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(Object.keys(res.body).sort(), ['report_key', 'unlocked']);
+  assert.deepEqual(Object.keys(res.body).sort(), ['paid_at', 'report_key', 'unlocked']);
   assert.equal(res.body.unlocked, true);
+  assert.equal(res.body.paid_at, '2026-07-30T12:00:00.000Z');
   assert.equal(received[0], 7);
   assert.equal(received[1], 'bazi');
   assert.match(received[2], /^[0-9a-f]{64}$/);
@@ -92,6 +96,7 @@ test('report access returns false with 200 for a valid report that is not purcha
 
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.unlocked, false);
+  assert.equal(res.body.paid_at, null);
   assert.match(res.body.report_key, /^[0-9a-f]{64}$/);
 });
 

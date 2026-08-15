@@ -38,6 +38,7 @@ function getUrlParams() {
         zishi: p.get('zishi') || '',
         mode: mode,
         timing: timing,
+        reportYear: p.get('report_year') ? parseInt(p.get('report_year')) : undefined,
         enteredPillars: mode === 'pillars' && window.PillarInput
             ? window.PillarInput.fromSearchParams(p)
             : null
@@ -90,6 +91,20 @@ let _nativeShenSha = [];  // 四柱神煞
 let _dayunShenSha = [];   // 大运柱神煞
 let _liunianShenSha = []; // 流年柱神煞
 let _params = null;       // URL参数（供后续函数使用）
+let _reportYear = 0;      // 只读购买年份，不进入报告/订单身份
+let _reportAnchorYear = 0;
+
+function reportAnchorKey(params) {
+    var key = {
+        mode: params.mode || '', year: params.year, month: params.month, day: params.day,
+        hour: params.hour, gender: params.gender, cal: params.cal || '',
+        prov: params.prov || '', city: params.city || '', dist: params.dist || '',
+        minute: params.minute || 0, clock: params.clock || 0,
+        solar: params.solar || '', zishi: params.zishi || '', timing: params.timing || ''
+    };
+    if (params.enteredPillars) key.enteredPillars = params.enteredPillars;
+    return JSON.stringify(key);
+}
 
 // ==================== 主渲染 ====================
 function render(data) {
@@ -1280,6 +1295,8 @@ function toggleDrawer(sectionId) {
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', function() {
     _params = getUrlParams();
+    _reportYear = _params.reportYear;
+    delete _params.reportYear;
     var isDirect = _params.mode === 'pillars';
     var hasTiming = !isDirect || _params.timing === 'matched';
     var invalidDate = !_params.year || !_params.month || !_params.day || isNaN(_params.hour);
@@ -1314,6 +1331,17 @@ document.addEventListener('DOMContentLoaded', function() {
         solarInfo=normalizedBirth.solarInfo;
     }
 
+    if (typeof DeepReportAnchor !== 'undefined' && DeepReportAnchor.resolve) {
+        try {
+            _reportAnchorYear = DeepReportAnchor.resolve({
+                reportYear: _reportYear,
+                chartKey: reportAnchorKey(_params),
+                storage: window.localStorage
+            });
+            window.__deepReportAnchorYear = _reportAnchorYear;
+        } catch (e) {}
+    }
+
     const resultData = buildResultData(_params);
     const bazi = resultData.bazi;
     const daYun = resultData.daYun;
@@ -1332,7 +1360,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof Auth !== 'undefined') {
       Auth.ready(function() {
         if (!Auth.isLoggedIn()) return;
-        var paramStr = window.location.search.substring(1);
+        var identityQuery = new URLSearchParams(window.location.search);
+        identityQuery.delete('report_year');
+        var paramStr = identityQuery.toString();
         try { Auth.syncData('last_bazi_params', paramStr); } catch(e) {}
         if (typeof iru === 'function' && iru()) {
           try { Auth.syncData('bazi_rpt', JSON.stringify({h:typeof _baziHash!=='undefined'?_baziHash:'',e:Date.now()+365*86400000})); } catch(e) {}

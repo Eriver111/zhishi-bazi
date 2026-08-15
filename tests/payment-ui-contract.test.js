@@ -566,5 +566,7 @@ test('bazi paywall sends account credentials and supports account report recover
   assert.match(paywallSource, /\/api\/reports\/access/);
   assert.match(paywallSource, /already_unlocked/);
   assert.match(paywallSource, /登录后购买可在个人中心长期查看/);
+  assert.doesNotMatch(paywallSource, /report_year/);
+  assert.match(resultSource, /delete\s+_params\.reportYear/);
   assert.match(resultSource, /initPaywall\(_params\)/);
 });

@@ -127,7 +127,7 @@ test('purchased reports escape fields and restore normalized parameters in their
   const pillars = new URL(`https://example.test${links[1]}`);
   assert.deepEqual(Object.fromEntries(pillars.searchParams), {
     yg: '甲', yz: '子', mg: '乙', mz: '丑', dg: '丙', dz: '寅', hg: '丁', hz: '卯',
-    mode: 'pillars', timing: 'unknown', gender: 'male', city: 'A&B'
+    mode: 'pillars', timing: 'unknown', gender: 'male', city: 'A&B', report_year: '2026'
   });
 });
 
@@ -154,6 +154,7 @@ test('a normalized solar report maps enabled timing settings to result URL flags
   assert.equal(url.searchParams.get('solar'), '1');
   assert.equal(url.searchParams.get('zishi'), '0');
   assert.equal(url.searchParams.get('cal'), null);
+  assert.equal(url.searchParams.get('report_year'), '2026');
   assert.equal(makeReportKey('bazi', Object.fromEntries(url.searchParams)), makeReportKey('bazi', solarSameDayEnabled));
 });
 
