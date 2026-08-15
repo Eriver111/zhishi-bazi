@@ -147,7 +147,7 @@
     var risks = list(core && core.structuralRisks);
     var rows = [];
     var definitions = [
-      { type: '食伤生财', pattern: /食神|伤官|食伤.*财|生财/, conclusion: '已有食伤与财星的链路证据，可关注表达、技能或产出向资源转化的条件。' },
+      { type: '食伤生财', pattern: /(?:食神|伤官|食伤)\s*(?:生财|(?:→|->)\s*财(?:星)?)/, conclusion: '已有食伤与财星的链路证据，可关注表达、技能或产出向资源转化的条件。' },
       { type: '财生官', pattern: /财.*官|财.*杀|官.*财/, conclusion: '已有财与官杀相连的证据，资源可能与责任、规则或组织位置同步出现。' },
       { type: '财官印连续流通', pattern: /财.*官.*印|财生杀印|财官印/, conclusion: '已有财、官杀、印连续流通的证据，转化效果取决于各环节是否承接。' },
       { type: '财配印', pattern: /财.*印|印.*财/, conclusion: '已有财印同场证据，资源与学习、资质或支持系统之间存在联动条件。' },

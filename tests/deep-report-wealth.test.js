@@ -96,3 +96,15 @@ test('wealth occurrences distinguish exposed and hidden stem layers', () => {
   assert.ok(facts.occurrences.some((item) => item.layer === '本气' || item.layer === '中气' || item.layer === '余气'));
   assert.ok(facts.occurrences.every((item) => item.element === '土'));
 });
+
+test('伤官见官 alone is not a 食伤生财 pathway', () => {
+  const facts = DeepReport.buildWealthFacts(chart(), {
+    strength: { level: '中和' },
+    pattern: { name: '普通格' },
+    yongJi: { yongShen: [], xiShen: [], jiShen: [] },
+    actionChains: ['伤官见官'],
+    relationEvents: [],
+    structuralRisks: [],
+  }, calculator);
+  assert.equal(facts.pathways.some((path) => path.type === '食伤生财'), false);
+});
