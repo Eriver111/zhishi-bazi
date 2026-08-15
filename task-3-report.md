@@ -32,4 +32,6 @@ node --check js/deep-report.js
 - 按 `StructuralAnalysis` 的真实字段契约消费 `parties/why/mitigations/triggerHint/evidence/partyEvidence`，以流年干支、十神、五行和实际冲关系匹配风险，不依赖风险标题同名。
 - 已触发风险的具体 `mitigations` 会进入年度 `reliefs`；同时保留动态链和喜用泛化救应。
 - 大运计算前校验出生年月日时的完整性与日期有效性；缺失或无效时安全降级。
-- 复跑聚焦与指定回归：40 tests passed，0 failed；报告文件无尾随空白。
+- 对“进一步增强/得根行旺/制化不足”等无法由年度事实验证的提示采取保守策略，不因单一干支或十神 token 命中而升级；已触发风险保留 why、triggerHint、evidence 与 partyEvidence。
+- `无`、`暂无`、`无救应` 等占位救应会被过滤，不生成伪造的救应结论。
+- 复跑聚焦与指定回归：43 tests passed，0 failed；报告文件无尾随空白。

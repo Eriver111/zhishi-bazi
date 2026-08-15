@@ -156,3 +156,63 @@ test('incomplete birthDate safely skips DaYun calculation', () => {
   assert.equal(result.hasDaYun, false);
   assert.match(result.limitation, /未确认出生时间/);
 });
+
+test('an unverifiable strengthening hint does not activate from one matching token', () => {
+  const risk = {
+    type: '枭夺食',
+    severity: '潜在',
+    parties: '时柱甲（枭）克年柱戊（食）',
+    why: '偏印元素克食神元素',
+    mitigations: '无',
+    triggerHint: '若偏印甲进一步增强，枭夺食可能显化。',
+    evidence: '原局偏印与食神相克',
+    partyEvidence: '时柱hour甲枭；年柱year戊食',
+  };
+  const annual = DeepReport.buildAnnualFacts(
+    chart, { ...core, structuralRisks: [risk] }, makeCalculator(), makeChain(false), 2024,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+  assert.equal(annual.triggeredRisks.length, 0);
+});
+
+test('active risk preserves the real structural evidence fields', () => {
+  const risk = {
+    type: '关键用神/格局节点受冲',
+    severity: '潜在',
+    parties: '年柱子 ↔ 时柱午',
+    why: '六冲子午命中',
+    mitigations: '保留调整空间',
+    triggerHint: '若流年午冲年柱子，相关节点可能受扰。',
+    evidence: '原局年柱子与时柱午形成六冲',
+    partyEvidence: '年柱year（癸水·偏财）；时柱hour（丁火·偏印）',
+  };
+  const annual = DeepReport.buildAnnualFacts(
+    chart, { ...core, structuralRisks: [risk] }, makeCalculator(), makeChain(false), 2026,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+  assert.equal(annual.triggeredRisks.length, 1);
+  const active = annual.triggeredRisks[0];
+  assert.equal(active.why, risk.why);
+  assert.equal(active.triggerHint, risk.triggerHint);
+  assert.equal(active.partyEvidence, risk.partyEvidence);
+  assert.match(JSON.stringify(active.evidence), /原局年柱子/);
+});
+
+test('placeholder mitigations do not become relief conclusions', () => {
+  const risk = {
+    type: '关键用神/格局节点受冲',
+    parties: '年柱子 ↔ 时柱午',
+    why: '六冲子午命中',
+    mitigations: ['无', '暂无', '无救应', '  ', '保留边界与调整空间'],
+    triggerHint: '若流年午冲年柱子，相关节点可能受扰。',
+    evidence: '原局年柱子与时柱午形成六冲',
+    partyEvidence: '年柱year子；时柱hour午',
+  };
+  const annual = DeepReport.buildAnnualFacts(
+    chart, { ...core, structuralRisks: [risk] }, makeCalculator(), makeChain(false), 2026,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+  const conclusions = annual.reliefs.map((row) => row.conclusion).join('|');
+  assert.match(conclusions, /保留边界与调整空间/);
+  assert.doesNotMatch(conclusions, /^(无|暂无|无救应)$/m);
+});

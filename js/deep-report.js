@@ -393,6 +393,28 @@
     return ANNUAL_BRANCHES.filter(function (branch) { return source.indexOf(branch) >= 0; });
   }
 
+  function hasUnverifiableTimingCondition(value) {
+    return /进一步增强|得根行旺|得运助增|力量增强|制化不足|失其制化|根基不稳|可能加重|加重/.test(textOf(value));
+  }
+
+  function usableMitigation(value) {
+    var normalized = textOf(value).trim();
+    if (!normalized) return false;
+    var compact = normalized.replace(/[\s，。；;、,]/g, '');
+    return ['无', '暂无', '无救应', '无救援', '暂无救应', '暂无明显救应'].indexOf(compact) < 0;
+  }
+
+  function structuralEvidence(risk) {
+    return [
+      ['why', risk.why],
+      ['triggerHint', risk.triggerHint],
+      ['evidence', risk.evidence],
+      ['partyEvidence', risk.partyEvidence],
+    ].filter(function (row) { return textOf(row[1]); }).map(function (row) {
+      return { field: row[0], text: textOf(row[1]) };
+    });
+  }
+
   function riskMatches(risk, pillar, daYun, dynamic, calculator, year, dayGan) {
     risk = risk || {};
     if (risk.strengthensRisk === false || risk.active === false) return false;
@@ -415,7 +437,7 @@
     })) return true;
     var triggerText = textOf(risk.triggerHint || risk.trigger || risk.condition);
     if (!triggerText) triggerText = textOf(risk.why);
-    if (annualTokens.some(function (token) { return triggerText.indexOf(token) >= 0; })) return true;
+    if (!hasUnverifiableTimingCondition(triggerText) && annualTokens.some(function (token) { return triggerText.indexOf(token) >= 0; })) return true;
     var requiredElements = list(risk.triggerElements || risk.elements || risk.strengthenedBy);
     if (requiredElements.length && requiredElements.some(function (element) {
       return elements.indexOf(element) >= 0;
@@ -456,7 +478,10 @@
         type: label,
         conclusion: '岁运可能加强' + label + '，需结合现实条件与救应安排观察。',
         confidence: 'medium',
-        evidence: source ? [source] : [label],
+        evidence: structuralEvidence(risk).length ? structuralEvidence(risk) : (source ? [{ field: 'source', text: source }] : [{ field: 'type', text: label }]),
+        why: textOf(risk.why),
+        triggerHint: textOf(risk.triggerHint),
+        partyEvidence: textOf(risk.partyEvidence),
         conditions: ['流年' + (pillar.gan || '') + (pillar.zhi || '') + '与当前岁运节点同时出现'],
       };
     });
@@ -468,7 +493,7 @@
     });
     var rows = list(dynamic && (dynamic.reliefs || dynamic.rescues));
     activeRisks.forEach(function (risk) {
-      list(risk.mitigations).forEach(function (mitigation) {
+      list(risk.mitigations).filter(usableMitigation).forEach(function (mitigation) {
         rows.push({ type: '结构风险救应', detail: textOf(mitigation), riskType: textOf(risk.type || risk.name) });
       });
     });
