@@ -768,7 +768,7 @@ Expected: 与实施前基准相比无新增失败；支付创建、二维码、�
 
 - [ ] **Step 5: 证明支付关键文件未被修改**
 
-Run: `git diff $(git merge-base main HEAD) -- api/create-order.js api/check-order.js api/callback.js js/paywall.js js/hepan-paywall.js`  
+Run: `git diff $(git merge-base main HEAD) -- api/create-order.js api/check-order.js api/callback.js js/paywall.js js/hepan-paywall.js`
 Expected: 空输出。`api/reports/access.js` 只允许出现只读 `paid_at` 扩展。
 
 - [ ] **Step 6: 启动本地网站进行桌面和手机验收**
