@@ -34,7 +34,7 @@ function chart(overrides = {}) {
   };
 }
 
-function buildStudyFixture({ strength = '中和', sealRole = '用神', sealCount = 1, wenChang = false, chain, patternStatus = '成格', noStudySignals = false } = {}) {
+function buildStudyFixture({ strength = '中和', sealRole = '用神', sealCount = 1, wenChang = false, chain, patternStatus = '成格', noStudySignals = false, noOfficers = false } = {}) {
   const seals = Array.from({ length: sealCount }, (_, index) => ({ gan: index % 2 ? '壬' : '癸', zhi: '子' }));
   const bazi = chart({
     year: seals[0] || { gan: '甲', zhi: wenChang ? '巳' : '子' },
@@ -47,6 +47,7 @@ function buildStudyFixture({ strength = '中和', sealRole = '用神', sealCount
     bazi.hour = { gan: '甲', zhi: '午' };
   }
   if (chain === '伤官配印' && !noStudySignals) bazi.hour = { gan: '丁', zhi: '午' };
+  if (noOfficers && !noStudySignals) bazi.hour = { gan: '甲', zhi: '午' };
   const core = {
     strength: { level: strength },
     pattern: { name: chain || '普通格', status: patternStatus, congGe: false },
@@ -95,6 +96,12 @@ test('ShangGuanPeiYin with Ji seal is conditional rather than unconditionally st
   assert.equal(result.path.type, '研究创作型');
   assert.notEqual(result.path.confidence, 'strong');
   assert.match(result.path.conclusion + result.path.conditions.join(' '), /忌神|条件|转化/);
+});
+
+test('GuanYin or ShaYin cannot be strong discipline evidence without officers', () => {
+  const result = buildStudyFixture({ chain: '官印相生', sealCount: 2, noOfficers: true });
+  assert.notEqual(result.discipline.confidence, 'strong');
+  assert.match(result.discipline.conclusion, /官杀|纪律|外部/);
 });
 
 test('study facts expose four dimensions and avoid deterministic education claims', () => {

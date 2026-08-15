@@ -211,7 +211,7 @@
     var patternText = studyActionText(core) + ' ' + studyPatternText(core);
     var mixed = officers.some(function (item) { return item.role === '正官'; }) &&
       officers.some(function (item) { return item.role === '七杀'; });
-    if (studyPatternEffective(core) && seals.length && /官印相生|杀印相生/.test(patternText)) {
+    if (studyPatternEffective(core) && seals.length && officers.length && /官印相生|杀印相生/.test(patternText)) {
       return evidence('可借规则转化', '官杀与印形成承接或转化链路，适合把长期目标拆成计划、检查点和阶段性认证；执行仍需现实投入。', 'strong', evidenceRows.concat([/杀印相生/.test(patternText) ? '杀印相生结构提示' : '官印相生结构提示']), role);
     }
     if (mixed || /官杀混杂/.test(patternText)) {
