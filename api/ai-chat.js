@@ -686,11 +686,12 @@ function runReplyValidation(chartData, reply) {
   }
 
   // ---------- ③ 标准关系表错误（E1） ----------
-  // 天干五合：只有五对
+  // 天干五合：只有五对（正写/反写任一命中即合法——2026-08-15 收口批次：
+  // 旧实现 .sort() 按 Unicode 码点排序，己(U+5DF1)<甲(U+7532) 致合法对「甲己」必然误报）
   var validHe = ['甲己', '乙庚', '丙辛', '丁壬', '戊癸'];
   var heRe = new RegExp('([' + GAN + '])([' + GAN + '])(?:相)?合', 'g');
   while ((m = heRe.exec(reply)) !== null) {
-    if (validHe.indexOf([m[1], m[2]].sort().join('')) < 0) {
+    if (validHe.indexOf(m[1] + m[2]) < 0 && validHe.indexOf(m[2] + m[1]) < 0) {
       warnings.push('E1-五合错误：回复出现「' + m[0] + '」，五合只有甲己/乙庚/丙辛/丁壬/戊癸五对');
     }
   }
