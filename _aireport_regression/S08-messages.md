@@ -1,6 +1,6 @@
 # S08 · 实际发送给模型的完整 messages 数组（复刻 api/ai-chat.js callAI，mode=pro，history=[]）
 
-> fetch body: { model: "deepseek-v4-flash", thinking: {type:"disabled"}, temperature: 0.7, max_tokens: 4096, stream: false }，25 秒 AbortController 超时。
+> fetch body: { model: "deepseek-v4-flash", thinking: {type:"disabled"}, temperature: 0.7, max_tokens: 4096, stream: false }，180 秒客户端超时（req.setTimeout）。
 > SYSTEM_PROMPT 为服务端加载时逐字内容（\${currentYear2} 已解析为 2026）。
 
 ---
