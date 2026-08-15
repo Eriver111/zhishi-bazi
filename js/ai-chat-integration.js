@@ -285,8 +285,10 @@
       body.code = AI.code;
     }
 
+    // 服务端生成实测 60-120s（2026-08-15 生产回归 6/12 盘超 60s），30s 超时会导致服务端已完成
+    // 却扣分+保存，用户误以为失败而重试 → 双扣。改为 300s 与 Vercel 服务端上限对齐。
     var ctrl=new AbortController();
-    var timer=setTimeout(function(){ctrl.abort();hideTyping();addMessage('ai','AI 响应超时，请稍后重试。若持续超时，可能是 API 额度不足。');AI.isWaiting=false;updateSendBtn()},30000);
+    var timer=setTimeout(function(){ctrl.abort();hideTyping();addMessage('ai','AI 响应超时（5 分钟），请稍后重试。');AI.isWaiting=false;updateSendBtn()},300000);
     fetch('/api/ai-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
