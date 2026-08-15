@@ -1,6 +1,9 @@
 // AI 报告验证 · 同13盘回归（2026-08-14）：GPT 终裁三修复（context 剥除 / SYSTEM_PROMPT 事实锁 / V1 validator）后重跑
 // 原13盘 = 冒烟3盘（S04/TH07/R01）+ 全量批9盘（S07/S08/BND02/BND04/PAT01/PAT07/TH01/R06/X04）+ PAT04 表达专项。
-// 通过门槛（GPT 终裁）：A层13/13红线0、E1=0、E2=0、E3=0、E4=0，纯文风瑕疵可接受。
+// 2026-08-15 P5-B(B4) 复跑：+1 盘 #61（己丑壬申丙午壬辰，B4 白名单验收盘）→ 14 盘；
+// EXPECT_SHA_BAZI 更新为 P5-B 格名迁移后口径 774f83bd…（working-state 门闸，最终重钉待 P5-B 收口）。
+// 通过门槛（GPT 终裁）：A层红线0、E1=0、E2=0、E3=0、E4=0，纯文风瑕疵可接受。
+// B4 专项：机制行/候选对比/财→杀链进 context；#61 报告不得以「财生官」描述壬七杀关系。
 // 纪律：AI 报告走线上网站真实调用（zhishi.online /api/ai-chat，生产 DeepSeek）；
 // 本地离线仅用于构建与生产前端完全一致的 chartData（同一冻结引擎字节）。
 // 流程：
@@ -14,7 +17,7 @@ var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
-var EXPECT_SHA_BAZI = 'b8e9ebaa8a9fcf6b20d63621020658084be9d98c403a1fbfaafd1b5ac37f3db2';
+var EXPECT_SHA_BAZI = '774f83bdfe20b94c11c99e7f2b7c63a5ca04434e569510c2aa7edd14e4100be6';
 var EXPECT_SHA_STRUCT = '96b8370dafc89453c1c63792f9f212934369d166682f8551f0f8d78984b5f8f7';
 var TEST_CODE = 'AISMOKE03';
 var OUT_DIR = path.join(__dirname, '_aireport_regression');
@@ -32,7 +35,8 @@ var DISKS = [
   ['TH01', '壬辰', '壬子', '甲午', '丙寅'],
   ['R06', '辛卯', '丁酉', '乙亥', '己卯'],
   ['X04', '戊辰', '丙辰', '壬戌', '庚戌'],
-  ['PAT04', '丁亥', '己酉', '甲辰', '庚午']
+  ['PAT04', '丁亥', '己酉', '甲辰', '庚午'],
+  ['#61', '己丑', '壬申', '丙午', '壬辰']
 ];
 var QUESTION = '请根据我的排盘数据，为我做一份完整的命理分析报告，涵盖旺衰格局、喜用忌神、性格、事业、财运、婚姻、健康等方面。';
 
@@ -375,6 +379,8 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       if (pt.type) ctx += '（' + pt.type + '类）';
       if (pt.monthWx) ctx += ' 月令五行：' + pt.monthWx;
       if (pt.status) ctx += '\n格局状态：' + pt.status;
+      // P5-B(B4) 格局机制（与线上 buildSingleChart 同步，证据文件须与服务器实际发送一致）
+      if (pt.mechanism) ctx += '\n格局机制：' + pt.mechanism;
       if (pt.breakReasons && pt.breakReasons.length) ctx += '\n破格原因：' + pt.breakReasons.join('；');
       if (pt.establishConditions && pt.establishConditions.length) {
         ctx += '\n格局成立条件清单：\n';
@@ -608,7 +614,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   // ---- ③ 插入测试兑换码 ----
   var nowIso = new Date().toISOString();
   var { error: insErr } = await db.from('user_credits').upsert({
-    code: TEST_CODE, order_id: 'qa-report-batch-20260814', credits: DISKS.length, total_used: 0,
+    code: TEST_CODE, order_id: 'qa-report-batch-20260815', credits: DISKS.length, total_used: 0,
     created_at: nowIso, updated_at: nowIso, channel: 'qa'
   }, { onConflict: 'code' });
   if (insErr) throw new Error('插入测试码失败: ' + insErr.message);
@@ -704,13 +710,13 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   }
 
   // ---- 汇总 ----
-  var sum = '# AI 报告同13盘回归汇总（2026-08-14，GPT 终裁三修复后）\n\n';
+  var sum = '# AI 报告同14盘回归汇总（2026-08-15，P5-B(B4) AI context 接入后）\n\n';
   sum += '> 线上真实调用 zhishi.online /api/ai-chat（生产 DeepSeek，model 由服务端钉死），mode=pro，新会话首问（history=[]），qa_debug 透出 V1 validator warnings。\n';
   sum += '> 测试兑换码 AISMOKE03（qa 专用，' + DISKS.length + ' 次额度），调用完成后已删除；chat_history 证据行保留（code=AISMOKE03）。\n';
-  sum += '> 通过门槛（GPT 终裁）：A层 13/13 红线 0；E1=0、E2=0、E3=0、E4=0；纯文风瑕疵可接受。\n';
+  sum += '> 通过门槛（GPT 终裁）：A层 14/14 红线 0；E1=0、E2=0、E3=0、E4=0；纯文风瑕疵可接受。\n';
   sum += '> 性别：统一男命（乾造）。盲测盘未定义性别，大运顺逆按乾造计算。\n';
   sum += '> 出生日期：50 盘盲测只冻结四柱；出生日期由引擎四柱反查合成（优先 1940-2010 在世年，其次 1900-1939，未来年份仅兜底），供大运/流年做生产级计算。\n';
-  sum += '> PAT04 为表达专项（第 13 盘），成绩单列、不计入 12 盘正式通过率。\n\n';
+  sum += '> PAT04 为表达专项（第 13 盘），成绩单列、不计入 13 盘正式通过率。#61 为 B4 白名单验收盘。\n\n';
   sum += '| 盘 | 状态 | 回复长度 | 剩余额度 | DB行数 | 保存一致 | validator |\n|---|---|---|---|---|---|---|\n';
   log.forEach(function (l) {
     sum += '| ' + l.id + ' | ' + l.status + ' | ' + (l.replyLen || '-') + ' | ' + (l.creditsLeft !== undefined ? l.creditsLeft : '-') + ' | ' + (l.dbRows || 0) + ' | ' + (l.dbSaved === undefined ? '-' : (l.dbSaved ? '✅' : '❌')) + ' | ' + (l.vw === undefined ? '-' : l.vw) + ' |\n';
