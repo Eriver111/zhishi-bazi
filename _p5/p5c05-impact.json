@@ -1,0 +1,112 @@
+{
+  "diffs": [
+    {
+      "gz": "癸酉 壬午 癸丑 壬子",
+      "strength": 48,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "水"
+    },
+    {
+      "gz": "甲申 庚午 甲子 甲戌",
+      "strength": 51,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "金"
+    },
+    {
+      "gz": "壬午 丁酉 壬午 丁卯",
+      "strength": 53,
+      "level": "中和",
+      "tgWx": "水",
+      "gatePass": false,
+      "wCur": "水",
+      "wGateQ": "火"
+    },
+    {
+      "gz": "戊午 甲子 甲午 庚午",
+      "strength": 56,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "火"
+    },
+    {
+      "gz": "壬午 戊子 戊午 庚辰",
+      "strength": 48,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "土"
+    },
+    {
+      "gz": "甲寅 庚午 甲子 乙丑",
+      "strength": 52,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "金"
+    },
+    {
+      "gz": "丙寅 戊申 戊戌 壬子",
+      "strength": 49,
+      "level": "中和",
+      "tgWx": "水",
+      "gatePass": false,
+      "wCur": "水",
+      "wGateQ": "土"
+    },
+    {
+      "gz": "戊寅 丙子 甲午 己巳",
+      "strength": 54,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "火"
+    },
+    {
+      "gz": "己卯 辛酉 癸丑 丙辰",
+      "strength": 54,
+      "level": "中和",
+      "tgWx": "水",
+      "gatePass": false,
+      "wCur": "水",
+      "wGateQ": "土"
+    },
+    {
+      "gz": "癸酉 丁酉 癸丑 丁卯",
+      "strength": 54,
+      "level": "中和",
+      "tgWx": "水",
+      "gatePass": false,
+      "wCur": "水",
+      "wGateQ": "土"
+    },
+    {
+      "gz": "丙寅 戊申 戊辰 壬子",
+      "strength": 47,
+      "level": "中和",
+      "tgWx": "水",
+      "gatePass": false,
+      "wCur": "水",
+      "wGateQ": "土"
+    },
+    {
+      "gz": "戊子 丁巳 癸亥 庚申",
+      "strength": 49,
+      "level": "中和",
+      "tgWx": "木",
+      "gatePass": false,
+      "wCur": "木",
+      "wGateQ": "金"
+    }
+  ]
+}
