@@ -4158,7 +4158,7 @@ function finalizePatternStatus(bazi, pattern) {
   // 格局专属条件
   if (pt !== '同柱复合') {
     if (pn === '正官格') {
-      conditions.push({ condition: '正官透干有根', met: pattern.matchMode === 'exact-canggan', detail: pattern.matchMode === 'exact-canggan' ? '月令正官透出天干' : (pattern.matchMode === 'same-element' ? '月支' + pattern.monthZhi + '本气' + getCangGan(pattern.monthZhi)[0] + '为正官，未透干；' + pattern.matchedPillar + '透' + pattern.matchedGan + '，为日主之' + getShiShen(bazi.day.gan, pattern.matchedGan) + '，不视为正官本星透干' : '月令正官未透干') });
+      conditions.push({ condition: '正官透干有根', met: pattern.type === '透干取格', detail: pattern.type === '透干取格' ? '月令正官透出天干' : '月令正官未透干' });
       conditions.push({ condition: '无伤官克官', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '天干透伤官，克损正官' : '✓' });
       conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
     } else if (pn === '七杀格') {
@@ -4283,10 +4283,6 @@ function getPattern(bazi) {
       }
     }
   }
-  // P4-A-EVID-02：同五行兜底的透干不是格神本星（如庚日午月透丙，丙对庚为七杀而非正官），
-  // "格神透干"类成格条件只认精确藏干透出（exact-canggan），不认同五行外透（same-element）。
-  // 藏干各干五行互异，同五行外透干必不在月支藏干内，indexOf 判据可靠。
-  var matchMode = !matchedSS ? '' : (cangGan.indexOf(matchedGan) >= 0 ? 'exact-canggan' : 'same-element');
 
   // 取格：优先透干匹配→同五行天干→月支本气十神兜底
   var ss = matchedSS || getShiShen(dayGan, benQi);
@@ -4392,7 +4388,6 @@ function getPattern(bazi) {
   var pResult = finalizePatternStatus(bazi, {
     name: p.name, desc: p.desc,
     type: specialGrid ? '月令特别格' : (matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格')),
-    matchMode: matchMode, matchedGan: matchedGan, matchedPillar: matchedPillar,
     monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
     source: source
   });
