@@ -123,14 +123,50 @@
     return roles.length ? roles[0] : '中性';
   }
 
+  function studyHasElementRole(occurrences, core, role) {
+    return list(occurrences).some(function (item) {
+      return classifyElementRole(item.element, core && core.yongJi) === role;
+    });
+  }
+
   function studyActionText(core) {
-    var pattern = core && core.pattern || {};
     return list(core && core.actionChains).map(textOf).concat([
-      textOf(pattern),
-      pattern.status,
-      list(pattern.breakReasons).map(textOf).join(' '),
       textOf(core && core.chain),
     ]).filter(Boolean).join(' ');
+  }
+
+  function studyPatternText(core) {
+    var pattern = core && core.pattern || {};
+    return [pattern.name, pattern.label, pattern.source].concat(list(pattern.evidence).map(textOf))
+      .filter(Boolean).join(' ');
+  }
+
+  function studyPatternEffective(core) {
+    var pattern = core && core.pattern || {};
+    var status = textOf(pattern.status || pattern.state || pattern.result);
+    if (pattern.isEstablished === false || pattern.established === false || pattern.valid === false) return false;
+    if (pattern.isEstablished === true || pattern.established === true || pattern.valid === true) return true;
+    if (/破格|未成|不成|失效|无效/.test(status)) return false;
+    return /成格|成立|有效|真格/.test(status);
+  }
+
+  function studyPathOccurrenceEvidence(occurrences, core) {
+    return list(occurrences).map(function (item) {
+      return item.pillarLabel + item.layer + '出现' + item.gan + item.role +
+        '，喜忌角色为' + classifyElementRole(item.element, core && core.yongJi);
+    });
+  }
+
+  function studyPathEvidence(core, occurrences) {
+    var pattern = core && core.pattern || {};
+    var rows = studyPathOccurrenceEvidence(occurrences, core);
+    if (studyPatternEffective(core)) {
+      rows.push('有效格局证据：' + (pattern.name || pattern.label || '已确认格局') + '·' + (pattern.status || '成立'));
+    } else {
+      rows.push('格局未满足强路径条件，需结合实际十神与现实反馈验证。');
+    }
+    rows = rows.concat(list(core && core.actionChains).map(textOf).filter(Boolean));
+    return rows;
   }
 
   function buildAbsorptionFacts(seals, core) {
@@ -169,13 +205,13 @@
       : '食神偏向稳定、持续的表达输出，宜通过固定练习和复盘形成可重复的方法。', 'medium', evidenceRows, role);
   }
 
-  function buildDisciplineFacts(officers, core) {
+  function buildDisciplineFacts(officers, seals, core) {
     var role = studyElementRole(officers, core);
-    var evidenceRows = studyOccurrenceEvidence(officers);
-    var patternText = studyActionText(core);
+    var evidenceRows = studyOccurrenceEvidence(officers.concat(seals));
+    var patternText = studyActionText(core) + ' ' + studyPatternText(core);
     var mixed = officers.some(function (item) { return item.role === '正官'; }) &&
       officers.some(function (item) { return item.role === '七杀'; });
-    if (/官印相生|杀印相生/.test(patternText)) {
+    if (studyPatternEffective(core) && seals.length && /官印相生|杀印相生/.test(patternText)) {
       return evidence('可借规则转化', '官杀与印形成承接或转化链路，适合把长期目标拆成计划、检查点和阶段性认证；执行仍需现实投入。', 'strong', evidenceRows.concat([/杀印相生/.test(patternText) ? '杀印相生结构提示' : '官印相生结构提示']), role);
     }
     if (mixed || /官杀混杂/.test(patternText)) {
@@ -203,16 +239,31 @@
 
   function deriveStudyPath(core, seals, outputs, officers) {
     var text = studyActionText(core);
-    var pattern = textOf(core && core.pattern);
-    var combined = text + ' ' + pattern;
+    var pattern = core && core.pattern || {};
+    var combined = text + ' ' + studyPatternText(core);
+    var effective = studyPatternEffective(core);
+    var actualGuanYin = seals.length && officers.length && /官印相生|杀印相生/.test(combined);
+    var actualShangYin = seals.length && outputs.some(function (item) { return item.role === '伤官'; }) && /伤官配印/.test(combined);
+    var occurrences = seals.concat(outputs, officers);
+    var pathEvidence = studyPathEvidence(core, occurrences);
+    var sealRole = studyElementRole(seals, core);
+    var outputRole = studyElementRole(outputs, core);
+    var officerRole = studyElementRole(officers, core);
+    var constrained = studyHasElementRole(seals, core, '忌神') ||
+      studyHasElementRole(outputs, core, '忌神') || studyHasElementRole(officers, core, '忌神');
     var type;
     var reason;
-    if (/伤官配印/.test(combined)) {
+    var confidence = 'medium';
+    if (effective && actualShangYin) {
       type = '研究创作型';
       reason = '伤官配印把理解、拆解与表达连接起来，适合研究、创作、写作或需要形成观点的学习路径。';
-    } else if (/官印相生|杀印相生/.test(combined)) {
+      confidence = constrained ? 'limited' : 'strong';
+      if (sealRole === '忌神') reason += '但印星为忌，需先用输出、练习和现实反馈校准吸收，路径成立具有条件性。';
+    } else if (effective && actualGuanYin) {
       type = '考试型';
       reason = '官印相生或杀印相生提供规则、长期目标与知识承接的链路，适合阶段计划清晰的考试、认证或深造路径。';
+      confidence = constrained ? 'limited' : 'strong';
+      if (constrained) reason += '相关十神带有忌神或承压角色，需以阶段性反馈调整节奏。';
     } else if (outputs.some(function (item) { return item.role === '伤官'; }) && outputs.length) {
       type = '创作型';
       reason = '伤官输出线索较明显，适合以项目、作品、观点表达和开放题目检验学习成果。';
@@ -229,12 +280,18 @@
       type = '复合型';
       reason = '单一学习信号不足，适合先用小目标测试吸收、输出、纪律和实践四个环节，再收敛到更匹配的路径。';
     }
+    if (!effective && /伤官配印|官印相生|杀印相生/.test(combined)) {
+      reason += '相关格局未明确成格或缺少对应十神，仅作条件性参考，需以实际练习与反馈验证。';
+    }
     return {
       type: type,
       conclusion: reason,
-      evidence: [textOf(core && core.pattern)].concat(list(core && core.actionChains).map(textOf)).filter(Boolean),
-      confidence: /伤官配印|官印相生|杀印相生/.test(combined) ? 'strong' : 'medium',
-      conditions: ['路径是学习方式倾向，不代表确定学历、学校层次或录取结果'],
+      evidence: pathEvidence,
+      confidence: confidence,
+      elementRole: constrained ? '忌神' : (sealRole !== '中性' ? sealRole : (outputRole !== '中性' ? outputRole : officerRole)),
+      conditions: ['路径是学习方式倾向，不代表确定学历、学校层次或录取结果']
+        .concat(constrained ? ['相关十神含忌神角色，结论需以输出、承载与现实反馈校准'] : [])
+        .concat(!effective && /伤官配印|官印相生|杀印相生/.test(combined) ? ['格局未明确成格或缺少实际对应十神，不采用强路径结论'] : []),
     };
   }
 
@@ -281,7 +338,7 @@
     return {
       absorption: buildAbsorptionFacts(seals, core),
       expression: buildExpressionFacts(outputs, core),
-      discipline: buildDisciplineFacts(officers, core),
+      discipline: buildDisciplineFacts(officers, seals, core),
       application: buildApplicationFacts(tenGods, core),
       path: deriveStudyPath(core, seals, outputs, officers),
       obstacles: selectStudyRisks(list(core.structuralRisks).concat(list(core.relationEvents))),

@@ -34,16 +34,22 @@ function chart(overrides = {}) {
   };
 }
 
-function buildStudyFixture({ strength = '中和', sealRole = '用神', sealCount = 1, wenChang = false, chain } = {}) {
+function buildStudyFixture({ strength = '中和', sealRole = '用神', sealCount = 1, wenChang = false, chain, patternStatus = '成格', noStudySignals = false } = {}) {
   const seals = Array.from({ length: sealCount }, (_, index) => ({ gan: index % 2 ? '壬' : '癸', zhi: '子' }));
   const bazi = chart({
     year: seals[0] || { gan: '甲', zhi: wenChang ? '巳' : '子' },
     month: seals[1] || { gan: '乙', zhi: '卯' },
     shenSha: wenChang ? [{ name: '文昌贵人', positions: ['year'] }] : [],
   });
+  if (noStudySignals) {
+    bazi.year = { gan: '甲', zhi: '子' };
+    bazi.month = { gan: '甲', zhi: '卯' };
+    bazi.hour = { gan: '甲', zhi: '午' };
+  }
+  if (chain === '伤官配印' && !noStudySignals) bazi.hour = { gan: '丁', zhi: '午' };
   const core = {
     strength: { level: strength },
-    pattern: { name: chain || '普通格', status: '成格', congGe: false },
+    pattern: { name: chain || '普通格', status: patternStatus, congGe: false },
     congGe: false,
     yongJi: { yongShen: sealRole === '用神' ? ['水'] : [], xiShen: [], jiShen: sealRole === '忌神' ? ['水'] : [] },
     actionChains: chain ? [{ title: chain, detail: chain }] : [],
@@ -69,6 +75,26 @@ test('WenChang alone cannot decide study level', () => {
 test('GuanYin and ShangGuanPeiYin map to different paths', () => {
   assert.equal(buildStudyFixture({ chain: '官印相生' }).path.type, '考试型');
   assert.equal(buildStudyFixture({ chain: '伤官配印' }).path.type, '研究创作型');
+});
+
+test('broken or unsupported pattern labels cannot create a strong study path', () => {
+  const result = buildStudyFixture({ chain: '官印相生', patternStatus: '破格', noStudySignals: true });
+  assert.notEqual(result.path.type, '考试型');
+  assert.notEqual(result.path.confidence, 'strong');
+  assert.match(result.path.conclusion, /条件|证据|路径/);
+});
+
+test('study path evidence names occurrences and their frozen yongJi roles', () => {
+  const result = buildStudyFixture({ chain: '官印相生', sealRole: '用神', sealCount: 2 });
+  assert.ok(result.path.evidence.some((item) => /月柱|时柱|正官|偏印|正印/.test(item)));
+  assert.ok(result.path.evidence.some((item) => /用神|喜神|成格/.test(item)));
+});
+
+test('ShangGuanPeiYin with Ji seal is conditional rather than unconditionally strong', () => {
+  const result = buildStudyFixture({ chain: '伤官配印', sealRole: '忌神', sealCount: 2 });
+  assert.equal(result.path.type, '研究创作型');
+  assert.notEqual(result.path.confidence, 'strong');
+  assert.match(result.path.conclusion + result.path.conditions.join(' '), /忌神|条件|转化/);
 });
 
 test('study facts expose four dimensions and avoid deterministic education claims', () => {
