@@ -304,6 +304,307 @@
     };
   }
 
+  var ANNUAL_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  var ANNUAL_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  var BRANCH_CLASH = {
+    子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅',
+    卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳',
+  };
+
+  function annualPillarFallback(year) {
+    var offset = Number(year) - 1984;
+    var stemIndex = ((offset % 10) + 10) % 10;
+    var branchIndex = ((offset % 12) + 12) % 12;
+    return { year: Number(year), gan: ANNUAL_STEMS[stemIndex], zhi: ANNUAL_BRANCHES[branchIndex] };
+  }
+
+  function findDaYunForYear(list, year) {
+    list = Array.isArray(list) ? list : [];
+    var target = Number(year);
+    for (var i = 0; i < list.length; i += 1) {
+      var item = list[i] || {};
+      var start = Number(item.startYear);
+      var end = Number(item.endYear);
+      if (Number.isFinite(start) && Number.isFinite(end) && target >= start && target <= end) return item;
+    }
+    return null;
+  }
+
+  function textList(value) {
+    return list(value).map(textOf).filter(Boolean);
+  }
+
+  function annualPillarForYear(calculator, year, daYun, dayGan) {
+    var rows = [];
+    if (calculator && typeof calculator.calculateLiuNian === 'function') {
+      try {
+        var source = daYun || { startYear: Number(year), endYear: Number(year) + 9 };
+        var result = calculator.calculateLiuNian(source, dayGan);
+        rows = Array.isArray(result) ? result : list(result && result.years);
+      } catch (error) {
+        rows = [];
+      }
+    }
+    var found = rows.filter(function (row) { return Number(row && row.year) === Number(year); })[0];
+    if (found && found.gan && found.zhi) return found;
+    return annualPillarFallback(year);
+  }
+
+  function resolveAnnualDynamic(bazi, daYun, pillar, core, calculator, chain) {
+    if (chain && typeof chain.analyzeLiuNian === 'function') {
+      try {
+        return chain.analyzeLiuNian(bazi, daYun, pillar, core && core.yongJi) || { triggers: [], reliefs: [] };
+      } catch (error) {
+        return { triggers: [], reliefs: [], error: '岁运关系暂无法解析' };
+      }
+    }
+    return { triggers: [], reliefs: [] };
+  }
+
+  function annualNodeTexts(pillar, daYun, dynamic) {
+    var values = [pillar && pillar.gan, pillar && pillar.zhi, daYun && daYun.gan, daYun && daYun.zhi];
+    return values.concat(textList(dynamic && dynamic.triggers)).concat(textList(dynamic && dynamic.reliefs));
+  }
+
+  function annualNodeElements(pillar, daYun, calculator) {
+    var stems = [pillar && pillar.gan, daYun && daYun.gan];
+    var branches = [pillar && pillar.zhi, daYun && daYun.zhi];
+    var stemMap = calculator && calculator.WU_XING || {};
+    var branchMap = calculator && calculator.DI_ZHI_WU_XING || {};
+    return stems.map(function (item) { return stemMap[item]; })
+      .concat(branches.map(function (item) { return branchMap[item]; })).filter(Boolean);
+  }
+
+  function riskMatches(risk, pillar, daYun, dynamic, calculator, year) {
+    risk = risk || {};
+    if (risk.strengthensRisk === false || risk.active === false) return false;
+    var triggerYears = list(risk.triggerYears || risk.activeYears || risk.years).map(Number);
+    if (triggerYears.length && triggerYears.indexOf(Number(year)) >= 0) return true;
+    var dynamicRows = list(dynamic && dynamic.triggers);
+    var riskType = textOf(risk.type || risk.name || risk.category) || textOf(risk);
+    if (dynamicRows.some(function (row) {
+      var value = textOf(row);
+      return riskType && value.indexOf(riskType) >= 0;
+    })) return true;
+    var texts = annualNodeTexts(pillar, daYun, dynamic);
+    var elements = annualNodeElements(pillar, daYun, calculator);
+    var requiredElements = list(risk.triggerElements || risk.elements || risk.strengthenedBy);
+    if (requiredElements.length && requiredElements.some(function (element) {
+      return elements.indexOf(element) >= 0;
+    })) {
+      if (risk.requiresDynamic === false) return true;
+      return dynamicRows.some(function (row) {
+        var value = textOf(row);
+        return !riskType || value.indexOf(riskType) >= 0 || requiredElements.some(function (element) { return value.indexOf(element) >= 0; });
+      });
+    }
+    var relation = risk.relation || risk.event || risk.triggerRelation;
+    if (relation === '冲' || /冲/.test(textOf(risk))) {
+      var branches = [pillar && pillar.zhi, daYun && daYun.zhi];
+      var chartBranches = [
+        risk.pillar && risk.pillar.zhi,
+        risk.zhi,
+      ].filter(Boolean);
+      if (risk.pillars && Array.isArray(risk.pillars) && risk.pillars.length) {
+        chartBranches = chartBranches.concat(risk.pillars.map(function (item) {
+          return typeof item === 'string' ? item : item && item.zhi;
+        }).filter(Boolean));
+      }
+      if (branches.some(function (branch) {
+        return branch && chartBranches.some(function (other) { return BRANCH_CLASH[branch] === other; });
+      })) return true;
+    }
+    var trigger = textOf(risk.trigger || risk.condition || risk.activation);
+    return !!trigger && texts.some(function (value) { return value.indexOf(trigger) >= 0; });
+  }
+
+  function matchTriggeredRisks(risks, pillar, daYun, dynamic, calculator, year) {
+    return list(risks).filter(function (risk) {
+      return riskMatches(risk, pillar, daYun, dynamic, calculator, year);
+    }).map(function (risk) {
+      var label = textOf(risk.type || risk.name || risk.category) || '结构节点';
+      var source = textOf(risk.detail || risk.description || risk.conclusion || risk);
+      return {
+        type: label,
+        conclusion: '岁运可能加强' + label + '，需结合现实条件与救应安排观察。',
+        confidence: 'medium',
+        evidence: source ? [source] : [label],
+        conditions: ['流年' + (pillar.gan || '') + (pillar.zhi || '') + '与当前岁运节点同时出现'],
+      };
+    });
+  }
+
+  function matchReliefs(risks, pillar, daYun, dynamic, calculator, year, core) {
+    var rows = list(dynamic && (dynamic.reliefs || dynamic.rescues));
+    var role = classifyElementRole(calculator && calculator.WU_XING && calculator.WU_XING[pillar && pillar.gan], core && core.yongJi);
+    if (role === '用神' || role === '喜神') {
+      rows = rows.concat([{ type: '喜用岁运', detail: '流年天干属于' + role + '，可作为缓和压力的条件之一。' }]);
+    }
+    return rows.map(function (row) {
+      return { type: textOf(row.type || row.name) || '岁运救应', conclusion: textOf(row.detail || row.conclusion || row) || '岁运出现可供调节的条件，仍需结合现实执行。', evidence: [textOf(row)].filter(Boolean) };
+    });
+  }
+
+  function annualTenGod(pillar, daYun, bazi, calculator) {
+    var dayGan = bazi && bazi.day && bazi.day.gan;
+    var getRole = function (gan) { return getStemRole(dayGan, gan, calculator); };
+    return {
+      yearStem: getRole(pillar && pillar.gan),
+      daYunStem: getRole(daYun && daYun.gan),
+      yearBranch: (pillar && pillar.zhi) || '',
+      daYunBranch: (daYun && daYun.zhi) || '',
+    };
+  }
+
+  function buildAnnualCareerFacts(tenGod, dynamic) {
+    return {
+      conclusion: '事业议题按官杀、印与食伤的岁运透出观察，适合把目标拆成可执行步骤。',
+      evidence: [tenGod.yearStem, tenGod.daYunStem].filter(function (item) { return item && item !== '十神未定'; }),
+      timing: dynamic && dynamic.summary ? dynamic.summary : '',
+    };
+  }
+
+  function buildAnnualWealthFacts(core, pillar, daYun, dynamic, calculator) {
+    var base = core && (core.wealth || core.wealthFacts) || null;
+    var stemElement = calculator && calculator.WU_XING && calculator.WU_XING[pillar && pillar.gan];
+    return {
+      base: base,
+      resource: base && base.resource,
+      capacity: base && base.capacity,
+      pathways: base && base.pathways,
+      retention: base && base.retention,
+      storage: base && base.storage,
+      timing: {
+        yearPillar: { gan: pillar && pillar.gan, zhi: pillar && pillar.zhi },
+        daYun: daYun,
+        elementRole: classifyElementRole(stemElement, core && core.yongJi),
+        activation: textList(dynamic && dynamic.triggers),
+      },
+      conclusion: base && base.summaryLevel
+        ? '沿用财富事实的“' + base.summaryLevel + '”倾向，本年只补充岁运激活条件，不重新评估财富质量。'
+        : '本年仅记录岁运对既有财富事实的激活条件，不重新评估财富质量。',
+      evidence: textList(dynamic && dynamic.triggers),
+    };
+  }
+
+  function buildAnnualRelationshipFacts(pillar, daYun, dynamic) {
+    return {
+      conclusion: '关系议题按流年与夫妻宫、配偶星的动态牵动观察，合冲只表示议题被触发，不直接定结果。',
+      timing: { yearPillar: pillar, daYun: daYun },
+      evidence: textList(dynamic && dynamic.triggers),
+    };
+  }
+
+  function buildAnnualStudyFacts(tenGod, dynamic) {
+    return {
+      conclusion: '学习安排可结合印、食伤与官杀的岁运表现，在吸收、输出和纪律之间调整节奏。',
+      evidence: [tenGod.yearStem, tenGod.daYunStem].filter(function (item) { return item && item !== '十神未定'; }).concat(textList(dynamic && dynamic.triggers)),
+    };
+  }
+
+  function buildWellbeingGuidance(core, pillar, daYun) {
+    return {
+      conclusion: '岁运变化较明显时，优先留意作息、活动、饮食与情绪管理，必要时寻求专业支持。',
+      evidence: [pillar && pillar.gan + pillar.zhi, daYun && daYun.gan + daYun.zhi].filter(Boolean),
+      conditions: ['仅作身心状态风险提示，不作诊断'],
+    };
+  }
+
+  function buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun) {
+    var pillar = annualPillarForYear(calculator, year, activeDaYun, bazi && bazi.day && bazi.day.gan);
+    var dynamic = resolveAnnualDynamic(bazi, activeDaYun, pillar, core || {}, calculator, chain);
+    var tenGod = annualTenGod(pillar, activeDaYun, bazi, calculator);
+    var stemElement = calculator && calculator.WU_XING && calculator.WU_XING[pillar.gan];
+    var branchElement = calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[pillar.zhi];
+    return {
+      year: Number(year),
+      pillar: pillar,
+      yearPillar: pillar,
+      daYun: activeDaYun || null,
+      hasDaYun: !!activeDaYun,
+      stemRole: classifyElementRole(stemElement, core && core.yongJi),
+      branchRole: classifyElementRole(branchElement, core && core.yongJi),
+      daYunStemRole: classifyElementRole(calculator && calculator.WU_XING && calculator.WU_XING[activeDaYun && activeDaYun.gan], core && core.yongJi),
+      daYunBranchRole: classifyElementRole(calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[activeDaYun && activeDaYun.zhi], core && core.yongJi),
+      tenGod: tenGod,
+      dynamic: dynamic,
+      triggeredRisks: matchTriggeredRisks(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year),
+      reliefs: matchReliefs(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, core),
+      career: buildAnnualCareerFacts(tenGod, dynamic),
+      wealth: buildAnnualWealthFacts(core, pillar, activeDaYun, dynamic, calculator),
+      relationship: buildAnnualRelationshipFacts(pillar, activeDaYun, dynamic),
+      study: buildAnnualStudyFacts(tenGod, dynamic),
+      wellbeing: buildWellbeingGuidance(core, pillar, activeDaYun),
+    };
+  }
+
+  function compareAnnualFacts(years) {
+    years = Array.isArray(years) ? years : [];
+    var active = years.filter(function (row) { return row.triggeredRisks && row.triggeredRisks.length; });
+    var roles = years.map(function (row) { return row.stemRole; });
+    return {
+      label: active.length ? '结构调整与风险管理' : '按年观察与节奏收敛',
+      evidence: active.map(function (row) { return row.year + '年有条件性结构提示'; }),
+      roleSequence: roles,
+    };
+  }
+
+  function findDaYunTransitions(years) {
+    var transitions = [];
+    for (var i = 1; i < years.length; i += 1) {
+      var previous = years[i - 1].daYun;
+      var current = years[i].daYun;
+      var previousKey = previous && previous.gan + previous.zhi;
+      var currentKey = current && current.gan + current.zhi;
+      if (previousKey !== currentKey) {
+        transitions.push({ year: years[i].year, from: previous || null, to: current || null });
+      }
+    }
+    return transitions;
+  }
+
+  function buildUndatedFiveYearFacts(bazi, core, calculator, chain, anchorYear) {
+    var years = [];
+    for (var year = Number(anchorYear); year < Number(anchorYear) + 5; year += 1) {
+      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, null));
+    }
+    return {
+      anchorYear: Number(anchorYear),
+      hasDaYun: false,
+      limitation: '未确认出生时间，当前大运与起运年龄未纳入。',
+      years: years,
+      transitions: [],
+      trend: compareAnnualFacts(years),
+    };
+  }
+
+  function buildFiveYearFacts(bazi, core, calculator, chain, anchorYear, gender) {
+    var targetYear = Number(anchorYear);
+    if (!bazi || !bazi.birthDate || !bazi.birthDate.year || !calculator || typeof calculator.calculateDaYun !== 'function') {
+      return buildUndatedFiveYearFacts(bazi, core, calculator || {}, chain, targetYear);
+    }
+    var daYunData;
+    try {
+      daYunData = calculator.calculateDaYun(
+        bazi.month, bazi.year, gender,
+        bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour
+      ) || {};
+    } catch (error) {
+      return buildUndatedFiveYearFacts(bazi, core, calculator, chain, targetYear);
+    }
+    var years = [];
+    for (var year = targetYear; year < targetYear + 5; year += 1) {
+      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, findDaYunForYear(daYunData.list, year)));
+    }
+    return {
+      anchorYear: targetYear,
+      hasDaYun: true,
+      years: years,
+      transitions: findDaYunTransitions(years),
+      trend: compareAnnualFacts(years),
+    };
+  }
+
   function buildFacts(bazi, gender, options) {
     options = options || {};
     var host = typeof window !== 'undefined' ? window : globalThis;
@@ -345,8 +646,20 @@
       fiveYear: null,
     };
     facts.wealth = buildWealthFacts(bazi, core, deps.calculator);
+    var timingCore = Object.assign({}, core, { wealth: facts.wealth });
+    facts.fiveYear = buildFiveYearFacts(
+      bazi, timingCore, deps.calculator, deps.chain, facts.anchorYear, gender
+    );
+    facts.currentYear = facts.fiveYear.years[0] || null;
     return facts;
   }
 
-  return { SCHEMA_VERSION: SCHEMA_VERSION, buildFacts: buildFacts, buildWealthFacts: buildWealthFacts };
+  return {
+    SCHEMA_VERSION: SCHEMA_VERSION,
+    buildFacts: buildFacts,
+    buildWealthFacts: buildWealthFacts,
+    buildAnnualFacts: buildAnnualFacts,
+    buildFiveYearFacts: buildFiveYearFacts,
+    findDaYunForYear: findDaYunForYear,
+  };
 }));
