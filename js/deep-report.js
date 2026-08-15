@@ -304,6 +304,293 @@
     };
   }
 
+  var ELEMENT_CYCLE = ['木', '火', '土', '金', '水'];
+  var BRANCH_ELEMENTS = {
+    '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+    '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水',
+  };
+  var RELATIONSHIP_POSITION_TENDENCIES = {
+    year: 'outside_or_early',
+    month: 'work_or_local',
+    day: 'close_circle',
+    hour: 'later_or_distant',
+  };
+  var RELATIONSHIP_POSITION_LABELS = {
+    outside_or_early: '生活圈外或较早阶段的弱信号',
+    work_or_local: '工作圈、同学同事或同城附近的弱信号',
+    close_circle: '身边长期接触圈的弱信号',
+    later_or_distant: '较晚阶段、未来生活圈或异地的弱信号',
+  };
+  var AGE_TENDENCY_LABELS = {
+    older_tendency: '略年长',
+    similar_tendency: '相仿',
+    younger_tendency: '略年轻',
+    unclear: '证据不足',
+  };
+
+  function normalizeGender(gender) {
+    var value = String(gender || '').toLowerCase();
+    if (value === 'male' || value === 'm' || value === '男' || value.indexOf('男') >= 0) return 'male';
+    if (value === 'female' || value === 'f' || value === '女' || value.indexOf('女') >= 0) return 'female';
+    return value;
+  }
+
+  function branchElement(zhi, calculator) {
+    var map = calculator && (calculator.DI_ZHI_WU_XING || calculator.BRANCH_WU_XING);
+    return (map && map[zhi]) || BRANCH_ELEMENTS[zhi] || '';
+  }
+
+  function elementRelation(source, target) {
+    var sourceIndex = ELEMENT_CYCLE.indexOf(source);
+    var targetIndex = ELEMENT_CYCLE.indexOf(target);
+    if (sourceIndex < 0 || targetIndex < 0) return 'unknown';
+    if (source === target) return 'same';
+    if ((sourceIndex + 1) % ELEMENT_CYCLE.length === targetIndex) return 'generates';
+    if ((sourceIndex + 2) % ELEMENT_CYCLE.length === targetIndex) return 'controls';
+    if ((targetIndex + 1) % ELEMENT_CYCLE.length === sourceIndex) return 'generatedBy';
+    if ((targetIndex + 2) % ELEMENT_CYCLE.length === sourceIndex) return 'controlledBy';
+    return 'unknown';
+  }
+
+  function deriveDayPillarInteraction(dayGanWx, dayZhiWx) {
+    var relation = elementRelation(dayZhiWx, dayGanWx);
+    if (relation === 'generates') return { direction: '夫妻宫生身', actor: 'partner', effect: 'support' };
+    if (relation === 'generatedBy') return { direction: '命主生夫妻宫', actor: 'self', effect: 'invest' };
+    if (relation === 'controls') return { direction: '夫妻宫克身', actor: 'partner', effect: 'pressure' };
+    if (relation === 'controlledBy') return { direction: '命主克夫妻宫', actor: 'self', effect: 'lead' };
+    return { direction: '干支同类', actor: 'both', effect: 'peer' };
+  }
+
+  function interactionConclusion(interaction) {
+    var conclusions = {
+      '夫妻宫生身': '夫妻宫所代表的关系侧更偏向提供支持、照顾或资源承接，仍需结合喜忌与结构观察。',
+      '命主生夫妻宫': '命主更倾向主动投入关系、提供支持或承担经营，投入方式仍受整体结构影响。',
+      '命主克夫妻宫': '命主更倾向主导关系安排、提出要求或推动边界，需留意协商与相互尊重。',
+      '夫妻宫克身': '关系侧更容易带来责任、约束或压力感，宜把现实分工与边界说清楚。',
+      '干支同类': '日干与日支五行同类，互动更偏相似与平等，也可能在意见上互不相让。',
+    };
+    return conclusions[interaction.direction] || '日干与日支的互动方向需结合喜忌与结构观察。';
+  }
+
+  function layerForHidden(index) {
+    return index === 0 ? '本气' : (index === 1 ? '中气' : '余气');
+  }
+
+  function relationshipEventsForDay(events) {
+    return list(events).filter(function (event) {
+      var text = textOf(event);
+      var pillars = event && event.pillars;
+      return text.indexOf('日支') >= 0 || text.indexOf('夫妻宫') >= 0 || text.indexOf('日柱') >= 0 ||
+        (Array.isArray(pillars) && pillars.indexOf('day') >= 0);
+    });
+  }
+
+  function buildRelationshipPalace(bazi, core, calculator) {
+    var day = bazi && bazi.day || {};
+    var hiddenStems = getHiddenStems(day, calculator);
+    var dayElement = branchElement(day.zhi, calculator);
+    var hiddenTenGods = hiddenStems.map(function (gan, index) {
+      return { gan: gan, role: getStemRole(day.gan, gan, calculator), layer: layerForHidden(index) };
+    });
+    var events = relationshipEventsForDay(core && core.relationEvents);
+    var risks = relationshipEventsForDay(core && core.structuralRisks);
+    return {
+      zhi: day.zhi || '',
+      element: dayElement,
+      hiddenStems: hiddenStems,
+      hiddenTenGods: hiddenTenGods,
+      elementRole: classifyElementRole(dayElement, core && core.yongJi),
+      dayInvolvingEvents: events,
+      relationEvents: events,
+      risks: risks,
+      evidence: events.concat(risks).map(textOf).filter(Boolean),
+    };
+  }
+
+  function spouseElementFromRole(dayElement, gender) {
+    var index = ELEMENT_CYCLE.indexOf(dayElement);
+    if (index < 0) return '';
+    if (gender === 'male') return ELEMENT_CYCLE[(index + 2) % ELEMENT_CYCLE.length];
+    return ELEMENT_CYCLE[(index + 3) % ELEMENT_CYCLE.length];
+  }
+
+  function positionTendencyFor(pillar) {
+    return RELATIONSHIP_POSITION_TENDENCIES[pillar] || 'unknown';
+  }
+
+  function spouseOccurrenceRows(bazi, calculator, roles) {
+    return collectTenGodOccurrences(bazi, calculator, function (role) {
+      return roles.indexOf(role) >= 0;
+    }).map(function (item) {
+      var positionTendency = positionTendencyFor(item.pillar);
+      return Object.assign({}, item, {
+        positionTendency: positionTendency,
+        positionLabel: RELATIONSHIP_POSITION_LABELS[positionTendency] || '位置证据不足',
+      });
+    });
+  }
+
+  function buildSpouseStarFacts(bazi, gender, core, calculator, palace) {
+    var roles = gender === 'male' ? ['正财', '偏财'] : ['正官', '七杀'];
+    var occurrences = spouseOccurrenceRows(bazi, calculator, roles);
+    var exposed = occurrences.filter(function (item) { return item.layer === '天干'; });
+    var hidden = occurrences.filter(function (item) { return item.layer !== '天干'; });
+    var month = bazi && bazi.month;
+    var monthHidden = getHiddenStems(month, calculator);
+    var dayElement = palace.element;
+    var spouseElement = occurrences.map(function (item) { return item.element; }).filter(Boolean)[0] || spouseElementFromRole((calculator.WU_XING || {})[bazi.day.gan], gender);
+    var monthSupport = occurrences.some(function (item) {
+      return item.pillar === 'month' || (month && item.element === branchElement(month.zhi, calculator));
+    }) || monthHidden.some(function (gan) { return getStemRole(bazi.day.gan, gan, calculator) === roles[0] || getStemRole(bazi.day.gan, gan, calculator) === roles[1]; });
+    var visibility = !occurrences.length ? '不显' : (exposed.length && hidden.length ? '透藏并见' : exposed.length ? '透干显现' : '藏干潜藏');
+    var strengthTendency = !occurrences.length ? '未见明确配偶星' : (monthSupport ? '有月令或根气响应的显现倾向' : exposed.length ? '有透干显现倾向' : '以藏干潜藏为主');
+    var roleMix = roles.every(function (role) { return occurrences.some(function (item) { return item.role === role; }); });
+    var rolePurity = roleMix ? '正偏混杂' : '单一口径';
+    var elementRole = classifyElementRole(spouseElement, core && core.yongJi);
+    return {
+      roles: roles,
+      element: spouseElement,
+      occurrences: occurrences,
+      exposed: exposed,
+      hidden: hidden,
+      visibility: visibility,
+      strengthTendency: strengthTendency,
+      monthSupport: monthSupport,
+      rooted: hidden.length > 0,
+      rolePurity: rolePurity,
+      elementRole: elementRole,
+      quality: {
+        visibility: visibility,
+        strengthTendency: strengthTendency,
+        monthSupport: monthSupport,
+        rooted: hidden.length > 0,
+        rolePurity: rolePurity,
+        elementRole: elementRole,
+      },
+      evidence: occurrences.map(function (item) {
+        return item.pillarLabel + item.layer + '出现' + item.gan + item.role + '，位置仅作弱证据。';
+      }),
+      palaceElement: dayElement,
+    };
+  }
+
+  function dominantPosition(occurrences) {
+    var counts = {};
+    occurrences.forEach(function (item) {
+      if (!item.positionTendency || item.positionTendency === 'unknown') return;
+      counts[item.positionTendency] = (counts[item.positionTendency] || 0) + 1;
+    });
+    var keys = Object.keys(counts);
+    if (!keys.length) return 'unclear';
+    keys.sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); });
+    if (keys.length > 1 && counts[keys[0]] === counts[keys[1]]) return 'unclear';
+    return keys[0];
+  }
+
+  function buildDistanceFacts(spouseStar) {
+    var tendency = dominantPosition(spouseStar.occurrences);
+    return {
+      tendency: tendency,
+      label: tendency === 'unclear' ? '远近证据不足' : RELATIONSHIP_POSITION_LABELS[tendency],
+      confidence: tendency === 'unclear' ? 'limited' : 'limited',
+      evidence: spouseStar.occurrences.map(function (item) {
+        return item.pillarLabel + '仅提供' + item.positionLabel + '，需叠加关系事件与岁运后再提高可信度。';
+      }),
+    };
+  }
+
+  function ageTendencyForPosition(position) {
+    if (position === 'year' || position === 'month') return 'older_tendency';
+    if (position === 'hour') return 'younger_tendency';
+    if (position === 'day') return 'similar_tendency';
+    return 'unclear';
+  }
+
+  function buildAgeFacts(spouseStar, palace) {
+    var candidates = spouseStar.occurrences.map(function (item) {
+      return { tendency: ageTendencyForPosition(item.pillar), evidence: item.pillarLabel + '位置只提供年龄远近的弱证据。' };
+    }).filter(function (item) { return item.tendency !== 'unclear'; });
+    var counts = {};
+    candidates.forEach(function (item) { counts[item.tendency] = (counts[item.tendency] || 0) + 1; });
+    var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); });
+    var tendency = keys.length && (!keys[1] || counts[keys[0]] > counts[keys[1]]) ? keys[0] : 'unclear';
+    return {
+      tendency: tendency,
+      label: AGE_TENDENCY_LABELS[tendency],
+      confidence: tendency === 'unclear' ? 'limited' : 'limited',
+      evidence: candidates.map(function (item) { return item.evidence; }).concat(palace.hiddenTenGods.length ? ['夫妻宫藏干参与年龄判断，但不单独定年龄差。'] : []),
+    };
+  }
+
+  function appearanceStyle(element) {
+    var styles = {
+      '木': '清秀舒展、重视成长感',
+      '火': '明朗有活力、表达感较强',
+      '土': '稳重朴实、节奏感较稳',
+      '金': '利落清爽、边界感较明',
+      '水': '灵活温和、适应性较强',
+    };
+    return styles[element] || '';
+  }
+
+  function collectAppearanceSignals(palace, spouseStar, core) {
+    var signals = [];
+    if (palace.element && appearanceStyle(palace.element)) {
+      signals.push({ source: '夫妻宫', element: palace.element, style: appearanceStyle(palace.element), role: palace.elementRole });
+    }
+    if (spouseStar.occurrences.length && spouseStar.element && appearanceStyle(spouseStar.element)) {
+      signals.push({ source: '配偶星', element: spouseStar.element, style: appearanceStyle(spouseStar.element), role: spouseStar.elementRole });
+    }
+    if (palace.elementRole && palace.elementRole !== '中性' && palace.elementRole === spouseStar.elementRole) {
+      signals.push({ source: '喜忌同向', element: palace.element, style: appearanceStyle(palace.element), role: palace.elementRole });
+    }
+    if (!signals.length && core && core.relationEvents && core.relationEvents.length) {
+      signals.push({ source: '关系事件', style: '关系形象呈现动态复合倾向' });
+    }
+    return signals;
+  }
+
+  function buildAppearanceFacts(palace, spouseStar, core) {
+    var signals = collectAppearanceSignals(palace, spouseStar, core);
+    var counts = {};
+    signals.forEach(function (signal) { counts[signal.style] = (counts[signal.style] || 0) + 1; });
+    var styles = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); });
+    var agreement = styles.length ? counts[styles[0]] : 0;
+    var confidence = agreement >= 2 ? 'medium' : 'limited';
+    var conclusion = agreement >= 2
+      ? '外在气质与形象风格更偏向' + styles[0] + '，仅作低到中等可信度的倾向参考，不指向具体样貌。'
+      : '夫妻宫与配偶星呈现复合信号，外在气质特征不集中，仅作低可信度倾向参考。';
+    return { confidence: confidence, conclusion: conclusion, evidence: signals, signals: signals, agreement: agreement };
+  }
+
+  function buildRelationshipFacts(bazi, gender, core, calculator) {
+    if (!bazi || !bazi.day || !calculator) throw new Error('婚恋事实缺少有效命盘或计算器');
+    core = core || {};
+    var normalizedGender = normalizeGender(gender);
+    var palace = buildRelationshipPalace(bazi, core, calculator);
+    var spouseStar = buildSpouseStarFacts(bazi, normalizedGender, core, calculator, palace);
+    var dayElement = (calculator.WU_XING || {})[bazi.day.gan] || '';
+    var interaction = deriveDayPillarInteraction(dayElement, palace.element);
+    interaction.conclusion = interactionConclusion(interaction);
+    return {
+      gender: normalizedGender,
+      spouseStar: spouseStar,
+      palace: palace,
+      interaction: interaction,
+      distance: buildDistanceFacts(spouseStar),
+      age: buildAgeFacts(spouseStar, palace),
+      ageTendency: buildAgeFacts(spouseStar, palace),
+      appearance: buildAppearanceFacts(palace, spouseStar, core),
+      stability: {
+        relationEvents: list(core.relationEvents),
+        structuralRisks: list(core.structuralRisks),
+        conclusion: '合冲刑害只表示关系议题被触发，不等于必然结婚或离开；稳定性仍需结合现实安排、边界和救应观察。',
+        confidence: 'limited',
+      },
+      evidence: palace.evidence.concat(spouseStar.evidence),
+    };
+  }
+
   var ANNUAL_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
   var ANNUAL_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
   var BRANCH_CLASH = {
@@ -708,6 +995,7 @@
       currentYear: null,
       fiveYear: null,
     };
+    facts.relationship = buildRelationshipFacts(bazi, gender, core, deps.calculator);
     facts.wealth = buildWealthFacts(bazi, core, deps.calculator);
     var timingCore = Object.assign({}, core, { wealth: facts.wealth });
     facts.fiveYear = buildFiveYearFacts(
@@ -721,6 +1009,8 @@
     SCHEMA_VERSION: SCHEMA_VERSION,
     buildFacts: buildFacts,
     buildWealthFacts: buildWealthFacts,
+    buildRelationshipFacts: buildRelationshipFacts,
+    deriveDayPillarInteraction: deriveDayPillarInteraction,
     buildAnnualFacts: buildAnnualFacts,
     buildFiveYearFacts: buildFiveYearFacts,
     findDaYunForYear: findDaYunForYear,
