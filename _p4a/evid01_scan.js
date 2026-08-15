@@ -2,6 +2,8 @@
 //   1. 四生四正月 8 组合同五行异阴阳透干组合：source 必须为「本气/透干分开描述」新格式；
 //   2. 全量 1940-2010 h=6 真实出生盘：pattern.source 中所有「藏X」的 X 必须 ∈ getCangGan(月支)；
 //      source 含「本气」的必须匹配新格式模板且字段正确（月支/本气/日干/柱/透干/五行/格局名）。
+// ★ GPT 终局裁决（2026-08-15）：本脚本保留为长期【事实完整性 validator】——
+//   「藏X」∈ 月支藏干 是解释层不得违反的硬约束；js/bazi.js 字节每次变更后必须重跑本脚本 + evid01_diff.js。
 var fs = require('fs');
 var path = require('path');
 var vm = require('vm');
