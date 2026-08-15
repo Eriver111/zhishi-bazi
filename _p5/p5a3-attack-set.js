@@ -9,13 +9,12 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.join(__dirname, '..');
-function loadEngine(file) {
-  var source = fs.readFileSync(path.join(ROOT, file), 'utf8');
-  var context = { window: {} };
-  vm.runInNewContext(source, context);
-  return context.window.BaZiCalculator;
-}
-var ENG = loadEngine('js/bazi.js');
+// P5-B 缺口3 修复：与生产 result.html 对齐，同一 context 加载 bazi.js + bazi-chain.js——
+// 否则 chainHints 恒空（攻击集输出的生克链证据缺失是 harness 覆盖缺口，非引擎缺口）。
+var SHARED = { window: {} };
+vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'js/bazi.js'), 'utf8'), SHARED);
+vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'js/bazi-chain.js'), 'utf8'), SHARED);
+var ENG = SHARED.window.BaZiCalculator;
 
 function buildPillars(gz) {
   var p = gz.split(' ');
