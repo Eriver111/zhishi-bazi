@@ -119,3 +119,40 @@ test('annual wealth only adds timing activation and reuses frozen wealth facts',
   assert.ok(annual.wealth.timing);
   assert.equal(Object.prototype.hasOwnProperty.call(annual.wealth, 'occurrences'), false);
 });
+
+test('real StructuralRisks contract activates from annual branch relation and preserves mitigation', () => {
+  const realRisk = {
+    type: '关键用神/格局节点受冲',
+    severity: '潜在',
+    parties: '年柱子 ↔ 时柱午（印星之根）',
+    why: '六冲子午命中；时柱午（印星之根）',
+    mitigations: '加强印星支持并保留调整空间',
+    triggerHint: '若年柱子（癸水·偏财）得运助增，对时柱午（印星之根）的冲击可能加重。',
+    evidence: '年柱子与时柱午形成六冲',
+    partyEvidence: '年柱year（癸水·偏财）；时柱hour（丁火·偏印）',
+  };
+  const realCore = { ...core, structuralRisks: [realRisk] };
+  const active = DeepReport.buildAnnualFacts(
+    chart, realCore, makeCalculator(), makeChain(false), 2026,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+  const dormant = DeepReport.buildAnnualFacts(
+    chart, realCore, makeCalculator(), makeChain(false), 2027,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+  assert.equal(active.triggeredRisks.length, 1);
+  assert.equal(dormant.triggeredRisks.length, 0);
+  assert.ok(active.reliefs.some((row) => row.conclusion.includes('加强印星支持')));
+});
+
+test('incomplete birthDate safely skips DaYun calculation', () => {
+  let called = false;
+  const calculator = makeCalculator();
+  const original = calculator.calculateDaYun;
+  calculator.calculateDaYun = (...args) => { called = true; return original(...args); };
+  const incomplete = { ...chart, birthDate: { year: 1990, month: 1, day: 1 } };
+  const result = DeepReport.buildFiveYearFacts(incomplete, core, calculator, makeChain(false), 2026, 'male');
+  assert.equal(called, false);
+  assert.equal(result.hasDaYun, false);
+  assert.match(result.limitation, /未确认出生时间/);
+});

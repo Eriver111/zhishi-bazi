@@ -27,3 +27,9 @@ node --check js/deep-report.js
 - 结构风险的年度升级依赖既有风险对象和 `analyzeLiuNian` 的触发证据；无法定位大运时只保留流年级事实。
 - 本任务只实现岁运事实层，未接入结果页渲染、报告年份快照模块或支付读取逻辑。
 
+## 修订记录
+
+- 按 `StructuralAnalysis` 的真实字段契约消费 `parties/why/mitigations/triggerHint/evidence/partyEvidence`，以流年干支、十神、五行和实际冲关系匹配风险，不依赖风险标题同名。
+- 已触发风险的具体 `mitigations` 会进入年度 `reliefs`；同时保留动态链和喜用泛化救应。
+- 大运计算前校验出生年月日时的完整性与日期有效性；缺失或无效时安全降级。
+- 复跑聚焦与指定回归：40 tests passed，0 failed；报告文件无尾随空白。

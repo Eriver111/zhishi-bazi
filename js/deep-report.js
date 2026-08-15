@@ -375,19 +375,47 @@
       .concat(branches.map(function (item) { return branchMap[item]; })).filter(Boolean);
   }
 
-  function riskMatches(risk, pillar, daYun, dynamic, calculator, year) {
+  function validBirthDate(birthDate) {
+    if (!birthDate || typeof birthDate !== 'object') return false;
+    var year = Number(birthDate.year);
+    var month = Number(birthDate.month);
+    var day = Number(birthDate.day);
+    var hour = Number(birthDate.hour);
+    if (![year, month, day, hour].every(Number.isFinite)) return false;
+    if (!Number.isInteger(year) || year < 1 || !Number.isInteger(month) || month < 1 || month > 12) return false;
+    if (!Number.isInteger(day) || day < 1 || day > 31 || !Number.isInteger(hour) || hour < 0 || hour > 11) return false;
+    var date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  }
+
+  function extractAnnualBranches(value) {
+    var source = textOf(value);
+    return ANNUAL_BRANCHES.filter(function (branch) { return source.indexOf(branch) >= 0; });
+  }
+
+  function riskMatches(risk, pillar, daYun, dynamic, calculator, year, dayGan) {
     risk = risk || {};
     if (risk.strengthensRisk === false || risk.active === false) return false;
     var triggerYears = list(risk.triggerYears || risk.activeYears || risk.years).map(Number);
     if (triggerYears.length && triggerYears.indexOf(Number(year)) >= 0) return true;
     var dynamicRows = list(dynamic && dynamic.triggers);
     var riskType = textOf(risk.type || risk.name || risk.category) || textOf(risk);
-    if (dynamicRows.some(function (row) {
-      var value = textOf(row);
-      return riskType && value.indexOf(riskType) >= 0;
-    })) return true;
     var texts = annualNodeTexts(pillar, daYun, dynamic);
     var elements = annualNodeElements(pillar, daYun, calculator);
+    var riskText = [risk.parties, risk.why, risk.triggerHint, risk.evidence, risk.partyEvidence].map(textOf).join(' ');
+    var annualRoles = [
+      getStemRole(dayGan, pillar && pillar.gan, calculator),
+      getStemRole(dayGan, daYun && daYun.gan, calculator),
+    ].filter(Boolean);
+    var annualTokens = [pillar && pillar.gan, pillar && pillar.zhi, daYun && daYun.gan, daYun && daYun.zhi]
+      .concat(elements).concat(annualRoles).filter(Boolean);
+    if (dynamicRows.some(function (row) {
+      var value = textOf(row);
+      return riskType && value.indexOf(riskType) >= 0 && annualTokens.some(function (token) { return value.indexOf(token) >= 0; });
+    })) return true;
+    var triggerText = textOf(risk.triggerHint || risk.trigger || risk.condition);
+    if (!triggerText) triggerText = textOf(risk.why);
+    if (annualTokens.some(function (token) { return triggerText.indexOf(token) >= 0; })) return true;
     var requiredElements = list(risk.triggerElements || risk.elements || risk.strengthenedBy);
     if (requiredElements.length && requiredElements.some(function (element) {
       return elements.indexOf(element) >= 0;
@@ -399,12 +427,12 @@
       });
     }
     var relation = risk.relation || risk.event || risk.triggerRelation;
-    if (relation === '冲' || /冲/.test(textOf(risk))) {
+    if (relation === '冲' || /冲/.test(textOf(risk)) || /冲/.test(riskText)) {
       var branches = [pillar && pillar.zhi, daYun && daYun.zhi];
       var chartBranches = [
         risk.pillar && risk.pillar.zhi,
         risk.zhi,
-      ].filter(Boolean);
+      ].filter(Boolean).concat(extractAnnualBranches(riskText));
       if (risk.pillars && Array.isArray(risk.pillars) && risk.pillars.length) {
         chartBranches = chartBranches.concat(risk.pillars.map(function (item) {
           return typeof item === 'string' ? item : item && item.zhi;
@@ -418,9 +446,9 @@
     return !!trigger && texts.some(function (value) { return value.indexOf(trigger) >= 0; });
   }
 
-  function matchTriggeredRisks(risks, pillar, daYun, dynamic, calculator, year) {
+  function matchTriggeredRisks(risks, pillar, daYun, dynamic, calculator, year, dayGan) {
     return list(risks).filter(function (risk) {
-      return riskMatches(risk, pillar, daYun, dynamic, calculator, year);
+      return riskMatches(risk, pillar, daYun, dynamic, calculator, year, dayGan);
     }).map(function (risk) {
       var label = textOf(risk.type || risk.name || risk.category) || '结构节点';
       var source = textOf(risk.detail || risk.description || risk.conclusion || risk);
@@ -434,8 +462,16 @@
     });
   }
 
-  function matchReliefs(risks, pillar, daYun, dynamic, calculator, year, core) {
+  function matchReliefs(risks, pillar, daYun, dynamic, calculator, year, core, dayGan) {
+    var activeRisks = list(risks).filter(function (risk) {
+      return riskMatches(risk, pillar, daYun, dynamic, calculator, year, dayGan);
+    });
     var rows = list(dynamic && (dynamic.reliefs || dynamic.rescues));
+    activeRisks.forEach(function (risk) {
+      list(risk.mitigations).forEach(function (mitigation) {
+        rows.push({ type: '结构风险救应', detail: textOf(mitigation), riskType: textOf(risk.type || risk.name) });
+      });
+    });
     var role = classifyElementRole(calculator && calculator.WU_XING && calculator.WU_XING[pillar && pillar.gan], core && core.yongJi);
     if (role === '用神' || role === '喜神') {
       rows = rows.concat([{ type: '喜用岁运', detail: '流年天干属于' + role + '，可作为缓和压力的条件之一。' }]);
@@ -516,6 +552,8 @@
     var tenGod = annualTenGod(pillar, activeDaYun, bazi, calculator);
     var stemElement = calculator && calculator.WU_XING && calculator.WU_XING[pillar.gan];
     var branchElement = calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[pillar.zhi];
+    var dayGan = bazi && bazi.day && bazi.day.gan;
+    var triggeredRisks = matchTriggeredRisks(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, dayGan);
     return {
       year: Number(year),
       pillar: pillar,
@@ -528,8 +566,8 @@
       daYunBranchRole: classifyElementRole(calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[activeDaYun && activeDaYun.zhi], core && core.yongJi),
       tenGod: tenGod,
       dynamic: dynamic,
-      triggeredRisks: matchTriggeredRisks(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year),
-      reliefs: matchReliefs(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, core),
+      triggeredRisks: triggeredRisks,
+      reliefs: matchReliefs(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, core, dayGan),
       career: buildAnnualCareerFacts(tenGod, dynamic),
       wealth: buildAnnualWealthFacts(core, pillar, activeDaYun, dynamic, calculator),
       relationship: buildAnnualRelationshipFacts(pillar, activeDaYun, dynamic),
@@ -580,7 +618,7 @@
 
   function buildFiveYearFacts(bazi, core, calculator, chain, anchorYear, gender) {
     var targetYear = Number(anchorYear);
-    if (!bazi || !bazi.birthDate || !bazi.birthDate.year || !calculator || typeof calculator.calculateDaYun !== 'function') {
+    if (!bazi || !validBirthDate(bazi.birthDate) || !calculator || typeof calculator.calculateDaYun !== 'function') {
       return buildUndatedFiveYearFacts(bazi, core, calculator || {}, chain, targetYear);
     }
     var daYunData;
