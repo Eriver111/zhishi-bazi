@@ -1,9 +1,10 @@
 // P4-A 线上最小验收（2026-08-14）：拉取 zhishi.online 实际部署的 js/bazi.js，
-// 校验 sha256 === P4-A-EVID-01 后 merge blob 677a95f3...，再用线上字节在内存跑 7 盘硬断言。
+// 校验 sha256 === 冻结 blob，再用线上字节在内存跑 7 盘硬断言。
+// 2026-08-15 P5-B 收口：EXPECT_SHA 一次性重钉为 774f83bd…（git blob LF，P5-B 后冻结）。
 var https = require('https');
 var crypto = require('crypto');
 
-var EXPECT_SHA = 'e3f9f67ada904819afd211d289991ade7712581be5d84ba74c923a522e3e21ab';
+var EXPECT_SHA = '774f83bdfe20b94c11c99e7f2b7c63a5ca04434e569510c2aa7edd14e4100be6';
 
 function get(url) {
   return new Promise(function (res, rej) {
@@ -19,8 +20,8 @@ function get(url) {
   var buf = await get('https://zhishi.online/js/bazi.js');
   var sha = crypto.createHash('sha256').update(buf).digest('hex');
   console.log('线上 sha256: ' + sha);
-  if (sha !== EXPECT_SHA) { console.error('❌ 线上文件与 merge blob 不一致'); process.exit(1); }
-  console.log('✅ 线上 js/bazi.js === merge blob 677a95f3…');
+  if (sha !== EXPECT_SHA) { console.error('❌ 线上文件与冻结 blob 不一致'); process.exit(1); }
+  console.log('✅ 线上 js/bazi.js === 冻结 blob 774f83bd…');
 
   global.window = global;
   global.document = {};

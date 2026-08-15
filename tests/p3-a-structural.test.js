@@ -78,12 +78,12 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    'e2287dc47e4525f12bffef0a230e017da912dc42fc7eddf7571e061687b8c458',
-    'js/bazi.js sha256 与 P5-A2A 制杀有效性后冻结一致'
+    '2398e8c71310b7ccc79e4483eb31843ebac6b1d07d4f107889f220490f02d639',
+    'js/bazi.js sha256 与 P5-B 收口冻结一致（CRLF 工作区原始字节口径）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
-  const deployed = execSync('git show 1b78314:js/bazi.js', { cwd: ROOT }).toString('utf8');
-  assert.equal(lf, deployed, 'js/bazi.js（LF 归一化）=== ac31f45 部署 blob');
+  const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
+  assert.equal(lf, deployed, 'js/bazi.js（LF 归一化）=== HEAD 部署 blob');
 });
 
 test('A层：53 盘五行层对 _p2_4a_replay.csv 逐项全等（P1/P2 零漂移）', function () {

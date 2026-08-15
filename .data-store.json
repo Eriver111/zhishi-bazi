@@ -756,6 +756,32 @@
       "status": "pending",
       "created_at": "2026-08-15T11:39:57.606Z",
       "paid_at": null
+    },
+    "bazi_msud9c8x_1f8c2a60": {
+      "order_id": "bazi_msud9c8x_1f8c2a60",
+      "user_id": null,
+      "report_type": "bazi",
+      "report_key": "de9de78200ad5667129922ab18a109e7f1d0541cf17931a418073298006eb725",
+      "report_params": {
+        "mode": "solar",
+        "year": 1990,
+        "month": 6,
+        "day": 15,
+        "hour": 8,
+        "minute": 0,
+        "clock": 8,
+        "gender": "female",
+        "ziHourRule": "same-day",
+        "trueSolarTime": "enabled",
+        "prov": "",
+        "city": "",
+        "dist": ""
+      },
+      "label": "坤造 · 1990年6月15日",
+      "amount": 9.9,
+      "status": "pending",
+      "created_at": "2026-08-15T12:42:51.587Z",
+      "paid_at": null
     }
   }
 }
