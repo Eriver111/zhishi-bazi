@@ -694,16 +694,18 @@ function runReplyValidation(chartData, reply) {
       warnings.push('E1-五合错误：回复出现「' + m[0] + '」，五合只有甲己/乙庚/丙辛/丁壬/戊癸五对');
     }
   }
-  // 五行生克方向
+  // 五行生克方向（词边界组合：X 前紧邻动词集的字符视为该动词的宾语，如「燥土不能晦火生金」
+  // = 晦火 + 生金（共享主语燥土），非独立「火生金」断言——2026-08-15 GPT 终裁批准修 validator 边界）
   var shengValid = ['木火', '火土', '土金', '金水', '水木'];
   var keValid = ['金木', '木土', '土水', '水火', '火金'];
-  var shengRe = new RegExp('([' + WX + '])(?:能|可以|来)?生([' + WX + '])', 'g');
+  var BOUND_VERBS = '晦掩遮蔽盖埋盗夺泄耗破伤损伐熔炼';
+  var shengRe = new RegExp('(?<![' + BOUND_VERBS + '])([' + WX + '])(?:能|可以|来)?生([' + WX + '])', 'g');
   while ((m = shengRe.exec(reply)) !== null) {
     if (shengValid.indexOf(m[1] + m[2]) < 0) {
       warnings.push('E1-生克方向：回复出现「' + m[0] + '」，相生顺序为木生火→火生土→土生金→金生水→水生木');
     }
   }
-  var keRe = new RegExp('([' + WX + '])(?:能|可以|来)?克([' + WX + '])', 'g');
+  var keRe = new RegExp('(?<![' + BOUND_VERBS + '])([' + WX + '])(?:能|可以|来)?克([' + WX + '])', 'g');
   while ((m = keRe.exec(reply)) !== null) {
     if (keValid.indexOf(m[1] + m[2]) < 0) {
       warnings.push('E1-生克方向：回复出现「' + m[0] + '」，相克顺序为木克土→土克水→水克火→火克金→金克木');
