@@ -626,7 +626,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     created_at: nowIso, updated_at: nowIso, channel: 'qa'
   }, { onConflict: 'code' });
   if (insErr) throw new Error('插入测试码失败: ' + insErr.message);
-  console.log('✅ 测试兑换码 ' + TEST_CODE + '（credits=' + DISKS.length + '）已插入');
+  console.log('✅ 测试兑换码 ' + TEST_CODE + '（credits=' + DISKS.length * 2 + '）已插入');
   // 清理中止运行可能残留的 chat_history 行，保证行数断言从 0 起
   var { error: purgeErr } = await db.from('chat_history').delete().neq('id', -1).eq('code', TEST_CODE);
   if (purgeErr) console.log('⚠ chat_history 残留清理失败: ' + purgeErr.message);
