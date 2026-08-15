@@ -97,6 +97,7 @@
     "monthWx": "金",
     "monthZhi": "酉",
     "monthGan": "丁",
+    "mechanism": null,
     "source": "月柱丁酉：食神(丁) + 七杀(酉)",
     "establishConditions": [
       {
@@ -167,6 +168,11 @@
         "category": "生克链·滴天髓",
         "title": "滴天髓",
         "detail": "《滴天髓》乙木章：「跨凤乘猴」——乙木在申酉绝地，无甲则藤无所附，宜见火制金。"
+      },
+      {
+        "category": "候选对比",
+        "title": "五行候选评分对比",
+        "detail": "取水（印，综合分 19.0）；未取木（比劫，13.0）、火（食伤，-9.0）、土（财，-13.0）、金（官杀，-13.0）"
       }
     ],
     "elementReasons": {

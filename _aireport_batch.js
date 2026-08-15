@@ -2,6 +2,8 @@
 // 原13盘 = 冒烟3盘（S04/TH07/R01）+ 全量批9盘（S07/S08/BND02/BND04/PAT01/PAT07/TH01/R06/X04）+ PAT04 表达专项。
 // 2026-08-15 P5-B(B4) 复跑：+1 盘 #61（己丑壬申丙午壬辰，B4 白名单验收盘）→ 14 盘；
 // EXPECT_SHA_BAZI 更新为 P5-B 格名迁移后口径 774f83bd…（working-state 门闸，最终重钉待 P5-B 收口）。
+// 2026-08-15 补跑支持：node _aireport_batch.js "PAT04,#61" 只跑指定盘（credits=2×盘数，覆盖 60s 超时双扣）；
+// 客户端超时 60s→180s（生产服务端生成 >60s 时不再中途放弃重试，消除双保存/双扣噪声）。
 // 通过门槛（GPT 终裁）：A层红线0、E1=0、E2=0、E3=0、E4=0，纯文风瑕疵可接受。
 // B4 专项：机制行/候选对比/财→杀链进 context；#61 报告不得以「财生官」描述壬七杀关系。
 // 纪律：AI 报告走线上网站真实调用（zhishi.online /api/ai-chat，生产 DeepSeek）；
@@ -38,6 +40,12 @@ var DISKS = [
   ['PAT04', '丁亥', '己酉', '甲辰', '庚午'],
   ['#61', '己丑', '壬申', '丙午', '壬辰']
 ];
+// 盘过滤（补跑支持）：node _aireport_batch.js "PAT04,#61" 只跑指定盘
+if (process.argv[2]) {
+  var idsArg = process.argv[2].split(',').map(function (s) { return s.trim(); });
+  DISKS = DISKS.filter(function (d) { return idsArg.indexOf(d[0]) !== -1; });
+  console.log('🎯 盘过滤：' + DISKS.map(function (d) { return d[0]; }).join('、') + '（' + DISKS.length + ' 盘）');
+}
 var QUESTION = '请根据我的排盘数据，为我做一份完整的命理分析报告，涵盖旺衰格局、喜用忌神、性格、事业、财运、婚姻、健康等方面。';
 
 // ---- 环境 ----
@@ -79,7 +87,7 @@ function postJson(url, body) {
       });
     });
     req.on('error', rej);
-    req.setTimeout(60000, function () { req.destroy(new Error('client timeout 60s')); });
+    req.setTimeout(180000, function () { req.destroy(new Error('client timeout 180s')); });
     req.write(data);
     req.end();
   });
@@ -614,7 +622,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   // ---- ③ 插入测试兑换码 ----
   var nowIso = new Date().toISOString();
   var { error: insErr } = await db.from('user_credits').upsert({
-    code: TEST_CODE, order_id: 'qa-report-batch-20260815', credits: DISKS.length, total_used: 0,
+    code: TEST_CODE, order_id: 'qa-report-batch-20260815', credits: DISKS.length * 2, total_used: 0,
     created_at: nowIso, updated_at: nowIso, channel: 'qa'
   }, { onConflict: 'code' });
   if (insErr) throw new Error('插入测试码失败: ' + insErr.message);
@@ -646,7 +654,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
       fs.writeFileSync(path.join(OUT_DIR, id + '-chartdata.json'), JSON.stringify(chartData, null, 2), 'utf8');
       fs.writeFileSync(path.join(OUT_DIR, id + '-context.txt'), ctx, 'utf8');
       var msgsMd = '# ' + id + ' · 实际发送给模型的完整 messages 数组（复刻 api/ai-chat.js callAI，mode=pro，history=[]）\n\n';
-      msgsMd += '> fetch body: { model: "deepseek-v4-flash", thinking: {type:"disabled"}, temperature: 0.7, max_tokens: 4096, stream: false }，25 秒 AbortController 超时。\n';
+      msgsMd += '> fetch body: { model: "deepseek-v4-flash", thinking: {type:"disabled"}, temperature: 0.7, max_tokens: 4096, stream: false }，180 秒客户端超时（req.setTimeout）。\n';
       msgsMd += '> SYSTEM_PROMPT 为服务端加载时逐字内容（\\${currentYear2} 已解析为 2026）。\n\n';
       msgs.forEach(function (mg, i) {
         msgsMd += '---\n\n### message[' + i + '] · ' + mg.role + '\n\n```\n' + mg.content + '\n```\n\n';
@@ -710,7 +718,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   }
 
   // ---- 汇总 ----
-  var sum = '# AI 报告同14盘回归汇总（2026-08-15，P5-B(B4) AI context 接入后）\n\n';
+  var sum = '# AI 报告回归汇总（2026-08-15，P5-B(B4) AI context 接入后，' + DISKS.length + ' 盘）\n\n';
   sum += '> 线上真实调用 zhishi.online /api/ai-chat（生产 DeepSeek，model 由服务端钉死），mode=pro，新会话首问（history=[]），qa_debug 透出 V1 validator warnings。\n';
   sum += '> 测试兑换码 AISMOKE03（qa 专用，' + DISKS.length + ' 次额度），调用完成后已删除；chat_history 证据行保留（code=AISMOKE03）。\n';
   sum += '> 通过门槛（GPT 终裁）：A层 14/14 红线 0；E1=0、E2=0、E3=0、E4=0；纯文风瑕疵可接受。\n';

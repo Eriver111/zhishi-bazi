@@ -133,7 +133,8 @@
     "isEstablished": true,
     "status": "成格",
     "congGe": true,
-    "basePattern": "正官格·破格"
+    "basePattern": "正官格·破格",
+    "mechanism": null
   },
   "yongJi": {
     "dayMasterLevel": "极弱",
