@@ -114,6 +114,9 @@
     "name": "七杀格",
     "desc": "月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。",
     "type": "透干取格",
+    "matchMode": "exact-canggan",
+    "matchedGan": "丁",
+    "matchedPillar": "年柱",
     "monthWx": "土",
     "monthZhi": "未",
     "monthGan": "丁",
@@ -122,17 +125,20 @@
       {
         "condition": "日主有承载格局之力",
         "met": true,
-        "detail": "日主偏弱（31分），可承载格局"
+        "detail": "日主偏弱（31分），可承载格局",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "有食神制杀或印星化杀",
         "met": false,
-        "detail": "印为燥土，虚浮不化杀"
+        "detail": "印为燥土，虚浮不化杀",
+        "category": "HARD_BREAK"
       },
       {
         "condition": "无财星党杀",
         "met": true,
-        "detail": "✓"
+        "detail": "✓",
+        "category": "QUALITY"
       }
     ],
     "breakReasons": [
