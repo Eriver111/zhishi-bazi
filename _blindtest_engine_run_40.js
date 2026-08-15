@@ -5,7 +5,7 @@ var https = require('https');
 var crypto = require('crypto');
 var fs = require('fs');
 
-var EXPECT_SHA_BAZI = 'e3f9f67ada904819afd211d289991ade7712581be5d84ba74c923a522e3e21ab';
+var EXPECT_SHA_BAZI = 'b8e9ebaa8a9fcf6b20d63621020658084be9d98c403a1fbfaafd1b5ac37f3db2';
 var EXPECT_SHA_STRUCT = '96b8370dafc89453c1c63792f9f212934369d166682f8551f0f8d78984b5f8f7';
 
 var DISKS = [
@@ -100,9 +100,9 @@ function get(url) {
   }
 
   var lines = [];
-  lines.push('# 盲测正式批 · 线上引擎结果（2026-08-14）');
+  lines.push('# 盲测正式批 · 线上引擎结果（2026-08-15）');
   lines.push('');
-  lines.push('> 数据源：zhishi.online 部署字节。bazi.js sha256 `' + shaBazi.slice(0, 16) + '…`（P2 冻结 blob ✓）');
+  lines.push('> 数据源：zhishi.online 部署字节。bazi.js sha256 `' + shaBazi.slice(0, 16) + '…`（P5-A2A blob ✓）');
   lines.push('> structural.js sha256 `' + shaStruct.slice(0, 16) + '…`（merge blob ✓）。');
   lines.push('> 时序：本结果在 Claude 独立断盘冻结稿 commit 之后生成。X01~10 为压力盘，单独统计。');
   lines.push('');

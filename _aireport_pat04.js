@@ -7,7 +7,7 @@ var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
-var EXPECT_SHA_BAZI = 'e3f9f67ada904819afd211d289991ade7712581be5d84ba74c923a522e3e21ab';
+var EXPECT_SHA_BAZI = 'b8e9ebaa8a9fcf6b20d63621020658084be9d98c403a1fbfaafd1b5ac37f3db2';
 var EXPECT_SHA_STRUCT = '96b8370dafc89453c1c63792f9f212934369d166682f8551f0f8d78984b5f8f7';
 var TEST_CODE = 'AISMOKE04';
 var OUT_DIR = path.join(__dirname, '_aireport_regression');
@@ -589,7 +589,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   // ---- ③ 插入测试兑换码 ----
   var nowIso = new Date().toISOString();
   var { error: insErr } = await db.from('user_credits').upsert({
-    code: TEST_CODE, order_id: 'qa-report-batch-20260814', credits: 2, total_used: 0,
+    code: TEST_CODE, order_id: 'qa-report-pat04-20260815', credits: 2, total_used: 0,
     created_at: nowIso, updated_at: nowIso, channel: 'qa'
   }, { onConflict: 'code' });
   if (insErr) throw new Error('插入测试码失败: ' + insErr.message);
