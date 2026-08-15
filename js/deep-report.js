@@ -20,6 +20,7 @@
 
   function textOf(value) {
     if (value == null) return '';
+    if (Array.isArray(value)) return value.map(textOf).filter(Boolean).join(' ');
     if (typeof value === 'string') return value;
     if (typeof value === 'number') return String(value);
     return [value.title, value.name, value.type, value.category, value.detail, value.desc, value.text,
@@ -380,8 +381,24 @@
     return list(events).filter(function (event) {
       var text = textOf(event);
       var pillars = event && event.pillars;
+      var pillarText = textOf(pillars);
+      var structuralText = [event && event.parties, event && event.why, event && event.partyEvidence,
+        event && event.evidence, event && event.triggerHint].map(textOf).join(' ');
       return text.indexOf('日支') >= 0 || text.indexOf('夫妻宫') >= 0 || text.indexOf('日柱') >= 0 ||
-        (Array.isArray(pillars) && pillars.indexOf('day') >= 0);
+        structuralText.indexOf('日支') >= 0 || structuralText.indexOf('夫妻宫') >= 0 || structuralText.indexOf('日柱') >= 0 ||
+        pillarText.indexOf('day') >= 0 || pillarText.indexOf('日柱') >= 0;
+    });
+  }
+
+  function structuralRiskEvidence(risk) {
+    return [
+      ['parties', risk && risk.parties],
+      ['why', risk && risk.why],
+      ['partyEvidence', risk && risk.partyEvidence],
+      ['evidence', risk && risk.evidence],
+      ['triggerHint', risk && risk.triggerHint],
+    ].filter(function (row) { return textOf(row[1]); }).map(function (row) {
+      return { field: row[0], text: textOf(row[1]) };
     });
   }
 
@@ -403,6 +420,7 @@
       dayInvolvingEvents: events,
       relationEvents: events,
       risks: risks,
+      riskEvidence: risks.reduce(function (all, risk) { return all.concat(structuralRiskEvidence(risk)); }, []),
       evidence: events.concat(risks).map(textOf).filter(Boolean),
     };
   }
@@ -541,9 +559,6 @@
     if (spouseStar.occurrences.length && spouseStar.element && appearanceStyle(spouseStar.element)) {
       signals.push({ source: '配偶星', element: spouseStar.element, style: appearanceStyle(spouseStar.element), role: spouseStar.elementRole });
     }
-    if (palace.elementRole && palace.elementRole !== '中性' && palace.elementRole === spouseStar.elementRole) {
-      signals.push({ source: '喜忌同向', element: palace.element, style: appearanceStyle(palace.element), role: palace.elementRole });
-    }
     if (!signals.length && core && core.relationEvents && core.relationEvents.length) {
       signals.push({ source: '关系事件', style: '关系形象呈现动态复合倾向' });
     }
@@ -572,14 +587,15 @@
     var dayElement = (calculator.WU_XING || {})[bazi.day.gan] || '';
     var interaction = deriveDayPillarInteraction(dayElement, palace.element);
     interaction.conclusion = interactionConclusion(interaction);
+    var age = buildAgeFacts(spouseStar, palace);
     return {
       gender: normalizedGender,
       spouseStar: spouseStar,
       palace: palace,
       interaction: interaction,
       distance: buildDistanceFacts(spouseStar),
-      age: buildAgeFacts(spouseStar, palace),
-      ageTendency: buildAgeFacts(spouseStar, palace),
+      age: age,
+      ageTendency: age,
       appearance: buildAppearanceFacts(palace, spouseStar, core),
       stability: {
         relationEvents: list(core.relationEvents),

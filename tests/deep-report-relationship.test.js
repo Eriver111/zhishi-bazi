@@ -95,6 +95,37 @@ test('appearance confidence falls when spouse star and palace signals conflict',
   assert.doesNotMatch(JSON.stringify(result.appearance), /厘米|瓜子脸|皮肤一定/);
 });
 
+test('day palace reuses real structural risk evidence when risk parties mention the day pillar', () => {
+  const risk = {
+    type: '财印冲',
+    parties: '年柱亥（壬水）↔日柱巳（丙火）',
+    why: '冲对主气一财一印，涉日支',
+    partyEvidence: '年柱亥（壬水·正财）:hiddenMainRoot；日柱巳（丙火·正印）:hiddenMainRoot',
+    evidence: 'v2：主气口径不变；补 partyEvidence',
+    triggerHint: '若财方进一步增强，财印相冲可能加重。',
+  };
+  const result = DeepReport.buildRelationshipFacts(chart(), 'male', core({ structuralRisks: [risk] }), calculator);
+
+  assert.deepEqual(result.palace.risks, [risk]);
+  assert.match(result.palace.risks[0].parties, /日柱/);
+  assert.match(result.palace.risks[0].why, /日支/);
+  assert.match(result.palace.risks[0].partyEvidence, /日柱/);
+  assert.match(result.palace.risks[0].evidence, /partyEvidence/);
+  assert.match(result.palace.risks[0].triggerHint, /可能/);
+});
+
+test('conflicting palace and spouse styles stay limited even when their yongJi roles match', () => {
+  const result = DeepReport.buildRelationshipFacts(
+    chart(),
+    'male',
+    core({ yongJi: { yongShen: ['木', '土'], xiShen: [], jiShen: [] } }),
+    calculator,
+  );
+
+  assert.equal(result.appearance.confidence, 'limited');
+  assert.equal(result.appearance.evidence.filter((signal) => signal.source === '喜忌同向').length, 0);
+});
+
 test('missing spouse star keeps appearance as a low-confidence palace archetype', () => {
   const result = DeepReport.buildRelationshipFacts(chart(), 'female', core(), calculator);
   assert.equal(result.spouseStar.occurrences.length, 0);
@@ -108,5 +139,6 @@ test('position and age are evidence-weighted tendencies rather than fixed claims
   assert.ok(result.spouseStar.occurrences.every((item) => item.positionTendency));
   assert.ok(['older_tendency', 'similar_tendency', 'younger_tendency', 'unclear'].includes(result.age.tendency));
   assert.ok(['outside_or_early', 'work_or_local', 'close_circle', 'later_or_distant', 'unclear'].includes(result.distance.tendency));
+  assert.strictEqual(result.age, result.ageTendency);
   assert.doesNotMatch(JSON.stringify(result), /必婚|必离|相差\d+岁|克夫|克妻/);
 });
