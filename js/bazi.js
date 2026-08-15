@@ -4163,7 +4163,7 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
     } else if (pn === '七杀格') {
       conditions.push({ condition: '有食神制杀或印星化杀', met: hasVisible('食神') || ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin), detail: hasVisible('食神') ? '食神制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '无制无化' });
-      conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星生杀，助纣为虐' : '✓' });
+      conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? ((hasVisible('食神')||hasVisible('正印')||hasVisible('偏印')) ? '财星生杀，助纣为虐；局有食制/印化，财党杀暂作提示不翻成破（待3×3分层裁定）' : '财星生杀，助纣为虐') : '✓' });
     } else if (pn === '正印格' || pn === '偏印格' || pn === '印绶格') {
       conditions.push({ condition: '无财星破印', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星克印，印格受损' : '✓' });
       conditions.push({ condition: '日主有根纳印', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身极弱，印来难纳' });
@@ -4191,13 +4191,44 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '印星有力（非燥土虚浮）', met: !dryEarthYin, detail: dryEarthYin ? '金日主生未戌燥土月，燥土不生金，印虚不化杀' : '✓' });
       if (dryEarthYin) reasons.push('燥土印虚浮，不化杀生身');
     }
-    if (pn.indexOf('食伤生财') >= 0) {
+    // P5-A2B-EVID03：原 pn.indexOf('食伤生财') 对『食神生财格』『伤官生财格』均不命中（神≠伤），
+    // 「日主能担财」对两个生财复合格都是死代码。显式精确匹配两格名。
+    if (pn === '食神生财格' || pn === '伤官生财格') {
       conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱，食伤生出的财拿不稳' });
     }
     if (pn.indexOf('配印') >= 0) {
       conditions.push({ condition: '印星有力', met: dmStr2.level !== '极弱' || hasVisible('正印'), detail: (dmStr2.level !== '极弱' || hasVisible('正印')) ? '✓' : '印弱身极弱，配印空悬' });
     }
   }
+
+  // P5-A2B condition schema 分类：HARD_BREAK=与 breakReasons 对齐的硬条件；QUALITY=层次/配置条件（不驱动成破）；
+  // INFO=说明性条目。待攻条目（财党杀、官印复合双条、配印印星有力、伤官无制化）暂列 QUALITY，P5-A2 后续分层裁定再调整。
+  // P5-A2-DESIGN-01：『日主有根纳印』由疑似硬条件降级 QUALITY——极弱印格（攻击集 C19/C20）不视为破格，印格承载语义待审。
+  var CONDITION_CATEGORIES = {
+    '日主有承载格局之力': 'HARD_BREAK',
+    '正官透干有根': 'QUALITY',
+    '无伤官克官': 'HARD_BREAK',
+    '无官杀混杂': 'HARD_BREAK',
+    '有食神制杀或印星化杀': 'HARD_BREAK',
+    '无财星党杀': 'QUALITY',
+    '无财星破印': 'HARD_BREAK',
+    '日主有根纳印': 'QUALITY',
+    '无枭神夺食': 'HARD_BREAK',
+    '食神有生财之路': 'QUALITY',
+    '无正官被伤': 'HARD_BREAK',
+    '有印星制伤或财星引化': 'QUALITY',
+    '比劫不过重': 'HARD_BREAK',
+    '日主能担财': 'HARD_BREAK',
+    '财官透出为用': 'HARD_BREAK',
+    '官杀制刃': 'HARD_BREAK',
+    '印星不被财破': 'QUALITY',
+    '官/杀不被食伤制死': 'QUALITY',
+    '印星有力（非燥土虚浮）': 'HARD_BREAK',
+    '印星有力': 'QUALITY'
+  };
+  conditions.forEach(function (c) {
+    c.category = CONDITION_CATEGORIES[c.condition] || 'INFO';
+  });
 
   pattern.establishConditions = conditions;
   pattern.breakReasons = Array.from(new Set(reasons));
@@ -4335,7 +4366,7 @@ function getPattern(bazi) {
       breakReasons: [],
       desc: cong.desc,
       source: cong.source + '（原局' + pResult.name + '，既成从格，以从格论）',
-      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。' }],
+      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。', category: 'INFO' }],
       congGe: true,
       basePattern: pResult.name + '·' + pResult.status
     });
