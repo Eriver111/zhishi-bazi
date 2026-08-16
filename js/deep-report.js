@@ -2462,8 +2462,8 @@
     var headline;
     var painPoint;
     if (capacity.state === '承压') {
-      headline = '你不是没有赚钱机会，而是机会越多，资金、责任和精力越容易一起承压。';
-      painPoint = '最大的财富问题不是收入低，而是为了接住机会付出的成本可能超过实际留存。';
+      headline = '你不是没有赚钱机会，而是机会一多，垫的钱、要扛的事和花掉的时间也会一起变多。';
+      painPoint = '最大的财富问题不是收入低，而是项目做大后，钱可能先压在项目里、分给合伙人，或花在家庭和责任上。';
     } else if (!Number(resource.visibleCount) && !Number(resource.hiddenCount)) {
       headline = '你的财富不会凭空出现，必须先把能力做成别人愿意持续付费的东西。';
       painPoint = '最容易卡住的地方，是有能力却缺少稳定的成交入口。';
@@ -2486,8 +2486,8 @@
     var retentionText = retentionRisks.length
       ? '钱进来以后，容易继续投进项目、被合作伙伴分走，或者被家庭和责任性支出带走。'
       : (capacity.state === '承压' || storageRetentionText.length
-        ? '钱能不能留下要更谨慎看。机会变多时，垫资、责任和实际支出也可能一起增加，进账不等于手里能留住。'
-        : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住，但实际资产仍取决于现实经营。');
+        ? '钱能不能留下，要看机会变多后垫资、责任和实际支出会不会一起增加；进账不等于最后能留在手里。'
+        : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住；最后留下多少，还会受真实成交、成本和分配影响。');
     var hasFinancialStorage = financialStorageRows.length > 0 || Boolean(wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length);
     var hasStrongWealthPath = actualPaths.length > 0;
     var hasCongCai = capacity.method === '从格顺势';
@@ -2525,7 +2525,7 @@
       directionSource = actualPaths.length
         ? '已见财富通路，但能接入通路的喜用元素没有形成单一优势。'
         : '原局未见同时符合喜用与实际财富通路的单一方向。';
-      directionText = '得财方向不集中，不能只凭某一个五行或方位断定哪里一定更赚钱。先看哪一种客户、项目、平台或合作方式能把现有路径真正接成收入。';
+      directionText = '得财方向不集中，不能只凭某一个五行或方位断定哪里一定更赚钱。真正决定收入的，是哪一种客户、项目、平台或合作方式能把现有路径接成收入。';
     }
     return {
       grade: 'A' + level,
@@ -2753,7 +2753,7 @@
       ? '配偶星在命局中属于' + quality.elementRole + '，所以' + partnerLabel + '进入你的生活后，更容易给你带来实际帮助，例如资源、收入机会、生活安排或做事秩序。'
       : quality.elementRole === '忌神'
         ? '配偶星在命局中属于忌神，所以进入关系后，你更容易觉得钱、责任和精力都被感情占住；对方越强势，这种压力通常越明显。'
-        : '配偶星在命局中没有明显落在喜神或忌神上，所以' + partnerLabel + '带来的帮助和压力都不算特别集中，关系起伏更容易跟着大运流年变化。';
+        : '配偶星在命局中没有明显落在喜神或忌神上，所以' + partnerLabel + '带来的帮助和压力都不算特别集中；两个人有时靠近、有时疏远的情况，更容易跟着大运流年变化。';
     var firstPosition = spouseStar.occurrences && spouseStar.occurrences[0] && spouseStar.occurrences[0].pillar || 'unknown';
     var distanceCopies = { year: '原有生活圈之外、长辈关系圈或较早阶段', month: '工作、学习、同事同学或熟人圈', day: '身边长期接触、关系基础较近的圈层', hour: '后期工作圈、异地或人生较晚阶段' };
     var distanceCopy = distanceCopies[firstPosition] || '现实生活中能够持续接触的圈层';
@@ -2870,7 +2870,7 @@
     var sourceLabel = activation.source || '岁运';
     var relationLabel = activation.type || '关系';
     if (relationLabel === '六冲' && activation.direction === 'favorable') {
-      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为忌神，引动它的岁运支为' + activation.movingRole + '，所以原来让你觉得压抑、被管着或反复纠缠的相处方式，有机会在这段时间被打破，变化方向偏有利；但“冲”本身仍代表明显变化，可能先经历争吵、分开或重新决定关系，再看到改善。';
+      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为忌神，引动它的岁运支为' + activation.movingRole + '，所以原来让你觉得被管得多、明明相处不舒服却一直拖着的状态，有机会在这段时间被打破；但“冲”本身仍代表明显变化，可能先经历争吵、分开或重新决定关系，再看到改善。';
     }
     if (relationLabel === '六冲' && activation.direction === 'adverse') {
       return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为' + activation.palaceRole + '，原本能给你帮助、让关系稳定的部分被冲动，而引动它的岁运支为' + activation.movingRole + '，所以变化方向偏不利；两个人更容易争吵、分开住、聚少离多，或者重新考虑这段感情是否继续。';
@@ -2911,12 +2911,12 @@
     row = row || {};
     var domains = list(row.domains);
     if (domains.indexOf('relationship') >= 0) {
-      if (row.type === '六冲' && row.direction === 'favorable') return '原来让你压抑、被管着或反复纠缠的相处方式更容易被打破，关系有改善机会；但通常会先经历争吵、分开或重新决定关系。';
+      if (row.type === '六冲' && row.direction === 'favorable') return '原来让你被管得多、明明相处不舒服却一直拖着的状态更容易被打破；但通常会先经历争吵、分开或重新决定关系。';
       if (row.type === '六冲') return '感情稳定基础被打乱，两个人更容易争吵、分开住、聚少离多，或者重新考虑这段关系。';
       if (row.type === '刑') return '两个人更容易互不服气，同一个问题反复争执，旧账也容易重新被翻出来。';
       if (row.type === '六害') return '不满更容易憋在心里，久了会出现误会、怀疑、不信任或表面不吵但逐渐冷淡。';
       if (/合|会/.test(row.type) && row.direction === 'favorable') return '两个人更容易靠近，关系确认、共同生活或未来安排会更容易稳定推进。';
-      if (/合|会/.test(row.type) && row.direction === 'adverse') return '两个人的联系会变紧，但也更容易出现舍不得分开、相处又很累的拉扯，关系忽远忽近。';
+      if (/合|会/.test(row.type) && row.direction === 'adverse') return '两个人的联系会变紧，但也更容易出现明明相处不开心、又迟迟分不开；短暂靠近以后又冷下来。';
     }
     if (domains.indexOf('wealth') >= 0) {
       if (row.direction === 'favorable' && row.type === '六冲') return '原来卡住收入或资产流动的部分被打破，进账、资金周转或资产调整更容易出现实质变化，但过程会先有波动。';
@@ -2961,7 +2961,7 @@
       ? '按流年、大运与原局的实际关系判断。'
       : '当前大运未纳入，只按流年与原局的实际关系判断。';
     var headline = interactions.length
-      ? (directionLabel === '偏有利' ? '本年被引动的有利关系更多，现实变化总体朝着改善和兑现发展。' : directionLabel === '偏不利' ? '本年被引动的不利关系更多，事业、资金或感情更容易出现明显波动。' : '本年有利与不利关系同时被引动，机会和压力会先后出现。')
+      ? (directionLabel === '偏有利' ? '本年对你有帮助的力量更多，工作、钱和感情里更容易出现能落实的进展。' : directionLabel === '偏不利' ? '本年不利力量更多，工作里容易反复改计划，钱上进出变多，感情里也更容易争吵或拉开距离。' : '本年机会和麻烦会一起出现：有些事能往前走，也会有计划被打断、钱被占用或关系闹别扭的时候。')
       : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
@@ -3033,7 +3033,7 @@
     return {
       hideScore: true,
       headline: headline,
-      painPoint: adverseYears.length ? adverseYears.map(function (row) { return row.year; }).join('、') + '年出现的阻力最集中，相关领域更容易发生现实波动。' : '五年内没有集中出现偏不利的强关系，主要差别在于兑现速度。',
+      painPoint: adverseYears.length ? adverseYears.map(function (row) { return row.year; }).join('、') + '年更容易遇到计划改了又改、钱被占用，或和身边人反复闹别扭。' : '五年内没有集中出现偏不利的强关系，主要差别在于事情落地的快慢。',
       paragraphs: [],
       verdicts: [narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
         sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),

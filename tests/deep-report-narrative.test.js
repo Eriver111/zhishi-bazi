@@ -454,3 +454,20 @@ test('customer-visible paid narratives contain outcomes rather than advice or in
     assert.doesNotMatch(copy, /消耗结构|关系结构|议题增强|暗耗|失衡模式/);
   }
 });
+
+test('all customer-visible paid narratives translate abstract pressure into concrete experiences', () => {
+  const facts = addFiveYearInteractions(favorableFacts());
+  facts.relationship.palace.dayInvolvingEvents = [
+    { type: '半合', pillars: ['year', 'day'], source: '年柱午', target: '日柱寅', elements: ['午寅', '合火'] },
+  ];
+  facts.wealth.retention = { risks: [{ type: '比劫分流' }] };
+  facts.core.yongJi = { yongShen: ['木'], xiShen: ['水'], jiShen: ['火'] };
+  const narratives = DeepReport.buildNarratives(facts);
+  const text = Object.values(narratives).map(customerVisibleCopy).join('\n');
+
+  assert.doesNotMatch(text, /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
+  assert.match(text, /反复怀疑|怀疑对方到底靠不靠谱/);
+  assert.match(text, /钱进来以后|真正留下/);
+  assert.match(text, /客户|项目/);
+  assert.match(text, /本科/);
+});
