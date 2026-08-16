@@ -81,6 +81,7 @@ function renderFixture(options = {}) {
   let receivedOptions = null;
   const context = {
     console,
+    fetch() { return Promise.resolve({ ok: true, json: async () => ({ unlocked: false }) }); },
     document,
     window: {
       DeepReportAnchor: { resolve() { return 2026; } },
@@ -106,16 +107,28 @@ function renderFixture(options = {}) {
 
 function createInitFixture({ search, storage, now, facts = fixtureFacts() }) {
   const ids = ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent', 'thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'];
-  const nodes = Object.fromEntries(ids.map(id => [id, { id, innerHTML: '', style: {}, classList: { add() {} } }]));
+  const nodes = {};
+  const rootNode = { id: 'root', children: [], appendChild(node) { node.parentNode = this; this.children.push(node); if (node.id) nodes[node.id] = node; return node; }, insertBefore(node) { return this.appendChild(node); } };
+  function makeNode(id) {
+    return { id, innerHTML: '', textContent: '', style: {}, offsetHeight: 160,
+      classList: { add() {}, remove() {} }, parentNode: rootNode,
+      addEventListener() {}, setAttribute() {}, removeAttribute() {},
+      appendChild(node) { node.parentNode = this; if (node.id) nodes[node.id] = node; return node; },
+      insertBefore(node) { return this.appendChild(node); },
+      remove() { if (this.parentNode && this.parentNode.children) this.parentNode.children = this.parentNode.children.filter(child => child !== this); },
+      querySelectorAll() { return []; } };
+  }
+  ids.forEach(id => { nodes[id] = makeNode(id); });
   let ready;
   let buildOptions;
-  let paywallParams;
   let buildResultParams;
   const document = {
     addEventListener(event, callback) { if (event === 'DOMContentLoaded') ready = callback; },
-    getElementById(id) { return nodes[id] || null; },
+    getElementById(id) { return nodes[id] || (nodes[id] = makeNode(id)); },
     querySelector() { return null; },
     querySelectorAll() { return []; },
+    createElement() { return makeNode(''); },
+    body: rootNode,
   };
   const RealDate = Date;
   class FrozenDate extends RealDate {
@@ -127,9 +140,11 @@ function createInitFixture({ search, storage, now, facts = fixtureFacts() }) {
     document,
     Date: FrozenDate,
     URLSearchParams,
+    localStorage: storage,
     window: {
       location: { search },
       localStorage: storage,
+      PillarInput: { fromSearchParams() { return { year: {}, month: {}, day: {}, hour: {} }; } },
       BaZiCalculator: {
         normalizeBirthInput(input) { return { ...input, dayPillarOffset: 0, solarInfo: null }; },
       },
@@ -144,12 +159,13 @@ function createInitFixture({ search, storage, now, facts = fixtureFacts() }) {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
   context.buildResultData = function(params) {
     buildResultParams = params;
-    return { bazi: { year:{gan:'甲',zhi:'子'}, month:{gan:'乙',zhi:'丑'}, day:{gan:'丙',zhi:'寅'}, hour:{gan:'丁',zhi:'卯'} }, daYun:null, shenSha:[], hasTiming:true };
+    return { bazi: { year:{gan:'甲',zhi:'子'}, month:{gan:'乙',zhi:'丑'}, day:{gan:'丙',zhi:'寅'}, hour:{gan:'丁',zhi:'卯'} }, daYun:null, shenSha:[], hasTiming:false };
   };
-  context.render = function() { vm.runInContext('renderPaidContent(); initPaywall(_params);', context); };
-  vm.runInContext('initPaywall = function(params) { globalThis.__capturedPaywallParams = params; };', context);
+  for (const name of ['renderSiZhu', 'renderRiZhuJieXi', 'renderPillarAnalysis', 'renderDayMasterPower', 'renderPattern', 'renderYongJi', 'renderCharacter', 'renderParents']) {
+    context[name] = function() {};
+  }
   ready();
-  return { context, nodes, buildOptions, paywallParams: context.__capturedPaywallParams || paywallParams, buildResultParams, makeLocalReportKey: context.makeLocalReportKey };
+  return { context, nodes, buildOptions, paywallParams: context._baziPayParams, buildResultParams, makeLocalReportKey: context.makeLocalReportKey };
 }
 
 test('five paid sections render from one deep report fact object', () => {
@@ -199,7 +215,7 @@ test('Task 6 anchor precedence and guest rollover stay outside report identity',
 test('real result initialization passes report_year anchor and strips it from paywall identity', () => {
   const storage = { getItem() { return null; }, setItem() {} };
   const fixture = createInitFixture({
-    search: '?year=1990&month=1&day=1&hour=0&gender=male&report_year=2026',
+    search: '?mode=pillars&timing=unknown&yg=%E7%94%B2&yz=%E5%AD%90&mg=%E4%B9%99&mz=%E4%B8%91&dg=%E4%B8%99&dz=%E5%AF%85&hg=%E4%B8%81&hz=%E5%8D%AF&gender=male&report_year=2026',
     storage,
     now: '2030-01-01T00:00:00+08:00',
   });
@@ -207,6 +223,7 @@ test('real result initialization passes report_year anchor and strips it from pa
   assert.equal(fixture.paywallParams.reportYear, undefined);
   assert.doesNotMatch(JSON.stringify(fixture.paywallParams), /report_year|reportYear/);
   assert.doesNotMatch(fixture.makeLocalReportKey(fixture.paywallParams), /report_year|reportYear/);
+  assert.equal(fixture.context._baziHash, fixture.makeLocalReportKey(fixture.paywallParams));
   assert.equal(fixture.buildResultParams.reportYear, undefined);
 });
 
@@ -217,12 +234,12 @@ test('real guest result initialization reuses the first anchor year across a Chi
     setItem(key, value) { values.set(key, String(value)); },
   };
   const first = createInitFixture({
-    search: '?year=1990&month=1&day=1&hour=0&gender=male',
+    search: '?mode=pillars&timing=unknown&yg=%E7%94%B2&yz=%E5%AD%90&mg=%E4%B9%99&mz=%E4%B8%91&dg=%E4%B8%99&dz=%E5%AF%85&hg=%E4%B8%81&hz=%E5%8D%AF&gender=male',
     storage,
     now: '2026-12-31T20:00:00+08:00',
   });
   const second = createInitFixture({
-    search: '?year=1990&month=1&day=1&hour=0&gender=male',
+    search: '?mode=pillars&timing=unknown&yg=%E7%94%B2&yz=%E5%AD%90&mg=%E4%B9%99&mz=%E4%B8%91&dg=%E4%B8%99&dz=%E5%AF%85&hg=%E4%B8%81&hz=%E5%8D%AF&gender=male',
     storage,
     now: '2027-01-01T00:00:00+08:00',
   });

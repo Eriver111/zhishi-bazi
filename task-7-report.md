@@ -19,7 +19,9 @@ node --test tests/deep-report-render.test.js tests/deep-report-anchor.test.js
 15 passed, 0 failed
 ```
 
-复核补充了真实 `result.js` DOMContentLoaded 初始化链路：`report_year` 优先级、paywall 参数/本地报告键隔离、游客跨中国年份复用首个 anchor 年份，以及 `_bazi/_params` 缺失时五栏统一错误卡。
+复核补充了真实 `result.js` DOMContentLoaded 初始化链路和真实 `initPaywall()`：`report_year` 优先级、真实 `window._baziPayParams`/`window._baziHash` 与去年份参数重新计算结果一致、paywall 参数/本地报告键隔离、游客跨中国年份复用首个 anchor 年份，以及 `_bazi/_params` 缺失时五栏统一错误卡。
+
+本轮验证使用最小 DOM/localStorage/fetch 环境保留真实 paywall 初始化，不替换 `render()` 或 `initPaywall()`。
 
 Task 7 指定回归：
 
