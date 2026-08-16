@@ -4436,17 +4436,9 @@ function getPattern(bazi) {
 
   if (compound) {
     var cd = PATTERNS[ss] || { name: ss, desc: '' };
-    // 文案层（2026-08-17）：复合格复用月令十神模板 desc 时，「月令透X」只在月支藏干本星
-    // 实际透干（EVID-02 口径 exact-canggan）时成立；未透干/仅同五行外透时改为「当权」，
-    // 避免伪透干描述（判定逻辑零改动，仅 desc 字符串）。
-    var cdDesc = cd.desc;
-    if (!(matchedSS && matchMode === 'exact-canggan')) {
-      var QUAN_YI = { 正官: '官星', 七杀: '七杀', 正财: '财星', 偏财: '偏财', 正印: '印星', 偏印: '枭神', 食神: '食神', 伤官: '伤官' };
-      cdDesc = cdDesc.replace(/^月令透[^，]+，/, '月令' + (QUAN_YI[ssZhi] || ssZhi) + '当权，');
-    }
     return applyCongGePriority(bazi, finalizePatternStatus(bazi, {
       name: compound,
-      desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cdDesc,
+      desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cd.desc,
       type: '同柱复合',
       monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
       mechanism: mechanism,
