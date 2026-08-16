@@ -392,18 +392,31 @@ test('five-year narrative labels unknown birth and pre-start timing separately',
   assert.equal(years[0].daYunLabel, '出生时间未定位');
   assert.equal(years[1].daYunLabel, '起运前');
   assert.equal(years[2].daYunLabel, '甲辰大运');
-  assert.equal(years[3].daYunLabel, '大运范围待延展');
+  assert.equal(years[3].daYunLabel, '大运范围待延展（仅按流年与原局）');
 });
 
 test('out-of-range current-year copy states that DaYun is not included in the judgment', () => {
   const facts = favorableFacts();
   facts.currentYear.daYun = null;
   facts.currentYear.daYunStatus = 'out_of_range';
+  facts.fiveYear.years.forEach((year) => {
+    year.daYun = null;
+    year.daYunStatus = 'out_of_range';
+  });
 
   const narrative = DeepReport.buildNarratives(facts).currentYear;
   assert.match(narrative.verdicts[0].sourceText, /大运范围待延展/);
   assert.match(narrative.verdicts[0].sourceText, /只按流年与原局/);
   assert.doesNotMatch(narrative.verdicts[0].sourceText, /按流年、大运与原局实际关系判断/);
+  assert.match(narrative.note, /大运未纳入，只按流年与原局/);
+  assert.doesNotMatch(narrative.note, /流年、大运、原局/);
+
+  const fiveYear = DeepReport.buildNarratives(facts).fiveYear;
+  const outOfRangeRow = fiveYear.years[0];
+  assert.match(outOfRangeRow.daYunLabel, /大运范围待延展.*仅按流年与原局/);
+  assert.doesNotMatch(outOfRangeRow.daYunLabel, /大运与原局实际关系|流年、大运、原局/);
+  assert.match(fiveYear.note, /大运未纳入，只按流年与原局/);
+  assert.doesNotMatch(fiveYear.note, /流年、大运、原局/);
 });
 
 test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {

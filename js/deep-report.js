@@ -2946,7 +2946,7 @@
   function daYunStatusLabel(year) {
     if (year && year.daYun) return textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运';
     if (year && year.daYunStatus === 'before_start') return '起运前';
-    if (year && year.daYunStatus === 'out_of_range') return '大运范围待延展';
+    if (year && year.daYunStatus === 'out_of_range') return '大运范围待延展（仅按流年与原局）';
     if (year && year.daYunStatus === 'unknown_birth') return '出生时间未定位';
     return '未纳入大运';
   }
@@ -2990,7 +2990,9 @@
       painPoint: interactions.length ? interactions.map(timingInteractionOutcome)[0] : '没有强引动不等于没有事情发生，只表示主要结果更接近原有方向的延续。',
       paragraphs: [],
       verdicts: verdicts,
-      note: '以上年度结论依据流年、大运、原局喜忌及实际刑冲克害合化推演；未被岁运触发的原局信息不会被写成本年事件。',
+      note: year && year.daYun
+        ? '以上年度结论依据流年、大运、原局喜忌及实际刑冲克害合化推演；未被岁运触发的原局信息不会被写成本年事件。'
+        : '当前大运未纳入，只按流年与原局喜忌及实际刑冲克害合化推演；未被流年触发的原局信息不会被写成本年事件。',
     };
   }
 
@@ -3035,7 +3037,9 @@
         delete clean.priority;
         return clean;
       }),
-      note: '五年结论依据同一命盘在不同流年和大运下的实际刑冲克害合化推演，不等同于具体事件保证。',
+      note: years.some(function (row) { return row && row.daYunLabel && !/出生时间未定位|起运前|大运范围待延展/.test(row.daYunLabel); })
+        ? '五年结论依据同一命盘在不同流年和大运下的实际刑冲克害合化推演，不等同于具体事件保证。'
+        : '当前大运未纳入，只按流年与原局喜忌及实际刑冲克害合化推演，不等同于具体事件保证。',
     };
   }
 
