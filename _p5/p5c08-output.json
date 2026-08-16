@@ -1,0 +1,7776 @@
+{
+ "meta": {
+  "title": "P5-C08 congGe decision chain EVIDENCE",
+  "date": "2026-08-16",
+  "engine": "js/bazi.js (AFTER_P5_C07)"
+ },
+ "anchors": [
+  {
+   "id": "ANCH1",
+   "gz": "丁亥 丙午 癸巳 己卯",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 2
+   },
+   "powers": {
+    "dg": 3,
+    "ke": 2,
+    "cai": 6,
+    "shi": 1,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": true,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金",
+   "yj": {
+    "method": "格局救应",
+    "yongShen": [
+     "水"
+    ],
+    "xiShen": [
+     "水",
+     "金"
+    ],
+    "jiShen": [
+     "木",
+     "火",
+     "土"
+    ],
+    "dayMasterScore": 2,
+    "yongQuality": {
+     "score": 0,
+     "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+     "roots": [
+      "亥本气根",
+      "被克：己天干直克；巳(day)地支根被冲"
+     ]
+    }
+   }
+  },
+  {
+   "id": "ANCH2",
+   "gz": "戊子 丁巳 癸亥 庚申",
+   "sex": "male",
+   "dm": {
+    "level": "中和",
+    "score": 49
+   },
+   "powers": {
+    "dg": 4,
+    "ke": 2,
+    "cai": 3,
+    "shi": 0,
+    "yin": 3
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "level gate: 中和(49) not 极弱(<30)",
+   "yj": {
+    "method": "格局救应",
+    "yongShen": [
+     "金"
+    ],
+    "xiShen": [
+     "金",
+     "水"
+    ],
+    "jiShen": [
+     "木",
+     "火",
+     "土"
+    ],
+    "dayMasterScore": 49,
+    "yongQuality": {
+     "score": 3,
+     "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+     "roots": [
+      "巳中气根",
+      "申本气根",
+      "透干hour",
+      "被克：丁天干直克"
+     ]
+    }
+   }
+  },
+  {
+   "id": "ANCH3",
+   "gz": "己丑 甲戌 癸巳 丙辰",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 3,
+    "shi": 2,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金",
+   "yj": {
+    "method": "格局救应",
+    "yongShen": [
+     "金"
+    ],
+    "xiShen": [
+     "金",
+     "水"
+    ],
+    "jiShen": [
+     "木",
+     "火",
+     "土"
+    ],
+    "dayMasterScore": 1,
+    "yongQuality": {
+     "score": 1.5,
+     "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+     "roots": [
+      "丑余气根",
+      "戌中气根",
+      "巳中气根",
+      "被克：丙天干直克"
+     ]
+    }
+   }
+  }
+ ],
+ "pool": {
+  "summary": {
+   "total": 540,
+   "jiRuo": 143,
+   "jiQiang": 72,
+   "groupA": 12,
+   "groupB": 120,
+   "groupC": 11,
+   "groupA2": 2,
+   "levelGateClean": 0,
+   "dgPowerGt2InCanCong": 0,
+   "mismatch": 0
+  },
+  "jiRuo": [
+   {
+    "id": "#2",
+    "gz": "庚申 戊子 丙子 壬辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 3,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "#4",
+    "gz": "壬子 辛亥 戊子 壬子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 0,
+     "cai": 8,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "#8",
+    "gz": "庚申 壬午 甲午 丙寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 0,
+     "shi": 4,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "A4",
+    "gz": "辛亥 庚寅 己巳 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 1,
+     "cai": 1,
+     "shi": 6,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 土/火"
+   },
+   {
+    "id": "B2",
+    "gz": "壬申 丁未 甲辰 乙丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 1,
+     "cai": 3,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 木/水"
+   },
+   {
+    "id": "P15-14",
+    "gz": "丙寅 庚寅 戊辰 癸亥",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 3,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 土/火"
+   },
+   {
+    "id": "P15-15",
+    "gz": "癸未 戊午 乙卯 丙戌",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 29.75
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 0,
+     "cai": 4,
+     "shi": 3,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 卯 cangGan [乙] has 木/水"
+   },
+   {
+    "id": "P15-16",
+    "gz": "丁卯 壬寅 壬午 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 3,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "H04",
+    "gz": "甲申 庚午 辛卯 戊戌",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26.5
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 1,
+     "cai": 3,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 土/金"
+   },
+   {
+    "id": "H05",
+    "gz": "庚子 乙酉 甲辰 甲子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21.5
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 3,
+     "cai": 1,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 木/水"
+   },
+   {
+    "id": "H12",
+    "gz": "甲申 丁丑 壬辰 己酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28.5
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 2,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 水/金"
+   },
+   {
+    "id": "H14",
+    "gz": "乙丑 己丑 壬子 辛丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 18.5
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 5,
+     "cai": 0,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "P15-20",
+    "gz": "壬午 癸卯 戊寅 乙卯",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 6
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 4,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 寅 cangGan [甲丙戊] has 土/火"
+   },
+   {
+    "id": "S02",
+    "gz": "庚午 甲申 甲午 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 4,
+     "cai": 0,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "S04",
+    "gz": "壬子 壬子 丁酉 辛亥",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 7,
+     "cai": 3,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": true,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从杀格",
+    "engineName": "从杀格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "S06",
+    "gz": "乙亥 己卯 己酉 丙寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 25
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 4,
+     "cai": 1,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 火/土"
+   },
+   {
+    "id": "S08",
+    "gz": "丁巳 乙巳 辛亥 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 4,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "BND02",
+    "gz": "辛未 丁酉 丁亥 癸卯",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 20
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 3,
+     "cai": 3,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 亥 cangGan [壬甲] has 火/木"
+   },
+   {
+    "id": "BND06",
+    "gz": "己未 己巳 乙丑 丁亥",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 0,
+     "cai": 6,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 丑 cangGan [己癸辛] has 木/水"
+   },
+   {
+    "id": "PAT02",
+    "gz": "辛酉 辛卯 己丑 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 1,
+     "cai": 0,
+     "shi": 7,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 丑 cangGan [己癸辛] has 土/火"
+   },
+   {
+    "id": "PAT04",
+    "gz": "丁亥 己酉 甲辰 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 10.5
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 3,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 木/水"
+   },
+   {
+    "id": "PAT06",
+    "gz": "乙未 壬午 壬戌 戊申",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 24
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 4,
+     "cai": 1,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 戌 cangGan [戊辛丁] has 水/金"
+   },
+   {
+    "id": "PAT08",
+    "gz": "戊子 癸亥 丁未 己酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 1,
+     "shi": 5,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 未 cangGan [己丁乙] has 火/木"
+   },
+   {
+    "id": "TH02",
+    "gz": "庚子 己丑 丁未 辛亥",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 4,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 未 cangGan [己丁乙] has 火/木"
+   },
+   {
+    "id": "TH04",
+    "gz": "辛亥 庚子 庚寅 壬午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 1,
+     "cai": 1,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 寅 cangGan [甲丙戊] has 金/土"
+   },
+   {
+    "id": "TH08",
+    "gz": "己巳 庚午 乙亥 庚辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 3,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 亥 cangGan [壬甲] has 木/水"
+   },
+   {
+    "id": "R01",
+    "gz": "甲子 丁卯 己亥 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 24
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 2,
+     "shi": 2,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 火/土"
+   },
+   {
+    "id": "R03",
+    "gz": "乙酉 己卯 戊子 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 3,
+     "cai": 1,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 火/土"
+   },
+   {
+    "id": "R08",
+    "gz": "癸未 乙丑 丙申 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 1,
+     "shi": 3,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "X01",
+    "gz": "癸亥 癸亥 丁巳 乙巳",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 6,
+     "cai": 0,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 火/木"
+   },
+   {
+    "id": "X02",
+    "gz": "庚申 甲申 甲寅 丙寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 29
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 4,
+     "cai": 0,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 寅 cangGan [甲丙戊] has 木/水"
+   },
+   {
+    "id": "X03",
+    "gz": "辛酉 丁酉 乙卯 己卯",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 4,
+     "cai": 2,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 卯 cangGan [乙] has 木/水"
+   },
+   {
+    "id": "X04",
+    "gz": "戊辰 丙辰 壬戌 庚戌",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 7
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 6,
+     "cai": 2,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 戌 cangGan [戊辛丁] has 水/金"
+   },
+   {
+    "id": "X05",
+    "gz": "己丑 辛未 癸丑 己未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 8,
+     "cai": 0,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 丑 cangGan [己癸辛] has 水/金"
+   },
+   {
+    "id": "X06",
+    "gz": "甲午 庚午 庚子 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 7
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 4,
+     "cai": 2,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 土/金"
+   },
+   {
+    "id": "X07",
+    "gz": "乙亥 丁亥 辛巳 癸巳",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 2,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 金/土"
+   },
+   {
+    "id": "M14",
+    "gz": "戊午 戊午 甲戌 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 5,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "M16",
+    "gz": "丙寅 庚寅 壬午 戊申",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 3,
+     "shi": 2,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "M18",
+    "gz": "乙亥 己卯 癸未 丁巳",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 6
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 金/水"
+   },
+   {
+    "id": "M19",
+    "gz": "庚辰 戊子 丙午 壬辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 2,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 午 cangGan [丁己] has 火/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#1",
+    "gz": "甲申 戊辰 甲午 辛未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 3,
+     "cai": 4,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#3",
+    "gz": "乙酉 庚辰 甲午 辛未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 14.75
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 5,
+     "cai": 2,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#5",
+    "gz": "戊午 丙辰 甲午 乙丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 17
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 0,
+     "cai": 4,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#6",
+    "gz": "己巳 壬辰 甲午 丁酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 1,
+     "cai": 3,
+     "shi": 4,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#7",
+    "gz": "庚午 壬辰 丙申 辛卯",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 5,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#9",
+    "gz": "戊午 戊戌 甲寅 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 5,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 寅 cangGan [甲丙戊] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#10",
+    "gz": "辛丑 丙戌 甲子 辛未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 3,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#12",
+    "gz": "戊午 丙戌 甲子 辛丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 20
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 4,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#14",
+    "gz": "甲午 丙戌 丙子 壬辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 23
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 3,
+     "cai": 0,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#19",
+    "gz": "己巳 癸丑 甲午 庚申",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 3,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#21",
+    "gz": "甲午 丁丑 丙子 壬辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 20
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 3,
+     "cai": 0,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#25",
+    "gz": "乙酉 辛未 甲午 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 7.75
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 5,
+     "cai": 1,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#31",
+    "gz": "戊辰 庚申 甲子 戊辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 14
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 6,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#35",
+    "gz": "戊辰 庚申 甲子 丁丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 4,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#37",
+    "gz": "戊辰 庚申 甲寅 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 18
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 寅 cangGan [甲丙戊] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#38",
+    "gz": "甲子 壬子 丁丑 己丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 5
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 0,
+     "shi": 4,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#40",
+    "gz": "庚寅 庚午 辛卯 壬辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 23
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 1,
+     "cai": 2,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 土/金"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#43",
+    "gz": "己巳 己未 癸卯 辛酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 23
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 1,
+     "shi": 1,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#44",
+    "gz": "乙卯 己未 癸巳 己未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 13
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 6,
+     "cai": 1,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#49",
+    "gz": "丙寅 丙午 庚申 壬午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 6,
+     "cai": 1,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 申 cangGan [庚壬戊] has 金/土"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#51",
+    "gz": "辛巳 辛酉 乙亥 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 0,
+     "shi": 3,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 亥 cangGan [壬甲] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#52",
+    "gz": "丁亥 辛酉 乙亥 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 0,
+     "shi": 4,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 亥 cangGan [壬甲] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#60",
+    "gz": "乙酉 壬子 丁丑 己丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 1,
+     "shi": 4,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#65",
+    "gz": "丙午 丙申 甲寅 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 1,
+     "cai": 0,
+     "shi": 8,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 寅 cangGan [甲丙戊] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#66",
+    "gz": "丙子 丙申 甲子 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 0,
+     "shi": 5,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#70",
+    "gz": "辛巳 丙戌 乙亥 庚辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 25
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 2,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 亥 cangGan [壬甲] has 木/水"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#77",
+    "gz": "癸巳 壬午 辛丑 壬子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 29
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 0,
+     "shi": 7,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 丑 cangGan [己癸辛] has 金/土"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#81",
+    "gz": "壬子 壬子 丁丑 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 8,
+     "cai": 1,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": true,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从杀格",
+    "engineName": "从杀格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#82",
+    "gz": "壬子 壬子 丁卯 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 15
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 8,
+     "cai": 1,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 卯 cangGan [乙] has 火/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#83",
+    "gz": "乙卯 壬子 丁丑 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 12
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 1,
+     "shi": 1,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#84",
+    "gz": "丙戌 壬子 丁丑 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 5
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 5,
+     "cai": 1,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#85",
+    "gz": "壬辰 壬子 丁丑 戊申",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 1,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#86",
+    "gz": "壬寅 壬子 丁丑 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 7,
+     "cai": 1,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 木/火"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#87",
+    "gz": "甲寅 乙卯 庚子 甲子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 0,
+     "cai": 8,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#88",
+    "gz": "己巳 乙卯 庚子 甲辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 12
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 1,
+     "cai": 5,
+     "shi": 1,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 土/金"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#89",
+    "gz": "辛巳 乙卯 庚子 甲辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 14
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 1,
+     "cai": 5,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 土/金"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#90",
+    "gz": "甲寅 乙卯 庚申 甲辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 0,
+     "cai": 8,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 申 cangGan [庚壬戊] has 金/土"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#91",
+    "gz": "甲寅 乙卯 庚子 丙申",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 2
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 6,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 土/金"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#92",
+    "gz": "甲寅 乙卯 壬寅 甲辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 1,
+     "cai": 0,
+     "shi": 9,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": true,
+     "jiaCong": true
+    },
+    "traceName": "从儿格",
+    "engineName": "从儿格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#94",
+    "gz": "庚申 壬子 戊子 甲申",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 4,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#100",
+    "gz": "庚申 壬子 丁丑 癸酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 4,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#102",
+    "gz": "壬申 己亥 丁卯 戊寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 1,
+     "shi": 4,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 卯 cangGan [乙] has 火/木"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#108",
+    "gz": "癸巳 壬子 庚申 丁亥",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22.5
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 0,
+     "shi": 6,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 申 cangGan [庚壬戊] has 金/土"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#22",
+    "gz": "庚辰 丙申 甲子 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 25
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 1,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#42",
+    "gz": "丙寅 戊辰 壬申 丙辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 29
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 4,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 申 cangGan [庚壬戊] has 水/金"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#47",
+    "gz": "丙午 己未 癸酉 丙辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 5,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 酉 cangGan [辛] has 水/金"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#58",
+    "gz": "癸亥 癸亥 丙午 庚寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 6,
+     "cai": 2,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 午 cangGan [丁己] has 火/木"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#75",
+    "gz": "庚申 辛未 丙申 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 24
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 1,
+     "cai": 6,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 木/火"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#78",
+    "gz": "丙午 辛卯 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 19
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 0,
+     "cai": 7,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#79",
+    "gz": "己巳 己未 辛巳 丁酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 4,
+     "cai": 0,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 金/土"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#80",
+    "gz": "戊午 戊戌 辛巳 丁酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 29
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 4,
+     "cai": 0,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 金/土"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#4",
+    "gz": "丙寅 戊辰 壬戌 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 5,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 戌 cangGan [戊辛丁] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#5",
+    "gz": "丁未 戊辰 壬子 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 24
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 4,
+     "cai": 5,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#6",
+    "gz": "丙午 戊戌 壬子 丁巳",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 17
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 6,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#7",
+    "gz": "丙寅 戊戌 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 6,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#8",
+    "gz": "丁巳 戊戌 壬子 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 16
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 6,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#9",
+    "gz": "丙午 戊辰 壬辰 丁巳",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 4
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 6,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#10",
+    "gz": "丙子 戊辰 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 10
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 6,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#13",
+    "gz": "丙午 戊午 壬子 丁巳",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 12
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 7,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#14",
+    "gz": "丁巳 戊午 壬子 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 7,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#16",
+    "gz": "甲寅 戊辰 壬子 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 29
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#25",
+    "gz": "甲辰 戊辰 壬申 丙寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 2,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 申 cangGan [庚壬戊] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#26",
+    "gz": "丙子 戊辰 壬午 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 12
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 4,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#27",
+    "gz": "庚子 戊辰 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 4,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#29",
+    "gz": "丙午 戊辰 壬寅 甲辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 8
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 3,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#36",
+    "gz": "丙午 戊戌 壬子 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 25
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 4,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#37",
+    "gz": "丙寅 戊戌 壬午 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 8
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#38",
+    "gz": "丁未 戊戌 壬子 庚辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 5,
+     "cai": 2,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#41",
+    "gz": "丙寅 戊午 壬辰 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 17
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#45",
+    "gz": "丁巳 戊辰 壬寅 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 18
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 4,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#52",
+    "gz": "丙寅 戊戌 壬子 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#53",
+    "gz": "丁巳 戊戌 壬子 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 4,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#54",
+    "gz": "丙午 戊戌 壬子 庚辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 25
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 4,
+     "cai": 3,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 水/金"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#55",
+    "gz": "丙寅 戊辰 壬午 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 23
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 3,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#56",
+    "gz": "丁巳 戊辰 壬午 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 20
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 4,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#57",
+    "gz": "丙午 戊辰 壬午 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 4,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "00-P5A3-财党杀攻击集#58",
+    "gz": "丙寅 戊午 壬午 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 13
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 4,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "P4A-25",
+    "gz": "庚辰 庚辰 甲午 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 6,
+     "cai": 2,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": true,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从杀格",
+    "engineName": "从杀格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-26",
+    "gz": "己丑 丙寅 癸未 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 2
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 6,
+     "cai": 3,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": true,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从杀格",
+    "engineName": "从杀格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-27",
+    "gz": "己丑 丁卯 壬寅 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 3
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 5,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-28",
+    "gz": "甲午 丙寅 癸卯 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 4,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-29",
+    "gz": "己丑 丙寅 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 9
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 3,
+     "cai": 6,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-30",
+    "gz": "甲午 丙寅 壬寅 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 2
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 0,
+     "cai": 6,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-31",
+    "gz": "丙戌 甲午 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 1,
+     "cai": 7,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "P4A-32",
+    "gz": "己丑 戊辰 甲戌 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 7,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": true,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "从财格",
+    "engineName": "从财格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "IMPACT",
+    "gz": "庚申 甲午 庚子 庚辰",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 28
+    },
+    "powers": {
+     "dg": 7,
+     "ke": 1,
+     "cai": 2,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 土/金"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己酉 庚午 甲子 辛未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 25
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 5,
+     "cai": 3,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "甲子 庚午 壬午 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 12
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 0,
+     "cai": 5,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "庚申 庚午 甲子 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 27
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 7,
+     "cai": 0,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 子 cangGan [癸] has 木/水"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己丑 丁未 甲午 辛未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 5,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "IMPACT",
+    "gz": "庚辰 壬戌 丙子 戊子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 1
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 2,
+     "shi": 4,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": false,
+     "canCong": true
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": true
+    },
+    "traceName": "假从势格",
+    "engineName": "假从势格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己丑 辛未 癸巳 己未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 8
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 7,
+     "cai": 1,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "庚子 辛丑 壬午 己未",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 23.5
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 4,
+     "cai": 1,
+     "shi": 0,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 金/水"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "戊子 庚午 甲辰 戊寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 22
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 5,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 木/水"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "丙子 庚午 甲辰 戊寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 21
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 3,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 辰 cangGan [戊乙癸] has 木/水"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己巳 己亥 丁酉 己酉",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 6
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 1,
+     "cai": 2,
+     "shi": 6,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "zhiHelp gate: branch main qi has 木/火"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己卯 乙酉 甲午 甲子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 7,
+     "ke": 1,
+     "cai": 2,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "戊午 戊子 丙午 戊戌",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 1,
+     "cai": 0,
+     "shi": 7,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 午 cangGan [丁己] has 火/木"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "壬午 壬子 丙午 戊戌",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 24
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 5,
+     "cai": 0,
+     "shi": 3,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 午 cangGan [丁己] has 火/木"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "壬午 壬子 丁巳 辛丑",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 26
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 5,
+     "cai": 2,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 火/木"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己卯 乙酉 甲午 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 14
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 1,
+     "cai": 4,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 水/木"
+   },
+   {
+    "id": "G1-09",
+    "gz": "丙寅 庚申 戊子 甲寅",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 11
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 4,
+     "cai": 1,
+     "shi": 3,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "ganHelp gate: tian gan透 火/土"
+   },
+   {
+    "id": "G2-11",
+    "gz": "丙子 庚午 乙丑 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极弱",
+     "score": 15
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 2,
+     "cai": 1,
+     "shi": 5,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "dayRoot gate: day zhi 丑 cangGan [己癸辛] has 木/水"
+   }
+  ],
+  "jiQiang": [
+   {
+    "id": "#1",
+    "gz": "甲寅 丙寅 甲寅 甲子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 9,
+     "ke": 0,
+     "cai": 0,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "#3",
+    "gz": "戊午 丁巳 丙午 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 8,
+     "ke": 0,
+     "cai": 0,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "#5",
+    "gz": "己酉 癸酉 庚申 甲申",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 2,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "#7",
+    "gz": "癸亥 甲寅 乙卯 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 0,
+     "shi": 2,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "H08",
+    "gz": "丁酉 丙午 丁卯 庚戌",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 94
+    },
+    "powers": {
+     "dg": 7,
+     "ke": 0,
+     "cai": 3,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "H10",
+    "gz": "癸未 丁巳 丙戌 辛卯",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 95.5
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 2,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=2 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "H13",
+    "gz": "壬寅 丙午 丙戌 辛卯",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 2,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=1 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "H16",
+    "gz": "丙辰 庚子 癸巳 庚申",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 98.5
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 1,
+     "cai": 3,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "H17",
+    "gz": "甲子 丙子 癸亥 甲寅",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 90.5
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 2,
+     "shi": 5,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=5 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "S01",
+    "gz": "壬申 壬寅 甲寅 丁卯",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 1,
+     "cai": 0,
+     "shi": 2,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "S03",
+    "gz": "甲辰 庚午 丙午 癸巳",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 2,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "S05",
+    "gz": "丙戌 甲午 戊戌 丁巳",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 91
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 2,
+     "cai": 0,
+     "shi": 0,
+     "yin": 6
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "S07",
+    "gz": "庚申 乙酉 庚申 乙酉",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 8,
+     "ke": 0,
+     "cai": 4,
+     "shi": 0,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "R04",
+    "gz": "壬子 丙午 丁卯 己酉",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 91
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 3,
+     "cai": 1,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=3 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#97",
+    "gz": "乙卯 乙卯 乙亥 乙卯",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 11,
+     "ke": 0,
+     "cai": 0,
+     "shi": 0,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": true,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": "从强格",
+    "engineName": "从强格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A1-格局攻击集#98",
+    "gz": "乙卯 乙卯 乙亥 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 10,
+     "ke": 0,
+     "cai": 0,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#99",
+    "gz": "乙卯 乙卯 乙亥 丙子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 8,
+     "ke": 0,
+     "cai": 0,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=false"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#104",
+    "gz": "癸丑 壬子 甲寅 戊辰",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 96
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 0,
+     "cai": 4,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#105",
+    "gz": "癸丑 壬子 甲寅 甲子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 1,
+     "shi": 0,
+     "yin": 6
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#112",
+    "gz": "甲午 乙巳 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 99
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 0,
+     "cai": 0,
+     "shi": 1,
+     "yin": 7
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#113",
+    "gz": "庚午 乙巳 丙寅 庚子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 95
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 1,
+     "cai": 4,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#114",
+    "gz": "甲午 丙午 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 0,
+     "shi": 1,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#115",
+    "gz": "壬辰 丙午 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 0,
+     "shi": 2,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A1-格局攻击集#119",
+    "gz": "庚申 庚子 甲寅 甲子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 90
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 5,
+     "cai": 0,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=5 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#26",
+    "gz": "乙亥 辛未 己巳 丙寅",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 87
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 1,
+     "shi": 2,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=3 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#81",
+    "gz": "甲午 乙巳 丙寅 戊戌",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 96
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 0,
+     "cai": 0,
+     "shi": 3,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=3 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#83",
+    "gz": "癸巳 乙巳 丙寅 癸巳",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 95
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 4,
+     "cai": 0,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=4 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#84",
+    "gz": "壬午 乙巳 丙寅 壬子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 97
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 5,
+     "cai": 0,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=5 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#85",
+    "gz": "戊午 乙巳 丙寅 戊子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 98
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 1,
+     "cai": 0,
+     "shi": 4,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=4 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#86",
+    "gz": "己丑 乙巳 丙寅 己亥",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 87
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 1,
+     "cai": 0,
+     "shi": 5,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=5 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#87",
+    "gz": "庚子 乙巳 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 98
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 1,
+     "cai": 2,
+     "shi": 1,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#88",
+    "gz": "庚午 乙巳 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 91
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 0,
+     "cai": 2,
+     "shi": 1,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#89",
+    "gz": "壬申 乙巳 丙寅 壬子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 85
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 5,
+     "cai": 1,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=5 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#90",
+    "gz": "庚午 乙巳 丙寅 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 97
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 2,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#91",
+    "gz": "乙未 丙午 丙寅 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 0,
+     "shi": 1,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#92",
+    "gz": "壬申 丙午 丙寅 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 2,
+     "cai": 1,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#93",
+    "gz": "庚午 丙午 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 98
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 2,
+     "shi": 1,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#94",
+    "gz": "戊戌 丙午 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 98
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 0,
+     "shi": 4,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=4 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#95",
+    "gz": "乙丑 乙卯 甲子 乙亥",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 9,
+     "ke": 0,
+     "cai": 1,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#96",
+    "gz": "丙申 丙午 丙寅 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 7,
+     "ke": 0,
+     "cai": 1,
+     "shi": 1,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#97",
+    "gz": "庚午 丙午 丙寅 戊子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 96
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 1,
+     "cai": 2,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#98",
+    "gz": "壬子 乙卯 甲子 壬子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 0,
+     "shi": 0,
+     "yin": 7
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": true,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": "从强格",
+    "engineName": "从强格",
+    "match": true,
+    "failReason": ""
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#99",
+    "gz": "壬子 丙午 丙寅 戊戌",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 99
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 3,
+     "cai": 0,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=3 shi=3 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#100",
+    "gz": "癸亥 乙巳 丙寅 庚寅",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 91
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 3,
+     "cai": 2,
+     "shi": 0,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=3 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#109",
+    "gz": "乙亥 辛未 己巳 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 80
+    },
+    "powers": {
+     "dg": 3,
+     "ke": 2,
+     "cai": 1,
+     "shi": 4,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": false,
+     "zhiHelp": true,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=4 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#113",
+    "gz": "庚辰 丙午 丁卯 己未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 2,
+     "shi": 4,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=4 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "00-P5A2-格局成败攻击集#115",
+    "gz": "甲寅 丙午 丙戌 乙未",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 88
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 0,
+     "shi": 2,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-1",
+    "gz": "癸未 乙卯 甲子 庚午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 92
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 1,
+     "shi": 1,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-4",
+    "gz": "癸未 甲寅 乙未 壬午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 86
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 2,
+     "shi": 1,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-6",
+    "gz": "癸未 甲寅 乙卯 壬午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 1,
+     "shi": 1,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-7",
+    "gz": "丁亥 丙午 丙寅 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 8,
+     "ke": 1,
+     "cai": 0,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-8",
+    "gz": "丁亥 丙午 丙子 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 87
+    },
+    "powers": {
+     "dg": 8,
+     "ke": 2,
+     "cai": 0,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=0 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-9",
+    "gz": "丁亥 丙午 丙戌 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 8,
+     "ke": 1,
+     "cai": 0,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=1 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-10",
+    "gz": "庚辰 辛巳 丁巳 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 7,
+     "ke": 0,
+     "cai": 4,
+     "shi": 1,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-11",
+    "gz": "庚辰 辛巳 丁卯 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 4,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-12",
+    "gz": "庚辰 辛巳 丁丑 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 80
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 4,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-13",
+    "gz": "辛巳 丁酉 庚申 壬午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 88.5
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 4,
+     "cai": 0,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=4 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-15",
+    "gz": "辛巳 丁酉 庚辰 壬午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 93
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 4,
+     "cai": 0,
+     "shi": 2,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=4 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-17",
+    "gz": "庚辰 甲申 辛丑 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 87
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 1,
+     "cai": 4,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-20",
+    "gz": "癸未 甲子 壬子 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 87
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 1,
+     "cai": 3,
+     "shi": 2,
+     "yin": 0
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "P4A-22",
+    "gz": "壬午 辛亥 癸酉 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 2,
+     "shi": 0,
+     "yin": 3
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "戊午 戊午 戊子 丙午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 83
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 1,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "丙寅 甲午 丙子 甲午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 93
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 1,
+     "cai": 0,
+     "shi": 0,
+     "yin": 5
+    },
+    "gates": {
+     "dayRoot": false,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "戊辰 癸亥 甲子 壬申",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 82
+    },
+    "powers": {
+     "dg": 2,
+     "ke": 1,
+     "cai": 3,
+     "shi": 0,
+     "yin": 6
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "甲子 丙寅 甲寅 壬子",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 6,
+     "ke": 0,
+     "cai": 0,
+     "shi": 2,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己巳 乙亥 甲子 戊辰",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 85
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 0,
+     "cai": 5,
+     "shi": 1,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己巳 乙亥 甲寅 戊辰",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 86
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 0,
+     "cai": 5,
+     "shi": 1,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=1 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己巳 乙亥 甲子 己巳",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 81
+    },
+    "powers": {
+     "dg": 4,
+     "ke": 0,
+     "cai": 4,
+     "shi": 2,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=2 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "丙午 甲子 甲寅 乙丑",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 7,
+     "ke": 0,
+     "cai": 1,
+     "shi": 3,
+     "yin": 1
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=3 dayZhiIsKeXie=false hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己卯 辛酉 庚寅 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 83
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 1,
+     "cai": 2,
+     "shi": 0,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=1 shi=0 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "IMPACT",
+    "gz": "己卯 辛酉 庚午 戊午",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 82
+    },
+    "powers": {
+     "dg": 5,
+     "ke": 2,
+     "cai": 1,
+     "shi": 0,
+     "yin": 4
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=2 shi=0 dayZhiIsKeXie=true hasCangKeXie=true"
+   },
+   {
+    "id": "G2-08",
+    "gz": "戊子 戊午 己丑 己巳",
+    "sex": "male",
+    "dm": {
+     "level": "极强",
+     "score": 100
+    },
+    "powers": {
+     "dg": 9,
+     "ke": 0,
+     "cai": 1,
+     "shi": 0,
+     "yin": 2
+    },
+    "gates": {
+     "dayRoot": true,
+     "ganHelp": true,
+     "zhiHelp": false,
+     "canCong": false
+    },
+    "branches": {
+     "congQiang": false,
+     "congSha": false,
+     "congCai": false,
+     "congEr": false,
+     "jiaCong": false
+    },
+    "traceName": null,
+    "engineName": null,
+    "match": true,
+    "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true"
+   }
+  ]
+ },
+ "synthetic": [
+  {
+   "id": "D01",
+   "gz": "戊午 己未 癸卯 丙寅",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 3,
+    "shi": 2,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": true
+   },
+   "traceName": "假从势格",
+   "engineName": "假从势格",
+   "match": true,
+   "failReason": "",
+   "intent": "ke=5 不足从杀→应落假从"
+  },
+  {
+   "id": "D02",
+   "gz": "戊戌 己未 癸卯 丙午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 6,
+    "cai": 3,
+    "shi": 1,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": true,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": true
+   },
+   "traceName": "从杀格",
+   "engineName": "从杀格",
+   "match": true,
+   "failReason": "",
+   "intent": "ke=6 恰好从杀"
+  },
+  {
+   "id": "D03",
+   "gz": "戊戌 己未 癸巳 丙午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 6,
+    "cai": 4,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金",
+   "intent": "日支巳余气庚印=有根→不从"
+  },
+  {
+   "id": "D04",
+   "gz": "戊戌 己未 癸未 丙午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 7,
+    "cai": 3,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": true,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": true
+   },
+   "traceName": "从杀格",
+   "engineName": "从杀格",
+   "match": true,
+   "failReason": "",
+   "intent": "D03 对照：日支未无金水根→从杀"
+  },
+  {
+   "id": "D05",
+   "gz": "戊戌 己未 癸卯 庚午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 12
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 6,
+    "cai": 1,
+    "shi": 1,
+    "yin": 2
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "ganHelp gate: tian gan透 金/水",
+   "intent": "一字透印（庚）破格"
+  },
+  {
+   "id": "D06",
+   "gz": "戊戌 己未 癸卯 壬午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 4,
+    "ke": 6,
+    "cai": 1,
+    "shi": 1,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "ganHelp gate: tian gan透 金/水",
+   "intent": "透比（壬）破格"
+  },
+  {
+   "id": "D07",
+   "gz": "戊戌 丙午 癸卯 戊申",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 11
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 3,
+    "shi": 1,
+    "yin": 1
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": true,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "zhiHelp gate: branch main qi has 金/水",
+   "intent": "时支申本气庚印→zhiHelp 不从"
+  },
+  {
+   "id": "D08",
+   "gz": "戊戌 丙午 癸卯 己巳",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 2
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 4,
+    "shi": 1,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": true
+   },
+   "traceName": "假从势格",
+   "engineName": "假从势格",
+   "match": true,
+   "failReason": "",
+   "intent": "D07 对照：时支巳本气丙财→假从"
+  },
+  {
+   "id": "D09",
+   "gz": "丙午 丁巳 癸未 丙午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 1,
+    "cai": 9,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": true,
+    "congEr": false,
+    "jiaCong": true
+   },
+   "traceName": "从财格",
+   "engineName": "从财格",
+   "match": true,
+   "failReason": "",
+   "intent": "从财入口"
+  },
+  {
+   "id": "D10",
+   "gz": "甲寅 乙卯 癸未 甲寅",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 1,
+    "cai": 0,
+    "shi": 9,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": true,
+    "jiaCong": true
+   },
+   "traceName": "从儿格",
+   "engineName": "从儿格",
+   "match": true,
+   "failReason": "",
+   "intent": "从儿入口"
+  },
+  {
+   "id": "D11",
+   "gz": "戊午 甲寅 癸未 乙卯",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 3,
+    "cai": 1,
+    "shi": 6,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": true,
+    "jiaCong": true
+   },
+   "traceName": "从儿格",
+   "engineName": "从儿格",
+   "match": true,
+   "failReason": "",
+   "intent": "假从2x边界构造尝试（预期不可达）"
+  },
+  {
+   "id": "D12",
+   "gz": "甲子 壬子 甲子 壬子",
+   "sex": "male",
+   "dm": {
+    "level": "极强",
+    "score": 95
+   },
+   "powers": {
+    "dg": 4,
+    "ke": 0,
+    "cai": 0,
+    "shi": 0,
+    "yin": 8
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": true,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": "从强格",
+   "engineName": "从强格",
+   "match": true,
+   "failReason": "",
+   "intent": "从强对照：极强全印比"
+  },
+  {
+   "id": "D13",
+   "gz": "甲寅 乙卯 甲寅 乙卯",
+   "sex": "male",
+   "dm": {
+    "level": "极强",
+    "score": 100
+   },
+   "powers": {
+    "dg": 12,
+    "ke": 0,
+    "cai": 0,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": false,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": false
+   },
+   "traceName": null,
+   "engineName": null,
+   "match": true,
+   "failReason": "congQiang branch: ke=0 shi=0 dayZhiIsKeXie=false hasCangKeXie=true",
+   "intent": "极强但不从强（藏干泄耗破格）"
+  },
+  {
+   "id": "D14",
+   "gz": "戊戌 己丑 癸未 丙午",
+   "sex": "male",
+   "dm": {
+    "level": "极弱",
+    "score": 1
+   },
+   "powers": {
+    "dg": 2,
+    "ke": 7,
+    "cai": 3,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "branches": {
+    "congQiang": false,
+    "congSha": true,
+    "congCai": false,
+    "congEr": false,
+    "jiaCong": true
+   },
+   "traceName": "从杀格",
+   "engineName": "从杀格",
+   "match": true,
+   "failReason": "",
+   "intent": "从杀/从财互斥证明盘（ke6+cai6>12不可达）"
+  }
+ ],
+ "mismatches": []
+}
