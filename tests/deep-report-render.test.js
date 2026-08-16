@@ -304,6 +304,26 @@ test('relationship narrative removes the score strip without affecting scores in
   assert.match(wealthPage, /A6/);
 });
 
+test('wealth renderer preserves the four-part customer structure and escapes direction copy', () => {
+  const facts = fixtureFacts();
+  facts.wealth.narrative = {
+    grade: 'A6', level: '十万元级', difficulty: '持续经营时更容易逐步达到',
+    headline: '财富结论', painPoint: '财富短板', note: '财富说明。',
+    verdicts: [
+      { title: '财富量级与总判断', sourceText: '命盘依据。', outcomeText: '总判断。' },
+      { title: '钱主要从哪里来', sourceText: '命盘依据。', outcomeText: '来源。' },
+      { title: '钱能不能留下', sourceText: '命盘依据。', outcomeText: '留存。' },
+      { title: '哪里更容易打开财路', sourceText: '木为用神且接入食伤生财。', outcomeText: '东方和东南的客户、市场或合作机会更容易把收入打开。<east>' },
+    ],
+  };
+  const page = renderFixture({ facts }).nodes.wealthContent.innerHTML;
+  const titles = ['财富量级与总判断', '钱主要从哪里来', '钱能不能留下', '哪里更容易打开财路'];
+  assert.deepEqual(titles.map(title => page.indexOf(title)), titles.map(title => page.indexOf(title)).slice().sort((a, b) => a - b));
+  assert.equal((page.match(/deep-report-verdict-item/g) || []).length, 4);
+  assert.match(page, /&lt;east&gt;/);
+  assert.doesNotMatch(page, /<east>/);
+});
+
 test('paid verdict renders professional source before the plain outcome and escapes both', () => {
   const facts = fixtureFacts();
   facts.currentYear.narrative = {

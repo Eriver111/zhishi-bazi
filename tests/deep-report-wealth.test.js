@@ -346,3 +346,38 @@ test('exposed, main-qi, two-distinct-hidden, and authoritative-chain support eac
     });
   }
 });
+
+test('wealth direction prefers a useful element that participates in the actual wealth path', () => {
+  const direction = DeepReport.__test.deriveWealthDirection({
+    yongJi: { yongShen: ['木'], xiShen: ['水'], jiShen: ['火'] },
+    pathElements: ['木', '火'],
+  });
+  assert.deepEqual(direction, {
+    element: '木', directions: ['东方', '东南'], confidence: 'strong', conflict: false,
+  });
+});
+
+test('conflicting direction evidence does not force a single favorable direction', () => {
+  const direction = DeepReport.__test.deriveWealthDirection({
+    yongJi: { yongShen: ['木', '水'], xiShen: [], jiShen: ['火'] },
+    pathElements: ['木', '水'],
+  });
+  assert.equal(direction.conflict, true);
+  assert.equal(direction.element, '');
+  assert.deepEqual(direction.directions, []);
+});
+
+test('wealth facts derive a direction only from a validated wealth pathway', () => {
+  const core = storageCore({ yongShen: ['火'], xiShen: [], jiShen: ['土'] });
+  core.actionChains = ['食伤生财'];
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '戊', zhi: '子' },
+    month: { gan: '己', zhi: '卯' },
+    day: { gan: '甲', zhi: '寅' },
+    hour: { gan: '丙', zhi: '午' },
+  }), core, calculator);
+  assert.ok(facts.pathways.some(path => path.type === '食伤生财'));
+  assert.deepEqual(facts.direction, {
+    element: '火', directions: ['南方'], confidence: 'strong', conflict: false,
+  });
+});

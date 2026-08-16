@@ -30,6 +30,10 @@
     { branches: ['申', '酉', '戌'], element: '金' },
     { branches: ['亥', '子', '丑'], element: '水' },
   ];
+  var WEALTH_DIRECTIONS = {
+    '木': ['东方', '东南'], '火': ['南方'], '土': ['本地', '中央区域'],
+    '金': ['西方', '西北'], '水': ['北方'],
+  };
 
   function list(value) {
     if (Array.isArray(value)) return value;
@@ -879,6 +883,60 @@
     return rows;
   }
 
+  function uniqueElements(values) {
+    return list(values).filter(function (value, index, rows) {
+      return typeof value === 'string' && ELEMENT_CYCLE.indexOf(value) >= 0 && rows.indexOf(value) === index;
+    });
+  }
+
+  function wealthPathElements(pathways, wealthElement) {
+    var wealthIndex = ELEMENT_CYCLE.indexOf(wealthElement);
+    if (wealthIndex < 0) return [];
+    var dayElement = ELEMENT_CYCLE[(wealthIndex + ELEMENT_CYCLE.length - 2) % ELEMENT_CYCLE.length];
+    var outputElement = ELEMENT_CYCLE[(wealthIndex + ELEMENT_CYCLE.length - 1) % ELEMENT_CYCLE.length];
+    var officerElement = ELEMENT_CYCLE[(wealthIndex + 1) % ELEMENT_CYCLE.length];
+    var resourceElement = ELEMENT_CYCLE[(wealthIndex + 2) % ELEMENT_CYCLE.length];
+    var supportedTypes = {
+      '比劫生食伤生财': [dayElement, outputElement, wealthElement],
+      '食伤生财': [outputElement, wealthElement],
+      '财生官': [wealthElement, officerElement],
+      '财官印连续流通': [wealthElement, officerElement, resourceElement],
+      '财配印': [wealthElement, resourceElement],
+    };
+    return uniqueElements(list(pathways).reduce(function (all, pathway) {
+      if (!pathway || typeof pathway !== 'object') return all;
+      var elements = supportedTypes[pathway.type];
+      if (!elements) return all;
+      return all.concat(elements, uniqueElements(pathway.elements));
+    }, []));
+  }
+
+  function deriveWealthDirection(input) {
+    input = input || {};
+    var yong = uniqueElements(input.yongJi && input.yongJi.yongShen);
+    var xi = uniqueElements(input.yongJi && input.yongJi.xiShen);
+    var ji = uniqueElements(input.yongJi && input.yongJi.jiShen);
+    var paths = uniqueElements(input.pathElements);
+    var ranked = ELEMENT_CYCLE.filter(function (element) {
+      return paths.indexOf(element) >= 0 && ji.indexOf(element) < 0 &&
+        (yong.indexOf(element) >= 0 || xi.indexOf(element) >= 0);
+    }).map(function (element) {
+      return {
+        element: element,
+        score: 2 + (yong.indexOf(element) >= 0 ? 2 : 0) + (xi.indexOf(element) >= 0 ? 1 : 0),
+      };
+    }).sort(function (a, b) { return b.score - a.score; });
+    if (!ranked.length || (ranked[1] && ranked[1].score === ranked[0].score)) {
+      return { element: '', directions: [], confidence: 'limited', conflict: true };
+    }
+    return {
+      element: ranked[0].element,
+      directions: WEALTH_DIRECTIONS[ranked[0].element] || [],
+      confidence: 'strong',
+      conflict: false,
+    };
+  }
+
   function buildWealthRetention(core, wealthElement) {
     var risks = list(core && core.structuralRisks);
     var events = list(core && core.relationEvents);
@@ -1104,6 +1162,7 @@
       return role === '正财' || role === '偏财';
     });
     var pathways = buildWealthPathways(core);
+    var pathElements = wealthPathElements(pathways, wealthWx);
     var elementRole = classifyElementRole(wealthWx, core.yongJi);
     var patternName = core.pattern && (core.pattern.name || core.pattern.label || '');
     var isCongCai = !!(core.congGe && /从财/.test(patternName));
@@ -1166,6 +1225,9 @@
     return {
       wealthElement: wealthWx,
       wealthRole: ['正财', '偏财'],
+      yongJi: core.yongJi || {},
+      pathElements: pathElements,
+      direction: deriveWealthDirection({ yongJi: core.yongJi, pathElements: pathElements }),
       occurrences: occurrences,
       resource: buildResourceQuality(occurrences, bazi, core, calculator, wealthWx),
       capacity: capacity,
@@ -2283,6 +2345,21 @@
     var quality = resource.quality || {};
     var pathways = list(wealth.pathways);
     var retentionRisks = list(wealth.retention && wealth.retention.risks);
+    var yongJi = wealth.yongJi || (facts && facts.core && facts.core.yongJi) || {};
+    var pathElements = uniqueElements(wealth.pathElements);
+    if (!pathElements.length) pathElements = wealthPathElements(pathways, wealth.wealthElement);
+    var direction = wealth.direction || deriveWealthDirection({ yongJi: yongJi, pathElements: pathElements });
+    var storageRows = list(wealth.storage && wealth.storage.storages);
+    var storageFacts = storageRows.map(function (row) {
+      return (row.pillarLabel || '') + (row.zhi || '') + '为' + (row.storageRole || '十神库') +
+        (row.activated ? '，已见引动' : '，尚未见引动');
+    });
+    var positivePathTypes = ['比劫生食伤生财', '食伤生财', '财生官', '财官印连续流通', '财配印'];
+    var actualPaths = pathways.filter(function (row) {
+      return row && positivePathTypes.indexOf(row.type) >= 0;
+    });
+    var annualWealthEvidence = facts && facts.currentYear && facts.currentYear.wealth &&
+      list(facts.currentYear.wealth.timing && facts.currentYear.wealth.timing.activation).length > 0;
     var points = 2;
     points += ({ '顺势': 3, '可承接': 2, '有缓解': 1, '平衡观察': 0, '承压': -2 })[capacity.state] || 0;
     if (Number(resource.visibleCount) > 0) points += 1;
@@ -2293,7 +2370,7 @@
     if (wealth.storage && wealth.storage.activated) points += 0.5;
     points -= Math.min(3, retentionRisks.length) * 0.5;
     var level = clampNumber(Math.round(points), 1, 10);
-    var pathText = pathways.map(function (row) { return textOf(row && (row.type || row.conclusion || row)); }).join(' ');
+    var pathText = actualPaths.map(function (row) { return textOf(row && (row.type || row.conclusion || row)); }).join(' ');
     var headline;
     var painPoint;
     if (capacity.state === '承压') {
@@ -2333,13 +2410,41 @@
             ? '财星对命主形成明显消耗，收入规模扩大时，责任、成本和资金压力也会同步增加。'
             : '财富承载处于中间状态，收入高低更依赖具体行业与岁运是否形成通路。';
     var retentionText = retentionRisks.length
-      ? '命局存在财富分流或消耗结构，表现为进账之后容易继续投入、被合作分配，或被责任性支出带走。'
-      : '原局没有明显的财富分流结构，收入形成后相对更容易保留，但实际资产仍取决于现实经营。';
+      ? '钱进来以后，容易继续投进项目、被合作伙伴分走，或者被家庭和责任性支出带走。'
+      : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住，但实际资产仍取决于现实经营。';
+    var hasFinancialStorage = Boolean(wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length);
+    var hasStrongWealthPath = actualPaths.length > 0;
+    var hasCongCai = capacity.method === '从格顺势';
     var storageText = wealth.storage && wealth.storage.activated
-      ? '财库在原局中有真实财星并受到引动，财富存在从现金流沉淀为资产、项目或长期资源的通道。'
-      : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length
-        ? '命局有财入库的基础，但库气尚未被明显引动，财富更像有储存空间、暂未完全打开。'
-        : '原局未形成有效财库，财富更偏流动收入，资产沉淀能力不能仅凭库支判断。';
+      ? '命局里有财星入库且库气已被引动，钱进来以后更容易沉淀成存款、资产或长期项目；能留多少还要一起看合作分配和实际支出。'
+      : hasFinancialStorage
+        ? '命局有财入库的条件，但库气还没有明显被触动。赚钱以后有地方可存，只是兑现和积累不会一下子很快。'
+        : (!hasStrongWealthPath && !hasCongCai && !annualWealthEvidence
+          ? '命局没有形成财库，也没有看到把机会突然放大的明确链路。你的钱更适合一点点做大，把主业、客户或项目做稳，比押一次短期机会更容易留下成果。'
+          : '命局没有形成财库，但已经有其他财富通路或岁运引动条件，不能只因没有财库就断定没有突然放大的机会。');
+    var totalText;
+    if (capacity.state === '承压') {
+      totalText = '你的赚钱机会并不少，但机会一多，需要垫的钱、扛的责任和花掉的精力也会一起增加。账面进账可能变大，真正能留下多少要看后面的路径和留存条件。';
+    } else if (capacity.state === '顺势' || level >= 8) {
+      totalText = '这张盘有把资源做大的基础。收入不只靠一份固定工资，更容易靠项目、客户、平台或长期经营把规模慢慢拉开。';
+    } else if (capacity.state === '可承接' || capacity.state === '有缓解') {
+      totalText = '这张盘能接住正常的赚钱机会。收入上来以后，只要路径稳定，通常能把一部分机会变成看得见的成果；但不适合把每一次机会都放大到超出自己手里的资源。';
+    } else {
+      totalText = '这张盘的财富表现更看重具体路径。先把一个稳定的赚钱入口跑顺，再把它做成可重复的客户、项目或产品，比单纯追求机会数量更有效。';
+    }
+    var retentionOutcome = retentionText + ' ' + storageText;
+    var directionSource;
+    var directionText;
+    if (!direction.conflict) {
+      var role = classifyElementRole(direction.element, yongJi);
+      directionSource = direction.element + '为本命' + role + '，并且已接入' + actualPaths.map(function (row) { return row.type; }).join('、') + '的实际财富通路。';
+      directionText = direction.directions.join('、') + '方向更容易打开财路。这里既包括去这些方向发展，也包括这些方向来的客户、市场、合作方和工作机会；因为它们更容易把现有的赚钱通路接成收入。';
+    } else {
+      directionSource = actualPaths.length
+        ? '已见财富通路，但能接入通路的喜用元素没有形成单一优势。'
+        : '原局未见同时符合喜用与实际财富通路的单一方向。';
+      directionText = '得财方向不集中，不能只凭某一个五行或方位断定哪里一定更赚钱。先看哪一种客户、项目、平台或合作方式能把现有路径真正接成收入。';
+    }
     return {
       grade: 'A' + level,
       level: wealthMagnitude(level),
@@ -2348,20 +2453,20 @@
       painPoint: painPoint,
       paragraphs: [],
       verdicts: [
-        narrativeVerdict('财富显现方式', '', ['WEALTH_OCCURRENCE:' + (resource.state || 'unknown')], {
-          sourceText: '财星在原局中' + (Number(resource.visibleCount) > 0 ? '透干显现' : Number(resource.hiddenCount) > 0 ? '藏于地支' : '没有明显显现') + '。', outcomeText: resourceText,
+        narrativeVerdict('财富量级与总判断', '', [
+          'WEALTH_OCCURRENCE:' + (resource.state || 'unknown'),
+          'WEALTH_CAPACITY:' + (capacity.state || 'unknown'),
+        ], {
+          sourceText: '财星在原局中' + (Number(resource.visibleCount) > 0 ? '透干显现' : Number(resource.hiddenCount) > 0 ? '藏于地支' : '没有明显显现') + '；日主旺衰与财星喜忌综合后，财富承载状态为“' + (capacity.state || '中间状态') + '”。', outcomeText: totalText,
         }),
-        narrativeVerdict('财富承载能力', '', ['WEALTH_CAPACITY:' + (capacity.state || 'unknown')], {
-          sourceText: '日主旺衰与财星喜忌综合后，财富承载状态为“' + (capacity.state || '中间状态') + '”。', outcomeText: capacityText,
-        }),
-        narrativeVerdict('主要赚钱路径', '', pathways.length ? pathways.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
+        narrativeVerdict('钱主要从哪里来', '', actualPaths.length ? actualPaths.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
           sourceText: pathways.length ? '命局形成' + pathways.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。', outcomeText: source,
         }),
-        narrativeVerdict('财富留存状态', '', retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR'], {
-          sourceText: retentionRisks.length ? '原局存在' + retentionRisks.map(function (row) { return textOf(row.type || row); }).join('、') + '等财富分流证据。' : '原局未见明确财富分流结构。', outcomeText: retentionText,
+        narrativeVerdict('钱能不能留下', '', (retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR']).concat(['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : hasFinancialStorage ? 'present' : 'absent')]), {
+          sourceText: (retentionRisks.length ? '原局存在' + retentionRisks.map(function (row) { return textOf(row.type || row); }).join('、') + '等财富留存证据。' : '原局未见明确财富留存风险。') + (storageFacts.length ? ' ' + storageFacts.join('；') + '。' : ''), outcomeText: retentionOutcome,
         }),
-        narrativeVerdict('资产沉淀能力', '', ['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length ? 'present' : 'absent')], {
-          sourceText: wealth.storage && wealth.storage.activated ? '财星真实入库，且财库受到原局关系引动。' : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length ? '财星真实入库，但库气尚未明显引动。' : '原局未形成有效财库。', outcomeText: storageText,
+        narrativeVerdict('哪里更容易打开财路', '', direction.conflict ? ['WEALTH_DIRECTION:UNFOCUSED'] : ['WEALTH_DIRECTION:' + direction.element], {
+          sourceText: directionSource, outcomeText: directionText,
         }),
       ],
       note: '财富等级表示个人净资产峰值的命局量级参考，不代表当前存款，也不是收益承诺。',
@@ -2913,6 +3018,7 @@
       timingSourceText: timingSourceText,
       timingDomains: timingDomains,
       storageOutcome: storageOutcome,
+      deriveWealthDirection: deriveWealthDirection,
     };
   }
   return api;

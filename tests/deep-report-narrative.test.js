@@ -71,7 +71,9 @@ test('narrative turns wealth facts into a stable A1-A10 asset magnitude without 
   assert.match(first.wealth.grade, /^A(?:10|[1-9])$/);
   assert.match(first.wealth.level, /元级|万元级|亿元级/);
   assert.match(first.wealth.headline, /财富|赚钱|收入|资产/);
-  assert.ok(first.wealth.verdicts.length >= 5);
+  assert.deepEqual(first.wealth.verdicts.map(row => row.title), [
+    '财富量级与总判断', '钱主要从哪里来', '钱能不能留下', '哪里更容易打开财路',
+  ]);
   assert.doesNotMatch(JSON.stringify(first.wealth), /relationEvents|structuralRisks|confidence|evidence|月令与季节|关系质量/);
 });
 
@@ -243,14 +245,23 @@ test('study narrative uses the evidence-gated profile and education band without
   assert.doesNotMatch(visible, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
 });
 
-test('wealth narrative states magnitude, source, capacity, retention and storage without advice verbs', () => {
+test('wealth narrative groups magnitude source retention and direction into four conclusions without advice verbs', () => {
   const narrative = DeepReport.buildNarratives(favorableFacts()).wealth;
   const copy = JSON.stringify(narrative);
   assert.match(copy, /A(?:10|[1-9])/);
-  for (const title of ['财富显现方式', '财富承载能力', '主要赚钱路径', '财富留存状态', '资产沉淀能力']) {
+  for (const title of ['财富量级与总判断', '钱主要从哪里来', '钱能不能留下', '哪里更容易打开财路']) {
     assert.match(copy, new RegExp(title));
   }
   assert.doesNotMatch(copy, /建议|应该|应当|优先|最好|宜|需注意|控制投入|建立|选择/);
+});
+
+test('a generic annual wealth sentence does not override the no-storage steady-accumulation conclusion', () => {
+  const facts = favorableFacts();
+  facts.wealth.pathways = [];
+  facts.wealth.storage = { present: false, activated: false, candidates: [], storages: [] };
+  facts.currentYear.wealth = { conclusion: '财富条件被激活。', evidence: ['普通年度说明'], timing: { activation: [] } };
+  const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
+  assert.match(retention.outcomeText, /一点点做大/);
 });
 
 test('wealth timing names the exact year relation and a concrete money outcome', () => {
