@@ -512,3 +512,43 @@ test('annual risk translation never exposes abstract or unknown internal risk na
   assert.equal((fiveYearRisk.summary.match(/机会一多，可能要先垫钱/g) || []).length, 1);
   assert.doesNotMatch(fiveYearRisk.sourceText + fiveYearRisk.summary, /未知承载不足|承载不足/);
 });
+
+test('every frozen structural risk has a safe factual source and concrete annual and five-year outcome', () => {
+  const facts = favorableFacts();
+  const risks = [
+    { type: '伤官见官', why: '天干同透伤官与正官，位距1。' },
+    { type: '财破印', why: '财干元素克印干（全 pair 枚举 2 对）。' },
+    { type: '枭夺食', why: '偏印元素克食神元素。' },
+    { type: '官杀混杂', why: '天干同透正官与七杀，位距1。' },
+    { type: '杀重无制', why: '七杀压力加重，缺少制化。' },
+    { type: '关键用神/格局节点受冲', why: '六冲子午命中；时柱午（印星之根）。' },
+    { type: '财印冲', why: '财星与印星相冲，涉月令。' },
+    { type: '官印冲', why: '官星与印星相冲，位距1。' },
+  ];
+  facts.currentYear = facts.fiveYear.years[0];
+  facts.currentYear.interactions = [];
+  facts.currentYear.triggeredRisks = risks;
+  const narratives = DeepReport.buildNarratives(facts);
+  const current = customerVisibleCopy(narratives.currentYear);
+  const fiveYear = narratives.fiveYear.years[0];
+  const cases = [
+    ['伤官见官', /伤官与正官同时出现/, /和上级、规则或流程顶起来/],
+    ['财破印', /财星克印星/, /打断学习、考证或原来的准备/],
+    ['枭夺食', /偏印克食神/, /想得很多，却很难把想法稳定做成成果/],
+    ['官杀混杂', /正官与七杀同时出现/, /要求一会儿一个标准/],
+    ['杀重无制', /七杀压力增加/, /任务、考核和催促容易压到一起/],
+    ['关键用神/格局节点受冲', /原局子与午形成六冲/, /原本最能撑住你的一个环节容易被打乱/],
+    ['财印冲', /财星与印星相冲/, /赚钱和学习、考证或原有支持很难同时顾好/],
+    ['官印冲', /官星与印星相冲/, /工作要求和自己的学习、证书或原有安排容易撞在一起/],
+  ];
+
+  for (const [, source, outcome] of cases) {
+    assert.match(current, source);
+    assert.match(current, outcome);
+    assert.match(fiveYear.sourceText, source);
+    assert.match(fiveYear.summary, outcome);
+  }
+  assert.match(fiveYear.summary, /未见强刑冲合，但有风险信号已被岁运触发/);
+  assert.doesNotMatch(fiveYear.summary, /没有发现足以改变原局方向的强引动/);
+  assert.doesNotMatch(current + fiveYear.sourceText + fiveYear.summary, /位距1|全 pair|涉月令|消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
+});

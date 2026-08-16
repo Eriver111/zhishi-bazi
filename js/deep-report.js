@@ -2954,15 +2954,40 @@
   function annualRiskNarrative(risk) {
     var type = textOf(risk && risk.type);
     var known = {
+      '伤官见官': {
+        title: '本年被引动的风险点·伤官见官',
+        sourceText: '本年伤官与正官同时出现的关系被引动。',
+        outcomeText: '工作里更容易和上级、规则或流程顶起来；说得太直接、按自己的方法做事时，返工或被挑问题的情况会变多。',
+      },
       '财破印': {
         title: '本年被引动的风险点·财破印',
-        sourceText: '本年财破印的关系被引动。',
+        sourceText: '本年财星克印星的关系被引动。',
         outcomeText: '赚钱、感情或现实事务更容易打断学习、考证或原来的准备；关键阶段常会出现计划临时改掉、时间被别的事占走的情况。',
       },
       '财坏印': {
         title: '本年被引动的风险点·财坏印',
-        sourceText: '本年财坏印的关系被引动。',
+        sourceText: '本年财星克印星的关系被引动。',
         outcomeText: '赚钱、感情或现实事务更容易打断学习、考证或原来的准备；关键阶段常会出现计划临时改掉、时间被别的事占走的情况。',
+      },
+      '枭夺食': {
+        title: '本年被引动的风险点·枭夺食',
+        sourceText: '本年偏印克食神的关系被引动。',
+        outcomeText: '这一年容易想得很多，却很难把想法稳定做成成果；学习、创作或项目交付时，反复推翻和卡住的情况会更多。',
+      },
+      '官杀混杂': {
+        title: '本年工作要求更容易互相打架',
+        sourceText: '本年正官与七杀同时出现的关系被引动。',
+        outcomeText: '上级、规则或任务要求一会儿一个标准，做事时容易不知道该先顾哪一头，也更容易被不同的人催不同的事。',
+      },
+      '杀重无制': {
+        title: '本年任务和考核更容易压到一起',
+        sourceText: '本年七杀压力增加、缺少制化的信号被引动。',
+        outcomeText: '任务、考核和催促容易压到一起，事情赶得很急；越想一次性全扛住，越容易出现遗漏、返工或睡不好。',
+      },
+      '关键用神/格局节点受冲': {
+        title: '本年关键支撑点更容易被打乱',
+        sourceText: '本年原局关键用神或格局节点受到冲动。',
+        outcomeText: '原本最能撑住你的一个环节容易被打乱，工作、学习或生活安排里常会有一件原来顺手的事突然不好推进。',
       },
       '承载不足': {
         title: '本年机会和责任同时变多',
@@ -2986,8 +3011,13 @@
       },
       '财印冲': {
         title: '本年赚钱和原有准备容易顾此失彼',
-        sourceText: '本年财富事务与学习、证书或支持条件互相牵动。',
-        outcomeText: '钱、工作和学习准备容易撞在同一段时间里：顾着项目时，考证、学习或原有安排就可能被推后。',
+        sourceText: '本年财星与印星相冲的关系被引动。',
+        outcomeText: '赚钱和学习、考证或原有支持很难同时顾好：顾着项目时，考证、学习或原有安排就可能被推后。',
+      },
+      '官印冲': {
+        title: '本年工作要求和原有安排容易撞在一起',
+        sourceText: '本年官星与印星相冲的关系被引动。',
+        outcomeText: '工作要求和自己的学习、证书或原有安排容易撞在一起；临时加的任务多时，原本排好的学习和生活节奏容易被打断。',
       },
     };
     var copy = known[type] || {
@@ -3002,12 +3032,32 @@
 
   function annualRiskEvidenceText(risk, knownType) {
     if (!knownType) return '';
-    var unsafe = /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动|建议|应该|应当|优先|最好|宜|需注意|需要做到/;
+    var unsafe = /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动|建议|应该|应当|优先|最好|宜|需注意|需要做到|位距\s*\d|全\s*pair|涉月令/;
     var candidates = [risk && risk.why, risk && risk.triggerHint, risk && risk.partyEvidence]
       .concat(list(risk && risk.evidence).map(function (item) { return textOf(item && (item.text || item)); }));
+    var relationText = annualRiskRelationEvidence(candidates);
+    if (relationText) return relationText;
     return candidates.map(textOf).filter(function (text) {
-      return text && text.length <= 80 && !unsafe.test(text) && /流年|大运|岁运|冲|合|刑|害|克|生/.test(text);
+      return text && text.length <= 80 && !unsafe.test(text) && /流年|大运|岁运|六冲|六合|六害|刑/.test(text);
     })[0] || '';
+  }
+
+  function annualRiskRelationEvidence(candidates) {
+    var branches = '子丑寅卯辰巳午未申酉戌亥';
+    var pairs = [
+      { type: '六冲', pattern: new RegExp('六冲\\s*([' + branches + '])\\s*([' + branches + '])') },
+      { type: '六合', pattern: new RegExp('六合\\s*([' + branches + '])\\s*([' + branches + '])') },
+      { type: '六害', pattern: new RegExp('六害\\s*([' + branches + '])\\s*([' + branches + '])') },
+      { type: '刑', pattern: new RegExp('刑\\s*([' + branches + '])\\s*([' + branches + '])') },
+    ];
+    for (var i = 0; i < candidates.length; i += 1) {
+      var text = textOf(candidates[i]);
+      for (var j = 0; j < pairs.length; j += 1) {
+        var match = text.match(pairs[j].pattern);
+        if (match) return '原局' + match[1] + '与' + match[2] + '形成' + pairs[j].type + '。';
+      }
+    }
+    return '';
   }
 
   function annualRiskCopies(risks) {
@@ -3080,7 +3130,9 @@
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
           ? legacyRelationship.map(annualRelationshipActivationText).join(' ')
-          : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
+          : riskCopies.length
+            ? String(year && year.year || '') + '年未见强刑冲合，但有风险信号已被岁运触发。'
+            : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
       var summary = [baseSummary].concat(riskCopies.map(function (copy) { return copy.outcomeText; })).filter(Boolean).join(' ');
       return {
         year: year && year.year,
