@@ -576,3 +576,21 @@ test('risk-only years never read as quiet and never echo raw trigger evidence', 
   assert.match(row.summary, /未见强刑冲合，但有风险信号已被岁运触发/);
   assert.doesNotMatch(text, /没有.*强引动|延续为主|平稳延续|severity=存在|涉日支|d1|位距\d|内部位距|证据原文/);
 });
+
+test('five-year interaction direction takes priority over a simultaneous risk signal', () => {
+  const facts = favorableFacts();
+  const year = facts.fiveYear.years[0];
+  year.interactions = [{
+    source: '流年', type: '六冲', layer: '地支', actor: '申', target: '寅',
+    targetPillar: 'day', targetLabel: '日支', targetRole: '用神', actorRole: '忌神',
+    direction: 'adverse', domains: ['relationship'], sourceText: '流年申冲日支寅，寅木为本命用神。',
+  }];
+  year.triggeredRisks = [{ type: '财破印', why: '财星克印星被流年引动。' }];
+
+  const fiveYear = DeepReport.buildNarratives(facts).fiveYear;
+  const row = fiveYear.years.find((item) => item.year === year.year);
+
+  assert.equal(row.directionLabel, '偏不利');
+  assert.match(fiveYear.painPoint, /计划改了又改、钱被占用/);
+  assert.doesNotMatch(fiveYear.painPoint, /风险信号被触发/);
+});

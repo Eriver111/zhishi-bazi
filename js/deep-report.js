@@ -3139,7 +3139,9 @@
       var selected = interactions.slice(0, 2);
       var legacyRelationship = !selected.length ? list(year && year.relationship && year.relationship.activations) : [];
       var riskCopies = annualRiskCopies(year && year.triggeredRisks);
-      var directionLabel = riskCopies.length ? '风险已触发' : timingDirectionLabel(interactions);
+      var directionLabel = !interactions.length && riskCopies.length
+        ? '风险已触发'
+        : timingDirectionLabel(interactions);
       var baseSummary = selected.length
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
