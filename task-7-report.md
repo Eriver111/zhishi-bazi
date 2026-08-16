@@ -16,8 +16,10 @@ TDD 先运行 `node --test tests/deep-report-render.test.js`，确认旧 `render
 
 ```text
 node --test tests/deep-report-render.test.js tests/deep-report-anchor.test.js
-12 passed, 0 failed
+15 passed, 0 failed
 ```
+
+复核补充了真实 `result.js` DOMContentLoaded 初始化链路：`report_year` 优先级、paywall 参数/本地报告键隔离、游客跨中国年份复用首个 anchor 年份，以及 `_bazi/_params` 缺失时五栏统一错误卡。
 
 Task 7 指定回归：
 

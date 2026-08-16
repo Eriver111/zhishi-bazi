@@ -83,6 +83,7 @@ function renderFixture(options = {}) {
     console,
     document,
     window: {
+      DeepReportAnchor: { resolve() { return 2026; } },
       DeepReport: {
         buildFacts(_bazi, _gender, buildOptions) {
           buildFactsCalls += 1;
@@ -93,7 +94,7 @@ function renderFixture(options = {}) {
     },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8'), context);
-  vm.runInContext('_bazi = { year: {}, month: {}, day: {}, hour: {} }; _params = { gender: "male" }; _reportAnchorYear = 2026; renderPaidContent(); renderPaidContent();', context);
+  vm.runInContext('_bazi = { year: {}, month: {}, day: {}, hour: {} }; _params = { gender: "male" }; renderPaidContent(); renderPaidContent();', context);
   return {
     nodes,
     buildFactsCalls,
@@ -101,6 +102,54 @@ function renderFixture(options = {}) {
     html: ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent']
       .map(id => nodes[id].innerHTML).join('\n'),
   };
+}
+
+function createInitFixture({ search, storage, now, facts = fixtureFacts() }) {
+  const ids = ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent', 'thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'];
+  const nodes = Object.fromEntries(ids.map(id => [id, { id, innerHTML: '', style: {}, classList: { add() {} } }]));
+  let ready;
+  let buildOptions;
+  let paywallParams;
+  let buildResultParams;
+  const document = {
+    addEventListener(event, callback) { if (event === 'DOMContentLoaded') ready = callback; },
+    getElementById(id) { return nodes[id] || null; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+  };
+  const RealDate = Date;
+  class FrozenDate extends RealDate {
+    constructor(...args) { super(...(args.length ? args : [now])); }
+    static now() { return new RealDate(now).getTime(); }
+  }
+  const context = {
+    console,
+    document,
+    Date: FrozenDate,
+    URLSearchParams,
+    window: {
+      location: { search },
+      localStorage: storage,
+      BaZiCalculator: {
+        normalizeBirthInput(input) { return { ...input, dayPillarOffset: 0, solarInfo: null }; },
+      },
+    },
+  };
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'deep-report-anchor.js'), 'utf8'), context);
+  context.window.DeepReport = {
+    buildFacts(_bazi, _gender, options) { buildOptions = options; return facts; },
+  };
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+  context.buildResultData = function(params) {
+    buildResultParams = params;
+    return { bazi: { year:{gan:'甲',zhi:'子'}, month:{gan:'乙',zhi:'丑'}, day:{gan:'丙',zhi:'寅'}, hour:{gan:'丁',zhi:'卯'} }, daYun:null, shenSha:[], hasTiming:true };
+  };
+  context.render = function() { vm.runInContext('renderPaidContent(); initPaywall(_params);', context); };
+  vm.runInContext('initPaywall = function(params) { globalThis.__capturedPaywallParams = params; };', context);
+  ready();
+  return { context, nodes, buildOptions, paywallParams: context.__capturedPaywallParams || paywallParams, buildResultParams, makeLocalReportKey: context.makeLocalReportKey };
 }
 
 test('five paid sections render from one deep report fact object', () => {
@@ -145,4 +194,50 @@ test('Task 6 anchor precedence and guest rollover stay outside report identity',
   const result = fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8');
   assert.doesNotMatch(paywall, /report_year|reportYear|anchorYear/);
   assert.match(result, /delete\s+_params\.reportYear/);
+});
+
+test('real result initialization passes report_year anchor and strips it from paywall identity', () => {
+  const storage = { getItem() { return null; }, setItem() {} };
+  const fixture = createInitFixture({
+    search: '?year=1990&month=1&day=1&hour=0&gender=male&report_year=2026',
+    storage,
+    now: '2030-01-01T00:00:00+08:00',
+  });
+  assert.equal(fixture.buildOptions.anchorYear, 2026);
+  assert.equal(fixture.paywallParams.reportYear, undefined);
+  assert.doesNotMatch(JSON.stringify(fixture.paywallParams), /report_year|reportYear/);
+  assert.doesNotMatch(fixture.makeLocalReportKey(fixture.paywallParams), /report_year|reportYear/);
+  assert.equal(fixture.buildResultParams.reportYear, undefined);
+});
+
+test('real guest result initialization reuses the first anchor year across a China-year rollover', () => {
+  const values = new Map();
+  const storage = {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, String(value)); },
+  };
+  const first = createInitFixture({
+    search: '?year=1990&month=1&day=1&hour=0&gender=male',
+    storage,
+    now: '2026-12-31T20:00:00+08:00',
+  });
+  const second = createInitFixture({
+    search: '?year=1990&month=1&day=1&hour=0&gender=male',
+    storage,
+    now: '2027-01-01T00:00:00+08:00',
+  });
+  assert.equal(first.buildOptions.anchorYear, 2026);
+  assert.equal(second.buildOptions.anchorYear, 2026);
+});
+
+test('missing chart or params renders one explicit error card in every paid section', () => {
+  const ids = ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent'];
+  const nodes = Object.fromEntries(ids.concat(ids.map(id => id.replace('Content', 'Section'))).map(id => [id, { innerHTML: '', style: {}, classList: { add() {} } }]));
+  const context = { console, document: { addEventListener() {}, getElementById(id) { return nodes[id] || null; }, querySelector() { return null; }, querySelectorAll() { return []; } }, window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8'), context);
+  vm.runInContext('_bazi = null; _params = null; renderPaidContent();', context);
+  for (const id of ids) {
+    assert.match(nodes[id].innerHTML, /专业报告暂时无法生成/);
+    assert.match(nodes[id].innerHTML, /重试/);
+  }
 });

@@ -387,7 +387,10 @@ function renderDeepFiveYear(facts) {
 }
 
 function renderPaidContent() {
-    if (!_bazi || !_params) return;
+    if (!_bazi || !_params) {
+        renderDeepReportError('请刷新页面后重试。');
+        return;
+    }
     try {
         if (!_deepReportFacts) {
             if (!window.DeepReport || typeof window.DeepReport.buildFacts !== 'function') throw new Error('缺少深度报告事实模块');
