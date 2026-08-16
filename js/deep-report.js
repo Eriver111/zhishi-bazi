@@ -884,6 +884,7 @@
       if (!matched.length && !riskMatched.length) return;
       rows.push({
         type: definition.type,
+        positive: definition.positive === true,
         conclusion: definition.conclusion,
         confidence: matched.length ? 'strong' : 'medium',
         evidence: matched.concat(riskMatched).map(textOf).filter(Boolean),
@@ -962,11 +963,15 @@
 
   function storageNarrativeContribution(row, capacity) {
     row = row || {};
-    var useful = favorableRole(row.elementRole);
+    var disposition = storageRoleDisposition(row);
+    var useful = disposition === 'useful';
+    var adverse = disposition === 'adverse' || disposition === 'adverse-hidden';
     var active = row.activated === true;
     var connected = row.wealthConnection === true;
     var pressure = capacity && capacity.state === '承压';
-    var hidden = list(row.hiddenRoles).map(function (item) { return item && item.role; }).filter(Boolean);
+    var hidden = list(row.hiddenRoles).map(function (item) {
+      return item && item.role ? item.role + '为' + (item.elementRole || '中性') : '';
+    }).filter(Boolean);
     var basis = (row.pillarLabel || '') + (row.zhi || '') + '为' + (row.storageRole || '十神库') +
       '，对应' + (row.elementRole || '中性') + (hidden.length ? '，库中见' + hidden.join('、') : '') +
       (active ? '，已见引动' : '，尚未见引动') +
@@ -976,20 +981,20 @@
     if (!active) return result;
     if (row.storageRoleKey === 'peer') {
       if (useful && connected) result.source = '伙伴、团队或熟人圈能把机会往前推，合作本身能接到现有的赚钱路径。';
-      else if (!useful) result.retention = '合作越多，越容易出现谁做得多、谁拿得多的问题，钱进来后要经过分配才会到自己手里。';
+      else if (adverse) result.retention = '合作越多，越容易出现谁做得多、谁拿得多的问题，钱进来后要经过分配才会到自己手里。';
     } else if (row.storageRoleKey === 'resource') {
       if (useful && connected) result.source = '证书、专业能力、已有口碑或平台支持，能接到现有的赚钱路径。';
-      else if (!useful) result.retention = '容易把钱和时间持续花在准备、学习或依赖平台上，短期不一定马上变成进账。';
+      else if (adverse) result.retention = '容易把钱和时间持续花在准备、学习或依赖平台上，短期不一定马上变成进账。';
     } else if (row.storageRoleKey === 'output') {
       if (useful && connected) result.source = '技能、内容、产品、表达和项目交付，更容易直接变成客户和收入。';
-      else if (!useful) result.retention = '想做的项目容易铺得太开，花了时间和钱，真正收款的项目反而不多。';
+      else if (adverse) result.retention = '想做的项目容易铺得太开，花了时间和钱，真正收款的项目反而不多。';
     } else if (row.storageRoleKey === 'wealth') {
       if (useful && connected && !pressure) result.retention = '钱进来以后，有机会变成存款、资产或能持续带来回款的长期项目。';
-      else if (!useful || pressure) result.retention = '财库被触动时，先要面对垫资、债务、家庭责任或项目规模变大的问题，不能把它直接当成存钱信号。';
+      else if (adverse || pressure) result.retention = '财库被触动时，先要面对垫资、债务、家庭责任或项目规模变大的问题，不能把它直接当成存钱信号。';
       else result.retention = '财库被触动只说明资金和资产议题会变多；没有接上明确赚钱路径前，不能断定钱会留下。';
     } else if (row.storageRoleKey === 'officer') {
       if (useful && connected) result.source = '职位、管理权、平台资源或重要客户，能接到现有的赚钱路径。';
-      else if (!useful) result.retention = '职位和责任一上来，时间、规则和要承担的事情都会变多，收入未必能同步留下。';
+      else if (adverse) result.retention = '职位和责任一上来，时间、规则和要承担的事情都会变多，收入未必能同步留下。';
     }
     return result;
   }
@@ -997,7 +1002,8 @@
   function buildWealthRetention(core, wealthElement) {
     var risks = list(core && core.structuralRisks);
     var events = list(core && core.relationEvents);
-    var source = risks.concat(events);
+    var chains = list(core && core.actionChains);
+    var source = risks.concat(events, chains);
     var rows = [];
     var definitions = [
       { type: '比劫分流', pattern: /比劫|劫财/, text: '比劫相关证据提示资源分流或竞争条件，需要明确边界与分配规则。' },
@@ -1071,10 +1077,24 @@
     return false;
   }
 
+  function storageRoleDisposition(row) {
+    row = row || {};
+    if (favorableRole(row.elementRole)) return 'useful';
+    if (row.elementRole === '忌神') return 'adverse';
+    var hiddenRoles = list(row.hiddenRoles).map(function (item) { return item && item.elementRole; });
+    var hasUsefulHidden = hiddenRoles.some(favorableRole);
+    var hasAdverseHidden = hiddenRoles.indexOf('忌神') >= 0;
+    if (hasUsefulHidden && hasAdverseHidden) return 'mixed';
+    if (hasAdverseHidden) return 'adverse-hidden';
+    if (hasUsefulHidden) return 'supportive-hidden';
+    return 'neutral';
+  }
+
   function storageOutcome(row) {
     row = row || {};
     var key = row.storageRoleKey || 'neutral';
-    var useful = row.elementRole === '用神' || row.elementRole === '喜神';
+    var disposition = storageRoleDisposition(row);
+    var useful = disposition === 'useful';
     var inactive = {
       peer: '比劫库尚未见引动证据，协作与伙伴条件仍以潜在变化观察。',
       resource: '印库尚未见引动证据，学习、资质或支持条件仍以潜在变化观察。',
@@ -1089,8 +1109,25 @@
       wealth: '财库被引动，但对应元素为' + (row.elementRole || '平神') + '，资金或资产议题可能伴随压力。',
       officer: '官杀库被引动，但对应元素为' + (row.elementRole || '平神') + '，责任、规则或组织位置可能形成压力。',
     };
+    var neutral = {
+      peer: '比劫库被引动，但固定库性与库中藏干整体没有明确喜忌，只说明合作、伙伴与分配议题会变多，不能直接断定有利或不利。',
+      resource: '印库被引动，但固定库性与库中藏干整体没有明确喜忌，只说明学习、资质与支持条件会变多，不能直接断定有利或不利。',
+      output: '食伤库被引动，但固定库性与库中藏干整体没有明确喜忌，只说明技能、表达与交付活动会变多，不能直接断定有利或不利。',
+      wealth: '财库被引动，但固定库性与库中藏干整体没有明确喜忌，只说明资金与资产事项会变多，不能直接断定钱会增加或留下。',
+      officer: '官杀库被引动，但固定库性与库中藏干整体没有明确喜忌，只说明责任、规则与组织事项会变多，不能直接断定职位或收入变化。',
+    };
     if (!row.activated) return inactive[key] || '库支尚未见引动证据，当前以潜在条件观察。';
-    if (!useful) return adverse[key] || '库支被引动，但对应元素为' + (row.elementRole || '平神') + '，暂不直接视为利好。';
+    if (disposition === 'adverse' || disposition === 'adverse-hidden') {
+      return adverse[key] || '库支被引动，固定库性或库中藏干见忌神，暂不直接视为利好。';
+    }
+    if (!useful) {
+      var hiddenNote = disposition === 'supportive-hidden'
+        ? '库中虽有喜用藏干，但固定库性仍为中性。'
+        : disposition === 'mixed'
+          ? '库中喜用与忌神同时存在。'
+          : '';
+      return hiddenNote + (neutral[key] || '库支被引动，但整体喜忌不明确，只说明相关事项会变多，不能直接判断好坏。');
+    }
     if (key === 'wealth') {
       return row.wealthConnection
         ? '财库被引动，资金或资产议题已接入明确财富路径，可观察收入转化与留存条件。'
@@ -1128,11 +1165,13 @@
       if (!pillar || !STORAGE_ELEMENTS[pillar.zhi]) return;
       var fixedElement = STORAGE_ELEMENTS[pillar.zhi];
       var hiddenRoles = getHiddenStems(pillar, calculator).map(function (gan, index) {
+        var element = (calculator.WU_XING || {})[gan] || '';
         return {
           gan: gan,
           layer: index === 0 ? '本气' : (index === 1 ? '中气' : '余气'),
-          element: (calculator.WU_XING || {})[gan] || '',
+          element: element,
           role: getStemRole(bazi.day.gan, gan, calculator),
+          elementRole: classifyElementRole(element, core && core.yongJi),
         };
       });
       var roleKey = storageRoleKey(dayElement, fixedElement);
@@ -1725,9 +1764,11 @@
     var month = Number(birthDate.month);
     var day = Number(birthDate.day);
     var hour = Number(birthDate.hour);
-    if (![year, month, day, hour].every(Number.isFinite)) return false;
+    var clock = Number(birthDate.clock);
+    if (![year, month, day, hour, clock].every(Number.isFinite)) return false;
     if (!Number.isInteger(year) || year < 1 || !Number.isInteger(month) || month < 1 || month > 12) return false;
     if (!Number.isInteger(day) || day < 1 || day > 31 || !Number.isInteger(hour) || hour < 0 || hour > 11) return false;
+    if (!Number.isInteger(clock) || clock < 0 || clock > 23) return false;
     var date = new Date(Date.UTC(year, month - 1, day));
     return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
   }
@@ -2352,6 +2393,22 @@
     };
   }
 
+  function buildUnavailableFiveYearFacts(bazi, core, calculator, chain, anchorYear) {
+    var years = [];
+    for (var year = Number(anchorYear); year < Number(anchorYear) + 5; year += 1) {
+      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, null, 'calculation_unavailable'));
+    }
+    return {
+      anchorYear: Number(anchorYear),
+      hasDaYun: false,
+      timingStatus: 'calculation_unavailable',
+      limitation: '出生信息完整，但大运计算暂不可用。',
+      years: years,
+      transitions: [],
+      trend: compareAnnualFacts(years),
+    };
+  }
+
   function buildFiveYearFacts(bazi, core, calculator, chain, anchorYear, gender) {
     var targetYear = Number(anchorYear);
     if (!bazi || !validBirthDate(bazi.birthDate) || !calculator || typeof calculator.calculateDaYun !== 'function') {
@@ -2364,17 +2421,21 @@
         bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour, bazi.birthDate.clock
       ) || {};
     } catch (error) {
-      return buildUndatedFiveYearFacts(bazi, core, calculator, chain, targetYear);
+      return buildUnavailableFiveYearFacts(bazi, core, calculator, chain, targetYear);
     }
-    var daYunStarts = list(daYunData.list).map(function (item) { return Number(item && item.startYear); })
+    var daYunList = list(daYunData.list);
+    var daYunStarts = daYunList.map(function (item) { return Number(item && item.startYear); })
       .filter(Number.isFinite).sort(function (a, b) { return a - b; });
-    var daYunEnds = list(daYunData.list).map(function (item) { return Number(item && item.endYear); })
+    var daYunEnds = daYunList.map(function (item) { return Number(item && item.endYear); })
       .filter(Number.isFinite).sort(function (a, b) { return a - b; });
+    if (!daYunList.length || !daYunStarts.length || !daYunEnds.length) {
+      return buildUnavailableFiveYearFacts(bazi, core, calculator, chain, targetYear);
+    }
     var firstDaYun = daYunStarts[0];
     var lastDaYun = daYunEnds[daYunEnds.length - 1];
     var years = [];
     for (var year = targetYear; year < targetYear + 5; year += 1) {
-      var activeDaYun = findDaYunForYear(daYunData.list, year);
+      var activeDaYun = findDaYunForYear(daYunList, year);
       var yearTimingStatus = activeDaYun ? 'active'
         : (Number.isFinite(firstDaYun) && year < firstDaYun ? 'before_start'
           : (Number.isFinite(lastDaYun) && year > lastDaYun ? 'out_of_range' : 'unknown_birth'));
@@ -2454,7 +2515,7 @@
     if (Number(resource.hiddenCount) > 0 || list(quality.roots).length) points += 0.5;
     if (capacity.elementRole === '用神' || capacity.elementRole === '喜神' || resource.elementRole === '用神' || resource.elementRole === '喜神') points += 1;
     if (capacity.elementRole === '忌神' || resource.elementRole === '忌神') points -= 1;
-    points += Math.min(2, pathways.length) * 0.5;
+    points += Math.min(2, actualPaths.length) * 0.5;
     if (wealth.storage && wealth.storage.activated) points += 0.5;
     points -= Math.min(3, retentionRisks.length) * 0.5;
     var level = clampNumber(Math.round(points), 1, 10);
@@ -2519,7 +2580,10 @@
     var directionText;
     if (!direction.conflict) {
       var role = classifyElementRole(direction.element, yongJi);
-      directionSource = direction.element + '为本命' + role + '，并且已接入' + actualPaths.map(function (row) { return row.type; }).join('、') + '的实际财富通路。';
+      var directionPaths = actualPaths.filter(function (row) {
+        return wealthPathElements([row], wealth.wealthElement).indexOf(direction.element) >= 0;
+      });
+      directionSource = direction.element + '为本命' + role + '，并且已接入' + directionPaths.map(function (row) { return row.type; }).join('、') + '的实际财富通路。';
       directionText = direction.directions.join('、') + '方向更容易打开财路。这里既包括去这些方向发展，也包括这些方向来的客户、市场、合作方和工作机会；因为它们更容易把现有的赚钱通路接成收入。';
     } else {
       directionSource = actualPaths.length
@@ -2602,7 +2666,7 @@
     // Cached reports can retain the former L1–L10 label strings.  The public
     // label must always be recalculated from the retained internal rank.
     var levelLabel = publicBand.label;
-    var levelOutcome = textOf(band.outcomeText) || studyLevelText(level);
+    var levelOutcome = studyLevelText(level);
     var profile = study.profile || studyProfileRecord('composite', ['PROFILE:LEGACY_COMPOSITE']);
     var limitations = list(study.limitations);
     var disciplineText = textOf(study.discipline);
@@ -2891,8 +2955,18 @@
   }
 
   function timingDirectionLabel(interactions) {
-    var favorable = list(interactions).filter(function (row) { return row && row.direction === 'favorable'; }).length;
-    var adverse = list(interactions).filter(function (row) { return row && row.direction === 'adverse'; }).length;
+    var directional = list(interactions).filter(function (row) {
+      return row && (row.direction === 'favorable' || row.direction === 'adverse');
+    });
+    if (!directional.length) return '平稳延续';
+    var highestPriority = directional.reduce(function (highest, row) {
+      return Math.max(highest, timingInteractionPriority(row));
+    }, 0);
+    var decisive = directional.filter(function (row) {
+      return timingInteractionPriority(row) === highestPriority;
+    });
+    var favorable = decisive.filter(function (row) { return row.direction === 'favorable'; }).length;
+    var adverse = decisive.filter(function (row) { return row.direction === 'adverse'; }).length;
     if (favorable > adverse) return '偏有利';
     if (adverse > favorable) return '偏不利';
     return favorable || adverse ? '有利与压力并见' : '平稳延续';
@@ -2948,6 +3022,7 @@
     if (year && year.daYunStatus === 'before_start') return '起运前（仅按流年与原局）';
     if (year && year.daYunStatus === 'out_of_range') return '大运范围待延展（仅按流年与原局）';
     if (year && year.daYunStatus === 'unknown_birth') return '出生时间未定位（仅按流年与原局）';
+    if (year && year.daYunStatus === 'calculation_unavailable') return '大运计算暂不可用（仅按流年与原局）';
     return '未纳入大运';
   }
 
@@ -3078,12 +3153,37 @@
     });
   }
 
+  function annualReliefCopies(reliefs, hasSupportedPressure) {
+    var seen = {};
+    return list(reliefs).map(function (relief) {
+      var type = textOf(relief && relief.type);
+      var sourceText = type === '喜用岁运'
+        ? '本年流年天干落在本命喜用范围，能给正在发生的事情增加一部分支撑。'
+        : type === '结构风险救应'
+          ? '本年被引动的风险同时见到可缓和条件。'
+          : '本年同时出现一项可缓和当前变化的条件。';
+      return {
+        title: '本年已有缓和条件',
+        sourceText: sourceText,
+        outcomeText: hasSupportedPressure
+          ? '这会让前面列出的争执、返工、资金占用或计划被打断减轻一些，但不会把已经出现的不利变化完全消掉。'
+          : '这会让事情推进时多一部分支撑，但没有明确不利结果时，也不能把它单独写成一定变好。',
+      };
+    }).filter(function (copy) {
+      var key = [copy.sourceText, copy.outcomeText].join('|');
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
     var interactions = list(year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
     var riskCopies = annualRiskCopies(year.triggeredRisks);
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
+    var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
     var timingBasis = year && year.daYun
@@ -3094,6 +3194,9 @@
       : hasTriggeredRisk
         ? '本年有风险信号被岁运触发，下面列出已有依据和可能出现的具体表现。'
         : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
+    if (reliefCopies.length && (directionLabel === '偏不利' || hasTriggeredRisk)) {
+      headline += '同时出现的缓和条件能减轻一部分，但不会把这些不利变化完全消掉。';
+    }
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
       outcomeText: headline,
@@ -3113,6 +3216,12 @@
       verdicts.push(narrativeVerdict(riskCopy.title, '', ['ANNUAL_RISK:' + riskCopy.basisRisk], {
         sourceText: riskCopy.sourceText,
         outcomeText: riskCopy.outcomeText,
+      }));
+    });
+    reliefCopies.forEach(function (reliefCopy, index) {
+      verdicts.push(narrativeVerdict(reliefCopy.title, '', ['ANNUAL_RELIEF:' + index], {
+        sourceText: reliefCopy.sourceText,
+        outcomeText: reliefCopy.outcomeText,
       }));
     });
     return {
@@ -3142,6 +3251,7 @@
       var directionLabel = !interactions.length && riskCopies.length
         ? '风险已触发'
         : timingDirectionLabel(interactions);
+      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0);
       var baseSummary = selected.length
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
@@ -3149,14 +3259,18 @@
           : riskCopies.length
             ? String(year && year.year || '') + '年未见强刑冲合，但有风险信号已被岁运触发。'
             : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
-      var summary = [baseSummary].concat(riskCopies.map(function (copy) { return copy.outcomeText; })).filter(Boolean).join(' ');
+      var summary = [baseSummary]
+        .concat(riskCopies.map(function (copy) { return copy.outcomeText; }))
+        .concat(reliefCopies.map(function (copy) { return copy.outcomeText; }))
+        .filter(Boolean).join(' ');
       return {
         year: year && year.year,
         pillar: textOf(year && year.pillar && year.pillar.gan) + textOf(year && year.pillar && year.pillar.zhi),
         daYunLabel: daYunStatusLabel(year),
         directionLabel: directionLabel,
         sourceText: selected.map(function (row) { return textOf(row.sourceText); })
-          .concat(riskCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
+          .concat(riskCopies.map(function (copy) { return copy.sourceText; }))
+          .concat(reliefCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
         priority: selected.length ? timingInteractionPriority(selected[0]) : 0,
         riskTriggered: riskCopies.length > 0,
@@ -3172,7 +3286,7 @@
       return year && year.daYun && year.daYunStatus === 'active';
     });
     var headline = strongest && strongest.priority
-      ? strongest.year + '年变化最明显，具体方向以该年列出的刑冲克害合化结果为准。'
+      ? strongest.year + '年变化最明显，主要方向为' + strongest.directionLabel + '，具体表现以该年列出的刑冲克害合化结果为准。'
       : riskYears.length
         ? '未来五年已有风险信号被岁运触发，具体表现以对应年份列出的结果为准。'
         : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';

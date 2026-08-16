@@ -33,7 +33,7 @@ function getUrlParams() {
         city: p.get('city') || '',
         dist: p.get('dist') || '',
         minute: parseInt(p.get('minute')) || 0,
-        clock: parseInt(p.get('clock')) || 0,
+        clock: p.has('clock') && p.get('clock') !== '' ? parseInt(p.get('clock')) : NaN,
         solar: p.get('solar') || '',
         zishi: p.get('zishi') || '',
         mode: mode,
@@ -45,22 +45,28 @@ function getUrlParams() {
     };
 }
 
+function isValidBirthClock(clock) {
+    var value = Number(clock);
+    return Number.isInteger(value) && value >= 0 && value <= 23;
+}
+
 function buildResultData(params) {
     var isDirect = params.mode === 'pillars';
-    var hasTiming = !isDirect || params.timing === 'matched';
+    var requestedTiming = !isDirect || params.timing === 'matched';
+    var hasTiming = requestedTiming && isValidBirthClock(params.clock);
     var birthDate = hasTiming
         ? { year: params.year, month: params.month, day: params.day, hour: params.hour, clock: params.clock }
         : null;
     var bazi = isDirect
         ? window.BaZiCalculator.buildFromPillars(params.enteredPillars, params.gender, birthDate)
         : window.BaZiCalculator.calculate(
-            params.year, params.month, params.day, params.hour, params.gender, params.clock || 0,
+            params.year, params.month, params.day, params.hour, params.gender, params.clock,
             params.dayPillarOffset || 0
         );
     var daYun = hasTiming
         ? window.BaZiCalculator.calculateDaYun(
             bazi.month, bazi.year, params.gender,
-            params.year, params.month, params.day, params.hour, params.clock || 0
+            params.year, params.month, params.day, params.hour, params.clock
         )
         : null;
 
@@ -1674,7 +1680,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var isDirect = _params.mode === 'pillars';
     var hasTiming = !isDirect || _params.timing === 'matched';
     var invalidDate = !_params.year || !_params.month || !_params.day || isNaN(_params.hour);
+    var invalidClock = hasTiming && !isValidBirthClock(_params.clock);
     var invalidParams = !_params.gender
+        || invalidClock
         || (isDirect ? (!_params.enteredPillars || (hasTiming && invalidDate)) : invalidDate);
 
     // 登录用户：报告页不在这儿存档，见下方 _bazi 赋值后

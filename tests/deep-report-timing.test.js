@@ -17,7 +17,7 @@ const chart = {
   month: { gan: '乙', zhi: '丑' },
   day: { gan: '丙', zhi: '午' },
   hour: { gan: '丁', zhi: '未' },
-  birthDate: { year: 1990, month: 1, day: 1, hour: 1 },
+  birthDate: { year: 1990, month: 1, day: 1, hour: 1, clock: 2 },
 };
 
 const core = {
@@ -149,6 +149,46 @@ test('dated chart before the first DaYun says pre-start rather than unknown birt
 
   assert.equal(result.timingStatus, 'before_start');
   assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'before_start'));
+});
+
+test('birth time without a precise clock stays unknown and never calls DaYun', () => {
+  let called = false;
+  const calculator = {
+    ...makeCalculator(),
+    calculateDaYun() { called = true; return { list: [] }; },
+  };
+  const missingClock = {
+    ...chart,
+    birthDate: { year: 1990, month: 7, day: 12, hour: 9 },
+  };
+
+  const result = DeepReport.buildFiveYearFacts(
+    missingClock, core, calculator, makeChain(false), 2026, 'male'
+  );
+
+  assert.equal(called, false);
+  assert.equal(result.timingStatus, 'unknown_birth');
+});
+
+test('known birth with empty or failed DaYun calculation has its own unavailable state', async (t) => {
+  const knownBirth = {
+    ...chart,
+    birthDate: { year: 1990, month: 7, day: 12, hour: 9, clock: 18 },
+  };
+  const cases = [
+    ['empty', () => ({ list: [] })],
+    ['thrown', () => { throw new Error('calculator unavailable'); }],
+  ];
+  for (const [name, calculateDaYun] of cases) {
+    await t.test(name, () => {
+      const result = DeepReport.buildFiveYearFacts(
+        knownBirth, core, { ...makeCalculator(), calculateDaYun }, makeChain(false), 2026, 'male'
+      );
+      assert.equal(result.timingStatus, 'calculation_unavailable');
+      assert.match(result.limitation, /大运计算暂不可用/);
+      assert.ok(result.years.every(row => row.daYun === null && row.daYunStatus === 'calculation_unavailable'));
+    });
+  }
 });
 
 test('known birth after the available DaYun list stays out of range rather than becoming unknown birth', () => {

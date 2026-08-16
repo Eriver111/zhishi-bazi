@@ -142,6 +142,32 @@ test('direct result query restores all entered pillars and timing metadata', () 
   });
 });
 
+test('matched direct timing never invents clock zero when the selected candidate lost its clock', () => {
+  const search = '?mode=pillars&timing=matched&gender=female'
+    + '&yg=%E7%94%B2&yz=%E7%94%B3&mg=%E5%A3%AC&mz=%E7%94%B3'
+    + '&dg=%E4%B9%99&dz=%E4%B8%91&hg=%E4%B8%81&hz=%E4%BA%A5'
+    + '&year=2004&month=8&day=20&hour=11';
+  const { context } = loadResult(search);
+  assert.equal(Number.isNaN(context.getUrlParams().clock), true);
+
+  let daYunCalled = false;
+  context.window.BaZiCalculator = {
+    buildFromPillars(_entered, _gender, birthDate) {
+      assert.equal(birthDate, null);
+      return pillars;
+    },
+    calculateDaYun() { daYunCalled = true; return { list: [] }; },
+    calculateShenSha() { return []; },
+  };
+  const result = context.buildResultData({
+    mode: 'pillars', timing: 'matched', enteredPillars: pillars, gender: 'female',
+    year: 2004, month: 8, day: 20, hour: 11, clock: NaN,
+  });
+  assert.equal(result.hasTiming, false);
+  assert.equal(result.daYun, null);
+  assert.equal(daYunCalled, false);
+});
+
 test('matched direct result keeps entered chart while candidate timing drives DaYun', () => {
   const { context } = loadResult();
   const calls = {};

@@ -397,3 +397,73 @@ test('two exposed partial-wealth stems create a traceable strong-partial-wealth 
   });
   assert.equal(facts.storage.candidates.length, 0);
 });
+
+test('every hidden stem keeps its own frozen Yong-Xi-Ji role', () => {
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '戊', zhi: '辰' },
+    month: { gan: '辛', zhi: '戌' },
+    day: { gan: '甲', zhi: '未' },
+    hour: { gan: '己', zhi: '丑' },
+  }), storageCore({ yongShen: ['木'], xiShen: ['水'], jiShen: ['火'] }), calculator);
+
+  const hidden = facts.storage.storages.flatMap(row => row.hiddenRoles);
+  assert.ok(hidden.length > 0);
+  assert.ok(hidden.every(row => ['用神', '喜神', '忌神', '中性'].includes(row.elementRole)));
+  assert.ok(hidden.some(row => row.element === '木' && row.elementRole === '用神'));
+  assert.ok(hidden.some(row => row.element === '水' && row.elementRole === '喜神'));
+  assert.ok(hidden.some(row => row.element === '火' && row.elementRole === '忌神'));
+});
+
+test('all five storage categories distinguish useful adverse and neutral verdicts', async (t) => {
+  const roles = {
+    peer: /团队|伙伴|圈层/,
+    resource: /学习|资质|支持/,
+    output: /技能|表达|交付/,
+    wealth: /资金|资产/,
+    officer: /责任|规则|组织/,
+  };
+  const adverseTerms = /压力|竞争|牵制|垫资|债务|争客户|分钱|收款.*不多/;
+  for (const [key, roleTerm] of Object.entries(roles)) {
+    await t.test(key, () => {
+      const useful = DeepReport.__test.storageOutcome(storageFixture(key, {
+        elementRole: '用神', hiddenRoles: [{ elementRole: '喜神' }], wealthConnection: true,
+      }));
+      const adverse = DeepReport.__test.storageOutcome(storageFixture(key, {
+        elementRole: '忌神', hiddenRoles: [{ elementRole: '忌神' }], wealthConnection: true,
+      }));
+      const neutral = DeepReport.__test.storageOutcome(storageFixture(key, {
+        elementRole: '中性', hiddenRoles: [{ elementRole: '中性' }], wealthConnection: true,
+      }));
+
+      assert.match(useful, roleTerm);
+      assert.match(adverse, roleTerm);
+      assert.match(adverse, adverseTerms);
+      assert.match(neutral, roleTerm);
+      assert.doesNotMatch(neutral, adverseTerms);
+      assert.match(neutral, /中性|只说明|不能直接/);
+    });
+  }
+});
+
+test('negative wealth chains enter retention risk but cannot raise the A-level', () => {
+  const bazi = chart({
+    year: { gan: '庚', zhi: '子' },
+    month: { gan: '甲', zhi: '卯' },
+    day: { gan: '丙', zhi: '午' },
+    hour: { gan: '乙', zhi: '亥' },
+  });
+  const plainCore = storageCore();
+  const base = DeepReport.buildWealthFacts(bazi, plainCore, calculator);
+  const negative = DeepReport.buildWealthFacts(bazi, {
+    ...plainCore,
+    actionChains: ['财党杀', '财破印'],
+  }, calculator);
+  const baseGrade = DeepReport.buildNarratives({ wealth: base }).wealth.grade;
+  const negativeGrade = DeepReport.buildNarratives({ wealth: negative }).wealth.grade;
+
+  assert.deepEqual(negative.pathways.map(row => [row.type, row.positive]), [
+    ['财党杀', false], ['财破印', false],
+  ]);
+  assert.deepEqual(negative.retention.risks.map(row => row.type).sort(), ['财党杀', '财破印']);
+  assert.ok(Number(negativeGrade.slice(1)) <= Number(baseGrade.slice(1)));
+});

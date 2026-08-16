@@ -261,6 +261,30 @@ test('study narrative uses the evidence-gated profile and education band without
   assert.doesNotMatch(visible, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
 });
 
+test('cached study labels and outcomes are regenerated from rank before public rendering', () => {
+  const cases = [
+    [8, '高学历', /本科相对轻松/],
+    [6, '普通学历', /本科阶段通常可达/],
+    [2, '低学历', /达到本科需要.*更多/],
+  ];
+  for (const [rank, label, outcome] of cases) {
+    const facts = favorableFacts();
+    facts.study.educationBand = {
+      key: `L${rank}`,
+      rank,
+      label: '旧缓存硕士标签',
+      publicLabel: '旧缓存大专标签',
+      outcomeText: '旧缓存结论：考不上，只能读大专。',
+      basis: [`STUDY_BAND:L${rank}`],
+    };
+    const narrative = DeepReport.buildNarratives(facts).study;
+    const visible = customerVisibleCopy(narrative);
+    assert.equal(narrative.level, label);
+    assert.match(visible, outcome);
+    assert.doesNotMatch(visible, /旧缓存|大专|考不上|只能|硕士标签/);
+  }
+});
+
 test('wealth narrative groups magnitude source retention and direction into four conclusions without advice verbs', () => {
   const narrative = DeepReport.buildNarratives(favorableFacts()).wealth;
   const copy = JSON.stringify(narrative);
@@ -593,4 +617,64 @@ test('five-year interaction direction takes priority over a simultaneous risk si
   assert.equal(row.directionLabel, '偏不利');
   assert.match(fiveYear.painPoint, /计划改了又改、钱被占用/);
   assert.doesNotMatch(fiveYear.painPoint, /风险信号被触发/);
+});
+
+test('one high-priority spouse-palace clash outweighs several low-priority favorable events', () => {
+  const facts = favorableFacts();
+  const highAdverse = {
+    source: '流年', type: '六冲', layer: '地支', actor: '申', target: '寅',
+    targetPillar: 'day', targetLabel: '日支', targetRole: '用神', actorRole: '忌神',
+    direction: 'adverse', domains: ['relationship'], sourceText: '流年申冲日支寅，寅木为本命用神。',
+  };
+  const lowFavorable = [
+    { source: '流年', type: '伏吟', targetPillar: 'year', direction: 'favorable', domains: ['career'], sourceText: '年柱有利信号。' },
+    { source: '流年', type: '伏吟', targetPillar: 'hour', direction: 'favorable', domains: ['wealth'], sourceText: '时柱有利信号。' },
+    { source: '大运', type: '伏吟', targetPillar: 'year', direction: 'favorable', domains: ['study'], sourceText: '大运有利信号。' },
+  ];
+  facts.currentYear.interactions = [highAdverse, ...lowFavorable];
+  facts.fiveYear.years[0] = facts.currentYear;
+
+  const narratives = DeepReport.buildNarratives(facts);
+  assert.match(narratives.currentYear.headline, /不利/);
+  assert.match(narratives.currentYear.painPoint, /争吵|分开住|重新考虑/);
+  assert.equal(narratives.fiveYear.years[0].directionLabel, '偏不利');
+  assert.match(narratives.fiveYear.headline, /偏不利/);
+  assert.match(narratives.fiveYear.painPoint, new RegExp(String(facts.currentYear.year)));
+});
+
+test('relief facts enter annual and five-year copy but only soften the prioritized adverse result', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '六冲', layer: '地支', actor: '申', target: '寅',
+    targetPillar: 'day', targetLabel: '日支', targetRole: '用神', actorRole: '忌神',
+    direction: 'adverse', domains: ['relationship'], sourceText: '流年申冲日支寅，寅木为本命用神。',
+  }];
+  facts.currentYear.triggeredRisks = [{ type: '财破印' }];
+  facts.currentYear.reliefs = [{ type: '结构风险救应', conclusion: '加强印星支持并保留调整空间', riskType: '财破印' }];
+  facts.fiveYear.years[0] = facts.currentYear;
+
+  const narratives = DeepReport.buildNarratives(facts);
+  const currentCopy = customerVisibleCopy(narratives.currentYear);
+  const yearRow = narratives.fiveYear.years[0];
+  assert.match(currentCopy, /缓和|减轻/);
+  assert.match(currentCopy, /不会.*完全|仍会/);
+  assert.match(yearRow.sourceText + yearRow.summary, /缓和|减轻/);
+  assert.equal(yearRow.directionLabel, '偏不利');
+  assert.match(narratives.currentYear.headline, /不利/);
+  assert.doesNotMatch(currentCopy + yearRow.sourceText + yearRow.summary, /加强印星支持|建议|应该|最好/);
+});
+
+test('wealth direction source names only paths that actually contain the selected element', () => {
+  const facts = favorableFacts();
+  facts.wealth.wealthElement = '土';
+  facts.wealth.yongJi = { yongShen: ['火'], xiShen: [], jiShen: ['金'] };
+  facts.wealth.pathways = [{ type: '食伤生财', positive: true }, { type: '财配印', positive: true }];
+  facts.wealth.pathElements = ['火', '土', '水'];
+  delete facts.wealth.direction;
+
+  const direction = DeepReport.buildNarratives(facts).wealth.verdicts
+    .find(row => row.title === '哪里更容易打开财路');
+  assert.match(direction.sourceText, /火为本命用神/);
+  assert.match(direction.sourceText, /食伤生财/);
+  assert.doesNotMatch(direction.sourceText, /财配印/);
 });
