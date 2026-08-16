@@ -106,7 +106,114 @@ test('GuanYin or ShaYin cannot be strong discipline evidence without officers', 
 
 test('study facts expose four dimensions and avoid deterministic education claims', () => {
   const result = buildStudyFixture({ sealRole: '用神', sealCount: 2 });
-  assert.deepEqual(Object.keys(result).sort(), ['absorption', 'application', 'auxiliary', 'discipline', 'expression', 'obstacles', 'path', 'timing'].sort());
+  assert.deepEqual(Object.keys(result).sort(), ['absorption', 'application', 'auxiliary', 'chains', 'discipline', 'expression', 'obstacles', 'path', 'timing'].sort());
   assert.match(JSON.stringify(result), /学习|表达|纪律|实践/);
   assert.doesNotMatch(JSON.stringify(result), /必上岸|必然取得学历|大学层次/);
+});
+
+function findStudyChain(result, id) {
+  return result.chains.find((chain) => chain.id === id);
+}
+
+test('effective sha-yin evidence requires actual officer and seal and keeps the claim conditional', () => {
+  const result = buildStudyFixture({ chain: '杀印相生', sealRole: '用神', sealCount: 2 });
+  const chain = findStudyChain(result, 'sha_yin');
+  assert.equal(chain.present, true);
+  assert.equal(chain.confidence, 'strong');
+  assert.ok(chain.evidence.some((item) => /正官|七杀/.test(item)));
+  assert.ok(chain.evidence.some((item) => /正印|偏印/.test(item)));
+  assert.doesNotMatch(JSON.stringify(chain), /高学历|必上岸|录取|名校|一定聪明/);
+});
+
+test('broken or officer-less sha-yin never becomes strong', () => {
+  const broken = buildStudyFixture({ chain: '杀印相生', sealRole: '用神', sealCount: 2, patternStatus: '破格' });
+  const noOfficer = buildStudyFixture({ chain: '杀印相生', sealRole: '用神', sealCount: 2, noOfficers: true });
+  assert.notEqual(findStudyChain(broken, 'sha_yin').confidence, 'strong');
+  assert.notEqual(findStudyChain(noOfficer, 'sha_yin').confidence, 'strong');
+  assert.ok(findStudyChain(broken, 'sha_yin').blockers.length > 0);
+  assert.ok(findStudyChain(noOfficer, 'sha_yin').blockers.length > 0);
+});
+
+test('wealth regulating an excess seal is distinct from the structural wealth-breaks-seal risk', () => {
+  const bazi = chart({
+    year: { gan: '戊', zhi: '子' },
+    month: { gan: '癸', zhi: '卯' },
+    hour: { gan: '辛', zhi: '午' },
+  });
+  const core = {
+    strength: { level: '偏强' },
+    pattern: { name: '印绶格', status: '成格' },
+    yongJi: { yongShen: ['土'], xiShen: [], jiShen: [] },
+    actionChains: [{ title: '印成势→财制印', detail: '印成势→财制印，财为用神。' }],
+    structuralRisks: [],
+    relationEvents: [],
+  };
+  const safe = findStudyChain(DeepReport.buildStudyFacts(bazi, core, calculator), 'wealth_regulates_seal');
+  assert.equal(safe.present, true);
+  assert.equal(safe.confidence, 'medium');
+  assert.ok(safe.elementRoles.wealth === '用神');
+  assert.equal(safe.blockers.some((item) => /财破印|财坏印/.test(item)), false);
+
+  const risky = findStudyChain(DeepReport.buildStudyFacts(bazi, {
+    ...core,
+    structuralRisks: [{ type: '财破印', why: '财印透干相克' }],
+  }, calculator), 'wealth_regulates_seal');
+  assert.ok(risky.blockers.some((item) => /财破印/.test(item)));
+  assert.notEqual(risky.confidence, 'strong');
+});
+
+test('food-controls-sha distinguishes food god plus seven-kill from proper officer and hurting-officer conflicts', () => {
+  const positive = chart({
+    year: { gan: '丙', zhi: '子' },
+    month: { gan: '庚', zhi: '申' },
+    hour: { gan: '癸', zhi: '午' },
+  });
+  const positiveCore = {
+    strength: { level: '中和' },
+    pattern: { name: '食神制杀格', status: '成格' },
+    yongJi: { yongShen: ['火'], xiShen: [], jiShen: [] },
+    actionChains: [{ title: '食神制杀', detail: '食神制杀，七杀有制。' }],
+    structuralRisks: [], relationEvents: [],
+  };
+  const foodSha = findStudyChain(DeepReport.buildStudyFacts(positive, positiveCore, calculator), 'food_controls_sha');
+  assert.equal(foodSha.present, true);
+  assert.equal(foodSha.confidence, 'strong');
+  assert.ok(foodSha.elementRoles.outputKind === '食神');
+  assert.ok(foodSha.elementRoles.officerKind === '七杀');
+
+  const properOfficer = chart({
+    year: { gan: '丙', zhi: '子' },
+    month: { gan: '辛', zhi: '酉' },
+    hour: { gan: '癸', zhi: '午' },
+  });
+  const properCore = { ...positiveCore, pattern: { name: '正官格', status: '成格' }, actionChains: [{ title: '食神克正官', detail: '食神克正官。' }] };
+  const proper = findStudyChain(DeepReport.buildStudyFacts(properOfficer, properCore, calculator), 'food_controls_sha');
+  assert.notEqual(proper.confidence, 'strong');
+  assert.notEqual(proper.present, true);
+
+  const hurtingOfficer = chart({
+    year: { gan: '丁', zhi: '子' },
+    month: { gan: '辛', zhi: '酉' },
+    hour: { gan: '癸', zhi: '午' },
+  });
+  const hurtingCore = { ...properCore, actionChains: [{ title: '伤官见官', detail: '伤官见官。' }] };
+  const hurting = findStudyChain(DeepReport.buildStudyFacts(hurtingOfficer, hurtingCore, calculator), 'food_controls_sha');
+  assert.notEqual(hurting.confidence, 'strong');
+  assert.ok(hurting.blockers.some((item) => /伤官见官/.test(item)));
+});
+
+test('weak body with officers and no seals produces conditional learning pressure only', () => {
+  const result = DeepReport.buildStudyFacts(chart({
+    year: { gan: '丙', zhi: '巳' },
+    month: { gan: '乙', zhi: '卯' },
+    hour: { gan: '辛', zhi: '酉' },
+  }), {
+    strength: { level: '极弱' }, pattern: { name: '普通格', status: '成格' },
+    yongJi: { yongShen: [], xiShen: [], jiShen: [] }, actionChains: [], structuralRisks: [], relationEvents: [],
+  }, calculator);
+  const pressure = findStudyChain(result, 'learning_pressure');
+  assert.equal(pressure.present, true);
+  assert.notEqual(pressure.confidence, 'strong');
+  assert.match(pressure.conclusion, /压力|承载|条件/);
+  assert.notEqual(findStudyChain(result, 'sha_yin').confidence, 'strong');
 });
