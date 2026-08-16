@@ -489,6 +489,7 @@ test('annual risk translation never exposes abstract or unknown internal risk na
   const facts = addFiveYearInteractions(favorableFacts());
   facts.currentYear.triggeredRisks = [
     { type: '承载不足', why: '承载不足被流年引动。' },
+    { type: '承载不足', why: '承载不足被流年引动。' },
     { type: '未知承载不足', why: '未知承载不足被流年引动。' },
   ];
   facts.fiveYear.years[0].triggeredRisks = facts.currentYear.triggeredRisks;
@@ -501,4 +502,13 @@ test('annual risk translation never exposes abstract or unknown internal risk na
   assert.doesNotMatch(text, /未知承载不足|本年被引动的风险点·承载不足/);
   assert.doesNotMatch(textWithoutDisclaimer, /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
   assert.doesNotMatch(textWithoutDisclaimer, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
+
+  const currentRiskTitles = narratives.currentYear.verdicts.map((row) => row.title).join('\n');
+  const fiveYearRisk = narratives.fiveYear.years[0];
+  assert.equal((currentRiskTitles.match(/本年机会和责任同时变多/g) || []).length, 1);
+  assert.match(fiveYearRisk.sourceText, /本年出现需要垫钱、扛责任或投入更多时间的信号/);
+  assert.match(fiveYearRisk.summary, /机会一多，可能要先垫钱/);
+  assert.match(fiveYearRisk.summary, /现有事实不足以细分具体表现/);
+  assert.equal((fiveYearRisk.summary.match(/机会一多，可能要先垫钱/g) || []).length, 1);
+  assert.doesNotMatch(fiveYearRisk.sourceText + fiveYearRisk.summary, /未知承载不足|承载不足/);
 });

@@ -2990,11 +2990,36 @@
         outcomeText: '钱、工作和学习准备容易撞在同一段时间里：顾着项目时，考证、学习或原有安排就可能被推后。',
       },
     };
-    return known[type] || {
+    var copy = known[type] || {
       title: '本年被引动的风险点',
       sourceText: '本年有一项风险信号被引动。',
-      outcomeText: '这个信号被触发后，计划可能反复改动，钱会被占用，或需要投入更多时间和精力。',
+      outcomeText: '本年有风险信号被引动，但现有事实不足以细分具体表现。',
     };
+    var evidenceText = annualRiskEvidenceText(risk, Boolean(known[type]));
+    if (evidenceText) copy = Object.assign({}, copy, { sourceText: evidenceText });
+    return copy;
+  }
+
+  function annualRiskEvidenceText(risk, knownType) {
+    if (!knownType) return '';
+    var unsafe = /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动|建议|应该|应当|优先|最好|宜|需注意|需要做到/;
+    var candidates = [risk && risk.why, risk && risk.triggerHint, risk && risk.partyEvidence]
+      .concat(list(risk && risk.evidence).map(function (item) { return textOf(item && (item.text || item)); }));
+    return candidates.map(textOf).filter(function (text) {
+      return text && text.length <= 80 && !unsafe.test(text) && /流年|大运|岁运|冲|合|刑|害|克|生/.test(text);
+    })[0] || '';
+  }
+
+  function annualRiskCopies(risks) {
+    var seen = {};
+    return list(risks).map(function (risk) {
+      return Object.assign({}, annualRiskNarrative(risk), { basisRisk: textOf(risk) });
+    }).filter(function (copy) {
+      var key = [copy.title, copy.sourceText, copy.outcomeText].join('|');
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
   }
 
   function buildCurrentYearNarrative(facts) {
@@ -3024,9 +3049,8 @@
         verdicts.push(narrativeVerdict((activation.source || '岁运') + '感情·' + (activation.type || '关系'), annualRelationshipActivationText(activation), ['ANNUAL_PALACE:' + (activation.source || '岁运') + ':' + (activation.type || '关系')]));
       });
     }
-    list(year.triggeredRisks).forEach(function (risk) {
-      var riskCopy = annualRiskNarrative(risk);
-      verdicts.push(narrativeVerdict(riskCopy.title, '', ['ANNUAL_RISK:' + textOf(risk)], {
+    annualRiskCopies(year.triggeredRisks).forEach(function (riskCopy) {
+      verdicts.push(narrativeVerdict(riskCopy.title, '', ['ANNUAL_RISK:' + riskCopy.basisRisk], {
         sourceText: riskCopy.sourceText,
         outcomeText: riskCopy.outcomeText,
       }));
@@ -3051,17 +3075,20 @@
       var directionLabel = timingDirectionLabel(interactions);
       var selected = interactions.slice(0, 2);
       var legacyRelationship = !selected.length ? list(year && year.relationship && year.relationship.activations) : [];
-      var summary = selected.length
+      var riskCopies = annualRiskCopies(year && year.triggeredRisks);
+      var baseSummary = selected.length
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
           ? legacyRelationship.map(annualRelationshipActivationText).join(' ')
           : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
+      var summary = [baseSummary].concat(riskCopies.map(function (copy) { return copy.outcomeText; })).filter(Boolean).join(' ');
       return {
         year: year && year.year,
         pillar: textOf(year && year.pillar && year.pillar.gan) + textOf(year && year.pillar && year.pillar.zhi),
         daYunLabel: daYunStatusLabel(year),
         directionLabel: directionLabel,
-        sourceText: selected.map(function (row) { return textOf(row.sourceText); }).filter(Boolean).join(' '),
+        sourceText: selected.map(function (row) { return textOf(row.sourceText); })
+          .concat(riskCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
         priority: selected.length ? timingInteractionPriority(selected[0]) : 0,
       };
