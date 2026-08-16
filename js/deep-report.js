@@ -1670,7 +1670,8 @@
 
   function findDaYunForYear(list, year) {
     list = Array.isArray(list) ? list : [];
-    var target = Number(year);
+    if (typeof year !== 'number' || !Number.isFinite(year) || !Number.isInteger(year)) return null;
+    var target = year;
     for (var i = 0; i < list.length; i += 1) {
       var item = list[i] || {};
       var start = Number(item.startYear);
@@ -2984,7 +2985,11 @@
   }
 
   function timingDirectionLabel(interactions) {
-    var decisive = prioritizedTimingInteractions(interactions).filter(function (row) {
+    var prioritized = prioritizedTimingInteractions(interactions);
+    if (prioritized.some(function (row) {
+      return !row || row.direction === 'mixed' || row.direction === 'unknown' || !row.direction;
+    })) return '变化明显、好坏暂不能定';
+    var decisive = prioritized.filter(function (row) {
       return row && (row.direction === 'favorable' || row.direction === 'adverse');
     });
     if (!decisive.length) return '平稳延续';
@@ -3018,7 +3023,8 @@
     var domains = list(row.domains);
     if (domains.indexOf('relationship') >= 0) {
       if (row.type === '六冲' && row.direction === 'favorable') return '原来让你被管得多、明明相处不舒服却一直拖着的状态更容易被打破；但通常会先经历争吵、分开或重新决定关系。';
-      if (row.type === '六冲') return '感情稳定基础被打乱，两个人更容易争吵、分开住、聚少离多，或者重新考虑这段关系。';
+      if (row.type === '六冲' && row.direction === 'adverse') return '感情稳定基础被打乱，两个人更容易争吵、分开住、聚少离多，或者重新考虑这段关系。';
+      if (row.type === '六冲') return '夫妻宫被冲，关系或共同生活会出现明显变化和拉扯；现有喜忌不足，所以只能确定关系会动，好坏暂不能定。';
       if (row.type === '刑') return '两个人更容易互不服气，同一个问题反复争执，旧账也容易重新被翻出来。';
       if (row.type === '六害') return '不满更容易憋在心里，久了会出现误会、怀疑、不信任或表面不吵但逐渐冷淡。';
       if (/合|会/.test(row.type) && row.direction === 'favorable') return '两个人更容易靠近，关系确认、共同生活或未来安排会更容易稳定推进。';
@@ -3193,9 +3199,12 @@
       });
       return domains;
     }, []);
-    var domain = ['relationship', 'career', 'wealth', 'study', 'health', 'wellbeing'].find(function (name) {
-      return leadDomains.indexOf(name) >= 0;
-    }) || 'general';
+    var recognizedDomains = leadDomains.map(function (name) {
+      return name === 'wellbeing' ? 'health' : name;
+    }).filter(function (name) {
+      return ['relationship', 'career', 'wealth', 'study', 'health'].indexOf(name) >= 0;
+    }).filter(function (name, index, rows) { return rows.indexOf(name) === index; });
+    var domain = recognizedDomains.length === 1 ? recognizedDomains[0] : 'general';
     if (domain === 'wellbeing') domain = 'health';
     var domainLead = {
       relationship: '双方仍有沟通和回转空间，关系上的紧张会缓和一些',

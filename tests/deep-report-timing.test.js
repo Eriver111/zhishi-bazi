@@ -109,6 +109,14 @@ test('undated four pillars do not fabricate a DaYun', () => {
   assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'unknown_birth'));
 });
 
+test('findDaYunForYear accepts only a primitive finite integer target year', () => {
+  const rows = [{ gan: '丙', zhi: '寅', startYear: 1995, endYear: 2004 }];
+  assert.equal(DeepReport.findDaYunForYear(rows, 1995), rows[0]);
+  for (const year of ['1995', '   ', true, [1995], { value: 1995 }, null, 1995.5, NaN, Infinity]) {
+    assert.equal(DeepReport.findDaYunForYear(rows, year), null, String(year));
+  }
+});
+
 test('matched direct-pillar birth passes its precise clock into an active DaYun report', () => {
   const matched = {
     ...chart,

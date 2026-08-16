@@ -758,6 +758,40 @@ test('relief copy stays inside the prioritized lead domain', async (t) => {
   }
 });
 
+test('unknown spouse-palace clash is a clear change with undetermined outcome, not a bad fixed result', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '六冲', targetPillar: 'day', direction: 'unknown',
+    domains: ['relationship'], sourceText: '流年申冲夫妻宫寅，喜忌未定。',
+  }];
+  facts.currentYear.reliefs = [{ type: '结构风险救应', conclusion: '存在缓和条件' }];
+  facts.fiveYear.years[0] = facts.currentYear;
+  const narratives = DeepReport.buildNarratives(facts);
+  const year = narratives.fiveYear.years[0];
+  const copy = narratives.currentYear.headline + narratives.currentYear.painPoint + year.summary;
+  assert.equal(year.directionLabel, '变化明显、好坏暂不能定');
+  assert.match(copy, /明显变化|拉扯|好坏暂不能定/);
+  assert.doesNotMatch(copy, /必然争吵|分开住|聚少离多|重新考虑这段关系/);
+  assert.match(year.summary, /原方向不变|暂不能定/);
+});
+
+test('same-priority cross-domain leads force general relief without borrowing either domain result', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [
+    { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year', direction: 'favorable', domains: ['wealth'], sourceText: '财富通路被引动。' },
+    { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'hour', direction: 'unknown', domains: ['relationship'], sourceText: '关系出现变化但喜忌未定。' },
+  ];
+  facts.currentYear.reliefs = [{ type: '结构风险救应', conclusion: '存在缓和条件' }];
+  facts.fiveYear.years[0] = facts.currentYear;
+  const narratives = DeepReport.buildNarratives(facts);
+  const relief = narratives.currentYear.verdicts.find(row => row.title === '本年已有缓和条件');
+  const year = narratives.fiveYear.years[0];
+  assert.equal(relief.outcomeText, '影响有所缓和，但原方向不变。');
+  assert.match(year.summary, /影响有所缓和，但原方向不变/);
+  assert.doesNotMatch(relief.outcomeText, /感情|关系|争吵|资金|回款|收入/);
+  assert.equal(year.directionLabel, '变化明显、好坏暂不能定');
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';
