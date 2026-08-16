@@ -51,6 +51,17 @@ function favorableFacts() {
   };
 }
 
+function customerVisibleCopy(section) {
+  const visible = [section.headline, section.painPoint, section.note];
+  for (const verdict of section.verdicts || []) {
+    visible.push(verdict.title, verdict.sourceText, verdict.outcomeText || verdict.text);
+  }
+  for (const year of section.years || []) {
+    visible.push(year.year, year.pillar, year.daYunLabel, year.directionLabel, year.sourceText, year.summary);
+  }
+  return visible.filter(Boolean).join('\n');
+}
+
 test('narrative turns wealth facts into a stable A1-A10 asset magnitude without exposing evidence rows', () => {
   const facts = favorableFacts();
   const first = DeepReport.buildNarratives(facts);
@@ -302,4 +313,14 @@ test('five-year outcomes distinguish favorable and adverse clash, favorable comb
   assert.match(years[2].summary, /靠近|稳定|推进|落实/);
   assert.match(years[3].summary, /误会|怀疑|不信任|冷淡/);
   assert.match(years[4].summary, /延续/);
+});
+
+test('customer-visible paid narratives contain outcomes rather than advice or internal abstractions', () => {
+  const narratives = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts()));
+  for (const section of Object.values(narratives)) {
+    const copy = customerVisibleCopy(section);
+    assert.doesNotMatch(copy, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
+    assert.doesNotMatch(copy, /relationEvents|structuralRisks|elementRole|confidence|evidence|sourcePillar|targetPillar/);
+    assert.doesNotMatch(copy, /消耗结构|关系结构|议题增强|暗耗|失衡模式/);
+  }
 });
