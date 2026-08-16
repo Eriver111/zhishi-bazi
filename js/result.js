@@ -93,6 +93,8 @@ let _liunianShenSha = []; // 流年柱神煞
 let _params = null;       // URL参数（供后续函数使用）
 let _reportYear = 0;      // 只读购买年份，不进入报告/订单身份
 let _reportAnchorYear = 0;
+let _reportPaidAt = '';
+let _accountReportAccessResolved = false;
 let _deepReportFacts = null;
 
 function reportAnchorKey(params) {
@@ -250,16 +252,28 @@ function reportEsc(value) {
 
 function reportText(value) {
     if (value == null) return '';
-    if (typeof value === 'string' || typeof value === 'number') return String(value);
+    if (typeof value === 'string' || typeof value === 'number') {
+        return String(value)
+            .replace(/事业\/家庭根基动摇/g, '事业或家庭安排可能调整')
+            .replace(/根基动摇/g, '相关安排可能调整')
+            .replace(/大凶/g, '高强度条件性波动')
+            .replace(/谨防口舌官非、?工作变动、?与上级冲突/g, '沟通、工作节奏或上下级关系需留有调整空间')
+            .replace(/变动冲突分离之象/g, '变动或边界议题')
+            .replace(/暗中不利貌合神离/g, '隐性摩擦议题')
+            .replace(/旧运已断新运未稳/g, '运势切换阶段');
+    }
     if (Array.isArray(value)) return value.map(reportText).filter(Boolean).join('；');
     return String(value.text || value.conclusion || value.detail || value.label || value.name || '');
 }
 
 function reportRows(rows) {
     return (Array.isArray(rows) ? rows : []).map(function(row) {
+        if (typeof row === 'string' || typeof row === 'number') {
+            return '<li><strong>依据</strong>：' + reportEsc(reportText(row)) + '</li>';
+        }
         var label = row && (row.label || row.type || row.field || row.name) || '依据';
-        var text = row && (row.text || row.conclusion || row.detail || row.evidence) || '';
-        return '<li><strong>' + reportEsc(label) + '</strong>：' + reportEsc(reportText(text)) + '</li>';
+        var text = row && (row.text || row.conclusion || row.detail || row.evidence || row.why || row.parties || row.triggerHint) || '';
+        return '<li><strong>' + reportEsc(reportText(label)) + '</strong>：' + reportEsc(reportText(text)) + '</li>';
     }).join('');
 }
 
@@ -277,10 +291,11 @@ function reportEvidence(value) {
 
 function reportCard(title, fact) {
     if (!fact) return '';
-    var titleHtml = '<h3>' + reportEsc(title) + '</h3>';
-    var state = fact.state ? '<span class="deep-report-state">' + reportEsc(fact.state) + '</span>' : '';
+    var titleHtml = '<h3>' + reportEsc(reportText(title)) + '</h3>';
+    var state = fact.state ? '<span class="deep-report-state">' + reportEsc(reportText(fact.state)) + '</span>' : '';
+    var confidence = fact.confidence ? '<span class="deep-report-confidence">可信度：' + reportEsc(reportText(fact.confidence)) + '</span>' : '';
     var conclusion = fact.conclusion ? '<p>' + reportEsc(reportText(fact.conclusion)) + '</p>' : '';
-    return '<article class="deep-report-card">' + titleHtml + state + conclusion + reportEvidence(fact.evidence) + reportConditions(fact.conditions) + '</article>';
+    return '<article class="deep-report-card">' + titleHtml + state + confidence + conclusion + reportEvidence(fact.evidence) + reportConditions(fact.conditions) + '</article>';
 }
 
 function openPaidSection(id) {
@@ -300,13 +315,26 @@ function renderDeepReportError(message) {
 }
 
 function resolveDeepReportAnchor(params) {
-    var resolved = Number(_reportAnchorYear || _reportYear);
-    if (resolved >= 1900 && resolved <= 2200) return resolved;
     var anchor = typeof window !== 'undefined' && window.DeepReportAnchor;
     if (anchor && typeof anchor.resolve === 'function') {
-        return anchor.resolve({ reportYear: _reportYear, chartKey: reportAnchorKey(params || {}), storage: window.localStorage });
+        if (_reportPaidAt) {
+            return anchor.resolve({ paidAt: _reportPaidAt, chartKey: reportAnchorKey(params || {}), storage: window.localStorage });
+        }
+        var resolved = Number(_reportAnchorYear);
+        if (resolved >= 1900 && resolved <= 2200) return resolved;
+        return anchor.resolve({ chartKey: reportAnchorKey(params || {}), storage: window.localStorage });
     }
     return Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date()));
+}
+
+function applyAuthenticatedReportAccess(data) {
+    data = data || {};
+    _accountReportAccessResolved = true;
+    _reportPaidAt = data.unlocked && data.paid_at ? String(data.paid_at) : '';
+    _reportAnchorYear = 0;
+    _reportAnchorYear = resolveDeepReportAnchor(_params || {});
+    _deepReportFacts = null;
+    renderPaidContent();
 }
 
 function renderDeepCurrentYear(facts) {
@@ -329,7 +357,33 @@ function renderDeepRelationship(facts) {
     var node = document.getElementById('marriageContent');
     if (!node) return;
     var html = reportCard('夫妻宫互动', facts && facts.interaction);
+    var palace = facts && facts.palace || {};
+    var hiddenRows = (palace.hiddenTenGods || []).map(function(item) {
+        return { label: item.layer || '藏干', text: reportText(item.gan) + ' · ' + reportText(item.role) };
+    });
+    html += reportCard('夫妻宫藏干与十神', {
+        confidence: hiddenRows.length ? 'medium' : 'limited',
+        conclusion: palace.zhi ? '日支' + reportText(palace.zhi) + '为' + reportText(palace.element) + '，在冻结喜忌中属于' + reportText(palace.elementRole || '中性') + '。' : '夫妻宫藏干证据不足。',
+        evidence: hiddenRows,
+    });
     html += reportCard('配偶星证据', facts && facts.spouseStar);
+    var quality = facts && facts.spouseStar && facts.spouseStar.quality || {};
+    html += reportCard('配偶星质量', {
+        confidence: facts && facts.spouseStar && facts.spouseStar.occurrences && facts.spouseStar.occurrences.length ? 'medium' : 'limited',
+        conclusion: [quality.visibility, quality.strengthTendency, typeof quality.rooted === 'boolean' ? (quality.rooted ? '有根气证据' : '根气证据不足') : '', quality.rolePurity, quality.elementRole].filter(Boolean).join('；') || '配偶星质量证据不足，保持低可信度。',
+        evidence: facts && facts.spouseStar && facts.spouseStar.evidence,
+    });
+    html += reportCard('日柱关系事件', {
+        confidence: palace.dayInvolvingEvents && palace.dayInvolvingEvents.length ? 'medium' : 'limited',
+        conclusion: palace.dayInvolvingEvents && palace.dayInvolvingEvents.length ? '以下事件只表示日柱或夫妻宫议题被牵动，不直接定关系结果。' : '未见权威日柱关系事件。',
+        evidence: palace.dayInvolvingEvents || palace.relationEvents || [],
+    });
+    html += reportCard('条件性结构风险', {
+        confidence: palace.risks && palace.risks.length ? 'medium' : 'limited',
+        conclusion: palace.risks && palace.risks.length ? '结构风险需在相关条件被引动时观察，并结合救应与现实边界。' : '未见涉及日柱的已登记结构风险。',
+        evidence: palace.risks || [],
+        conditions: palace.risks && palace.risks.length ? ['不把条件性风险解释为必然关系结果'] : [],
+    });
     html += reportCard('远近倾向', facts && facts.distance);
     html += reportCard('年龄远近倾向', facts && facts.age);
     html += reportCard('外在气质参考', facts && facts.appearance);
@@ -360,6 +414,22 @@ function renderDeepStudy(facts) {
     html += reportCard('纪律应试', facts && facts.discipline);
     html += reportCard('实践转化', facts && facts.application);
     html += reportCard('学习路径：' + reportText(facts && facts.path && facts.path.type), facts && facts.path);
+    var chainLabels = {
+        sha_yin: '杀印相生链', wealth_regulates_seal: '财制印链', food_controls_sha: '食神制杀链',
+        yangren_output: '羊刃输出链', learning_pressure: '学习压力链'
+    };
+    html += '<div class="deep-report-study-chains">' + ((facts && facts.chains) || []).map(function(chain) {
+        var roleEvidence = Object.keys(chain.elementRoles || {}).map(function(key) {
+            return { label: '元素角色', text: key + '：' + reportText(chain.elementRoles[key]) };
+        });
+        return reportCard(chainLabels[chain.id] || chain.id || '学习证据链', {
+            state: chain.present ? '已识别' : '证据不足',
+            confidence: chain.confidence || 'limited',
+            conclusion: chain.conclusion,
+            evidence: (chain.evidence || []).concat(roleEvidence),
+            conditions: (chain.blockers || []).concat(chain.conditions || []),
+        });
+    }).join('') + '</div>';
     html += '<article class="deep-report-card"><h3>辅助提示</h3><ul>' + reportRows(facts && facts.auxiliary) + '</ul></article>';
     html += '<article class="deep-report-card"><h3>障碍与建议</h3><ul>' + reportRows(facts && facts.obstacles) + '</ul></article>';
     node.innerHTML = html;
@@ -391,6 +461,7 @@ function renderPaidContent() {
         renderDeepReportError('请刷新页面后重试。');
         return;
     }
+    if (typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn() && !_accountReportAccessResolved) return;
     try {
         if (!_deepReportFacts) {
             if (!window.DeepReport || typeof window.DeepReport.buildFacts !== 'function') throw new Error('缺少深度报告事实模块');
@@ -1448,6 +1519,8 @@ function toggleDrawer(sectionId) {
 document.addEventListener('DOMContentLoaded', function() {
     _params = getUrlParams();
     _reportYear = _params.reportYear;
+    _reportPaidAt = '';
+    _accountReportAccessResolved = false;
     delete _params.reportYear;
     var isDirect = _params.mode === 'pillars';
     var hasTiming = !isDirect || _params.timing === 'matched';
@@ -1486,7 +1559,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof DeepReportAnchor !== 'undefined' && DeepReportAnchor.resolve) {
         try {
             _reportAnchorYear = DeepReportAnchor.resolve({
-                reportYear: _reportYear,
                 chartKey: reportAnchorKey(_params),
                 storage: window.localStorage
             });

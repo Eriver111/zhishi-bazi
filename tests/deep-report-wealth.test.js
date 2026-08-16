@@ -108,3 +108,58 @@ test('伤官见官 alone is not a 食伤生财 pathway', () => {
   }, calculator);
   assert.equal(facts.pathways.some((path) => path.type === '食伤生财'), false);
 });
+
+test('财破印 or 财坏印 never emits the positive 财配印 pathway', () => {
+  for (const riskType of ['财破印', '财坏印']) {
+    const facts = DeepReport.buildWealthFacts(chart(), {
+      strength: { level: '中和' },
+      pattern: { name: '普通格' },
+      yongJi: { yongShen: [], xiShen: [], jiShen: [] },
+      actionChains: [],
+      relationEvents: [],
+      structuralRisks: [{ type: riskType, why: `${riskType}结构成立` }],
+    }, calculator);
+    assert.equal(facts.pathways.some(path => path.type === '财配印'), false, riskType);
+    assert.equal(facts.pathways.some(path => path.type === '财破印'), true, riskType);
+  }
+});
+
+test('财党杀 never emits the positive 财生官 pathway', () => {
+  const facts = DeepReport.buildWealthFacts(chart(), {
+    strength: { level: '中和' },
+    pattern: { name: '普通格' },
+    yongJi: { yongShen: [], xiShen: [], jiShen: [] },
+    actionChains: [],
+    relationEvents: [],
+    structuralRisks: [{ type: '财党杀', why: '财星加强七杀压力' }],
+  }, calculator);
+  assert.equal(facts.pathways.some(path => path.type === '财生官'), false);
+  assert.equal(facts.pathways.some(path => path.type === '财党杀'), true);
+});
+
+test('wealth quality exposes evidence-backed season root source and relation fields without a score', () => {
+  const facts = buildWealthFixture({ strength: '中和', wealthRole: '用神', visibleWealth: 2 });
+  assert.ok(facts.resource.quality);
+  assert.ok(facts.resource.quality.season);
+  assert.ok(facts.resource.quality.roots.length > 0);
+  assert.ok(facts.resource.quality.sources.length > 0);
+  assert.ok(Array.isArray(facts.resource.quality.restraints));
+  assert.ok(Array.isArray(facts.resource.quality.relationships));
+  assert.equal(Object.prototype.hasOwnProperty.call(facts.resource.quality, 'score'), false);
+});
+
+test('weak body with effective seal or peer support reports mitigation before pure pressure', () => {
+  const facts = DeepReport.buildWealthFacts(chart(), {
+    strength: { level: '偏弱' },
+    pattern: { name: '普通格', congGe: false },
+    congGe: false,
+    yongJi: { yongShen: ['水'], xiShen: ['木'], jiShen: ['土'] },
+    actionChains: [],
+    relationEvents: [],
+    structuralRisks: [],
+  }, calculator);
+  assert.equal(facts.capacity.state, '有缓解');
+  assert.equal(facts.capacity.support.effective, true);
+  assert.match(facts.capacity.conclusion, /印|比|支持|缓解/);
+  assert.doesNotMatch(facts.capacity.conclusion, /纯粹|完全无法承载/);
+});

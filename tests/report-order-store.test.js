@@ -21,13 +21,14 @@ function createFakeSupabase() {
     },
     from(table) {
       const filters = [];
+      const ordering = [];
       let operation = null;
       let payload = null;
       const builder = {
         select() { return this; },
         eq(field, value) { filters.push([field, value]); return this; },
         limit() { return this; },
-        order() { return this; },
+        order(field, options = {}) { ordering.push([field, options.ascending !== false]); return this; },
         insert(row) { operation = 'insert'; payload = row; return this; },
         update(patch) { operation = 'update'; payload = patch; return this; },
         maybeSingle() {
@@ -63,7 +64,14 @@ function createFakeSupabase() {
           return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null });
         },
         then(resolve, reject) {
-          return Promise.resolve({ data: rowsFor(table, filters), error: null }).then(resolve, reject);
+          const rows = rowsFor(table, filters).sort((a, b) => {
+            for (const [field, ascending] of ordering) {
+              const compared = String(a[field] || '').localeCompare(String(b[field] || ''));
+              if (compared) return ascending ? compared : -compared;
+            }
+            return 0;
+          });
+          return Promise.resolve({ data: rows, error: null }).then(resolve, reject);
         }
       };
       return builder;
@@ -146,5 +154,19 @@ test('getPaidReportAccess exposes paid_at without changing the access decision',
   assert.deepEqual(await store.getPaidReportAccess(8, 'bazi', 'a'.repeat(64)), {
     unlocked: false,
     paid_at: null
+  });
+});
+
+test('getPaidReportAccess deterministically returns the earliest successful purchase', async () => {
+  const duplicateStore = loadStore(createFakeSupabase());
+  const common = { user_id: 9, report_type: 'bazi', report_key: 'c'.repeat(64), report_params: { year: 1992 }, amount: 9.9 };
+  await duplicateStore.createReportOrder({ ...common, order_id: 'later-order', label: 'later' });
+  await duplicateStore.markReportOrderPaid('later-order', '2027-01-01T00:00:00.000Z');
+  await duplicateStore.createReportOrder({ ...common, order_id: 'earlier-order', label: 'earlier' });
+  await duplicateStore.markReportOrderPaid('earlier-order', '2026-01-01T00:00:00.000Z');
+
+  assert.deepEqual(await duplicateStore.getPaidReportAccess(9, 'bazi', 'c'.repeat(64)), {
+    unlocked: true,
+    paid_at: '2026-01-01T00:00:00.000Z'
   });
 });

@@ -83,21 +83,24 @@ function restoreAccountAccess(){
   var query=reportSearchParams(_baziPayParams);
   return new Promise(function(resolve){
     var settled=false;
-    function finish(value,failed){
+    function finish(value,failed,data){
       if(settled)return;
       settled=true;
       clearTimeout(timeout);
       if(failed)_accountAccessFailed=true;
+      if(typeof applyAuthenticatedReportAccess==='function'){
+        try{applyAuthenticatedReportAccess(data||{unlocked:false,paid_at:null,access_failed:!!failed})}catch(e){}
+      }
       resolve(value);
     }
-    var timeout=setTimeout(function(){finish(false,true)},8000);
+    var timeout=setTimeout(function(){finish(false,true,null)},8000);
     fetch('/api/reports/access?'+query.toString(),{
       headers:{Authorization:'Bearer '+Auth.getToken()}
     }).then(function(response){return response.ok?response.json():{unlocked:false}})
     .then(function(data){
-      if(data.unlocked&&!settled){unlock({persistLocal:true,persistCloud:false});finish(true,false);return}
-      finish(false,false);
-    }).catch(function(){finish(false,true)});
+      if(data.unlocked&&!settled){finish(true,false,data);unlock({persistLocal:true,persistCloud:false});return}
+      finish(false,false,data);
+    }).catch(function(){finish(false,true,null)});
   });
 }
 

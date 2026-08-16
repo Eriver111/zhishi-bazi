@@ -553,6 +553,34 @@
     var conditions = [];
     if (exposed.length) conditions.push('财星透干：' + exposed.map(function (item) { return item.gan + item.pillarLabel; }).join('、'));
     if (hidden.length) conditions.push('财星藏于：' + hidden.map(function (item) { return item.gan + item.pillarLabel + item.layer; }).join('、'));
+    var monthElement = branchElement(bazi && bazi.month && bazi.month.zhi, calculator);
+    var seasonRelation = elementRelation(monthElement, wealthElement);
+    var sourceIndex = ELEMENT_CYCLE.indexOf(wealthElement);
+    var sourceElement = sourceIndex >= 0 ? ELEMENT_CYCLE[(sourceIndex + ELEMENT_CYCLE.length - 1) % ELEMENT_CYCLE.length] : '';
+    var allOccurrences = collectTenGodOccurrences(bazi, calculator, function () { return true; });
+    var roots = occurrences.filter(function (item) { return item.layer !== '天干'; }).map(function (item) {
+      return item.pillarLabel + item.layer + item.gan + '提供财星根气证据';
+    });
+    var sources = allOccurrences.filter(function (item) { return item.element === sourceElement; }).map(function (item) {
+      return item.pillarLabel + item.layer + item.gan + '为财星生源' + sourceElement;
+    });
+    var relationRows = list(core && core.relationEvents).concat(list(core && core.structuralRisks)).filter(function (row) {
+      return /财/.test(textOf(row));
+    });
+    var restraints = relationRows.filter(function (row) {
+      return /克|冲|刑|害|破|受制|合绊/.test(textOf(row));
+    }).map(textOf).filter(Boolean);
+    var quality = {
+      season: {
+        state: monthElement === wealthElement ? '月令同气' : (seasonRelation === 'generates' ? '月令相生' : '未见月令直接支持'),
+        evidence: monthElement ? ['月支' + bazi.month.zhi + '为' + monthElement + '，与财星' + wealthElement + '关系为' + seasonRelation] : [],
+      },
+      roots: roots,
+      sources: sources,
+      restraints: restraints,
+      relationships: relationRows.map(textOf).filter(Boolean),
+      uncertainty: relationRows.length ? '' : '权威关系事件未提供财星受制或联动证据，相关质量保持不确定。',
+    };
     if (!occurrences.length) {
       return {
         state: '不显',
@@ -562,6 +590,7 @@
         visibleCount: 0,
         hiddenCount: 0,
         evidence: [],
+        quality: quality,
       };
     }
     return {
@@ -574,25 +603,31 @@
       visibleCount: exposed.length,
       hiddenCount: hidden.length,
       evidence: conditions,
+      quality: quality,
     };
   }
 
   function buildWealthPathways(core) {
     var chains = list(core && core.actionChains);
+    var relations = list(core && core.relationEvents);
     var risks = list(core && core.structuralRisks);
     var rows = [];
     var definitions = [
-      { type: '食伤生财', pattern: /(?:食神|伤官|食伤)\s*(?:生财|(?:→|->)\s*财(?:星)?)/, conclusion: '已有食伤与财星的链路证据，可关注表达、技能或产出向资源转化的条件。' },
-      { type: '财生官', pattern: /财.*官|财.*杀|官.*财/, conclusion: '已有财与官杀相连的证据，资源可能与责任、规则或组织位置同步出现。' },
-      { type: '财官印连续流通', pattern: /财.*官.*印|财生杀印|财官印/, conclusion: '已有财、官杀、印连续流通的证据，转化效果取决于各环节是否承接。' },
-      { type: '财配印', pattern: /财.*印|印.*财/, conclusion: '已有财印同场证据，资源与学习、资质或支持系统之间存在联动条件。' },
-      { type: '比劫与财并见', pattern: /比劫.*财|财.*比劫|劫财/, conclusion: '已有比劫与财并见证据，获取机会与资源分流需同时评估。' },
-      { type: '财党杀', pattern: /财党杀|财.*杀/, conclusion: '已有财党杀证据，资源议题可能伴随责任、竞争或压力，不能单独视为利好。' },
-      { type: '财破印', pattern: /财破印|财.*破.*印/, conclusion: '已有财破印证据，资源投入可能牵动学习、资质或支持系统，需要保留缓冲。' },
+      { type: '食伤生财', positive: true, pattern: /(?:食神|伤官|食伤)\s*(?:生财|(?:→|->)\s*财(?:星)?)/, conclusion: '已有食伤与财星的链路证据，可关注表达、技能或产出向资源转化的条件。' },
+      { type: '财生官', positive: true, pattern: /财(?:星)?(?:生|→|->)(?:正官|七杀|官杀|官)/, exclude: /财党杀|财破印|财坏印/, conclusion: '已有财与官杀相连的正向生化证据，资源可能与责任、规则或组织位置同步出现。' },
+      { type: '财官印连续流通', positive: true, pattern: /财(?:星)?(?:生|→|->).*官(?:杀)?.*(?:生|→|->).*印|财官印连续流通|财生杀印/, exclude: /财党杀|财破印|财坏印/, conclusion: '已有财、官杀、印连续流通的证据，转化效果取决于各环节是否承接。' },
+      { type: '财配印', positive: true, pattern: /财配印|财(?:星)?(?:与|配合|协同)(?:正印|偏印|印星)/, exclude: /财破印|财坏印|财印冲/, conclusion: '已有财印正向配合证据，资源与学习、资质或支持系统之间存在联动条件。' },
+      { type: '比劫与财并见', positive: true, pattern: /比劫与财并见|比劫.*财(?:星)?并见|财(?:星)?.*比劫并见/, conclusion: '已有比劫与财并见证据，获取机会与资源分流需同时评估。' },
+      { type: '财党杀', pattern: /财党杀/, conclusion: '已有财党杀证据，资源议题可能伴随责任、竞争或压力，不能单独视为利好。' },
+      { type: '财破印', pattern: /财破印|财坏印|财.*破.*印/, conclusion: '已有财破印证据，资源投入可能牵动学习、资质或支持系统，需要保留缓冲。' },
     ];
     definitions.forEach(function (definition) {
-      var matched = chains.filter(function (chain) { return definition.pattern.test(textOf(chain)); });
-      var riskMatched = risks.filter(function (risk) { return definition.pattern.test(textOf(risk)); });
+      var authoritative = definition.positive ? chains.concat(relations) : chains;
+      var matched = authoritative.filter(function (chain) {
+        var text = textOf(chain);
+        return definition.pattern.test(text) && !(definition.exclude && definition.exclude.test(text));
+      });
+      var riskMatched = definition.positive ? [] : risks.filter(function (risk) { return definition.pattern.test(textOf(risk)); });
       if (!matched.length && !riskMatched.length) return;
       rows.push({
         type: definition.type,
@@ -711,10 +746,26 @@
     var strength = core.strength || {};
     var strengthText = strength.level || strength.label || '';
     var weak = /弱/.test(strengthText);
+    var supportOccurrences = collectTenGodOccurrences(bazi, calculator, function (role) {
+      return ['正印', '偏印', '比肩', '劫财'].indexOf(role) >= 0;
+    }).filter(function (item) { return !(item.pillar === 'day' && item.layer === '天干'); });
+    var effectiveSupport = supportOccurrences.filter(function (item) {
+      var itemRole = classifyElementRole(item.element, core.yongJi);
+      return itemRole === '用神' || itemRole === '喜神';
+    });
+    var support = {
+      effective: effectiveSupport.length > 0,
+      occurrences: effectiveSupport,
+      evidence: effectiveSupport.map(function (item) {
+        return item.pillarLabel + item.layer + item.gan + item.role + '为' + classifyElementRole(item.element, core.yongJi) + '，提供身弱承载支持';
+      }),
+    };
     var capacity;
     if (isCongCai) {
       capacity = evidence('顺势', '从财格成立，财星按冻结的从格结论顺势解释。', 'strong', ['从财格'], elementRole);
       capacity.method = '从格顺势';
+    } else if (weak && elementRole === '忌神' && support.effective) {
+      capacity = evidence('有缓解', '身弱而财为忌仍有承载压力，但有效印星或比劫支持可提供缓解，不宜只按承压解释。', 'medium', ['身弱', '财为忌'].concat(support.evidence), elementRole);
     } else if (weak && elementRole === '忌神') {
       capacity = evidence('承压', '财星力量明显，但日主承载条件有限，机会与资源压力可能同时增加。', 'strong', ['身弱', '财为忌'], elementRole);
     } else if (elementRole === '用神' || elementRole === '喜神') {
@@ -722,6 +773,7 @@
     } else {
       capacity = evidence('平衡观察', '财星作用需结合日主承载、格局路径和结构风险判断，不以数量直接等同结果。', 'medium', [], elementRole);
     }
+    capacity.support = support;
     return {
       wealthElement: wealthWx,
       wealthRole: ['正财', '偏财'],
@@ -1088,6 +1140,56 @@
   }
 
   function resolveAnnualDynamic(bazi, daYun, pillar, core, calculator, chain) {
+    if (!daYun) {
+      var originalTriggers = [];
+      PILLARS.forEach(function (sourcePillar) {
+        var original = bazi && bazi[sourcePillar];
+        if (!original) return;
+        var proxy = { year: original, month: pillar, day: bazi.day, hour: bazi.hour };
+        if (calculator && typeof calculator.getPillarRelations === 'function') {
+          try {
+            var pillarRelation = list(calculator.getPillarRelations(proxy)).filter(function (row) {
+              return row && row.from === '年柱' && row.to === '月柱';
+            })[0];
+            list(pillarRelation && pillarRelation.details).forEach(function (detail) {
+              originalTriggers.push({
+                type: pillarRelation.gan && pillarRelation.gan !== '—' ? '天干' + pillarRelation.gan : '地支' + pillarRelation.zhi,
+                detail: textOf(detail), sourcePillar: sourcePillar, annualPillar: pillar,
+                pillars: [sourcePillar, 'annual'], involvesDay: sourcePillar === 'day',
+                domains: sourcePillar === 'day' ? ['relationship'] : [], source: 'calculator.getPillarRelations',
+              });
+            });
+          } catch (error) { /* authoritative relation API unavailable for this row */ }
+        }
+        if (calculator && typeof calculator.getBranchRelations === 'function') {
+          try {
+            list(calculator.getBranchRelations(proxy)).filter(function (row) {
+              return row && row.from === '年柱' && row.to === '月柱';
+            }).forEach(function (row) {
+              list(row.relations).forEach(function (relation) {
+                originalTriggers.push({
+                  type: textOf(relation.type) || '地支关系', detail: textOf(relation.detail),
+                  sourcePillar: sourcePillar, annualPillar: pillar, pillars: [sourcePillar, 'annual'],
+                  involvesDay: sourcePillar === 'day', domains: sourcePillar === 'day' ? ['relationship'] : [],
+                  source: 'calculator.getBranchRelations',
+                });
+              });
+            });
+          } catch (error) { /* authoritative relation API unavailable for this row */ }
+        }
+      });
+      var seen = {};
+      originalTriggers = originalTriggers.filter(function (row) {
+        var key = [row.type, row.sourcePillar, row.detail].join('|');
+        if (seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+      return {
+        mode: 'original-chart', triggers: originalTriggers, reliefs: [],
+        summary: originalTriggers.length ? '流年只与原局关系进行条件性对照，未纳入大运。' : '当前权威接口未返回流年与原局关系。',
+      };
+    }
     if (chain && typeof chain.analyzeLiuNian === 'function') {
       try {
         return chain.analyzeLiuNian(bazi, daYun, pillar, core && core.yongJi) || { triggers: [], reliefs: [] };
@@ -1254,10 +1356,55 @@
     };
   }
 
+  var ANNUAL_DOMAIN_NAMES = {
+    wealth: 'wealth', finance: 'wealth', money: 'wealth', '财运': 'wealth', '财富': 'wealth',
+    relationship: 'relationship', marriage: 'relationship', love: 'relationship', '感情': 'relationship', '婚恋': 'relationship',
+    study: 'study', education: 'study', learning: 'study', '学业': 'study', '学习': 'study',
+    career: 'career', work: 'career', profession: 'career', '事业': 'career', '工作': 'career',
+  };
+
+  function normalizedAnnualDomain(value) {
+    return ANNUAL_DOMAIN_NAMES[String(value == null ? '' : value).trim().toLowerCase()] || '';
+  }
+
+  function annualTriggerDomains(row) {
+    row = row || {};
+    var structured = list(row.domains || row.domain || row.reportDomains || row.reportDomain || row.area || row.areas || row.category)
+      .map(normalizedAnnualDomain).filter(Boolean);
+    if (structured.length) return structured.filter(function (domain, index) { return structured.indexOf(domain) === index; });
+    var text = textOf(row);
+    var domains = [];
+    if (/财星|财运|财富|食伤生财|财破印|财坏印|财党杀|资源议题/.test(text)) domains.push('wealth');
+    if (/夫妻宫|配偶星|感情|婚恋|婚姻|关系议题|日支/.test(text)) domains.push('relationship');
+    if (/学业|学习|考试|进修|官印相生|杀印相生|伤官配印|食神制杀/.test(text)) domains.push('study');
+    if (/事业|工作|职场|上级|组织位置|官非/.test(text)) domains.push('career');
+    return domains;
+  }
+
+  function annualTriggerText(row) {
+    return textOf(row && (row.detail || row.conclusion || row.text || row.summary || row));
+  }
+
+  function annualDomainTriggers(dynamic, domain) {
+    return list(dynamic && dynamic.triggers).filter(function (row) {
+      return annualTriggerDomains(row).indexOf(domain) >= 0;
+    });
+  }
+
+  function annualOverallTriggers(dynamic) {
+    return list(dynamic && dynamic.triggers).filter(function (row) {
+      return annualTriggerDomains(row).length === 0;
+    });
+  }
+
+  function annualDomainEvidence(dynamic, domain) {
+    return annualDomainTriggers(dynamic, domain).map(annualTriggerText).filter(Boolean);
+  }
+
   function buildAnnualCareerFacts(tenGod, dynamic) {
     return {
       conclusion: '事业议题按官杀、印与食伤的岁运透出观察，适合把目标拆成可执行步骤。',
-      evidence: [tenGod.yearStem, tenGod.daYunStem].filter(function (item) { return item && item !== '十神未定'; }),
+      evidence: [tenGod.yearStem, tenGod.daYunStem].filter(function (item) { return item && item !== '十神未定'; }).concat(annualDomainEvidence(dynamic, 'career')),
       timing: dynamic && dynamic.summary ? dynamic.summary : '',
     };
   }
@@ -1276,12 +1423,12 @@
         yearPillar: { gan: pillar && pillar.gan, zhi: pillar && pillar.zhi },
         daYun: daYun,
         elementRole: classifyElementRole(stemElement, core && core.yongJi),
-        activation: textList(dynamic && dynamic.triggers),
+        activation: annualDomainEvidence(dynamic, 'wealth'),
       },
       conclusion: base && base.summaryLevel
         ? '沿用财富事实的“' + base.summaryLevel + '”倾向，本年只补充岁运激活条件，不重新评估财富质量。'
         : '本年仅记录岁运对既有财富事实的激活条件，不重新评估财富质量。',
-      evidence: textList(dynamic && dynamic.triggers),
+      evidence: annualDomainEvidence(dynamic, 'wealth'),
     };
   }
 
@@ -1289,14 +1436,14 @@
     return {
       conclusion: '关系议题按流年与夫妻宫、配偶星的动态牵动观察，合冲只表示议题被触发，不直接定结果。',
       timing: { yearPillar: pillar, daYun: daYun },
-      evidence: textList(dynamic && dynamic.triggers),
+      evidence: annualDomainEvidence(dynamic, 'relationship'),
     };
   }
 
   function buildAnnualStudyFacts(tenGod, dynamic) {
     return {
       conclusion: '学习安排可结合印、食伤与官杀的岁运表现，在吸收、输出和纪律之间调整节奏。',
-      evidence: [tenGod.yearStem, tenGod.daYunStem].filter(function (item) { return item && item !== '十神未定'; }).concat(textList(dynamic && dynamic.triggers)),
+      evidence: [tenGod.yearStem, tenGod.daYunStem].filter(function (item) { return item && item !== '十神未定'; }).concat(annualDomainEvidence(dynamic, 'study')),
     };
   }
 
@@ -1328,6 +1475,7 @@
       daYunBranchRole: classifyElementRole(calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[activeDaYun && activeDaYun.zhi], core && core.yongJi),
       tenGod: tenGod,
       dynamic: dynamic,
+      overallTriggers: annualOverallTriggers(dynamic),
       triggeredRisks: triggeredRisks,
       reliefs: matchReliefs(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, core, dayGan),
       career: buildAnnualCareerFacts(tenGod, dynamic),

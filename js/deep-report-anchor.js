@@ -31,13 +31,17 @@
 
   function resolve(options) {
     options = options || {};
-    var explicit = validYear(options.reportYear);
-    if (explicit) return explicit;
+    var paidYear = paidAtYear(options.paidAt);
+    if (paidYear) return paidYear;
 
     var key = options.chartKey ? 'deep_report_anchor_v1:' + String(options.chartKey) : '';
     var stored = 0;
     if (key && options.storage && typeof options.storage.getItem === 'function') {
-      stored = validYear(options.storage.getItem(key));
+      try {
+        stored = validYear(options.storage.getItem(key));
+      } catch (error) {
+        return chinaYear(options.now);
+      }
       if (stored) return stored;
     }
 
@@ -46,7 +50,7 @@
 
     var year = chinaYear(options.now);
     if (key && options.storage && typeof options.storage.setItem === 'function' && validYear(year)) {
-      options.storage.setItem(key, String(year));
+      try { options.storage.setItem(key, String(year)); } catch (error) { /* storage is optional */ }
     }
     return year;
   }

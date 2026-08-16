@@ -14,11 +14,22 @@ function memoryStorage() {
   };
 }
 
-test('explicit paid report year wins over the local snapshot and current year', () => {
+test('authenticated paid_at wins while an untrusted report_year is ignored', () => {
   assert.equal(Anchor.resolve({
-    reportYear: 2026,
+    paidAt: '2026-07-30T12:00:00.000Z',
+    reportYear: 2099,
     localYear: 2027,
     now: new Date('2030-01-01T00:00:00+08:00')
+  }), 2026);
+});
+
+test('a URL report_year cannot override the guest first-open snapshot', () => {
+  const storage = memoryStorage();
+  assert.equal(Anchor.resolve({
+    reportYear: 2099,
+    chartKey: 'chart',
+    storage,
+    now: new Date('2026-07-30T12:00:00+08:00')
   }), 2026);
 });
 
@@ -38,6 +49,30 @@ test('invalid explicit and stored years fall back to the China year', () => {
     storage,
     now: new Date('2025-12-31T16:00:00Z')
   }), 2026);
+});
+
+test('storage read exceptions fall back to the current China year', () => {
+  const storage = {
+    getItem() { throw new Error('blocked'); },
+    setItem() { throw new Error('must not write after a failed read'); }
+  };
+  assert.equal(Anchor.resolve({
+    chartKey: 'chart',
+    storage,
+    now: new Date('2026-12-31T18:00:00.000Z')
+  }), 2027);
+});
+
+test('storage write exceptions still return the current China year', () => {
+  const storage = {
+    getItem() { return null; },
+    setItem() { throw new Error('quota exceeded'); }
+  };
+  assert.equal(Anchor.resolve({
+    chartKey: 'chart',
+    storage,
+    now: new Date('2026-12-31T18:00:00.000Z')
+  }), 2027);
 });
 
 test('report_year is not part of paywall source or report identity params', () => {

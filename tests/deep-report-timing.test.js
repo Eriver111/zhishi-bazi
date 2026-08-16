@@ -108,6 +108,82 @@ test('undated four pillars do not fabricate a DaYun', () => {
   assert.ok(result.years.every((row) => row.daYun === null));
 });
 
+test('undated four pillars still use authoritative original-chart annual relations', () => {
+  const undated = { ...chart };
+  delete undated.birthDate;
+  let pillarCalls = 0;
+  let branchCalls = 0;
+  const calculator = {
+    ...makeCalculator(),
+    getPillarRelations(proxy) {
+      pillarCalls += 1;
+      return [{ from: '年柱', to: '月柱', gan: '克', zhi: '—', details: [`年柱天干${proxy.year.gan}克月柱天干${proxy.month.gan}`] }];
+    },
+    getBranchRelations(proxy) {
+      branchCalls += 1;
+      return proxy.year.zhi === '子' && proxy.month.zhi === '午'
+        ? [{ from: '年柱', to: '月柱', branch1: '子', branch2: '午', relations: [{ type: '六冲', detail: '年柱地支子冲月柱地支午' }] }]
+        : [];
+    },
+  };
+  const chain = { analyzeLiuNian() { throw new Error('must not pass a null DaYun into the DaYun analyzer'); } };
+
+  const result = DeepReport.buildFiveYearFacts(undated, core, calculator, chain, 2026, 'female');
+  const first = result.years[0];
+  assert.ok(pillarCalls > 0);
+  assert.ok(branchCalls > 0);
+  assert.ok(first.dynamic.triggers.some(row => row.type === '六冲' && row.sourcePillar === 'year'));
+  assert.equal(first.dynamic.mode, 'original-chart');
+});
+
+test('structured annual triggers stay in their own report domains', () => {
+  const chain = {
+    analyzeLiuNian() {
+      return {
+        triggers: [
+          { type: '财星激活', domain: 'wealth', detail: '财星资源议题' },
+          { type: '夫妻宫激活', domains: ['relationship'], detail: '夫妻宫关系议题' },
+          { type: '学习节奏', category: 'study', detail: '学习安排议题' },
+          { type: '年度节点', detail: '通用结构变化' },
+        ],
+        reliefs: [],
+      };
+    },
+  };
+  const annual = DeepReport.buildAnnualFacts(
+    chart, core, makeCalculator(), chain, 2026,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+
+  assert.match(annual.wealth.evidence.join('|'), /财星资源议题/);
+  assert.doesNotMatch(annual.wealth.evidence.join('|'), /夫妻宫|学习安排|通用结构/);
+  assert.match(annual.relationship.evidence.join('|'), /夫妻宫关系议题/);
+  assert.doesNotMatch(annual.relationship.evidence.join('|'), /财星资源|学习安排|通用结构/);
+  assert.match(annual.study.evidence.join('|'), /学习安排议题/);
+  assert.doesNotMatch(annual.study.evidence.join('|'), /财星资源|夫妻宫|通用结构/);
+  assert.deepEqual(annual.overallTriggers.map(row => row.detail), ['通用结构变化']);
+});
+
+test('conservative annual text fallback separates wealth and relationship triggers', () => {
+  const chain = {
+    analyzeLiuNian() {
+      return {
+        triggers: [
+          { type: '触发', detail: '财星资源被引动' },
+          { type: '触发', detail: '日支夫妻宫被引动' },
+        ],
+        reliefs: [],
+      };
+    },
+  };
+  const annual = DeepReport.buildAnnualFacts(
+    chart, core, makeCalculator(), chain, 2026,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 }
+  );
+  assert.deepEqual(annual.wealth.evidence, ['财星资源被引动']);
+  assert.deepEqual(annual.relationship.evidence, ['日支夫妻宫被引动']);
+});
+
 test('annual wealth only adds timing activation and reuses frozen wealth facts', () => {
   const wealth = { summaryLevel: '承压', resource: { state: '潜藏' }, capacity: { state: '承压' } };
   const annual = DeepReport.buildAnnualFacts(
