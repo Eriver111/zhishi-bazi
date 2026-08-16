@@ -1893,7 +1893,12 @@
     if (row.type === '天干相生') return row.actor + '与' + targetLabel + row.target + '相生';
     if (row.type === '天干五合') return row.actor + '与' + targetLabel + row.target + '五合';
     if (row.type === '六合') return row.actor + '与' + targetLabel + row.target + '六合';
-    if (/三合|半合|三会|半会/.test(row.type)) return (row.participants || [row.actor, row.target]).join('') + row.type;
+    if (/三合|半合|三会|半会/.test(row.type)) {
+      var branches = (row.participants || [row.actor, row.target]).filter(function (branch, index, values) {
+        return branch && values.indexOf(branch) === index;
+      });
+      return row.actor + '引动原局' + targetLabel + '，' + branches.join('') + row.type;
+    }
     return row.actor + '与' + targetLabel + row.target + row.type;
   }
 

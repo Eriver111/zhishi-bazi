@@ -420,6 +420,18 @@ test('half combinations and unqualified combinations never claim transformation'
   assert.equal(rows.some(row => row.type === '天干五合' && row.transformed === true), false);
 });
 
+test('group interaction source names the moving branch once and labels the original branches', () => {
+  const hooks = DeepReport.__test;
+  const calculator = makeCalculator();
+  const roleCore = { yongJi: { yongShen: ['木'], xiShen: ['水'], jiShen: ['火'] } };
+  const row = hooks.collectGroupTimingRelations('流年', '午', {
+    year: { zhi: '午' }, month: { zhi: '未' }, day: { zhi: '寅' }, hour: { zhi: '酉' },
+  }, roleCore, calculator).find(item => item.type === '半合' && item.formedElement === '火');
+  const sourceText = hooks.timingSourceText(row);
+  assert.match(sourceText, /流年午引动原局年柱午、日柱寅，午寅半合/);
+  assert.doesNotMatch(sourceText, /流年午午寅/);
+});
+
 test('undated direct pillars collect annual-original relations without fabricating DaYun relations', () => {
   const undated = {
     year: { gan: '甲', zhi: '子' }, month: { gan: '乙', zhi: '丑' },
