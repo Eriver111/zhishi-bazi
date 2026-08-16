@@ -155,6 +155,56 @@ test('useful peer storage requires a peer-output-wealth path before claiming tea
   assert.doesNotMatch(DeepReport.__test.storageOutcome(storageFixture('peer', { elementRole: '喜神', wealthConnection: false })), /带来收入/);
 });
 
+test('a wealth storage needs a recognized wealth pathway before it is connected', () => {
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '己', zhi: '丑' },
+    month: { gan: '甲', zhi: '卯' },
+    day: { gan: '丙', zhi: '午' },
+    hour: { gan: '乙', zhi: '巳' },
+  }), storageCore({ yongShen: ['金'], xiShen: [], jiShen: [] }), calculator);
+  const wealthStorage = facts.storage.storages.find(row => row.storageRoleKey === 'wealth');
+  assert.equal(wealthStorage.wealthConnection, false);
+  assert.match(wealthStorage.outcomeKey, /disconnected$/);
+});
+
+test('a recognized food-harms-wealth path connects a useful output storage', () => {
+  const core = storageCore({ yongShen: ['火'], xiShen: [], jiShen: [] });
+  core.actionChains = ['食伤生财'];
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '戊', zhi: '戌' },
+    month: { gan: '乙', zhi: '卯' },
+    day: { gan: '甲', zhi: '寅' },
+    hour: { gan: '丙', zhi: '午' },
+  }), core, calculator);
+  assert.ok(facts.pathways.some(path => path.type === '食伤生财'));
+  assert.equal(facts.storage.storages.find(row => row.storageRoleKey === 'output').wealthConnection, true);
+});
+
+test('inactive and adverse storage outcomes remain specific to each Ten-God role', () => {
+  const roleTerms = {
+    peer: /协作|伙伴/,
+    resource: /学习|资质/,
+    output: /技能|表达/,
+    wealth: /资金|资产/,
+    officer: /责任|规则/,
+  };
+  for (const [key, term] of Object.entries(roleTerms)) {
+    assert.match(DeepReport.__test.storageOutcome(storageFixture(key, { elementRole: '用神', activated: false })), term, key + ' inactive');
+    assert.match(DeepReport.__test.storageOutcome(storageFixture(key, { elementRole: '忌神', activated: true })), term, key + ' adverse');
+  }
+});
+
+test('storage activation retains the exact relation or action-chain evidence that matched', () => {
+  const relation = { type: '丑未冲', pillars: ['year', 'month'] };
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '己', zhi: '丑' },
+    month: { gan: '乙', zhi: '未' },
+    day: { gan: '丙', zhi: '午' },
+    hour: { gan: '甲', zhi: '子' },
+  }), { ...storageCore(), relationEvents: [relation] }, calculator);
+  assert.deepEqual(facts.storage.storages.find(row => row.zhi === '丑').activationEvidence, [relation]);
+});
+
 test('wealth occurrences distinguish exposed and hidden stem layers', () => {
   const facts = buildWealthFixture();
   assert.ok(facts.occurrences.some((item) => item.layer === '天干' && item.pillar === 'year'));

@@ -905,16 +905,23 @@
   }
 
   function hasStorageActivation(zhi, bazi, core) {
+    return storageActivationEvidence(zhi, bazi, core).length > 0;
+  }
+
+  function storageActivationEvidence(zhi, bazi, core) {
     var paired = STORAGE_CLASH[zhi];
     var texts = list(core && core.relationEvents).concat(list(core && core.actionChains));
-    if (texts.some(function (item) {
+    var direct = texts.filter(function (item) {
       var text = textOf(item);
       return text.indexOf(zhi) >= 0 && (text.indexOf('冲') >= 0 || text.indexOf('刑') >= 0 || text.indexOf('合') >= 0);
-    })) return true;
-    if (!paired || !bazi) return false;
-    return PILLARS.some(function (pillarName) {
+    });
+    if (direct.length) return direct;
+    if (!paired || !bazi) return [];
+    var hasPairedBranch = PILLARS.some(function (pillarName) {
       return bazi[pillarName] && bazi[pillarName].zhi === paired;
-    }) && texts.some(function (item) {
+    });
+    if (!hasPairedBranch) return [];
+    return texts.filter(function (item) {
       var text = textOf(item);
       return text.indexOf(paired) >= 0 && (text.indexOf('冲') >= 0 || text.indexOf('刑') >= 0 || text.indexOf('合') >= 0);
     });
@@ -929,8 +936,8 @@
     return ({ peer: '比劫库', resource: '印库', output: '食伤库', wealth: '财库', officer: '官杀库' })[key] || '十神库';
   }
 
-  function structuredWealthPathTypes(core) {
-    var paths = list(core && (core.wealthPaths || core.wealthPathways || core.pathways));
+  function structuredWealthPathTypes(paths) {
+    paths = list(paths);
     return paths.filter(function (path) {
       return path && typeof path === 'object' && typeof path.type === 'string';
     }).map(function (path) {
@@ -938,9 +945,10 @@
     });
   }
 
-  function storageHasWealthConnection(key, core) {
-    var pathTypes = structuredWealthPathTypes(core);
-    if (key === 'wealth') return true;
+  function storageHasWealthConnection(key, paths) {
+    var pathTypes = structuredWealthPathTypes(paths);
+    var directWealthPaths = ['食伤生财', '财生官', '财官印连续流通', '财配印'];
+    if (key === 'wealth') return pathTypes.some(function (type) { return directWealthPaths.indexOf(type) >= 0; });
     if (key === 'output') return pathTypes.indexOf('食伤生财') >= 0;
     if (key === 'resource') return pathTypes.indexOf('财配印') >= 0 || pathTypes.indexOf('财官印连续流通') >= 0;
     if (key === 'officer') return pathTypes.indexOf('财生官') >= 0 || pathTypes.indexOf('财官印连续流通') >= 0;
@@ -955,8 +963,22 @@
     row = row || {};
     var key = row.storageRoleKey || 'neutral';
     var useful = row.elementRole === '用神' || row.elementRole === '喜神';
-    if (!row.activated) return storageRoleLabel(key) + '尚未见引动证据，当前以潜在条件观察。';
-    if (!useful) return storageRoleLabel(key) + '被引动，但对应元素为' + (row.elementRole || '平神') + '，需观察其带来的压力或牵制，不能直接视为利好。';
+    var inactive = {
+      peer: '比劫库尚未见引动证据，协作与伙伴条件仍以潜在变化观察。',
+      resource: '印库尚未见引动证据，学习、资质或支持条件仍以潜在变化观察。',
+      output: '食伤库尚未见引动证据，技能、表达或交付条件仍以潜在变化观察。',
+      wealth: '财库尚未见引动证据，资金或资产议题仍以潜在变化观察。',
+      officer: '官杀库尚未见引动证据，责任、规则或组织位置仍以潜在变化观察。',
+    };
+    var adverse = {
+      peer: '比劫库被引动，但对应元素为' + (row.elementRole || '平神') + '，竞争或伙伴分配压力需要结合实际观察。',
+      resource: '印库被引动，但对应元素为' + (row.elementRole || '平神') + '，学习、资质或支持条件可能形成牵制。',
+      output: '食伤库被引动，但对应元素为' + (row.elementRole || '平神') + '，技能、表达或交付环节可能形成压力。',
+      wealth: '财库被引动，但对应元素为' + (row.elementRole || '平神') + '，资金或资产议题可能伴随压力。',
+      officer: '官杀库被引动，但对应元素为' + (row.elementRole || '平神') + '，责任、规则或组织位置可能形成压力。',
+    };
+    if (!row.activated) return inactive[key] || '库支尚未见引动证据，当前以潜在条件观察。';
+    if (!useful) return adverse[key] || '库支被引动，但对应元素为' + (row.elementRole || '平神') + '，暂不直接视为利好。';
     if (key === 'wealth') return '财库被引动，资源和资产议题更容易显现，是否形成收入仍取决于承载与留存条件。';
     if (key === 'peer') {
       return row.wealthConnection
@@ -981,7 +1003,7 @@
     return '库支被引动，但十神归类尚未确定，暂以条件变化观察。';
   }
 
-  function buildWealthStorage(bazi, core, wealthElement, calculator) {
+  function buildWealthStorage(bazi, core, wealthElement, calculator, wealthPaths) {
     var candidates = [];
     var storages = [];
     var dayElement = ((calculator && calculator.WU_XING) || {})[bazi && bazi.day && bazi.day.gan] || '';
@@ -999,6 +1021,8 @@
       });
       var roleKey = storageRoleKey(dayElement, fixedElement);
       var activated = hasStorageActivation(pillar.zhi, bazi, core);
+      var activationEvidence = storageActivationEvidence(pillar.zhi, bazi, core);
+      var wealthConnection = storageHasWealthConnection(roleKey, wealthPaths);
       var row = {
         pillar: pillarName,
         pillarLabel: PILLAR_LABELS[pillarName],
@@ -1009,9 +1033,9 @@
         elementRole: classifyElementRole(fixedElement, core && core.yongJi),
         activated: activated,
         hiddenRoles: hiddenRoles,
-        wealthConnection: storageHasWealthConnection(roleKey, core),
-        outcomeKey: roleKey + '-' + (activated ? 'activated' : 'inactive') + '-' + (storageHasWealthConnection(roleKey, core) ? 'connected' : 'disconnected'),
-        activationEvidence: activated ? [PILLAR_LABELS[pillarName] + pillar.zhi + '已有冲、刑或合的引动证据。'] : [],
+        wealthConnection: wealthConnection,
+        outcomeKey: roleKey + '-' + (activated ? 'activated' : 'inactive') + '-' + (wealthConnection ? 'connected' : 'disconnected'),
+        activationEvidence: activationEvidence,
       };
       row.outcome = storageOutcome(row);
       storages.push(row);
@@ -1078,6 +1102,7 @@
     var occurrences = collectTenGodOccurrences(bazi, calculator, function (role) {
       return role === '正财' || role === '偏财';
     });
+    var pathways = buildWealthPathways(core);
     var elementRole = classifyElementRole(wealthWx, core.yongJi);
     var patternName = core.pattern && (core.pattern.name || core.pattern.label || '');
     var isCongCai = !!(core.congGe && /从财/.test(patternName));
@@ -1143,9 +1168,9 @@
       occurrences: occurrences,
       resource: buildResourceQuality(occurrences, bazi, core, calculator, wealthWx),
       capacity: capacity,
-      pathways: buildWealthPathways(core),
+      pathways: pathways,
       retention: buildWealthRetention(core, wealthWx),
-      storage: buildWealthStorage(bazi, core, wealthWx, calculator),
+      storage: buildWealthStorage(bazi, core, wealthWx, calculator, pathways),
       timing: null,
       summaryLevel: deriveWealthSummaryLevel(capacity, occurrences, core),
       evidence: [capacity].concat(occurrences.map(function (item) {
