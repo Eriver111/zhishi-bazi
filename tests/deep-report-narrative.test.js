@@ -925,6 +925,51 @@ test('current-year same-priority favorable plus unknown uses the full set in an 
   assert.match(forward.painPoint, /收入|财富|明显变化|拉扯/);
 });
 
+test('non-decisive risks never replace a highest-priority favorable five-year pain point', async (t) => {
+  for (const riskPlacement of ['same-year', 'lower-year']) {
+    await t.test(riskPlacement, () => {
+      const facts = favorableFacts();
+      facts.fiveYear.years[0].interactions = [{
+        source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year',
+        direction: 'favorable', domains: ['wealth'], sourceText: '高优先财富有利。',
+      }];
+      facts.fiveYear.years[0].triggeredRisks = riskPlacement === 'same-year' ? [{ type: '财破印' }] : [];
+      facts.fiveYear.years[1].triggeredRisks = riskPlacement === 'lower-year' ? [{ type: '财破印' }] : [];
+      const fiveYear = DeepReport.buildNarratives(facts).fiveYear;
+      assert.match(fiveYear.headline, /偏有利/);
+      assert.match(fiveYear.painPoint, /收入|财富|回款|资产/);
+      assert.doesNotMatch(fiveYear.painPoint, /风险信号|学习.*打断|计划临时改掉/);
+    });
+  }
+});
+
+test('stable interaction ordering includes normalized domains and all decision fields', () => {
+  function build(reverse) {
+    const facts = favorableFacts();
+    const common = {
+      source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year',
+      direction: 'favorable', sourceText: '同一来源文字。', actor: '甲', target: '甲',
+    };
+    const rows = [
+      { ...common, domains: ['wealth'] },
+      { ...common, domains: ['career'] },
+    ];
+    facts.currentYear.interactions = reverse ? rows.slice().reverse() : rows;
+    facts.currentYear.reliefs = [];
+    facts.fiveYear.years[0] = facts.currentYear;
+    const narratives = DeepReport.buildNarratives(facts);
+    return {
+      current: { headline: narratives.currentYear.headline, painPoint: narratives.currentYear.painPoint },
+      five: {
+        headline: narratives.fiveYear.headline,
+        painPoint: narratives.fiveYear.painPoint,
+        summary: narratives.fiveYear.years[0].summary,
+      },
+    };
+  }
+  assert.deepEqual(build(false), build(true));
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';

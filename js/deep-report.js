@@ -3023,8 +3023,12 @@
 
   function timingInteractionStableKey(row) {
     row = row || {};
-    return [row.source, row.type, row.targetPillar, row.targetLabel, row.actor, row.target,
-      row.formedElement, row.direction, row.sourceText].map(textOf).join('|');
+    var domains = list(row.domains).map(textOf).filter(Boolean).sort().join(',');
+    return [row.source, row.type, row.id, row.layer, row.formationStatus,
+      row.targetPillar, row.targetLabel, row.targetRole, row.actor, row.actorRole,
+      row.target, row.movingBranch, row.movingRole, row.palaceBranch, row.palaceRole,
+      row.formedElement, row.formedRole, row.direction, domains, row.sourceText]
+      .map(textOf).join('|');
   }
 
   function timingInteractionOutcome(row) {
@@ -3393,7 +3397,9 @@
         ? highestOutcome + ' 相关领域会明显变化或拉扯，但好坏暂不能定。'
         : adverseYears.length
         ? adverseYears.map(function (row) { return row.year + '年：' + row.prioritizedOutcome; }).join(' ')
-        : riskYears.length
+        : highestYears.length
+          ? highestOutcome
+          : riskYears.length
           ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
           : '五年内没有集中出现偏不利的强关系，主要差别在于事情落地的快慢。',
       paragraphs: [],
