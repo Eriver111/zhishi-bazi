@@ -488,6 +488,17 @@ test('calibrated wealth examples keep their accepted public A bands', () => {
   }
 });
 
+test('hidden wealth without a source chain or connected storage stays in a poor public band', () => {
+  const facts = buildRealWealthFacts('甲子 戊辰 己丑 戊辰');
+  const level = Number(facts.wealth.narrative.grade.slice(1));
+
+  assert.equal(facts.wealth.resource.visibleCount, 0);
+  assert.equal(facts.wealth.pathways.filter((row) => row && row.scalePotential !== false).length, 0);
+  assert.ok(facts.wealth.storage.storages.filter((row) => row.storageRoleKey === 'wealth').every((row) => row.wealthConnection === false));
+  assert.ok(level <= 4, facts.wealth.narrative.grade);
+  assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /藏在地支|没有接成|不等于/);
+});
+
 test('multiple Yong elements retain all matching directions instead of returning no answer', () => {
   const direction = DeepReport.__test.deriveWealthDirection({
     yongJi: { yongShen: ['木', '水'], xiShen: [], jiShen: ['火'] },

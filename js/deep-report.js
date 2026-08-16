@@ -2707,6 +2707,10 @@
     if (connectedActivatedWealthStorage) points += 1.5;
     if (wealthGatheringPath) points += 1;
     var level = clampNumber(Math.round(points), 1, 10);
+    var isolatedHiddenWealth = Number(resource.visibleCount) === 0 &&
+      Number(resource.hiddenCount) > 0 && scalePaths.length === 0 &&
+      list(quality.sources).length <= 1 && !connectedActivatedWealthStorage;
+    if (isolatedHiddenWealth) level = Math.min(level, 4);
     var strengthScore = Number(facts && facts.core && facts.core.strength && facts.core.strength.score);
     var extremeWeakAdverse = Number.isFinite(strengthScore) && strengthScore <= 20 &&
       (capacity.elementRole === '忌神' || resource.elementRole === '忌神') && capacity.method !== '从格顺势';
@@ -2762,6 +2766,9 @@
       : strengthState === 'weak'
         ? '你的日主偏弱，容易出现“富屋贫人”：有挣钱的能力和想法，也能遇到赚钱机会，但钱一多，项目投入、家庭责任或意外支出也容易跟着增加，最后形成财来财去。'
         : '你的日主力量处在中间，正常收入能够接住一部分，但项目、责任或支出突然放大时，手里的钱也会明显变少。';
+    if (isolatedHiddenWealth) {
+      retentionText = '你的日主虽然偏强，但财星都藏在地支，又没有接成稳定的赚钱通路。这不是“有库就能留财”：有赚钱想法，也能遇到零散进账，但收入不容易持续做大，最后留下的钱也有限。';
+    }
     if (retentionRisks.length) {
       var retentionDetails = [];
       if (hasPartnershipLoss) retentionDetails.push('合作、团队或同行会参与分钱，账面收入不会全部落到自己手里');
@@ -2787,7 +2794,9 @@
             ? '命局没有形成财库，但偏财连续透出两处，说明遇到项目、客户、市场变化或阶段性机会时，进账有被放大的可能；能不能留下，仍要看后续的合作分配和实际投入。'
             : '命局没有形成财库，但已经有其他挣钱方式或岁运引动条件，所以仍可能出现收入突然增加，只是这不等于能一次性沉淀成大额资产。'));
     var totalText;
-    if (extremeWeakAdverse) {
+    if (isolatedHiddenWealth) {
+      totalText = '这张盘身强不代表富。财星只藏在地支，没有透出，也没有接成稳定的赚钱链条；财库虽被触动，但没有真正接上财路。所以更容易是有挣钱的能力和想法，但收入难以持续放大，财富层级偏低。';
+    } else if (extremeWeakAdverse) {
       totalText = '这张盘看得到挣钱机会，但日主太弱，财星又继续把力量推向压力和责任。事情越做越多，成本和负担也越重，真正留下的钱通常有限。';
     } else if (capacity.state === '承压') {
       totalText = '你的赚钱机会并不少，但机会一多，需要垫的钱、扛的责任和花掉的精力也会一起增加。账面进账可能变大，真正能留下多少要看后面的路径和留存条件。';
