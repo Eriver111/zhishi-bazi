@@ -258,6 +258,94 @@ test('guest result initialization ignores report_year and strips it from paywall
   assert.equal(fixture.buildResultParams.reportYear, undefined);
 });
 
+test('customer narrative hides internal evidence cards while keeping decisive Chinese conclusions in page and PDF', () => {
+  const facts = fixtureFacts();
+  const narrative = {
+    grade: 'A7', level: '百万元级', difficulty: '需要持续经营',
+    headline: '你不是赚不到钱，真正的问题是收入增加后也容易被长期投入分走。',
+    painPoint: '最大的财富漏洞，是把能赚钱误当成能留下钱。',
+    paragraphs: ['更适合依靠专业能力和项目经验放大收入。', '控制低回报投入后，财富留存会更稳定。'],
+    actions: ['优先建立可重复成交的收入来源。'],
+    note: '财富等级表示个人净资产峰值的命局量级参考。',
+  };
+  facts.wealth.narrative = narrative;
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.wealthContent.innerHTML;
+
+  assert.match(page, /A7/);
+  assert.match(page, /百万元级/);
+  assert.match(page, /真正的问题/);
+  assert.match(rendered.pdfHtml, /百万元级/);
+  assert.doesNotMatch(page, /资源质量依据|月令与季节|根气|生源|关系质量|可信度|<strong>依据<\/strong>/);
+  assert.doesNotMatch(page, /你最应该做的事/);
+});
+
+test('relationship narrative removes the score strip without affecting scores in other paid sections', () => {
+  const facts = fixtureFacts();
+  facts.relationship.narrative = {
+    hideScore: true,
+    headline: '另一半的主见更强，你容易觉得自己被管得多。',
+    painPoint: '两个人容易一阵亲近、一阵疏远。',
+    verdicts: [{ title: '命盘依据', text: '夫妻宫受冲，所以感情状态更容易发生明显变化。' }],
+    note: '依据夫妻宫与配偶星推演。',
+  };
+  facts.wealth.narrative = {
+    grade: 'A6', level: '十万元级', difficulty: '需要持续经营',
+    headline: '财富结论', painPoint: '财富短板', verdicts: [], note: '财富说明。',
+  };
+
+  const rendered = renderFixture({ facts });
+  const relationshipPage = rendered.nodes.marriageContent.innerHTML;
+  const wealthPage = rendered.nodes.wealthContent.innerHTML;
+
+  assert.doesNotMatch(relationshipPage, /deep-report-overview|deep-report-grade|\/10|需要磨合/);
+  assert.match(relationshipPage, /一阵亲近、一阵疏远/);
+  assert.match(wealthPage, /deep-report-overview/);
+  assert.match(wealthPage, /A6/);
+});
+
+test('paid verdict renders professional source before the plain outcome and escapes both', () => {
+  const facts = fixtureFacts();
+  facts.currentYear.narrative = {
+    hideScore: true,
+    headline: '本年结论',
+    painPoint: '',
+    verdicts: [{
+      title: '感情稳定基础被打乱',
+      sourceText: '流年申冲日支寅，寅木为本命用神。',
+      outcomeText: '两个人更容易争吵、分开住，或者重新考虑关系。<img src=x>',
+      basis: ['TIMING:LIUNIAN:CLASH:DAY'],
+    }],
+    note: '传统命理推演参考。',
+  };
+
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.thisYearContent.innerHTML;
+  assert.ok(page.indexOf('流年申冲日支寅') < page.indexOf('两个人更容易争吵'));
+  assert.match(page, /deep-report-verdict-source/);
+  assert.match(page, /deep-report-verdict-outcome/);
+  assert.doesNotMatch(page, /<img/);
+  assert.match(page, /&lt;img src=x&gt;/);
+  assert.match(rendered.pdfHtml, /流年申冲日支寅/);
+  assert.doesNotMatch(page, /TIMING:LIUNIAN/);
+});
+
+test('legacy text-only verdicts remain visible during source-outcome migration', () => {
+  const facts = fixtureFacts();
+  facts.study.narrative = {
+    grade: 'L6',
+    level: '本科较顺',
+    difficulty: '',
+    headline: '学业结论',
+    painPoint: '',
+    verdicts: [{ title: '学习方式', text: '理解和表达能够连接起来。', basis: ['LEGACY'] }],
+    note: '',
+  };
+
+  const rendered = renderFixture({ facts });
+  assert.match(rendered.nodes.studyContent.innerHTML, /理解和表达能够连接起来/);
+});
+
 test('relationship rendering exposes escaped palace, spouse quality, day events and conditional risks', () => {
   const facts = fixtureFacts();
   facts.relationship.palace = {
