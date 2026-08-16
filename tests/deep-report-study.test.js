@@ -423,3 +423,18 @@ test('authoritative severe study blockers lower the education band by at least t
     assert.ok(blocked.educationBand.rank <= base.educationBand.rank - 2, blocker);
   }
 });
+
+test('study ranks expose only high ordinary or low public bands', () => {
+  assert.deepEqual(DeepReport.__test.publicStudyBand(9), { key: 'high', label: '高学历' });
+  assert.deepEqual(DeepReport.__test.publicStudyBand(6), { key: 'ordinary', label: '普通学历' });
+  assert.deepEqual(DeepReport.__test.publicStudyBand(2), { key: 'low', label: '低学历' });
+});
+
+test('study facts retain the internal rank but publish a three-band education result', () => {
+  const result = buildProfileFacts(chart({
+    year: { gan: '壬', zhi: '子' }, month: { gan: '庚', zhi: '申' }, hour: { gan: '甲', zhi: '寅' },
+  }), { pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'] });
+  assert.ok(result.educationBand.rank >= 8);
+  assert.equal(result.educationBand.publicKey, 'high');
+  assert.equal(result.educationBand.publicLabel, '高学历');
+});

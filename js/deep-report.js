@@ -648,7 +648,16 @@
       rank -= limitation.severity === 'severe' ? 2 : 1;
     });
     rank = clampNumber(rank, 1, 10);
-    return { key: 'L' + rank, label: studyLevelText(rank), rank: rank, basis: ['STUDY_BAND:L' + rank] };
+    var publicBand = publicStudyBand(rank);
+    return {
+      key: 'L' + rank,
+      label: publicBand.label,
+      rank: rank,
+      publicKey: publicBand.key,
+      publicLabel: publicBand.label,
+      outcomeText: studyLevelText(rank),
+      basis: ['STUDY_BAND:L' + rank],
+    };
   }
 
   function deriveStudyPath(core, seals, outputs, officers) {
@@ -2532,12 +2541,25 @@
     return Math.max(0, points);
   }
 
+  function publicStudyBand(level) {
+    if (level >= 8) return { key: 'high', label: '高学历' };
+    if (level >= 4) return { key: 'ordinary', label: '普通学历' };
+    return { key: 'low', label: '低学历' };
+  }
+
   function studyLevelText(level) {
     return [
-      '', '基础学习较吃力', '完成基础学历需要更多投入', '职业技能路线相对更顺',
-      '大专层级较顺，本科需要努力', '本科有机会，稳定投入是关键',
-      '本科较顺，冲击更高学历需要努力', '本科以上相对轻松，硕士仍需持续投入',
-      '硕士层级有较强潜力', '研究生深造优势明显', '高阶研究型学习潜力突出',
+      '',
+      '传统应试会明显吃力，达到本科需要投入比多数人更多的时间和稳定训练。',
+      '传统应试会比较吃力，达到本科需要投入更多时间和稳定训练。',
+      '学习过程会更吃力，达到本科需要更长时间的稳定训练。',
+      '本科需要更多努力，学习状态一松，成绩就容易掉下来。',
+      '本科有机会，稳定投入比临场发挥更决定结果。',
+      '本科阶段通常可达，但更高层次需要持续投入和稳定发挥。',
+      '本科基础较稳，继续深造仍要靠长期投入把优势维持住。',
+      '本科相对轻松，具备研究生或更高层级深造潜力。',
+      '本科相对轻松，研究生或更高层级深造潜力较强。',
+      '本科相对轻松，在研究型学习和长期深造上更容易形成优势。',
     ][level];
   }
 
@@ -2555,7 +2577,9 @@
       points -= Math.min(2, list(study.obstacles).length) * 0.5;
       level = clampNumber(Math.round(points), 1, 10);
     }
-    var levelLabel = textOf(band.label) || studyLevelText(level);
+    var publicBand = publicStudyBand(level);
+    var levelLabel = textOf(band.publicLabel) || textOf(band.label) || publicBand.label;
+    var levelOutcome = textOf(band.outcomeText) || studyLevelText(level);
     var profile = study.profile || studyProfileRecord('composite', ['PROFILE:LEGACY_COMPOSITE']);
     var limitations = list(study.limitations);
     var disciplineText = textOf(study.discipline);
@@ -2569,12 +2593,12 @@
           ? '你容易出现“听懂了但写不出来、做不出来”的问题，输出训练决定最终成绩。'
           : '真正的问题不是聪明程度，而是能否把优势稳定维持到长期考试和成果交付，这也是最容易低估的短板。';
     var headline = level >= 8
-      ? '你的学习结构具备继续深造的基础，本科以上相对轻松，硕士及更高层级也有明显潜力。'
+      ? '你的学习结构具备继续深造的基础，本科相对轻松，研究生及更高层级也有明显潜力。'
       : level >= 6
-        ? '你达到本科层级相对有基础，更高学历的差距主要出现在长期投入和应试稳定性。'
-        : level >= 4
-          ? '你并非学不会，但纯靠临场发挥很难稳定跨过更高学历门槛。'
-          : '传统应试对你会比较吃力，理解能力、稳定输出和长期执行之间容易出现明显断层。';
+        ? '本科阶段通常可达，更高层次的差距主要出现在长期投入和应试稳定性。'
+      : level >= 4
+          ? '本科需要更多努力，纯靠临场发挥很难把成绩一直维持在更高层次。'
+          : '传统应试会比较吃力，达到本科需要投入更多时间和稳定训练。';
     function studyStateText(kind, fact) {
       var state = textOf(fact && fact.state);
       var maps = {
@@ -2615,7 +2639,7 @@
     var verdicts = [
       narrativeVerdict('可达到的学习层级', '', list(band.basis).length ? band.basis : ['STUDY_BAND:L' + level], {
         sourceText: '综合学习结构、四项承接能力与已确认阻断后，学业层级落在“' + levelLabel + '”。',
-        outcomeText: levelLabel + '。这表示命局具备的学习与应试承接上限，不代表具体学校录取。',
+        outcomeText: levelLabel + '：' + levelOutcome + '这表示命局具备的学习与应试承接上限，不代表具体学校录取。',
       }),
       narrativeVerdict('你的学习类型', '', list(profile.basis).length ? profile.basis : ['STUDY_PROFILE:' + (profile.key || 'composite')], {
         sourceText: textOf(profile.sourceText),
@@ -3071,6 +3095,7 @@
       timingDomains: timingDomains,
       storageOutcome: storageOutcome,
       deriveWealthDirection: deriveWealthDirection,
+      publicStudyBand: publicStudyBand,
     };
   }
   return api;

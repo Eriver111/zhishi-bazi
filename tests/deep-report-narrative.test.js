@@ -79,9 +79,24 @@ test('narrative turns wealth facts into a stable A1-A10 asset magnitude without 
 
 test('study narrative states an attainable education level and the effort needed for the next level', () => {
   const narrative = DeepReport.buildNarratives(favorableFacts()).study;
-  assert.match(narrative.level, /本科|硕士|研究|深造/);
+  assert.match(narrative.level, /^(高学历|普通学历|低学历)$/);
+  assert.match(JSON.stringify(narrative.verdicts), /本科|硕士|研究|深造/);
   assert.match(narrative.headline + narrative.paragraphs.join(''), /轻松|较顺|努力|投入|冲击/);
   assert.match(narrative.painPoint, /短板|吃力|拖累|问题|容易/);
+});
+
+test('customer study copy uses the low public band without junior-college or exclusion wording', () => {
+  const facts = favorableFacts();
+  facts.study.educationBand = {
+    key: 'L2', rank: 2, publicKey: 'low', publicLabel: '低学历', basis: ['STUDY_BAND:L2'],
+  };
+  const narrative = DeepReport.buildNarratives(facts).study;
+  const text = [narrative.level, narrative.headline]
+    .concat(narrative.verdicts.map((row) => row.outcomeText || row.text || ''))
+    .join('\n');
+  assert.match(text, /低学历/);
+  assert.match(text, /达到本科需要.*更多/);
+  assert.doesNotMatch(text, /大专|考不上|只能|无缘本科/);
 });
 
 test('all five paid narratives use plain Chinese conclusions and contain no raw internal field names', () => {
