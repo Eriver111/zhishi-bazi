@@ -4099,7 +4099,6 @@ function finalizePatternStatus(bazi, pattern) {
     if (chong[monthZhi] === bazi[pos].zhi) reasons.push('月令受' + pos.replace('year','年柱').replace('day','日柱').replace('hour','时柱') + '冲');
   });
 
-    if (pattern.type === '月令取格') reasons.push('月令用神未透干');
     if (pattern.name === '杂格') reasons.push('月令取格条件不清');
 
     var visibleShiShen = ['year','month','hour'].map(function(pos) {
@@ -4144,6 +4143,15 @@ function finalizePatternStatus(bazi, pattern) {
   var conditions = [];
   var pn = pattern.name, pt = pattern.type;
   var dmStr2 = calcDayMasterStrength(bazi);
+  if (pt === '月令取格' || pattern.matchMode === 'same-element') {
+    conditions.push({
+      condition: '月令格神透干',
+      met: false,
+      detail: pattern.matchMode === 'same-element'
+        ? '月令格神本星未透，仅有同五行异干透出；格局可以成立，但表现层次与显达程度受限'
+        : '月令格神当令但未透干，格局可以成立，但表现层次与显达程度受限'
+    });
+  }
 
   // 通用条件：日主有承载之力
   if (pt !== '同柱复合') {
@@ -4261,6 +4269,7 @@ function finalizePatternStatus(bazi, pattern) {
   // INFO=说明性条目。待攻条目（财党杀、官印复合双条、配印印星有力、伤官无制化）暂列 QUALITY，P5-A2 后续分层裁定再调整。
   // P5-A2-DESIGN-01：『日主有根纳印』由疑似硬条件降级 QUALITY——极弱印格（攻击集 C19/C20）不视为破格，印格承载语义待审。
   var CONDITION_CATEGORIES = {
+    '月令格神透干': 'QUALITY',
     '日主有承载格局之力': 'HARD_BREAK',
     '正官透干有根': 'QUALITY',
     '无伤官克官': 'HARD_BREAK',
@@ -4472,7 +4481,10 @@ function getPattern(bazi) {
 
   // 未匹配到标准格局时，用五行关系兜底
   if (!p) {
-    if (dmWx === mWx) p = { name: '建禄格', desc: '月令为日主禄位（同五行），自身强旺。' };
+    if (dmWx === mWx) p = {
+      name: '杂格',
+      desc: '月令比劫当权，但不在日主临官或帝旺位，不作建禄、羊刃论；需结合财官食伤透藏综合判断。'
+    };
     else {
       var SHENGWO = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
       if (SHENGWO[dmWx] === mWx) p = { name: '印绶格', desc: '月令生扶日主，印星当令，学识型人才。' };
@@ -4491,9 +4503,20 @@ function getPattern(bazi) {
           : '月支' + mZhi + '本气' + benQi + '，为日主' + dayGan + '之' + ss + '；' + matchedPillar + '透' + matchedGan + '，同属' + benQiWx + '气，强化月令' + ss + '之势 → 取' + p.name)
       : '月支' + mZhi + '（' + ss + '）';
 
+  // 月令本气取格但格神未透，只表示格局层次与显达程度受限，不等同于破格。
+  // 描述必须同步说明“当令但未透”，避免页面一边写未透、一边仍显示“月令透食”等伪证据。
+  var patternDesc = p.desc;
+  var patternType = specialGrid ? '月令特别格' : (matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格'));
+  var MONTH_ROLE_LABEL = { 正官: '官星', 七杀: '七杀', 正财: '财星', 偏财: '偏财', 正印: '印星', 偏印: '枭神', 食神: '食神', 伤官: '伤官' };
+  if (matchMode === 'same-element') {
+    patternDesc = patternDesc.replace(/^月令透[^，]+，/, '月令' + (MONTH_ROLE_LABEL[ss] || ss) + '当令但本星未透干，');
+  } else if (patternType === '月令取格') {
+    patternDesc = patternDesc.replace(/^月令透[^，]+，/, '月令' + (MONTH_ROLE_LABEL[ss] || ss) + '当令但未透干，');
+  }
+
   var pResult = finalizePatternStatus(bazi, {
-    name: p.name, desc: p.desc,
-    type: specialGrid ? '月令特别格' : (matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格')),
+    name: p.name, desc: patternDesc,
+    type: patternType,
     matchMode: matchMode, matchedGan: matchedGan, matchedPillar: matchedPillar,
     monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
     source: source
@@ -5083,6 +5106,22 @@ function getYongJi(bazi) {
     // 连续旺衰权重 d 取代 50 分二元 if/else：需求定用神、根气定质量
     cs = calcCandidateScores(bazi, dmStr, pattern);
     tiaoHouNote = cs.tiaoHouNote;
+
+    // 调候裁决层：普通调候仍不改扶抑用神；只有已核准的寒暖燥湿硬边界才接管或抬升。
+    // 1) 丙火未月：保留扶抑用神，但水润燥的实际作用不得再被列为忌神。
+    // 2) 偏强/强旺庚金生亥月：冬金非火不暖，火优先成为核心调候用神。
+    var forceSummerFireWaterXi = dmWx === '火' && bazi.month.zhi === '未';
+    var forceWinterMetalFireYong = dmWx === '金' && bazi.month.zhi === '亥' && dmLevel.indexOf('强') >= 0;
+    if (forceWinterMetalFireYong) {
+      cs.yongWx = '火';
+      cs.tiebreak.winner = '火';
+      cs.tiebreak.used = true;
+      cs.tiebreak.steps.push({
+        step: '调候硬边界',
+        values: '庚金生亥月且日主' + dmLevel + '，非火不暖',
+        advance: ['火']
+      });
+    }
     yongShen = [cs.yongWx];
     // P5-C07（GPT 终裁）：最终分类层全覆盖——先按档位给五行全部归类，正式档（喜/忌）排序优先，
     // 弱档（弱喜/弱忌，符号折叠）紧随其后；不再存在 neutral 悬空。不修改 candidateScores/S_need/用神赢家。
@@ -5090,6 +5129,22 @@ function getYongJi(bazi) {
     WX.forEach(function(wx) {
       elementClassification[wx] = c07ElementTier(wx, cs.SNeed[wx], cs.L1[wx], dmWx, wx === cs.yongWx);
     });
+    if (forceSummerFireWaterXi && cs.yongWx !== '水') {
+      elementClassification['水'] = '喜神';
+    }
+    if (forceSummerFireWaterXi) {
+      cs.candidates.filter(function(candidate) { return candidate.wx === '水'; }).forEach(function(candidate) {
+        candidate.role = '喜神';
+      });
+    }
+    if (forceWinterMetalFireYong) {
+      cs.candidates.forEach(function(candidate) {
+        if (candidate.wx === '火') candidate.role = '用神';
+        else if (candidate.role === '用神') {
+          candidate.role = c07ElementTier(candidate.wx, candidate.SNeed, candidate.L1, dmWx, false);
+        }
+      });
+    }
     xiShen = WX.filter(function(wx) { return elementClassification[wx] === '喜神'; })
       .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; })
       .concat(WX.filter(function(wx) { return elementClassification[wx] === '弱喜'; })
