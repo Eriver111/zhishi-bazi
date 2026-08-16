@@ -90,6 +90,71 @@ test('storage activation is conditional and names the hidden wealth evidence', (
   assert.doesNotMatch(facts.storage.conclusion, /冲开.*发财|必发/);
 });
 
+function storageCore(yongJi = { yongShen: [], xiShen: [], jiShen: [] }) {
+  return {
+    strength: { level: '中和' },
+    pattern: { name: '普通格', congGe: false },
+    congGe: false,
+    yongJi,
+    actionChains: [],
+    relationEvents: [],
+    structuralRisks: [],
+  };
+}
+
+function storageFixture(storageRoleKey, overrides = {}) {
+  return {
+    storageRoleKey,
+    elementRole: '平神',
+    activated: true,
+    wealthConnection: false,
+    ...overrides,
+  };
+}
+
+test('every storage is classified by fixed element and keeps every hidden Ten-God role', () => {
+  const chartWithFourStorages = chart({
+    year: { gan: '戊', zhi: '辰' },
+    month: { gan: '辛', zhi: '戌' },
+    day: { gan: '甲', zhi: '未' },
+    hour: { gan: '己', zhi: '丑' },
+  });
+  const facts = DeepReport.buildWealthFacts(chartWithFourStorages, storageCore(), calculator);
+  assert.deepEqual(
+    facts.storage.storages.map(row => row.storageRoleKey).sort(),
+    ['officer', 'output', 'resource', 'peer'].sort()
+  );
+  assert.ok(facts.storage.storages.every(row => row.hiddenRoles.length > 0));
+  assert.deepEqual(
+    facts.storage.storages.map(row => row.fixedElement).sort(),
+    ['金', '木', '水', '火'].sort()
+  );
+  assert.ok(facts.storage.storages.every(row => row.hiddenRoles.every(hidden => hidden.role !== '十神未定')));
+});
+
+test('same-element storage is classified as peer storage for a matching day master', () => {
+  const peerStorageChart = chart({
+    year: { gan: '戊', zhi: '戌' },
+    month: { gan: '乙', zhi: '卯' },
+    day: { gan: '丙', zhi: '午' },
+    hour: { gan: '甲', zhi: '子' },
+  });
+  const facts = DeepReport.buildWealthFacts(peerStorageChart, storageCore(), calculator);
+  assert.ok(facts.storage.storages.some(row => row.storageRoleKey === 'peer'));
+});
+
+test('useful resource output and officer storage do not claim income without a wealth connection', () => {
+  for (const key of ['resource', 'output', 'officer']) {
+    const row = storageFixture(key, { elementRole: '用神', wealthConnection: false });
+    assert.doesNotMatch(DeepReport.__test.storageOutcome(row), /收入增加|直接赚钱|发财/);
+  }
+});
+
+test('useful peer storage requires a peer-output-wealth path before claiming team-amplified income', () => {
+  assert.match(DeepReport.__test.storageOutcome(storageFixture('peer', { elementRole: '喜神', wealthConnection: true })), /团队|伙伴|圈层/);
+  assert.doesNotMatch(DeepReport.__test.storageOutcome(storageFixture('peer', { elementRole: '喜神', wealthConnection: false })), /带来收入/);
+});
+
 test('wealth occurrences distinguish exposed and hidden stem layers', () => {
   const facts = buildWealthFixture();
   assert.ok(facts.occurrences.some((item) => item.layer === '天干' && item.pillar === 'year'));

@@ -920,22 +920,111 @@
     });
   }
 
+  function storageRoleKey(dayElement, storedElement) {
+    var relation = elementRelation(dayElement, storedElement);
+    return ({ same: 'peer', generatedBy: 'resource', generates: 'output', controls: 'wealth', controlledBy: 'officer' })[relation] || 'neutral';
+  }
+
+  function storageRoleLabel(key) {
+    return ({ peer: '比劫库', resource: '印库', output: '食伤库', wealth: '财库', officer: '官杀库' })[key] || '十神库';
+  }
+
+  function structuredWealthPathTypes(core) {
+    var paths = list(core && (core.wealthPaths || core.wealthPathways || core.pathways));
+    return paths.filter(function (path) {
+      return path && typeof path === 'object' && typeof path.type === 'string';
+    }).map(function (path) {
+      return path.type;
+    });
+  }
+
+  function storageHasWealthConnection(key, core) {
+    var pathTypes = structuredWealthPathTypes(core);
+    if (key === 'wealth') return true;
+    if (key === 'output') return pathTypes.indexOf('食伤生财') >= 0;
+    if (key === 'resource') return pathTypes.indexOf('财配印') >= 0 || pathTypes.indexOf('财官印连续流通') >= 0;
+    if (key === 'officer') return pathTypes.indexOf('财生官') >= 0 || pathTypes.indexOf('财官印连续流通') >= 0;
+    if (key === 'peer') {
+      return pathTypes.indexOf('比劫生食伤生财') >= 0 ||
+        (pathTypes.indexOf('比劫生食伤') >= 0 && pathTypes.indexOf('食伤生财') >= 0);
+    }
+    return false;
+  }
+
+  function storageOutcome(row) {
+    row = row || {};
+    var key = row.storageRoleKey || 'neutral';
+    var useful = row.elementRole === '用神' || row.elementRole === '喜神';
+    if (!row.activated) return storageRoleLabel(key) + '尚未见引动证据，当前以潜在条件观察。';
+    if (!useful) return storageRoleLabel(key) + '被引动，但对应元素为' + (row.elementRole || '平神') + '，需观察其带来的压力或牵制，不能直接视为利好。';
+    if (key === 'wealth') return '财库被引动，资源和资产议题更容易显现，是否形成收入仍取决于承载与留存条件。';
+    if (key === 'peer') {
+      return row.wealthConnection
+        ? '比劫库被引动，团队、伙伴或圈层的协作可通过既有路径放大资源转化。'
+        : '比劫库被引动，团队、伙伴或圈层的协作条件更活跃，但尚未见通向财富的完整路径。';
+    }
+    if (key === 'output') {
+      return row.wealthConnection
+        ? '食伤库被引动，技能、表达或交付已接入财富路径，可观察产出转化。'
+        : '食伤库被引动，技能、表达或交付条件更活跃，但尚未见其接入财富路径。';
+    }
+    if (key === 'resource') {
+      return row.wealthConnection
+        ? '印库被引动，学习、资质或支持系统已与财富路径相连，可观察其转化条件。'
+        : '印库被引动，学习、资质或支持系统更活跃，但尚未见其接入财富路径。';
+    }
+    if (key === 'officer') {
+      return row.wealthConnection
+        ? '官杀库被引动，责任、规则或组织位置已与财富路径相连，可观察其转化条件。'
+        : '官杀库被引动，责任、规则或组织位置更活跃，但尚未见其接入财富路径。';
+    }
+    return '库支被引动，但十神归类尚未确定，暂以条件变化观察。';
+  }
+
   function buildWealthStorage(bazi, core, wealthElement, calculator) {
     var candidates = [];
+    var storages = [];
+    var dayElement = ((calculator && calculator.WU_XING) || {})[bazi && bazi.day && bazi.day.gan] || '';
     PILLARS.forEach(function (pillarName) {
       var pillar = bazi && bazi[pillarName];
       if (!pillar || !STORAGE_ELEMENTS[pillar.zhi]) return;
-      var hidden = getHiddenStems(pillar, calculator).map(function (gan, index) {
-        return { gan: gan, layer: index === 0 ? '本气' : (index === 1 ? '中气' : '余气'), element: (calculator.WU_XING || {})[gan] || '' };
-      }).filter(function (item) { return item.element === wealthElement; });
-      if (!hidden.length) return;
-      candidates.push({
+      var fixedElement = STORAGE_ELEMENTS[pillar.zhi];
+      var hiddenRoles = getHiddenStems(pillar, calculator).map(function (gan, index) {
+        return {
+          gan: gan,
+          layer: index === 0 ? '本气' : (index === 1 ? '中气' : '余气'),
+          element: (calculator.WU_XING || {})[gan] || '',
+          role: getStemRole(bazi.day.gan, gan, calculator),
+        };
+      });
+      var roleKey = storageRoleKey(dayElement, fixedElement);
+      var activated = hasStorageActivation(pillar.zhi, bazi, core);
+      var row = {
         pillar: pillarName,
         pillarLabel: PILLAR_LABELS[pillarName],
         zhi: pillar.zhi,
-        storedElement: STORAGE_ELEMENTS[pillar.zhi],
+        fixedElement: fixedElement,
+        storageRole: storageRoleLabel(roleKey),
+        storageRoleKey: roleKey,
+        elementRole: classifyElementRole(fixedElement, core && core.yongJi),
+        activated: activated,
+        hiddenRoles: hiddenRoles,
+        wealthConnection: storageHasWealthConnection(roleKey, core),
+        outcomeKey: roleKey + '-' + (activated ? 'activated' : 'inactive') + '-' + (storageHasWealthConnection(roleKey, core) ? 'connected' : 'disconnected'),
+        activationEvidence: activated ? [PILLAR_LABELS[pillarName] + pillar.zhi + '已有冲、刑或合的引动证据。'] : [],
+      };
+      row.outcome = storageOutcome(row);
+      storages.push(row);
+      var hidden = hiddenRoles.filter(function (item) { return item.element === wealthElement; }).map(function (item) {
+        return { gan: item.gan, layer: item.layer, element: item.element };
+      });
+      if (hidden.length) candidates.push({
+        pillar: pillarName,
+        pillarLabel: PILLAR_LABELS[pillarName],
+        zhi: pillar.zhi,
+        storedElement: fixedElement,
         hidden: hidden,
-        activated: hasStorageActivation(pillar.zhi, bazi, core),
+        activated: activated,
       });
     });
     var activated = candidates.filter(function (item) { return item.activated; });
@@ -945,10 +1034,10 @@
       }));
     }, []);
     if (!candidates.length) {
-      return { present: false, activated: false, confidence: 'limited', conclusion: '未发现库支中真实藏有对应财星，不能仅以库支出现判定财库。', candidates: [], evidence: [] };
+      return { present: false, activated: false, confidence: 'limited', conclusion: '未发现库支中真实藏有对应财星，不能仅以库支出现判定财库。', candidates: [], storages: storages, evidence: [] };
     }
     if (!activated.length) {
-      return { present: false, activated: false, confidence: 'limited', conclusion: '发现库支中真实藏有财星，但尚未见相关冲、刑、合或岁运引动证据。', candidates: candidates, evidence: candidates.map(function (item) { return item.pillarLabel + item.zhi + '藏有财星'; }) };
+      return { present: false, activated: false, confidence: 'limited', conclusion: '发现库支中真实藏有财星，但尚未见相关冲、刑、合或岁运引动证据。', candidates: candidates, storages: storages, evidence: candidates.map(function (item) { return item.pillarLabel + item.zhi + '藏有财星'; }) };
     }
     return {
       present: true,
@@ -956,6 +1045,7 @@
       confidence: 'medium',
       conclusion: evidenceRows.join('') + '这只表示藏干或库气被触动，是否形成实际资源仍需结合透干、月令、喜忌和承载条件。',
       candidates: candidates,
+      storages: storages,
       evidence: evidenceRows,
     };
   }
@@ -2796,6 +2886,7 @@
       adjudicateTimingInteraction: adjudicateTimingInteraction,
       timingSourceText: timingSourceText,
       timingDomains: timingDomains,
+      storageOutcome: storageOutcome,
     };
   }
   return api;
