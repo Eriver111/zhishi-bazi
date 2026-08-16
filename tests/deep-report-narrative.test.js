@@ -255,3 +255,51 @@ test('wealth timing names the exact year relation and a concrete money outcome',
   assert.match(copy, /流年戌冲原局财库辰/);
   assert.match(copy, /收入|进账|支出|资金|资产/);
 });
+
+function addFiveYearInteractions(facts) {
+  const rows = [
+    { source: '流年', type: '六冲', layer: '地支', actor: '申', target: '寅', targetPillar: 'day', targetLabel: '日支', targetRole: '用神', actorRole: '忌神', direction: 'adverse', domains: ['relationship'], sourceText: '流年申冲日支寅，寅木为本命用神。' },
+    { source: '流年', type: '六冲', layer: '地支', actor: '子', target: '午', targetPillar: 'day', targetLabel: '日支', targetRole: '忌神', actorRole: '喜神', direction: 'favorable', domains: ['relationship'], sourceText: '流年子冲日支午，午火为本命忌神。' },
+    { source: '流年', type: '六合', layer: '地支', actor: '亥', target: '寅', targetPillar: 'day', targetLabel: '日支', formedElement: '木', formedRole: '喜神', direction: 'favorable', domains: ['relationship'], sourceText: '流年亥与日支寅六合，合向木，木为本命喜神。' },
+    { source: '流年', type: '六害', layer: '地支', actor: '巳', target: '寅', targetPillar: 'day', targetLabel: '日支', direction: 'adverse', domains: ['relationship'], sourceText: '流年巳害日支寅，寅木为本命用神。' },
+    null,
+  ];
+  facts.fiveYear.years.forEach((year, index) => {
+    year.pillar = { gan: ['丙', '丁', '戊', '己', '庚'][index], zhi: ['申', '子', '亥', '巳', '戌'][index] };
+    year.daYun = { gan: index < 2 ? '甲' : '乙', zhi: index < 2 ? '辰' : '巳' };
+    year.interactions = rows[index] ? [rows[index]] : [];
+  });
+  facts.currentYear = facts.fiveYear.years[0];
+  return facts;
+}
+
+test('current-year and five-year narratives expose no scores or score-derived labels', () => {
+  const narratives = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts()));
+  for (const section of [narratives.currentYear, narratives.fiveYear]) {
+    assert.equal(section.hideScore, true);
+    assert.equal(Object.prototype.hasOwnProperty.call(section, 'grade'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(section, 'difficulty'), false);
+    assert.doesNotMatch(JSON.stringify(section), /\/10|最高分|最低分|高分年份|低分年份|ANNUAL_SCORE|FIVE_YEAR_AVERAGE/);
+  }
+});
+
+test('each five-year row includes pillar, DaYun, professional source and a plain outcome', () => {
+  const years = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts())).fiveYear.years;
+  assert.equal(years.length, 5);
+  for (const year of years) {
+    assert.ok(year.pillar);
+    assert.ok(Object.prototype.hasOwnProperty.call(year, 'daYunLabel'));
+    assert.ok(year.directionLabel);
+    assert.ok(year.sourceText || /延续/.test(year.summary));
+    assert.doesNotMatch(JSON.stringify(year), /\/10/);
+  }
+});
+
+test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {
+  const years = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts())).fiveYear.years;
+  assert.match(years[0].summary, /争吵|分开住|聚少离多|重新考虑/);
+  assert.match(years[1].summary, /打破|改善|原来.*压力/);
+  assert.match(years[2].summary, /靠近|稳定|推进|落实/);
+  assert.match(years[3].summary, /误会|怀疑|不信任|冷淡/);
+  assert.match(years[4].summary, /延续/);
+});

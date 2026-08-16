@@ -346,6 +346,35 @@ test('legacy text-only verdicts remain visible during source-outcome migration',
   assert.match(rendered.nodes.studyContent.innerHTML, /理解和表达能够连接起来/);
 });
 
+test('scoreless five-year rows render pillar, DaYun, direction, source and outcome', () => {
+  const facts = fixtureFacts();
+  facts.fiveYear.narrative = {
+    hideScore: true,
+    headline: '五年变化',
+    painPoint: '',
+    verdicts: [],
+    note: '传统命理推演参考。',
+    years: [{
+      year: 2028,
+      pillar: '戊申',
+      daYunLabel: '甲辰大运',
+      directionLabel: '偏不利',
+      sourceText: '流年申冲日支寅，寅木为本命用神。',
+      summary: '两个人更容易争吵、分开住或聚少离多。',
+    }],
+  };
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.fortuneContent.innerHTML;
+  assert.match(page, /2028年/);
+  assert.match(page, /戊申/);
+  assert.match(page, /甲辰大运/);
+  assert.match(page, /偏不利/);
+  assert.match(page, /流年申冲日支寅/);
+  assert.match(page, /争吵、分开住/);
+  assert.doesNotMatch(page, /\/10/);
+  assert.match(rendered.pdfHtml, /甲辰大运/);
+});
+
 test('relationship rendering exposes escaped palace, spouse quality, day events and conditional risks', () => {
   const facts = fixtureFacts();
   facts.relationship.palace = {

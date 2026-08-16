@@ -2565,106 +2565,141 @@
     return sourceLabel + activation.movingBranch + '与夫妻宫' + activation.palaceBranch + '伏吟，以前在感情里反复出现的问题会再次被放大；夫妻宫为' + activation.palaceRole + '，原来相处得顺的部分会更明显，原来让你难受的问题也会更明显。';
   }
 
+  function timingDirectionLabel(interactions) {
+    var favorable = list(interactions).filter(function (row) { return row && row.direction === 'favorable'; }).length;
+    var adverse = list(interactions).filter(function (row) { return row && row.direction === 'adverse'; }).length;
+    if (favorable > adverse) return '偏有利';
+    if (adverse > favorable) return '偏不利';
+    return favorable || adverse ? '有利与压力并见' : '平稳延续';
+  }
+
+  function timingInteractionPriority(row) {
+    if (!row) return 0;
+    if (row.formationStatus === 'qualified') return 6;
+    if (/六冲|刑|六害|天干相克/.test(row.type) && /day|month/.test(row.targetPillar || '')) return 5;
+    if (/六合|三合|三会|半合|半会|天干五合/.test(row.type)) return 4;
+    if (row.direction === 'favorable' || row.direction === 'adverse') return 3;
+    return 1;
+  }
+
+  function timingInteractionOutcome(row) {
+    row = row || {};
+    var domains = list(row.domains);
+    if (domains.indexOf('relationship') >= 0) {
+      if (row.type === '六冲' && row.direction === 'favorable') return '原来让你压抑、被管着或反复纠缠的相处方式更容易被打破，关系有改善机会；但通常会先经历争吵、分开或重新决定关系。';
+      if (row.type === '六冲') return '感情稳定基础被打乱，两个人更容易争吵、分开住、聚少离多，或者重新考虑这段关系。';
+      if (row.type === '刑') return '两个人更容易互不服气，同一个问题反复争执，旧账也容易重新被翻出来。';
+      if (row.type === '六害') return '不满更容易憋在心里，久了会出现误会、怀疑、不信任或表面不吵但逐渐冷淡。';
+      if (/合|会/.test(row.type) && row.direction === 'favorable') return '两个人更容易靠近，关系确认、共同生活或未来安排会更容易稳定推进。';
+      if (/合|会/.test(row.type) && row.direction === 'adverse') return '两个人的联系会变紧，但也更容易出现舍不得分开、相处又很累的拉扯，关系忽远忽近。';
+    }
+    if (domains.indexOf('wealth') >= 0) {
+      if (row.direction === 'favorable' && row.type === '六冲') return '原来卡住收入或资产流动的部分被打破，进账、资金周转或资产调整更容易出现实质变化，但过程会先有波动。';
+      if (row.direction === 'favorable') return '财富通路被有利力量引动，收入、项目回款或资产沉淀更容易出现实际进展。';
+      if (row.direction === 'adverse') return '资金占用、责任支出或合作分配会放大，流水可能增加，但真正留下的钱反而容易减少。';
+      return '收入、支出或资产安排会发生变化，但现有证据不足以确定最后增加还是减少。';
+    }
+    if (domains.indexOf('career') >= 0) {
+      return row.direction === 'favorable'
+        ? '岗位、职责、上级关系或项目节奏会出现有利变化，现实推进速度比平时更快。'
+        : row.direction === 'adverse'
+          ? '岗位、职责、上级关系或项目节奏更容易被打乱，工作中的摩擦和返工会增加。'
+          : '岗位、职责或项目节奏会变化，但最后走向仍取决于其他同时出现的岁运关系。';
+    }
+    if (domains.indexOf('study') >= 0) {
+      return row.direction === 'favorable'
+        ? '学习、考试、资格认证或专业成果更容易兑现，原有优势能在这一年发挥出来。'
+        : row.direction === 'adverse'
+          ? '学习节奏更容易被压力、分心或输出不稳打断，成绩会低于真实能力。'
+          : '学习和考试议题会被加强，但现有证据不足以确定成绩一定上升或下降。';
+    }
+    if (row.direction === 'favorable') return '这项岁运关系打通了原局中的有利部分，现实推进会比平时顺。';
+    if (row.direction === 'adverse') return '这项岁运关系触动了原局中的不利部分，现实阻力和反复会增加。';
+    return '这项岁运关系带来明显变化，但现有喜忌证据不足以直接判定最终好坏。';
+  }
+
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
-    var score = annualNarrativeScore(year);
-    var hasRisk = list(year.triggeredRisks).length > 0;
-    var favorableCount = [year.stemRole, year.branchRole, year.daYunStemRole, year.daYunBranchRole].filter(function (role) { return role === '用神' || role === '喜神'; }).length;
-    var adverseCount = [year.stemRole, year.branchRole, year.daYunStemRole, year.daYunBranchRole].filter(function (role) { return role === '忌神'; }).length;
+    var interactions = list(year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
+    var directionLabel = timingDirectionLabel(interactions);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
-    var overallText = score >= 8
-      ? '流年与当前阶段的有利力量集中，外部机会与个人承接能力更容易同时到位，属于结果兑现速度较快的一年。'
-      : score >= 6
-        ? '流年有利力量多于阻力，事业、收入或个人计划较容易向前推进，但成果仍会有先后次序。'
-        : score >= 4
-          ? '流年有利与不利力量接近，表现为机会和调整同时出现，全年节奏不会始终保持同一方向。'
-          : '流年不利力量较集中，外部变化对命局形成明显消耗，事业、资金和关系更容易同时感到压力。';
-    var careerEvidence = list(year.career && year.career.evidence);
-    var wealthActivation = list(year.wealth && year.wealth.timing && year.wealth.timing.activation);
-    var wealthInteractions = list(year.interactions).filter(function (row) {
-      return list(row && row.domains).indexOf('wealth') >= 0;
-    });
-    var relationshipEvidence = list(year.relationship && year.relationship.evidence);
-    var studyEvidence = list(year.study && year.study.evidence);
-    var verdicts = [narrativeVerdict('年度总势', overallText, ['ANNUAL_SCORE:' + score, 'ANNUAL_PILLAR:' + pillarText, 'FAVORABLE:' + favorableCount, 'ADVERSE:' + adverseCount])];
-    if (careerEvidence.length) verdicts.push(narrativeVerdict('事业变化', '事业宫位在本年被实际引动，工作职责、职位关系或项目节奏会出现比平年更明显的变化。', careerEvidence.map(function (row) { return 'ANNUAL_CAREER:' + textOf(row); })));
-    if (wealthActivation.length) verdicts.push(narrativeVerdict('财富变化', '本年直接触发原局财富结构，收入机会、资金流动或资产安排的变化幅度高于普通年份。', wealthActivation.map(function (row) { return 'ANNUAL_WEALTH:' + textOf(row); })));
-    wealthInteractions.forEach(function (interaction) {
-      var outcome;
-      if (interaction.direction === 'favorable' && interaction.type === '六冲') {
-        outcome = '原来卡住收入或资产流动的部分被打破，进账、资金周转或资产调整更容易出现实质变化；但冲动也会先带来明显波动。';
-      } else if (interaction.direction === 'favorable') {
-        outcome = '这项引动让财富通路更顺，收入、项目回款或资产沉淀更容易出现实际进展。';
-      } else if (interaction.direction === 'adverse') {
-        outcome = '这项引动会放大资金占用、责任支出或合作分配，流水可能增加，但真正留下的钱反而容易减少。';
-      } else {
-        outcome = '这项引动会让收入、支出或资产安排发生变化，但现有喜忌证据不足以直接判定最终增加还是减少。';
-      }
-      verdicts.push(narrativeVerdict('本年财富引动', '', ['ANNUAL_WEALTH_INTERACTION:' + (interaction.id || interaction.type)], {
-        sourceText: textOf(interaction.sourceText), outcomeText: outcome,
+    var daYunText = year.daYun ? textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运' : '未纳入大运';
+    var headline = interactions.length
+      ? (directionLabel === '偏有利' ? '本年被引动的有利关系更多，现实变化总体朝着改善和兑现发展。' : directionLabel === '偏不利' ? '本年被引动的不利关系更多，事业、资金或感情更容易出现明显波动。' : '本年有利与不利关系同时被引动，机会和压力会先后出现。')
+      : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
+    var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
+      sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；按流年、大运与原局的实际关系判断。',
+      outcomeText: headline,
+    })];
+    interactions.forEach(function (interaction) {
+      verdicts.push(narrativeVerdict((interaction.source || '岁运') + '·' + (interaction.type || '关系'), '', ['ANNUAL_INTERACTION:' + (interaction.id || interaction.type)], {
+        sourceText: textOf(interaction.sourceText), outcomeText: timingInteractionOutcome(interaction),
       }));
     });
     var relationshipActivations = list(year.relationship && year.relationship.activations);
-    relationshipActivations.forEach(function (activation) {
-      var sourceLabel = activation.source || '岁运';
-      var relationLabel = activation.type || '关系';
-      var text = annualRelationshipActivationText(activation);
-      verdicts.push(narrativeVerdict(sourceLabel + '感情·' + relationLabel, text, ['ANNUAL_PALACE:' + sourceLabel + ':' + relationLabel, 'PALACE_ROLE:' + activation.palaceRole, 'MOVING_ROLE:' + activation.movingRole]));
+    if (!interactions.some(function (row) { return list(row.domains).indexOf('relationship') >= 0; })) {
+      relationshipActivations.forEach(function (activation) {
+        verdicts.push(narrativeVerdict((activation.source || '岁运') + '感情·' + (activation.type || '关系'), annualRelationshipActivationText(activation), ['ANNUAL_PALACE:' + (activation.source || '岁运') + ':' + (activation.type || '关系')]));
+      });
+    }
+    list(year.triggeredRisks).forEach(function (risk) {
+      verdicts.push(narrativeVerdict('本年结构压力', '', ['ANNUAL_RISK:' + textOf(risk)], {
+        sourceText: textOf(risk.why || risk.triggerHint || risk.type),
+        outcomeText: '原局中的这个压力点在本年被触发，计划反复、关系摩擦、资金占用或精力负担会更明显。',
+      }));
     });
-    if (!relationshipActivations.length && relationshipEvidence.length) verdicts.push(narrativeVerdict('感情变化', '本年配偶星或与感情有关的五行力量变得更明显，所以你会比平时更在意恋爱、婚姻或另一半的问题；但流年与夫妻宫没有形成明确的合、冲、刑、害，因此不能直接断定一定会恋爱、结婚或分开。', relationshipEvidence.map(function (row) { return 'ANNUAL_RELATIONSHIP:' + textOf(row); })));
-    if (studyEvidence.length) verdicts.push(narrativeVerdict('学业变化', '本年学习、考试、资格认证或专业提升的议题被加强，成果高低更直接取决于原局学习结构能否顺利运转。', studyEvidence.map(function (row) { return 'ANNUAL_STUDY:' + textOf(row); })));
-    if (hasRisk) verdicts.push(narrativeVerdict('本年压力点', '原局中的结构风险在本年被触发，现实中更容易表现为计划变化、关系摩擦、资金压力或身心负荷增加。', list(year.triggeredRisks).map(function (row) { return 'ANNUAL_RISK:' + textOf(row); })));
     return {
-      grade: score + '/10',
-      level: score >= 8 ? '兑现增强年' : score >= 6 ? '稳步上升年' : score >= 4 ? '调整交替年' : '压力集中年',
-      difficulty: hasRisk ? '机会与压力同时出现' : '节奏总体可控',
-      headline: overallText,
-      painPoint: hasRisk ? '本年事业、金钱或关系可能同时被牵动，现实表现是变化增多、精力分散和决定节奏变快。' : '本年没有明显结构风险被触发，现实变化更多来自原有方向的延续，而不是突然转折。',
+      hideScore: true,
+      headline: headline,
+      painPoint: interactions.length ? interactions.map(timingInteractionOutcome)[0] : '没有强引动不等于没有事情发生，只表示主要结果更接近原有方向的延续。',
       paragraphs: [],
       verdicts: verdicts,
-      note: '以上年度结论依据流年、大运、原局喜忌及实际触发关系推演；未被岁运触发的原局信息不会被写成本年事件。',
+      note: '以上年度结论依据流年、大运、原局喜忌及实际刑冲克害合化推演；未被岁运触发的原局信息不会被写成本年事件。',
     };
-  }
-
-  function plainYearSummary(year, score) {
-    var yearLabel = String(year && year.year || '') + '年';
-    if (score >= 7) return yearLabel + '有利力量较集中，事业、项目或收入机会的兑现速度高于五年平均水平。';
-    if (score <= 3) return yearLabel + '不利力量较集中，事业、资金、关系或身心负荷更容易出现同步压力。';
-    if (list(year && year.triggeredRisks).length) return yearLabel + '机会与结构调整并存，得到新机会的同时也更容易出现旧问题被重新引动。';
-    return yearLabel + '整体力量接近中间状态，外部变化有限，主要表现为原有方向的延续和积累。';
   }
 
   function buildFiveYearNarrative(facts) {
     var fiveYear = facts && facts.fiveYear || {};
     var years = list(fiveYear.years).map(function (year) {
-      var score = annualNarrativeScore(year);
-      var relationshipSummary = list(year && year.relationship && year.relationship.activations)
-        .map(annualRelationshipActivationText).join('');
-      return { year: year.year, grade: score + '/10', summary: plainYearSummary(year, score) + (relationshipSummary ? ' 感情上，' + relationshipSummary : '') };
+      var interactions = list(year && year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
+      var directionLabel = timingDirectionLabel(interactions);
+      var selected = interactions.slice(0, 2);
+      var legacyRelationship = !selected.length ? list(year && year.relationship && year.relationship.activations) : [];
+      var summary = selected.length
+        ? selected.map(timingInteractionOutcome).join(' ')
+        : legacyRelationship.length
+          ? legacyRelationship.map(annualRelationshipActivationText).join(' ')
+          : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
+      return {
+        year: year && year.year,
+        pillar: textOf(year && year.pillar && year.pillar.gan) + textOf(year && year.pillar && year.pillar.zhi),
+        daYunLabel: year && year.daYun ? textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运' : '未纳入大运',
+        directionLabel: directionLabel,
+        sourceText: selected.map(function (row) { return textOf(row.sourceText); }).filter(Boolean).join(' '),
+        summary: summary,
+        priority: selected.length ? timingInteractionPriority(selected[0]) : 0,
+      };
     });
-    var sorted = years.slice().sort(function (a, b) { return Number(b.grade.split('/')[0]) - Number(a.grade.split('/')[0]) || a.year - b.year; });
-    var best = sorted[0];
-    var minimumScore = sorted.length ? Number(sorted[sorted.length - 1].grade.split('/')[0]) : 5;
-    var pressureYears = years.filter(function (row) { return Number(row.grade.split('/')[0]) === minimumScore; }).map(function (row) { return row.year; });
-    var pressureLabel = pressureYears.length > 1 ? pressureYears.join('、') + '年' : (pressureYears[0] ? pressureYears[0] + '年' : '低分年份');
-    var average = years.length ? Math.round(years.reduce(function (sum, row) { return sum + Number(row.grade.split('/')[0]); }, 0) / years.length) : 5;
-    var bestYears = best ? years.filter(function (row) { return row.grade === best.grade; }).map(function (row) { return row.year; }) : [];
-    var bestLabel = bestYears.length > 1 ? bestYears.join('、') + '年' : (bestYears[0] ? bestYears[0] + '年' : '有利年份');
-    var verdicts = [
-      narrativeVerdict('五年总体层级', average >= 7 ? '未来五年有利力量整体较集中，至少存在一个明显的现实兑现窗口。' : average >= 5 ? '未来五年不是持续上升或持续下降，而是先后出现积累、调整和兑现阶段。' : '未来五年不利力量总体偏多，现实进展更容易被旧问题、压力或外部变化打断。', ['FIVE_YEAR_AVERAGE:' + average]),
-      narrativeVerdict('最强兑现年份', bestLabel + '在五年中得分最高，外部机会与命局承接条件最容易同时出现。', bestYears.map(function (year) { return 'FIVE_YEAR_BEST:' + year; })),
-      narrativeVerdict('主要压力年份', pressureLabel + '在五年中阻力最集中，更容易出现事业、资金、关系或身体节奏同时需要调整的情况。', pressureYears.map(function (year) { return 'FIVE_YEAR_PRESSURE:' + year; })),
-    ];
+    var strongest = years.slice().sort(function (a, b) { return b.priority - a.priority || a.year - b.year; })[0];
+    var adverseYears = years.filter(function (row) { return row.directionLabel === '偏不利'; });
+    var headline = strongest && strongest.priority
+      ? strongest.year + '年变化最明显，具体方向以该年列出的刑冲克害合化结果为准。'
+      : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
     return {
-      grade: average + '/10',
-      level: average >= 7 ? '五年兑现窗口较强' : average >= 5 ? '先积累、后兑现' : '五年以守成调整为主',
-      difficulty: '不同年份的推进力度需要区分',
-      headline: best ? bestLabel + '是这五年命局承接条件最强的阶段，现实结果的兑现速度高于其余年份。' : '未来五年的年度力量没有形成明显高低差。',
-      painPoint: best && minimumScore < Number(best.grade.split('/')[0]) ? pressureLabel + '的阻力最集中，与高分年份相比更容易出现事业、资金或关系层面的同步调整。' : '五个年份的力量接近，整体没有特别突出的高峰或低谷。',
+      hideScore: true,
+      headline: headline,
+      painPoint: adverseYears.length ? adverseYears.map(function (row) { return row.year; }).join('、') + '年出现的阻力最集中，相关领域更容易发生现实波动。' : '五年内没有集中出现偏不利的强关系，主要差别在于兑现速度。',
       paragraphs: [],
-      verdicts: verdicts,
-      years: years,
-      note: '五年指数依据同一命盘在不同流年和大运下的相对变化推演，用于判断阶段强弱，不等同于具体事件保证。',
+      verdicts: [narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
+        sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),
+        outcomeText: headline,
+      })],
+      years: years.map(function (row) {
+        var clean = Object.assign({}, row);
+        delete clean.priority;
+        return clean;
+      }),
+      note: '五年结论依据同一命盘在不同流年和大运下的实际刑冲克害合化推演，不等同于具体事件保证。',
     };
   }
 

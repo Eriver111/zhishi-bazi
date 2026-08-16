@@ -1442,6 +1442,73 @@
 .st-advice-text { font-size: 13px; color: var(--text-primary); line-height: 1.9; }
 
 /* ============================
+   深度报告 · 用户结论层
+   ============================ */
+.deep-report-verdict {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin-bottom: 14px;
+    padding: 16px 18px;
+    border: 1px solid rgba(212,175,55,.2);
+    background: linear-gradient(135deg, rgba(212,175,55,.1), rgba(212,175,55,.025));
+}
+.deep-report-grade {
+    font-family: Georgia,'Times New Roman',serif;
+    color: var(--gold);
+    font-size: 38px;
+    line-height: 1;
+    letter-spacing: 1px;
+}
+.deep-report-level { color: var(--text-primary); font-size: 18px; font-weight: 700; }
+.deep-report-difficulty { color: var(--text-secondary); font-size: 12px; }
+.deep-report-narrative {
+    padding: 16px 18px;
+    color: var(--text-primary);
+    border: 1px solid rgba(212,175,55,.1);
+    background: rgba(212,175,55,.025);
+}
+.deep-report-narrative h3 {
+    margin: 0 0 12px;
+    color: var(--gold);
+    font-family: 'STKaiti','KaiTi','FangSong',serif;
+    font-size: 20px;
+    line-height: 1.55;
+}
+.deep-report-narrative > p { margin: 10px 0; font-size: 14px; line-height: 1.9; }
+.deep-report-pain-point {
+    padding: 11px 14px;
+    border-left: 3px solid #9f453b;
+    background: rgba(159,69,59,.08);
+    font-weight: 700;
+}
+.deep-report-verdict-list { display: grid; gap: 10px; margin-top: 15px; }
+.deep-report-verdict-item { padding: 12px 14px; border: 1px solid rgba(212,175,55,.1); background: rgba(255,255,255,.018); }
+.deep-report-verdict-item h4 { margin: 0 0 5px; color: var(--gold); font-size: 13px; letter-spacing: 2px; }
+.deep-report-verdict-item p { margin: 0; color: var(--text-primary); font-size: 13px; line-height: 1.85; }
+.deep-report-verdict-item .deep-report-verdict-source,
+.deep-report-year .deep-report-verdict-source { color: var(--text-secondary); font-size: 11px; line-height: 1.75; margin-bottom: 5px; }
+.deep-report-verdict-item .deep-report-verdict-outcome,
+.deep-report-year .deep-report-verdict-outcome { color: var(--text-primary); font-size: 14px; line-height: 1.9; }
+.deep-report-actions { margin-top: 15px; padding: 12px 15px; background: rgba(75,120,92,.08); }
+.deep-report-actions h4 { margin: 0 0 6px; color: #557c62; font-size: 13px; letter-spacing: 2px; }
+.deep-report-actions ol { margin: 0; padding-left: 21px; }
+.deep-report-actions li { margin: 4px 0; font-size: 13px; line-height: 1.75; }
+.deep-report-note { color: var(--text-dim); font-size: 10px !important; opacity: .8; }
+.deep-report-year-verdicts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+.deep-report-year-verdicts .deep-report-year { padding: 13px 14px; border: 1px solid rgba(212,175,55,.1); border-left: 2px solid var(--gold); }
+.deep-report-year-verdicts h3 { margin: 0 0 5px; color: var(--gold); font-size: 15px; }
+.deep-report-year-verdicts p { margin: 0; color: var(--text-primary); font-size: 13px; line-height: 1.75; }
+@media (max-width:600px) {
+    .deep-report-grade { font-size: 32px; }
+    .deep-report-level { font-size: 16px; }
+    .deep-report-narrative { padding: 14px; }
+    .deep-report-narrative h3 { font-size: 18px; }
+    .deep-report-year-verdicts { grid-template-columns: 1fr; }
+}
+
+/* ============================
    五行分析
    ============================ */
 .section-wuxing .wuxing-stats,
@@ -2661,7 +2728,7 @@
     <script src="js/bazi.js?v=20260813d"></script>
     <script src="js/structural.js?v=1"></script>
     <script src="js/bazi-chain.js?v=2"></script>
-    <script src="js/deep-report.js?v=1"></script>
+    <script src="js/deep-report.js?v=13"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
  * 知时 — 动态效果库 v2.0
@@ -2815,7 +2882,7 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=2"></script>
     <script src="js/deep-report-anchor.js?v=1"></script>
-    <script src="js/result.js?v=8"></script>
+    <script src="js/result.js?v=9"></script>
     <script src="js/pro-analysis.js?v=6"></script>
 <script src="js/auth.js?v=2"></script>
     <script src="js/payment.js?v=2"></script>
