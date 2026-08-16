@@ -836,6 +836,37 @@ test('five-year pain point gives undecided strong changes their own branch', asy
   }
 });
 
+test('five-year overall adjudication aggregates every year tied at the highest priority', async (t) => {
+  const favorable = {
+    source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year',
+    direction: 'favorable', domains: ['wealth'], sourceText: '财富方向偏有利。',
+  };
+  const unknown = {
+    source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'day',
+    direction: 'unknown', domains: ['relationship'], sourceText: '关系方向暂不能定。',
+  };
+  const extraFavorable = {
+    source: '大运', type: '伏吟', formationStatus: 'qualified', targetPillar: 'month',
+    direction: 'favorable', domains: ['career'], sourceText: '事业方向偏有利。',
+  };
+  for (const order of ['forward', 'reverse', 'three-years']) {
+    await t.test(order, () => {
+      const facts = favorableFacts();
+      facts.fiveYear.years[0].interactions = [favorable];
+      facts.fiveYear.years[1].interactions = [unknown];
+      if (order === 'three-years') facts.fiveYear.years[2].interactions = [extraFavorable];
+      if (order === 'reverse') facts.fiveYear.years = facts.fiveYear.years.slice().reverse();
+      const fiveYear = DeepReport.buildNarratives(facts).fiveYear;
+      assert.match(fiveYear.headline, /变化明显、好坏暂不能定/);
+      assert.match(fiveYear.headline + fiveYear.painPoint, /2026|财富/);
+      assert.match(fiveYear.headline + fiveYear.painPoint, /2027|关系/);
+      assert.match(fiveYear.painPoint, /明显变化|拉扯/);
+      assert.match(fiveYear.painPoint, /好坏暂不能定/);
+      assert.doesNotMatch(fiveYear.painPoint, /事情落地的快慢|只是落地快慢/);
+    });
+  }
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';

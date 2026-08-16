@@ -2468,13 +2468,14 @@
       var activeDaYun = findDaYunForYear(daYunList, year);
       var yearTimingStatus = activeDaYun ? 'active'
         : (Number.isFinite(firstDaYun) && year < firstDaYun ? 'before_start'
-          : (Number.isFinite(lastDaYun) && year > lastDaYun ? 'out_of_range' : 'unknown_birth'));
+          : (Number.isFinite(lastDaYun) && year > lastDaYun ? 'out_of_range' : 'calculation_unavailable'));
       years.push(buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, yearTimingStatus));
     }
     var timingStatus = years.some(function (row) { return row.daYunStatus === 'active'; }) ? 'active'
       : years.some(function (row) { return row.daYunStatus === 'before_start'; }) ? 'before_start'
         : years.some(function (row) { return row.daYunStatus === 'out_of_range'; }) ? 'out_of_range'
-          : 'unknown_birth';
+          : years.some(function (row) { return row.daYunStatus === 'calculation_unavailable'; }) ? 'calculation_unavailable'
+            : 'unknown_birth';
     return {
       anchorYear: targetYear,
       hasDaYun: timingStatus === 'active',
@@ -3347,6 +3348,18 @@
       };
     });
     var strongest = years.slice().sort(function (a, b) { return b.priority - a.priority || a.year - b.year; })[0];
+    var highestPriority = strongest ? strongest.priority : 0;
+    var highestYears = highestPriority ? years.filter(function (row) { return row.priority === highestPriority; }) : [];
+    var highestLabels = highestYears.map(function (row) { return row.directionLabel; });
+    var overallDirection = highestLabels.some(function (label) {
+      return label === '变化明显、好坏暂不能定' || label === '有利与压力并见';
+    }) ? '变化明显、好坏暂不能定'
+      : highestLabels.indexOf('偏有利') >= 0 && highestLabels.indexOf('偏不利') >= 0
+        ? '有利与压力并见'
+        : highestLabels[0] || '平稳延续';
+    var highestOutcome = highestYears.map(function (row) {
+      return row.year + '年：' + row.prioritizedOutcome;
+    }).join(' ');
     var adverseYears = years.filter(function (row) { return row.directionLabel === '偏不利'; });
     var riskYears = years.filter(function (row) { return row.riskTriggered; });
     var allDaYunActive = sourceYears.length > 0 && sourceYears.every(function (year) {
@@ -3356,15 +3369,15 @@
       return year && year.daYun && year.daYunStatus === 'active';
     });
     var headline = strongest && strongest.priority
-      ? strongest.year + '年变化最明显，主要方向为' + strongest.directionLabel + '：' + strongest.prioritizedOutcome
+      ? highestYears.map(function (row) { return row.year; }).join('、') + '年变化最明显，主要方向为' + overallDirection + '：' + highestOutcome
       : riskYears.length
         ? '未来五年已有风险信号被岁运触发，具体表现以对应年份列出的结果为准。'
         : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
     return {
       hideScore: true,
       headline: headline,
-      painPoint: strongest && strongest.directionLabel === '变化明显、好坏暂不能定'
-        ? strongest.year + '年：' + strongest.prioritizedOutcome + ' 该领域会明显变化或拉扯，但好坏暂不能定。'
+      painPoint: highestYears.length && overallDirection === '变化明显、好坏暂不能定'
+        ? highestOutcome + ' 相关领域会明显变化或拉扯，但好坏暂不能定。'
         : adverseYears.length
         ? adverseYears.map(function (row) { return row.year + '年：' + row.prioritizedOutcome; }).join(' ')
         : riskYears.length
