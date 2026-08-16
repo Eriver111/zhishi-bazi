@@ -471,3 +471,16 @@ test('all customer-visible paid narratives translate abstract pressure into conc
   assert.match(text, /客户|项目/);
   assert.match(text, /本科/);
 });
+
+test('annual risk copy names the triggered fact instead of a generic structure label', () => {
+  const facts = addFiveYearInteractions(favorableFacts());
+  facts.currentYear.triggeredRisks = [{ type: '财破印', why: '财破印被流年引动。' }];
+  const section = DeepReport.buildNarratives(facts).currentYear;
+  const text = customerVisibleCopy(section);
+  const textWithoutDisclaimer = text.replace(/不构成决策建议/g, '');
+
+  assert.match(text, /本年被引动的风险点·财破印/);
+  assert.doesNotMatch(text, /本年结构压力/);
+  assert.doesNotMatch(textWithoutDisclaimer, /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
+  assert.doesNotMatch(textWithoutDisclaimer, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
+});

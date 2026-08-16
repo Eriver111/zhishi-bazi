@@ -2979,7 +2979,8 @@
       });
     }
     list(year.triggeredRisks).forEach(function (risk) {
-      verdicts.push(narrativeVerdict('本年结构压力', '', ['ANNUAL_RISK:' + textOf(risk)], {
+      var riskLabel = textOf(risk && risk.type) || '风险点';
+      verdicts.push(narrativeVerdict('本年被引动的风险点·' + riskLabel, '', ['ANNUAL_RISK:' + textOf(risk)], {
         sourceText: textOf(risk.why || risk.triggerHint || risk.type),
         outcomeText: '原局中的这个压力点在本年被触发，计划反复、关系摩擦、资金占用或精力负担会更明显。',
       }));
