@@ -314,6 +314,7 @@ git commit -m "fix: preserve direct-pillar birth timing in paid reports"
 
 **Files:**
 - Modify: `js/deep-report.js` (customer narrative strings only)
+- Modify: `result.html` (cache key for the updated report bundle)
 - Test: `tests/deep-report-narrative.test.js`
 - Test: `tests/deep-report-render.test.js`
 
