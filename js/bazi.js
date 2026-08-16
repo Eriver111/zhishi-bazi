@@ -4471,7 +4471,7 @@ function getPattern(bazi) {
   // 比劫透干不得覆盖十二长生判定（v5.6 注释原意）；临官分支守卫保持原样（兜底建禄格名称正确，不扩大改动面）。
   var matchedIsBiJie = matchedSS === '比肩' || matchedSS === '劫财';
   var specialGrid = false;
-  if (!matchedSS && changShengAtMonth && changShengAtMonth.stage === '临官') {
+  if ((!matchedSS || matchedIsBiJie) && changShengAtMonth && changShengAtMonth.stage === '临官') {
     p = PATTERNS['建禄'];
     specialGrid = true;
   } else if ((!matchedSS || matchedIsBiJie) && changShengAtMonth && changShengAtMonth.stage === '帝旺') {

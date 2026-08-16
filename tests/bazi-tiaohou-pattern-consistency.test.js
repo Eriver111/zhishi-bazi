@@ -120,3 +120,16 @@ test('同五行月令不在临官帝旺位时不能冒充建禄格', () => {
     assert.match(pattern.desc, /不作建禄、羊刃论/);
   });
 });
+
+test('临官月即使比肩透干仍然保留真正的建禄格', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['庚申', '甲申', '庚辰', '庚辰']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+
+  assert.equal(pattern.name, '建禄格');
+  assert.equal(pattern.type, '月令特别格');
+  assert.match(pattern.desc, /临官|建禄|禄/);
+});
