@@ -184,6 +184,60 @@ test('conservative annual text fallback separates wealth and relationship trigge
   assert.deepEqual(annual.relationship.evidence, ['日支夫妻宫被引动']);
 });
 
+test('annual facts explicitly evaluate both LiuNian and DaYun relations to the spouse palace', () => {
+  const annual = DeepReport.buildAnnualFacts(
+    chart,
+    { ...core, yongJi: { yongShen: ['火'], xiShen: ['木'], jiShen: ['水'] } },
+    makeCalculator(),
+    makeChain(false),
+    2026,
+    { gan: '丙', zhi: '子', startYear: 2020, endYear: 2027 },
+  );
+
+  assert.deepEqual(
+    annual.relationship.activations.map(row => [row.source, row.type, row.movingBranch, row.palaceBranch]),
+    [['流年', '伏吟', '午', '午'], ['大运', '六冲', '子', '午']],
+  );
+  assert.equal(annual.relationship.activations[0].palaceRole, '用神');
+  assert.equal(annual.relationship.activations[1].movingRole, '忌神');
+  assert.equal(annual.relationship.activations[1].direction, 'adverse');
+});
+
+test('favorable annual branch clashing an adverse spouse palace is marked as conditional improvement', () => {
+  const annual = DeepReport.buildAnnualFacts(
+    chart,
+    { ...core, yongJi: { yongShen: ['水'], xiShen: [], jiShen: ['火'] } },
+    makeCalculator(),
+    makeChain(false),
+    2032,
+    { gan: '丁', zhi: '卯', startYear: 2028, endYear: 2037 },
+  );
+
+  const clash = annual.relationship.activations.find(row => row.source === '流年' && row.type === '六冲');
+  assert.ok(clash);
+  assert.equal(clash.movingBranch, '子');
+  assert.equal(clash.palaceBranch, '午');
+  assert.equal(clash.palaceRole, '忌神');
+  assert.equal(clash.movingRole, '用神');
+  assert.equal(clash.direction, 'favorable');
+});
+
+test('neutral annual branch clashing a favorable spouse palace is still adverse to palace stability', () => {
+  const annual = DeepReport.buildAnnualFacts(
+    chart,
+    { ...core, yongJi: { yongShen: ['火'], xiShen: [], jiShen: ['金'] } },
+    makeCalculator(),
+    makeChain(false),
+    2032,
+    { gan: '丁', zhi: '卯', startYear: 2028, endYear: 2037 },
+  );
+
+  const clash = annual.relationship.activations.find(row => row.source === '流年' && row.type === '六冲');
+  assert.equal(clash.palaceRole, '用神');
+  assert.equal(clash.movingRole, '中性');
+  assert.equal(clash.direction, 'adverse');
+});
+
 test('annual wealth only adds timing activation and reuses frozen wealth facts', () => {
   const wealth = { summaryLevel: '承压', resource: { state: '潜藏' }, capacity: { state: '承压' } };
   const annual = DeepReport.buildAnnualFacts(
@@ -291,4 +345,87 @@ test('placeholder mitigations do not become relief conclusions', () => {
   const conclusions = annual.reliefs.map((row) => row.conclusion).join('|');
   assert.match(conclusions, /保留边界与调整空间/);
   assert.doesNotMatch(conclusions, /^(无|暂无|无救应)$/m);
+});
+
+test('annual interactions evaluate LiuNian and DaYun against every original pillar', () => {
+  const allTargetsChart = {
+    year: { gan: '甲', zhi: '子' },
+    month: { gan: '乙', zhi: '子' },
+    day: { gan: '丙', zhi: '子' },
+    hour: { gan: '丁', zhi: '子' },
+    birthDate: { year: 1990, month: 1, day: 1, hour: 1 },
+  };
+  const annual = DeepReport.buildAnnualFacts(
+    allTargetsChart, core, makeCalculator(), makeChain(false), 2026,
+    { gan: '丙', zhi: '寅', startYear: 2020, endYear: 2027 },
+  );
+  assert.ok(Array.isArray(annual.interactions));
+  for (const targetPillar of ['year', 'month', 'day', 'hour']) {
+    assert.ok(annual.interactions.some(row => row.source === '流年' && row.targetPillar === targetPillar));
+  }
+  assert.ok(annual.interactions.some(row => row.source === '大运'));
+  assert.ok(annual.interactions.some(row => row.source === '岁运' && row.targetPillar === 'dayun'));
+});
+
+test('timing collectors preserve stem control and every branch relation family', () => {
+  assert.ok(DeepReport.__test, 'CommonJS test hooks must exist');
+  const hooks = DeepReport.__test;
+  const calculator = makeCalculator();
+  const roleCore = { yongJi: { yongShen: ['木'], xiShen: ['水'], jiShen: ['金'] } };
+  const pairRows = [
+    ...hooks.collectStemTimingRelation('流年', '庚', '甲', 'day', roleCore, calculator),
+    ...hooks.collectStemTimingRelation('流年', '甲', '己', 'month', roleCore, calculator),
+    ...hooks.collectBranchTimingRelations('流年', '申', '寅', 'day', roleCore, calculator),
+    ...hooks.collectBranchTimingRelations('流年', '亥', '寅', 'day', roleCore, calculator),
+    ...hooks.collectBranchTimingRelations('流年', '巳', '寅', 'day', roleCore, calculator),
+    ...hooks.collectBranchTimingRelations('流年', '子', '卯', 'day', roleCore, calculator),
+    ...hooks.collectBranchTimingRelations('流年', '寅', '寅', 'day', roleCore, calculator),
+  ];
+  for (const type of ['天干相克', '天干五合', '六冲', '六合', '六害', '刑', '伏吟']) {
+    assert.ok(pairRows.some(row => row.type === type), type);
+  }
+  const control = pairRows.find(row => row.type === '天干相克');
+  assert.ok(control.controller && control.controlled);
+
+  const groupRows = []
+    .concat(hooks.collectGroupTimingRelations('流年', '戌', {
+      year: { zhi: '寅' }, month: { zhi: '午' }, day: { zhi: '子' }, hour: { zhi: '丑' },
+    }, roleCore, calculator))
+    .concat(hooks.collectGroupTimingRelations('流年', '午', {
+      year: { zhi: '寅' }, month: { zhi: '子' }, day: { zhi: '丑' }, hour: { zhi: '亥' },
+    }, roleCore, calculator))
+    .concat(hooks.collectGroupTimingRelations('流年', '辰', {
+      year: { zhi: '寅' }, month: { zhi: '卯' }, day: { zhi: '午' }, hour: { zhi: '未' },
+    }, roleCore, calculator))
+    .concat(hooks.collectGroupTimingRelations('流年', '卯', {
+      year: { zhi: '寅' }, month: { zhi: '子' }, day: { zhi: '午' }, hour: { zhi: '未' },
+    }, roleCore, calculator));
+  for (const type of ['三合', '半合', '三会', '半会']) {
+    assert.ok(groupRows.some(row => row.type === type), type);
+  }
+});
+
+test('half combinations and unqualified combinations never claim transformation', () => {
+  assert.ok(DeepReport.__test, 'CommonJS test hooks must exist');
+  const hooks = DeepReport.__test;
+  const calculator = makeCalculator();
+  const roleCore = { yongJi: { yongShen: ['木'], xiShen: ['水'], jiShen: ['火'] } };
+  const rows = hooks.collectGroupTimingRelations('流年', '午', {
+    year: { zhi: '寅' }, month: { zhi: '子' }, day: { zhi: '卯' }, hour: { zhi: '酉' },
+  }, roleCore, calculator).concat(
+    hooks.collectStemTimingRelation('流年', '甲', '己', 'month', roleCore, calculator),
+  );
+  assert.ok(rows.some(row => row.type === '半合' && row.formationStatus === 'tendency'));
+  assert.equal(rows.some(row => /半合|半会/.test(row.type) && row.transformed === true), false);
+  assert.equal(rows.some(row => row.type === '天干五合' && row.transformed === true), false);
+});
+
+test('undated direct pillars collect annual-original relations without fabricating DaYun relations', () => {
+  const undated = {
+    year: { gan: '甲', zhi: '子' }, month: { gan: '乙', zhi: '丑' },
+    day: { gan: '丙', zhi: '午' }, hour: { gan: '丁', zhi: '未' },
+  };
+  const facts = DeepReport.buildFiveYearFacts(undated, core, makeCalculator(), makeChain(false), 2026, 'male');
+  assert.ok(facts.years[0].interactions.some(row => row.source === '流年'));
+  assert.equal(facts.years.some(year => year.interactions.some(row => row.source === '大运' || row.source === '岁运')), false);
 });

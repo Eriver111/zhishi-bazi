@@ -11,6 +11,25 @@
   var PILLAR_LABELS = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
   var STORAGE_ELEMENTS = { '丑': '金', '未': '木', '辰': '水', '戌': '火' };
   var STORAGE_CLASH = { '丑': '未', '未': '丑', '辰': '戌', '戌': '辰' };
+  var BRANCH_CLASH = { '子': '午', '午': '子', '丑': '未', '未': '丑', '寅': '申', '申': '寅', '卯': '酉', '酉': '卯', '辰': '戌', '戌': '辰', '巳': '亥', '亥': '巳' };
+  var BRANCH_HARM = { '子': '未', '未': '子', '丑': '午', '午': '丑', '寅': '巳', '巳': '寅', '卯': '辰', '辰': '卯', '申': '亥', '亥': '申', '酉': '戌', '戌': '酉' };
+  var BRANCH_COMBINE = { '子': '丑', '丑': '子', '寅': '亥', '亥': '寅', '卯': '戌', '戌': '卯', '辰': '酉', '酉': '辰', '巳': '申', '申': '巳', '午': '未', '未': '午' };
+  var BRANCH_PUNISH = { '子卯': 1, '卯子': 1, '寅巳': 1, '巳寅': 1, '巳申': 1, '申巳': 1, '申寅': 1, '寅申': 1, '丑戌': 1, '戌丑': 1, '戌未': 1, '未戌': 1, '未丑': 1, '丑未': 1 };
+  var STEM_COMBINE = { '甲': '己', '己': '甲', '乙': '庚', '庚': '乙', '丙': '辛', '辛': '丙', '丁': '壬', '壬': '丁', '戊': '癸', '癸': '戊' };
+  var STEM_COMBINE_ELEMENT = { '甲己': '土', '己甲': '土', '乙庚': '金', '庚乙': '金', '丙辛': '水', '辛丙': '水', '丁壬': '木', '壬丁': '木', '戊癸': '火', '癸戊': '火' };
+  var BRANCH_COMBINE_ELEMENT = { '子丑': '土', '丑子': '土', '寅亥': '木', '亥寅': '木', '卯戌': '火', '戌卯': '火', '辰酉': '金', '酉辰': '金', '巳申': '水', '申巳': '水', '午未': '土', '未午': '土' };
+  var THREE_COMBINE = [
+    { branches: ['寅', '午', '戌'], element: '火' },
+    { branches: ['亥', '卯', '未'], element: '木' },
+    { branches: ['申', '子', '辰'], element: '水' },
+    { branches: ['巳', '酉', '丑'], element: '金' },
+  ];
+  var THREE_MEET = [
+    { branches: ['寅', '卯', '辰'], element: '木' },
+    { branches: ['巳', '午', '未'], element: '火' },
+    { branches: ['申', '酉', '戌'], element: '金' },
+    { branches: ['亥', '子', '丑'], element: '水' },
+  ];
 
   function list(value) {
     if (Array.isArray(value)) return value;
@@ -42,6 +61,10 @@
       return yongJi.elementReasons[element].role || '中性';
     }
     return '中性';
+  }
+
+  function favorableRole(role) {
+    return role === '用神' || role === '喜神';
   }
 
   function getStemRole(dayGan, gan, calculator) {
@@ -1038,7 +1061,8 @@
   }
 
   function ageTendencyForPosition(position) {
-    if (position === 'year' || position === 'month') return 'older_tendency';
+    if (position === 'year') return 'older_tendency';
+    if (position === 'month') return 'similar_tendency';
     if (position === 'hour') return 'younger_tendency';
     if (position === 'day') return 'similar_tendency';
     return 'unclear';
@@ -1129,11 +1153,6 @@
 
   var ANNUAL_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
   var ANNUAL_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-  var BRANCH_CLASH = {
-    子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅',
-    卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳',
-  };
-
   function annualPillarFallback(year) {
     var offset = Number(year) - 1984;
     var stemIndex = ((offset % 10) + 10) % 10;
@@ -1466,10 +1485,217 @@
     };
   }
 
-  function buildAnnualRelationshipFacts(pillar, daYun, dynamic) {
+  function timingTargetLabel(targetPillar, layer) {
+    if (targetPillar === 'dayun') return layer === '天干' ? '大运天干' : '大运地支';
+    var label = PILLAR_LABELS[targetPillar] || targetPillar || '原局';
+    return label + (layer === '天干' ? '天干' : '地支');
+  }
+
+  function timingBaseRow(source, layer, type, actor, target, targetPillar, core, calculator) {
+    var actorElement = layer === '天干'
+      ? ((calculator && calculator.WU_XING || {})[actor] || '')
+      : branchElement(actor, calculator);
+    var targetElement = layer === '天干'
+      ? ((calculator && calculator.WU_XING || {})[target] || '')
+      : branchElement(target, calculator);
+    return {
+      id: [String(source).toLowerCase(), layer === '天干' ? 'stem' : 'branch', type, targetPillar, actor, target].join(':'),
+      source: source,
+      targetPillar: targetPillar,
+      targetLabel: timingTargetLabel(targetPillar, layer),
+      layer: layer,
+      type: type,
+      actor: actor,
+      target: target,
+      actorElement: actorElement,
+      targetElement: targetElement,
+      actorRole: classifyElementRole(actorElement, core && core.yongJi),
+      targetRole: classifyElementRole(targetElement, core && core.yongJi),
+      formedElement: '',
+      formedRole: '中性',
+      formationStatus: 'none',
+      transformed: false,
+      direction: 'mixed',
+      domains: targetPillar === 'day' && layer === '地支'
+        ? ['relationship']
+        : (targetPillar === 'month' ? ['career'] : []),
+    };
+  }
+
+  function collectStemTimingRelation(source, movingGan, targetGan, targetPillar, core, calculator) {
+    if (!movingGan || !targetGan) return [];
+    var rows = [];
+    var relation = elementRelation(
+      (calculator && calculator.WU_XING || {})[movingGan],
+      (calculator && calculator.WU_XING || {})[targetGan]
+    );
+    if (movingGan === targetGan) {
+      rows.push(timingBaseRow(source, '天干', '伏吟', movingGan, targetGan, targetPillar, core, calculator));
+    } else if (relation === 'generates' || relation === 'generatedBy') {
+      rows.push(timingBaseRow(source, '天干', '天干相生', movingGan, targetGan, targetPillar, core, calculator));
+    } else if (relation === 'controls' || relation === 'controlledBy') {
+      var control = timingBaseRow(source, '天干', '天干相克', movingGan, targetGan, targetPillar, core, calculator);
+      var movingControls = relation === 'controls';
+      control.controller = movingControls ? movingGan : targetGan;
+      control.controlled = movingControls ? targetGan : movingGan;
+      control.controllerRole = movingControls ? control.actorRole : control.targetRole;
+      control.controlledRole = movingControls ? control.targetRole : control.actorRole;
+      rows.push(control);
+    }
+    if (STEM_COMBINE[movingGan] === targetGan) {
+      var combined = timingBaseRow(source, '天干', '天干五合', movingGan, targetGan, targetPillar, core, calculator);
+      combined.formedElement = STEM_COMBINE_ELEMENT[movingGan + targetGan] || '';
+      combined.formedRole = classifyElementRole(combined.formedElement, core && core.yongJi);
+      combined.formationStatus = 'potential';
+      rows.push(combined);
+    }
+    return rows;
+  }
+
+  function collectBranchTimingRelations(source, movingZhi, targetZhi, targetPillar, core, calculator) {
+    if (!movingZhi || !targetZhi) return [];
+    var types = [];
+    if (movingZhi === targetZhi) types.push('伏吟');
+    if (BRANCH_CLASH[movingZhi] === targetZhi) types.push('六冲');
+    if (BRANCH_COMBINE[movingZhi] === targetZhi) types.push('六合');
+    if (BRANCH_HARM[movingZhi] === targetZhi) types.push('六害');
+    if (BRANCH_PUNISH[movingZhi + targetZhi]) types.push('刑');
+    return types.map(function (type) {
+      var row = timingBaseRow(source, '地支', type, movingZhi, targetZhi, targetPillar, core, calculator);
+      if (type === '六合') {
+        row.formedElement = BRANCH_COMBINE_ELEMENT[movingZhi + targetZhi] || '';
+        row.formedRole = classifyElementRole(row.formedElement, core && core.yongJi);
+        row.formationStatus = 'potential';
+      }
+      return row;
+    });
+  }
+
+  function collectGroupTimingRelations(source, movingZhi, bazi, core, calculator) {
+    if (!movingZhi || !bazi) return [];
+    var original = PILLARS.map(function (pillar) {
+      return { pillar: pillar, zhi: bazi[pillar] && bazi[pillar].zhi };
+    }).filter(function (row) { return row.zhi; });
+    var rows = [];
+    function collect(groups, fullType, halfType) {
+      groups.forEach(function (group) {
+        if (group.branches.indexOf(movingZhi) < 0) return;
+        var before = group.branches.filter(function (branch) {
+          return original.some(function (row) { return row.zhi === branch; });
+        });
+        var after = group.branches.filter(function (branch) {
+          return branch === movingZhi || before.indexOf(branch) >= 0;
+        });
+        if (after.length < 2 || before.length === group.branches.length) return;
+        var type = after.length === 3 ? fullType : halfType;
+        var participants = original.filter(function (row) { return group.branches.indexOf(row.zhi) >= 0; });
+        var targetPillar = participants.map(function (row) { return row.pillar; }).join('+') || 'original';
+        var target = participants.map(function (row) { return row.zhi; }).join('');
+        var row = timingBaseRow(source, '地支', type, movingZhi, target, targetPillar, core, calculator);
+        row.targetLabel = participants.map(function (item) { return PILLAR_LABELS[item.pillar] + item.zhi; }).join('、');
+        row.formedElement = group.element;
+        row.formedRole = classifyElementRole(group.element, core && core.yongJi);
+        row.formationStatus = after.length === 3 ? 'potential' : 'tendency';
+        row.participants = [movingZhi].concat(participants.map(function (item) { return item.zhi; }));
+        row.domains = participants.some(function (item) { return item.pillar === 'day'; }) ? ['relationship'] : [];
+        rows.push(row);
+      });
+    }
+    collect(THREE_COMBINE, '三合', '半合');
+    collect(THREE_MEET, '三会', '半会');
+    return rows;
+  }
+
+  function applyAuthoritativeFormationEvidence(rows, dynamic) {
+    var authoritative = textList(dynamic && dynamic.triggers).join(' ');
+    if (!authoritative || !/合化|化成|化神|真化|三合局|三会局|成局/.test(authoritative)) return rows;
+    return rows.map(function (row) {
+      if (!/天干五合|六合|三合|三会/.test(row.type)) return row;
+      var tokens = [row.actor, row.target, row.formedElement].filter(Boolean);
+      if (!tokens.some(function (token) { return authoritative.indexOf(token) >= 0; })) return row;
+      return Object.assign({}, row, { formationStatus: 'qualified', transformed: true });
+    });
+  }
+
+  function dedupeTimingInteractions(rows) {
+    var seen = {};
+    return list(rows).filter(function (row) {
+      var key = [row.source, row.layer, row.type, row.targetPillar, row.actor, row.target, row.formedElement].join('|');
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function collectAnnualInteractions(bazi, core, pillar, daYun, dynamic, calculator) {
+    var rows = [];
+    function collectMoving(source, moving, targetChart) {
+      if (!moving) return;
+      PILLARS.forEach(function (targetPillar) {
+        var target = targetChart && targetChart[targetPillar];
+        if (!target) return;
+        rows = rows.concat(collectStemTimingRelation(source, moving.gan, target.gan, targetPillar, core, calculator));
+        rows = rows.concat(collectBranchTimingRelations(source, moving.zhi, target.zhi, targetPillar, core, calculator));
+      });
+      rows = rows.concat(collectGroupTimingRelations(source, moving.zhi, targetChart, core, calculator));
+    }
+    collectMoving('流年', pillar, bazi);
+    if (daYun) {
+      collectMoving('大运', daYun, bazi);
+      rows = rows.concat(collectStemTimingRelation('岁运', pillar && pillar.gan, daYun.gan, 'dayun', core, calculator));
+      rows = rows.concat(collectBranchTimingRelations('岁运', pillar && pillar.zhi, daYun.zhi, 'dayun', core, calculator));
+    }
+    return dedupeTimingInteractions(applyAuthoritativeFormationEvidence(rows, dynamic));
+  }
+
+  function movingPalaceRelations(source, movingBranch, palaceBranch, core, calculator) {
+    if (!movingBranch || !palaceBranch) return [];
+    var types = [];
+    if (movingBranch === palaceBranch) types.push('伏吟');
+    if (BRANCH_CLASH[movingBranch] === palaceBranch) types.push('六冲');
+    if (BRANCH_HARM[movingBranch] === palaceBranch) types.push('六害');
+    if (BRANCH_PUNISH[movingBranch + palaceBranch]) types.push('刑');
+    if (BRANCH_COMBINE[movingBranch] === palaceBranch) types.push('六合');
+    var movingElement = branchElement(movingBranch, calculator);
+    var palaceElement = branchElement(palaceBranch, calculator);
+    var movingRole = classifyElementRole(movingElement, core && core.yongJi);
+    var palaceRole = classifyElementRole(palaceElement, core && core.yongJi);
+    return types.map(function (type) {
+      var direction = 'mixed';
+      if (type === '六冲') {
+        if (palaceRole === '忌神') direction = 'favorable';
+        else if (favorableRole(palaceRole)) direction = 'adverse';
+      } else if (type === '六合') {
+        if (favorableRole(movingRole) && favorableRole(palaceRole)) direction = 'favorable';
+        else if (movingRole === '忌神' || palaceRole === '忌神') direction = 'adverse';
+      } else if (type === '伏吟') {
+        if (favorableRole(palaceRole)) direction = 'favorable';
+        else if (palaceRole === '忌神') direction = 'adverse';
+      } else if ((type === '刑' || type === '六害') && movingRole === '忌神' && favorableRole(palaceRole)) {
+        direction = 'adverse';
+      }
+      return {
+        source: source,
+        type: type,
+        movingBranch: movingBranch,
+        palaceBranch: palaceBranch,
+        movingElement: movingElement,
+        palaceElement: palaceElement,
+        movingRole: movingRole,
+        palaceRole: palaceRole,
+        direction: direction,
+      };
+    });
+  }
+
+  function buildAnnualRelationshipFacts(bazi, core, pillar, daYun, dynamic, calculator) {
+    var palaceBranch = bazi && bazi.day && bazi.day.zhi;
+    var activations = movingPalaceRelations('流年', pillar && pillar.zhi, palaceBranch, core, calculator)
+      .concat(movingPalaceRelations('大运', daYun && daYun.zhi, palaceBranch, core, calculator));
     return {
       conclusion: '关系议题按流年与夫妻宫、配偶星的动态牵动观察，合冲只表示议题被触发，不直接定结果。',
       timing: { yearPillar: pillar, daYun: daYun },
+      activations: activations,
       evidence: annualDomainEvidence(dynamic, 'relationship'),
     };
   }
@@ -1497,6 +1723,7 @@
     var branchElement = calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[pillar.zhi];
     var dayGan = bazi && bazi.day && bazi.day.gan;
     var triggeredRisks = matchTriggeredRisks(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, dayGan);
+    var interactions = collectAnnualInteractions(bazi, core || {}, pillar, activeDaYun, dynamic, calculator);
     return {
       year: Number(year),
       pillar: pillar,
@@ -1509,12 +1736,13 @@
       daYunBranchRole: classifyElementRole(calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[activeDaYun && activeDaYun.zhi], core && core.yongJi),
       tenGod: tenGod,
       dynamic: dynamic,
+      interactions: interactions,
       overallTriggers: annualOverallTriggers(dynamic),
       triggeredRisks: triggeredRisks,
       reliefs: matchReliefs(core && core.structuralRisks, pillar, activeDaYun, dynamic, calculator, year, core, dayGan),
       career: buildAnnualCareerFacts(tenGod, dynamic),
       wealth: buildAnnualWealthFacts(core, pillar, activeDaYun, dynamic, calculator),
-      relationship: buildAnnualRelationshipFacts(pillar, activeDaYun, dynamic),
+      relationship: buildAnnualRelationshipFacts(bazi, core, pillar, activeDaYun, dynamic, calculator),
       study: buildAnnualStudyFacts(tenGod, dynamic),
       wellbeing: buildWellbeingGuidance(core, pillar, activeDaYun),
     };
@@ -1587,6 +1815,503 @@
     };
   }
 
+  function clampNumber(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function wealthMagnitude(level) {
+    return [
+      '', '1元级', '10元级', '100元级', '1000元级', '1万元级',
+      '10万元级', '100万元级', '1000万元级', '1亿元级', '10亿元级',
+    ][level];
+  }
+
+  function narrativeVerdict(title, text, basis) {
+    return { title: title, text: text, basis: list(basis).filter(Boolean) };
+  }
+
+  function buildWealthNarrative(facts) {
+    var wealth = facts && facts.wealth || {};
+    var resource = wealth.resource || {};
+    var capacity = wealth.capacity || {};
+    var quality = resource.quality || {};
+    var pathways = list(wealth.pathways);
+    var retentionRisks = list(wealth.retention && wealth.retention.risks);
+    var points = 2;
+    points += ({ '顺势': 3, '可承接': 2, '有缓解': 1, '平衡观察': 0, '承压': -2 })[capacity.state] || 0;
+    if (Number(resource.visibleCount) > 0) points += 1;
+    if (Number(resource.hiddenCount) > 0 || list(quality.roots).length) points += 0.5;
+    if (capacity.elementRole === '用神' || capacity.elementRole === '喜神' || resource.elementRole === '用神' || resource.elementRole === '喜神') points += 1;
+    if (capacity.elementRole === '忌神' || resource.elementRole === '忌神') points -= 1;
+    points += Math.min(2, pathways.length) * 0.5;
+    if (wealth.storage && wealth.storage.activated) points += 0.5;
+    points -= Math.min(3, retentionRisks.length) * 0.5;
+    var level = clampNumber(Math.round(points), 1, 10);
+    var pathText = pathways.map(function (row) { return textOf(row && (row.type || row.conclusion || row)); }).join(' ');
+    var headline;
+    var painPoint;
+    if (capacity.state === '承压') {
+      headline = '你不是没有赚钱机会，而是机会越多，资金、责任和精力越容易一起承压。';
+      painPoint = '最大的财富问题不是收入低，而是为了接住机会付出的成本可能超过实际留存。';
+    } else if (!Number(resource.visibleCount) && !Number(resource.hiddenCount)) {
+      headline = '你的财富不会凭空出现，必须先把能力做成别人愿意持续付费的东西。';
+      painPoint = '最容易卡住的地方，是有能力却缺少稳定的成交入口。';
+    } else if (retentionRisks.length) {
+      headline = '你具备赚钱条件，但真正拉开财富差距的是能不能把钱留下。';
+      painPoint = '最大的财富漏洞，是收入增加后又被合作分配、长期投入或责任支出迅速带走。';
+    } else {
+      headline = '你的财富上限不只取决于工资，更取决于能否把经验和资源重复变现。';
+      painPoint = '最容易低估的问题，是只顾增加收入，却没有同步建立可复制的赚钱方式。';
+    }
+    var source = /食伤生财/.test(pathText)
+      ? '更适合依靠专业输出、产品、技术、内容或项目成果获得收入。'
+      : /财生官|财官印/.test(pathText)
+        ? '更适合借助组织平台、管理职责和资源调度放大收入。'
+        : /财配印/.test(pathText)
+          ? '知识、资质、专业信誉和长期资产更容易成为财富入口。'
+          : /比劫/.test(pathText)
+            ? '合作与圈层能够带来机会，但利益分配必须提前说清楚。'
+            : '财富更适合从稳定主业起步，再逐步发展可重复成交的能力或资源。';
+    var retention = wealth.storage && wealth.storage.activated
+      ? '你有把阶段性机会沉淀为资产的可能，但前提是主动做储蓄、配置和风险隔离，不能只看进账。'
+      : retentionRisks.length
+        ? '收入扩大时也会伴随明显分流，先守住现金流和合同边界，比盲目追求更高流水重要。'
+        : '只要减少低回报投入，并把收入的一部分固定沉淀，财富留存会比单纯追逐机会更有效。';
+    var resourceText = Number(resource.visibleCount) > 0
+      ? '财富机会在命局中有明显出口，收入通常不是完全隐性的，更容易通过现实职位、项目或交易被看见。'
+      : Number(resource.hiddenCount) > 0
+        ? '财富信息藏在命局内部，赚钱机会往往先以能力、资源或长期积累的形式出现，兑现速度偏慢。'
+        : '原局没有明显财富出口，财富增长更依赖后天行业、平台和岁运把资源通路打开。';
+    var capacityText = capacity.state === '顺势'
+      ? '命局顺着财富结构运行，资源越集中越容易形成现实结果，财富承载是这张盘的主要优势。'
+      : capacity.state === '可承接'
+        ? '命主具备承接财富的基础，收入机会出现后有能力把它转成实际成果。'
+        : capacity.state === '有缓解'
+          ? '财富会同时带来压力，但命局中仍有力量分担，属于能接财、却不能无限扩张的结构。'
+          : capacity.state === '承压'
+            ? '财星对命主形成明显消耗，收入规模扩大时，责任、成本和资金压力也会同步增加。'
+            : '财富承载处于中间状态，收入高低更依赖具体行业与岁运是否形成通路。';
+    var retentionText = retentionRisks.length
+      ? '命局存在财富分流或消耗结构，表现为进账之后容易继续投入、被合作分配，或被责任性支出带走。'
+      : '原局没有明显的财富分流结构，收入形成后相对更容易保留，但实际资产仍取决于现实经营。';
+    var storageText = wealth.storage && wealth.storage.activated
+      ? '财库在原局中有真实财星并受到引动，财富存在从现金流沉淀为资产、项目或长期资源的通道。'
+      : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length
+        ? '命局有财入库的基础，但库气尚未被明显引动，财富更像有储存空间、暂未完全打开。'
+        : '原局未形成有效财库，财富更偏流动收入，资产沉淀能力不能仅凭库支判断。';
+    return {
+      grade: 'A' + level,
+      level: wealthMagnitude(level),
+      difficulty: level >= 8 ? '需要平台、强运与长期经营共同兑现' : level >= 5 ? '通过持续经营有机会逐步达到' : '需要先补足承载与变现通路',
+      headline: headline,
+      painPoint: painPoint,
+      paragraphs: [],
+      verdicts: [
+        narrativeVerdict('财富显现方式', resourceText, ['WEALTH_OCCURRENCE:' + (resource.state || 'unknown')]),
+        narrativeVerdict('财富承载能力', capacityText, ['WEALTH_CAPACITY:' + (capacity.state || 'unknown')]),
+        narrativeVerdict('主要赚钱路径', source, pathways.length ? pathways.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK']),
+        narrativeVerdict('财富留存状态', retentionText, retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR']),
+        narrativeVerdict('资产沉淀能力', storageText, ['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length ? 'present' : 'absent')]),
+      ],
+      note: '财富等级表示个人净资产峰值的命局量级参考，不代表当前存款，也不是收益承诺。',
+    };
+  }
+
+  function studySignalScore(fact) {
+    if (!fact) return 0;
+    var points = ({ strong: 1.25, medium: 0.75, limited: 0.25 })[fact.confidence] || 0.5;
+    if (/待建立|拉扯|需转化|规则切换|吃力|不足/.test(textOf(fact.state))) points -= 0.5;
+    return Math.max(0, points);
+  }
+
+  function studyLevelText(level) {
+    return [
+      '', '基础学习较吃力', '完成基础学历需要更多投入', '职业技能路线相对更顺',
+      '大专层级较顺，本科需要努力', '本科有机会，稳定投入是关键',
+      '本科较顺，冲击更高学历需要努力', '本科以上相对轻松，硕士仍需持续投入',
+      '硕士层级有较强潜力', '研究生深造优势明显', '高阶研究型学习潜力突出',
+    ][level];
+  }
+
+  function buildStudyNarrative(facts) {
+    var study = facts && facts.study || {};
+    var points = 1 + studySignalScore(study.absorption) + studySignalScore(study.expression) +
+      studySignalScore(study.discipline) + studySignalScore(study.application);
+    list(study.chains).forEach(function (chain) {
+      if (!chain || !chain.present) return;
+      points += chain.id === 'learning_pressure' ? -1.25 : (chain.confidence === 'strong' ? 1.5 : 0.75);
+    });
+    points -= Math.min(2, list(study.obstacles).length) * 0.5;
+    var level = clampNumber(Math.round(points), 1, 10);
+    var disciplineText = textOf(study.discipline);
+    var absorptionText = textOf(study.absorption);
+    var expressionText = textOf(study.expression);
+    var painPoint = /待建立|需外部节奏|规则切换/.test(disciplineText)
+      ? '最容易拖累你的不是理解能力，而是长期执行、应试节奏和对重复训练的耐心。'
+      : /待建立|需转化|拉扯/.test(absorptionText)
+        ? '学习最吃力的环节在于把零散信息真正消化，资料越多反而越容易失去重点。'
+        : /待建立|拉扯/.test(expressionText)
+          ? '你容易出现“听懂了但写不出来、做不出来”的问题，输出训练决定最终成绩。'
+          : '真正的问题不是聪明程度，而是能否把优势稳定维持到长期考试和成果交付，这也是最容易低估的短板。';
+    var headline = level >= 8
+      ? '你的学习结构适合继续深造，本科以上相对轻松，冲击硕士及更高层级仍需要持续投入。'
+      : level >= 6
+        ? '你达到本科层级相对有基础，但更高学历仍取决于持续投入和应试执行。'
+        : level >= 4
+          ? '你并非学不会，但纯靠临场发挥很难稳定跨过更高学历门槛。'
+          : '传统应试对你会比较吃力，理解能力、稳定输出和长期执行之间容易出现明显断层。';
+    var path = textOf(study.path && (study.path.type || study.path.conclusion));
+    function studyStateText(kind, fact) {
+      var state = textOf(fact && fact.state);
+      var maps = {
+        absorption: {
+          '有承接': '理解和吸收能力较稳定，面对系统知识时能够抓住主线，不完全依赖死记硬背。',
+          '需转化': '理解并不差，但容易停在思考和收集资料阶段，知道得多、真正转成成绩或成果的速度偏慢。',
+          '输入与输出拉扯': '吸收信息和表达成果之间容易脱节，常出现听懂、看懂，却不能稳定复现的情况。',
+          '待建立': '吸收知识更依赖兴趣和外部引导，面对不感兴趣的标准课程时会明显吃力。',
+        },
+        expression: {
+          '稳定输出': '输出能力偏稳定，适合通过持续练习积累成绩，临场表现通常不会大起大落。',
+          '创新输出': '思路活、拆解能力强，开放题和创造性任务更占优势，但标准答案环境容易显得不够规整。',
+          '复合输出': '既能稳定表达，也有创新能力，学习成果更容易通过写作、讲解、作品或项目表现出来。',
+          '待建立': '表达和答题输出是明显短板，理解程度往往高于最终呈现出来的成绩。',
+        },
+        discipline: {
+          '可借规则转化': '能够在明确制度、考试目标或资格体系中持续投入，越是有标准的长期学习越容易形成成果。',
+          '有规则承接': '具备一定自律和应试适应力，学习状态在目标明确时明显好于完全自由安排。',
+          '规则切换': '面对多个目标或规则频繁变化时容易分心，应试成绩的稳定性弱于真实理解能力。',
+          '需外部节奏': '长期自我约束偏弱，没有考试、期限或监督时，学习容易断续。',
+        },
+        application: {
+          '学以致用': '知识更容易转成技能、项目、作品或收入，实践型学习的兑现能力较强。',
+          '实践转化': '学习只有进入真实任务后才容易掌握，单纯理论积累的效率一般。',
+          '待建立': '知识与现实应用之间缺少稳定通道，学历和实际能力可能出现落差。',
+        },
+      };
+      return maps[kind] && maps[kind][state] || textOf(fact && fact.conclusion) || '该项学习特征没有形成集中表现。';
+    }
+    var chainTexts = list(study.chains).filter(function (chain) { return chain && chain.present; }).map(function (chain) {
+      var map = {
+        sha_yin: '杀印相生结构成立时，面对压力和高门槛目标反而更能投入，属于越有要求越容易逼出成绩的类型。',
+        wealth_regulates_seal: '财制印结构使思考能够落到行动，学习不只停在理论，更重视结果和现实用途。',
+        food_controls_sha: '食神制杀结构使压力能够转成解题、表达和专业能力，考试竞争中更容易靠能力化解紧张。',
+        yangren_output: '羊刃配合输出结构带来强烈的突破力和灵感，优势集中在创造、竞赛或高强度任务。',
+        learning_pressure: '官杀压力缺少充分承接时，学习容易因焦虑、难度或身体状态出现阶段性中断。',
+      };
+      return narrativeVerdict('特殊学习结构', map[chain.id] || textOf(chain.conclusion), ['STUDY_CHAIN:' + (chain.id || 'unknown')]);
+    });
+    return {
+      grade: 'L' + level,
+      level: studyLevelText(level),
+      difficulty: level >= 8 ? '深造优势较明显，但仍需要现实投入' : level >= 6 ? '本科较顺，更高层级需要持续努力' : '需要用方法和外部节奏补足短板',
+      headline: headline,
+      painPoint: painPoint,
+      paragraphs: [],
+      verdicts: [
+        narrativeVerdict('学历上限', studyLevelText(level), ['STUDY_LEVEL:L' + level]),
+        narrativeVerdict('理解吸收', studyStateText('absorption', study.absorption), ['STUDY_ABSORPTION:' + textOf(study.absorption && study.absorption.state)]),
+        narrativeVerdict('答题与表达', studyStateText('expression', study.expression), ['STUDY_EXPRESSION:' + textOf(study.expression && study.expression.state)]),
+        narrativeVerdict('自律与应试', studyStateText('discipline', study.discipline), ['STUDY_DISCIPLINE:' + textOf(study.discipline && study.discipline.state)]),
+        narrativeVerdict('知识变现', studyStateText('application', study.application), ['STUDY_APPLICATION:' + textOf(study.application && study.application.state)]),
+      ].concat(chainTexts),
+      note: '学业层级表示命局中的学习承接与应试潜力，不等于录取或学历承诺。',
+    };
+  }
+
+  function buildRelationshipNarrative(facts) {
+    var relationship = facts && facts.relationship || {};
+    var interaction = relationship.interaction || {};
+    var spouseStar = relationship.spouseStar || {};
+    var quality = spouseStar.quality || {};
+    var palace = relationship.palace || {};
+    var partnerLabel = relationship.gender === 'female' ? '丈夫' : relationship.gender === 'male' ? '妻子' : '另一半';
+    var branchProfiles = {
+      '子': ['反应快、心思细、适应力强，但情绪和想法变化也快', '五官线条偏柔和，眼神灵动，体态轻巧，气质带有清冷或机敏感'],
+      '丑': ['务实耐受、慢热谨慎，重生活基础，也容易固执和压住情绪', '骨架稳、身形匀实，面部轮廓端正，气质朴素耐看'],
+      '寅': ['主见强、行动果断、讲原则和效率，不喜欢被反复指挥，关系中自然带有主导感', '身形偏修长或骨架舒展，眉形清晰，眼神直接有精神，动作利落，整体清秀而干练'],
+      '卯': ['审美和分寸感较强，待人温和但内在坚持，重视体面与感受', '身形偏纤细匀称，五官秀气，线条柔顺，整体形象较整洁'],
+      '辰': ['现实、能筹划，表面稳定但内心想法多，既重资源也重长期安排', '身形匀实，轮廓有层次，气质沉稳中带灵活感，耐看多于张扬'],
+      '巳': ['反应敏捷、表达直接、企图心强，重效率，也容易急躁或控制节奏', '面部有光彩，眼神活，身形利落，举止带速度感和明显存在感'],
+      '午': ['热情坦率、自尊心强，喜欢明确回应，关系中不愿长期冷淡', '气色明亮，神态外放，身形舒展，笑容或眼神较有感染力'],
+      '未': ['温和顾家、重感受与稳定，愿意照顾人，但内心有自己的标准', '线条柔和，身形匀称或略有肉感，气质温暖亲近'],
+      '申': ['聪明机敏、现实判断强，善于处理复杂关系，也容易防备心重', '骨架清楚，五官轮廓利落，动作灵活，气质精明而有距离感'],
+      '酉': ['重品质、边界和细节，自我要求高，也容易挑剔或在意评价', '五官精致或轮廓分明，身形匀称，仪表整洁，修饰感较突出'],
+      '戌': ['责任感强、重承诺和原则，能扛事，但固执时不容易听取不同意见', '骨架稳健，轮廓方正，神态可靠，气质成熟克制'],
+      '亥': ['感受力强、包容随和，重精神交流，但想法深、不喜欢被追问到底', '线条柔润，眼神温和，体态自然，气质安静并带一点神秘感'],
+    };
+    var roleProfiles = {
+      '七杀': '夫妻宫主气对应七杀，所以对方做事更果断、要求更高，也更习惯自己掌握节奏',
+      '正官': '夫妻宫主气对应正官，所以对方重规则、名分和责任，对伴侣也有明确标准',
+      '食神': '夫妻宫主气对应食神，所以对方性格较温和，会照顾生活感受，也在意两个人相处得舒不舒服',
+      '伤官': '夫妻宫主气对应伤官，所以对方表达直接、自我意识强，不喜欢被固定规矩束缚',
+      '正财': '夫妻宫主气对应正财，所以对方务实、会安排生活，也比较重视稳定和秩序',
+      '偏财': '夫妻宫主气对应偏财，所以对方擅长与人打交道，对机会和现实资源也更敏感',
+      '正印': '夫妻宫主气对应正印，所以对方较温和体贴，重视安全感和精神支持，但也容易照顾得过多',
+      '偏印': '夫妻宫主气对应偏印，所以对方观察细、有自己的想法，很多情绪不会马上说出来，也需要个人空间',
+      '比肩': '夫妻宫主气对应比肩，所以对方独立、自尊心强，希望两个人平等，不愿长期处于弱势',
+      '劫财': '夫妻宫主气对应劫财，所以对方行动力强、爱憎分明，发生分歧时也更容易争主导权',
+    };
+    var starElementLooks = {
+      '木': '配偶星属木，进一步加强修长、清秀和有成长感的特征',
+      '火': '配偶星属火，进一步加强明亮气色、表达感和存在感',
+      '土': '配偶星属土，进一步加强稳重、匀实和朴素耐看的特征',
+      '金': '配偶星属金，进一步加强轮廓清晰、整洁精致和边界感',
+      '水': '配偶星属水，使外形在利落之外多出细腻、柔和与灵动感',
+    };
+    var branchProfile = branchProfiles[palace.zhi] || ['配偶性格呈现复合特点', '外形气质没有形成单一特征'];
+    var hiddenRows = list(palace.hiddenTenGods);
+    var mainHidden = hiddenRows.filter(function (row) { return row && row.layer === '本气'; })[0] || hiddenRows[0];
+    var secondaryHidden = hiddenRows.filter(function (row) { return row && row !== mainHidden; });
+    var secondaryRoleCopies = {
+      '七杀': '遇事敢做决定', '正官': '看重规则和承诺', '食神': '会照顾生活感受', '伤官': '说话直接、不愿受束缚',
+      '正财': '务实、会过日子', '偏财': '懂人情和机会', '正印': '重感情和安全感', '偏印': '心思细、有自己的想法',
+      '比肩': '独立、不愿示弱', '劫财': '行动快、好胜心强',
+    };
+    var personalityText = branchProfile[0] + '。' + (roleProfiles[mainHidden && mainHidden.role] || '夫妻宫主气让这些特点更明显') + '。';
+    if (secondaryHidden.length) personalityText += '夫妻宫里同时还藏有' + secondaryHidden.map(function (row) { return row.role; }).join('、') + '，所以对方还有' + secondaryHidden.map(function (row) { return secondaryRoleCopies[row.role] || '不轻易外露'; }).join('、') + '的一面。';
+    var interactionTexts = {
+      '夫妻宫生身': partnerLabel + '更愿意照顾你，遇到现实问题时也更容易主动帮你。',
+      '命主生夫妻宫': '这段关系里通常是你付出更多，照顾、迁就和承担往往先由你开始。',
+      '命主克夫妻宫': '你更想掌握两个人的生活节奏，遇到重要事情时通常希望按你的想法推进。',
+      '夫妻宫克身': partnerLabel + '的主见和现实要求比你更强，很多事情会推着你走，你也容易觉得自己被管得多、被压着。',
+      '干支同类': '两个人都很有主见，平时能并肩做事，但争起来也都不愿先让步。',
+    };
+    var marriageEffectText = quality.elementRole === '用神' || quality.elementRole === '喜神'
+      ? '配偶星在命局中属于' + quality.elementRole + '，所以' + partnerLabel + '进入你的生活后，更容易给你带来实际帮助，例如资源、收入机会、生活安排或做事秩序。'
+      : quality.elementRole === '忌神'
+        ? '配偶星在命局中属于忌神，所以进入关系后，你更容易觉得钱、责任和精力都被感情占住；对方越强势，这种压力通常越明显。'
+        : '配偶星在命局中没有明显落在喜神或忌神上，所以' + partnerLabel + '带来的帮助和压力都不算特别集中，关系起伏更容易跟着大运流年变化。';
+    var firstPosition = spouseStar.occurrences && spouseStar.occurrences[0] && spouseStar.occurrences[0].pillar || 'unknown';
+    var distanceCopies = { year: '原有生活圈之外、长辈关系圈或较早阶段', month: '工作、学习、同事同学或熟人圈', day: '身边长期接触、关系基础较近的圈层', hour: '后期工作圈、异地或人生较晚阶段' };
+    var distanceCopy = distanceCopies[firstPosition] || '现实生活中能够持续接触的圈层';
+    var ageCopy = relationship.age && relationship.age.tendency === 'older_tendency'
+      ? '配偶年龄更容易略大，或即使年龄接近，心理成熟度和现实经验也更强。'
+      : relationship.age && relationship.age.tendency === 'younger_tendency'
+        ? '配偶年龄更容易略小，或在性格和生活阶段上显得更年轻。'
+        : '配偶年龄以与命主相仿为主，也可能只是略年长、表现得更成熟。';
+    var appearanceText = branchProfile[1] + '。' + (starElementLooks[spouseStar.element] || '') + '。';
+    var eventVerdicts = [];
+    var palaceRoleText = palace.elementRole || '中性';
+    var originalEvents = list(palace.dayInvolvingEvents);
+    var eventTypes = originalEvents.map(function (row) { return textOf(row && row.type) || textOf(row); });
+    function hasOriginalEvent(pattern) { return eventTypes.some(function (type) { return pattern.test(type); }); }
+    function originalEventDirections(pattern) {
+      return originalEvents.filter(function (row) { return pattern.test(textOf(row && row.type)); }).map(function (row) {
+        return textOf(row && row.source) + '与' + textOf(row && row.target) + '形成' + textOf(row && row.type);
+      }).filter(function (row) { return row !== '与形成'; }).join('、');
+    }
+    var favorablePalace = favorableRole(palaceRoleText);
+    function originalRoleSuffix(type) {
+      if (favorablePalace) {
+        if (type === '合') return '夫妻宫本身为' + palaceRoleText + '，合住以后，两个人更容易真正靠近，也更愿意把生活和未来安排放到一起。';
+        if (type === '冲') return '夫妻宫本身为' + palaceRoleText + '，被冲以后，原本能带来帮助和稳定的部分会被打乱，所以整体偏不利。';
+        return '夫妻宫本身为' + palaceRoleText + '，出现这种作用后，原本比较顺的相处和配偶帮助会被干扰。';
+      }
+      if (palaceRoleText === '忌神') {
+        if (type === '合') return '夫妻宫本身为忌神，合住以后更容易出现明明相处很累，却又舍不得彻底分开的情况。';
+        if (type === '冲') return '夫妻宫本身为忌神，被冲以后，原来让你难受的相处方式可能被打破，但关系本身也会经历明显变化。';
+        return '夫妻宫本身为忌神，这种作用会让争执、不信任或被对方压着的感觉更明显，不能因为宫位是忌神就把刑害克直接说成好事。';
+      }
+      return '夫妻宫喜忌不明显，所以这里只能确定关系会发生变化，不能单凭这一项判断最后一定变好或变坏。';
+    }
+    if (hasOriginalEvent(/六冲|冲/)) eventVerdicts.push(narrativeVerdict('感情容易出现明显变化', originalEventDirections(/六冲|冲/) + '。夫妻宫受冲，关系更容易突然改变，常见表现是争吵、分开住、聚少离多，或者其中一方重新考虑这段感情还要不要继续。' + originalRoleSuffix('冲'), ['PALACE_EVENT:CLASH', 'PALACE_ROLE:' + palaceRoleText]));
+    if (hasOriginalEvent(/刑/)) eventVerdicts.push(narrativeVerdict('同一个问题容易反复争执', originalEventDirections(/刑/) + '。夫妻宫带刑，说明两个人容易较劲、互不服气；一个问题吵完看似过去，之后还可能因为类似的事情再次翻旧账。' + originalRoleSuffix('刑'), ['PALACE_EVENT:PUNISHMENT', 'PALACE_ROLE:' + palaceRoleText]));
+    if (hasOriginalEvent(/六害|害/)) eventVerdicts.push(narrativeVerdict('不满容易憋在心里', originalEventDirections(/六害|害/) + '。夫妻宫受害，很多问题不一定当场吵出来，但心里的不满会慢慢积累，久了容易怀疑对方、不再完全信任对方。' + originalRoleSuffix('害'), ['PALACE_EVENT:HARM', 'PALACE_ROLE:' + palaceRoleText]));
+    originalEvents.filter(function (row) { return /六合|三合局|半合|三会方|半会/.test(textOf(row && row.type)); }).forEach(function (row) {
+      var type = textOf(row && row.type);
+      var pair = list(row && row.elements).map(textOf).filter(function (value) { return /^[子丑寅卯辰巳午未申酉戌亥]{2,3}$/.test(value); })[0] || '';
+      var canonicalPairs = { '午寅': '寅午', '戌寅': '寅戌', '戌午': '午戌', '卯亥': '亥卯', '未亥': '亥未', '未卯': '卯未', '子申': '申子', '辰申': '申辰', '辰子': '子辰', '酉巳': '巳酉', '丑巳': '巳丑', '丑酉': '酉丑' };
+      pair = canonicalPairs[pair] || pair;
+      var formedElement = list(row && row.elements).map(textOf).map(function (value) {
+        var match = value.match(/(?:合|会)([木火土金水])/);
+        return match && match[1];
+      }).filter(Boolean)[0] || '';
+      var formedRole = classifyElementRole(formedElement, facts && facts.core && facts.core.yongJi);
+      var directionLabel = favorableRole(formedRole) ? '偏有利' : (formedRole === '忌神' ? '偏不利' : '中性');
+      var directionText = textOf(row && row.source) + '与' + textOf(row && row.target) + '形成' + (pair || '') + type + (formedElement ? formedElement + '势' : '');
+      var resultText = favorableRole(formedRole)
+        ? formedElement + '在本命中为' + formedRole + '，所以这项组合对感情偏有利：两个人更愿意靠近，也更容易把生活、家庭和未来安排真正放到一起。'
+        : formedRole === '忌神'
+          ? formedElement + '在本命中为忌神，所以这项组合对感情偏不利：它会让你心里没底、内心反复琢磨，怀疑对方到底靠不靠谱、这段感情还能不能继续走下去；两个人也容易一阵亲近、一阵疏远，明明互相牵挂，却很难长期保持稳定。'
+          : '所趋五行在本命中喜忌不明显，所以这里只能确定两个人的联系会变多，不能只靠这一项判断最后是好是坏。';
+      var limitText = type === '半合' || type === '半会'
+        ? '半合只表示气势趋向，并不等于已经完全合化，也不等同于暗合或隐秘关系。'
+        : '是否真正成化仍以月令、透干和受制情况为准。';
+      eventVerdicts.push(narrativeVerdict('夫妻宫' + type + (formedElement || '') + '·' + directionLabel, directionText + '。' + resultText + limitText, ['PALACE_EVENT:BRANCH_COMBINATION:' + type, 'FORMED_ELEMENT:' + (formedElement || 'unknown'), 'FORMED_ROLE:' + formedRole]));
+    });
+    var spouseCombineRows = originalEvents.filter(function (row) {
+      if (!/天干五合/.test(textOf(row && row.type))) return false;
+      var otherPillar = list(row && row.pillars).filter(function (pillar) { return pillar !== 'day'; })[0];
+      var eventText = textOf(row);
+      return list(spouseStar.occurrences).some(function (item) {
+        return item && item.pillar === otherPillar && item.layer === '天干' && (!item.gan || eventText.indexOf(item.gan) >= 0);
+      });
+    });
+    if (spouseCombineRows.length) {
+      var spouseCombineDirections = spouseCombineRows.map(function (row) {
+        return textOf(row && row.source) + '与' + textOf(row && row.target) + '五合';
+      }).filter(function (row) { return row !== '与五合'; });
+      var spouseLabel = relationship.gender === 'female' ? '正官或七杀夫星合身' : relationship.gender === 'male' ? '正财妻星合身' : '配偶星合身';
+      var spouseRoleCopy = favorableRole(quality.elementRole)
+        ? '配偶星在本命中为' + quality.elementRole + '，所以' + partnerLabel + '更容易真正进入你的生活，并在钱、资源、家庭或日常安排上帮到你。'
+        : quality.elementRole === '忌神'
+          ? '配偶星在本命中为忌神，所以' + partnerLabel + '会很深地参与到你的生活里，但你也更容易觉得感情占用了太多钱、精力或责任。'
+          : '配偶星在本命中喜忌不明显，所以只能确定' + partnerLabel + '会比较直接地参与到你的现实生活中，不能只靠这一项断好坏。';
+      eventVerdicts.push(narrativeVerdict(spouseLabel, spouseCombineDirections.join('、') + '。与日主相合的这个天干，正好也是本命的配偶星，所以才放进婚姻板块；这表示另一半会比较直接地进入你的钱、家庭和生活安排。' + spouseRoleCopy + '至于五合能不能真正化成另一种五行，还要看月令、透干和有没有受制。', ['PALACE_EVENT:SPOUSE_STAR_COMBINATION', 'SPOUSE_STAR_ROLE:' + (quality.elementRole || 'neutral')]));
+    }
+    var controlDirections = originalEvents.filter(function (row) { return /天干克|克/.test(textOf(row && row.type)); }).map(function (row) {
+      return textOf(row && row.source) + '克' + textOf(row && row.target);
+    }).filter(function (row) { return row !== '克'; });
+    if (controlDirections.length) eventVerdicts.push(narrativeVerdict('两个人容易争谁说了算', controlDirections.join('、') + '。日柱参与天干相克，说明两个人在主导权、现实要求或责任分配上更容易正面顶起来；具体是谁压着谁，要按实际的生克方向判断。' + originalRoleSuffix('克'), ['PALACE_EVENT:STEM_CONTROL', 'PALACE_ROLE:' + palaceRoleText]));
+    return {
+      hideScore: true,
+      headline: interactionTexts[interaction.direction] || textOf(interaction.conclusion),
+      painPoint: marriageEffectText,
+      paragraphs: [],
+      verdicts: [
+        narrativeVerdict('夫妻主导关系', interactionTexts[interaction.direction] || textOf(interaction.conclusion), ['DAY_PILLAR_INTERACTION:' + (interaction.direction || 'unknown')]),
+        narrativeVerdict('配偶性格', personalityText, ['SPOUSE_PALACE:' + (palace.zhi || 'unknown'), 'PALACE_MAIN_ROLE:' + (mainHidden && mainHidden.role || 'unknown')]),
+        narrativeVerdict('婚后作用', marriageEffectText, ['SPOUSE_STAR_ROLE:' + (quality.elementRole || 'neutral')]),
+        narrativeVerdict('认识渠道', '缘分更容易出现在' + distanceCopy + '，属于现实接触中逐渐建立关系的类型。', ['SPOUSE_STAR_POSITION:' + firstPosition]),
+        narrativeVerdict('年龄倾向', ageCopy, ['SPOUSE_AGE_POSITION:' + (relationship.age && relationship.age.tendency || 'unclear')]),
+        narrativeVerdict('外形气质', appearanceText, ['SPOUSE_PALACE_APPEARANCE:' + (palace.zhi || 'unknown'), 'SPOUSE_STAR_ELEMENT:' + (spouseStar.element || 'unknown')]),
+      ].concat(eventVerdicts),
+      note: '以上内容依据传统子平法中的夫妻宫、配偶星、喜忌、透藏与生克关系推演，不等同于现实人物身份确认。',
+    };
+  }
+
+  function annualNarrativeScore(year) {
+    year = year || {};
+    var points = 5;
+    [year.stemRole, year.branchRole, year.daYunStemRole, year.daYunBranchRole].forEach(function (role) {
+      if (role === '用神' || role === '喜神') points += 0.75;
+      if (role === '忌神') points -= 0.75;
+    });
+    points += Math.min(2, list(year.reliefs).length) * 0.5;
+    points -= Math.min(3, list(year.triggeredRisks).length) * 0.75;
+    return clampNumber(Math.round(points), 1, 10);
+  }
+
+  function annualRelationshipActivationText(activation) {
+    activation = activation || {};
+    var sourceLabel = activation.source || '岁运';
+    var relationLabel = activation.type || '关系';
+    if (relationLabel === '六冲' && activation.direction === 'favorable') {
+      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为忌神，引动它的岁运支为' + activation.movingRole + '，所以原来让你觉得压抑、被管着或反复纠缠的相处方式，有机会在这段时间被打破，变化方向偏有利；但“冲”本身仍代表明显变化，可能先经历争吵、分开或重新决定关系，再看到改善。';
+    }
+    if (relationLabel === '六冲' && activation.direction === 'adverse') {
+      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为' + activation.palaceRole + '，原本能给你帮助、让关系稳定的部分被冲动，而引动它的岁运支为' + activation.movingRole + '，所以变化方向偏不利；两个人更容易争吵、分开住、聚少离多，或者重新考虑这段感情是否继续。';
+    }
+    if (relationLabel === '六冲') {
+      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '，说明感情或共同生活会发生明显变化；但夫妻宫和岁运没有形成明确喜忌，所以只能确定“会动”，不能直接断定最后一定变好或变坏。';
+    }
+    if (relationLabel === '六合') {
+      return sourceLabel + activation.movingBranch + '合夫妻宫' + activation.palaceBranch + '，两个人的联系会变紧，感情更容易确定，也更容易把钱、家庭或生活安排绑在一起。' + (activation.direction === 'favorable' ? '宫位与岁运偏喜用，所以这种靠近更容易让关系稳定下来。' : activation.direction === 'adverse' ? '但这里带有忌神，所以也可能出现明明相处很累，却一直拖着、舍不得彻底分开的情况。' : '喜忌不明确，所以不能只凭这次相合判断最后是好是坏。');
+    }
+    if (relationLabel === '刑') {
+      return sourceLabel + activation.movingBranch + '刑夫妻宫' + activation.palaceBranch + '，两个人更容易互不服气，同一个问题吵完以后还会再出现，也容易重新翻出以前没有解决的旧账。';
+    }
+    if (relationLabel === '六害') {
+      return sourceLabel + activation.movingBranch + '害夫妻宫' + activation.palaceBranch + '，很多不满不一定当场说出来，但心里会慢慢积累；久了容易误会对方、怀疑对方，表面没大吵，关系却越来越冷。';
+    }
+    return sourceLabel + activation.movingBranch + '与夫妻宫' + activation.palaceBranch + '伏吟，以前在感情里反复出现的问题会再次被放大；夫妻宫为' + activation.palaceRole + '，原来相处得顺的部分会更明显，原来让你难受的问题也会更明显。';
+  }
+
+  function buildCurrentYearNarrative(facts) {
+    var year = facts && facts.currentYear || {};
+    var score = annualNarrativeScore(year);
+    var hasRisk = list(year.triggeredRisks).length > 0;
+    var favorableCount = [year.stemRole, year.branchRole, year.daYunStemRole, year.daYunBranchRole].filter(function (role) { return role === '用神' || role === '喜神'; }).length;
+    var adverseCount = [year.stemRole, year.branchRole, year.daYunStemRole, year.daYunBranchRole].filter(function (role) { return role === '忌神'; }).length;
+    var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
+    var overallText = score >= 8
+      ? '流年与当前阶段的有利力量集中，外部机会与个人承接能力更容易同时到位，属于结果兑现速度较快的一年。'
+      : score >= 6
+        ? '流年有利力量多于阻力，事业、收入或个人计划较容易向前推进，但成果仍会有先后次序。'
+        : score >= 4
+          ? '流年有利与不利力量接近，表现为机会和调整同时出现，全年节奏不会始终保持同一方向。'
+          : '流年不利力量较集中，外部变化对命局形成明显消耗，事业、资金和关系更容易同时感到压力。';
+    var careerEvidence = list(year.career && year.career.evidence);
+    var wealthActivation = list(year.wealth && year.wealth.timing && year.wealth.timing.activation);
+    var relationshipEvidence = list(year.relationship && year.relationship.evidence);
+    var studyEvidence = list(year.study && year.study.evidence);
+    var verdicts = [narrativeVerdict('年度总势', overallText, ['ANNUAL_SCORE:' + score, 'ANNUAL_PILLAR:' + pillarText, 'FAVORABLE:' + favorableCount, 'ADVERSE:' + adverseCount])];
+    if (careerEvidence.length) verdicts.push(narrativeVerdict('事业变化', '事业宫位在本年被实际引动，工作职责、职位关系或项目节奏会出现比平年更明显的变化。', careerEvidence.map(function (row) { return 'ANNUAL_CAREER:' + textOf(row); })));
+    if (wealthActivation.length) verdicts.push(narrativeVerdict('财富变化', '本年直接触发原局财富结构，收入机会、资金流动或资产安排的变化幅度高于普通年份。', wealthActivation.map(function (row) { return 'ANNUAL_WEALTH:' + textOf(row); })));
+    var relationshipActivations = list(year.relationship && year.relationship.activations);
+    relationshipActivations.forEach(function (activation) {
+      var sourceLabel = activation.source || '岁运';
+      var relationLabel = activation.type || '关系';
+      var text = annualRelationshipActivationText(activation);
+      verdicts.push(narrativeVerdict(sourceLabel + '感情·' + relationLabel, text, ['ANNUAL_PALACE:' + sourceLabel + ':' + relationLabel, 'PALACE_ROLE:' + activation.palaceRole, 'MOVING_ROLE:' + activation.movingRole]));
+    });
+    if (!relationshipActivations.length && relationshipEvidence.length) verdicts.push(narrativeVerdict('感情变化', '本年配偶星或与感情有关的五行力量变得更明显，所以你会比平时更在意恋爱、婚姻或另一半的问题；但流年与夫妻宫没有形成明确的合、冲、刑、害，因此不能直接断定一定会恋爱、结婚或分开。', relationshipEvidence.map(function (row) { return 'ANNUAL_RELATIONSHIP:' + textOf(row); })));
+    if (studyEvidence.length) verdicts.push(narrativeVerdict('学业变化', '本年学习、考试、资格认证或专业提升的议题被加强，成果高低更直接取决于原局学习结构能否顺利运转。', studyEvidence.map(function (row) { return 'ANNUAL_STUDY:' + textOf(row); })));
+    if (hasRisk) verdicts.push(narrativeVerdict('本年压力点', '原局中的结构风险在本年被触发，现实中更容易表现为计划变化、关系摩擦、资金压力或身心负荷增加。', list(year.triggeredRisks).map(function (row) { return 'ANNUAL_RISK:' + textOf(row); })));
+    return {
+      grade: score + '/10',
+      level: score >= 8 ? '兑现增强年' : score >= 6 ? '稳步上升年' : score >= 4 ? '调整交替年' : '压力集中年',
+      difficulty: hasRisk ? '机会与压力同时出现' : '节奏总体可控',
+      headline: overallText,
+      painPoint: hasRisk ? '本年事业、金钱或关系可能同时被牵动，现实表现是变化增多、精力分散和决定节奏变快。' : '本年没有明显结构风险被触发，现实变化更多来自原有方向的延续，而不是突然转折。',
+      paragraphs: [],
+      verdicts: verdicts,
+      note: '以上年度结论依据流年、大运、原局喜忌及实际触发关系推演；未被岁运触发的原局信息不会被写成本年事件。',
+    };
+  }
+
+  function plainYearSummary(year, score) {
+    var yearLabel = String(year && year.year || '') + '年';
+    if (score >= 7) return yearLabel + '有利力量较集中，事业、项目或收入机会的兑现速度高于五年平均水平。';
+    if (score <= 3) return yearLabel + '不利力量较集中，事业、资金、关系或身心负荷更容易出现同步压力。';
+    if (list(year && year.triggeredRisks).length) return yearLabel + '机会与结构调整并存，得到新机会的同时也更容易出现旧问题被重新引动。';
+    return yearLabel + '整体力量接近中间状态，外部变化有限，主要表现为原有方向的延续和积累。';
+  }
+
+  function buildFiveYearNarrative(facts) {
+    var fiveYear = facts && facts.fiveYear || {};
+    var years = list(fiveYear.years).map(function (year) {
+      var score = annualNarrativeScore(year);
+      var relationshipSummary = list(year && year.relationship && year.relationship.activations)
+        .map(annualRelationshipActivationText).join('');
+      return { year: year.year, grade: score + '/10', summary: plainYearSummary(year, score) + (relationshipSummary ? ' 感情上，' + relationshipSummary : '') };
+    });
+    var sorted = years.slice().sort(function (a, b) { return Number(b.grade.split('/')[0]) - Number(a.grade.split('/')[0]) || a.year - b.year; });
+    var best = sorted[0];
+    var minimumScore = sorted.length ? Number(sorted[sorted.length - 1].grade.split('/')[0]) : 5;
+    var pressureYears = years.filter(function (row) { return Number(row.grade.split('/')[0]) === minimumScore; }).map(function (row) { return row.year; });
+    var pressureLabel = pressureYears.length > 1 ? pressureYears.join('、') + '年' : (pressureYears[0] ? pressureYears[0] + '年' : '低分年份');
+    var average = years.length ? Math.round(years.reduce(function (sum, row) { return sum + Number(row.grade.split('/')[0]); }, 0) / years.length) : 5;
+    var bestYears = best ? years.filter(function (row) { return row.grade === best.grade; }).map(function (row) { return row.year; }) : [];
+    var bestLabel = bestYears.length > 1 ? bestYears.join('、') + '年' : (bestYears[0] ? bestYears[0] + '年' : '有利年份');
+    var verdicts = [
+      narrativeVerdict('五年总体层级', average >= 7 ? '未来五年有利力量整体较集中，至少存在一个明显的现实兑现窗口。' : average >= 5 ? '未来五年不是持续上升或持续下降，而是先后出现积累、调整和兑现阶段。' : '未来五年不利力量总体偏多，现实进展更容易被旧问题、压力或外部变化打断。', ['FIVE_YEAR_AVERAGE:' + average]),
+      narrativeVerdict('最强兑现年份', bestLabel + '在五年中得分最高，外部机会与命局承接条件最容易同时出现。', bestYears.map(function (year) { return 'FIVE_YEAR_BEST:' + year; })),
+      narrativeVerdict('主要压力年份', pressureLabel + '在五年中阻力最集中，更容易出现事业、资金、关系或身体节奏同时需要调整的情况。', pressureYears.map(function (year) { return 'FIVE_YEAR_PRESSURE:' + year; })),
+    ];
+    return {
+      grade: average + '/10',
+      level: average >= 7 ? '五年兑现窗口较强' : average >= 5 ? '先积累、后兑现' : '五年以守成调整为主',
+      difficulty: '不同年份的推进力度需要区分',
+      headline: best ? bestLabel + '是这五年命局承接条件最强的阶段，现实结果的兑现速度高于其余年份。' : '未来五年的年度力量没有形成明显高低差。',
+      painPoint: best && minimumScore < Number(best.grade.split('/')[0]) ? pressureLabel + '的阻力最集中，与高分年份相比更容易出现事业、资金或关系层面的同步调整。' : '五个年份的力量接近，整体没有特别突出的高峰或低谷。',
+      paragraphs: [],
+      verdicts: verdicts,
+      years: years,
+      note: '五年指数依据同一命盘在不同流年和大运下的相对变化推演，用于判断阶段强弱，不等同于具体事件保证。',
+    };
+  }
+
+  function buildNarratives(facts) {
+    return {
+      currentYear: buildCurrentYearNarrative(facts),
+      relationship: buildRelationshipNarrative(facts),
+      wealth: buildWealthNarrative(facts),
+      study: buildStudyNarrative(facts),
+      fiveYear: buildFiveYearNarrative(facts),
+    };
+  }
+
   function buildFacts(bazi, gender, options) {
     options = options || {};
     var host = typeof window !== 'undefined' ? window : globalThis;
@@ -1635,12 +2360,19 @@
       bazi, timingCore, deps.calculator, deps.chain, facts.anchorYear, gender
     );
     facts.currentYear = facts.fiveYear.years[0] || null;
+    var narratives = buildNarratives(facts);
+    if (facts.currentYear) facts.currentYear.narrative = narratives.currentYear;
+    facts.relationship.narrative = narratives.relationship;
+    facts.wealth.narrative = narratives.wealth;
+    facts.study.narrative = narratives.study;
+    facts.fiveYear.narrative = narratives.fiveYear;
     return facts;
   }
 
-  return {
+  var api = {
     SCHEMA_VERSION: SCHEMA_VERSION,
     buildFacts: buildFacts,
+    buildNarratives: buildNarratives,
     buildWealthFacts: buildWealthFacts,
     buildRelationshipFacts: buildRelationshipFacts,
     buildStudyFacts: buildStudyFacts,
@@ -1649,4 +2381,13 @@
     buildFiveYearFacts: buildFiveYearFacts,
     findDaYunForYear: findDaYunForYear,
   };
+  if (typeof module === 'object' && module.exports) {
+    api.__test = {
+      collectStemTimingRelation: collectStemTimingRelation,
+      collectBranchTimingRelations: collectBranchTimingRelations,
+      collectGroupTimingRelations: collectGroupTimingRelations,
+      collectAnnualInteractions: collectAnnualInteractions,
+    };
+  }
+  return api;
 }));
