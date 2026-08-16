@@ -4640,10 +4640,6 @@ function finalizeYongJiResult(bazi, base, context) {
     result.candidateScores = context.candidateScores.candidates;
     result.tiebreak = context.candidateScores.tiebreak;
   }
-  // P5-C07：最终分类层透传（仅扶抑路径挂载；从格/穷通短路盘不挂——其喜忌语义冻结，不参与强弱档）
-  if (base.elementClassification) {
-    result.elementClassification = base.elementClassification;
-  }
   return result;
 }
 
@@ -5001,29 +4997,6 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   };
 }
 
-// P5-C07（GPT 终裁）：最终分类层档位——每元素唯一归类（用神/喜神/弱喜/忌神/弱忌）。
-// 边界与现状一致：sn>3 正式喜 / sn<−3 正式忌 / 0<sn≤3 弱喜 / −3≤sn<0 弱忌（符号折叠，取消展示层 neutral 悬空）。
-// sn=0 走二级 deterministic：L1>0 弱喜 / L1<0 弱忌 / L1=0 按扶抑组兜底（见 c07ZeroTier）。
-// 仅作用于最终分类出口，不修改 candidateScores / S_need / 用神赢家。
-function c07ElementTier(wx, sn, l1v, dmWx, isYong) {
-  if (isYong) return '用神';
-  if (sn > 3) return '喜神';
-  if (sn < -3) return '忌神';
-  if (sn === 0) {
-    if (l1v > 0) return '弱喜';
-    if (l1v < 0) return '弱忌';
-    return c07ZeroTier(dmWx, wx);
-  }
-  return sn > 0 ? '弱喜' : '弱忌';
-}
-
-// P5-C07：sn=0 且 L1=0（⟺ 旺衰差 d=0，中和盘）的确定性兜底——生扶组（印·比劫）归喜侧、克泄耗组（食伤·财·官杀）归忌侧。
-function c07ZeroTier(dmWx, wx) {
-  var WX0 = ['木','火','土','金','水'];
-  var SHENG_WO0 = WX0[(WX0.indexOf(dmWx) + 4) % 5];
-  return (wx === dmWx || wx === SHENG_WO0) ? '弱喜' : '弱忌';
-}
-
 function getYongJi(bazi) {
   var dmStr = calcDayMasterStrength(bazi);
   var dmLevel = dmStr.level;
@@ -5037,7 +5010,7 @@ function getYongJi(bazi) {
   var SHENG_WO = WX[(di + 4) % 5];
   var TONG    = dmWx;
 
-  var xiShen = [], yongShen = [], jiShen = [], reasoning = '', elementClassification;
+  var xiShen = [], yongShen = [], jiShen = [], reasoning = '';
 
   // ---- v3.4: 从格优先 ----
   var cong = getCongGe(bazi);
@@ -5073,20 +5046,10 @@ function getYongJi(bazi) {
     cs = calcCandidateScores(bazi, dmStr, pattern);
     tiaoHouNote = cs.tiaoHouNote;
     yongShen = [cs.yongWx];
-    // P5-C07（GPT 终裁）：最终分类层全覆盖——先按档位给五行全部归类，正式档（喜/忌）排序优先，
-    // 弱档（弱喜/弱忌，符号折叠）紧随其后；不再存在 neutral 悬空。不修改 candidateScores/S_need/用神赢家。
-    elementClassification = {};
-    WX.forEach(function(wx) {
-      elementClassification[wx] = c07ElementTier(wx, cs.SNeed[wx], cs.L1[wx], dmWx, wx === cs.yongWx);
-    });
-    xiShen = WX.filter(function(wx) { return elementClassification[wx] === '喜神'; })
-      .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; })
-      .concat(WX.filter(function(wx) { return elementClassification[wx] === '弱喜'; })
-        .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; }));
-    jiShen = WX.filter(function(wx) { return elementClassification[wx] === '忌神'; })
-      .sort(function(a, b) { return cs.SNeed[a] - cs.SNeed[b]; })
-      .concat(WX.filter(function(wx) { return elementClassification[wx] === '弱忌'; })
-        .sort(function(a, b) { return cs.SNeed[a] - cs.SNeed[b]; }));
+    xiShen = WX.filter(function(wx) { return cs.SNeed[wx] > 3 && wx !== cs.yongWx; })
+      .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; });
+    jiShen = WX.filter(function(wx) { return cs.SNeed[wx] < -3 && wx !== cs.yongWx; })
+      .sort(function(a, b) { return cs.SNeed[a] - cs.SNeed[b]; });
     var yongReasons = cs.l2Details.concat(cs.l3Details).concat(cs.l4Details).filter(function(dt) {
       return dt.wx === cs.yongWx && dt.val > 0;
     }).map(function(dt) { return dt.note; });
@@ -5153,8 +5116,7 @@ function getYongJi(bazi) {
     xiShen: xiShen,
     yongShen: yongShen,
     jiShen: jiShen,
-    reasoning: reasoning,
-    elementClassification: elementClassification
+    reasoning: reasoning
   }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern, chain:chainContext, candidateScores: cs });
 }
 
