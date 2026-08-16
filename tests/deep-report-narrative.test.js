@@ -484,3 +484,21 @@ test('annual risk copy names the triggered fact instead of a generic structure l
   assert.doesNotMatch(textWithoutDisclaimer, /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
   assert.doesNotMatch(textWithoutDisclaimer, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
 });
+
+test('annual risk translation never exposes abstract or unknown internal risk names', () => {
+  const facts = addFiveYearInteractions(favorableFacts());
+  facts.currentYear.triggeredRisks = [
+    { type: '承载不足', why: '承载不足被流年引动。' },
+    { type: '未知承载不足', why: '未知承载不足被流年引动。' },
+  ];
+  facts.fiveYear.years[0].triggeredRisks = facts.currentYear.triggeredRisks;
+  const narratives = DeepReport.buildNarratives(facts);
+  const text = Object.values(narratives).map(customerVisibleCopy).join('\n');
+  const textWithoutDisclaimer = text.replace(/不构成决策建议/g, '');
+
+  assert.match(text, /本年机会和责任同时变多/);
+  assert.match(text, /本年被引动的风险点/);
+  assert.doesNotMatch(text, /未知承载不足|本年被引动的风险点·承载不足/);
+  assert.doesNotMatch(textWithoutDisclaimer, /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
+  assert.doesNotMatch(textWithoutDisclaimer, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
+});

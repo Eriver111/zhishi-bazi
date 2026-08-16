@@ -2951,6 +2951,52 @@
     return '未纳入大运';
   }
 
+  function annualRiskNarrative(risk) {
+    var type = textOf(risk && risk.type);
+    var known = {
+      '财破印': {
+        title: '本年被引动的风险点·财破印',
+        sourceText: '本年财破印的关系被引动。',
+        outcomeText: '赚钱、感情或现实事务更容易打断学习、考证或原来的准备；关键阶段常会出现计划临时改掉、时间被别的事占走的情况。',
+      },
+      '财坏印': {
+        title: '本年被引动的风险点·财坏印',
+        sourceText: '本年财坏印的关系被引动。',
+        outcomeText: '赚钱、感情或现实事务更容易打断学习、考证或原来的准备；关键阶段常会出现计划临时改掉、时间被别的事占走的情况。',
+      },
+      '承载不足': {
+        title: '本年机会和责任同时变多',
+        sourceText: '本年出现需要垫钱、扛责任或投入更多时间的信号。',
+        outcomeText: '机会一多，可能要先垫钱、接更多事或把时间全压进去；账面进账变大，手里能留下的钱未必同步增加。',
+      },
+      '身弱不担财': {
+        title: '本年钱和责任更容易压到一起',
+        sourceText: '本年财务机会超过现有支撑的信号被引动。',
+        outcomeText: '项目、客户或收入机会一多，往往也要同时投入更多钱和精力；容易出现事情接得太多、最后顾不过来的情况。',
+      },
+      '比劫分流': {
+        title: '本年合作分钱的情况更明显',
+        sourceText: '本年合作与分配的信号被引动。',
+        outcomeText: '一起做事时，客户、项目和收入更容易需要多人分；进账增加以后，真正落到自己手里的部分不一定同比增加。',
+      },
+      '财党杀': {
+        title: '本年钱和责任更容易一起来',
+        sourceText: '本年财富机会与责任同时增加的信号被引动。',
+        outcomeText: '收入或项目变多时，上级要求、交付压力和要承担的责任也会一起变多，容易忙起来却没有留下多少空余。',
+      },
+      '财印冲': {
+        title: '本年赚钱和原有准备容易顾此失彼',
+        sourceText: '本年财富事务与学习、证书或支持条件互相牵动。',
+        outcomeText: '钱、工作和学习准备容易撞在同一段时间里：顾着项目时，考证、学习或原有安排就可能被推后。',
+      },
+    };
+    return known[type] || {
+      title: '本年被引动的风险点',
+      sourceText: '本年有一项风险信号被引动。',
+      outcomeText: '这个信号被触发后，计划可能反复改动，钱会被占用，或需要投入更多时间和精力。',
+    };
+  }
+
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
     var interactions = list(year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
@@ -2979,10 +3025,10 @@
       });
     }
     list(year.triggeredRisks).forEach(function (risk) {
-      var riskLabel = textOf(risk && risk.type) || '风险点';
-      verdicts.push(narrativeVerdict('本年被引动的风险点·' + riskLabel, '', ['ANNUAL_RISK:' + textOf(risk)], {
-        sourceText: textOf(risk.why || risk.triggerHint || risk.type),
-        outcomeText: '原局中的这个压力点在本年被触发，计划反复、关系摩擦、资金占用或精力负担会更明显。',
+      var riskCopy = annualRiskNarrative(risk);
+      verdicts.push(narrativeVerdict(riskCopy.title, '', ['ANNUAL_RISK:' + textOf(risk)], {
+        sourceText: riskCopy.sourceText,
+        outcomeText: riskCopy.outcomeText,
       }));
     });
     return {
