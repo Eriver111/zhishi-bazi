@@ -2186,22 +2186,17 @@
       painPoint = '最大的财富漏洞，是收入增加后又被合作分配、长期投入或责任支出迅速带走。';
     } else {
       headline = '你的财富上限不只取决于工资，更取决于能否把经验和资源重复变现。';
-      painPoint = '最容易低估的问题，是只顾增加收入，却没有同步建立可复制的赚钱方式。';
+      painPoint = '最容易低估的问题，是收入增加了，但可复制的赚钱方式没有同步形成。';
     }
     var source = /食伤生财/.test(pathText)
-      ? '更适合依靠专业输出、产品、技术、内容或项目成果获得收入。'
+      ? '财富主要通过专业输出、产品、技术、内容或项目成果形成。'
       : /财生官|财官印/.test(pathText)
-        ? '更适合借助组织平台、管理职责和资源调度放大收入。'
+        ? '财富主要通过组织平台、管理职责和资源调度放大。'
         : /财配印/.test(pathText)
           ? '知识、资质、专业信誉和长期资产更容易成为财富入口。'
           : /比劫/.test(pathText)
-            ? '合作与圈层能够带来机会，但利益分配必须提前说清楚。'
-            : '财富更适合从稳定主业起步，再逐步发展可重复成交的能力或资源。';
-    var retention = wealth.storage && wealth.storage.activated
-      ? '你有把阶段性机会沉淀为资产的可能，但前提是主动做储蓄、配置和风险隔离，不能只看进账。'
-      : retentionRisks.length
-        ? '收入扩大时也会伴随明显分流，先守住现金流和合同边界，比盲目追求更高流水重要。'
-        : '只要减少低回报投入，并把收入的一部分固定沉淀，财富留存会比单纯追逐机会更有效。';
+            ? '合作与圈层能够带来机会，同时也会产生更明显的利益分配。'
+            : '财富更常从稳定主业开始，再由可重复成交的能力或资源逐步放大。';
     var resourceText = Number(resource.visibleCount) > 0
       ? '财富机会在命局中有明显出口，收入通常不是完全隐性的，更容易通过现实职位、项目或交易被看见。'
       : Number(resource.hiddenCount) > 0
@@ -2227,16 +2222,26 @@
     return {
       grade: 'A' + level,
       level: wealthMagnitude(level),
-      difficulty: level >= 8 ? '需要平台、强运与长期经营共同兑现' : level >= 5 ? '通过持续经营有机会逐步达到' : '需要先补足承载与变现通路',
+      difficulty: level >= 8 ? '平台、强运与长期经营同时到位时兑现更快' : level >= 5 ? '持续经营时更容易逐步达到' : '承载与变现通路偏弱',
       headline: headline,
       painPoint: painPoint,
       paragraphs: [],
       verdicts: [
-        narrativeVerdict('财富显现方式', resourceText, ['WEALTH_OCCURRENCE:' + (resource.state || 'unknown')]),
-        narrativeVerdict('财富承载能力', capacityText, ['WEALTH_CAPACITY:' + (capacity.state || 'unknown')]),
-        narrativeVerdict('主要赚钱路径', source, pathways.length ? pathways.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK']),
-        narrativeVerdict('财富留存状态', retentionText, retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR']),
-        narrativeVerdict('资产沉淀能力', storageText, ['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length ? 'present' : 'absent')]),
+        narrativeVerdict('财富显现方式', '', ['WEALTH_OCCURRENCE:' + (resource.state || 'unknown')], {
+          sourceText: '财星在原局中' + (Number(resource.visibleCount) > 0 ? '透干显现' : Number(resource.hiddenCount) > 0 ? '藏于地支' : '没有明显显现') + '。', outcomeText: resourceText,
+        }),
+        narrativeVerdict('财富承载能力', '', ['WEALTH_CAPACITY:' + (capacity.state || 'unknown')], {
+          sourceText: '日主旺衰与财星喜忌综合后，财富承载状态为“' + (capacity.state || '中间状态') + '”。', outcomeText: capacityText,
+        }),
+        narrativeVerdict('主要赚钱路径', '', pathways.length ? pathways.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
+          sourceText: pathways.length ? '命局形成' + pathways.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。', outcomeText: source,
+        }),
+        narrativeVerdict('财富留存状态', '', retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR'], {
+          sourceText: retentionRisks.length ? '原局存在' + retentionRisks.map(function (row) { return textOf(row.type || row); }).join('、') + '等财富分流证据。' : '原局未见明确财富分流结构。', outcomeText: retentionText,
+        }),
+        narrativeVerdict('资产沉淀能力', '', ['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length ? 'present' : 'absent')], {
+          sourceText: wealth.storage && wealth.storage.activated ? '财星真实入库，且财库受到原局关系引动。' : wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length ? '财星真实入库，但库气尚未明显引动。' : '原局未形成有效财库。', outcomeText: storageText,
+        }),
       ],
       note: '财富等级表示个人净资产峰值的命局量级参考，不代表当前存款，也不是收益承诺。',
     };
@@ -2576,11 +2581,29 @@
           : '流年不利力量较集中，外部变化对命局形成明显消耗，事业、资金和关系更容易同时感到压力。';
     var careerEvidence = list(year.career && year.career.evidence);
     var wealthActivation = list(year.wealth && year.wealth.timing && year.wealth.timing.activation);
+    var wealthInteractions = list(year.interactions).filter(function (row) {
+      return list(row && row.domains).indexOf('wealth') >= 0;
+    });
     var relationshipEvidence = list(year.relationship && year.relationship.evidence);
     var studyEvidence = list(year.study && year.study.evidence);
     var verdicts = [narrativeVerdict('年度总势', overallText, ['ANNUAL_SCORE:' + score, 'ANNUAL_PILLAR:' + pillarText, 'FAVORABLE:' + favorableCount, 'ADVERSE:' + adverseCount])];
     if (careerEvidence.length) verdicts.push(narrativeVerdict('事业变化', '事业宫位在本年被实际引动，工作职责、职位关系或项目节奏会出现比平年更明显的变化。', careerEvidence.map(function (row) { return 'ANNUAL_CAREER:' + textOf(row); })));
     if (wealthActivation.length) verdicts.push(narrativeVerdict('财富变化', '本年直接触发原局财富结构，收入机会、资金流动或资产安排的变化幅度高于普通年份。', wealthActivation.map(function (row) { return 'ANNUAL_WEALTH:' + textOf(row); })));
+    wealthInteractions.forEach(function (interaction) {
+      var outcome;
+      if (interaction.direction === 'favorable' && interaction.type === '六冲') {
+        outcome = '原来卡住收入或资产流动的部分被打破，进账、资金周转或资产调整更容易出现实质变化；但冲动也会先带来明显波动。';
+      } else if (interaction.direction === 'favorable') {
+        outcome = '这项引动让财富通路更顺，收入、项目回款或资产沉淀更容易出现实际进展。';
+      } else if (interaction.direction === 'adverse') {
+        outcome = '这项引动会放大资金占用、责任支出或合作分配，流水可能增加，但真正留下的钱反而容易减少。';
+      } else {
+        outcome = '这项引动会让收入、支出或资产安排发生变化，但现有喜忌证据不足以直接判定最终增加还是减少。';
+      }
+      verdicts.push(narrativeVerdict('本年财富引动', '', ['ANNUAL_WEALTH_INTERACTION:' + (interaction.id || interaction.type)], {
+        sourceText: textOf(interaction.sourceText), outcomeText: outcome,
+      }));
+    });
     var relationshipActivations = list(year.relationship && year.relationship.activations);
     relationshipActivations.forEach(function (activation) {
       var sourceLabel = activation.source || '岁运';

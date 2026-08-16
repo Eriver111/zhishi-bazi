@@ -231,3 +231,27 @@ test('study narrative uses the evidence-gated profile and education band without
     .filter(Boolean).join('\n');
   assert.doesNotMatch(visible, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
 });
+
+test('wealth narrative states magnitude, source, capacity, retention and storage without advice verbs', () => {
+  const narrative = DeepReport.buildNarratives(favorableFacts()).wealth;
+  const copy = JSON.stringify(narrative);
+  assert.match(copy, /A(?:10|[1-9])/);
+  for (const title of ['财富显现方式', '财富承载能力', '主要赚钱路径', '财富留存状态', '资产沉淀能力']) {
+    assert.match(copy, new RegExp(title));
+  }
+  assert.doesNotMatch(copy, /建议|应该|应当|优先|最好|宜|需注意|控制投入|建立|选择/);
+});
+
+test('wealth timing names the exact year relation and a concrete money outcome', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '六冲', targetPillar: 'month', targetLabel: '月支',
+    actor: '戌', target: '辰', actorRole: '喜神', targetRole: '忌神',
+    direction: 'favorable', domains: ['wealth'],
+    sourceText: '流年戌冲原局财库辰，辰土为本命忌神。',
+  }];
+  const narrative = DeepReport.buildNarratives(facts).currentYear;
+  const copy = narrative.verdicts.map(row => [row.sourceText, row.outcomeText || row.text].join(' ')).join('\n');
+  assert.match(copy, /流年戌冲原局财库辰/);
+  assert.match(copy, /收入|进账|支出|资金|资产/);
+});
