@@ -389,10 +389,27 @@ test('five-year narrative labels unknown birth and pre-start timing separately',
   facts.fiveYear.years[3].daYunStatus = 'out_of_range';
 
   const years = DeepReport.buildNarratives(facts).fiveYear.years;
-  assert.equal(years[0].daYunLabel, '出生时间未定位');
-  assert.equal(years[1].daYunLabel, '起运前');
+  assert.equal(years[0].daYunLabel, '出生时间未定位（仅按流年与原局）');
+  assert.equal(years[1].daYunLabel, '起运前（仅按流年与原局）');
   assert.equal(years[2].daYunLabel, '甲辰大运');
   assert.equal(years[3].daYunLabel, '大运范围待延展（仅按流年与原局）');
+});
+
+test('mixed five-year timing discloses partial DaYun coverage from original annual states', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years[0].daYun = { gan: '甲', zhi: '辰' };
+  facts.fiveYear.years[0].daYunStatus = 'active';
+  facts.fiveYear.years[1].daYun = null;
+  facts.fiveYear.years[1].daYunStatus = 'before_start';
+  facts.fiveYear.years[2].daYun = null;
+  facts.fiveYear.years[2].daYunStatus = 'unknown_birth';
+
+  const narrative = DeepReport.buildNarratives(facts).fiveYear;
+  assert.equal(narrative.years[0].daYunLabel, '甲辰大运');
+  assert.equal(narrative.years[1].daYunLabel, '起运前（仅按流年与原局）');
+  assert.equal(narrative.years[2].daYunLabel, '出生时间未定位（仅按流年与原局）');
+  assert.match(narrative.note, /部分年份大运未纳入，对应年份仅按流年与原局/);
+  assert.doesNotMatch(narrative.note, /^五年结论依据同一命盘在不同流年和大运下/);
 });
 
 test('out-of-range current-year copy states that DaYun is not included in the judgment', () => {

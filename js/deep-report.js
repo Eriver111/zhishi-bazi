@@ -2945,9 +2945,9 @@
 
   function daYunStatusLabel(year) {
     if (year && year.daYun) return textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运';
-    if (year && year.daYunStatus === 'before_start') return '起运前';
+    if (year && year.daYunStatus === 'before_start') return '起运前（仅按流年与原局）';
     if (year && year.daYunStatus === 'out_of_range') return '大运范围待延展（仅按流年与原局）';
-    if (year && year.daYunStatus === 'unknown_birth') return '出生时间未定位';
+    if (year && year.daYunStatus === 'unknown_birth') return '出生时间未定位（仅按流年与原局）';
     return '未纳入大运';
   }
 
@@ -2998,7 +2998,8 @@
 
   function buildFiveYearNarrative(facts) {
     var fiveYear = facts && facts.fiveYear || {};
-    var years = list(fiveYear.years).map(function (year) {
+    var sourceYears = list(fiveYear.years);
+    var years = sourceYears.map(function (year) {
       var interactions = list(year && year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
       var directionLabel = timingDirectionLabel(interactions);
       var selected = interactions.slice(0, 2);
@@ -3020,6 +3021,12 @@
     });
     var strongest = years.slice().sort(function (a, b) { return b.priority - a.priority || a.year - b.year; })[0];
     var adverseYears = years.filter(function (row) { return row.directionLabel === '偏不利'; });
+    var allDaYunActive = sourceYears.length > 0 && sourceYears.every(function (year) {
+      return year && year.daYun && year.daYunStatus === 'active';
+    });
+    var hasAnyDaYunActive = sourceYears.some(function (year) {
+      return year && year.daYun && year.daYunStatus === 'active';
+    });
     var headline = strongest && strongest.priority
       ? strongest.year + '年变化最明显，具体方向以该年列出的刑冲克害合化结果为准。'
       : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
@@ -3037,9 +3044,11 @@
         delete clean.priority;
         return clean;
       }),
-      note: years.some(function (row) { return row && row.daYunLabel && !/出生时间未定位|起运前|大运范围待延展/.test(row.daYunLabel); })
+      note: allDaYunActive
         ? '五年结论依据同一命盘在不同流年和大运下的实际刑冲克害合化推演，不等同于具体事件保证。'
-        : '当前大运未纳入，只按流年与原局喜忌及实际刑冲克害合化推演，不等同于具体事件保证。',
+        : hasAnyDaYunActive
+          ? '部分年份大运未纳入，对应年份仅按流年与原局喜忌及实际刑冲克害合化推演，不等同于具体事件保证。'
+          : '当前大运未纳入，只按流年与原局喜忌及实际刑冲克害合化推演，不等同于具体事件保证。',
     };
   }
 
