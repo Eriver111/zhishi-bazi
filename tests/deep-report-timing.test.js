@@ -151,6 +151,25 @@ test('dated chart before the first DaYun says pre-start rather than unknown birt
   assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'before_start'));
 });
 
+test('known birth after the available DaYun list stays out of range rather than becoming unknown birth', () => {
+  const knownBirth = {
+    ...chart,
+    birthDate: { year: 1990, month: 1, day: 1, hour: 1, clock: 2 },
+  };
+  const calculator = {
+    ...makeCalculator(),
+    calculateDaYun: () => ({ list: [{ gan: '丙', zhi: '寅', startYear: 1995, endYear: 2004 }] }),
+  };
+
+  const result = DeepReport.buildFiveYearFacts(
+    knownBirth, core, calculator, makeChain(false), 2026, 'male'
+  );
+
+  assert.equal(result.timingStatus, 'out_of_range');
+  assert.equal(result.hasDaYun, false);
+  assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'out_of_range'));
+});
+
 test('undated four pillars still use authoritative original-chart annual relations', () => {
   const undated = { ...chart };
   delete undated.birthDate;

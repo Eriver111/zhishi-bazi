@@ -2364,20 +2364,25 @@
     }
     var daYunStarts = list(daYunData.list).map(function (item) { return Number(item && item.startYear); })
       .filter(Number.isFinite).sort(function (a, b) { return a - b; });
+    var daYunEnds = list(daYunData.list).map(function (item) { return Number(item && item.endYear); })
+      .filter(Number.isFinite).sort(function (a, b) { return a - b; });
     var firstDaYun = daYunStarts[0];
+    var lastDaYun = daYunEnds[daYunEnds.length - 1];
     var years = [];
     for (var year = targetYear; year < targetYear + 5; year += 1) {
       var activeDaYun = findDaYunForYear(daYunData.list, year);
       var yearTimingStatus = activeDaYun ? 'active'
-        : (Number.isFinite(firstDaYun) && year < firstDaYun ? 'before_start' : 'unknown_birth');
+        : (Number.isFinite(firstDaYun) && year < firstDaYun ? 'before_start'
+          : (Number.isFinite(lastDaYun) && year > lastDaYun ? 'out_of_range' : 'unknown_birth'));
       years.push(buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, yearTimingStatus));
     }
     var timingStatus = years.some(function (row) { return row.daYunStatus === 'active'; }) ? 'active'
       : years.some(function (row) { return row.daYunStatus === 'before_start'; }) ? 'before_start'
-        : 'unknown_birth';
+        : years.some(function (row) { return row.daYunStatus === 'out_of_range'; }) ? 'out_of_range'
+          : 'unknown_birth';
     return {
       anchorYear: targetYear,
-      hasDaYun: true,
+      hasDaYun: timingStatus === 'active',
       timingStatus: timingStatus,
       years: years,
       transitions: findDaYunTransitions(years),
@@ -2937,6 +2942,7 @@
   function daYunStatusLabel(year) {
     if (year && year.daYun) return textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运';
     if (year && year.daYunStatus === 'before_start') return '起运前';
+    if (year && year.daYunStatus === 'out_of_range') return '大运范围待延展';
     if (year && year.daYunStatus === 'unknown_birth') return '出生时间未定位';
     return '未纳入大运';
   }

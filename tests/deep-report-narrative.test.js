@@ -385,11 +385,14 @@ test('five-year narrative labels unknown birth and pre-start timing separately',
   facts.fiveYear.years[1].daYunStatus = 'before_start';
   facts.fiveYear.years[2].daYun = { gan: '甲', zhi: '辰' };
   facts.fiveYear.years[2].daYunStatus = 'active';
+  facts.fiveYear.years[3].daYun = null;
+  facts.fiveYear.years[3].daYunStatus = 'out_of_range';
 
   const years = DeepReport.buildNarratives(facts).fiveYear.years;
   assert.equal(years[0].daYunLabel, '出生时间未定位');
   assert.equal(years[1].daYunLabel, '起运前');
   assert.equal(years[2].daYunLabel, '甲辰大运');
+  assert.equal(years[3].daYunLabel, '大运范围待延展');
 });
 
 test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {
