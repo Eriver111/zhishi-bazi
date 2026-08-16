@@ -279,6 +279,7 @@ test('an activated Ji wealth storage under pressure never becomes a money-retent
   };
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
   assert.doesNotMatch(retention.outcomeText, /更容易沉淀成存款|赚钱以后有地方可存/);
+  assert.doesNotMatch(retention.outcomeText, /相对更容易留住|更容易留住/);
   assert.match(retention.outcomeText, /垫的钱|责任|支出/);
 });
 

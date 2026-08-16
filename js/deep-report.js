@@ -2455,7 +2455,9 @@
             : '财富更常从稳定主业开始，再由可重复成交的能力或资源逐步放大。';
     var retentionText = retentionRisks.length
       ? '钱进来以后，容易继续投进项目、被合作伙伴分走，或者被家庭和责任性支出带走。'
-      : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住，但实际资产仍取决于现实经营。';
+      : (capacity.state === '承压' || storageRetentionText.length
+        ? '钱能不能留下要更谨慎看。机会变多时，垫资、责任和实际支出也可能一起增加，进账不等于手里能留住。'
+        : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住，但实际资产仍取决于现实经营。');
     var hasFinancialStorage = financialStorageRows.length > 0 || Boolean(wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length);
     var hasStrongWealthPath = actualPaths.length > 0;
     var hasCongCai = capacity.method === '从格顺势';
