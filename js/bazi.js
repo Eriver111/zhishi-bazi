@@ -5005,6 +5005,9 @@ function calcCandidateScores(bazi, dmStr, pattern) {
 // 边界与现状一致：sn>3 正式喜 / sn<−3 正式忌 / 0<sn≤3 弱喜 / −3≤sn<0 弱忌（符号折叠，取消展示层 neutral 悬空）。
 // sn=0 走二级 deterministic：L1>0 弱喜 / L1<0 弱忌 / L1=0 按扶抑组兜底（见 c07ZeroTier）。
 // 仅作用于最终分类出口，不修改 candidateScores / S_need / 用神赢家。
+// ⚠️ 消费方契约（GPT P5-C07 终裁）：xiShen/jiShen 是「五行方向集合」（含弱档成员），强弱语义在
+// elementClassification（用神/喜神/弱喜/忌神/弱忌）。不得默认 xi 成员全是强喜、ji 成员全是强忌——
+// 需要强弱语义时查 elementClassification，不要反过来。
 function c07ElementTier(wx, sn, l1v, dmWx, isYong) {
   if (isYong) return '用神';
   if (sn > 3) return '喜神';
