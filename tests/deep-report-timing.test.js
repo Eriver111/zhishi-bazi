@@ -178,6 +178,7 @@ test('known birth with empty or failed DaYun calculation has its own unavailable
   const cases = [
     ['empty', () => ({ list: [] })],
     ['thrown', () => { throw new Error('calculator unavailable'); }],
+    ['malformed nonempty list', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: 'soon', endYear: null }] })],
   ];
   for (const [name, calculateDaYun] of cases) {
     await t.test(name, () => {
@@ -187,6 +188,28 @@ test('known birth with empty or failed DaYun calculation has its own unavailable
       assert.equal(result.timingStatus, 'calculation_unavailable');
       assert.match(result.limitation, /大运计算暂不可用/);
       assert.ok(result.years.every(row => row.daYun === null && row.daYunStatus === 'calculation_unavailable'));
+    });
+  }
+});
+
+test('known birth with a missing DaYun calculator is unavailable rather than unknown', () => {
+  const knownBirth = { ...chart, birthDate: { year: 1990, month: 7, day: 12, hour: 9, clock: 18 } };
+  const calculator = makeCalculator();
+  delete calculator.calculateDaYun;
+  const result = DeepReport.buildFiveYearFacts(knownBirth, core, calculator, makeChain(false), 2026, 'male');
+  assert.equal(result.timingStatus, 'calculation_unavailable');
+  assert.match(result.limitation, /大运计算暂不可用/);
+});
+
+test('null empty and partial clock values never become midnight in report facts', async (t) => {
+  for (const clock of [null, undefined, '', '18abc', '1.5']) {
+    await t.test(String(clock), () => {
+      let called = false;
+      const bazi = { ...chart, birthDate: { year: 1990, month: 7, day: 12, hour: 9, clock } };
+      const calculator = { ...makeCalculator(), calculateDaYun() { called = true; return { list: [] }; } };
+      const result = DeepReport.buildFiveYearFacts(bazi, core, calculator, makeChain(false), 2026, 'male');
+      assert.equal(called, false);
+      assert.equal(result.timingStatus, 'unknown_birth');
     });
   }
 });

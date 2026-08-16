@@ -467,3 +467,16 @@ test('negative wealth chains enter retention risk but cannot raise the A-level',
   assert.deepEqual(negative.retention.risks.map(row => row.type).sort(), ['财党杀', '财破印']);
   assert.ok(Number(negativeGrade.slice(1)) <= Number(baseGrade.slice(1)));
 });
+
+test('fixed and hidden storage roles are adjudicated together when they conflict', () => {
+  const usefulFixedAdverseHidden = DeepReport.__test.storageOutcome(storageFixture('wealth', {
+    elementRole: '用神', hiddenRoles: [{ elementRole: '忌神' }], wealthConnection: true,
+  }));
+  const adverseFixedUsefulHidden = DeepReport.__test.storageOutcome(storageFixture('wealth', {
+    elementRole: '忌神', hiddenRoles: [{ elementRole: '喜神' }], wealthConnection: true,
+  }));
+  assert.match(usefulFixedAdverseHidden, /同时|混合|不能直接/);
+  assert.doesNotMatch(usefulFixedAdverseHidden, /可观察收入转化与留存/);
+  assert.match(adverseFixedUsefulHidden, /同时|混合|不能直接/);
+  assert.doesNotMatch(adverseFixedUsefulHidden, /可能伴随压力/);
+});

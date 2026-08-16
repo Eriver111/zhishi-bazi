@@ -33,7 +33,8 @@ function getUrlParams() {
         city: p.get('city') || '',
         dist: p.get('dist') || '',
         minute: parseInt(p.get('minute')) || 0,
-        clock: p.has('clock') && p.get('clock') !== '' ? parseInt(p.get('clock')) : NaN,
+        clock: /^\d{1,2}$/.test(p.get('clock') || '') && Number(p.get('clock')) <= 23
+            ? Number(p.get('clock')) : NaN,
         solar: p.get('solar') || '',
         zishi: p.get('zishi') || '',
         mode: mode,
@@ -46,6 +47,8 @@ function getUrlParams() {
 }
 
 function isValidBirthClock(clock) {
+    if (clock === null || clock === undefined || clock === '') return false;
+    if (typeof clock === 'string' && !/^\d{1,2}$/.test(clock)) return false;
     var value = Number(clock);
     return Number.isInteger(value) && value >= 0 && value <= 23;
 }

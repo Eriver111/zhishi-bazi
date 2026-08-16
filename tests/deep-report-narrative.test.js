@@ -601,6 +601,49 @@ test('risk-only years never read as quiet and never echo raw trigger evidence', 
   assert.doesNotMatch(text, /没有.*强引动|延续为主|平稳延续|severity=存在|涉日支|d1|位距\d|内部位距|证据原文/);
 });
 
+test('an activated adverse wealth storage cannot raise the A-level', () => {
+  const base = favorableFacts();
+  base.wealth.capacity = { state: '平衡观察', elementRole: '中性' };
+  base.wealth.resource = { state: '显现', visibleCount: 1, hiddenCount: 0, elementRole: '中性', quality: { roots: [], sources: [], restraints: [], relationships: [] } };
+  base.wealth.pathways = [];
+  base.wealth.storage = { present: false, activated: false, storages: [], candidates: [] };
+  const baseGrade = DeepReport.buildNarratives(base).wealth.grade;
+  base.wealth.storage = {
+    present: true, activated: true, candidates: [{ zhi: '辰' }],
+    storages: [{ storageRoleKey: 'wealth', storageRole: '财库', elementRole: '忌神', activated: true, wealthConnection: false, hiddenRoles: [{ elementRole: '忌神' }] }],
+  };
+  const adverseGrade = DeepReport.buildNarratives(base).wealth.grade;
+  assert.ok(Number(adverseGrade.slice(1)) <= Number(baseGrade.slice(1)));
+});
+
+test('neutral wealth storage under overall pressure does not invent storage debt or advance-payment risk', () => {
+  const facts = favorableFacts();
+  facts.wealth.capacity = { state: '承压', elementRole: '中性' };
+  facts.wealth.storage = {
+    present: true, activated: true, candidates: [{ zhi: '辰' }],
+    storages: [{ storageRoleKey: 'wealth', storageRole: '财库', elementRole: '中性', activated: true, wealthConnection: false, hiddenRoles: [{ elementRole: '中性' }], outcome: '中性财库被引动。' }],
+  };
+  const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
+  assert.doesNotMatch(retention.sourceText, /垫资|债务/);
+  assert.match(retention.outcomeText, /进账|承压|责任|机会/);
+});
+
+test('negative wealth chains appear only in retention risk and never in income source', () => {
+  const facts = favorableFacts();
+  facts.wealth.pathways = [
+    { type: '食伤生财', positive: true },
+    { type: '财党杀', positive: false },
+    { type: '财破印', positive: false },
+  ];
+  facts.wealth.retention = { risks: [{ type: '财党杀' }, { type: '财破印' }] };
+  const narrative = DeepReport.buildNarratives(facts).wealth;
+  const source = narrative.verdicts.find(row => row.title === '钱主要从哪里来');
+  const retention = narrative.verdicts.find(row => row.title === '钱能不能留下');
+  assert.match(source.sourceText + source.outcomeText, /食伤生财|专业输出|产品/);
+  assert.doesNotMatch(source.sourceText + source.outcomeText, /财党杀|财破印/);
+  assert.match(retention.sourceText + retention.outcomeText, /财党杀|财破印/);
+});
+
 test('five-year interaction direction takes priority over a simultaneous risk signal', () => {
   const facts = favorableFacts();
   const year = facts.fiveYear.years[0];
@@ -615,7 +658,8 @@ test('five-year interaction direction takes priority over a simultaneous risk si
   const row = fiveYear.years.find((item) => item.year === year.year);
 
   assert.equal(row.directionLabel, '偏不利');
-  assert.match(fiveYear.painPoint, /计划改了又改、钱被占用/);
+  assert.match(fiveYear.painPoint, /感情|争吵|分开|关系/);
+  assert.doesNotMatch(fiveYear.painPoint, /计划改了又改、钱被占用/);
   assert.doesNotMatch(fiveYear.painPoint, /风险信号被触发/);
 });
 
@@ -637,9 +681,12 @@ test('one high-priority spouse-palace clash outweighs several low-priority favor
   const narratives = DeepReport.buildNarratives(facts);
   assert.match(narratives.currentYear.headline, /不利/);
   assert.match(narratives.currentYear.painPoint, /争吵|分开住|重新考虑/);
+  assert.doesNotMatch(narratives.currentYear.headline + narratives.currentYear.painPoint, /不利力量更多|工作|钱上/);
   assert.equal(narratives.fiveYear.years[0].directionLabel, '偏不利');
   assert.match(narratives.fiveYear.headline, /偏不利/);
   assert.match(narratives.fiveYear.painPoint, new RegExp(String(facts.currentYear.year)));
+  assert.match(narratives.fiveYear.painPoint, /感情|争吵|分开|关系/);
+  assert.doesNotMatch(narratives.fiveYear.painPoint, /计划改了又改|钱被占用|工作/);
 });
 
 test('relief facts enter annual and five-year copy but only soften the prioritized adverse result', () => {

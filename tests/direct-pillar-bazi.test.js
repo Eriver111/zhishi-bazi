@@ -168,6 +168,17 @@ test('matched direct timing never invents clock zero when the selected candidate
   assert.equal(daYunCalled, false);
 });
 
+test('result entry accepts only a complete integer clock from zero through twenty-three', () => {
+  for (const raw of ['', ' ', '18abc', '1.5', '-1', '24']) {
+    const { context } = loadResult('?mode=pillars&timing=matched&clock=' + encodeURIComponent(raw));
+    assert.equal(Number.isNaN(context.getUrlParams().clock), true, raw);
+  }
+  for (const raw of ['0', '18', '23']) {
+    const { context } = loadResult('?mode=pillars&timing=matched&clock=' + raw);
+    assert.equal(context.getUrlParams().clock, Number(raw), raw);
+  }
+});
+
 test('matched direct result keeps entered chart while candidate timing drives DaYun', () => {
   const { context } = loadResult();
   const calls = {};
