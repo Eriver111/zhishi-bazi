@@ -792,6 +792,50 @@ test('same-priority cross-domain leads force general relief without borrowing ei
   assert.equal(year.directionLabel, '变化明显、好坏暂不能定');
 });
 
+test('five-year adjudication uses every decisive event even when only two are displayed', async (t) => {
+  for (const count of [3, 4]) {
+    await t.test(String(count) + ' decisive events', () => {
+      const facts = favorableFacts();
+      const interactions = [
+        { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year', direction: 'favorable', domains: ['wealth'], sourceText: '财富通路一被引动。' },
+        { source: '大运', type: '伏吟', formationStatus: 'qualified', targetPillar: 'month', direction: 'favorable', domains: ['wealth'], sourceText: '财富通路二被引动。' },
+        { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'day', direction: 'unknown', domains: ['relationship'], sourceText: '关系明显变化但好坏未定。' },
+      ];
+      if (count === 4) interactions.push({ source: '大运', type: '伏吟', formationStatus: 'qualified', targetPillar: 'hour', direction: 'favorable', domains: ['wealth'], sourceText: '财富通路三被引动。' });
+      facts.currentYear.interactions = interactions;
+      facts.currentYear.reliefs = [{ type: '结构风险救应', conclusion: '存在缓和条件' }];
+      facts.fiveYear.years[0] = facts.currentYear;
+      const year = DeepReport.buildNarratives(facts).fiveYear.years[0];
+      assert.equal(year.directionLabel, '变化明显、好坏暂不能定');
+      assert.match(year.summary, /关系明显变化|好坏暂不能定/);
+      assert.match(year.summary, /影响有所缓和，但原方向不变/);
+      assert.doesNotMatch(year.summary, /资金占用和回款压力会减轻/);
+    });
+  }
+});
+
+test('five-year pain point gives undecided strong changes their own branch', async (t) => {
+  const cases = [
+    ['spouse clash', ['relationship'], '六冲', /关系|夫妻宫|拉扯/],
+    ['general unknown', [], '伏吟', /明显变化|好坏暂不能定/],
+  ];
+  for (const [name, domains, type, expected] of cases) {
+    await t.test(name, () => {
+      const facts = favorableFacts();
+      facts.currentYear.interactions = [{
+        source: '流年', type, formationStatus: 'qualified', targetPillar: 'day',
+        direction: 'unknown', domains, sourceText: '本年出现强变化，但喜忌未定。',
+      }];
+      facts.currentYear.reliefs = [];
+      facts.fiveYear.years[0] = facts.currentYear;
+      const painPoint = DeepReport.buildNarratives(facts).fiveYear.painPoint;
+      assert.match(painPoint, expected);
+      assert.match(painPoint, /好坏暂不能定/);
+      assert.doesNotMatch(painPoint, /只是落地快慢|事情落地的快慢|分开住|聚少离多|必然争吵/);
+    });
+  }
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';

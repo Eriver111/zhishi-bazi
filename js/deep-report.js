@@ -3052,7 +3052,7 @@
     }
     if (row.direction === 'favorable') return '这项岁运关系打通了原局中的有利部分，现实推进会比平时顺。';
     if (row.direction === 'adverse') return '这项岁运关系触动了原局中的不利部分，现实阻力和反复会增加。';
-    return '这项岁运关系带来明显变化，但现有喜忌证据不足以直接判定最终好坏。';
+    return '该领域会出现明显变化和拉扯，但好坏暂不能定。';
   }
 
   function daYunStatusLabel(year) {
@@ -3313,15 +3313,16 @@
     var sourceYears = list(fiveYear.years);
     var years = sourceYears.map(function (year) {
       var interactions = list(year && year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
-      var selected = prioritizedTimingInteractions(interactions).slice(0, 2);
-      var legacyRelationship = !selected.length ? list(year && year.relationship && year.relationship.activations) : [];
+      var decisive = prioritizedTimingInteractions(interactions);
+      var displaySelected = decisive.slice(0, 2);
+      var legacyRelationship = !decisive.length ? list(year && year.relationship && year.relationship.activations) : [];
       var riskCopies = annualRiskCopies(year && year.triggeredRisks);
       var directionLabel = !interactions.length && riskCopies.length
         ? '风险已触发'
         : timingDirectionLabel(interactions);
-      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, selected, directionLabel);
-      var baseSummary = selected.length
-        ? selected.map(timingInteractionOutcome).join(' ')
+      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, decisive, directionLabel);
+      var baseSummary = decisive.length
+        ? decisive.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
           ? legacyRelationship.map(annualRelationshipActivationText).join(' ')
           : riskCopies.length
@@ -3336,12 +3337,12 @@
         pillar: textOf(year && year.pillar && year.pillar.gan) + textOf(year && year.pillar && year.pillar.zhi),
         daYunLabel: daYunStatusLabel(year),
         directionLabel: directionLabel,
-        sourceText: selected.map(function (row) { return textOf(row.sourceText); })
+        sourceText: displaySelected.map(function (row) { return textOf(row.sourceText); })
           .concat(riskCopies.map(function (copy) { return copy.sourceText; }))
           .concat(reliefCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
-        prioritizedOutcome: selected.length ? selected.map(timingInteractionOutcome).join(' ') : baseSummary,
-        priority: selected.length ? timingInteractionPriority(selected[0]) : 0,
+        prioritizedOutcome: decisive.length ? decisive.map(timingInteractionOutcome).join(' ') : baseSummary,
+        priority: decisive.length ? timingInteractionPriority(decisive[0]) : 0,
         riskTriggered: riskCopies.length > 0,
       };
     });
@@ -3362,7 +3363,9 @@
     return {
       hideScore: true,
       headline: headline,
-      painPoint: adverseYears.length
+      painPoint: strongest && strongest.directionLabel === '变化明显、好坏暂不能定'
+        ? strongest.year + '年：' + strongest.prioritizedOutcome + ' 该领域会明显变化或拉扯，但好坏暂不能定。'
+        : adverseYears.length
         ? adverseYears.map(function (row) { return row.year + '年：' + row.prioritizedOutcome; }).join(' ')
         : riskYears.length
           ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
