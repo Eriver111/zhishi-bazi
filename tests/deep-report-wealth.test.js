@@ -180,6 +180,27 @@ test('a recognized food-harms-wealth path connects a useful output storage', () 
   assert.equal(facts.storage.storages.find(row => row.storageRoleKey === 'output').wealthConnection, true);
 });
 
+test('an explicit peer-to-output-to-wealth path is retained and connects a useful peer storage', () => {
+  const core = storageCore({ yongShen: ['木'], xiShen: [], jiShen: [] });
+  core.actionChains = ['比劫生食伤生财'];
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '己', zhi: '未' },
+    month: { gan: '乙', zhi: '卯' },
+    day: { gan: '甲', zhi: '寅' },
+    hour: { gan: '丙', zhi: '午' },
+  }), core, calculator);
+  assert.ok(facts.pathways.some(path => path.type === '比劫生食伤生财'));
+  assert.equal(facts.storage.storages.find(row => row.storageRoleKey === 'peer').wealthConnection, true);
+});
+
+test('wealth storage outcomes distinguish connected and disconnected wealth paths', () => {
+  const disconnected = DeepReport.__test.storageOutcome(storageFixture('wealth', { elementRole: '用神', wealthConnection: false }));
+  const connected = DeepReport.__test.storageOutcome(storageFixture('wealth', { elementRole: '用神', wealthConnection: true }));
+  assert.match(disconnected, /尚未见.*财富路径/);
+  assert.match(connected, /已接入.*财富路径/);
+  assert.notEqual(connected, disconnected);
+});
+
 test('inactive and adverse storage outcomes remain specific to each Ten-God role', () => {
   const roleTerms = {
     peer: /协作|伙伴/,

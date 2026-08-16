@@ -852,6 +852,7 @@
     var risks = list(core && core.structuralRisks);
     var rows = [];
     var definitions = [
+      { type: '比劫生食伤生财', positive: true, pattern: /^(?:比肩|劫财|比劫)\s*(?:生|→|->)\s*(?:食神|伤官|食伤)\s*(?:生|→|->)\s*财(?:星)?$/, conclusion: '已有比劫、食伤到财星的完整链路证据，可观察协作、产出向资源的转化条件。' },
       { type: '食伤生财', positive: true, pattern: /(?:食神|伤官|食伤)\s*(?:生财|(?:→|->)\s*财(?:星)?)/, conclusion: '已有食伤与财星的链路证据，可关注表达、技能或产出向资源转化的条件。' },
       { type: '财生官', positive: true, pattern: /财(?:星)?(?:生|→|->)(?:正官|七杀|官杀|官)/, exclude: /财党杀|财破印|财坏印/, conclusion: '已有财与官杀相连的正向生化证据，资源可能与责任、规则或组织位置同步出现。' },
       { type: '财官印连续流通', positive: true, pattern: /财(?:星)?(?:生|→|->).*官(?:杀)?.*(?:生|→|->).*印|财官印连续流通|财生杀印/, exclude: /财党杀|财破印|财坏印/, conclusion: '已有财、官杀、印连续流通的证据，转化效果取决于各环节是否承接。' },
@@ -902,10 +903,6 @@
       risks: rows,
       evidence: rows.reduce(function (all, row) { return all.concat(row.evidence); }, []),
     };
-  }
-
-  function hasStorageActivation(zhi, bazi, core) {
-    return storageActivationEvidence(zhi, bazi, core).length > 0;
   }
 
   function storageActivationEvidence(zhi, bazi, core) {
@@ -979,7 +976,11 @@
     };
     if (!row.activated) return inactive[key] || '库支尚未见引动证据，当前以潜在条件观察。';
     if (!useful) return adverse[key] || '库支被引动，但对应元素为' + (row.elementRole || '平神') + '，暂不直接视为利好。';
-    if (key === 'wealth') return '财库被引动，资源和资产议题更容易显现，是否形成收入仍取决于承载与留存条件。';
+    if (key === 'wealth') {
+      return row.wealthConnection
+        ? '财库被引动，资金或资产议题已接入明确财富路径，可观察收入转化与留存条件。'
+        : '财库被引动，资金或资产议题更容易显现，但尚未见其接入明确财富路径。';
+    }
     if (key === 'peer') {
       return row.wealthConnection
         ? '比劫库被引动，团队、伙伴或圈层的协作可通过既有路径放大资源转化。'
@@ -1020,8 +1021,8 @@
         };
       });
       var roleKey = storageRoleKey(dayElement, fixedElement);
-      var activated = hasStorageActivation(pillar.zhi, bazi, core);
       var activationEvidence = storageActivationEvidence(pillar.zhi, bazi, core);
+      var activated = activationEvidence.length > 0;
       var wealthConnection = storageHasWealthConnection(roleKey, wealthPaths);
       var row = {
         pillar: pillarName,
