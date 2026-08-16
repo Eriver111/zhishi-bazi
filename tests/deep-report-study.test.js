@@ -115,7 +115,10 @@ test('GuanYin or ShaYin cannot be strong discipline evidence without officers', 
 
 test('study facts expose four dimensions and avoid deterministic education claims', () => {
   const result = buildStudyFixture({ sealRole: '用神', sealCount: 2 });
-  assert.deepEqual(Object.keys(result).sort(), ['absorption', 'application', 'auxiliary', 'chains', 'discipline', 'expression', 'obstacles', 'path', 'timing'].sort());
+  assert.deepEqual(Object.keys(result).sort(), [
+    'absorption', 'application', 'auxiliary', 'chains', 'discipline', 'educationBand',
+    'expression', 'fieldTendencies', 'limitations', 'obstacles', 'path', 'profile', 'timing',
+  ].sort());
   assert.match(JSON.stringify(result), /学习|表达|纪律|实践/);
   assert.doesNotMatch(JSON.stringify(result), /必上岸|必然取得学历|大学层次/);
 });
@@ -309,4 +312,114 @@ test('weak body with officers and no seals produces conditional learning pressur
   assert.notEqual(pressure.confidence, 'strong');
   assert.match(pressure.conclusion, /压力|承载|条件/);
   assert.notEqual(findStudyChain(result, 'sha_yin').confidence, 'strong');
+});
+
+function buildProfileFacts(bazi, {
+  strength = '中和', pattern = '普通格', actionChains = [],
+  yongShen = [], xiShen = [], jiShen = [], structuralRisks = [],
+} = {}) {
+  return DeepReport.buildStudyFacts(bazi, {
+    strength: { level: strength },
+    pattern: { name: pattern, status: '成格' },
+    yongJi: { yongShen, xiShen, jiShen },
+    actionChains,
+    relationEvents: [],
+    structuralRisks,
+  }, calculator);
+}
+
+test('effective Sha-Yin with useful seal outranks Guan-Yin and yields a persistent-study profile', () => {
+  const shaYin = buildProfileFacts(chart({
+    year: { gan: '壬', zhi: '子' }, month: { gan: '庚', zhi: '申' }, hour: { gan: '甲', zhi: '寅' },
+  }), { pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'] });
+  const guanYin = buildProfileFacts(chart({
+    year: { gan: '壬', zhi: '子' }, month: { gan: '辛', zhi: '酉' }, hour: { gan: '甲', zhi: '寅' },
+  }), { pattern: '官印相生格', actionChains: ['官印相生'], yongShen: ['水'] });
+  assert.equal(shaYin.profile.key, 'persistent_sha_yin');
+  assert.equal(guanYin.profile.key, 'disciplined_guan_yin');
+  assert.ok(shaYin.profile.rank > guanYin.profile.rank);
+  assert.match(shaYin.profile.outcomeText, /不怕重复|肯下功夫|长期投入/);
+});
+
+test('useful wealth regulating an excessive Ji seal is positive unless wealth breaks the seal', () => {
+  const bazi = chart({
+    year: { gan: '戊', zhi: '辰' }, month: { gan: '癸', zhi: '子' }, hour: { gan: '壬', zhi: '亥' },
+  });
+  const regulated = buildProfileFacts(bazi, {
+    strength: '偏强', pattern: '印绶格', actionChains: ['印星成势→财星制印'], yongShen: ['土'], jiShen: ['水'],
+  });
+  assert.equal(regulated.profile.key, 'smart_action_regulation');
+  const broken = buildProfileFacts(bazi, {
+    strength: '偏强', pattern: '印绶格', actionChains: ['印星成势→财星制印'], yongShen: ['土'], jiShen: ['水'],
+    structuralRisks: [{ type: '财坏印', why: '财坏印成立' }],
+  });
+  assert.notEqual(broken.profile.key, 'smart_action_regulation');
+});
+
+test('YangRen inspiration requires extreme strength, strong seal evidence and effective output', () => {
+  const bazi = chart({
+    year: { gan: '壬', zhi: '子' }, month: { gan: '乙', zhi: '卯' }, hour: { gan: '丙', zhi: '午' },
+  });
+  const complete = buildProfileFacts(bazi, {
+    strength: '极强', pattern: '羊刃格', actionChains: ['印星成势，羊刃吐秀，食伤成势'], yongShen: ['火'],
+  });
+  assert.equal(complete.profile.key, 'inspired_breakthrough');
+  assert.notEqual(buildProfileFacts(bazi, {
+    strength: '中和', pattern: '羊刃格', actionChains: ['印星成势，羊刃吐秀，食伤成势'], yongShen: ['火'],
+  }).profile.key, 'inspired_breakthrough');
+  assert.notEqual(buildProfileFacts(bazi, {
+    strength: '极强', pattern: '羊刃格', actionChains: ['羊刃见食伤'], yongShen: ['火'],
+  }).profile.key, 'inspired_breakthrough');
+});
+
+test('officer-control study profiles follow the confirmed hierarchy and exclude hurting-officer-sees-officer', () => {
+  const foodSha = buildProfileFacts(chart({ year: { gan: '丙', zhi: '午' }, month: { gan: '庚', zhi: '申' } }), {
+    pattern: '食神制杀格', actionChains: ['食神制杀'], yongShen: ['火'],
+  });
+  const woundSha = buildProfileFacts(chart({ year: { gan: '丁', zhi: '午' }, month: { gan: '庚', zhi: '申' } }), {
+    pattern: '伤官合杀格', actionChains: ['伤官合杀'], yongShen: ['火'],
+  });
+  const foodOfficer = buildProfileFacts(chart({ year: { gan: '丙', zhi: '午' }, month: { gan: '辛', zhi: '酉' } }), {
+    pattern: '食神克官', actionChains: ['食神克官'], yongShen: ['火'],
+  });
+  assert.ok(foodSha.profile.rank > woundSha.profile.rank);
+  assert.ok(woundSha.profile.rank > foodOfficer.profile.rank);
+  const conflict = buildProfileFacts(chart({ year: { gan: '丁', zhi: '午' }, month: { gan: '辛', zhi: '酉' } }), {
+    pattern: '伤官见官', actionChains: ['伤官见官'], yongShen: ['火'],
+  });
+  assert.notEqual(conflict.profile.key, 'smart_and_hardworking_wound_sha');
+});
+
+test('metal-water and wood-fire clarity require actual chains and reject seasonal blockers', () => {
+  const metalWater = buildProfileFacts(chart({
+    year: { gan: '庚', zhi: '申' }, month: { gan: '壬', zhi: '酉' }, hour: { gan: '甲', zhi: '寅' },
+  }), { actionChains: ['金生水，清而不寒'], yongShen: ['金'], xiShen: ['水'] });
+  assert.equal(metalWater.profile.key, 'metal_water_clarity');
+  const cold = buildProfileFacts(chart({
+    year: { gan: '庚', zhi: '申' }, month: { gan: '壬', zhi: '子' }, hour: { gan: '甲', zhi: '寅' },
+  }), { actionChains: ['金寒水冷'], yongShen: ['金'], xiShen: ['水'] });
+  assert.notEqual(cold.profile.key, 'metal_water_clarity');
+
+  const woodFire = buildProfileFacts(chart({
+    year: { gan: '甲', zhi: '寅' }, month: { gan: '丙', zhi: '卯' }, hour: { gan: '甲', zhi: '寅' },
+  }), { actionChains: ['木生火，清而不烈'], yongShen: ['木'], xiShen: ['火'] });
+  assert.equal(woodFire.profile.key, 'wood_fire_clarity');
+  const scorched = buildProfileFacts(chart({
+    year: { gan: '甲', zhi: '寅' }, month: { gan: '丙', zhi: '午' }, hour: { gan: '丁', zhi: '巳' },
+  }), { actionChains: ['火炎木焚'], yongShen: ['木'], xiShen: ['火'] });
+  assert.notEqual(scorched.profile.key, 'wood_fire_clarity');
+});
+
+test('authoritative severe study blockers lower the education band by at least two levels', () => {
+  const bazi = chart({
+    year: { gan: '壬', zhi: '子' }, month: { gan: '庚', zhi: '申' }, hour: { gan: '甲', zhi: '寅' },
+  });
+  const base = buildProfileFacts(bazi, { pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'] });
+  for (const blocker of ['财坏印', '身弱杀旺无印', '用神无力且空亡']) {
+    const blocked = buildProfileFacts(bazi, {
+      pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'],
+      structuralRisks: [{ type: blocker, why: blocker }],
+    });
+    assert.ok(blocked.educationBand.rank <= base.educationBand.rank - 2, blocker);
+  }
 });

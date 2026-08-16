@@ -365,7 +365,6 @@
     if (!explicit) blockers.push('缺少权威的印成势→财制印证据');
     if (wealthRole !== '用神' && wealthRole !== '喜神') blockers.push('财星未被核心喜忌标为用神或喜神');
     if (studyHasElementRole(wealth, core, '忌神')) blockers.push('财星同时含忌神角色，需先处理方向冲突');
-    if (sealRole === '忌神') blockers.push('印为忌时只能作为转化约束，不能直接视为调节成立');
     var confidence = present && blockers.length === 0 ? 'medium' : 'limited';
     var result = studyChainFact('wealth_regulates_seal', present,
       studyOccurrenceEvidence(wealth.concat(seals)).concat(explicit ? ['权威行动链证据：印成势→财制印'] : []),
@@ -444,6 +443,208 @@
       buildYangrenOutputChain(outputs, core),
       buildLearningPressureChain(officers, seals, core),
     ];
+  }
+
+  var STUDY_PROFILE_RANK = {
+    persistent_sha_yin: 100,
+    disciplined_guan_yin: 90,
+    inspired_breakthrough: 88,
+    smart_and_hardworking_food_sha: 84,
+    smart_and_hardworking_wound_sha: 80,
+    smart_and_hardworking_food_officer: 76,
+    smart_action_regulation: 74,
+    metal_water_clarity: 70,
+    wood_fire_clarity: 70,
+    composite: 50,
+  };
+
+  var STUDY_PROFILE_COPY = {
+    persistent_sha_yin: {
+      sourceText: '杀印相生链成立，印星为本命用神或喜神。',
+      outcomeText: '你属于不怕重复、肯下功夫的长期投入型；目标越难、准备周期越长，越容易把压力变成成绩。',
+      educationFloor: 8,
+    },
+    disciplined_guan_yin: {
+      sourceText: '官印相生链成立，印星为本命用神或喜神。',
+      outcomeText: '你对课程体系、考试规则和长期计划的适应力较强，按标准持续积累时，成绩更容易稳定兑现。',
+      educationFloor: 7,
+    },
+    inspired_breakthrough: {
+      sourceText: '日主旺极、印星成势，羊刃同时得到有效食伤吐秀。',
+      outcomeText: '你属于灵感和突破力很强的类型，面对竞赛、创作、复杂难题或高强度任务时，往往比常规课堂更容易显出聪明。',
+      educationFloor: 9,
+    },
+    smart_and_hardworking_food_sha: {
+      sourceText: '食神制杀链成立，食神能够制约七杀。',
+      outcomeText: '你既能扛住压力，也能把压力转成解题和专业能力，属于聪明且愿意下功夫的类型。',
+      educationFloor: 8,
+    },
+    smart_and_hardworking_wound_sha: {
+      sourceText: '伤官合杀链成立，伤官与七杀形成有效转化。',
+      outcomeText: '你的反应、拆解和临场调整能力较强，越是需要独立思考和解决难题的学习，越容易拉开差距。',
+      educationFloor: 7,
+    },
+    smart_and_hardworking_food_officer: {
+      sourceText: '食神克官链有实际十神和权威结构支持。',
+      outcomeText: '你能用自己的理解消化规则，但对僵硬标准容易产生抵触；能力型考试通常好于纯服从型环境。',
+      educationFloor: 7,
+    },
+    smart_action_regulation: {
+      sourceText: '印星成势且为忌，喜用财星形成财制印，没有财坏印证据。',
+      outcomeText: '你不是只会想而不会做；一旦目标和现实结果明确，思考会很快转成行动，聪明程度更容易通过成果体现。',
+      educationFloor: 7,
+    },
+    metal_water_clarity: {
+      sourceText: '金水实际相生，且没有金寒水冷、燥土埋金等阻断。',
+      outcomeText: '你的逻辑、归纳和信息处理能力较突出，数理、金融、法律、技术分析一类学习更容易形成优势。',
+      educationFloor: 7,
+    },
+    wood_fire_clarity: {
+      sourceText: '木火实际相生，且没有火炎木焚、木火偏枯等阻断。',
+      outcomeText: '你的理解、表达和联想能力较突出，文学、艺术、教育、传播或需要形成观点的学习更容易显出优势。',
+      educationFloor: 7,
+    },
+    composite: {
+      sourceText: '命局未形成单一高权重学习结构，按吸收、输出、纪律和应用四项综合判断。',
+      outcomeText: '你的学习表现更依赖各环节是否接得上，不属于只靠某一种天赋就能稳定出成绩的类型。',
+      educationFloor: 0,
+    },
+  };
+
+  function studyProfileRecord(key, basis) {
+    var copy = STUDY_PROFILE_COPY[key] || STUDY_PROFILE_COPY.composite;
+    return {
+      key: key,
+      rank: STUDY_PROFILE_RANK[key] || 0,
+      sourceText: copy.sourceText,
+      outcomeText: copy.outcomeText,
+      educationFloor: copy.educationFloor,
+      basis: list(basis).filter(Boolean),
+    };
+  }
+
+  function qualifiedElementOccurrences(tenGods, element) {
+    return list(tenGods).filter(function (item) {
+      return item && item.element === element && (item.layer === '天干' || item.layer === '本气');
+    });
+  }
+
+  function buildStudyPairingProfile(bazi, tenGods, core) {
+    var authoritative = studyAuthoritativeText(core) + ' ' + list(core && core.structuralRisks).map(studyRiskText).join(' ');
+    var blockerText = authoritative.replace(/不寒|不冻|不燥|不烈|不过寒|不过燥|不过烈/g, '');
+    var monthBranch = bazi && bazi.month && bazi.month.zhi;
+    var candidates = [];
+    var metal = qualifiedElementOccurrences(tenGods, '金');
+    var water = qualifiedElementOccurrences(tenGods, '水');
+    var wood = qualifiedElementOccurrences(tenGods, '木');
+    var fire = qualifiedElementOccurrences(tenGods, '火');
+    var metalWaterRolesBlocked = studyElementRole(metal, core) === '忌神' && studyElementRole(water, core) === '忌神';
+    var woodFireRolesBlocked = studyElementRole(wood, core) === '忌神' && studyElementRole(fire, core) === '忌神';
+
+    if (metal.length && water.length && /金[^。；，,]*生[^。；，,]*水|金水相涵/.test(authoritative) && !metalWaterRolesBlocked &&
+        !/寒|冻|金寒水冷|水多金沉|湿重|燥土埋金/.test(blockerText) &&
+        (!/[亥子丑]/.test(monthBranch || '') || fire.length)) {
+      candidates.push(studyProfileRecord('metal_water_clarity', ['PAIRING:METAL_WATER']));
+    }
+    if (wood.length && fire.length && /木[^。；，,]*生[^。；，,]*火|木火通明/.test(authoritative) && !woodFireRolesBlocked &&
+        !/燥|烈|火炎|木焚|木火偏枯|炎上太过/.test(blockerText) &&
+        (!/[巳午未]/.test(monthBranch || '') || water.length)) {
+      candidates.push(studyProfileRecord('wood_fire_clarity', ['PAIRING:WOOD_FIRE']));
+    }
+    candidates.sort(function (a, b) { return b.rank - a.rank; });
+    return candidates[0] || null;
+  }
+
+  function buildStudyProfile(bazi, tenGods, chains, core) {
+    var candidates = [];
+    var authoritative = studyAuthoritativeText(core);
+    var patternText = studyPatternText(core);
+    var seals = selectStudyRoles(tenGods, ['正印', '偏印']);
+    var outputs = selectStudyRoles(tenGods, ['食神', '伤官']);
+    var officers = selectStudyRoles(tenGods, ['正官', '七杀']);
+    var chainById = {};
+    list(chains).forEach(function (chain) { if (chain && chain.id) chainById[chain.id] = chain; });
+    var shaYin = chainById.sha_yin;
+    if (shaYin && shaYin.present && shaYin.confidence === 'strong' && favorableRole(shaYin.elementRoles && shaYin.elementRoles.sealRole)) {
+      if (list(shaYin.elementRoles.officerKind).indexOf('七杀') >= 0 && /杀印相生|印星化杀/.test(authoritative + ' ' + patternText)) {
+        candidates.push(studyProfileRecord('persistent_sha_yin', shaYin.evidence));
+      } else if (list(shaYin.elementRoles.officerKind).indexOf('正官') >= 0 && /官印相生/.test(authoritative + ' ' + patternText)) {
+        candidates.push(studyProfileRecord('disciplined_guan_yin', shaYin.evidence));
+      }
+    }
+
+    var strength = textOf(core && core.strength && core.strength.level);
+    var hasYangren = /羊刃/.test(patternText + ' ' + authoritative);
+    var strongSealEvidence = /印星成势|印成势|印旺|印绶成势|印强/.test(authoritative);
+    var effectiveOutput = /羊刃吐秀|食伤吐秀|食伤成势/.test(authoritative);
+    if (/极强|旺极/.test(strength) && hasYangren && strongSealEvidence && effectiveOutput && seals.length && outputs.length) {
+      candidates.push(studyProfileRecord('inspired_breakthrough', ['PROFILE:YANGREN_OUTPUT']));
+    }
+
+    var foodSha = chainById.food_controls_sha;
+    if (foodSha && foodSha.present && foodSha.confidence === 'strong') {
+      candidates.push(studyProfileRecord('smart_and_hardworking_food_sha', foodSha.evidence));
+    }
+    if (/伤官合杀/.test(authoritative) && !/伤官见官/.test(authoritative) &&
+        outputs.some(function (item) { return item.role === '伤官'; }) && officers.some(function (item) { return item.role === '七杀'; })) {
+      candidates.push(studyProfileRecord('smart_and_hardworking_wound_sha', ['CHAIN:WOUND_COMBINES_SHA']));
+    }
+    if (/食神克官/.test(authoritative) && outputs.some(function (item) { return item.role === '食神'; }) &&
+        officers.some(function (item) { return item.role === '正官'; })) {
+      candidates.push(studyProfileRecord('smart_and_hardworking_food_officer', ['CHAIN:FOOD_CONTROLS_OFFICER']));
+    }
+
+    var regulated = chainById.wealth_regulates_seal;
+    if (regulated && regulated.present && regulated.confidence !== 'limited' &&
+        regulated.elementRoles && regulated.elementRoles.sealRole === '忌神' &&
+        favorableRole(regulated.elementRoles.wealthRole) && !/财破印|财坏印/.test(authoritative + ' ' + list(core && core.structuralRisks).map(studyRiskText).join(' '))) {
+      candidates.push(studyProfileRecord('smart_action_regulation', regulated.evidence));
+    }
+
+    var pairing = buildStudyPairingProfile(bazi, tenGods, core);
+    if (pairing) candidates.push(pairing);
+    candidates.sort(function (a, b) { return b.rank - a.rank; });
+    return candidates[0] || studyProfileRecord('composite', ['PROFILE:COMPOSITE']);
+  }
+
+  function buildStudyLimitations(tenGods, chains, core) {
+    var authoritative = [studyAuthoritativeText(core), studyPatternText(core)]
+      .concat(list(core && core.structuralRisks).map(studyRiskText))
+      .concat(list(core && core.relationEvents).map(studyRiskText)).join(' ');
+    var seals = selectStudyRoles(tenGods, ['正印', '偏印']);
+    var limitations = [];
+    function add(key, severity, sourceText, outcomeText) {
+      if (limitations.some(function (row) { return row.key === key; })) return;
+      limitations.push({ key: key, severity: severity, sourceText: sourceText, outcomeText: outcomeText, basis: ['STUDY_LIMIT:' + key] });
+    }
+    if (studyElementRole(seals, core) === '忌神' && /印星成势|印成势|印旺|印重|印多/.test(authoritative)) {
+      add('excessive_ji_seal', 'medium', '印星为忌且有旺、重或成势的权威证据。', '你容易反复思考、囤积资料或依赖熟悉方法，理解不少，但形成成绩和成果的速度偏慢。');
+    }
+    if (/食伤过旺无制/.test(authoritative)) {
+      add('uncontrolled_output', 'medium', '食伤过旺且没有制化。', '你思路多、反应快，但容易厌烦重复训练和固定规则，成绩会明显低于真实聪明程度。');
+    }
+    if (/财破印|财坏印/.test(authoritative)) {
+      add('wealth_breaks_seal', 'severe', '命局有财破印或财坏印的有效证据。', '赚钱、感情或现实事务更容易在关键阶段打断学习，长期学业连续性会受到明显影响。');
+    }
+    if (/身弱杀旺无印/.test(authoritative) || list(chains).some(function (chain) { return chain && chain.id === 'learning_pressure' && chain.present; })) {
+      add('weak_body_strong_killers_no_seal', 'severe', '身弱、官杀压力重且缺少印星承接。', '面对高压考试和长期竞争时容易越学越累，成绩可能在关键阶段突然下滑或中断。');
+    }
+    if (/用神无力|用神[^。；，,]*空亡/.test(authoritative)) {
+      add('weak_or_void_useful_god', 'severe', '核心用神被权威事实标为无力或空亡。', '关键阶段的助力不稳定，能力可以达到，但兑现为学历或考试结果会多走弯路。');
+    }
+    return limitations;
+  }
+
+  function deriveEducationBand(profile, dimensions, limitations) {
+    var points = 1 + studySignalScore(dimensions.absorption) + studySignalScore(dimensions.expression) +
+      studySignalScore(dimensions.discipline) + studySignalScore(dimensions.application);
+    var rank = clampNumber(Math.round(points), 1, 10);
+    if (profile && profile.educationFloor) rank = Math.max(rank, profile.educationFloor);
+    list(limitations).forEach(function (limitation) {
+      rank -= limitation.severity === 'severe' ? 2 : 1;
+    });
+    rank = clampNumber(rank, 1, 10);
+    return { key: 'L' + rank, label: studyLevelText(rank), rank: rank, basis: ['STUDY_BAND:L' + rank] };
   }
 
   function deriveStudyPath(core, seals, outputs, officers) {
@@ -544,13 +745,28 @@
     var seals = selectStudyRoles(tenGods, ['正印', '偏印']);
     var outputs = selectStudyRoles(tenGods, ['食神', '伤官']);
     var officers = selectStudyRoles(tenGods, ['正官', '七杀']);
+    var absorption = buildAbsorptionFacts(seals, core);
+    var expression = buildExpressionFacts(outputs, core);
+    var discipline = buildDisciplineFacts(officers, seals, core);
+    var application = buildApplicationFacts(tenGods, core);
+    var chains = buildStudyChains(tenGods, core);
+    var profile = buildStudyProfile(bazi, tenGods, chains, core);
+    var limitations = buildStudyLimitations(tenGods, chains, core);
     return {
-      absorption: buildAbsorptionFacts(seals, core),
-      expression: buildExpressionFacts(outputs, core),
-      discipline: buildDisciplineFacts(officers, seals, core),
-      application: buildApplicationFacts(tenGods, core),
+      absorption: absorption,
+      expression: expression,
+      discipline: discipline,
+      application: application,
       path: deriveStudyPath(core, seals, outputs, officers),
-      chains: buildStudyChains(tenGods, core),
+      chains: chains,
+      profile: profile,
+      educationBand: deriveEducationBand(profile, {
+        absorption: absorption, expression: expression, discipline: discipline, application: application,
+      }, limitations),
+      fieldTendencies: profile.key === 'metal_water_clarity'
+        ? ['数理', '金融', '法律', '技术分析']
+        : (profile.key === 'wood_fire_clarity' ? ['文学', '艺术', '教育', '传播表达'] : []),
+      limitations: limitations,
       obstacles: selectStudyRisks(list(core.structuralRisks).concat(list(core.relationEvents))),
       auxiliary: buildStudyAuxiliary(bazi, calculator),
       timing: null,
@@ -1927,8 +2143,16 @@
     ][level];
   }
 
-  function narrativeVerdict(title, text, basis) {
-    return { title: title, text: text, basis: list(basis).filter(Boolean) };
+  function narrativeVerdict(title, text, basis, details) {
+    details = details || {};
+    var outcomeText = details.outcomeText || text || '';
+    return {
+      title: title || '',
+      sourceText: details.sourceText || '',
+      outcomeText: outcomeText,
+      text: outcomeText,
+      basis: list(basis).filter(Boolean),
+    };
   }
 
   function buildWealthNarrative(facts) {
@@ -2036,18 +2260,25 @@
 
   function buildStudyNarrative(facts) {
     var study = facts && facts.study || {};
-    var points = 1 + studySignalScore(study.absorption) + studySignalScore(study.expression) +
-      studySignalScore(study.discipline) + studySignalScore(study.application);
-    list(study.chains).forEach(function (chain) {
-      if (!chain || !chain.present) return;
-      points += chain.id === 'learning_pressure' ? -1.25 : (chain.confidence === 'strong' ? 1.5 : 0.75);
-    });
-    points -= Math.min(2, list(study.obstacles).length) * 0.5;
-    var level = clampNumber(Math.round(points), 1, 10);
+    var band = study.educationBand || {};
+    var level = Number(band.rank);
+    if (!Number.isFinite(level)) {
+      var points = 1 + studySignalScore(study.absorption) + studySignalScore(study.expression) +
+        studySignalScore(study.discipline) + studySignalScore(study.application);
+      list(study.chains).forEach(function (chain) {
+        if (!chain || !chain.present) return;
+        points += chain.id === 'learning_pressure' ? -1.25 : (chain.confidence === 'strong' ? 1.5 : 0.75);
+      });
+      points -= Math.min(2, list(study.obstacles).length) * 0.5;
+      level = clampNumber(Math.round(points), 1, 10);
+    }
+    var levelLabel = textOf(band.label) || studyLevelText(level);
+    var profile = study.profile || studyProfileRecord('composite', ['PROFILE:LEGACY_COMPOSITE']);
+    var limitations = list(study.limitations);
     var disciplineText = textOf(study.discipline);
     var absorptionText = textOf(study.absorption);
     var expressionText = textOf(study.expression);
-    var painPoint = /待建立|需外部节奏|规则切换/.test(disciplineText)
+    var painPoint = limitations.length ? textOf(limitations[0].outcomeText) : /待建立|需外部节奏|规则切换/.test(disciplineText)
       ? '最容易拖累你的不是理解能力，而是长期执行、应试节奏和对重复训练的耐心。'
       : /待建立|需转化|拉扯/.test(absorptionText)
         ? '学习最吃力的环节在于把零散信息真正消化，资料越多反而越容易失去重点。'
@@ -2055,13 +2286,12 @@
           ? '你容易出现“听懂了但写不出来、做不出来”的问题，输出训练决定最终成绩。'
           : '真正的问题不是聪明程度，而是能否把优势稳定维持到长期考试和成果交付，这也是最容易低估的短板。';
     var headline = level >= 8
-      ? '你的学习结构适合继续深造，本科以上相对轻松，冲击硕士及更高层级仍需要持续投入。'
+      ? '你的学习结构具备继续深造的基础，本科以上相对轻松，硕士及更高层级也有明显潜力。'
       : level >= 6
-        ? '你达到本科层级相对有基础，但更高学历仍取决于持续投入和应试执行。'
+        ? '你达到本科层级相对有基础，更高学历的差距主要出现在长期投入和应试稳定性。'
         : level >= 4
           ? '你并非学不会，但纯靠临场发挥很难稳定跨过更高学历门槛。'
           : '传统应试对你会比较吃力，理解能力、稳定输出和长期执行之间容易出现明显断层。';
-    var path = textOf(study.path && (study.path.type || study.path.conclusion));
     function studyStateText(kind, fact) {
       var state = textOf(fact && fact.state);
       var maps = {
@@ -2091,30 +2321,42 @@
       };
       return maps[kind] && maps[kind][state] || textOf(fact && fact.conclusion) || '该项学习特征没有形成集中表现。';
     }
-    var chainTexts = list(study.chains).filter(function (chain) { return chain && chain.present; }).map(function (chain) {
-      var map = {
-        sha_yin: '杀印相生结构成立时，面对压力和高门槛目标反而更能投入，属于越有要求越容易逼出成绩的类型。',
-        wealth_regulates_seal: '财制印结构使思考能够落到行动，学习不只停在理论，更重视结果和现实用途。',
-        food_controls_sha: '食神制杀结构使压力能够转成解题、表达和专业能力，考试竞争中更容易靠能力化解紧张。',
-        yangren_output: '羊刃配合输出结构带来强烈的突破力和灵感，优势集中在创造、竞赛或高强度任务。',
-        learning_pressure: '官杀压力缺少充分承接时，学习容易因焦虑、难度或身体状态出现阶段性中断。',
-      };
-      return narrativeVerdict('特殊学习结构', map[chain.id] || textOf(chain.conclusion), ['STUDY_CHAIN:' + (chain.id || 'unknown')]);
+    function dimensionVerdict(title, key, fact) {
+      var state = textOf(fact && fact.state) || '未形成集中表现';
+      var role = textOf(fact && fact.elementRole);
+      return narrativeVerdict(title, '', ['STUDY_' + key.toUpperCase() + ':' + state], {
+        sourceText: title + '在命局中呈现“' + state + '”' + (role && role !== '中性' ? '，对应五行为本命' + role : '') + '。',
+        outcomeText: studyStateText(key, fact),
+      });
+    }
+    var verdicts = [
+      narrativeVerdict('可达到的学习层级', '', list(band.basis).length ? band.basis : ['STUDY_BAND:L' + level], {
+        sourceText: '综合学习结构、四项承接能力与已确认阻断后，学业层级落在“' + levelLabel + '”。',
+        outcomeText: levelLabel + '。这表示命局具备的学习与应试承接上限，不代表具体学校录取。',
+      }),
+      narrativeVerdict('你的学习类型', '', list(profile.basis).length ? profile.basis : ['STUDY_PROFILE:' + (profile.key || 'composite')], {
+        sourceText: textOf(profile.sourceText),
+        outcomeText: textOf(profile.outcomeText),
+      }),
+      dimensionVerdict('理解吸收', 'absorption', study.absorption),
+      dimensionVerdict('答题与表达', 'expression', study.expression),
+      dimensionVerdict('自律与应试', 'discipline', study.discipline),
+      dimensionVerdict('知识兑现', 'application', study.application),
+    ];
+    limitations.forEach(function (limitation) {
+      verdicts.push(narrativeVerdict('拉低学业表现的因素', '', limitation.basis || ['STUDY_LIMIT:' + limitation.key], {
+        sourceText: textOf(limitation.sourceText),
+        outcomeText: textOf(limitation.outcomeText),
+      }));
     });
     return {
-      grade: 'L' + level,
-      level: studyLevelText(level),
-      difficulty: level >= 8 ? '深造优势较明显，但仍需要现实投入' : level >= 6 ? '本科较顺，更高层级需要持续努力' : '需要用方法和外部节奏补足短板',
+      grade: '',
+      level: levelLabel,
+      difficulty: '',
       headline: headline,
       painPoint: painPoint,
       paragraphs: [],
-      verdicts: [
-        narrativeVerdict('学历上限', studyLevelText(level), ['STUDY_LEVEL:L' + level]),
-        narrativeVerdict('理解吸收', studyStateText('absorption', study.absorption), ['STUDY_ABSORPTION:' + textOf(study.absorption && study.absorption.state)]),
-        narrativeVerdict('答题与表达', studyStateText('expression', study.expression), ['STUDY_EXPRESSION:' + textOf(study.expression && study.expression.state)]),
-        narrativeVerdict('自律与应试', studyStateText('discipline', study.discipline), ['STUDY_DISCIPLINE:' + textOf(study.discipline && study.discipline.state)]),
-        narrativeVerdict('知识变现', studyStateText('application', study.application), ['STUDY_APPLICATION:' + textOf(study.application && study.application.state)]),
-      ].concat(chainTexts),
+      verdicts: verdicts,
       note: '学业层级表示命局中的学习承接与应试潜力，不等于录取或学历承诺。',
     };
   }
