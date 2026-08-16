@@ -937,6 +937,54 @@
     };
   }
 
+  function buildPartialWealthFact(occurrences) {
+    var partial = list(occurrences).filter(function (item) { return item && item.role === '偏财'; });
+    var exposed = partial.filter(function (item) { return item.layer === '天干'; });
+    var hidden = partial.filter(function (item) { return item.layer !== '天干'; });
+    return {
+      strong: exposed.length >= 2,
+      exposedCount: exposed.length,
+      hiddenCount: hidden.length,
+      evidence: exposed.map(function (item) {
+        return item.pillarLabel + item.layer + item.gan + item.role;
+      }),
+    };
+  }
+
+  function storageNarrativeContribution(row, capacity) {
+    row = row || {};
+    var useful = favorableRole(row.elementRole);
+    var active = row.activated === true;
+    var connected = row.wealthConnection === true;
+    var pressure = capacity && capacity.state === '承压';
+    var hidden = list(row.hiddenRoles).map(function (item) { return item && item.role; }).filter(Boolean);
+    var basis = (row.pillarLabel || '') + (row.zhi || '') + '为' + (row.storageRole || '十神库') +
+      '，对应' + (row.elementRole || '中性') + (hidden.length ? '，库中见' + hidden.join('、') : '') +
+      (active ? '，已见引动' : '，尚未见引动') +
+      (connected ? '，并已接入财富路径' : '，尚未接入明确财富路径') +
+      (row.outcome ? '。' + row.outcome : '。');
+    var result = { basis: basis, source: '', retention: '' };
+    if (!active) return result;
+    if (row.storageRoleKey === 'peer') {
+      if (useful && connected) result.source = '伙伴、团队或熟人圈能把机会往前推，合作本身能接到现有的赚钱路径。';
+      else if (!useful) result.retention = '合作越多，越容易出现谁做得多、谁拿得多的问题，钱进来后要经过分配才会到自己手里。';
+    } else if (row.storageRoleKey === 'resource') {
+      if (useful && connected) result.source = '证书、专业能力、已有口碑或平台支持，能接到现有的赚钱路径。';
+      else if (!useful) result.retention = '容易把钱和时间持续花在准备、学习或依赖平台上，短期不一定马上变成进账。';
+    } else if (row.storageRoleKey === 'output') {
+      if (useful && connected) result.source = '技能、内容、产品、表达和项目交付，更容易直接变成客户和收入。';
+      else if (!useful) result.retention = '想做的项目容易铺得太开，花了时间和钱，真正收款的项目反而不多。';
+    } else if (row.storageRoleKey === 'wealth') {
+      if (useful && connected && !pressure) result.retention = '钱进来以后，有机会变成存款、资产或能持续带来回款的长期项目。';
+      else if (!useful || pressure) result.retention = '财库被触动时，先要面对垫资、债务、家庭责任或项目规模变大的问题，不能把它直接当成存钱信号。';
+      else result.retention = '财库被触动只说明资金和资产议题会变多；没有接上明确赚钱路径前，不能断定钱会留下。';
+    } else if (row.storageRoleKey === 'officer') {
+      if (useful && connected) result.source = '职位、管理权、平台资源或重要客户，能接到现有的赚钱路径。';
+      else if (!useful) result.retention = '职位和责任一上来，时间、规则和要承担的事情都会变多，收入未必能同步留下。';
+    }
+    return result;
+  }
+
   function buildWealthRetention(core, wealthElement) {
     var risks = list(core && core.structuralRisks);
     var events = list(core && core.relationEvents);
@@ -1229,6 +1277,7 @@
       pathElements: pathElements,
       direction: deriveWealthDirection({ yongJi: core.yongJi, pathElements: pathElements }),
       occurrences: occurrences,
+      partialWealth: buildPartialWealthFact(occurrences),
       resource: buildResourceQuality(occurrences, bazi, core, calculator, wealthWx),
       capacity: capacity,
       pathways: pathways,
@@ -2350,9 +2399,18 @@
     if (!pathElements.length) pathElements = wealthPathElements(pathways, wealth.wealthElement);
     var direction = wealth.direction || deriveWealthDirection({ yongJi: yongJi, pathElements: pathElements });
     var storageRows = list(wealth.storage && wealth.storage.storages);
-    var storageFacts = storageRows.map(function (row) {
-      return (row.pillarLabel || '') + (row.zhi || '') + '为' + (row.storageRole || '十神库') +
-        (row.activated ? '，已见引动' : '，尚未见引动');
+    var storageContributions = storageRows.map(function (row) { return storageNarrativeContribution(row, capacity); });
+    var storageFacts = storageContributions.map(function (item) { return item.basis; });
+    var storageSourceText = storageContributions.map(function (item) { return item.source; }).filter(Boolean);
+    var storageRetentionText = storageContributions.map(function (item) { return item.retention; }).filter(Boolean);
+    var financialStorageRows = storageRows.filter(function (row) {
+      return row && (row.storageRoleKey === 'wealth' || list(row.hiddenRoles).some(function (item) {
+        return item && (item.role === '正财' || item.role === '偏财');
+      }));
+    });
+    var usefulRetainingWealthStorage = financialStorageRows.filter(function (row) {
+      return row.storageRoleKey === 'wealth' && row.activated && row.wealthConnection &&
+        favorableRole(row.elementRole) && (capacity.state === '顺势' || capacity.state === '可承接');
     });
     var positivePathTypes = ['比劫生食伤生财', '食伤生财', '财生官', '财官印连续流通', '财配印'];
     var actualPaths = pathways.filter(function (row) {
@@ -2395,33 +2453,24 @@
           : /比劫/.test(pathText)
             ? '合作与圈层能够带来机会，同时也会产生更明显的利益分配。'
             : '财富更常从稳定主业开始，再由可重复成交的能力或资源逐步放大。';
-    var resourceText = Number(resource.visibleCount) > 0
-      ? '财富机会在命局中有明显出口，收入通常不是完全隐性的，更容易通过现实职位、项目或交易被看见。'
-      : Number(resource.hiddenCount) > 0
-        ? '财富信息藏在命局内部，赚钱机会往往先以能力、资源或长期积累的形式出现，兑现速度偏慢。'
-        : '原局没有明显财富出口，财富增长更依赖后天行业、平台和岁运把资源通路打开。';
-    var capacityText = capacity.state === '顺势'
-      ? '命局顺着财富结构运行，资源越集中越容易形成现实结果，财富承载是这张盘的主要优势。'
-      : capacity.state === '可承接'
-        ? '命主具备承接财富的基础，收入机会出现后有能力把它转成实际成果。'
-        : capacity.state === '有缓解'
-          ? '财富会同时带来压力，但命局中仍有力量分担，属于能接财、却不能无限扩张的结构。'
-          : capacity.state === '承压'
-            ? '财星对命主形成明显消耗，收入规模扩大时，责任、成本和资金压力也会同步增加。'
-            : '财富承载处于中间状态，收入高低更依赖具体行业与岁运是否形成通路。';
     var retentionText = retentionRisks.length
       ? '钱进来以后，容易继续投进项目、被合作伙伴分走，或者被家庭和责任性支出带走。'
       : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住，但实际资产仍取决于现实经营。';
-    var hasFinancialStorage = Boolean(wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length);
+    var hasFinancialStorage = financialStorageRows.length > 0 || Boolean(wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length);
     var hasStrongWealthPath = actualPaths.length > 0;
     var hasCongCai = capacity.method === '从格顺势';
-    var storageText = wealth.storage && wealth.storage.activated
-      ? '命局里有财星入库且库气已被引动，钱进来以后更容易沉淀成存款、资产或长期项目；能留多少还要一起看合作分配和实际支出。'
+    var partialWealth = wealth.partialWealth || { strong: false, exposedCount: 0, hiddenCount: 0, evidence: [] };
+    var storageText = usefulRetainingWealthStorage.length
+      ? '财库确实被引动，财星又是喜用，命局也能接住这股财气；钱进来以后，才有机会变成存款、资产或能持续回款的长期项目。'
+      : storageRetentionText.length
+        ? storageRetentionText.join(' ')
       : hasFinancialStorage
-        ? '命局有财入库的条件，但库气还没有明显被触动。赚钱以后有地方可存，只是兑现和积累不会一下子很快。'
-        : (!hasStrongWealthPath && !hasCongCai && !annualWealthEvidence
+        ? '命局里能看到财星或财库，但现在还不满足“财为喜用、命局接得住、并且已接上赚钱路径”这几个条件，不能直接说钱会留下。'
+        : (!hasStrongWealthPath && !hasCongCai && !annualWealthEvidence && !partialWealth.strong
           ? '命局没有形成财库，也没有看到把机会突然放大的明确链路。你的钱更适合一点点做大，把主业、客户或项目做稳，比押一次短期机会更容易留下成果。'
-          : '命局没有形成财库，但已经有其他财富通路或岁运引动条件，不能只因没有财库就断定没有突然放大的机会。');
+          : (partialWealth.strong
+            ? '命局没有形成财库，但偏财连续透出两处，说明遇到项目、客户、市场变化或阶段性机会时，进账有被放大的可能；能不能留下，仍要看后续的合作分配和实际投入。'
+            : '命局没有形成财库，但已经有其他财富通路或岁运引动条件，不能只因没有财库就断定没有突然放大的机会。'));
     var totalText;
     if (capacity.state === '承压') {
       totalText = '你的赚钱机会并不少，但机会一多，需要垫的钱、扛的责任和花掉的精力也会一起增加。账面进账可能变大，真正能留下多少要看后面的路径和留存条件。';
@@ -2432,6 +2481,7 @@
     } else {
       totalText = '这张盘的财富表现更看重具体路径。先把一个稳定的赚钱入口跑顺，再把它做成可重复的客户、项目或产品，比单纯追求机会数量更有效。';
     }
+    var sourceOutcome = source + (storageSourceText.length ? ' ' + storageSourceText.join(' ') : '');
     var retentionOutcome = retentionText + ' ' + storageText;
     var directionSource;
     var directionText;
@@ -2460,7 +2510,7 @@
           sourceText: '财星在原局中' + (Number(resource.visibleCount) > 0 ? '透干显现' : Number(resource.hiddenCount) > 0 ? '藏于地支' : '没有明显显现') + '；日主旺衰与财星喜忌综合后，财富承载状态为“' + (capacity.state || '中间状态') + '”。', outcomeText: totalText,
         }),
         narrativeVerdict('钱主要从哪里来', '', actualPaths.length ? actualPaths.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
-          sourceText: pathways.length ? '命局形成' + pathways.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。', outcomeText: source,
+          sourceText: (pathways.length ? '命局形成' + pathways.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。') + (storageFacts.length ? ' ' + storageFacts.join('；') + '。' : ''), outcomeText: sourceOutcome,
         }),
         narrativeVerdict('钱能不能留下', '', (retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR']).concat(['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : hasFinancialStorage ? 'present' : 'absent')]), {
           sourceText: (retentionRisks.length ? '原局存在' + retentionRisks.map(function (row) { return textOf(row.type || row); }).join('、') + '等财富留存证据。' : '原局未见明确财富留存风险。') + (storageFacts.length ? ' ' + storageFacts.join('；') + '。' : ''), outcomeText: retentionOutcome,

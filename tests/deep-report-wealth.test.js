@@ -381,3 +381,19 @@ test('wealth facts derive a direction only from a validated wealth pathway', () 
     element: '火', directions: ['南方'], confidence: 'strong', conflict: false,
   });
 });
+
+test('two exposed partial-wealth stems create a traceable strong-partial-wealth fact without a storage', () => {
+  const facts = DeepReport.buildWealthFacts(chart({
+    year: { gan: '戊', zhi: '子' },
+    month: { gan: '戊', zhi: '卯' },
+    day: { gan: '甲', zhi: '卯' },
+    hour: { gan: '乙', zhi: '午' },
+  }), storageCore({ yongShen: ['火'], xiShen: [], jiShen: ['土'] }), calculator);
+  assert.deepEqual(facts.partialWealth, {
+    strong: true,
+    exposedCount: 2,
+    hiddenCount: 0,
+    evidence: ['年柱天干戊偏财', '月柱天干戊偏财'],
+  });
+  assert.equal(facts.storage.candidates.length, 0);
+});

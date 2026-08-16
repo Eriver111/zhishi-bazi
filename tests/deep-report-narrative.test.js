@@ -264,6 +264,49 @@ test('a generic annual wealth sentence does not override the no-storage steady-a
   assert.match(retention.outcomeText, /一点点做大/);
 });
 
+test('an activated Ji wealth storage under pressure never becomes a money-retention promise', () => {
+  const facts = favorableFacts();
+  facts.core.yongJi = { yongShen: ['水'], xiShen: [], jiShen: ['土'] };
+  facts.wealth.capacity = { state: '承压', elementRole: '忌神' };
+  facts.wealth.resource.elementRole = '忌神';
+  facts.wealth.storage = {
+    present: true, activated: true, candidates: [{ zhi: '辰' }],
+    storages: [{
+      pillarLabel: '年柱', zhi: '辰', storageRoleKey: 'wealth', storageRole: '财库',
+      elementRole: '忌神', activated: true, wealthConnection: false,
+      hiddenRoles: [{ role: '偏财', gan: '戊' }], outcome: '财库被引动，但资金议题可能伴随压力。',
+    }],
+  };
+  const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
+  assert.doesNotMatch(retention.outcomeText, /更容易沉淀成存款|赚钱以后有地方可存/);
+  assert.match(retention.outcomeText, /垫的钱|责任|支出/);
+});
+
+test('five storage roles enter the wealth source and retention conclusions with different plain results', () => {
+  const facts = favorableFacts();
+  facts.wealth.storage.storages = [
+    { pillarLabel: '年柱', zhi: '未', storageRoleKey: 'peer', storageRole: '比劫库', elementRole: '喜神', activated: true, wealthConnection: true, hiddenRoles: [], outcome: '伙伴条件已接入财富路径。' },
+    { pillarLabel: '月柱', zhi: '丑', storageRoleKey: 'resource', storageRole: '印库', elementRole: '用神', activated: true, wealthConnection: true, hiddenRoles: [], outcome: '资质支持已接入财富路径。' },
+    { pillarLabel: '日柱', zhi: '戌', storageRoleKey: 'output', storageRole: '食伤库', elementRole: '喜神', activated: true, wealthConnection: true, hiddenRoles: [], outcome: '技能产出已接入财富路径。' },
+    { pillarLabel: '时柱', zhi: '辰', storageRoleKey: 'wealth', storageRole: '财库', elementRole: '用神', activated: true, wealthConnection: true, hiddenRoles: [{ role: '偏财', gan: '戊' }], outcome: '资产已接入财富路径。' },
+    { pillarLabel: '时柱', zhi: '丑', storageRoleKey: 'officer', storageRole: '官杀库', elementRole: '喜神', activated: true, wealthConnection: true, hiddenRoles: [], outcome: '管理平台已接入财富路径。' },
+  ];
+  const verdicts = DeepReport.buildNarratives(facts).wealth.verdicts;
+  const copy = verdicts.filter(row => /钱主要从哪里来|钱能不能留下/.test(row.title))
+    .map(row => row.sourceText + row.outcomeText).join('\n');
+  for (const text of ['伙伴', '资质', '技能', '资产', '管理']) assert.match(copy, new RegExp(text));
+});
+
+test('strong partial wealth prevents a no-storage chart from being reduced to only slow accumulation', () => {
+  const facts = favorableFacts();
+  facts.wealth.pathways = [];
+  facts.wealth.storage = { present: false, activated: false, candidates: [], storages: [] };
+  facts.wealth.partialWealth = { strong: true, exposedCount: 2, hiddenCount: 0, evidence: ['年干偏财', '月干偏财'] };
+  const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
+  assert.doesNotMatch(retention.outcomeText, /一点点做大/);
+  assert.match(retention.outcomeText, /偏财|机会/);
+});
+
 test('wealth timing names the exact year relation and a concrete money outcome', () => {
   const facts = favorableFacts();
   facts.currentYear.interactions = [{
