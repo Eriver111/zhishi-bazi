@@ -1124,7 +1124,7 @@
       var hiddenNote = disposition === 'supportive-hidden'
         ? '库中虽有喜用藏干，但固定库性仍为中性。'
         : disposition === 'mixed'
-          ? '库中喜用与忌神同时存在。'
+          ? mixedStorageRoleNote(row)
           : '';
       return hiddenNote + (neutral[key] || '库支被引动，但整体喜忌不明确，只说明相关事项会变多，不能直接判断好坏。');
     }
@@ -1154,6 +1154,23 @@
         : '官杀库被引动，责任、规则或组织位置更活跃，但尚未见其接入财富路径。';
     }
     return '库支被引动，但十神归类尚未确定，暂以条件变化观察。';
+  }
+
+  function mixedStorageRoleNote(row) {
+    row = row || {};
+    var hiddenRoles = list(row.hiddenRoles).map(function (item) { return item && item.elementRole; }).filter(Boolean);
+    var hiddenUseful = hiddenRoles.find(favorableRole);
+    var hiddenAdverse = hiddenRoles.indexOf('忌神') >= 0;
+    if (favorableRole(row.elementRole) && hiddenAdverse) {
+      return '固定库性为' + row.elementRole + '，但藏干含忌神。';
+    }
+    if (row.elementRole === '忌神' && hiddenUseful) {
+      return '固定库性为忌神，但藏干含' + hiddenUseful + '。';
+    }
+    if (!favorableRole(row.elementRole) && row.elementRole !== '忌神' && hiddenUseful && hiddenAdverse) {
+      return '固定库性为' + (row.elementRole || '中性') + '，藏干同时含喜用与忌神。';
+    }
+    return '固定库性与藏干的喜忌证据相反。';
   }
 
   function buildWealthStorage(bazi, core, wealthElement, calculator, wealthPaths) {
@@ -2430,10 +2447,10 @@
     }
     var daYunList = list(daYunData.list);
     var daYunListValid = daYunList.length && daYunList.every(function (item) {
-      return item && textOf(item.gan) && textOf(item.zhi) &&
+      return item && ANNUAL_STEMS.indexOf(item.gan) >= 0 && ANNUAL_BRANCHES.indexOf(item.zhi) >= 0 &&
         item.startYear !== null && item.startYear !== undefined && item.startYear !== '' &&
         item.endYear !== null && item.endYear !== undefined && item.endYear !== '' &&
-        Number.isFinite(Number(item.startYear)) && Number.isFinite(Number(item.endYear)) &&
+        Number.isInteger(Number(item.startYear)) && Number.isInteger(Number(item.endYear)) &&
         Number(item.endYear) >= Number(item.startYear);
     });
     var daYunStarts = daYunList.map(function (item) { return Number(item && item.startYear); })
@@ -3168,8 +3185,15 @@
     });
   }
 
-  function annualReliefCopies(reliefs, hasSupportedPressure) {
+  function annualReliefCopies(reliefs, hasSupportedPressure, leadInteractions) {
     var seen = {};
+    var leadDomains = list(leadInteractions).reduce(function (domains, interaction) {
+      list(interaction && interaction.domains).forEach(function (domain) {
+        if (domains.indexOf(domain) < 0) domains.push(domain);
+      });
+      return domains;
+    }, []);
+    var relationshipLead = leadDomains.indexOf('relationship') >= 0;
     return list(reliefs).map(function (relief) {
       var type = textOf(relief && relief.type);
       var sourceText = type === '喜用岁运'
@@ -3181,7 +3205,9 @@
         title: '本年已有缓和条件',
         sourceText: sourceText,
         outcomeText: hasSupportedPressure
-          ? '这会让前面列出的争执、返工、资金占用或计划被打断减轻一些，但不会把已经出现的不利变化完全消掉。'
+          ? relationshipLead
+            ? '这说明双方仍有沟通和回转空间，能缓和一部分矛盾，但不会把关系忽远忽近、发生争吵或重新考虑是否继续的变化完全消除，整体仍偏不利。'
+            : '这会让前面列出的争执、返工、资金占用或计划被打断减轻一些，但不会把已经出现的不利变化完全消掉。'
           : '这会让事情推进时多一部分支撑，但没有明确不利结果时，也不能把它单独写成一定变好。',
       };
     }).filter(function (copy) {
@@ -3199,7 +3225,7 @@
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var decisiveInteractions = prioritizedTimingInteractions(interactions);
-    var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk);
+    var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
     var timingBasis = year && year.daYun
@@ -3211,7 +3237,7 @@
         ? '本年有风险信号被岁运触发，下面列出已有依据和可能出现的具体表现。'
         : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
     if (reliefCopies.length && (directionLabel === '偏不利' || hasTriggeredRisk)) {
-      headline += '同时出现的缓和条件能减轻一部分，但不会把这些不利变化完全消掉。';
+      headline += reliefCopies[0].outcomeText;
     }
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
@@ -3267,7 +3293,7 @@
       var directionLabel = !interactions.length && riskCopies.length
         ? '风险已触发'
         : timingDirectionLabel(interactions);
-      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0);
+      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, selected);
       var baseSummary = selected.length
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length

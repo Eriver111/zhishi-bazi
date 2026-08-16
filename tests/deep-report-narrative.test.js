@@ -706,6 +706,8 @@ test('relief facts enter annual and five-year copy but only soften the prioritiz
   assert.match(currentCopy, /缓和|减轻/);
   assert.match(currentCopy, /不会.*完全|仍会/);
   assert.match(yearRow.sourceText + yearRow.summary, /缓和|减轻/);
+  assert.match(currentCopy + yearRow.sourceText + yearRow.summary, /沟通|回转|感情|关系/);
+  assert.doesNotMatch(currentCopy + yearRow.sourceText + yearRow.summary, /返工|资金占用|计划被打断/);
   assert.equal(yearRow.directionLabel, '偏不利');
   assert.match(narratives.currentYear.headline, /不利/);
   assert.doesNotMatch(currentCopy + yearRow.sourceText + yearRow.summary, /加强印星支持|建议|应该|最好/);

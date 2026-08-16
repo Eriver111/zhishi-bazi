@@ -480,3 +480,22 @@ test('fixed and hidden storage roles are adjudicated together when they conflict
   assert.match(adverseFixedUsefulHidden, /同时|混合|不能直接/);
   assert.doesNotMatch(adverseFixedUsefulHidden, /可能伴随压力/);
 });
+
+test('mixed storage copy names the fixed role and the opposing hidden role precisely', async (t) => {
+  const cases = [
+    ['fixed useful hidden adverse', '用神', ['忌神'], /固定库性为用神，但藏干含忌神/],
+    ['fixed adverse hidden useful', '忌神', ['喜神'], /固定库性为忌神，但藏干含喜神/],
+    ['neutral fixed mixed hidden', '中性', ['用神', '忌神'], /固定库性为中性，藏干同时含喜用与忌神/],
+  ];
+  for (const [name, elementRole, hiddenRoles, expected] of cases) {
+    await t.test(name, () => {
+      const outcome = DeepReport.__test.storageOutcome(storageFixture('wealth', {
+        elementRole,
+        hiddenRoles: hiddenRoles.map(role => ({ elementRole: role })),
+        wealthConnection: true,
+      }));
+      assert.match(outcome, expected);
+      assert.doesNotMatch(outcome, /^库中喜用与忌神同时存在/);
+    });
+  }
+});
