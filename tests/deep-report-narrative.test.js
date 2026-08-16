@@ -395,6 +395,17 @@ test('five-year narrative labels unknown birth and pre-start timing separately',
   assert.equal(years[3].daYunLabel, '大运范围待延展');
 });
 
+test('out-of-range current-year copy states that DaYun is not included in the judgment', () => {
+  const facts = favorableFacts();
+  facts.currentYear.daYun = null;
+  facts.currentYear.daYunStatus = 'out_of_range';
+
+  const narrative = DeepReport.buildNarratives(facts).currentYear;
+  assert.match(narrative.verdicts[0].sourceText, /大运范围待延展/);
+  assert.match(narrative.verdicts[0].sourceText, /只按流年与原局/);
+  assert.doesNotMatch(narrative.verdicts[0].sourceText, /按流年、大运与原局实际关系判断/);
+});
+
 test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {
   const years = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts())).fiveYear.years;
   assert.match(years[0].summary, /争吵|分开住|聚少离多|重新考虑/);

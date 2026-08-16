@@ -168,6 +168,7 @@ test('known birth after the available DaYun list stays out of range rather than 
   assert.equal(result.timingStatus, 'out_of_range');
   assert.equal(result.hasDaYun, false);
   assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'out_of_range'));
+  assert.ok(result.years.every((row) => row.daYunStemRole === '未纳入' && row.daYunBranchRole === '未纳入'));
 });
 
 test('undated four pillars still use authoritative original-chart annual relations', () => {

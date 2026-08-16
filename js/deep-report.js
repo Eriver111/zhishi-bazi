@@ -2291,8 +2291,12 @@
       daYunStatus: timingStatus || (activeDaYun ? 'active' : 'unknown_birth'),
       stemRole: classifyElementRole(stemElement, core && core.yongJi),
       branchRole: classifyElementRole(branchElement, core && core.yongJi),
-      daYunStemRole: classifyElementRole(calculator && calculator.WU_XING && calculator.WU_XING[activeDaYun && activeDaYun.gan], core && core.yongJi),
-      daYunBranchRole: classifyElementRole(calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[activeDaYun && activeDaYun.zhi], core && core.yongJi),
+      daYunStemRole: activeDaYun
+        ? classifyElementRole(calculator && calculator.WU_XING && calculator.WU_XING[activeDaYun.gan], core && core.yongJi)
+        : '未纳入',
+      daYunBranchRole: activeDaYun
+        ? classifyElementRole(calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[activeDaYun.zhi], core && core.yongJi)
+        : '未纳入',
       tenGod: tenGod,
       dynamic: dynamic,
       interactions: interactions,
@@ -2953,11 +2957,14 @@
     var directionLabel = timingDirectionLabel(interactions);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
+    var timingBasis = year && year.daYun
+      ? '按流年、大运与原局的实际关系判断。'
+      : '当前大运未纳入，只按流年与原局的实际关系判断。';
     var headline = interactions.length
       ? (directionLabel === '偏有利' ? '本年被引动的有利关系更多，现实变化总体朝着改善和兑现发展。' : directionLabel === '偏不利' ? '本年被引动的不利关系更多，事业、资金或感情更容易出现明显波动。' : '本年有利与不利关系同时被引动，机会和压力会先后出现。')
       : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
-      sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；按流年、大运与原局的实际关系判断。',
+      sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
       outcomeText: headline,
     })];
     interactions.forEach(function (interaction) {
