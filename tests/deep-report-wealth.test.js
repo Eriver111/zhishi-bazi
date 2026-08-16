@@ -499,6 +499,16 @@ test('hidden wealth without a source chain or connected storage stays in a poor 
   assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /藏在地支|没有接成|不等于/);
 });
 
+test('an extremely weak body cannot become rich from adverse wealth scale alone', () => {
+  const facts = buildRealWealthFacts('戊午 癸亥 辛卯 甲午');
+  const level = Number(facts.wealth.narrative.grade.slice(1));
+
+  assert.equal(facts.core.strength.score, 21);
+  assert.equal(facts.wealth.resource.elementRole, '忌神');
+  assert.ok(facts.wealth.pathways.some((row) => row.scalePotential === true && row.effect === 'adverse'));
+  assert.ok(level <= 5, facts.wealth.narrative.grade);
+});
+
 test('multiple Yong elements retain all matching directions instead of returning no answer', () => {
   const direction = DeepReport.__test.deriveWealthDirection({
     yongJi: { yongShen: ['木', '水'], xiShen: [], jiShen: ['火'] },

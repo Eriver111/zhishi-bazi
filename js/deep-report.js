@@ -2712,7 +2712,7 @@
       list(quality.sources).length <= 1 && !connectedActivatedWealthStorage;
     if (isolatedHiddenWealth) level = Math.min(level, 4);
     var strengthScore = Number(facts && facts.core && facts.core.strength && facts.core.strength.score);
-    var extremeWeakAdverse = Number.isFinite(strengthScore) && strengthScore <= 20 &&
+    var extremeWeakAdverse = Number.isFinite(strengthScore) && strengthScore <= 25 &&
       (capacity.elementRole === '忌神' || resource.elementRole === '忌神') && capacity.method !== '从格顺势';
     if (extremeWeakAdverse) level = Math.min(level, 5);
     var pathText = scalePaths.map(function (row) { return textOf(row && (row.type || row.conclusion || row)); }).join(' ');
