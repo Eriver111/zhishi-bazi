@@ -266,6 +266,23 @@ test('a legal DaYun list gap is calculation unavailable in both annual rows and 
   assert.ok(result.years.every(row => row.daYun === null && row.daYunStatus === 'calculation_unavailable'));
 });
 
+test('any unavailable year dominates active years in the five-year timing status', () => {
+  const knownBirth = { ...chart, birthDate: { year: 1990, month: 7, day: 12, hour: 9, clock: 18 } };
+  const calculator = {
+    ...makeCalculator(),
+    calculateDaYun: () => ({ list: [
+      { gan: '丙', zhi: '寅', startYear: 2013, endYear: 2014 },
+      { gan: '丁', zhi: '卯', startYear: 2017, endYear: 2026 },
+    ] }),
+  };
+  const result = DeepReport.buildFiveYearFacts(knownBirth, core, calculator, makeChain(false), 2013, 'male');
+  assert.deepEqual(result.years.map(row => row.daYunStatus), [
+    'active', 'active', 'calculation_unavailable', 'calculation_unavailable', 'active',
+  ]);
+  assert.equal(result.timingStatus, 'calculation_unavailable');
+  assert.equal(result.hasDaYun, false);
+});
+
 test('undated four pillars still use authoritative original-chart annual relations', () => {
   const undated = { ...chart };
   delete undated.birthDate;

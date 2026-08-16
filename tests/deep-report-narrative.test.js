@@ -867,6 +867,64 @@ test('five-year overall adjudication aggregates every year tied at the highest p
   }
 });
 
+test('annual and five-year decisive aggregation is stable under reversed input order', () => {
+  function build(reverse) {
+    const facts = favorableFacts();
+    const rows = [
+      { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year', direction: 'favorable', domains: ['wealth'], sourceText: '财富有利。' },
+      { source: '大运', type: '伏吟', formationStatus: 'qualified', targetPillar: 'day', direction: 'unknown', domains: ['relationship'], sourceText: '关系未定。' },
+      { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'month', direction: 'favorable', domains: ['career'], sourceText: '事业有利。' },
+    ];
+    facts.currentYear.interactions = reverse ? rows.slice().reverse() : rows;
+    facts.currentYear.reliefs = [];
+    facts.fiveYear.years[0] = facts.currentYear;
+    if (reverse) facts.fiveYear.years = facts.fiveYear.years.slice().reverse();
+    const narratives = DeepReport.buildNarratives(facts);
+    return {
+      current: { headline: narratives.currentYear.headline, painPoint: narratives.currentYear.painPoint },
+      five: {
+        headline: narratives.fiveYear.headline,
+        painPoint: narratives.fiveYear.painPoint,
+        summaries: narratives.fiveYear.years.map(row => [row.year, row.summary]),
+      },
+    };
+  }
+  assert.deepEqual(build(false), build(true));
+});
+
+test('low-priority adverse years never become the main pain point over a higher-priority favorable year', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years[0].interactions = [{
+    source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year',
+    direction: 'favorable', domains: ['wealth'], sourceText: '高优先财富有利。',
+  }];
+  facts.fiveYear.years[1].interactions = [{
+    source: '流年', type: '伏吟', targetPillar: 'year',
+    direction: 'adverse', domains: ['career'], sourceText: '低优先事业不利。',
+  }];
+  const fiveYear = DeepReport.buildNarratives(facts).fiveYear;
+  assert.match(fiveYear.headline, /偏有利/);
+  assert.doesNotMatch(fiveYear.painPoint, /岗位|返工|事业不利|2027年/);
+});
+
+test('current-year same-priority favorable plus unknown uses the full set in an order-independent pain point', () => {
+  function build(rows) {
+    const facts = favorableFacts();
+    facts.currentYear.interactions = rows;
+    facts.currentYear.reliefs = [];
+    return DeepReport.buildNarratives(facts).currentYear;
+  }
+  const rows = [
+    { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year', direction: 'favorable', domains: ['wealth'], sourceText: '财富有利。' },
+    { source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'day', direction: 'unknown', domains: ['relationship'], sourceText: '关系未定。' },
+  ];
+  const forward = build(rows);
+  const reverse = build(rows.slice().reverse());
+  assert.deepEqual({ headline: forward.headline, painPoint: forward.painPoint }, { headline: reverse.headline, painPoint: reverse.painPoint });
+  assert.match(forward.headline + forward.painPoint, /好坏暂不能定/);
+  assert.match(forward.painPoint, /收入|财富|明显变化|拉扯/);
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';

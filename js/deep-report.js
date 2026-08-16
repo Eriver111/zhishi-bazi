@@ -2471,11 +2471,11 @@
           : (Number.isFinite(lastDaYun) && year > lastDaYun ? 'out_of_range' : 'calculation_unavailable'));
       years.push(buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, yearTimingStatus));
     }
-    var timingStatus = years.some(function (row) { return row.daYunStatus === 'active'; }) ? 'active'
-      : years.some(function (row) { return row.daYunStatus === 'before_start'; }) ? 'before_start'
+    var timingStatus = years.some(function (row) { return row.daYunStatus === 'calculation_unavailable'; }) ? 'calculation_unavailable'
+      : years.some(function (row) { return row.daYunStatus === 'active'; }) ? 'active'
+        : years.some(function (row) { return row.daYunStatus === 'before_start'; }) ? 'before_start'
         : years.some(function (row) { return row.daYunStatus === 'out_of_range'; }) ? 'out_of_range'
-          : years.some(function (row) { return row.daYunStatus === 'calculation_unavailable'; }) ? 'calculation_unavailable'
-            : 'unknown_birth';
+          : 'unknown_birth';
     return {
       anchorYear: targetYear,
       hasDaYun: timingStatus === 'active',
@@ -3016,7 +3016,15 @@
     var highest = rows.reduce(function (priority, row) {
       return Math.max(priority, timingInteractionPriority(row));
     }, 0);
-    return rows.filter(function (row) { return timingInteractionPriority(row) === highest; });
+    return rows.filter(function (row) { return timingInteractionPriority(row) === highest; }).sort(function (a, b) {
+      return timingInteractionStableKey(a).localeCompare(timingInteractionStableKey(b), 'zh-CN');
+    });
+  }
+
+  function timingInteractionStableKey(row) {
+    row = row || {};
+    return [row.source, row.type, row.targetPillar, row.targetLabel, row.actor, row.target,
+      row.formedElement, row.direction, row.sourceText].map(textOf).join('|');
   }
 
   function timingInteractionOutcome(row) {
@@ -3252,6 +3260,7 @@
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var decisiveInteractions = prioritizedTimingInteractions(interactions);
+    var decisiveOutcome = decisiveInteractions.map(timingInteractionOutcome).filter(Boolean).join(' ');
     var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions, directionLabel);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
@@ -3259,7 +3268,7 @@
       ? '按流年、大运与原局的实际关系判断。'
       : '当前大运未纳入，只按流年与原局的实际关系判断。';
     var headline = interactions.length
-      ? decisiveInteractions.map(timingInteractionOutcome).filter(Boolean).join(' ')
+      ? decisiveOutcome
       : hasTriggeredRisk
         ? '本年有风险信号被岁运触发，下面列出已有依据和可能出现的具体表现。'
         : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
@@ -3297,7 +3306,9 @@
       hideScore: true,
       headline: headline,
       painPoint: interactions.length
-        ? timingInteractionOutcome(decisiveInteractions[0])
+        ? directionLabel === '变化明显、好坏暂不能定'
+          ? decisiveOutcome + ' 综合同级变化后，好坏暂不能定。'
+          : decisiveOutcome
         : hasTriggeredRisk
           ? riskCopies[0].outcomeText
           : '没有强引动不等于没有事情发生，只表示主要结果更接近原有方向的延续。',
@@ -3311,7 +3322,9 @@
 
   function buildFiveYearNarrative(facts) {
     var fiveYear = facts && facts.fiveYear || {};
-    var sourceYears = list(fiveYear.years);
+    var sourceYears = list(fiveYear.years).slice().sort(function (a, b) {
+      return Number(a && a.year) - Number(b && b.year);
+    });
     var years = sourceYears.map(function (year) {
       var interactions = list(year && year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
       var decisive = prioritizedTimingInteractions(interactions);
@@ -3360,7 +3373,7 @@
     var highestOutcome = highestYears.map(function (row) {
       return row.year + '年：' + row.prioritizedOutcome;
     }).join(' ');
-    var adverseYears = years.filter(function (row) { return row.directionLabel === '偏不利'; });
+    var adverseYears = highestYears.filter(function (row) { return row.directionLabel === '偏不利'; });
     var riskYears = years.filter(function (row) { return row.riskTriggered; });
     var allDaYunActive = sourceYears.length > 0 && sourceYears.every(function (year) {
       return year && year.daYun && year.daYunStatus === 'active';
