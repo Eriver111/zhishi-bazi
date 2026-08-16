@@ -729,6 +729,15 @@
     return '中等';
   }
 
+  function authoritativeWealthSupport(core) {
+    var positive = /(?:印星|正印|偏印|印比|比肩|劫财|比劫).{0,24}(?:生身|扶身|助身|帮身|护身|支持|承载)|(?:生身|扶身|助身|帮身|护身|支持|承载).{0,24}(?:印星|正印|偏印|印比|比肩|劫财|比劫)/;
+    var negative = /克身|破印|坏印|夺食|受制|无力|不足|不成|不能|未见|缺少/;
+    return list(core && core.actionChains).concat(list(core && core.relationEvents)).filter(function (row) {
+      var text = textOf(row);
+      return positive.test(text) && !negative.test(text);
+    });
+  }
+
   function buildWealthFacts(bazi, core, calculator) {
     if (!bazi || !bazi.day || !calculator) throw new Error('财富事实缺少有效命盘或计算器');
     core = core || {};
@@ -749,15 +758,38 @@
     var supportOccurrences = collectTenGodOccurrences(bazi, calculator, function (role) {
       return ['正印', '偏印', '比肩', '劫财'].indexOf(role) >= 0;
     }).filter(function (item) { return !(item.pillar === 'day' && item.layer === '天干'); });
-    var effectiveSupport = supportOccurrences.filter(function (item) {
+    var favorableSupport = supportOccurrences.filter(function (item) {
       var itemRole = classifyElementRole(item.element, core.yongJi);
       return itemRole === '用神' || itemRole === '喜神';
     });
+    var directSupport = favorableSupport.filter(function (item) {
+      return item.layer === '天干' || item.layer === '本气';
+    });
+    var secondarySupport = favorableSupport.filter(function (item) {
+      return item.layer === '中气' || item.layer === '余气';
+    });
+    var secondaryPillars = secondarySupport.map(function (item) { return item.pillar; }).filter(function (pillar, index, rows) {
+      return rows.indexOf(pillar) === index;
+    });
+    var chainSupport = authoritativeWealthSupport(core);
+    var effectiveSupport = directSupport.concat(secondaryPillars.length >= 2 ? secondarySupport : []);
+    var isEffectiveSupport = effectiveSupport.length > 0 || chainSupport.length > 0;
+    var limitedSupport = !isEffectiveSupport && secondarySupport.length > 0;
+    var occurrenceEvidence = effectiveSupport.map(function (item) {
+      return item.pillarLabel + item.layer + item.gan + item.role + '为' + classifyElementRole(item.element, core.yongJi) + '，提供身弱承载支持';
+    });
+    var chainEvidence = chainSupport.map(function (row) {
+      return '权威印比支持链：' + textOf(row);
+    });
     var support = {
-      effective: effectiveSupport.length > 0,
+      effective: isEffectiveSupport,
+      limited: limitedSupport,
       occurrences: effectiveSupport,
-      evidence: effectiveSupport.map(function (item) {
-        return item.pillarLabel + item.layer + item.gan + item.role + '为' + classifyElementRole(item.element, core.yongJi) + '，提供身弱承载支持';
+      limitedOccurrences: limitedSupport ? secondarySupport : [],
+      authoritative: chainSupport,
+      evidence: occurrenceEvidence.concat(chainEvidence),
+      limitedEvidence: (limitedSupport ? secondarySupport : []).map(function (item) {
+        return item.pillarLabel + item.layer + item.gan + item.role + '为单一弱藏干，仅部分缓解承载压力';
       }),
     };
     var capacity;
@@ -767,7 +799,9 @@
     } else if (weak && elementRole === '忌神' && support.effective) {
       capacity = evidence('有缓解', '身弱而财为忌仍有承载压力，但有效印星或比劫支持可提供缓解，不宜只按承压解释。', 'medium', ['身弱', '财为忌'].concat(support.evidence), elementRole);
     } else if (weak && elementRole === '忌神') {
-      capacity = evidence('承压', '财星力量明显，但日主承载条件有限，机会与资源压力可能同时增加。', 'strong', ['身弱', '财为忌'], elementRole);
+      capacity = evidence('承压', limitedSupport
+        ? '财星力量明显，日主承载条件仍有限；单一中气或余气印比仅部分缓解承载压力，不能作为有效支持。'
+        : '财星力量明显，但日主承载条件有限，机会与资源压力可能同时增加。', 'strong', ['身弱', '财为忌'].concat(support.limitedEvidence), elementRole);
     } else if (elementRole === '用神' || elementRole === '喜神') {
       capacity = evidence('可承接', '财星属于冻结核心中的有利元素，具备资源调动的候选条件，仍需结合承载和路径。', 'medium', ['财为' + elementRole], elementRole);
     } else {

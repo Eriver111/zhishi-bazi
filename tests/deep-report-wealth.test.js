@@ -163,3 +163,50 @@ test('weak body with effective seal or peer support reports mitigation before pu
   assert.match(facts.capacity.conclusion, /印|比|支持|缓解/);
   assert.doesNotMatch(facts.capacity.conclusion, /纯粹|完全无法承载/);
 });
+
+function supportFacts(bazi, { yongShen = ['水', '木'], actionChains = [], relationEvents = [] } = {}) {
+  return DeepReport.buildWealthFacts(bazi, {
+    strength: { level: '偏弱' },
+    pattern: { name: '普通格', congGe: false },
+    congGe: false,
+    yongJi: { yongShen, xiShen: [], jiShen: ['土'] },
+    actionChains,
+    relationEvents,
+    structuralRisks: [],
+  }, calculator);
+}
+
+test('one middle or remaining hidden seal or peer is limited support only', () => {
+  const facts = supportFacts(chart({
+    year: { gan: '戊', zhi: '丑' },
+    month: { gan: '己', zhi: '午' },
+    day: { gan: '甲', zhi: '巳' },
+    hour: { gan: '庚', zhi: '酉' },
+  }), { yongShen: ['水'] });
+  assert.equal(facts.capacity.support.effective, false);
+  assert.equal(facts.capacity.support.limited, true);
+  assert.equal(facts.capacity.state, '承压');
+  assert.match(facts.capacity.conclusion, /仅部分缓解承载压力/);
+});
+
+test('exposed, main-qi, two-distinct-hidden, and authoritative-chain support each qualify', async (t) => {
+  const base = {
+    year: { gan: '戊', zhi: '午' },
+    month: { gan: '己', zhi: '午' },
+    day: { gan: '甲', zhi: '巳' },
+    hour: { gan: '庚', zhi: '酉' },
+  };
+  const cases = [
+    ['exposed', chart({ ...base, hour: { gan: '壬', zhi: '酉' } }), {}],
+    ['main-qi', chart({ ...base, year: { gan: '戊', zhi: '子' } }), {}],
+    ['two-distinct-hidden', chart({ ...base, year: { gan: '戊', zhi: '丑' }, month: { gan: '己', zhi: '辰' } }), {}],
+    ['authoritative-chain', chart(base), { actionChains: [{ type: '印星生身', detail: '印星明确生身并提供承载支持' }] }],
+  ];
+  for (const [name, bazi, options] of cases) {
+    await t.test(name, () => {
+      const facts = supportFacts(bazi, options);
+      assert.equal(facts.capacity.support.effective, true);
+      assert.equal(facts.capacity.state, '有缓解');
+    });
+  }
+});

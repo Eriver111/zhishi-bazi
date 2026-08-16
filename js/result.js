@@ -253,17 +253,24 @@ function reportEsc(value) {
 function reportText(value) {
     if (value == null) return '';
     if (typeof value === 'string' || typeof value === 'number') {
-        return String(value)
+      return String(value)
             .replace(/事业\/家庭根基动摇/g, '事业或家庭安排可能调整')
             .replace(/根基动摇/g, '相关安排可能调整')
             .replace(/大凶/g, '高强度条件性波动')
             .replace(/谨防口舌官非、?工作变动、?与上级冲突/g, '沟通、工作节奏或上下级关系需留有调整空间')
             .replace(/变动冲突分离之象/g, '变动或边界议题')
             .replace(/暗中不利貌合神离/g, '隐性摩擦议题')
-            .replace(/旧运已断新运未稳/g, '运势切换阶段');
+            .replace(/旧运已断新运未稳/g, '运势切换阶段')
+            .replace(/必然|必定|一定会|肯定会/g, '在相关条件下可能')
+            .replace(/灾祸|灾难/g, '高强度变化')
+            .replace(/诉讼|官司|官非/g, '规则或沟通争议')
+            .replace(/重病|患病|疾病/g, '身心状态需关注')
+            .replace(/离婚|分手/g, '关系边界可能调整')
+            .replace(/破财|亏损|损失/g, '资源波动')
+            .replace(/死亡/g, '身心安全需关注');
     }
     if (Array.isArray(value)) return value.map(reportText).filter(Boolean).join('；');
-    return String(value.text || value.conclusion || value.detail || value.label || value.name || '');
+    return reportText(value.text || value.conclusion || value.detail || value.label || value.name || '');
 }
 
 function reportRows(rows) {
@@ -296,6 +303,77 @@ function reportCard(title, fact) {
     var confidence = fact.confidence ? '<span class="deep-report-confidence">可信度：' + reportEsc(reportText(fact.confidence)) + '</span>' : '';
     var conclusion = fact.conclusion ? '<p>' + reportEsc(reportText(fact.conclusion)) + '</p>' : '';
     return '<article class="deep-report-card">' + titleHtml + state + confidence + conclusion + reportEvidence(fact.evidence) + reportConditions(fact.conditions) + '</article>';
+}
+
+function reportTriggerKeys(row) {
+    var keys = [];
+    if (row == null) return keys;
+    if (typeof row !== 'object') {
+        var primitive = reportText(row).replace(/\s+/g, '').trim();
+        return primitive ? ['text:' + primitive] : [];
+    }
+    ['id', 'key', 'uid', 'eventId', 'eventKey'].forEach(function(field) {
+        if (row[field] != null && row[field] !== '') keys.push(field + ':' + String(row[field]));
+    });
+    var mainText = reportText(row.detail || row.conclusion || row.text || row.summary || row.desc || row.why || row);
+    if (mainText) keys.push('text:' + mainText.replace(/\s+/g, '').trim());
+    var structured = ['type', 'relation', 'sourcePillar', 'targetPillar', 'source', 'target'].map(function(field) {
+        return reportText(row[field]);
+    }).filter(Boolean).join('|');
+    if (structured && mainText) keys.push('structured:' + structured + '|' + mainText.replace(/\s+/g, '').trim());
+    ['evidence', 'conditions'].forEach(function(field) {
+        (Array.isArray(row[field]) ? row[field] : []).forEach(function(child) {
+            keys = keys.concat(reportTriggerKeys(child));
+        });
+    });
+    return keys.filter(function(key, index, rows) { return rows.indexOf(key) === index; });
+}
+
+function reportOverallTriggers(title, facts) {
+    var seen = {};
+    var domainRows = [];
+    ['career', 'wealth', 'relationship', 'study'].forEach(function(domain) {
+        var fact = facts && facts[domain] || {};
+        domainRows = domainRows.concat(Array.isArray(fact.evidence) ? fact.evidence : []);
+        if (fact.timing && Array.isArray(fact.timing.activation)) domainRows = domainRows.concat(fact.timing.activation);
+    });
+    domainRows = domainRows.concat(Array.isArray(facts && facts.triggeredRisks) ? facts.triggeredRisks : []);
+    domainRows.forEach(function(row) {
+        reportTriggerKeys(row).forEach(function(key) { seen[key] = true; });
+    });
+    var rows = (Array.isArray(facts && facts.overallTriggers) ? facts.overallTriggers : []).filter(function(row) {
+        var keys = reportTriggerKeys(row);
+        if (!keys.length || keys.some(function(key) { return seen[key]; })) return false;
+        keys.forEach(function(key) { seen[key] = true; });
+        return true;
+    });
+    if (!rows.length) return '';
+    return '<article class="deep-report-card deep-report-overall-triggers"><h3>' + reportEsc(title) + '</h3>'
+        + '<p>以下仅表示原局与年度节点出现互动，需结合领域事实、现实条件与可执行安排观察。</p>'
+        + '<ul>' + reportRows(rows) + '</ul></article>';
+}
+
+function reportWealthQuality(quality) {
+    if (!quality) return '';
+    function joined(rows, fallback) {
+        rows = Array.isArray(rows) ? rows.filter(function(row) { return reportText(row); }) : [];
+        return rows.length ? rows.map(reportText).join('；') : fallback;
+    }
+    var season = quality.season || {};
+    var seasonEvidence = joined(season.evidence, '未见进一步月令证据');
+    var rows = [
+        { label: '月令与季节', text: (reportText(season.state) || '月令关系未定') + '；' + seasonEvidence },
+        { label: '根气', text: joined(quality.roots, '未见明确财星根气证据') },
+        { label: '生源', text: joined(quality.sources, '未见明确财星生源证据') },
+        { label: '受制', text: joined(quality.restraints, '未见权威财星受制证据') },
+        { label: '关系质量', text: joined(quality.relationships, '未见权威财星关系事件') },
+        { label: '不确定性', text: reportText(quality.uncertainty) || '现有权威关系证据有限，相关质量保持不确定。' },
+    ];
+    return reportCard('资源质量依据', {
+        confidence: rows.length ? 'medium' : 'limited',
+        conclusion: rows.length ? '资源质量按月令、根气、生源与结构关系分项呈现，不另设强弱分数。' : '资源质量证据不足，保持不确定。',
+        evidence: rows,
+    });
 }
 
 function openPaidSection(id) {
@@ -348,6 +426,7 @@ function renderDeepCurrentYear(facts) {
     html += reportCard('关系议题', facts && facts.relationship);
     html += reportCard('学习安排', facts && facts.study);
     html += reportCard('身心管理', facts && facts.wellbeing);
+    html += reportOverallTriggers('综合变化', facts);
     html += reportCard('实际触发风险', { evidence: facts && facts.triggeredRisks, conditions: facts && facts.reliefs });
     node.innerHTML = html;
     openPaidSection('thisYearSection');
@@ -397,6 +476,7 @@ function renderDeepWealth(facts) {
     if (!node) return;
     var html = '<div class="deep-report-overview"><strong>资源承接：' + reportEsc(facts && facts.summaryLevel) + '</strong></div>';
     html += reportCard('资源质量', facts && facts.resource);
+    html += reportWealthQuality(facts && facts.resource && facts.resource.quality);
     html += reportCard('承载能力', facts && facts.capacity);
     html += '<article class="deep-report-card"><h3>转化路径</h3><ul>' + reportRows(facts && facts.pathways) + '</ul></article>';
     html += reportCard('留存与风险', facts && facts.retention);
@@ -449,6 +529,7 @@ function renderDeepFiveYear(facts) {
         card += reportCard('财富激活', year.wealth);
         card += reportCard('关系', year.relationship);
         card += reportCard('学习', year.study);
+        card += reportOverallTriggers('原局互动', year);
         card += reportEvidence(year.triggeredRisks);
         return card + '</article>';
     }).join('') + '</div>';

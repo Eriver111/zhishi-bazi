@@ -21,6 +21,7 @@ function fixtureFacts(injected = '') {
     wellbeing: { conclusion: '留意作息与情绪管理。', conditions: ['仅作身心状态风险提示，不作诊断'] },
     triggeredRisks: [],
     reliefs: [],
+    overallTriggers: [],
   });
   return {
     schemaVersion: '2.0.0',
@@ -70,6 +71,9 @@ function renderFixture(options = {}) {
     innerHTML: '',
     style: {},
     classList: { add() {} },
+    cloneNode() {
+      return { innerHTML: this.innerHTML, querySelectorAll() { return []; } };
+    },
   }]));
   const document = {
     addEventListener() {},
@@ -95,13 +99,22 @@ function renderFixture(options = {}) {
     },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8'), context);
-  vm.runInContext('_bazi = { year: {}, month: {}, day: {}, hour: {} }; _params = { gender: "male" }; renderPaidContent(); renderPaidContent();', context);
+  vm.runInContext('_bazi = { year: {}, month: {}, day: {}, hour: {} }; _params = { gender: "male", mode: "pillars", timing: "unknown" }; renderPaidContent(); renderPaidContent();', context);
+  const sectionContent = {
+    thisYearSection: 'thisYearContent', marriageSection: 'marriageContent', wealthSection: 'wealthContent',
+    studySection: 'studyContent', fortuneSection: 'fortuneContent',
+  };
+  Object.entries(sectionContent).forEach(([sectionId, contentId]) => {
+    nodes[sectionId].innerHTML = nodes[contentId].innerHTML;
+  });
+  const pdfHtml = vm.runInContext('buildReportHTML()', context);
   return {
     nodes,
     buildFactsCalls,
     receivedOptions,
     html: ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent']
       .map(id => nodes[id].innerHTML).join('\n'),
+    pdfHtml,
   };
 }
 
@@ -295,6 +308,90 @@ test('paid rendering neutralizes deterministic legacy risk wording', () => {
   const rendered = renderFixture({ facts });
   assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /根基动摇|大凶|谨防口舌官非/);
   assert.match(rendered.nodes.thisYearContent.innerHTML, /可能调整|条件性波动|沟通/);
+});
+
+test('current-year and five-year sections render each non-domain overall trigger once after dedupe', () => {
+  const facts = fixtureFacts();
+  facts.currentYear.wealth.evidence = [{ id: 'wealth-domain', type: '财星激活', detail: '财星资源议题' }];
+  facts.currentYear.triggeredRisks = [{ id: 'risk-1', type: '条件风险', detail: '风险重复提示' }];
+  facts.currentYear.overallTriggers = [
+    { id: 'overall-1', type: '年度节点', detail: '通用结构变化' },
+    { id: 'wealth-domain', type: '财星激活', detail: '财星资源议题' },
+    { id: 'risk-copy', type: '条件风险', detail: '风险重复提示' },
+    { id: 'overall-1', type: '年度节点', detail: '通用结构变化' },
+  ];
+  facts.fiveYear.years[0].overallTriggers = [
+    { id: 'original-relation', type: '六冲', sourcePillar: 'year', targetPillar: 'annual', detail: '流年午与原局年支子形成六冲' },
+    { id: 'original-relation', type: '六冲', sourcePillar: 'year', targetPillar: 'annual', detail: '流年午与原局年支子形成六冲' },
+  ];
+
+  const rendered = renderFixture({ facts });
+  assert.equal((rendered.nodes.thisYearContent.innerHTML.match(/综合变化/g) || []).length, 1);
+  assert.equal((rendered.nodes.thisYearContent.innerHTML.match(/通用结构变化/g) || []).length, 1);
+  assert.equal((rendered.nodes.thisYearContent.innerHTML.match(/财星资源议题/g) || []).length, 1);
+  assert.equal((rendered.nodes.thisYearContent.innerHTML.match(/风险重复提示/g) || []).length, 1);
+  assert.equal((rendered.nodes.fortuneContent.innerHTML.match(/原局互动/g) || []).length, 1);
+  assert.equal((rendered.nodes.fortuneContent.innerHTML.match(/流年午与原局年支子形成六冲/g) || []).length, 1);
+});
+
+test('direct-pillar original-chart annual relation is visible without inventing DaYun', () => {
+  const facts = fixtureFacts();
+  facts.currentYear.daYun = null;
+  facts.currentYear.hasDaYun = false;
+  facts.currentYear.overallTriggers = [{
+    id: 'direct-original', type: '六合', sourcePillar: 'day', targetPillar: 'annual',
+    detail: '流年亥与原局日支寅形成六合',
+  }];
+  const rendered = renderFixture({ facts });
+  assert.match(rendered.nodes.thisYearContent.innerHTML, /流年亥与原局日支寅形成六合/);
+  assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /大运/);
+});
+
+test('overall trigger output neutralizes disaster lawsuit illness divorce loss and certainty wording', () => {
+  const facts = fixtureFacts();
+  facts.currentYear.overallTriggers = [{
+    type: '旧判词',
+    detail: '必然发生灾祸、诉讼、疾病、离婚与损失。',
+  }];
+  const rendered = renderFixture({ facts });
+  assert.match(rendered.nodes.thisYearContent.innerHTML, /综合变化/);
+  assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /必然|灾祸|诉讼|疾病|离婚|损失/);
+  assert.match(rendered.nodes.thisYearContent.innerHTML, /相关条件下可能.*高强度变化.*规则或沟通争议.*身心状态.*关系边界.*资源波动/);
+});
+
+test('wealth quality evidence is escaped in the live section and copied into PDF HTML', () => {
+  const facts = fixtureFacts();
+  facts.wealth.resource.quality = {
+    season: { state: '月令同气<script>', evidence: ['月支辰为土<img>'] },
+    roots: ['年柱本气戊<root>'],
+    sources: ['月柱余气丁<source>'],
+    restraints: ['财星受制<restraint>'],
+    relationships: ['财印关系<relation>'],
+    uncertainty: '关系证据有限<uncertain>',
+  };
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.wealthContent.innerHTML;
+  for (const label of ['月令与季节', '根气', '生源', '受制', '关系质量', '不确定性']) assert.match(page, new RegExp(label));
+  for (const escaped of ['&lt;script&gt;', '&lt;img&gt;', '&lt;root&gt;', '&lt;source&gt;', '&lt;restraint&gt;', '&lt;relation&gt;', '&lt;uncertain&gt;']) {
+    assert.match(page, new RegExp(escaped));
+    assert.match(rendered.pdfHtml, new RegExp(escaped));
+  }
+  assert.doesNotMatch(page, /<(?:script|img|root|source|restraint|relation|uncertain)>/);
+});
+
+test('wealth quality keeps every evidence dimension visible when a category has no rows', () => {
+  const facts = fixtureFacts();
+  facts.wealth.resource.quality = {
+    season: { state: '未见月令直接支持', evidence: [] },
+    roots: [], sources: [], restraints: [], relationships: [], uncertainty: '',
+  };
+  const page = renderFixture({ facts }).nodes.wealthContent.innerHTML;
+  for (const label of ['月令与季节', '根气', '生源', '受制', '关系质量', '不确定性']) assert.match(page, new RegExp(label));
+  assert.match(page, /未见明确财星根气证据/);
+  assert.match(page, /未见明确财星生源证据/);
+  assert.match(page, /未见权威财星受制证据/);
+  assert.match(page, /未见权威财星关系事件/);
+  assert.match(page, /相关质量保持不确定/);
 });
 
 test('authenticated access paid_at anchors the only report build despite URL tampering', async () => {
