@@ -428,6 +428,10 @@ test('study ranks expose only high ordinary or low public bands', () => {
   assert.deepEqual(DeepReport.__test.publicStudyBand(9), { key: 'high', label: '高学历' });
   assert.deepEqual(DeepReport.__test.publicStudyBand(6), { key: 'ordinary', label: '普通学历' });
   assert.deepEqual(DeepReport.__test.publicStudyBand(2), { key: 'low', label: '低学历' });
+  assert.deepEqual(DeepReport.__test.publicStudyBand(3), { key: 'low', label: '低学历' });
+  assert.deepEqual(DeepReport.__test.publicStudyBand(4), { key: 'ordinary', label: '普通学历' });
+  assert.deepEqual(DeepReport.__test.publicStudyBand(7), { key: 'ordinary', label: '普通学历' });
+  assert.deepEqual(DeepReport.__test.publicStudyBand(8), { key: 'high', label: '高学历' });
 });
 
 test('study facts retain the internal rank but publish a three-band education result', () => {

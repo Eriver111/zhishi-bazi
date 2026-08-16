@@ -250,7 +250,8 @@ test('study narrative uses the evidence-gated profile and education band without
     basis: ['STUDY_LIMIT:uncontrolled_output'],
   }];
   const narrative = DeepReport.buildNarratives(facts).study;
-  assert.equal(narrative.level, '硕士层级有较强潜力');
+  assert.equal(narrative.level, '高学历');
+  assert.doesNotMatch(JSON.stringify(narrative), /硕士层级有较强潜力/);
   assert.ok(narrative.verdicts.some(row => row.sourceText === '杀印相生链成立，印星为本命用神。'));
   assert.ok(narrative.verdicts.some(row => /不怕重复、肯下功夫/.test(row.outcomeText)));
   assert.ok(narrative.verdicts.some(row => /食伤过旺且没有制化/.test(row.sourceText)));

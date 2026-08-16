@@ -2578,7 +2578,9 @@
       level = clampNumber(Math.round(points), 1, 10);
     }
     var publicBand = publicStudyBand(level);
-    var levelLabel = textOf(band.publicLabel) || textOf(band.label) || publicBand.label;
+    // Cached reports can retain the former L1–L10 label strings.  The public
+    // label must always be recalculated from the retained internal rank.
+    var levelLabel = publicBand.label;
     var levelOutcome = textOf(band.outcomeText) || studyLevelText(level);
     var profile = study.profile || studyProfileRecord('composite', ['PROFILE:LEGACY_COMPOSITE']);
     var limitations = list(study.limitations);
