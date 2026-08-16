@@ -377,6 +377,21 @@ test('each five-year row includes pillar, DaYun, professional source and a plain
   }
 });
 
+test('five-year narrative labels unknown birth and pre-start timing separately', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years[0].daYun = null;
+  facts.fiveYear.years[0].daYunStatus = 'unknown_birth';
+  facts.fiveYear.years[1].daYun = null;
+  facts.fiveYear.years[1].daYunStatus = 'before_start';
+  facts.fiveYear.years[2].daYun = { gan: '甲', zhi: '辰' };
+  facts.fiveYear.years[2].daYunStatus = 'active';
+
+  const years = DeepReport.buildNarratives(facts).fiveYear.years;
+  assert.equal(years[0].daYunLabel, '出生时间未定位');
+  assert.equal(years[1].daYunLabel, '起运前');
+  assert.equal(years[2].daYunLabel, '甲辰大运');
+});
+
 test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {
   const years = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts())).fiveYear.years;
   assert.match(years[0].summary, /争吵|分开住|聚少离多|重新考虑/);

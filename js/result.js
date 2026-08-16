@@ -49,7 +49,7 @@ function buildResultData(params) {
     var isDirect = params.mode === 'pillars';
     var hasTiming = !isDirect || params.timing === 'matched';
     var birthDate = hasTiming
-        ? { year: params.year, month: params.month, day: params.day, hour: params.hour }
+        ? { year: params.year, month: params.month, day: params.day, hour: params.hour, clock: params.clock }
         : null;
     var bazi = isDirect
         ? window.BaZiCalculator.buildFromPillars(params.enteredPillars, params.gender, birthDate)

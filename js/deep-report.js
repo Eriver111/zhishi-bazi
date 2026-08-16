@@ -2273,7 +2273,7 @@
     };
   }
 
-  function buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun) {
+  function buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, timingStatus) {
     var pillar = annualPillarForYear(calculator, year, activeDaYun, bazi && bazi.day && bazi.day.gan);
     var dynamic = resolveAnnualDynamic(bazi, activeDaYun, pillar, core || {}, calculator, chain);
     var tenGod = annualTenGod(pillar, activeDaYun, bazi, calculator);
@@ -2288,6 +2288,7 @@
       yearPillar: pillar,
       daYun: activeDaYun || null,
       hasDaYun: !!activeDaYun,
+      daYunStatus: timingStatus || (activeDaYun ? 'active' : 'unknown_birth'),
       stemRole: classifyElementRole(stemElement, core && core.yongJi),
       branchRole: classifyElementRole(branchElement, core && core.yongJi),
       daYunStemRole: classifyElementRole(calculator && calculator.WU_XING && calculator.WU_XING[activeDaYun && activeDaYun.gan], core && core.yongJi),
@@ -2334,11 +2335,12 @@
   function buildUndatedFiveYearFacts(bazi, core, calculator, chain, anchorYear) {
     var years = [];
     for (var year = Number(anchorYear); year < Number(anchorYear) + 5; year += 1) {
-      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, null));
+      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, null, 'unknown_birth'));
     }
     return {
       anchorYear: Number(anchorYear),
       hasDaYun: false,
+      timingStatus: 'unknown_birth',
       limitation: '未确认出生时间，当前大运与起运年龄未纳入。',
       years: years,
       transitions: [],
@@ -2355,18 +2357,28 @@
     try {
       daYunData = calculator.calculateDaYun(
         bazi.month, bazi.year, gender,
-        bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour
+        bazi.birthDate.year, bazi.birthDate.month, bazi.birthDate.day, bazi.birthDate.hour, bazi.birthDate.clock
       ) || {};
     } catch (error) {
       return buildUndatedFiveYearFacts(bazi, core, calculator, chain, targetYear);
     }
+    var daYunStarts = list(daYunData.list).map(function (item) { return Number(item && item.startYear); })
+      .filter(Number.isFinite).sort(function (a, b) { return a - b; });
+    var firstDaYun = daYunStarts[0];
     var years = [];
     for (var year = targetYear; year < targetYear + 5; year += 1) {
-      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, findDaYunForYear(daYunData.list, year)));
+      var activeDaYun = findDaYunForYear(daYunData.list, year);
+      var yearTimingStatus = activeDaYun ? 'active'
+        : (Number.isFinite(firstDaYun) && year < firstDaYun ? 'before_start' : 'unknown_birth');
+      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, yearTimingStatus));
     }
+    var timingStatus = years.some(function (row) { return row.daYunStatus === 'active'; }) ? 'active'
+      : years.some(function (row) { return row.daYunStatus === 'before_start'; }) ? 'before_start'
+        : 'unknown_birth';
     return {
       anchorYear: targetYear,
       hasDaYun: true,
+      timingStatus: timingStatus,
       years: years,
       transitions: findDaYunTransitions(years),
       trend: compareAnnualFacts(years),
@@ -2922,12 +2934,19 @@
     return '这项岁运关系带来明显变化，但现有喜忌证据不足以直接判定最终好坏。';
   }
 
+  function daYunStatusLabel(year) {
+    if (year && year.daYun) return textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运';
+    if (year && year.daYunStatus === 'before_start') return '起运前';
+    if (year && year.daYunStatus === 'unknown_birth') return '出生时间未定位';
+    return '未纳入大运';
+  }
+
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
     var interactions = list(year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
     var directionLabel = timingDirectionLabel(interactions);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
-    var daYunText = year.daYun ? textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运' : '未纳入大运';
+    var daYunText = daYunStatusLabel(year);
     var headline = interactions.length
       ? (directionLabel === '偏有利' ? '本年被引动的有利关系更多，现实变化总体朝着改善和兑现发展。' : directionLabel === '偏不利' ? '本年被引动的不利关系更多，事业、资金或感情更容易出现明显波动。' : '本年有利与不利关系同时被引动，机会和压力会先后出现。')
       : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
@@ -2977,7 +2996,7 @@
       return {
         year: year && year.year,
         pillar: textOf(year && year.pillar && year.pillar.gan) + textOf(year && year.pillar && year.pillar.zhi),
-        daYunLabel: year && year.daYun ? textOf(year.daYun.gan) + textOf(year.daYun.zhi) + '大运' : '未纳入大运',
+        daYunLabel: daYunStatusLabel(year),
         directionLabel: directionLabel,
         sourceText: selected.map(function (row) { return textOf(row.sourceText); }).filter(Boolean).join(' '),
         summary: summary,

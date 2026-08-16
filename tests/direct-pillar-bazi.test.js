@@ -185,7 +185,7 @@ test('matched direct result keeps entered chart while candidate timing drives Da
 
   assert.equal(result.bazi, directChart);
   assert.deepEqual(JSON.parse(JSON.stringify(calls.build.birthDate)), {
-    year: 2004, month: 8, day: 20, hour: 11,
+    year: 2004, month: 8, day: 20, hour: 11, clock: 22,
   });
   assert.equal(calls.daYun[0], directChart.month);
   assert.equal(calls.daYun[1], directChart.year);

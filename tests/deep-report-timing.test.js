@@ -104,8 +104,51 @@ test('undated four pillars do not fabricate a DaYun', () => {
     undated, core, makeCalculator(), makeChain(false), 2026, 'female'
   );
   assert.equal(result.hasDaYun, false);
+  assert.equal(result.timingStatus, 'unknown_birth');
   assert.match(result.limitation, /未确认出生时间/);
-  assert.ok(result.years.every((row) => row.daYun === null));
+  assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'unknown_birth'));
+});
+
+test('matched direct-pillar birth passes its precise clock into an active DaYun report', () => {
+  const matched = {
+    ...chart,
+    birthDate: { year: 1990, month: 7, day: 12, hour: 9, clock: 18 },
+  };
+  let receivedArgs = null;
+  const calculator = {
+    ...makeCalculator(),
+    calculateDaYun(...args) {
+      receivedArgs = args;
+      return { list: [{ gan: '丙', zhi: '戌', startYear: 1995, endYear: 2034 }] };
+    },
+  };
+
+  const result = DeepReport.buildFiveYearFacts(
+    matched, core, calculator, makeChain(false), 2026, 'male'
+  );
+
+  assert.equal(receivedArgs[7], 18);
+  assert.equal(result.timingStatus, 'active');
+  assert.equal(result.years[0].daYunStatus, 'active');
+  assert.equal(result.years[0].daYun.gan + result.years[0].daYun.zhi, '丙戌');
+});
+
+test('dated chart before the first DaYun says pre-start rather than unknown birth', () => {
+  const child = {
+    ...chart,
+    birthDate: { year: 2025, month: 1, day: 1, hour: 1, clock: 2 },
+  };
+  const calculator = {
+    ...makeCalculator(),
+    calculateDaYun: () => ({ list: [{ gan: '丙', zhi: '寅', startYear: 2031, endYear: 2040 }] }),
+  };
+
+  const result = DeepReport.buildFiveYearFacts(
+    child, core, calculator, makeChain(false), 2026, 'male'
+  );
+
+  assert.equal(result.timingStatus, 'before_start');
+  assert.ok(result.years.every((row) => row.daYun === null && row.daYunStatus === 'before_start'));
 });
 
 test('undated four pillars still use authoritative original-chart annual relations', () => {
@@ -284,6 +327,7 @@ test('incomplete birthDate safely skips DaYun calculation', () => {
   const result = DeepReport.buildFiveYearFacts(incomplete, core, calculator, makeChain(false), 2026, 'male');
   assert.equal(called, false);
   assert.equal(result.hasDaYun, false);
+  assert.equal(result.timingStatus, 'unknown_birth');
   assert.match(result.limitation, /未确认出生时间/);
 });
 
