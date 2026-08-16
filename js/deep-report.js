@@ -243,7 +243,7 @@
       risk.desc, risk.conclusion, risk.evidence, risk.partyEvidence].map(textOf).filter(Boolean).join(' ');
   }
 
-  function studyAuthoritativeText(core) {
+  function studyAuthoritativeRecords(core) {
     function itemText(item) {
       if (!item || typeof item !== 'object') return textOf(item);
       return [textOf(item), item.label, item.action, item.actionChain, item.reason, item.reasons,
@@ -254,10 +254,24 @@
     core = core || {};
     var yongJi = core.yongJi || {};
     var chain = core.chain || {};
-    return list(core.actionChains).concat([yongJi.reasoning, yongJi.primaryReason, yongJi.evidence,
-      yongJi.elementReasons, yongJi.chainHints, yongJi.chainAdjustments,
-      chain.hints, chain.adjustments]).map(itemText)
-      .filter(Boolean).join(' ');
+    var records = [];
+    var addList = function (value) {
+      list(value).map(itemText).filter(Boolean).forEach(function (item) { records.push(item); });
+    };
+    addList(core.actionChains);
+    addList(yongJi.reasoning);
+    addList(yongJi.primaryReason);
+    addList(yongJi.evidence);
+    Object.keys(yongJi.elementReasons || {}).forEach(function (element) { addList(yongJi.elementReasons[element]); });
+    addList(yongJi.chainHints);
+    addList(yongJi.chainAdjustments);
+    addList(chain.hints);
+    addList(chain.adjustments);
+    return records;
+  }
+
+  function studyAuthoritativeText(core) {
+    return studyAuthoritativeRecords(core).join(' ');
   }
 
   function studyStructuralBlockers(core, names) {
@@ -316,7 +330,9 @@
 
   function buildWealthRegulatesSealChain(seals, wealth, core) {
     var authoritative = studyAuthoritativeText(core);
-    var explicit = /印(?:星)?成势[\s\S]*(?:财(?:星)?制印)|(?:财(?:星)?制印)[\s\S]*印(?:星)?成势/.test(authoritative);
+    var explicit = studyAuthoritativeRecords(core).some(function (record) {
+      return /印(?:星)?成势[\s\S]*(?:财(?:星)?制印)|(?:财(?:星)?制印)[\s\S]*印(?:星)?成势/.test(record);
+    });
     var wealthRole = studyElementRole(wealth, core);
     var sealRole = studyElementRole(seals, core);
     var present = Boolean(seals.length && wealth.length && explicit);

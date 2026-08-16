@@ -10,7 +10,7 @@
 
 ## TDD 证据
 
-先新增 focused study-chain 测试并确认缺少 `chains` 时失败（6 项失败），再实现最小报告层逻辑；实现后 `tests/deep-report-study.test.js` 13/13 通过。
+先新增 focused study-chain 测试并确认缺少 `chains` 时失败（6 项失败），再实现最小报告层逻辑；当前 `tests/deep-report-study.test.js` 18/18 通过。
 
 ## 验证
 
@@ -21,11 +21,11 @@ node --test tests/deep-report-study.test.js
 node --test tests/deep-report-study.test.js tests/deep-report-core.test.js tests/deep-report-render.test.js tests/bazi-chain-professional.test.js tests/p3-a-structural.test.js
 ```
 
-组合回归结果：50/50 通过；包含报告 study/core/render、专业生克链与 P3-A/B/C 结构冻结对账。
+组合回归结果：55/55 通过；包含报告 study/core/render、专业生克链与 P3-A/B/C 结构冻结对账。
 
 ## 未决疑虑
 
-1. `wealth_regulates_seal` 只接受显式“印成势→财制印”行动/候选证据；若未来核心候选字段改名，需要同步证据适配器与测试。
+1. `wealth_regulates_seal` 只接受同一条生产 core 权威记录中明确的“印成势→财制印”因果证据；若未来生产 core 证据字段改名，需要同步适配器与测试。
 2. `yangren_output` 固定为 `limited` 并提示人工复核；当前核心没有可自动确认的统一“羊刃—食伤”权威链。
 3. `learning_pressure` 只消费 strength level、官杀出现和无印联合门槛，不涉及健康或教育结果；从格仍按核心 `congGe` 门控。
 4. 本任务未改动 `js/bazi.js`、`js/structural.js`、支付、AI、访问控制或 `.data-store.json`。
@@ -37,4 +37,11 @@ node --test tests/deep-report-study.test.js tests/deep-report-core.test.js tests
 - 真实 `BaZiCalculator` + `DeepReport.buildFacts` 端到端回归已加入；当前可复现盘未暴露明确“印成势→财制印”权威证据，因此诚实输出 `present:false`、`unsupported:true`、`confidence:'limited'`。
 - `yangren_output.manualReviewRequired` 固定为 `true`；财破印反例明确断言 `confidence:'limited'`。
 
-第 1 轮专项测试：17/17 通过。
+第 1 轮专项测试：18/18 通过。
+
+## 第 2 轮修复
+
+- 财制印命中改为逐条记录判断：同一 `actionChain`、`yongJi.evidence` 项或 `chainHint` 对象/字符串中必须同时出现“印成势”和“财制印/财星制印”；不同记录之间不会拼接成因果链。
+- 新增反例：独立记录“印成势”与“可考虑财制印”不命中；新增正例：同一条“印成势→财制印”命中。
+
+第 2 轮专项与冻结回归：55/55 通过。

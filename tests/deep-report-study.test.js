@@ -188,6 +188,27 @@ test('wealth regulation ignores non-production candidate pseudo-fields', () => {
   assert.equal(chain.confidence, 'limited');
 });
 
+test('wealth regulation does not join separate authoritative records into a false causal chain', () => {
+  const bazi = chart({
+    year: { gan: '戊', zhi: '子' }, month: { gan: '癸', zhi: '卯' }, hour: { gan: '辛', zhi: '午' },
+  });
+  const core = {
+    strength: { level: '偏强' }, pattern: { name: '印绶格', status: '成格' },
+    yongJi: { yongShen: ['土'], xiShen: [], jiShen: [] },
+    actionChains: ['印成势', '可考虑财制印'], structuralRisks: [], relationEvents: [],
+  };
+  const separate = findStudyChain(DeepReport.buildStudyFacts(bazi, core, calculator), 'wealth_regulates_seal');
+  assert.equal(separate.present, false);
+  assert.equal(separate.unsupported, true);
+  assert.equal(separate.confidence, 'limited');
+
+  const sameRecord = findStudyChain(DeepReport.buildStudyFacts(bazi, {
+    ...core, actionChains: ['印成势→财制印'],
+  }, calculator), 'wealth_regulates_seal');
+  assert.equal(sameRecord.present, true);
+  assert.equal(sameRecord.unsupported, false);
+});
+
 test('real core study facts report wealth regulation as unsupported when no production evidence is exposed', () => {
   const realCalculator = loadRealCalculator();
   const bazi = realCalculator.buildFromPillars({
