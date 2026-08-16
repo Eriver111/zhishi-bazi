@@ -3011,14 +3011,12 @@
   }
 
   function prioritizedTimingInteractions(interactions) {
-    var rows = list(interactions);
+    var rows = sortedTimingInteractions(interactions);
     if (!rows.length) return [];
     var highest = rows.reduce(function (priority, row) {
       return Math.max(priority, timingInteractionPriority(row));
     }, 0);
-    return rows.filter(function (row) { return timingInteractionPriority(row) === highest; }).sort(function (a, b) {
-      return timingInteractionStableKey(a).localeCompare(timingInteractionStableKey(b), 'zh-CN');
-    });
+    return rows.filter(function (row) { return timingInteractionPriority(row) === highest; });
   }
 
   function timingInteractionStableKey(row) {
@@ -3029,6 +3027,13 @@
       row.target, row.movingBranch, row.movingRole, row.palaceBranch, row.palaceRole,
       row.formedElement, row.formedRole, row.direction, domains, row.sourceText]
       .map(textOf).join('|');
+  }
+
+  function sortedTimingInteractions(interactions) {
+    return list(interactions).slice().sort(function (a, b) {
+      return timingInteractionPriority(b) - timingInteractionPriority(a) ||
+        timingInteractionStableKey(a).localeCompare(timingInteractionStableKey(b), 'zh-CN');
+    });
   }
 
   function timingInteractionOutcome(row) {
@@ -3259,7 +3264,7 @@
 
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
-    var interactions = list(year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
+    var interactions = sortedTimingInteractions(year.interactions);
     var riskCopies = annualRiskCopies(year.triggeredRisks);
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
@@ -3330,7 +3335,7 @@
       return Number(a && a.year) - Number(b && b.year);
     });
     var years = sourceYears.map(function (year) {
-      var interactions = list(year && year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
+      var interactions = sortedTimingInteractions(year && year.interactions);
       var decisive = prioritizedTimingInteractions(interactions);
       var displaySelected = decisive.slice(0, 2);
       var legacyRelationship = !decisive.length ? list(year && year.relationship && year.relationship.activations) : [];

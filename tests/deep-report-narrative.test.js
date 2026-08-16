@@ -970,6 +970,43 @@ test('stable interaction ordering includes normalized domains and all decision f
   assert.deepEqual(build(false), build(true));
 });
 
+test('same-priority annual events produce identical complete narratives in either input order', () => {
+  function build(reverse) {
+    const facts = favorableFacts();
+    const common = {
+      source: '流年', type: '伏吟', formationStatus: 'qualified', targetPillar: 'year',
+      direction: 'favorable', actor: '甲', target: '甲',
+    };
+    const rows = [
+      { ...common, domains: ['career'], sourceText: '事业关系被引动。' },
+      { ...common, domains: ['wealth'], sourceText: '财富关系被引动。' },
+    ];
+    const ordered = reverse ? rows.slice().reverse() : rows;
+    facts.currentYear.interactions = ordered;
+    facts.currentYear.reliefs = [];
+    facts.currentYear.triggeredRisks = [];
+    facts.fiveYear.years[0] = facts.currentYear;
+    const narratives = DeepReport.buildNarratives(facts);
+    return { currentYear: narratives.currentYear, fiveYear: narratives.fiveYear };
+  }
+
+  const forward = build(false);
+  const reverse = build(true);
+  assert.deepEqual(forward.currentYear.verdicts, reverse.currentYear.verdicts);
+  assert.deepEqual({
+    headline: forward.currentYear.headline,
+    painPoint: forward.currentYear.painPoint,
+    source: forward.currentYear.verdicts.map(row => row.sourceText),
+    outcome: forward.currentYear.verdicts.map(row => row.outcomeText),
+  }, {
+    headline: reverse.currentYear.headline,
+    painPoint: reverse.currentYear.painPoint,
+    source: reverse.currentYear.verdicts.map(row => row.sourceText),
+    outcome: reverse.currentYear.verdicts.map(row => row.outcomeText),
+  });
+  assert.deepEqual(forward.fiveYear, reverse.fiveYear);
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';
