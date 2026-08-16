@@ -9,7 +9,7 @@ const sourcePath = path.join(root, 'js', 'poster-templates.js');
 const dayMasters = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const patterns = [
   '正官格', '七杀格', '正财格', '偏财格', '正印格', '偏印格', '食神格', '伤官格',
-  '建禄格', '羊刃格', '官印相生格', '杀印相生格', '财生官格', '食神生财格', '印绶格', '杂格',
+  '建禄格', '羊刃格', '官印相生格', '杀印相生格', '财生官格', '财生杀格', '食神生财格', '印绶格', '杂格',
 ];
 const identity = {
   甲: ['参天之木', '木', 'jia'],
@@ -64,7 +64,7 @@ test('resolves every supported day-master and pattern pair to complete unique co
     }
   }
 
-  assert.equal(seenCopy.size, 160, 'each day-master × pattern pair needs its own reviewed copy');
+  assert.equal(seenCopy.size, 170, 'each day-master × pattern pair needs its own reviewed copy');
 });
 
 test('keeps the approved 乙木正官 copy verbatim', () => {

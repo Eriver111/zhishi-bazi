@@ -19,3 +19,4 @@ zhishi-demo/
 
 # 敏感工作区文件（兑换码等，严禁提交）
 兑换码.txt
+.data-store.json

@@ -1,0 +1,483 @@
+===== finalizePatternStatus =====
+function finalizePatternStatus(bazi, pattern) {
+    var reasons = [];
+  var chong = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+  var monthZhi = bazi.month.zhi;
+  // 燥土不生金：金日主生未/戌月，土印虚浮无力（不化杀、不配印）
+  var dryEarthYin = WU_XING[bazi.day.gan] === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0;
+  ['year','day','hour'].forEach(function(pos) {
+    if (chong[monthZhi] === bazi[pos].zhi) reasons.push('月令受' + pos.replace('year','年柱').replace('day','日柱').replace('hour','时柱') + '冲');
+  });
+
+    if (pattern.type === '月令取格') reasons.push('月令用神未透干');
+    if (pattern.name === '杂格') reasons.push('月令取格条件不清');
+
+    var visibleShiShen = ['year','month','hour'].map(function(pos) {
+      return getShiShen(bazi.day.gan, bazi[pos].gan);
+    });
+    var hasVisible = function(name) { return visibleShiShen.indexOf(name) >= 0; };
+    var visibleCount = function(names) {
+      return visibleShiShen.filter(function(name) { return names.indexOf(name) >= 0; }).length;
+    };
+
+    // 只记录各格最关键、无流派争议的阻断条件；其余交给解读层说明。
+    if (pattern.type !== '同柱复合') {
+      if (pattern.name === '正官格') {
+        if (hasVisible('伤官')) reasons.push('伤官克官');
+        if (hasVisible('七杀')) reasons.push('官杀混杂');
+      } else if (pattern.name === '七杀格') {
+        if (!hasVisible('食神') && !hasVisible('正印') && !hasVisible('偏印')) reasons.push('七杀无制化');
+        // 燥土不生金：印星虚浮不化杀（如金日主生未戌月，土印无力化杀）
+        if (!hasVisible('食神') && (hasVisible('正印') || hasVisible('偏印')) && dryEarthYin) reasons.push('印星为燥土，虚浮不化杀');
+      } else if (pattern.name === '正印格' || pattern.name === '偏印格' || pattern.name === '印绶格') {
+        if (hasVisible('正财') || hasVisible('偏财')) reasons.push('财星破印');
+      } else if (pattern.name === '食神格') {
+        if (hasVisible('偏印')) reasons.push('枭神夺食');
+      } else if (pattern.name === '伤官格') {
+        if (hasVisible('正官')) reasons.push('伤官见官');
+      } else if (pattern.name === '正财格' || pattern.name === '偏财格') {
+        if (visibleCount(['比肩','劫财']) >= 2) reasons.push('比劫过重，财星受夺');
+      } else if (pattern.name === '建禄格') {
+        if (visibleCount(['正财','偏财','正官','七杀']) === 0) reasons.push('禄旺而财官不显');
+      } else if (pattern.name === '羊刃格') {
+        if (visibleCount(['正官','七杀']) === 0) reasons.push('羊刃无制');
+      }
+    }
+
+  var strength = calcDayMasterStrength(bazi);
+  var needsBearing = /财|官|杀|食|伤/.test(pattern.name || '');
+  if (needsBearing && strength.level === '极弱' && !getCongGe(bazi).isCong) {
+    reasons.push('日主极弱，难以承载格局用神');
+  }
+
+  // ---- 成格条件清单（正面逐项检查，与破格原因互补）----
+  var conditions = [];
+  var pn = pattern.name, pt = pattern.type;
+  var dmStr2 = calcDayMasterStrength(bazi);
+
+  // 通用条件：日主有承载之力
+  if (pt !== '同柱复合') {
+    conditions.push({
+      condition: '日主有承载格局之力',
+      met: dmStr2.level !== '极弱' || getCongGe(bazi).isCong,
+      detail: '日主' + dmStr2.level + '（' + dmStr2.score + '分），' +
+        (dmStr2.level === '极弱' && !getCongGe(bazi).isCong ? '身太弱难担格局' : '可承载格局')
+    });
+  }
+
+  // 格局专属条件
+  if (pt !== '同柱复合') {
+    if (pn === '正官格') {
+      conditions.push({ condition: '正官透干有根', met: pattern.type === '透干取格', detail: pattern.type === '透干取格' ? '月令正官透出天干' : '月令正官未透干' });
+      conditions.push({ condition: '无伤官克官', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '天干透伤官，克损正官' : '✓' });
+      conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
+    } else if (pn === '七杀格') {
+      conditions.push({ condition: '有食神制杀或印星化杀', met: hasVisible('食神') || ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin), detail: hasVisible('食神') ? '食神制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '无制无化' });
+      conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星生杀，助纣为虐' : '✓' });
+    } else if (pn === '正印格' || pn === '偏印格' || pn === '印绶格') {
+      conditions.push({ condition: '无财星破印', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星克印，印格受损' : '✓' });
+      conditions.push({ condition: '日主有根纳印', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身极弱，印来难纳' });
+    } else if (pn === '食神格') {
+      conditions.push({ condition: '无枭神夺食', met: !hasVisible('偏印'), detail: hasVisible('偏印') ? '偏印夺食，才华受阻' : '✓' });
+      conditions.push({ condition: '食神有生财之路', met: hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正财')||hasVisible('偏财')) ? '食神生财，技艺得价' : '缺财星转化，秀而不实' });
+    } else if (pn === '伤官格') {
+      conditions.push({ condition: '无正官被伤', met: !hasVisible('正官'), detail: hasVisible('正官') ? '伤官见官，为祸百端' : '✓' });
+      conditions.push({ condition: '有印星制伤或财星引化', met: hasVisible('正印')||hasVisible('偏印')||hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正印')||hasVisible('偏印')) ? '印星制伤' : (hasVisible('正财')||hasVisible('偏财')) ? '财星引化' : '缺印缺财，伤官无制无化' });
+    } else if (pn === '正财格' || pn === '偏财格') {
+      conditions.push({ condition: '比劫不过重', met: visibleCount(['比肩','劫财']) < 2, detail: visibleCount(['比肩','劫财']) >= 2 ? '比劫重重夺财' : '✓' });
+      conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱不担财，富屋贫人' });
+    } else if (pn === '建禄格') {
+      conditions.push({ condition: '财官透出为用', met: visibleCount(['正财','偏财','正官','七杀']) > 0, detail: visibleCount(['正财','偏财','正官','七杀']) > 0 ? '✓' : '禄旺无财官，英雄无用武之地' });
+    } else if (pn === '羊刃格') {
+      conditions.push({ condition: '官杀制刃', met: visibleCount(['正官','七杀']) > 0, detail: visibleCount(['正官','七杀']) > 0 ? '✓' : '羊刃无制，刚暴自伤' });
+    }
+  }
+
+  // 同柱复合格局的条件
+  if (pt === '同柱复合') {
+    if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0) {
+      conditions.push({ condition: '印星不被财破', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星破印，官杀印通路中断' : '✓' });
+      conditions.push({ condition: '官/杀不被食伤制死', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '伤官克官，官印链断裂' : '✓' });
+      conditions.push({ condition: '印星有力（非燥土虚浮）', met: !dryEarthYin, detail: dryEarthYin ? '金日主生未戌燥土月，燥土不生金，印虚不化杀' : '✓' });
+      if (dryEarthYin) reasons.push('燥土印虚浮，不化杀生身');
+    }
+    if (pn.indexOf('食伤生财') >= 0) {
+      conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱，食伤生出的财拿不稳' });
+    }
+    if (pn.indexOf('配印') >= 0) {
+      conditions.push({ condition: '印星有力', met: dmStr2.level !== '极弱' || hasVisible('正印'), detail: (dmStr2.level !== '极弱' || hasVisible('正印')) ? '✓' : '印弱身极弱，配印空悬' });
+    }
+  }
+
+  pattern.establishConditions = conditions;
+  pattern.breakReasons = Array.from(new Set(reasons));
+  pattern.isEstablished = pattern.breakReasons.length === 0;
+  pattern.status = pattern.isEstablished ? '成格' : '破格';
+  return pattern;
+}
+
+function getPattern(bazi) {
+  var dayGan = bazi.day.gan;
+  var dmWx = WU_XING[dayGan];
+  var mWx = DI_ZHI_WU_XING[bazi.month.zhi];
+  var mGan = bazi.month.gan;
+  var mZhi = bazi.month.zhi;
+
+  // 月支藏干（本气→中气→余气）
+  var cangGan = getCangGan(mZhi);
+  // 月令透干只查年、月、时；日干是命主本身，不作月令藏干透出。
+  var allGan = [bazi.year.gan, bazi.month.gan, bazi.hour.gan];
+
+  // 单格局描述
+  var PATTERNS = {
+    '正官': { name: '正官格', desc: '月令透官，为人正直有责任心。"官以任能，贵乎清正。"——《耕寸集》' },
+    '七杀': { name: '七杀格', desc: '月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。' },
+    '正财': { name: '正财格', desc: '月令透财，务实稳健善理财。财宜食伤来生、官星来护。' },
+    '偏财': { name: '偏财格', desc: '月令透财，慷慨大方，商业嗅觉敏锐，适合投资经营。' },
+    '正印': { name: '正印格', desc: '月令透印，温厚善良学识渊博。印喜官杀来生，忌财星破印。' },
+    '偏印': { name: '偏印格', desc: '月令透枭，思维独特善钻研。枭神需财星制化，否则孤僻多思。' },
+    '食神': { name: '食神格', desc: '月令透食，温和聪慧有才华。"食神有气胜财官。"——《渊海子平》' },
+    '伤官': { name: '伤官格', desc: '月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。' },
+    '建禄': { name: '建禄格', desc: '日主得月令禄位，自身强旺。禄喜财官——身强方能担财官。' },
+    '羊刃': { name: '羊刃格', desc: '日主得帝旺之位气势极强。"羊刃驾杀，威震边疆。"——《滴天髓》' }
+  };
+
+  // 透干取格：《子平真诠》杂气月（辰戌丑未）"透干会支，方成其格"——
+  // 本气不透时依次取中气、余气之透干者为格；
+  // 四生四正月（寅申巳亥子午卯酉）仍只认本气（或本气同五行的透干，如寅月透戊仍取甲木本气）
+  var benQi = cangGan[0]; // 本气
+  var benQiWx = WU_XING[benQi];
+  var matchedSS = '';
+  var matchedGan = '';
+  var matchedPillar = '';
+  var pillarNames = ['年','月','时'];
+  var matchCangGan = ''; // 记录匹配到的藏干
+  var isZaQiMonth = ['辰','戌','丑','未'].indexOf(mZhi) >= 0;
+
+  for (var ci = 0; ci < cangGan.length; ci++) {
+    var cg = cangGan[ci];
+    var cgWx = WU_XING[cg];
+    for (var gi = 0; gi < allGan.length; gi++) {
+      if (allGan[gi] === cg) {
+        matchCangGan = cg;
+        // 杂气月：任何藏干透出皆可取格（按本气→中气→余气顺序优先）
+        // 四生四正月：只取本气或与本气同五行的透干
+        if (isZaQiMonth || ci === 0 || cgWx === benQiWx) {
+          matchedSS = getShiShen(dayGan, cg);
+          matchedGan = cg;
+          matchedPillar = pillarNames[gi] + '柱';
+        }
+        break;
+      }
+    }
+    if (matchCangGan && !matchedSS) {
+      // 非杂气月透出余气且五行不同→不取，继续找
+      matchCangGan = '';
+    }
+    if (matchedSS) break;
+  }
+  // v5.6: 若月支为日
+===== calcCandidateScores =====
+function calcCandidateScores(bazi, dmStr, pattern) {
+  var WX = ['木','火','土','金','水'];
+  var score = dmStr.score;
+  var d = Math.max(-1, Math.min(1, (score - 50) / 50));
+  var dmWx = WU_XING[bazi.day.gan];
+  var di = WX.indexOf(dmWx);
+  var WO_SHENG = WX[(di + 1) % 5]; // 食伤
+  var WO_KE    = WX[(di + 2) % 5]; // 财
+  var KE_WO    = WX[(di + 3) % 5]; // 官杀
+  var SHENG_WO = WX[(di + 4) % 5]; // 印
+  var TONG     = dmWx;             // 比劫
+  var mz = bazi.month.zhi;
+  var zeroMap = function() { return { '木':0,'火':0,'土':0,'金':0,'水':0 }; };
+  var l2Details = [], l3Details = [], l4Details = [];
+
+  // —— 8 位置表层计数（成势判定；日干位置不计比劫）——
+  var countMap = zeroMap();
+  ['year','month','day','hour'].forEach(function(pos) {
+    var gWx = WU_XING[bazi[pos].gan];
+    var zWx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    if (pos !== 'day' || gWx !== TONG) countMap[gWx] += 1;
+    countMap[zWx] += 1;
+  });
+  var chengShi = function(wx) { return countMap[wx] >= 3; };
+
+  // —— L1 方向基准：生扶组 -50d，克泄耗组 +50d（F4）——
+  var L1 = zeroMap();
+  WX.forEach(function(wx) {
+    L1[wx] = (wx === SHENG_WO || wx === TONG) ? -50 * d : 50 * d;
+  });
+
+  // —— L2 结构需求 × 门控 g1 = min(1, 2|d|)（F5）——
+  var g1 = Math.min(1, 2 * Math.abs(d));
+  var L2 = zeroMap();
+  var addL2 = function(wx, val, note) {
+    L2[wx] += val * g1;
+    if (val * g1 !== 0) l2Details.push({ wx: wx, val: val * g1, note: note });
+  };
+  if (d < 0) {
+    if (chengShi(KE_WO))    { addL2(SHENG_WO, 12, '官杀成势，印星化杀生身'); addL2(TONG, 4, '官杀成势，比劫帮身抗杀'); }
+    if (chengShi(WO_KE))    { addL2(TONG, 10, '财多成势，比劫帮身分财'); addL2(SHENG_WO, 6, '财多成势，印星生身'); }
+    if (chengShi(WO_SHENG)) { addL2(SHENG_WO, 12, '食伤成势，印星制食伤生身'); }
+  } else if (d > 0) {
+    if (chengShi(TONG))     { addL2(KE_WO, 10, '比劫成势，官杀制比劫'); addL2(WO_SHENG, 4, '比劫成势，食伤泄秀'); }
+    if (chengShi(SHENG_WO)) { addL2(WO_KE, 10, '印星成势，财星制印调结构'); addL2(WO_SHENG, 6, '印星成势，食伤泄秀'); }
+  }
+
+  // —— L3 格局修正（成格项 + 破格救应；杀印/官印方向门控 F6）——
+  var L3 = zeroMap();
+  var jiuYing = zeroMap(); // 救应分单独记账（tiebreak 第三顺位）
+  var addL3 = function(wx, val, note) {
+    L3[wx] += val;
+    if (val !== 0) l3Details.push({ wx: wx, val: val, note: note });
+  };
+  var addJiuYing = function(wx, val, note) {
+    jiuYing[wx] += val;
+    addL3(wx, val, note);
+  };
+  var pn = pattern.name || '';
+  var isPo = pattern.status === '破格';
+  var factor = isPo ? 0.4 : 1;
+  if (pn === '杀印相生格' || pn === '官印相生格' || pn === '印星化杀格') {
+    // F6 方向门控：身弱侧 + 官杀成势 + 印未成势 → 印加分；
+    // 身强/中和偏强侧或印已成势 → 不给印加分（财/食伤的加权由 L2 身强+印成势规则承担）
+    if (d < 0 && chengShi(KE_WO) && !chengShi(SHENG_WO)) {
+      addL3(SHENG_WO, 10 * factor, '杀/官印相生，印星化杀生身（方向门控通过）');
+    } else {
+      l3Details.push({ wx: SHENG_WO, val: 0, note: '杀/官印成格但方向门控不通过（身强侧或印已成势），印不加分' });
+    }
+  } else if (pn === '伤官配印格') {
+    addL3(SHENG_WO, 10 * factor, '伤官配印，印星制伤护身');
+  } else if (pn === '食神制杀格' || pn === '伤官制杀格') {
+    addL3(WO_SHENG, 10 * factor, '食伤制杀成格');
+  } else if (pn === '食神生财格' || pn === '伤官生财格') {
+    addL3(WO_KE, 6 * factor, '食伤生财，财为归宿');
+    addL3(WO_SHENG, 4 * factor, '食伤生财，食伤为源头');
+  } else if (pn === '财生官格') {
+    addL3(KE_WO, 6 * factor, '财生官，官为归宿');
+    addL3(WO_KE, 4 * factor, '财生官，财为源头');
+  } else if (pn === '建禄格' || pn === '羊刃格') {
+    addL3(KE_WO, 4 * factor, '建禄/羊刃喜财官制化');
+  }
+  if (isPo) {
+    var reasons = pattern.breakReasons || [];
+    // 月令受冲 → 两冲支通关五行 +6
+    var CHONG_PAIR = { '寅':'申','申':'寅','子':'午','午':'子','卯':'酉','酉':'卯','巳':'亥','亥':'巳' };
+    var TONG_GUAN = { '寅':'水','申':'水','子':'木','午':'木','卯':'水','酉':'水','巳':'木','亥':'木' };
+    var hasChong = reasons.some(function(r) { return r.indexOf('月令受') >= 0 && r.indexOf('冲') >= 0; });
+    var chongWx = TONG_GUAN[mz];
+    if (hasChong && chongWx) addJiuYing(chongWx, 6, '月令受冲，' + chongWx + '通关泄化');
+    reasons.forEach(function(r) {
+      if (r === '伤官克官' || r === '伤官见官') { addJiuYing(SHENG_WO, 6, '伤官克官，印星制伤护官'); addJiuYing(WO_KE, 3, '伤官克官，财星化伤生官'); }
+      else if (r === '枭神夺食') { addJiuYing(WO_KE, 6, '枭神夺食，财星制枭护食'); }
+      else if (r === '财星破印') { addJiuYing(TONG, 6, '财星破印，比劫制财护印'); }
+      else if (r === '七杀无制化') { addJiuYing(WO_SHENG, 3, '七杀无制化，食伤制杀'); addJiuYing(SHENG_WO, 3, '七杀无制化，印星化杀'); }
+    });
+  }
+
+  // —— L4 调候（现状 11 条规则转写为加分；同元素多规则命中取最大，防重复计分）——
+  var L4 = zeroMap();
+  var tiaoHouNote = '';
+  var addL4 = function(wx, val, note) {
+    if (val > L4[wx]) { L4[wx] = val; l4Details.push({ wx: wx, val: val, note: note }); }
+  };
+  var hasWxGlobal = function(wx) {
+    return ['year','month','day','hour'].some(function(p) {
+      return WU_XING[bazi[p].gan] === wx || DI_ZHI_WU_XING[bazi[p].zhi] === wx;
+    });
+  };
+  if (dmWx === '土' && mz === '丑') {
+    addL4('火', 8, '冬土冻土，火暖局');
+    tiaoHouNote = hasWxGlobal('火')
+      ? '原局有火暖局，寒谷回春，调候已得。'
+      : '《穷通宝鉴》：己土冬生，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
+  }
+  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    addL4('火', 8, '冬火微弱，火暖局扶身');
+    addL4('木', 6, '冬火微弱，木生火暖局');
+    tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
+  }
+  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
+    addL4('火', 6, '冬水寒凝，火暖局');
+    tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
+  }
+  if (dmWx === '火' && ['巳','午','未'].indexOf(mz) >= 0) {
+    addL4('水', 8, '夏火炎炎，水润局');
+    tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
+  }
+  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    addL4('火', 6, '冬木寒湿，火暖局');
+    tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
+  }
+  if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmStr.level.indexOf('强') >= 0) {
+    addL4('火', 6, '秋金当令过旺，火炼金成器');
+    tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
+  }
+  if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
+    addL4('火', 6, '辰月湿土，火暖局');
+    tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
+  }
+  if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
+    addL4('水', 6, '戌月燥土，水润局');
+    tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
+  }
+  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
+    addL4('水', 6, '巳午月火炎土燥，水润局');
+    tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
+  }
+  if ((dmWx === '火' || dmWx === '土') && mz === '未') {
+    addL4('水', 6, '未月火土燥烈，水润局');
+    tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
+  }
+  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    addL4('火', 6, '冬金寒冻，火暖局');
+    tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
+  }
+
+  // —— S_base / S_need ——
+  var S_base = zeroMap();
+  var S_need = zeroMap();
+  WX.forEach(function(wx) {
+    S_base[wx] = L1[wx] + L2[wx] + L3[wx];
+    S_need[wx] = S_base[wx] + L4[wx];
+  });
+
+  // —— 根气质量（F7：不参与主评分，仅并列 tiebreak 与质量报告）——
+  var rootQ = evaluateYongShenQuality(bazi, { yongShen: WX.slice(), xiShen: [] });
+
+  // —— 用神 = argmax S_base；严格并列时按 F11 链决胜 ——
+  var maxBase = -Infinity;
+  WX.forEach(function(wx) { if (S_base[wx] > maxBase) maxBase = S_base[wx]; });
+  var top = WX.filter(function(wx) { return S_base[wx] === maxBase; });
+  // F11 决胜链：①结构需求分(L2) → ②调候急迫 → ③通关/救应分 → ④根气质量 → ⑤固定序兜底
+  // ②停用说明：F8 铁律"普通调候不顶替核心用神"——若允许 L4 决胜，B6 等盘的火调候会顶替结构用神木印
+  var chainSteps = [
+    { name: '结构需求分', get: function(wx) { return L2[wx]; } },
+    { name: '通关/救应价值', get: function(wx) { return jiuYing[wx]; } },
+    { name: '根气质量', get: function(wx) { return rootQ[wx] ? rootQ[wx].score : 0; } },
+    { name: '固定序', get: function(wx) { return -WX.indexOf(wx); } }
+  ];
+  var tiebreak = { used: top.length > 1, steps: [], winner: top[0] };
+  var pool = top.slice();
+  for (var ci = 0; ci < chainSteps.length && pool.length > 1; ci++) {
+    var best = -Infinity, bestList = [];
+    pool.forEach(function(wx) {
+      var v = chainSteps[ci].get(wx);
+      if (v > best) { best = v; bestList = [wx]; }
+      else if (v === best) { bestList.push(wx); }
+    });
+    tiebreak.steps.push({
+      step: chainSteps[ci].name,
+      values: pool.map(function(wx) { return wx + '=' + chainSteps[ci].get(wx); }).join('，'),
+      advance: bestList.slice()
+    });
+    pool = bestList;
+  }
+  var yongWx = pool[0];
+  tiebreak.winner = yongWx;
+
+  // —— 候选明细（GPT 对账用）——
+  var candidates = WX.map(function(wx) {
+    var role = wx === yongWx ? '用神' : (S_need[wx] > 3 ? '喜神' : (S_need[wx] < -3 ? '忌神' : '中性'));
+    var relation = wx === TONG ? '比劫' : wx === WO_SHENG ? '食伤' : wx === WO_KE ? '财' : wx === KE_WO ? '官杀' : '印';
+    return {
+      wx: wx,
+      relation: relation,
+      L1: L1[wx],
+      L2: L2[wx],
+      L3: L3[wx],
+      L4: L4[wx],
+      SBase: S_base[wx],
+      SNeed: S_need[wx],
+      rootScore: rootQ[wx] ? rootQ[wx].score : 0,
+      rootQuality: rootQ[wx] ? rootQ[wx].quality : '',
+      role: role
+    };
+  });
+
+  return {
+    d: d,
+    g1: g1,
+    counts: countMap,
+    L1: L1, L2: L2, L3: L3, L4: L4,
+    SBase: S_base,
+    SNeed: S_need,
+    l2Details: l2Details,
+    l3Details: l3Details,
+    l4Details: l4Details,
+    tiaoHouNote: tiaoHouNote,
+    yongWx: yongWx,
+    candidates: candidates,
+    tiebreak: tiebreak
+  };
+}
+
+function getYongJi(bazi) {
+  var dmStr = calcDayMasterStrength(bazi);
+  var dmLevel = dmStr.level;
+  var dmWx = WU_XING[bazi.day.gan];
+  var WX = ['木','火','土','金','水'];
+
+  var di = WX.indexOf(dmWx);
+  var WO_SHENG = WX[(di + 1) % 5];
+  var WO_KE   = WX[(di + 2) % 5];
+  var KE_WO   = WX[(di + 3) % 5];
+  var SHENG_WO = WX[(di + 4) % 5];
+  var TONG    = dmWx;
+
+  var xiShen = [], yongShen = [], jiShen = [], reasoning = '';
+
+  // ---- v3.4: 从格优先 ----
+  var cong = getCongGe(bazi);
+  if (cong.isCong) {
+    xiShen = cong.xiOverride;
+    jiShen = cong.jiOverride;
+    yongShen = xiShen.slice(0, 1);
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。⚠️注意：从格判定的喜忌与普通扶抑法相反。举例：木为食伤（泄气），正常身弱忌泄，但此命已弃命从势，故木反为喜。'
+      + '喜：' + xiShen.join('、') + '来顺势助旺。'
+      + '忌：' + jiShen.join('、') + '来逆势破格。';
+    return finalizeYongJiResult(bazi, {
+      dayMasterLevel: dmLevel, dayMasterScore: dmStr.score,
+      xiShen: xiShen, yongShen: yongShen, jiShen: jiShen,
+      reasoning: reasoning, congGe: cong
+    }, { dmStr:dmStr, cong:cong, tiaoHouNote:'', pattern:getPattern(bazi) });
+  }
+
+  // ---- v5.7 P1 穷通宝鉴金日主未/戌月特例短路（保留 v4.2 前置规则，F9）----
+  // 金日主生未/戌燥土月：燥土不生金、土多埋金，印星虚浮无效——
+  // 按《穷通宝鉴》取水为用（制杀+润局+使燥土转生金），弃土用金水（"先用壬水，次取庚金佐之"）
+  var pattern = getPattern(bazi);
+  var tiaoHouNote = '';
+  var cs = null;
+  var qiongTong = dmWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0 && (dmLevel === '极弱' || dmLevel === '偏弱');
+  if (qiongTong) {
+    xiShen  = ['水', '金'];
+    yongShen = ['水'];
+    jiShen  = ['火', '木', '土'];
+    reasoning = '辛金生未戌燥土月，火炎土燥、土多埋金，燥土不生金，印星虚浮无效。《穷通宝鉴》：六月辛金"先用壬水，次取庚金佐之"。故取水为用：水制七杀（伤官制杀）、润燥土（燥土得润方能生金）、调候降温，一水三用；喜金比劫帮身，忌火木土（杀旺、财党杀、燥土埋金）。';
+  } else {
+    // ---- v5.7 P1 候选五行评分（GPT 裁决修订版：F4/F5/F6/F7/F8/F10/F11）----
+    // 连续旺衰权重 d 取代 50 分二元 if/else：需求定用神、根气定质量
+    cs = calcCandidateScores(bazi, dmStr, pattern);
+    tiaoHouNote = cs.tiaoHouNote;
+    yongShen = [cs.yongWx];
+    xiShen = WX.filter(function(wx) { return cs.SNeed[wx] > 3 && wx !== cs.yongWx; })
+      .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; });
+    jiShen = WX.filter(function(wx) { return cs.SNeed[wx] < -3 && wx !== cs.yongWx; })
+      .sort(function(a, b) { return cs.SNeed[a] - cs.SNeed[b]; });
+    var yongReasons = cs.l2Details.concat(cs.l3Details).concat(cs.l4Details).filter(function(dt) {
+      return dt.wx === cs.yongWx && dt.val > 0;
+    }).map(function(dt) { return dt.note; });
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），候选五行评分后取' + cs.yongWx + '为用神'
+      + (yongReasons.length > 0 ? '：' + yongReasons.join('；') : '。')
+      + ' 喜：' + [cs.yongWx].concat(xiShen).join('、')
+      + '。忌：' + (jiShen.length > 0 ? jiShen.join('、') : '无') + '。';
+    if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
+  }
+
+  // ---- v5.0 生克链分析 ----
+  var chainHints = [];
+  var chainAdjustments = [];
+  try {
+    if (window.B

@@ -1,0 +1,675 @@
+{
+ "meta": {
+  "title": "P5-C08 extended trace (candidate/realCong/fakeCong) + M01 neighbor comparison",
+  "date": "2026-08-16",
+  "engine": "js/bazi.js AFTER_P5_C07"
+ },
+ "traces": [
+  {
+   "id": "M01",
+   "gz": "壬子 壬子 丁酉 辛亥",
+   "sex": "male",
+   "strength": {
+    "score": 1,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 7,
+    "cai": 3,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "followType": "从杀",
+   "realCong": {
+    "checked": true,
+    "pass": true,
+    "name": "从杀格",
+    "failReasons": [
+     "从财: cai=3 (need >=6 and >=dg*2=4)",
+     "从儿: shi=0 (need >=6 and >=dg*2=4)"
+    ]
+   },
+   "fakeCong": {
+    "checked": true,
+    "pass": true,
+    "failReasons": []
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": "从杀格",
+   "match": true,
+   "final": {
+    "pattern": "从杀格/成格",
+    "yong": [
+     "水"
+    ],
+    "xi": [
+     "水",
+     "金"
+    ],
+    "ji": [
+     "木",
+     "火"
+    ]
+   },
+   "intent": "真从锚（池内=S04 从杀格）"
+  },
+  {
+   "id": "M01b",
+   "gz": "壬子 壬子 丁巳 辛亥",
+   "sex": "male",
+   "strength": {
+    "score": 16,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 3,
+    "ke": 7,
+    "cai": 2,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": true,
+    "canCong": false
+   },
+   "followType": "从杀",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 火/木",
+     "zhiHelp gate: branch main qi has 木/火"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "七杀格/破格",
+    "yong": [
+     "木"
+    ],
+    "xi": [
+     "木",
+     "火"
+    ],
+    "ji": [
+     "土",
+     "金",
+     "水"
+    ]
+   },
+   "intent": "M01 改一字：日支酉→巳（巳藏丙火劫财=dayRoot 余气根）"
+  },
+  {
+   "id": "M01c",
+   "gz": "壬子 甲子 丁酉 辛亥",
+   "sex": "male",
+   "strength": {
+    "score": 20,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 3,
+    "shi": 0,
+    "yin": 2
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "followType": "假从势",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "ganHelp gate: tian gan透 木/火"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "杀印相生格/破格",
+    "yong": [
+     "木"
+    ],
+    "xi": [
+     "木",
+     "火"
+    ],
+    "ji": [
+     "土",
+     "金",
+     "水"
+    ]
+   },
+   "intent": "M01 改一字：月干壬→甲（甲=正印透干=ganHelp）"
+  },
+  {
+   "id": "M01d",
+   "gz": "壬子 壬子 丁酉 辛卯",
+   "sex": "male",
+   "strength": {
+    "score": 1,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 6,
+    "cai": 3,
+    "shi": 0,
+    "yin": 1
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": true,
+    "canCong": false
+   },
+   "followType": "从杀",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "zhiHelp gate: branch main qi has 木/火"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "七杀格/破格",
+    "yong": [
+     "木"
+    ],
+    "xi": [
+     "木",
+     "火"
+    ],
+    "ji": [
+     "土",
+     "金",
+     "水"
+    ]
+   },
+   "intent": "M01 改一字：时支亥→卯（卯=乙木本气印=zhiHelp）"
+  },
+  {
+   "id": "ANCH1",
+   "gz": "丁亥 丙午 癸巳 己卯",
+   "sex": "male",
+   "strength": {
+    "score": 2,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 3,
+    "ke": 2,
+    "cai": 6,
+    "shi": 1,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": true,
+    "canCong": false
+   },
+   "followType": "从财",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金",
+     "zhiHelp gate: branch main qi has 金/水"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "偏财格/破格",
+    "yong": [
+     "水"
+    ],
+    "xi": [
+     "水",
+     "金"
+    ],
+    "ji": [
+     "木",
+     "火",
+     "土"
+    ]
+   },
+   "intent": "GPT 锚点1：极弱不从"
+  },
+  {
+   "id": "ANCH2",
+   "gz": "戊子 丁巳 癸亥 庚申",
+   "sex": "male",
+   "strength": {
+    "score": 49,
+    "label": "中和"
+   },
+   "candidate": false,
+   "powers": {
+    "dg": 4,
+    "ke": 2,
+    "cai": 3,
+    "shi": 0,
+    "yin": 3
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": true,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "followType": null,
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "level gate: 中和(49) not 极弱(<30)",
+     "dayRoot gate: day zhi 亥 cangGan [壬甲] has 水/金",
+     "ganHelp gate: tian gan透 金/水"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "正财格/破格",
+    "yong": [
+     "金"
+    ],
+    "xi": [
+     "金",
+     "水"
+    ],
+    "ji": [
+     "木",
+     "火",
+     "土"
+    ]
+   },
+   "intent": "GPT 锚点2：中和/49（前提修正）"
+  },
+  {
+   "id": "ANCH3",
+   "gz": "己丑 甲戌 癸巳 丙辰",
+   "sex": "male",
+   "strength": {
+    "score": 1,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 3,
+    "shi": 2,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "followType": "假从势",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "正官格/破格",
+    "yong": [
+     "金"
+    ],
+    "xi": [
+     "金",
+     "水"
+    ],
+    "ji": [
+     "木",
+     "火",
+     "土"
+    ]
+   },
+   "intent": "GPT 锚点3：极弱不从"
+  },
+  {
+   "id": "D03",
+   "gz": "戊戌 己未 癸巳 丙午",
+   "sex": "male",
+   "strength": {
+    "score": 1,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 6,
+    "cai": 4,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": true,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": false
+   },
+   "followType": "从杀",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "dayRoot gate: day zhi 巳 cangGan [丙庚戊] has 水/金"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "七杀格/破格",
+    "yong": [
+     "金"
+    ],
+    "xi": [
+     "金",
+     "水"
+    ],
+    "ji": [
+     "木",
+     "火",
+     "土"
+    ]
+   },
+   "intent": "D03 余气根翻转（不从）"
+  },
+  {
+   "id": "D04",
+   "gz": "戊戌 己未 癸未 丙午",
+   "sex": "male",
+   "strength": {
+    "score": 1,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 7,
+    "cai": 3,
+    "shi": 0,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "followType": "从杀",
+   "realCong": {
+    "checked": true,
+    "pass": true,
+    "name": "从杀格",
+    "failReasons": [
+     "从财: cai=3 (need >=6 and >=dg*2=4)",
+     "从儿: shi=0 (need >=6 and >=dg*2=4)"
+    ]
+   },
+   "fakeCong": {
+    "checked": true,
+    "pass": true,
+    "failReasons": []
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": "从杀格",
+   "match": true,
+   "final": {
+    "pattern": "从杀格/成格",
+    "yong": [
+     "土"
+    ],
+    "xi": [
+     "土",
+     "火"
+    ],
+    "ji": [
+     "金",
+     "水"
+    ]
+   },
+   "intent": "D04 D03 对照（从杀）"
+  },
+  {
+   "id": "D07",
+   "gz": "戊戌 丙午 癸卯 戊申",
+   "sex": "male",
+   "strength": {
+    "score": 11,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 3,
+    "shi": 1,
+    "yin": 1
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": true,
+    "canCong": false
+   },
+   "followType": "假从势",
+   "realCong": {
+    "checked": false,
+    "pass": false,
+    "name": null,
+    "failReasons": []
+   },
+   "fakeCong": {
+    "checked": false,
+    "pass": false,
+    "failReasons": [
+     "zhiHelp gate: branch main qi has 金/水"
+    ]
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": null,
+   "match": true,
+   "final": {
+    "pattern": "偏财格/破格",
+    "yong": [
+     "金"
+    ],
+    "xi": [
+     "金",
+     "水"
+    ],
+    "ji": [
+     "木",
+     "火",
+     "土"
+    ]
+   },
+   "intent": "D07 本气印 zhiHelp（不从）"
+  },
+  {
+   "id": "D08",
+   "gz": "戊戌 丙午 癸卯 己巳",
+   "sex": "male",
+   "strength": {
+    "score": 2,
+    "label": "极弱"
+   },
+   "candidate": true,
+   "powers": {
+    "dg": 2,
+    "ke": 5,
+    "cai": 4,
+    "shi": 1,
+    "yin": 0
+   },
+   "gates": {
+    "dayRoot": false,
+    "ganHelp": false,
+    "zhiHelp": false,
+    "canCong": true
+   },
+   "followType": "假从势",
+   "realCong": {
+    "checked": true,
+    "pass": false,
+    "name": null,
+    "failReasons": [
+     "从杀: ke=5 (need >=6 and >=dg*2=4)",
+     "从财: cai=4 (need >=6 and >=dg*2=4)",
+     "从儿: shi=1 (need >=6 and >=dg*2=4)"
+    ]
+   },
+   "fakeCong": {
+    "checked": true,
+    "pass": true,
+    "failReasons": []
+   },
+   "congQiang": {
+    "checked": false,
+    "pass": false,
+    "failReasons": []
+   },
+   "engineName": "假从势格",
+   "match": true,
+   "final": {
+    "pattern": "假从势格/成格",
+    "yong": [
+     "土"
+    ],
+    "xi": [
+     "土",
+     "火",
+     "木"
+    ],
+    "ji": [
+     "金",
+     "水"
+    ]
+   },
+   "intent": "D08 D07 对照（假从）"
+  }
+ ]
+}

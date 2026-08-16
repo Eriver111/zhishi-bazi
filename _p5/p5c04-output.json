@@ -1,0 +1,1664 @@
+[
+  {
+    "id": "A01",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "己巳 己亥 丁卯 甲辰",
+    "strength": 34,
+    "level": "偏弱",
+    "d": -0.32,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 5,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 1,
+    "marginCur": 13.68,
+    "marginQ": 13.68,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 5,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "亥中气根",
+        "卯本气根",
+        "辰中气根",
+        "透干hour"
+      ]
+    }
+  },
+  {
+    "id": "A02",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "己巳 己亥 丙寅 乙未",
+    "strength": 46,
+    "level": "中和",
+    "d": -0.08,
+    "pattern": "伤官制杀格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 4.5,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 1,
+    "marginCur": 7.92,
+    "marginQ": 7.92,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 4.5,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "亥中气根",
+        "寅本气根",
+        "未余气根",
+        "透干hour"
+      ]
+    }
+  },
+  {
+    "id": "A03",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "甲申 庚午 甲子 乙丑",
+    "strength": 48,
+    "level": "中和",
+    "d": -0.04,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 1,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "水",
+    "wQ": "木",
+    "factor": 1,
+    "marginCur": 6,
+    "marginQ": 6,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 1,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "透干year/hour",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "A04",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "戊申 戊寅 壬子 己亥",
+    "strength": 37,
+    "level": "偏弱",
+    "d": -0.26,
+    "pattern": "食神格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 2,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "金",
+    "wQ": "水",
+    "factor": 1,
+    "marginCur": 1.8399999999999963,
+    "marginQ": 1.8399999999999963,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 2,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "申中气根",
+        "子本气根",
+        "亥本气根",
+        "被克：戊天干直克；戊天干直克；己天干直克"
+      ]
+    }
+  },
+  {
+    "id": "A05",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "甲申 戊寅 壬子 戊申",
+    "strength": 34,
+    "level": "偏弱",
+    "d": -0.32,
+    "pattern": "食神格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受时柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 2,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "金",
+    "wQ": "水",
+    "factor": 1,
+    "marginCur": 6,
+    "marginQ": 6,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 2,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "申中气根",
+        "子本气根",
+        "申中气根",
+        "被克：戊天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "A06",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "戊申 甲寅 壬子 己亥",
+    "strength": 37,
+    "level": "偏弱",
+    "d": -0.26,
+    "pattern": "食神格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 3,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "水",
+    "wQ": "水",
+    "factor": 1,
+    "marginCur": 6,
+    "marginQ": 6,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "申中气根",
+        "子本气根",
+        "亥本气根",
+        "被克：戊天干直克；己天干直克"
+      ]
+    }
+  },
+  {
+    "id": "A07",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "戊申 甲寅 壬子 戊申",
+    "strength": 36,
+    "level": "偏弱",
+    "d": -0.28,
+    "pattern": "食神格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受时柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 2,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "金",
+    "wQ": "水",
+    "factor": 1,
+    "marginCur": 5.999999999999998,
+    "marginQ": 5.999999999999998,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 2,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "申中气根",
+        "子本气根",
+        "申中气根",
+        "被克：戊天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "A08",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "庚午 甲子 甲午 乙丑",
+    "strength": 71,
+    "level": "偏强",
+    "d": 0.42,
+    "pattern": "正印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 1,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "火",
+    "w0": "火",
+    "wQ": "火",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 1,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "透干month/hour",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "A09",
+    "decl": "A",
+    "calcCls": "A",
+    "gz": "戊午 戊子 丙寅 甲午",
+    "strength": 47,
+    "level": "中和",
+    "d": -0.06,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受时柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 3,
+    "ganVisible": true,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 1,
+    "marginCur": 6,
+    "marginQ": 6,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "寅本气根",
+        "透干hour"
+      ]
+    }
+  },
+  {
+    "id": "A10",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "丙午 甲子 甲寅 乙丑",
+    "strength": 100,
+    "level": "极强",
+    "d": 1,
+    "pattern": "正印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 4,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "金",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 6,
+    "marginQ": 6,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 4,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "寅本气根",
+        "透干month/hour"
+      ]
+    }
+  },
+  {
+    "id": "B01",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "戊午 戊子 丙寅 戊子",
+    "strength": 38,
+    "level": "偏弱",
+    "d": -0.24,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.7,
+    "marginCur": 11.759999999999998,
+    "marginQ": 9.959999999999997,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 2,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "寅本气根"
+      ]
+    }
+  },
+  {
+    "id": "B02",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "戊午 戊子 丁卯 己丑",
+    "strength": 34,
+    "level": "偏弱",
+    "d": -0.32,
+    "pattern": "伤官制杀格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.7,
+    "marginCur": 13.68,
+    "marginQ": 11.879999999999999,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 2,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "卯本气根"
+      ]
+    }
+  },
+  {
+    "id": "B03",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "己巳 己亥 丙寅 戊子",
+    "strength": 35,
+    "level": "偏弱",
+    "d": -0.3,
+    "pattern": "伤官制杀格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 3,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.7,
+    "marginCur": 13.2,
+    "marginQ": 11.399999999999999,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "亥中气根",
+        "寅本气根"
+      ]
+    }
+  },
+  {
+    "id": "B04",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "己巳 己亥 丙寅 戊戌",
+    "strength": 38,
+    "level": "偏弱",
+    "d": -0.24,
+    "pattern": "伤官制杀格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 3,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.7,
+    "marginCur": 11.759999999999998,
+    "marginQ": 9.959999999999997,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "亥中气根",
+        "寅本气根"
+      ]
+    }
+  },
+  {
+    "id": "B05",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "己巳 己亥 丁酉 己酉",
+    "strength": 6,
+    "level": "极弱",
+    "d": -0.88,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 1,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.7,
+    "marginCur": 18,
+    "marginQ": 16.200000000000003,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 1,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "亥中气根"
+      ]
+    }
+  },
+  {
+    "id": "B06",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "己卯 辛酉 庚寅 甲子",
+    "strength": 75,
+    "level": "偏强",
+    "d": 0.5,
+    "pattern": "羊刃格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 1,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "火",
+    "wQ": "水",
+    "factor": 0.7,
+    "marginCur": 4.399999999999999,
+    "marginQ": 2.599999999999998,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 1,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "子本气根",
+        "被克：己天干直克"
+      ]
+    }
+  },
+  {
+    "id": "B07",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 乙酉 甲午 甲子",
+    "strength": 26,
+    "level": "极弱",
+    "d": -0.48,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "木",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 6,
+    "marginQ": 1.8000000000000007,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "子本气根",
+        "被克：己天干直克；午(day)地支根被冲"
+      ]
+    }
+  },
+  {
+    "id": "B08",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "己卯 辛酉 戊辰 戊午",
+    "strength": 46.5,
+    "level": "中和",
+    "d": -0.07,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -1.5,
+    "ganVisible": false,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "土",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -1.5,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "辰余气根",
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "B09",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "己卯 乙酉 壬午 戊申",
+    "strength": 56,
+    "level": "中和",
+    "d": 0.12,
+    "pattern": "正印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -1,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "土",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -1,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "申中气根",
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "B10",
+    "decl": "B",
+    "calcCls": "B",
+    "gz": "戊午 戊子 丙寅 己丑",
+    "strength": 37,
+    "level": "偏弱",
+    "d": -0.26,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 12,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.7,
+    "marginCur": 18.240000000000002,
+    "marginQ": 14.64,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 2,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "寅本气根"
+      ]
+    }
+  },
+  {
+    "id": "C01",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "戊午 戊子 丙午 戊戌",
+    "strength": 26,
+    "level": "极弱",
+    "d": -0.48,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.3,
+    "marginCur": 17.519999999999996,
+    "marginQ": 13.319999999999993,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": []
+    }
+  },
+  {
+    "id": "C02",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 乙酉 甲寅 戊午",
+    "strength": 39,
+    "level": "偏弱",
+    "d": -0.22,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "木",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 6,
+    "marginQ": 1.8000000000000007,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C03",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 辛酉 庚寅 戊午",
+    "strength": 83,
+    "level": "极强",
+    "d": 0.66,
+    "pattern": "羊刃格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "火",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 4.399999999999999,
+    "marginQ": 0.19999999999999574,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C04",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 丁酉 丁巳 戊午",
+    "strength": 60,
+    "level": "偏强",
+    "d": 0.2,
+    "pattern": "偏财格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "水",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 8.4,
+    "marginQ": 4.200000000000001,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C05",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "壬午 壬子 丙午 戊戌",
+    "strength": 24,
+    "level": "极弱",
+    "d": -0.52,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.3,
+    "marginCur": 14,
+    "marginQ": 9.799999999999997,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": []
+    }
+  },
+  {
+    "id": "C06",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "壬午 壬子 丁巳 辛丑",
+    "strength": 26,
+    "level": "极弱",
+    "d": -0.48,
+    "pattern": "七杀格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": -1,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 9,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0.3,
+    "marginCur": 16.679999999999996,
+    "marginQ": 10.379999999999999,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -1,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：辛天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C07",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 乙酉 甲午 戊午",
+    "strength": 14,
+    "level": "极弱",
+    "d": -0.72,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "木",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 6,
+    "marginQ": 1.7999999999999972,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C08",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 辛酉 庚午 戊午",
+    "strength": 82,
+    "level": "极强",
+    "d": 0.64,
+    "pattern": "羊刃格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "火",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 4.399999999999999,
+    "marginQ": 0.19999999999999574,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C09",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "己卯 辛酉 癸巳 己未",
+    "strength": 60,
+    "level": "偏强",
+    "d": 0.2,
+    "pattern": "偏印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "土",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；己天干直克"
+      ]
+    }
+  },
+  {
+    "id": "C10",
+    "decl": "C",
+    "calcCls": "C",
+    "gz": "己卯 辛酉 戊戌 戊午",
+    "strength": 52,
+    "level": "中和",
+    "d": 0.04,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": -2,
+    "ganVisible": false,
+    "dirOK": true,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "木",
+    "wQ": "水",
+    "factor": 0.3,
+    "marginCur": 5.2,
+    "marginQ": 1,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": -2,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "被克：己天干直克；戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D01",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "甲申 庚午 甲子 甲戌",
+    "strength": 51,
+    "level": "中和",
+    "d": 0.02,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 1,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 4,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 1,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "透干year/hour",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D02",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "甲寅 丙午 甲子 甲寅",
+    "strength": 60,
+    "level": "偏强",
+    "d": 0.2,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 6,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "金",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 2.4000000000000004,
+    "marginQ": 2.4000000000000004,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 6,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "寅本气根",
+        "寅本气根",
+        "透干year/hour"
+      ]
+    }
+  },
+  {
+    "id": "D03",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "乙卯 壬午 丙子 甲午",
+    "strength": 79,
+    "level": "偏强",
+    "d": 0.58,
+    "pattern": "羊刃格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 4,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "金",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 4,
+    "marginQ": 4,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 4,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "卯本气根",
+        "透干year/hour"
+      ]
+    }
+  },
+  {
+    "id": "D04",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "丙寅 甲午 丙子 甲午",
+    "strength": 93,
+    "level": "极强",
+    "d": 0.86,
+    "pattern": "羊刃格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 4,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "水",
+    "w0": "水",
+    "wQ": "水",
+    "factor": 0,
+    "marginCur": 1.6000000000000014,
+    "marginQ": 1.6000000000000014,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 4,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "寅本气根",
+        "透干month/hour"
+      ]
+    }
+  },
+  {
+    "id": "D05",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "壬午 戊子 戊午 庚辰",
+    "strength": 48,
+    "level": "中和",
+    "d": -0.04,
+    "pattern": "正财格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 2,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "辰中气根",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D06",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "甲寅 庚午 甲子 乙丑",
+    "strength": 52,
+    "level": "中和",
+    "d": 0.04,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 3,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 1.2000000000000002,
+    "marginQ": 0.48,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "寅本气根",
+        "透干year/hour",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D07",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "戊午 甲子 甲午 庚午",
+    "strength": 56,
+    "level": "中和",
+    "d": 0.12,
+    "pattern": "正印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受日柱冲",
+      "月令受时柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 12,
+    "wCur": "木",
+    "w0": "火",
+    "wQ": "火",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "透干month",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D08",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "丙寅 戊申 戊辰 壬子",
+    "strength": 47,
+    "level": "中和",
+    "d": -0.06,
+    "pattern": "食神格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 3.5,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 12,
+    "wCur": "水",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 6,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 3.5,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "申中气根",
+        "辰余气根",
+        "子本气根",
+        "透干hour",
+        "被克：戊天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D09",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "己巳 乙亥 甲子 戊辰",
+    "strength": 85,
+    "level": "极强",
+    "d": 0.7,
+    "pattern": "偏印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 3,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 12,
+    "wCur": "土",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "亥中气根",
+        "辰中气根",
+        "透干month"
+      ]
+    }
+  },
+  {
+    "id": "D10",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "乙卯 辛酉 癸酉 丙辰",
+    "strength": 72,
+    "level": "偏强",
+    "d": 0.44,
+    "pattern": "偏印格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 0.5,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 12,
+    "wCur": "火",
+    "w0": "火",
+    "wQ": "火",
+    "factor": 0,
+    "marginCur": 3.5199999999999996,
+    "marginQ": 3.5199999999999996,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 0.5,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "辰余气根"
+      ]
+    }
+  },
+  {
+    "id": "D11",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "戊子 丁巳 癸亥 庚申",
+    "strength": 49,
+    "level": "中和",
+    "d": -0.02,
+    "pattern": "正财格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 4,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": [
+        "亥中气根",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D12",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "癸酉 壬午 癸丑 壬子",
+    "strength": 48,
+    "level": "中和",
+    "d": -0.04,
+    "pattern": "偏财格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受时柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "水",
+    "wQ": "水",
+    "factor": 0,
+    "marginCur": 2,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": true,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": []
+    }
+  },
+  {
+    "id": "D13",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "甲午 戊子 丙寅 甲午",
+    "strength": 54,
+    "level": "中和",
+    "d": 0.08,
+    "pattern": "正官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受时柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 4,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "金",
+    "w0": "金",
+    "wQ": "金",
+    "factor": 0,
+    "marginCur": 0.6399999999999997,
+    "marginQ": 0.6399999999999997,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 4,
+      "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+      "roots": [
+        "寅本气根",
+        "透干year/hour"
+      ]
+    }
+  },
+  {
+    "id": "D14",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "丙子 庚午 甲寅 乙亥",
+    "strength": 55,
+    "level": "中和",
+    "d": 0.1,
+    "pattern": "伤官格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 3,
+    "ganVisible": true,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "火",
+    "w0": "火",
+    "wQ": "火",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 3,
+      "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+      "roots": [
+        "寅本气根",
+        "亥中气根",
+        "透干hour",
+        "被克：庚天干直克"
+      ]
+    }
+  },
+  {
+    "id": "D15",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "壬午 戊子 戊午 壬戌",
+    "strength": 43,
+    "level": "中和",
+    "d": -0.14,
+    "pattern": "正财格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲",
+      "月令受日柱冲"
+    ],
+    "tgWx": "木",
+    "tgRoot": 0,
+    "ganVisible": false,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "土",
+    "w0": "土",
+    "wQ": "土",
+    "factor": 0,
+    "marginCur": 1.1199999999999992,
+    "marginQ": 1.1199999999999992,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 0,
+      "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+      "roots": []
+    }
+  },
+  {
+    "id": "D16",
+    "decl": "D",
+    "calcCls": "D",
+    "gz": "己卯 辛酉 丙寅 甲子",
+    "strength": 42,
+    "level": "中和",
+    "d": -0.16,
+    "pattern": "正财格",
+    "status": "破格",
+    "cong": false,
+    "chongReason": [
+      "月令受年柱冲"
+    ],
+    "tgWx": "水",
+    "tgRoot": 1,
+    "ganVisible": false,
+    "dirOK": false,
+    "rescueTotal": 6,
+    "wCur": "木",
+    "w0": "木",
+    "wQ": "木",
+    "factor": 0,
+    "marginCur": 0,
+    "marginQ": 0,
+    "check": "✅",
+    "fnQ": false,
+    "rootDetail": {
+      "score": 1,
+      "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+      "roots": [
+        "子本气根",
+        "被克：己天干直克"
+      ]
+    }
+  }
+]

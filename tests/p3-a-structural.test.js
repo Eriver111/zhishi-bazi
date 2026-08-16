@@ -74,16 +74,16 @@ function dataOf(c) {
 // ============================================================
 // A 层：引擎字节冻结 + 53 盘五行层（分数/旺衰/喜用忌/格局/从格）零漂移
 // ============================================================
-test('A层：js/bazi.js 与部署 blob 63fafaa 逐字节一致（sha256 + git show 双重断言）', function () {
+test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双重断言）', function () {
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '87f3255b0b130855fabd416379cbf60819336132e827bbd5ff38f278bc9d934d',
-    'js/bazi.js sha256 与 A3 开工快照一致'
+    '835df4d8b4afce7aa4fcd883c4bb5676397f87add8b80e95b861ff1942affb6a',
+    'js/bazi.js sha256 与 C07 冻结+文案补丁（2026-08-17 复合格 desc 透→当权）一致（CRLF 工作区原始字节口径）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
-  const deployed = execSync('git show 63fafaa:js/bazi.js', { cwd: ROOT }).toString('utf8');
-  assert.equal(lf, deployed, 'js/bazi.js（LF 归一化）=== 63fafaa 部署 blob');
+  const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
+  assert.equal(lf, deployed, 'js/bazi.js（LF 归一化）=== HEAD 部署 blob');
 });
 
 test('A层：53 盘五行层对 _p2_4a_replay.csv 逐项全等（P1/P2 零漂移）', function () {

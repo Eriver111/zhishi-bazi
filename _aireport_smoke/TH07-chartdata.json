@@ -1,0 +1,1065 @@
+{
+  "birthInfo": {
+    "year": 1967,
+    "month": 8,
+    "day": 5,
+    "hour": 0,
+    "gender": "male"
+  },
+  "fourPillars": {
+    "year": {
+      "gan": "丁",
+      "zhi": "未",
+      "ganWX": "火",
+      "zhiWX": "土",
+      "shiShenGan": "七杀",
+      "shiShenZhi": "偏印",
+      "nayin": "天河水",
+      "cangGan": [
+        {
+          "gan": "己",
+          "shiShen": "偏印"
+        },
+        {
+          "gan": "丁",
+          "shiShen": "七杀"
+        },
+        {
+          "gan": "乙",
+          "shiShen": "偏财"
+        }
+      ]
+    },
+    "month": {
+      "gan": "丁",
+      "zhi": "未",
+      "ganWX": "火",
+      "zhiWX": "土",
+      "shiShenGan": "七杀",
+      "shiShenZhi": "偏印",
+      "nayin": "天河水",
+      "cangGan": [
+        {
+          "gan": "己",
+          "shiShen": "偏印"
+        },
+        {
+          "gan": "丁",
+          "shiShen": "七杀"
+        },
+        {
+          "gan": "乙",
+          "shiShen": "偏财"
+        }
+      ]
+    },
+    "day": {
+      "gan": "辛",
+      "zhi": "丑",
+      "ganWX": "金",
+      "zhiWX": "土",
+      "shiShenGan": "日主",
+      "shiShenZhi": "偏印",
+      "nayin": "壁上土",
+      "cangGan": [
+        {
+          "gan": "己",
+          "shiShen": "偏印"
+        },
+        {
+          "gan": "癸",
+          "shiShen": "食神"
+        },
+        {
+          "gan": "辛",
+          "shiShen": "比肩"
+        }
+      ]
+    },
+    "hour": {
+      "gan": "戊",
+      "zhi": "子",
+      "ganWX": "土",
+      "zhiWX": "水",
+      "shiShenGan": "正印",
+      "shiShenZhi": "食神",
+      "nayin": "霹雳火",
+      "cangGan": [
+        {
+          "gan": "癸",
+          "shiShen": "食神"
+        }
+      ]
+    }
+  },
+  "wuXingCount": {
+    "金": 2,
+    "木": 2,
+    "水": 3,
+    "火": 4,
+    "土": 8
+  },
+  "dayMaster": {
+    "gan": "辛",
+    "wuXing": "金",
+    "yinYang": "阴"
+  },
+  "dayMasterStrength": {
+    "level": "偏弱",
+    "label": "元气偏柔",
+    "score": 31,
+    "detail": "综合评定身偏弱（31分）。命局中克泄耗力量偏重，日主需印比扶助。"
+  },
+  "pattern": {
+    "name": "七杀格",
+    "desc": "月令透杀，果断刚毅有魄力。杀需制化——食神制杀出武将，印化杀出文贵。",
+    "type": "透干取格",
+    "matchMode": "exact-canggan",
+    "matchedGan": "丁",
+    "matchedPillar": "年柱",
+    "monthWx": "土",
+    "monthZhi": "未",
+    "monthGan": "丁",
+    "source": "月支未藏丁，透于年柱 → 七杀",
+    "establishConditions": [
+      {
+        "condition": "日主有承载格局之力",
+        "met": true,
+        "detail": "日主偏弱（31分），可承载格局",
+        "category": "HARD_BREAK"
+      },
+      {
+        "condition": "有食神制杀或印星化杀",
+        "met": false,
+        "detail": "印为燥土，虚浮不化杀",
+        "category": "HARD_BREAK"
+      },
+      {
+        "condition": "无财星党杀",
+        "met": true,
+        "detail": "✓",
+        "category": "QUALITY"
+      }
+    ],
+    "breakReasons": [
+      "月令受日柱冲",
+      "印星为燥土，虚浮不化杀"
+    ],
+    "isEstablished": false,
+    "status": "破格"
+  },
+  "yongJi": {
+    "dayMasterLevel": "偏弱",
+    "dayMasterScore": 31,
+    "xiShen": [
+      "水",
+      "金"
+    ],
+    "yongShen": [
+      "水"
+    ],
+    "jiShen": [
+      "火",
+      "木",
+      "土"
+    ],
+    "reasoning": "辛金生未戌燥土月，火炎土燥、土多埋金，燥土不生金，印星虚浮无效。《穷通宝鉴》：六月辛金\"先用壬水，次取庚金佐之\"。故取水为用：水制七杀（伤官制杀）、润燥土（燥土得润方能生金）、调候降温，一水三用；喜金比劫帮身，忌火木土（杀旺、财党杀、燥土埋金）。 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。 【日支被冲】日支丑被年柱地支未冲——根基动摇。日主坐根被冲，力量打折扣。 【日支被冲】日支丑被月柱地支未冲——根基动摇。日主坐根被冲，力量打折扣。 【库冲开库】未、丑库支发生冲/刑，相关藏干受到引动。官/杀印通关、日主得库气。 【官/杀印通关】未库藏丁（火，七杀）受到引动，存在生印、印再生身的通关可能。 【日主得库气】丑库藏辛受到引动，与日主同五行，可作为根气增强的候选证据。",
+    "method": "格局救应",
+    "primaryReason": "七杀格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
+    "evidence": [
+      {
+        "category": "旺衰",
+        "title": "日主偏弱",
+        "detail": "综合评定身偏弱（31分）。命局中克泄耗力量偏重，日主需印比扶助。"
+      },
+      {
+        "category": "格局",
+        "title": "七杀格·破格",
+        "detail": "月令受日柱冲；印星为燥土，虚浮不化杀"
+      },
+      {
+        "category": "根气/透干",
+        "title": "用神在原局的状态",
+        "detail": "水：见于时柱地支"
+      },
+      {
+        "category": "生克链·日支被冲",
+        "title": "⚠ 日支被冲",
+        "detail": "日支丑被年柱地支未冲——根基动摇。日主坐根被冲，力量打折扣。"
+      },
+      {
+        "category": "生克链·日支被冲",
+        "title": "⚠ 日支被冲",
+        "detail": "日支丑被月柱地支未冲——根基动摇。日主坐根被冲，力量打折扣。"
+      },
+      {
+        "category": "生克链·日支受刑",
+        "title": "日支受刑",
+        "detail": "日支丑与年柱地支未相刑——暗中不和，需注意人际关系。"
+      },
+      {
+        "category": "生克链·日支受刑",
+        "title": "日支受刑",
+        "detail": "日支丑与月柱地支未相刑——暗中不和，需注意人际关系。"
+      },
+      {
+        "category": "生克链·日主根气",
+        "title": "日主根气",
+        "detail": "日柱地支丑藏辛金（余气根）；时柱地支子为日主长生之位（有气之根，靠印滋养）"
+      },
+      {
+        "category": "生克链·库冲开库",
+        "title": "库冲开库",
+        "detail": "未、丑库支发生冲/刑，相关藏干受到引动。官/杀印通关、日主得库气。"
+      },
+      {
+        "category": "生克链·官/杀印通关",
+        "title": "官/杀印通关",
+        "detail": "未库藏丁（火，七杀）受到引动，存在生印、印再生身的通关可能。"
+      },
+      {
+        "category": "生克链·日主得库气",
+        "title": "日主得库气",
+        "detail": "丑库藏辛受到引动，与日主同五行，可作为根气增强的候选证据。"
+      },
+      {
+        "category": "生克链·库开代价",
+        "title": "库开代价",
+        "detail": "库支发生冲/刑时，除藏干受到引动外，也会改变土气的稳定状态。土在本命中所对应的十神及其喜忌，须与相关藏干一并权衡。"
+      },
+      {
+        "category": "生克链·滴天髓",
+        "title": "滴天髓",
+        "detail": "《滴天髓》辛金章：「畏土之叠」——土多埋金，辛金珠玉之光被掩；「乐水之盈」——水淘辛金，珠玉愈发光洁，食伤泄秀为美；「热则喜母」——夏金销熔，喜湿土（辰丑）生金护金。"
+      }
+    ],
+    "elementReasons": {
+      "水": {
+        "role": "用神",
+        "reasons": [
+          "格局救应：食伤泄秀，是本局首要的调节力量",
+          "见于时柱地支"
+        ]
+      },
+      "金": {
+        "role": "喜神",
+        "reasons": [
+          "比劫同类，用于辅助用神并维持命局流通",
+          "透于日柱天干"
+        ],
+        "chainNote": "日支被冲，根气受损",
+        "chainAction": "downgrade_xi"
+      },
+      "火": {
+        "role": "忌神",
+        "reasons": [
+          "官杀制身，会加重当前失衡或破坏已有制化",
+          "透于年柱天干、月柱天干"
+        ],
+        "chainNote": "库支受冲刑后，火（官杀）存在官杀生印、印再生身的通关可能；能否转化须看透干、旺衰及全局承接",
+        "chainAction": "highlight_ambivalent"
+      },
+      "木": {
+        "role": "忌神",
+        "reasons": [
+          "财星耗身，会加重当前失衡或破坏已有制化",
+          "原局未直接出现"
+        ]
+      },
+      "土": {
+        "role": "忌神",
+        "reasons": [
+          "印星生身，会加重当前失衡或破坏已有制化",
+          "透于时柱天干，见于年柱地支、月柱地支、日柱地支"
+        ]
+      }
+    },
+    "chainHints": [
+      {
+        "type": "warning",
+        "category": "日支被冲",
+        "text": "日支丑被年柱地支未冲——根基动摇。日主坐根被冲，力量打折扣。"
+      },
+      {
+        "type": "warning",
+        "category": "日支被冲",
+        "text": "日支丑被月柱地支未冲——根基动摇。日主坐根被冲，力量打折扣。"
+      },
+      {
+        "type": "info",
+        "category": "日支受刑",
+        "text": "日支丑与年柱地支未相刑——暗中不和，需注意人际关系。"
+      },
+      {
+        "type": "info",
+        "category": "日支受刑",
+        "text": "日支丑与月柱地支未相刑——暗中不和，需注意人际关系。"
+      },
+      {
+        "type": "info",
+        "category": "日主根气",
+        "text": "日柱地支丑藏辛金（余气根）；时柱地支子为日主长生之位（有气之根，靠印滋养）"
+      },
+      {
+        "type": "structure",
+        "category": "库冲开库",
+        "text": "未、丑库支发生冲/刑，相关藏干受到引动。官/杀印通关、日主得库气。"
+      },
+      {
+        "type": "structure",
+        "category": "官/杀印通关",
+        "text": "未库藏丁（火，七杀）受到引动，存在生印、印再生身的通关可能。"
+      },
+      {
+        "type": "structure",
+        "category": "日主得库气",
+        "text": "丑库藏辛受到引动，与日主同五行，可作为根气增强的候选证据。"
+      },
+      {
+        "type": "info",
+        "category": "库开代价",
+        "text": "库支发生冲/刑时，除藏干受到引动外，也会改变土气的稳定状态。土在本命中所对应的十神及其喜忌，须与相关藏干一并权衡。"
+      },
+      {
+        "type": "classic",
+        "category": "滴天髓",
+        "text": "《滴天髓》辛金章：「畏土之叠」——土多埋金，辛金珠玉之光被掩；「乐水之盈」——水淘辛金，珠玉愈发光洁，食伤泄秀为美；「热则喜母」——夏金销熔，喜湿土（辰丑）生金护金。"
+      }
+    ],
+    "chainAdjustments": [
+      {
+        "wx": "金",
+        "action": "downgrade_xi",
+        "reason": "日支被冲，根气受损"
+      },
+      {
+        "wx": "火",
+        "action": "highlight_ambivalent",
+        "reason": "库支受冲刑后，火（官杀）存在官杀生印、印再生身的通关可能；能否转化须看透干、旺衰及全局承接"
+      }
+    ],
+    "yongShenQuality": {
+      "水": {
+        "score": 2,
+        "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+        "roots": [
+          "丑中气根",
+          "子本气根",
+          "被克：戊天干直克"
+        ]
+      },
+      "金": {
+        "score": -1.5,
+        "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+        "roots": [
+          "丑余气根",
+          "被克：丁天干直克；丁天干直克"
+        ]
+      }
+    },
+    "patternStatus": {
+      "name": "七杀格",
+      "status": "破格",
+      "breakReasons": [
+        "月令受日柱冲",
+        "印星为燥土，虚浮不化杀"
+      ]
+    }
+  },
+  "pillarRelations": [
+    {
+      "from": "年柱",
+      "to": "月柱",
+      "gan": "—",
+      "zhi": "—",
+      "details": []
+    },
+    {
+      "from": "月柱",
+      "to": "日柱",
+      "gan": "克",
+      "zhi": "冲",
+      "details": [
+        "月柱天干丁(火) 克 日柱天干辛(金)",
+        "月柱地支未 与 日柱地支丑 六冲——主变动冲突"
+      ]
+    },
+    {
+      "from": "日柱",
+      "to": "时柱",
+      "gan": "被生",
+      "zhi": "克",
+      "details": [
+        "时柱天干戊(土) 生 日柱天干辛(金)",
+        "日柱地支丑(土) 克 时柱地支子(水)"
+      ]
+    }
+  ],
+  "branchRelations": [
+    {
+      "from": "年柱",
+      "to": "日柱",
+      "branch1": "未",
+      "branch2": "丑",
+      "relations": [
+        {
+          "type": "六冲",
+          "detail": "年柱地支未 冲 日柱地支丑——变动冲突分离之象"
+        },
+        {
+          "type": "相刑",
+          "detail": "年柱地支未 刑 日柱地支丑"
+        }
+      ]
+    },
+    {
+      "from": "年柱",
+      "to": "时柱",
+      "branch1": "未",
+      "branch2": "子",
+      "relations": [
+        {
+          "type": "六害",
+          "detail": "年柱地支未 害 时柱地支子——暗中不利貌合神离"
+        }
+      ]
+    },
+    {
+      "from": "月柱",
+      "to": "日柱",
+      "branch1": "未",
+      "branch2": "丑",
+      "relations": [
+        {
+          "type": "六冲",
+          "detail": "月柱地支未 冲 日柱地支丑——变动冲突分离之象"
+        },
+        {
+          "type": "相刑",
+          "detail": "月柱地支未 刑 日柱地支丑"
+        }
+      ]
+    },
+    {
+      "from": "月柱",
+      "to": "时柱",
+      "branch1": "未",
+      "branch2": "子",
+      "relations": [
+        {
+          "type": "六害",
+          "detail": "月柱地支未 害 时柱地支子——暗中不利貌合神离"
+        }
+      ]
+    },
+    {
+      "from": "日柱",
+      "to": "时柱",
+      "branch1": "丑",
+      "branch2": "子",
+      "relations": [
+        {
+          "type": "六合",
+          "detail": "日柱地支丑 合 时柱地支子——和谐合作吸引之象"
+        }
+      ]
+    }
+  ],
+  "changSheng": {
+    "year": "衰",
+    "month": "衰",
+    "day": "养",
+    "hour": "长生"
+  },
+  "congGe": {
+    "isCong": false
+  },
+  "ganHe": [],
+  "sanHui": [],
+  "cangGanDepth": {
+    "year": {
+      "name": "年柱",
+      "zhi": "未",
+      "cangGan": [
+        {
+          "gan": "己",
+          "level": "本气",
+          "weight": 3
+        },
+        {
+          "gan": "丁",
+          "level": "中气",
+          "weight": 2
+        },
+        {
+          "gan": "乙",
+          "level": "余气",
+          "weight": 1
+        }
+      ]
+    },
+    "month": {
+      "name": "月柱",
+      "zhi": "未",
+      "cangGan": [
+        {
+          "gan": "己",
+          "level": "本气",
+          "weight": 3
+        },
+        {
+          "gan": "丁",
+          "level": "中气",
+          "weight": 2
+        },
+        {
+          "gan": "乙",
+          "level": "余气",
+          "weight": 1
+        }
+      ]
+    },
+    "day": {
+      "name": "日柱",
+      "zhi": "丑",
+      "cangGan": [
+        {
+          "gan": "己",
+          "level": "本气",
+          "weight": 3
+        },
+        {
+          "gan": "癸",
+          "level": "中气",
+          "weight": 2
+        },
+        {
+          "gan": "辛",
+          "level": "余气",
+          "weight": 1
+        }
+      ]
+    },
+    "hour": {
+      "name": "时柱",
+      "zhi": "子",
+      "cangGan": [
+        {
+          "gan": "癸",
+          "level": "本气",
+          "weight": 3
+        }
+      ]
+    }
+  },
+  "relationEvents": [
+    {
+      "type": "天干克",
+      "pillars": [
+        "year",
+        "day"
+      ],
+      "elements": [
+        "火克金"
+      ],
+      "distance": 2,
+      "involvesMonth": false,
+      "involvesDay": true,
+      "source": "年柱丁",
+      "target": "日柱辛",
+      "evidence": "经典十对（同性相克力重）"
+    },
+    {
+      "type": "六冲",
+      "pillars": [
+        "year",
+        "day"
+      ],
+      "elements": [
+        "土、土"
+      ],
+      "distance": 2,
+      "involvesMonth": false,
+      "involvesDay": true,
+      "source": "年柱未",
+      "target": "日柱丑",
+      "evidence": "js/bazi.js:2406 CHONG"
+    },
+    {
+      "type": "刑",
+      "pillars": [
+        "year",
+        "day"
+      ],
+      "elements": [
+        "土、土"
+      ],
+      "distance": 2,
+      "involvesMonth": false,
+      "involvesDay": true,
+      "source": "年柱未",
+      "target": "日柱丑",
+      "evidence": "js/bazi.js:2412 XING"
+    },
+    {
+      "type": "六害",
+      "pillars": [
+        "year",
+        "hour"
+      ],
+      "elements": [
+        "土、水"
+      ],
+      "distance": 3,
+      "involvesMonth": false,
+      "involvesDay": false,
+      "source": "年柱未",
+      "target": "时柱子",
+      "evidence": "js/bazi.js:2409 HAI"
+    },
+    {
+      "type": "天干克",
+      "pillars": [
+        "month",
+        "day"
+      ],
+      "elements": [
+        "火克金"
+      ],
+      "distance": 1,
+      "involvesMonth": true,
+      "involvesDay": true,
+      "source": "月柱丁",
+      "target": "日柱辛",
+      "evidence": "经典十对（同性相克力重）"
+    },
+    {
+      "type": "六冲",
+      "pillars": [
+        "month",
+        "day"
+      ],
+      "elements": [
+        "土、土"
+      ],
+      "distance": 1,
+      "involvesMonth": true,
+      "involvesDay": true,
+      "source": "月柱未",
+      "target": "日柱丑",
+      "evidence": "js/bazi.js:2406 CHONG"
+    },
+    {
+      "type": "刑",
+      "pillars": [
+        "month",
+        "day"
+      ],
+      "elements": [
+        "土、土"
+      ],
+      "distance": 1,
+      "involvesMonth": true,
+      "involvesDay": true,
+      "source": "月柱未",
+      "target": "日柱丑",
+      "evidence": "js/bazi.js:2412 XING"
+    },
+    {
+      "type": "六害",
+      "pillars": [
+        "month",
+        "hour"
+      ],
+      "elements": [
+        "土、水"
+      ],
+      "distance": 2,
+      "involvesMonth": true,
+      "involvesDay": false,
+      "source": "月柱未",
+      "target": "时柱子",
+      "evidence": "js/bazi.js:2409 HAI"
+    },
+    {
+      "type": "六合",
+      "pillars": [
+        "day",
+        "hour"
+      ],
+      "elements": [
+        "土、水",
+        "化土"
+      ],
+      "distance": 1,
+      "involvesMonth": false,
+      "involvesDay": true,
+      "source": "日柱丑",
+      "target": "时柱子",
+      "evidence": "js/bazi.js:2416 ZHI_HE（午未合土）"
+    },
+    {
+      "type": "半会",
+      "pillars": [
+        "hour",
+        "day"
+      ],
+      "elements": [
+        "子丑",
+        "会水"
+      ],
+      "distance": 1,
+      "involvesMonth": false,
+      "involvesDay": true,
+      "source": "时柱子",
+      "target": "日柱丑",
+      "evidence": "js/bazi.js:2536 半会=方局相邻两字"
+    }
+  ],
+  "structuralRisks": [
+    {
+      "type": "关键用神/格局节点受冲",
+      "severity": "存在",
+      "parties": "年柱未（印星之根） ↔ 日柱丑（印星之根）",
+      "why": "六冲未丑命中年柱未（印星之根）；日柱丑（印星之根），位距2、涉日支",
+      "mitigations": "无",
+      "triggerHint": "若日柱丑（己土·偏印）得运助增，对年柱未（印星之根）的冲击可能加重；若年柱未（己土·偏印）得运助增，对日柱丑（印星之根）的冲击可能加重，相关格局节点根基可能动摇。",
+      "evidence": "v2：节点清单=印星之根+用神节点+透干七杀坐支之根（无条件）∪格局核心十神之根（条件）；已删日主之禄",
+      "partyEvidence": "年柱year（己土·偏印）:hiddenMainRoot；日柱day（己土·偏印）:hiddenMainRoot"
+    },
+    {
+      "type": "关键用神/格局节点受冲",
+      "severity": "存在",
+      "parties": "月柱未（印星之根） ↔ 日柱丑（印星之根）",
+      "why": "六冲未丑命中月柱未（印星之根）；日柱丑（印星之根），位距1、涉月令、涉日支",
+      "mitigations": "无",
+      "triggerHint": "若日柱丑（己土·偏印）得运助增，对月柱未（印星之根）的冲击可能加重；若月柱未（己土·偏印）得运助增，对日柱丑（印星之根）的冲击可能加重，相关格局节点根基可能动摇。",
+      "evidence": "v2：节点清单=印星之根+用神节点+透干七杀坐支之根（无条件）∪格局核心十神之根（条件）；已删日主之禄",
+      "partyEvidence": "月柱month（己土·偏印）:hiddenMainRoot；日柱day（己土·偏印）:hiddenMainRoot"
+    }
+  ],
+  "daYun": {
+    "direction": "逆行",
+    "startAge": 9.3,
+    "cycles": [
+      {
+        "gan": "丙",
+        "zhi": "午",
+        "displayAge": "10",
+        "startYear": 1976,
+        "endYear": 1985
+      },
+      {
+        "gan": "乙",
+        "zhi": "巳",
+        "displayAge": "20",
+        "startYear": 1986,
+        "endYear": 1995
+      },
+      {
+        "gan": "甲",
+        "zhi": "辰",
+        "displayAge": "30",
+        "startYear": 1996,
+        "endYear": 2005
+      },
+      {
+        "gan": "癸",
+        "zhi": "卯",
+        "displayAge": "40",
+        "startYear": 2006,
+        "endYear": 2015
+      },
+      {
+        "gan": "壬",
+        "zhi": "寅",
+        "displayAge": "50",
+        "startYear": 2016,
+        "endYear": 2025
+      },
+      {
+        "gan": "辛",
+        "zhi": "丑",
+        "displayAge": "60",
+        "startYear": 2026,
+        "endYear": 2035
+      },
+      {
+        "gan": "庚",
+        "zhi": "子",
+        "displayAge": "70",
+        "startYear": 2036,
+        "endYear": 2045
+      },
+      {
+        "gan": "己",
+        "zhi": "亥",
+        "displayAge": "80",
+        "startYear": 2046,
+        "endYear": 2055
+      }
+    ]
+  },
+  "currentDaYun": {
+    "gan": "辛",
+    "zhi": "丑",
+    "startYear": 2026,
+    "endYear": 2035,
+    "displayAge": "60",
+    "shiShen": "比肩"
+  },
+  "currentYear": 2026,
+  "currentLiuNian": {
+    "year": 2026,
+    "gan": "丙",
+    "zhi": "午",
+    "shiShen": "正官"
+  },
+  "currentLiuYue": {
+    "gan": "丙",
+    "zhi": "申"
+  },
+  "shenSha": [
+    {
+      "name": "文昌贵人",
+      "type": "ji-shen",
+      "desc": "主聪明才智，学业有成，利于文职"
+    },
+    {
+      "name": "福星贵人",
+      "type": "ji-shen",
+      "desc": "主福禄双全，一生安稳，利于财运"
+    },
+    {
+      "name": "学堂",
+      "type": "ji-shen",
+      "desc": "主聪明好学，才艺出众，利于学业考试"
+    },
+    {
+      "name": "桃花",
+      "type": "zhong",
+      "desc": "主人缘好，异性缘旺，利于社交"
+    },
+    {
+      "name": "华盖",
+      "type": "zhong",
+      "desc": "主聪敏好学，但性情孤高，利于宗教哲学"
+    },
+    {
+      "name": "元辰",
+      "type": "ji",
+      "desc": "主耗散破财，行事多阻，需防破败"
+    },
+    {
+      "name": "阴差阳错",
+      "type": "ji",
+      "desc": "主婚姻波折，夫妻关系不和，家庭多矛盾"
+    }
+  ],
+  "palaceAnalysis": {
+    "monthDesc": "月柱丁未（提纲），官杀当令克身——压力重重，但若有制化反成权威。",
+    "hourDesc": "时柱戊子（归息），晚岁得印星庇护——老来有靠，福泽绵长。",
+    "yearDesc": "年柱丁未（祖业），祖上官杀——家规严苛或祖上有权威传承。",
+    "summary": "提纲官杀制身但归息印星解围——先难后易之命；"
+  },
+  "fortuneAnalysis": {
+    "periods": [
+      {
+        "gan": "丙",
+        "zhi": "午",
+        "ganWx": "火",
+        "zhiWx": "火",
+        "ganRole": "忌神",
+        "zhiRole": "忌神",
+        "age": "10",
+        "startYear": 1976,
+        "endYear": 1985,
+        "interactions": [],
+        "verdict": "忌运",
+        "summary": "大运丙午（10-1985），天干火官杀（忌神），地支火（忌神）。此运忌神当道，宜守不宜攻。"
+      },
+      {
+        "gan": "乙",
+        "zhi": "巳",
+        "ganWx": "木",
+        "zhiWx": "火",
+        "ganRole": "忌神",
+        "zhiRole": "忌神",
+        "age": "20",
+        "startYear": 1986,
+        "endYear": 1995,
+        "interactions": [],
+        "verdict": "忌运",
+        "summary": "大运乙巳（20-1995），天干木财星（忌神），地支火（忌神）。此运忌神当道，宜守不宜攻。"
+      },
+      {
+        "gan": "甲",
+        "zhi": "辰",
+        "ganWx": "木",
+        "zhiWx": "土",
+        "ganRole": "忌神",
+        "zhiRole": "忌神",
+        "age": "30",
+        "startYear": 1996,
+        "endYear": 2005,
+        "interactions": [],
+        "verdict": "忌运",
+        "summary": "大运甲辰（30-2005），天干木财星（忌神），地支土（忌神）。此运忌神当道，宜守不宜攻。"
+      },
+      {
+        "gan": "癸",
+        "zhi": "卯",
+        "ganWx": "水",
+        "zhiWx": "木",
+        "ganRole": "用神",
+        "zhiRole": "忌神",
+        "age": "40",
+        "startYear": 2006,
+        "endYear": 2015,
+        "interactions": [],
+        "verdict": "偏喜",
+        "summary": "大运癸卯（40-2015），天干水食伤（用神），地支木（忌神）。天干有喜但地支为忌——表面风光，暗流涌动。"
+      },
+      {
+        "gan": "壬",
+        "zhi": "寅",
+        "ganWx": "水",
+        "zhiWx": "木",
+        "ganRole": "用神",
+        "zhiRole": "忌神",
+        "age": "50",
+        "startYear": 2016,
+        "endYear": 2025,
+        "interactions": [],
+        "verdict": "偏喜",
+        "summary": "大运壬寅（50-2025），天干水食伤（用神），地支木（忌神）。天干有喜但地支为忌——表面风光，暗流涌动。"
+      },
+      {
+        "gan": "辛",
+        "zhi": "丑",
+        "ganWx": "金",
+        "zhiWx": "土",
+        "ganRole": "喜神",
+        "zhiRole": "忌神",
+        "age": "60",
+        "startYear": 2026,
+        "endYear": 2035,
+        "interactions": [
+          {
+            "type": "warning",
+            "text": "大运冲提纲（月支未）——十年根基动摇"
+          }
+        ],
+        "verdict": "偏喜",
+        "summary": "大运辛丑（60-2035），天干金比劫（喜神），地支土（忌神）。天干有喜但地支为忌——表面风光，暗流涌动。"
+      },
+      {
+        "gan": "庚",
+        "zhi": "子",
+        "ganWx": "金",
+        "zhiWx": "水",
+        "ganRole": "喜神",
+        "zhiRole": "用神",
+        "age": "70",
+        "startYear": 2036,
+        "endYear": 2045,
+        "interactions": [],
+        "verdict": "喜运",
+        "summary": "大运庚子（70-2045），天干金比劫（喜神），地支水（用神）。此运喜用双全，人生上升期。"
+      },
+      {
+        "gan": "己",
+        "zhi": "亥",
+        "ganWx": "土",
+        "zhiWx": "水",
+        "ganRole": "忌神",
+        "zhiRole": "用神",
+        "age": "80",
+        "startYear": 2046,
+        "endYear": 2055,
+        "interactions": [],
+        "verdict": "偏喜",
+        "summary": "大运己亥（80-2055），天干土印星（忌神），地支水（用神）。天干为忌但地支有喜——内里有靠，低调蓄力。"
+      }
+    ],
+    "summary": "一生8步大运中，喜运5步，忌运3步。整体运程偏吉，中晚年可期。"
+  },
+  "dayBranchAnalysis": {
+    "branch": "丑",
+    "wuXing": "土",
+    "mainShiShen": "偏印",
+    "ssDesc": "配偶思维独特、理工气质",
+    "rootType": "藏干余气根",
+    "rootScore": 0.5,
+    "interactions": [
+      {
+        "type": "冲",
+        "with": "年柱",
+        "detail": "丑未冲——配偶宫被冲，感情多变动，自身根基不稳"
+      },
+      {
+        "type": "刑",
+        "with": "年柱",
+        "detail": "丑未刑——配偶宫有刑伤，需防矛盾升级"
+      },
+      {
+        "type": "冲",
+        "with": "月柱",
+        "detail": "丑未冲——配偶宫被冲，感情多变动，自身根基不稳"
+      },
+      {
+        "type": "刑",
+        "with": "月柱",
+        "detail": "丑未刑——配偶宫有刑伤，需防矛盾升级"
+      },
+      {
+        "type": "合",
+        "with": "时柱",
+        "detail": "丑子合——配偶宫被合，感情易受外界牵绊"
+      }
+    ],
+    "heRole": "丑为金局之一，待大运/流年补全",
+    "huiRole": "丑属水方，为三会局成员",
+    "stabilityScore": -1.5,
+    "stability": "动荡——配偶宫不宁，婚姻是人生重大课题",
+    "cangGan": [
+      {
+        "gan": "己",
+        "shiShen": "偏印",
+        "level": "本气",
+        "desc": "本气偏印——配偶思维独特、理工气质"
+      },
+      {
+        "gan": "癸",
+        "shiShen": "食神",
+        "level": "中气",
+        "desc": "中气食神——配偶温和会享受、有口福"
+      },
+      {
+        "gan": "辛",
+        "shiShen": "比肩",
+        "level": "余气",
+        "desc": "余气比肩——配偶独立平等、像战友"
+      }
+    ],
+    "summary": "日支丑为偏印，藏干余气根。动荡——配偶宫不宁，婚姻是人生重大课题。丑未冲——配偶宫被冲，感情多变动，自身根基不稳；丑未刑——配偶宫有刑伤，需防矛盾升级；丑未冲——配偶宫被冲，感情多变动，自身根基不稳；丑未刑——配偶宫有刑伤，需防矛盾升级；丑子合——配偶宫被合，感情易受外界牵绊；丑为金局之一，待大运/流年补全"
+  },
+  "liuNianAnalysis": {
+    "liuNianGan": "丙",
+    "liuNianZhi": "午",
+    "daYunGan": "辛",
+    "daYunZhi": "丑",
+    "triggers": [
+      {
+        "type": "流年合日主",
+        "severity": "medium",
+        "detail": "流年丙与日主辛相合，表示相关人事议题容易被牵动；合而能否化、最终利弊均须结合月令与喜忌，不直接定吉凶。",
+        "isGood": null
+      }
+    ],
+    "dangerScore": 0,
+    "opportunityScore": 0,
+    "verdict": "偏凶",
+    "summary": "流年天干为忌神火，行事多阻。"
+  }
+}
