@@ -1,7 +1,16 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const DeepReport = require('../js/deep-report.js');
+
+function loadRealCalculator() {
+  const context = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'bazi.js'), 'utf8'), context);
+  return context.window.BaZiCalculator;
+}
 
 const WU_XING = {
   甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土',
@@ -159,7 +168,44 @@ test('wealth regulating an excess seal is distinct from the structural wealth-br
     structuralRisks: [{ type: '财破印', why: '财印透干相克' }],
   }, calculator), 'wealth_regulates_seal');
   assert.ok(risky.blockers.some((item) => /财破印/.test(item)));
-  assert.notEqual(risky.confidence, 'strong');
+  assert.equal(risky.confidence, 'limited');
+});
+
+test('wealth regulation ignores non-production candidate pseudo-fields', () => {
+  const bazi = chart({ year: { gan: '戊', zhi: '巳' }, month: { gan: '癸', zhi: '卯' } });
+  const result = DeepReport.buildStudyFacts(bazi, {
+    strength: { level: '偏强' },
+    pattern: { name: '印绶格', status: '成格' },
+    yongJi: { yongShen: ['土'], xiShen: [], jiShen: [] },
+    actionChains: [],
+    actionCandidates: [{ title: '印成势→财制印', detail: '伪候选字段，不属于生产 core' }],
+    candidateEvidence: ['印成势→财制印'],
+    structuralRisks: [], relationEvents: [],
+  }, calculator);
+  const chain = findStudyChain(result, 'wealth_regulates_seal');
+  assert.equal(chain.present, false);
+  assert.equal(chain.unsupported, true);
+  assert.equal(chain.confidence, 'limited');
+});
+
+test('real core study facts report wealth regulation as unsupported when no production evidence is exposed', () => {
+  const realCalculator = loadRealCalculator();
+  const bazi = realCalculator.buildFromPillars({
+    year: { gan: '戊', zhi: '午' }, month: { gan: '癸', zhi: '卯' },
+    day: { gan: '甲', zhi: '寅' }, hour: { gan: '辛', zhi: '酉' },
+  }, 'male');
+  const facts = DeepReport.buildFacts(bazi, 'male', {
+    anchorYear: 2026,
+    deps: { calculator: realCalculator },
+  });
+  const chain = findStudyChain(facts.study, 'wealth_regulates_seal');
+  assert.ok(chain);
+  if (!chain.present) {
+    assert.equal(chain.unsupported, true);
+    assert.equal(chain.confidence, 'limited');
+  } else {
+    assert.ok(chain.evidence.some((item) => /印成势|财制印|财星制印/.test(item)));
+  }
 });
 
 test('food-controls-sha distinguishes food god plus seven-kill from proper officer and hurting-officer conflicts', () => {
@@ -200,6 +246,32 @@ test('food-controls-sha distinguishes food god plus seven-kill from proper offic
   const hurting = findStudyChain(DeepReport.buildStudyFacts(hurtingOfficer, hurtingCore, calculator), 'food_controls_sha');
   assert.notEqual(hurting.confidence, 'strong');
   assert.ok(hurting.blockers.some((item) => /伤官见官/.test(item)));
+});
+
+test('effective food-controls-sha is limited when real risks or a Ji output block conversion', () => {
+  const positive = chart({
+    year: { gan: '丙', zhi: '子' }, month: { gan: '庚', zhi: '申' }, hour: { gan: '癸', zhi: '午' },
+  });
+  const core = {
+    strength: { level: '中和' }, pattern: { name: '食神制杀格', status: '成格' },
+    yongJi: { yongShen: [], xiShen: [], jiShen: ['火'] },
+    actionChains: [{ title: '食神制杀', detail: '食神制杀，七杀有制。' }],
+    structuralRisks: [{ type: '枭神夺食' }, { type: '财党杀' }, { type: '承载不足' }], relationEvents: [],
+  };
+  const chain = findStudyChain(DeepReport.buildStudyFacts(positive, core, calculator), 'food_controls_sha');
+  assert.equal(chain.present, true);
+  assert.equal(chain.confidence, 'limited');
+  assert.ok(chain.blockers.some((item) => /枭神夺食/.test(item)));
+  assert.ok(chain.blockers.some((item) => /财党杀/.test(item)));
+  assert.ok(chain.blockers.some((item) => /承载不足/.test(item)));
+  assert.ok(chain.blockers.some((item) => /忌神|忌/.test(item)));
+});
+
+test('yangren output is always marked for manual review', () => {
+  const result = buildStudyFixture({ chain: '羊刃', sealCount: 1 });
+  const chain = findStudyChain(result, 'yangren_output');
+  assert.equal(chain.manualReviewRequired, true);
+  assert.equal(chain.confidence, 'limited');
 });
 
 test('weak body with officers and no seals produces conditional learning pressure only', () => {

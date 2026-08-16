@@ -247,21 +247,31 @@
     function itemText(item) {
       if (!item || typeof item !== 'object') return textOf(item);
       return [textOf(item), item.label, item.action, item.actionChain, item.reason, item.reasons,
-        item.evidence, item.candidate, item.candidates].map(textOf).filter(Boolean).join(' ');
+        item.evidence, item.primaryReason, item.chainNote, item.chainAction, item.note]
+        .concat(Object.keys(item).map(function (key) { return itemText(item[key]); }))
+        .map(textOf).filter(Boolean).join(' ');
     }
     core = core || {};
-    return list(core.actionChains).concat(list(core.actionCandidates), list(core.candidateEvidence),
-      list(core.candidateScores), list(core.yongJi && core.yongJi.candidateEvidence)).map(itemText)
+    var yongJi = core.yongJi || {};
+    var chain = core.chain || {};
+    return list(core.actionChains).concat([yongJi.reasoning, yongJi.primaryReason, yongJi.evidence,
+      yongJi.elementReasons, yongJi.chainHints, yongJi.chainAdjustments,
+      chain.hints, chain.adjustments]).map(itemText)
       .filter(Boolean).join(' ');
   }
 
   function studyStructuralBlockers(core, names) {
     var wanted = list(names);
-    return list(core && core.structuralRisks).concat(list(core && core.relationEvents)).map(function (risk) {
+    var blockers = list(core && core.structuralRisks).concat(list(core && core.relationEvents)).map(function (risk) {
       var text = studyRiskText(risk);
       var match = wanted.filter(function (name) { return text.indexOf(name) >= 0; })[0];
       return match ? '结构风险：' + match : '';
-    }).filter(Boolean).filter(function (item, index, rows) { return rows.indexOf(item) === index; });
+    }).filter(Boolean);
+    var authoritative = studyAuthoritativeText(core);
+    wanted.forEach(function (name) {
+      if (authoritative.indexOf(name) >= 0) blockers.push('结构证据：' + name);
+    });
+    return blockers.filter(function (item, index, rows) { return rows.indexOf(item) === index; });
   }
 
   function studyChainFact(id, present, evidenceRows, elementRoles, blockers, conditions, conclusion, confidence) {
@@ -306,7 +316,7 @@
 
   function buildWealthRegulatesSealChain(seals, wealth, core) {
     var authoritative = studyAuthoritativeText(core);
-    var explicit = /印成势[\s\S]*财制印|财制印[\s\S]*印成势/.test(authoritative);
+    var explicit = /印(?:星)?成势[\s\S]*(?:财(?:星)?制印)|(?:财(?:星)?制印)[\s\S]*印(?:星)?成势/.test(authoritative);
     var wealthRole = studyElementRole(wealth, core);
     var sealRole = studyElementRole(seals, core);
     var present = Boolean(seals.length && wealth.length && explicit);
@@ -317,13 +327,15 @@
     if (wealthRole !== '用神' && wealthRole !== '喜神') blockers.push('财星未被核心喜忌标为用神或喜神');
     if (studyHasElementRole(wealth, core, '忌神')) blockers.push('财星同时含忌神角色，需先处理方向冲突');
     if (sealRole === '忌神') blockers.push('印为忌时只能作为转化约束，不能直接视为调节成立');
-    var confidence = present && blockers.length === 0 ? 'medium' : (present ? 'limited' : 'limited');
-    return studyChainFact('wealth_regulates_seal', present,
+    var confidence = present && blockers.length === 0 ? 'medium' : 'limited';
+    var result = studyChainFact('wealth_regulates_seal', present,
       studyOccurrenceEvidence(wealth.concat(seals)).concat(explicit ? ['权威行动链证据：印成势→财制印'] : []),
       { wealth: wealthRole, seal: sealRole, wealthRole: wealthRole, sealRole: sealRole, wealthKind: wealth.map(function (item) { return item.role; }).filter(Boolean),
         sealKind: seals.map(function (item) { return item.role; }).filter(Boolean) }, blockers,
       ['财制印与财破印/财坏印是不同事实；仍需结合结构风险与现实资源约束。'],
       '若印成势、财为用喜且无财破印风险，可把目标、输出和资源约束作为输入转化的方法；不替代核心喜忌。', confidence);
+    result.unsupported = !explicit;
+    return result;
   }
 
   function buildFoodControlsShaChain(outputs, officers, core) {
@@ -334,14 +346,16 @@
     var effective = studyPatternEffective(core) && /食神制杀格/.test(patternText);
     var explicit = /食神制杀/.test(authoritative);
     var present = Boolean(foods.length && sha.length);
-    var blockers = studyStructuralBlockers(core, ['伤官见官', '官杀混杂', '杀重无制']);
+    var blockers = studyStructuralBlockers(core, ['伤官见官', '官杀混杂', '杀重无制', '枭神夺食', '财党杀', '承载不足', '身弱不担财']);
     if (/伤官见官/.test(authoritative)) blockers.push('结构风险：伤官见官');
     if (authoritative.indexOf('食神克正官') >= 0) blockers.push('食神克正官不是食神制杀证据');
     if (!foods.length) blockers.push('缺少食神实际出现证据');
     if (!sha.length) blockers.push('缺少七杀实际出现证据');
     if (!effective && !explicit) blockers.push('缺少有效食神制杀证据');
+    if (studyHasElementRole(outputs, core, '忌神')) blockers.push('食神/伤官为忌神，输出转化受限');
     var confidence = present && (effective || explicit) && blockers.length === 0 ? 'strong'
       : (present ? 'medium' : 'limited');
+    if (blockers.length > 0 && present) confidence = 'limited';
     return studyChainFact('food_controls_sha', present,
       studyOccurrenceEvidence(foods.concat(sha)).concat(effective ? ['有效格局证据：食神制杀格'] : []).concat(explicit ? ['权威行动链证据：食神制杀'] : []),
       { outputKind: foods.length ? '食神' : (outputs.some(function (item) { return item.role === '伤官'; }) ? '伤官' : '未定'),
@@ -356,12 +370,14 @@
     var yangren = /羊刃/.test(patternText);
     var output = outputs.length > 0;
     var explicit = /羊刃[\s\S]*(食神|伤官|食伤)|羊刃吐秀|食伤[\s\S]*羊刃/.test(patternText);
-    return studyChainFact('yangren_output', yangren && output,
+    var result = studyChainFact('yangren_output', yangren && output,
       studyOccurrenceEvidence(outputs).concat(yangren ? ['羊刃相关格局或行动证据'] : []),
       { outputRole: studyElementRole(outputs, core), pattern: yangren ? '羊刃' : '未见羊刃' },
       yangren && output && !explicit ? ['缺少权威的羊刃—食伤链证据'] : [],
       ['仅作 limited/manual-review 候选；不能仅由印星数量推断印旺。'],
       '羊刃与输出同时出现时，可人工复核练习和作品方向；自动报告不把它升级为确定优势。', 'limited');
+    result.manualReviewRequired = true;
+    return result;
   }
 
   function buildLearningPressureChain(officers, seals, core) {

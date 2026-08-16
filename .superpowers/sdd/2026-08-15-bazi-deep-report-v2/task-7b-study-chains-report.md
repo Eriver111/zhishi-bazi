@@ -29,3 +29,12 @@ node --test tests/deep-report-study.test.js tests/deep-report-core.test.js tests
 2. `yangren_output` 固定为 `limited` 并提示人工复核；当前核心没有可自动确认的统一“羊刃—食伤”权威链。
 3. `learning_pressure` 只消费 strength level、官杀出现和无印联合门槛，不涉及健康或教育结果；从格仍按核心 `congGe` 门控。
 4. 本任务未改动 `js/bazi.js`、`js/structural.js`、支付、AI、访问控制或 `.data-store.json`。
+
+## 第 1 轮修复
+
+- `food_controls_sha` 现在复用并识别枭神夺食、财党杀、承载不足、身弱不担财等结构/链证据；食神或伤官为忌神时阻止 `strong`。有效食神制杀与枭神夺食、食神为忌的反例固定为 `limited`。
+- 财制印证据仅来自生产 core 可暴露的 `actionChains` 与 `yongJi.reasoning/evidence/elementReasons/chainHints/chainAdjustments`（以及既有 `core.chain` 提示），不再依赖 `actionCandidates`、`candidateEvidence` 等伪字段。
+- 真实 `BaZiCalculator` + `DeepReport.buildFacts` 端到端回归已加入；当前可复现盘未暴露明确“印成势→财制印”权威证据，因此诚实输出 `present:false`、`unsupported:true`、`confidence:'limited'`。
+- `yangren_output.manualReviewRequired` 固定为 `true`；财破印反例明确断言 `confidence:'limited'`。
+
+第 1 轮专项测试：17/17 通过。
