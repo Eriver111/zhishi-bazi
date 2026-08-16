@@ -552,3 +552,27 @@ test('every frozen structural risk has a safe factual source and concrete annual
   assert.doesNotMatch(fiveYear.summary, /没有发现足以改变原局方向的强引动/);
   assert.doesNotMatch(current + fiveYear.sourceText + fiveYear.summary, /位距1|全 pair|涉月令|消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
 });
+
+test('risk-only years never read as quiet and never echo raw trigger evidence', () => {
+  const facts = favorableFacts();
+  facts.currentYear = facts.fiveYear.years[0];
+  facts.currentYear.interactions = [];
+  facts.currentYear.triggeredRisks = [
+    { type: '财破印', why: 'severity=存在，涉日支，d1' },
+    { type: '枭夺食', triggerHint: '内部位距1，未解析触发提示' },
+    { type: '官印冲', partyEvidence: '技术字段：d1、位距2' },
+    { type: '财印冲', evidence: [{ text: '证据原文：涉日支，位距3' }] },
+  ];
+  const narratives = DeepReport.buildNarratives(facts);
+  const current = customerVisibleCopy(narratives.currentYear);
+  const five = narratives.fiveYear;
+  const row = five.years[0];
+  const text = [current, five.headline, five.painPoint, five.note, row.sourceText, row.summary, row.directionLabel].join('\n');
+
+  assert.match(current, /本年有风险信号被岁运触发/);
+  assert.match(current, /赚钱、感情或现实事务更容易打断学习/);
+  assert.equal(row.directionLabel, '风险已触发');
+  assert.match(five.headline, /未来五年已有风险信号被岁运触发/);
+  assert.match(row.summary, /未见强刑冲合，但有风险信号已被岁运触发/);
+  assert.doesNotMatch(text, /没有.*强引动|延续为主|平稳延续|severity=存在|涉日支|d1|位距\d|内部位距|证据原文/);
+});

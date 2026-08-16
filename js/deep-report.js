@@ -3032,29 +3032,35 @@
 
   function annualRiskEvidenceText(risk, knownType) {
     if (!knownType) return '';
-    var unsafe = /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动|建议|应该|应当|优先|最好|宜|需注意|需要做到|位距\s*\d|全\s*pair|涉月令/;
     var candidates = [risk && risk.why, risk && risk.triggerHint, risk && risk.partyEvidence]
       .concat(list(risk && risk.evidence).map(function (item) { return textOf(item && (item.text || item)); }));
-    var relationText = annualRiskRelationEvidence(candidates);
-    if (relationText) return relationText;
-    return candidates.map(textOf).filter(function (text) {
-      return text && text.length <= 80 && !unsafe.test(text) && /流年|大运|岁运|六冲|六合|六害|刑/.test(text);
-    })[0] || '';
+    // Risk evidence is an internal trace.  Only a positively verified branch
+    // relation may cross the public boundary; everything else uses the known
+    // risk's fixed, customer-facing source text.
+    return annualRiskRelationEvidence(candidates);
   }
 
   function annualRiskRelationEvidence(candidates) {
     var branches = '子丑寅卯辰巳午未申酉戌亥';
+    var branchBreak = { '子酉': 1, '酉子': 1, '卯午': 1, '午卯': 1, '辰丑': 1, '丑辰': 1, '未戌': 1, '戌未': 1, '寅亥': 1, '亥寅': 1, '巳申': 1, '申巳': 1 };
     var pairs = [
-      { type: '六冲', pattern: new RegExp('六冲\\s*([' + branches + '])\\s*([' + branches + '])') },
-      { type: '六合', pattern: new RegExp('六合\\s*([' + branches + '])\\s*([' + branches + '])') },
-      { type: '六害', pattern: new RegExp('六害\\s*([' + branches + '])\\s*([' + branches + '])') },
-      { type: '刑', pattern: new RegExp('刑\\s*([' + branches + '])\\s*([' + branches + '])') },
+      { type: '六冲', valid: function (a, b) { return BRANCH_CLASH[a] === b; }, plain: '原先固定的安排更容易被打乱。' },
+      { type: '六合', valid: function (a, b) { return BRANCH_COMBINE[a] === b; }, plain: '原本分开的事情更容易绑在一起处理。' },
+      { type: '六害', valid: function (a, b) { return BRANCH_HARM[a] === b; }, plain: '不容易当面说开的别扭更容易慢慢累积。' },
+      { type: '刑', valid: function (a, b) { return Boolean(BRANCH_PUNISH[a + b]); }, plain: '同一件事更容易反复卡住，或因小问题起争执。' },
+      { type: '破', valid: function (a, b) { return Boolean(branchBreak[a + b]); }, plain: '原来好用的安排更容易出现缺口，需要重新调整。' },
     ];
     for (var i = 0; i < candidates.length; i += 1) {
-      var text = textOf(candidates[i]);
+      var text = textOf(candidates[i]).replace(/\s+/g, '');
       for (var j = 0; j < pairs.length; j += 1) {
-        var match = text.match(pairs[j].pattern);
-        if (match) return '原局' + match[1] + '与' + match[2] + '形成' + pairs[j].type + '。';
+        var pair = pairs[j];
+        var labelPattern = pair.type === '破' ? '(?:六破|破)' : pair.type;
+        var after = text.match(new RegExp(labelPattern + '([' + branches + '])([' + branches + '])'));
+        var before = text.match(new RegExp('([' + branches + '])([' + branches + '])' + labelPattern));
+        var match = after || before;
+        if (match && pair.valid(match[1], match[2])) {
+          return '原局' + match[1] + '与' + match[2] + '形成' + pair.type + '，' + pair.plain;
+        }
       }
     }
     return '';
@@ -3075,6 +3081,8 @@
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
     var interactions = list(year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
+    var riskCopies = annualRiskCopies(year.triggeredRisks);
+    var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
@@ -3083,7 +3091,9 @@
       : '当前大运未纳入，只按流年与原局的实际关系判断。';
     var headline = interactions.length
       ? (directionLabel === '偏有利' ? '本年对你有帮助的力量更多，工作、钱和感情里更容易出现能落实的进展。' : directionLabel === '偏不利' ? '本年不利力量更多，工作里容易反复改计划，钱上进出变多，感情里也更容易争吵或拉开距离。' : '本年机会和麻烦会一起出现：有些事能往前走，也会有计划被打断、钱被占用或关系闹别扭的时候。')
-      : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
+      : hasTriggeredRisk
+        ? '本年有风险信号被岁运触发，下面列出已有依据和可能出现的具体表现。'
+        : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
       outcomeText: headline,
@@ -3099,7 +3109,7 @@
         verdicts.push(narrativeVerdict((activation.source || '岁运') + '感情·' + (activation.type || '关系'), annualRelationshipActivationText(activation), ['ANNUAL_PALACE:' + (activation.source || '岁运') + ':' + (activation.type || '关系')]));
       });
     }
-    annualRiskCopies(year.triggeredRisks).forEach(function (riskCopy) {
+    riskCopies.forEach(function (riskCopy) {
       verdicts.push(narrativeVerdict(riskCopy.title, '', ['ANNUAL_RISK:' + riskCopy.basisRisk], {
         sourceText: riskCopy.sourceText,
         outcomeText: riskCopy.outcomeText,
@@ -3108,7 +3118,11 @@
     return {
       hideScore: true,
       headline: headline,
-      painPoint: interactions.length ? interactions.map(timingInteractionOutcome)[0] : '没有强引动不等于没有事情发生，只表示主要结果更接近原有方向的延续。',
+      painPoint: interactions.length
+        ? interactions.map(timingInteractionOutcome)[0]
+        : hasTriggeredRisk
+          ? riskCopies[0].outcomeText
+          : '没有强引动不等于没有事情发生，只表示主要结果更接近原有方向的延续。',
       paragraphs: [],
       verdicts: verdicts,
       note: year && year.daYun
@@ -3122,10 +3136,10 @@
     var sourceYears = list(fiveYear.years);
     var years = sourceYears.map(function (year) {
       var interactions = list(year && year.interactions).slice().sort(function (a, b) { return timingInteractionPriority(b) - timingInteractionPriority(a); });
-      var directionLabel = timingDirectionLabel(interactions);
       var selected = interactions.slice(0, 2);
       var legacyRelationship = !selected.length ? list(year && year.relationship && year.relationship.activations) : [];
       var riskCopies = annualRiskCopies(year && year.triggeredRisks);
+      var directionLabel = riskCopies.length ? '风险已触发' : timingDirectionLabel(interactions);
       var baseSummary = selected.length
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
@@ -3143,10 +3157,12 @@
           .concat(riskCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
         priority: selected.length ? timingInteractionPriority(selected[0]) : 0,
+        riskTriggered: riskCopies.length > 0,
       };
     });
     var strongest = years.slice().sort(function (a, b) { return b.priority - a.priority || a.year - b.year; })[0];
     var adverseYears = years.filter(function (row) { return row.directionLabel === '偏不利'; });
+    var riskYears = years.filter(function (row) { return row.riskTriggered; });
     var allDaYunActive = sourceYears.length > 0 && sourceYears.every(function (year) {
       return year && year.daYun && year.daYunStatus === 'active';
     });
@@ -3155,11 +3171,17 @@
     });
     var headline = strongest && strongest.priority
       ? strongest.year + '年变化最明显，具体方向以该年列出的刑冲克害合化结果为准。'
-      : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
+      : riskYears.length
+        ? '未来五年已有风险信号被岁运触发，具体表现以对应年份列出的结果为准。'
+        : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
     return {
       hideScore: true,
       headline: headline,
-      painPoint: adverseYears.length ? adverseYears.map(function (row) { return row.year; }).join('、') + '年更容易遇到计划改了又改、钱被占用，或和身边人反复闹别扭。' : '五年内没有集中出现偏不利的强关系，主要差别在于事情落地的快慢。',
+      painPoint: adverseYears.length
+        ? adverseYears.map(function (row) { return row.year; }).join('、') + '年更容易遇到计划改了又改、钱被占用，或和身边人反复闹别扭。'
+        : riskYears.length
+          ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
+          : '五年内没有集中出现偏不利的强关系，主要差别在于事情落地的快慢。',
       paragraphs: [],
       verdicts: [narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
         sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),
@@ -3168,6 +3190,7 @@
       years: years.map(function (row) {
         var clean = Object.assign({}, row);
         delete clean.priority;
+        delete clean.riskTriggered;
         return clean;
       }),
       note: allDaYunActive
