@@ -1,7 +1,35 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 
 const DeepReport = require('../js/deep-report.js');
+
+function loadRealWealthDeps() {
+  const context = { window: {}, console };
+  vm.createContext(context);
+  for (const file of ['bazi.js', 'structural.js', 'bazi-chain.js']) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', file), 'utf8'), context, { filename: file });
+  }
+  return {
+    calculator: context.window.BaZiCalculator,
+    structural: context.window.StructuralAnalysis,
+    chain: context.window.BaZiChain,
+  };
+}
+
+function buildRealWealthFacts(pillars) {
+  const deps = loadRealWealthDeps();
+  const chars = [...pillars.replace(/\s+/g, '')];
+  const bazi = deps.calculator.buildFromPillars({
+    year: { gan: chars[0], zhi: chars[1] },
+    month: { gan: chars[2], zhi: chars[3] },
+    day: { gan: chars[4], zhi: chars[5] },
+    hour: { gan: chars[6], zhi: chars[7] },
+  }, 'male', null);
+  return DeepReport.buildFacts(bazi, 'male', { anchorYear: 2026, deps });
+}
 
 const WU_XING = {
   甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土',
@@ -347,27 +375,130 @@ test('exposed, main-qi, two-distinct-hidden, and authoritative-chain support eac
   }
 });
 
-test('wealth direction prefers a useful element that participates in the actual wealth path', () => {
+test('wealth direction lists Yong first and Xi second without requiring a wealth path', () => {
   const direction = DeepReport.__test.deriveWealthDirection({
     yongJi: { yongShen: ['木'], xiShen: ['水'], jiShen: ['火'] },
     pathElements: ['木', '火'],
   });
   assert.deepEqual(direction, {
-    element: '木', directions: ['东方', '东南'], confidence: 'strong', conflict: false,
+    element: '木', elements: ['木', '水'], primary: ['木'], secondary: ['水'],
+    directions: ['东方', '东南', '北方'], confidence: 'strong', conflict: false,
   });
 });
 
-test('conflicting direction evidence does not force a single favorable direction', () => {
+test('strong exposed output feeding rooted wealth and an activated wealth storage can reach A10', () => {
+  const deps = loadRealWealthDeps();
+  const bazi = deps.calculator.buildFromPillars({
+    year: { gan: '辛', zhi: '丑' },
+    month: { gan: '乙', zhi: '未' },
+    day: { gan: '丙', zhi: '寅' },
+    hour: { gan: '戊', zhi: '戌' },
+  }, 'male', null);
+  const facts = DeepReport.buildFacts(bazi, 'male', { anchorYear: 2026, deps });
+  const wealthStorage = facts.wealth.storage.storages.find((row) => row.storageRoleKey === 'wealth');
+
+  assert.ok(facts.wealth.pathways.some((row) => row.type === '食伤生财' && row.scalePotential === true));
+  assert.ok(facts.wealth.pathways.some((row) => row.type === '食伤生财' && row.effect === 'adverse'));
+  assert.equal(wealthStorage.zhi, '丑');
+  assert.equal(wealthStorage.activated, true);
+  assert.equal(wealthStorage.wealthConnection, true);
+  assert.equal(facts.wealth.narrative.grade, 'A10');
+  assert.match(facts.wealth.narrative.headline + facts.wealth.narrative.painPoint, /挣钱|财富|漏财|投资/);
+});
+
+test('month-command output feeding deeply rooted hidden wealth through a wealth combine can reach A10', () => {
+  const facts = buildRealWealthFacts('丙寅 己亥 庚申 庚辰');
+  const pathway = facts.wealth.pathways.find((row) => row.type === '食伤生财');
+
+  assert.ok(pathway);
+  assert.equal(pathway.positive, true);
+  assert.equal(pathway.confidence, 'strong');
+  assert.match(pathway.evidence.join(' '), /亥|食神|财星.*根|寅亥|合.*木/);
+  assert.equal(facts.wealth.narrative.grade, 'A10');
+});
+
+test('a large adverse wealth field is graded for scale but remains below A10 when the weak chart only has relief', () => {
+  const facts = buildRealWealthFacts('戊寅 甲子 辛卯 辛卯');
+  const pathway = facts.wealth.pathways.find((row) => row.type === '食伤生财');
+
+  assert.ok(pathway);
+  assert.equal(pathway.positive, false);
+  assert.equal(pathway.effect, 'adverse');
+  assert.ok(facts.wealth.pathways.some((row) => row.type === '合会引财'));
+  assert.equal(facts.wealth.narrative.grade, 'A9');
+  assert.match(facts.wealth.narrative.verdicts[1].outcomeText, /技能|产品|项目|内容|客户/);
+  assert.match(facts.wealth.narrative.verdicts[2].outcomeText, /财来财去|不容易.*留|压力/);
+});
+
+test('extremely weak charts do not gain wealth rank from adverse wealth-to-officer flow', () => {
+  const facts = buildRealWealthFacts('甲戌 乙亥 戊申 壬子');
+  const pathway = facts.wealth.pathways.find((row) => row.type === '财生官');
+
+  assert.ok(pathway);
+  assert.equal(pathway.positive, false);
+  assert.equal(pathway.effect, 'adverse');
+  assert.equal(facts.wealth.narrative.grade, 'A5');
+  assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /压力|负担|难.*留下|事情.*多/);
+  assert.doesNotMatch(facts.wealth.narrative.verdicts[1].outcomeText, /放大财富|职位.*收入.*放大/);
+});
+
+test('wealth-breaks-seal copy does not invent partnership loss or failed investment', () => {
+  const facts = buildRealWealthFacts('戊辰 癸亥 乙未 戊寅');
+  const retention = facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+
+  assert.match(retention, /学习|资格|稳定支持|原有保障/);
+  assert.doesNotMatch(retention, /合作分走|合伙|投资失败|判断失误/);
+});
+
+test('peer competition names shared profit while adverse wealth-to-officer flow names responsibility instead', () => {
+  const peerFacts = buildRealWealthFacts('庚申 甲申 庚辰 庚辰');
+  const officerFacts = buildRealWealthFacts('甲戌 乙亥 戊申 壬子');
+  const peerRetention = peerFacts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+  const officerRetention = officerFacts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+
+  assert.match(peerRetention, /合作|团队|同行|分利|分钱/);
+  assert.match(officerRetention, /责任|成本|压力/);
+  assert.doesNotMatch(officerRetention, /合作分走|合伙分钱/);
+});
+
+test('wealth hidden inside a non-wealth storage is not described as a wealth storage', () => {
+  const facts = buildRealWealthFacts('丙寅 己亥 庚申 庚辰');
+  const retention = facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+
+  assert.ok(facts.wealth.storage.storages.some((row) => row.storageRoleKey === 'output'));
+  assert.ok(!facts.wealth.storage.storages.some((row) => row.storageRoleKey === 'wealth'));
+  assert.match(retention, /没有形成财库/);
+  assert.doesNotMatch(retention, /虽然能看到财星或财库/);
+});
+
+test('calibrated wealth examples keep their accepted public A bands', () => {
+  const cases = [
+    ['辛丑 乙未 丙寅 戊戌', 'A10'],
+    ['丙寅 己亥 庚申 庚辰', 'A10'],
+    ['戊寅 甲子 辛卯 辛卯', 'A9'],
+    ['戊辰 乙丑 己巳 己巳', 'A8'],
+    ['庚申 甲申 庚辰 庚辰', 'A9'],
+    ['戊辰 癸亥 乙未 戊寅', 'A8'],
+    ['己酉 辛未 癸巳 丁巳', 'A5'],
+    ['甲戌 乙亥 戊申 壬子', 'A5'],
+  ];
+
+  for (const [pillars, expected] of cases) {
+    assert.equal(buildRealWealthFacts(pillars).wealth.narrative.grade, expected, pillars);
+  }
+});
+
+test('multiple Yong elements retain all matching directions instead of returning no answer', () => {
   const direction = DeepReport.__test.deriveWealthDirection({
     yongJi: { yongShen: ['木', '水'], xiShen: [], jiShen: ['火'] },
     pathElements: ['木', '水'],
   });
-  assert.equal(direction.conflict, true);
-  assert.equal(direction.element, '');
-  assert.deepEqual(direction.directions, []);
+  assert.equal(direction.conflict, false);
+  assert.deepEqual(direction.primary, ['木', '水']);
+  assert.deepEqual(direction.directions, ['东方', '东南', '北方']);
 });
 
-test('wealth facts derive a direction only from a validated wealth pathway', () => {
+test('wealth facts preserve Yong-based direction independently of validated wealth pathways', () => {
   const core = storageCore({ yongShen: ['火'], xiShen: [], jiShen: ['土'] });
   core.actionChains = ['食伤生财'];
   const facts = DeepReport.buildWealthFacts(chart({
@@ -378,7 +509,8 @@ test('wealth facts derive a direction only from a validated wealth pathway', () 
   }), core, calculator);
   assert.ok(facts.pathways.some(path => path.type === '食伤生财'));
   assert.deepEqual(facts.direction, {
-    element: '火', directions: ['南方'], confidence: 'strong', conflict: false,
+    element: '火', elements: ['火'], primary: ['火'], secondary: [],
+    directions: ['南方'], confidence: 'strong', conflict: false,
   });
 });
 

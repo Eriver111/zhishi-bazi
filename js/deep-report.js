@@ -859,7 +859,50 @@
     };
   }
 
-  function buildWealthPathways(core) {
+  function wealthGatheringRelations(core, wealthElement) {
+    var combineTypes = ['六合', '半合', '三合', '半会', '三会'];
+    var relations = list(core && core.relationEvents);
+    return relations.filter(function (row) {
+      if (!row || combineTypes.indexOf(row.type) < 0) return false;
+      var elementText = list(row.elements).join('');
+      if (!(new RegExp('[化合会]' + wealthElement)).test(elementText)) return false;
+      var pillars = list(row.pillars);
+      return !relations.some(function (other) {
+        if (!other || other === row || combineTypes.indexOf(other.type) < 0) return false;
+        var overlap = pillars.some(function (pillar) { return list(other.pillars).indexOf(pillar) >= 0; });
+        if (!overlap) return false;
+        var otherText = list(other.elements).join('');
+        return /[化合会][木火土金水]/.test(otherText) && !(new RegExp('[化合会]' + wealthElement)).test(otherText);
+      });
+    });
+  }
+
+  function wealthPathFinalElement(type, wealthElement) {
+    var wealthIndex = ELEMENT_CYCLE.indexOf(wealthElement);
+    if (wealthIndex < 0) return wealthElement;
+    if (type === '财生官') return ELEMENT_CYCLE[(wealthIndex + 1) % ELEMENT_CYCLE.length];
+    if (type === '财官印连续流通' || type === '财配印') return ELEMENT_CYCLE[(wealthIndex + 2) % ELEMENT_CYCLE.length];
+    return wealthElement;
+  }
+
+  function applyWealthPathEffects(rows, core, wealthElement) {
+    return list(rows).map(function (row) {
+      if (!row || !row.type) return row;
+      if (row.positive !== true) return Object.assign({}, row, { positive: false, effect: 'adverse', scalePotential: false });
+      var finalElement = wealthPathFinalElement(row.type, wealthElement);
+      var finalRole = classifyElementRole(finalElement, core && core.yongJi);
+      var effect = finalRole === '忌神' ? 'adverse' : favorableRole(finalRole) ? 'favorable' : 'mixed';
+      return Object.assign({}, row, {
+        positive: effect !== 'adverse',
+        effect: effect,
+        finalElement: finalElement,
+        finalElementRole: finalRole,
+        scalePotential: true,
+      });
+    });
+  }
+
+  function buildWealthPathways(core, bazi, calculator, wealthOccurrences, wealthElement) {
     var chains = list(core && core.actionChains);
     var relations = list(core && core.relationEvents);
     var risks = list(core && core.structuralRisks);
@@ -890,7 +933,64 @@
         evidence: matched.concat(riskMatched).map(textOf).filter(Boolean),
       });
     });
-    return rows;
+    var outputOccurrences = bazi && calculator ? collectTenGodOccurrences(bazi, calculator, function (role) {
+      return role === '食神' || role === '伤官';
+    }) : [];
+    var exposedOutput = outputOccurrences.filter(function (item) { return item.layer === '天干'; });
+    var hiddenOutput = outputOccurrences.filter(function (item) { return item.layer !== '天干'; });
+    var exposedWealth = list(wealthOccurrences).filter(function (item) { return item.layer === '天干'; });
+    var rootedWealth = list(wealthOccurrences).filter(function (item) { return item.layer !== '天干'; });
+    var outputElement = outputOccurrences[0] && outputOccurrences[0].element;
+    var monthElement = branchElement(bazi && bazi.month && bazi.month.zhi, calculator);
+    var monthCommandOutput = outputOccurrences.filter(function (item) {
+      return item.pillar === 'month' && item.layer === '本气';
+    })[0];
+    var wealthGathering = wealthGatheringRelations(core, wealthElement);
+    var strongOutput = exposedOutput.length > 0 && (hiddenOutput.length > 0 || monthElement === outputElement);
+    var outputFeedsWealth = outputElement && wealthElement && elementRelation(outputElement, wealthElement) === 'generates';
+    if (strongOutput && outputFeedsWealth && exposedWealth.length && rootedWealth.length && !rows.some(function (row) {
+      return row.type === '食伤生财' && row.positive === true;
+    })) {
+      rows.unshift({
+        type: '食伤生财',
+        positive: true,
+        conclusion: '食伤透出且有根气或得月令支持，财星同时透干有根，形成产出直接转化为财富的完整路径。',
+        confidence: 'strong',
+        evidence: [
+          '食伤透干：' + exposedOutput.map(function (item) { return item.gan + item.pillarLabel; }).join('、'),
+          '食伤有力：' + (monthElement === outputElement ? '月支同为' + outputElement : hiddenOutput.map(function (item) { return item.gan + item.pillarLabel + item.layer; }).join('、')),
+          '财星透干有根：' + exposedWealth.map(function (item) { return item.gan + item.pillarLabel; }).join('、') + '；' + rootedWealth.map(function (item) { return item.gan + item.pillarLabel + item.layer; }).join('、'),
+        ],
+        inferredFromChart: true,
+      });
+    }
+    if (monthCommandOutput && rootedWealth.length >= 2 &&
+      elementRelation(monthCommandOutput.element, wealthElement) === 'generates' && wealthGathering.length &&
+      !rows.some(function (row) { return row.type === '食伤生财'; })) {
+      rows.unshift({
+        type: '食伤生财',
+        positive: true,
+        conclusion: '月令食伤当令，财星虽未透干但根气集中，合会又把力量引向财星，形成由产出转成财富的完整路径。',
+        confidence: 'strong',
+        evidence: [
+          '月令食伤：' + monthCommandOutput.gan + monthCommandOutput.role + '居' + (bazi.month && bazi.month.zhi),
+          '财星有' + rootedWealth.length + '处根气：' + rootedWealth.map(function (item) { return item.gan + item.pillarLabel + item.layer; }).join('、'),
+        ].concat(wealthGathering.map(function (row) { return textOf(row); })),
+        inferredFromChart: true,
+        inferenceMode: 'month-command-hidden-wealth',
+      });
+    }
+    if (wealthGathering.length && !rows.some(function (row) { return row.type === '合会引财'; })) {
+      rows.push({
+        type: '合会引财',
+        positive: true,
+        conclusion: '原局的合会关系把力量引向财星，财富机会和资金规模容易被集中放大。',
+        confidence: 'medium',
+        evidence: wealthGathering.map(function (row) { return textOf(row); }),
+        inferredFromChart: true,
+      });
+    }
+    return applyWealthPathEffects(rows, core, wealthElement);
   }
 
   function uniqueElements(values) {
@@ -926,22 +1026,20 @@
     var yong = uniqueElements(input.yongJi && input.yongJi.yongShen);
     var xi = uniqueElements(input.yongJi && input.yongJi.xiShen);
     var ji = uniqueElements(input.yongJi && input.yongJi.jiShen);
-    var paths = uniqueElements(input.pathElements);
-    var ranked = ELEMENT_CYCLE.filter(function (element) {
-      return paths.indexOf(element) >= 0 && ji.indexOf(element) < 0 &&
-        (yong.indexOf(element) >= 0 || xi.indexOf(element) >= 0);
-    }).map(function (element) {
-      return {
-        element: element,
-        score: 2 + (yong.indexOf(element) >= 0 ? 2 : 0) + (xi.indexOf(element) >= 0 ? 1 : 0),
-      };
-    }).sort(function (a, b) { return b.score - a.score; });
-    if (!ranked.length || (ranked[1] && ranked[1].score === ranked[0].score)) {
-      return { element: '', directions: [], confidence: 'limited', conflict: true };
-    }
+    var primary = yong.filter(function (element) { return ji.indexOf(element) < 0; });
+    var secondary = xi.filter(function (element) {
+      return ji.indexOf(element) < 0 && primary.indexOf(element) < 0;
+    });
+    var ranked = primary.concat(secondary);
+    if (!ranked.length) return { element: '', elements: [], primary: [], secondary: [], directions: [], confidence: 'limited', conflict: true };
     return {
-      element: ranked[0].element,
-      directions: WEALTH_DIRECTIONS[ranked[0].element] || [],
+      element: ranked[0],
+      elements: ranked,
+      primary: primary,
+      secondary: secondary,
+      directions: ranked.reduce(function (rows, element) {
+        return rows.concat((WEALTH_DIRECTIONS[element] || []).filter(function (direction) { return rows.indexOf(direction) < 0; }));
+      }, []),
       confidence: 'strong',
       conflict: false,
     };
@@ -972,6 +1070,7 @@
     var hidden = list(row.hiddenRoles).map(function (item) {
       return item && item.role ? item.role + '为' + (item.elementRole || '中性') : '';
     }).filter(Boolean);
+    var hiddenRoleNames = list(row.hiddenRoles).map(function (item) { return item && item.role; }).filter(Boolean);
     var basis = (row.pillarLabel || '') + (row.zhi || '') + '为' + (row.storageRole || '十神库') +
       '，对应' + (row.elementRole || '中性') + (hidden.length ? '，库中见' + hidden.join('、') : '') +
       (active ? '，已见引动' : '，尚未见引动') +
@@ -980,26 +1079,32 @@
     var result = { basis: basis, source: '', retention: '' };
     if (!active) return result;
     if (row.storageRoleKey === 'peer') {
-      if (useful && connected) result.source = '伙伴、团队或熟人圈能把机会往前推，合作本身能接到现有的赚钱路径。';
+      if (useful) result.source = '钱更容易从熟人介绍、朋友牵线、同事合作或一起做项目中来；有人把客户和机会带进来，你再把事情做成。';
       else if (adverse) result.retention = '合作越多，越容易出现谁做得多、谁拿得多的问题，钱进来后要经过分配才会到自己手里。';
     } else if (row.storageRoleKey === 'resource') {
-      if (useful && connected) result.source = '证书、专业能力、已有口碑或平台支持，能接到现有的赚钱路径。';
+      if (useful) result.source = '钱更容易靠学会一门真本事、拿到别人认可的资格，或者凭过去做出的成绩和口碑挣到；别人先相信你，才愿意把工作和钱交给你。';
       else if (adverse) result.retention = '容易把钱和时间持续花在准备、学习或依赖平台上，短期不一定马上变成进账。';
     } else if (row.storageRoleKey === 'output') {
-      if (useful && connected) result.source = '技能、内容、产品、表达和项目交付，更容易直接变成客户和收入。';
+      if (useful) result.source = '钱更容易靠手艺、技术、做产品、讲清楚一件事或按时把项目交出来挣到；做出的东西越能直接解决问题，收入越容易跟着上来。';
       else if (adverse) result.retention = '想做的项目容易铺得太开，花了时间和钱，真正收款的项目反而不多。';
     } else if (row.storageRoleKey === 'wealth') {
       if (useful && connected && !pressure) result.retention = '钱进来以后，有机会变成存款、资产或能持续带来回款的长期项目。';
       else if (adverse) result.retention = '财库被触动时，先要面对垫资、债务、家庭责任或项目规模变大的问题，不能把它直接当成存钱信号。';
       else result.retention = '财库被触动只说明资金和资产议题会变多；没有接上明确赚钱路径前，不能断定钱会留下。';
     } else if (row.storageRoleKey === 'officer') {
-      if (useful && connected) result.source = '职位、管理权、平台资源或重要客户，能接到现有的赚钱路径。';
+      if (useful || disposition === 'mixed') {
+        result.source = '钱更容易从有规矩、有层级的单位或长期项目里来：接下更重要的事、职位往上走、带团队、管项目，或者对接重要客户，把手里的责任和决定权变成收入。';
+        if (hiddenRoleNames.some(function (role) { return /印/.test(role); })) result.source += '别人愿意把重要的事交给你，往往还因为你做事稳、经验够，或者过去的成绩让人放心。';
+        if (hiddenRoleNames.some(function (role) { return /比肩|劫财/.test(role); })) result.source += '这笔钱通常不是一个人闷头挣来，而是要跟同事、朋友或团队一起把事情做大。';
+        if (disposition === 'mixed' && list(row.hiddenRoles).some(function (item) { return item && item.elementRole === '忌神' && /比肩|劫财/.test(item.role); })) result.source += '但一起做大的钱还要经过分配，事情和责任可能主要由你扛，最后真正到手的会比账面收入少。';
+        if (disposition === 'mixed' && list(row.hiddenRoles).some(function (item) { return item && item.elementRole === '忌神' && /印/.test(item.role); })) result.source += '同时也容易先把时间和钱花在学习、准备或证明自己上，职位和收入不会完全同步增加。';
+      }
       else if (adverse) result.retention = '职位和责任一上来，时间、规则和要承担的事情都会变多，收入未必能同步留下。';
     }
     return result;
   }
 
-  function buildWealthRetention(core, wealthElement) {
+  function buildWealthRetention(core, wealthElement, pathways, bazi, calculator) {
     var risks = list(core && core.structuralRisks);
     var events = list(core && core.relationEvents);
     var chains = list(core && core.actionChains);
@@ -1016,6 +1121,32 @@
       if (!matched.length) return;
       rows.push({ type: definition.type, conclusion: definition.text, evidence: matched.map(textOf).filter(Boolean) });
     });
+    list(pathways).filter(function (pathway) {
+      return pathway && pathway.effect === 'adverse' && (pathway.type === '财生官' || pathway.type === '财官印连续流通');
+    }).forEach(function (pathway) {
+      if (rows.some(function (row) { return row.type === '财生官压身'; })) return;
+      rows.push({
+        type: '财生官压身',
+        conclusion: '财星继续生助忌神官杀，收入机会会同时放大责任、成本与现实压力。',
+        evidence: list(pathway.evidence),
+      });
+    });
+    var peerOccurrences = bazi && calculator ? collectTenGodOccurrences(bazi, calculator, function (role) {
+      return role === '比肩' || role === '劫财';
+    }) : [];
+    var exposedPeers = peerOccurrences.filter(function (item) {
+      return item.layer === '天干' && item.pillar !== 'day';
+    });
+    var exposedWealth = bazi && calculator ? collectTenGodOccurrences(bazi, calculator, function (role) {
+      return role === '正财' || role === '偏财';
+    }).filter(function (item) { return item.layer === '天干'; }) : [];
+    if (exposedPeers.length >= 2 && exposedWealth.length && !rows.some(function (row) { return row.type === '比劫分流'; })) {
+      rows.push({
+        type: '比劫分流',
+        conclusion: '多个比劫同时围绕透出的财星，挣钱规模可以做大，但合作分利和同行竞争会降低最终留存。',
+        evidence: [exposedPeers.map(function (item) { return item.gan + item.pillarLabel; }).join('、') + '并见' + exposedWealth.map(function (item) { return item.gan + item.pillarLabel; }).join('、')],
+      });
+    }
     var role = classifyElementRole(wealthElement, core && core.yongJi);
     return {
       state: rows.length ? '需管理' : '待观察',
@@ -1274,7 +1405,7 @@
     var occurrences = collectTenGodOccurrences(bazi, calculator, function (role) {
       return role === '正财' || role === '偏财';
     });
-    var pathways = buildWealthPathways(core);
+    var pathways = buildWealthPathways(core, bazi, calculator, occurrences, wealthWx);
     var pathElements = wealthPathElements(pathways, wealthWx);
     var elementRole = classifyElementRole(wealthWx, core.yongJi);
     var patternName = core.pattern && (core.pattern.name || core.pattern.label || '');
@@ -1346,7 +1477,7 @@
       resource: buildResourceQuality(occurrences, bazi, core, calculator, wealthWx),
       capacity: capacity,
       pathways: pathways,
-      retention: buildWealthRetention(core, wealthWx),
+      retention: buildWealthRetention(core, wealthWx, pathways, bazi, calculator),
       storage: buildWealthStorage(bazi, core, wealthWx, calculator, pathways),
       timing: null,
       summaryLevel: deriveWealthSummaryLevel(capacity, occurrences, core),
@@ -2497,6 +2628,15 @@
     ][level];
   }
 
+  function wealthStrengthState(facts, capacity) {
+    var strength = facts && facts.core && facts.core.strength || {};
+    var score = Number(strength.score);
+    var level = textOf(strength.level);
+    if ((Number.isFinite(score) && score >= 55) || /身强|偏强|旺极|从强/.test(level) || /顺势|可承接/.test(textOf(capacity && capacity.state))) return 'strong';
+    if ((Number.isFinite(score) && score < 45) || /身弱|偏弱|弱极/.test(level) || textOf(capacity && capacity.state) === '承压') return 'weak';
+    return 'balanced';
+  }
+
   function narrativeVerdict(title, text, basis, details) {
     details = details || {};
     var outcomeText = details.outcomeText || text || '';
@@ -2519,7 +2659,7 @@
     var yongJi = wealth.yongJi || (facts && facts.core && facts.core.yongJi) || {};
     var pathElements = uniqueElements(wealth.pathElements);
     if (!pathElements.length) pathElements = wealthPathElements(pathways, wealth.wealthElement);
-    var direction = wealth.direction || deriveWealthDirection({ yongJi: yongJi, pathElements: pathElements });
+    var direction = deriveWealthDirection({ yongJi: yongJi });
     var storageRows = list(wealth.storage && wealth.storage.storages);
     var storageContributions = storageRows.map(function (row) { return storageNarrativeContribution(row, capacity); });
     var storageFacts = storageContributions.map(function (item) { return item.basis; });
@@ -2535,8 +2675,20 @@
         storageRoleDisposition(row) === 'useful' && (capacity.state === '顺势' || capacity.state === '可承接');
     });
     var positivePathTypes = ['比劫生食伤生财', '食伤生财', '财生官', '财官印连续流通', '财配印'];
+    var scalePathTypes = positivePathTypes.concat(['合会引财']);
+    var scalePaths = pathways.filter(function (row) {
+      return row && scalePathTypes.indexOf(row.type) >= 0 && row.scalePotential !== false;
+    });
     var actualPaths = pathways.filter(function (row) {
-      return row && positivePathTypes.indexOf(row.type) >= 0;
+      return row && positivePathTypes.indexOf(row.type) >= 0 && row.positive === true;
+    });
+    var adverseScalePaths = scalePaths.filter(function (row) { return row.effect === 'adverse'; });
+    var strongOutputWealthPath = scalePaths.some(function (row) {
+      return row.type === '食伤生财' && row.confidence === 'strong';
+    });
+    var wealthGatheringPath = scalePaths.some(function (row) { return row.type === '合会引财'; });
+    var connectedActivatedWealthStorage = financialStorageRows.some(function (row) {
+      return row && row.storageRoleKey === 'wealth' && row.activated && row.wealthConnection;
     });
     var annualWealthEvidence = facts && facts.currentYear && facts.currentYear.wealth &&
       list(facts.currentYear.wealth.timing && facts.currentYear.wealth.timing.activation).length > 0;
@@ -2546,11 +2698,25 @@
     if (Number(resource.hiddenCount) > 0 || list(quality.roots).length) points += 0.5;
     if (capacity.elementRole === '用神' || capacity.elementRole === '喜神' || resource.elementRole === '用神' || resource.elementRole === '喜神') points += 1;
     if (capacity.elementRole === '忌神' || resource.elementRole === '忌神') points -= 1;
-    points += Math.min(2, actualPaths.length) * 0.5;
+    points += Math.min(2, scalePaths.length) * 0.5;
     if (usefulRetainingWealthStorage.length) points += 0.5;
-    points -= Math.min(3, retentionRisks.length) * 0.5;
+    if (strongOutputWealthPath) points += 2;
+    if (list(quality.roots).length >= 2) points += 1;
+    if (list(quality.sources).length >= 3) points += 1;
+    if (/月令同气|月令相生/.test(textOf(quality.season && quality.season.state))) points += 0.5;
+    if (connectedActivatedWealthStorage) points += 1.5;
+    if (wealthGatheringPath) points += 1;
     var level = clampNumber(Math.round(points), 1, 10);
-    var pathText = actualPaths.map(function (row) { return textOf(row && (row.type || row.conclusion || row)); }).join(' ');
+    var strengthScore = Number(facts && facts.core && facts.core.strength && facts.core.strength.score);
+    var extremeWeakAdverse = Number.isFinite(strengthScore) && strengthScore <= 20 &&
+      (capacity.elementRole === '忌神' || resource.elementRole === '忌神') && capacity.method !== '从格顺势';
+    if (extremeWeakAdverse) level = Math.min(level, 5);
+    var pathText = scalePaths.map(function (row) { return textOf(row && (row.type || row.conclusion || row)); }).join(' ');
+    var retentionRiskText = retentionRisks.map(function (row) { return textOf(row && (row.type || row)); }).join(' ');
+    var hasPartnershipLoss = /比劫|合伙|合作|分流/.test(retentionRiskText);
+    var hasSealBreak = /财破印|财坏印|财印冲/.test(retentionRiskText);
+    var hasInvestmentLoss = /投资|判断失误/.test(retentionRiskText);
+    var hasOfficerPressure = /财生官压身|财党杀/.test(retentionRiskText);
     var headline;
     var painPoint;
     if (capacity.state === '承压') {
@@ -2566,22 +2732,47 @@
       headline = '你的财富上限不只取决于工资，更取决于能否把经验和资源重复变现。';
       painPoint = '最容易低估的问题，是收入增加了，但可复制的赚钱方式没有同步形成。';
     }
+    if (retentionRisks.length) {
+      headline = '你有挣钱能力，但漏财风险也很明显。';
+      var lossReasons = [];
+      if (hasPartnershipLoss) lossReasons.push('合伙分钱、替别人扛成本时破财');
+      if (hasInvestmentLoss) lossReasons.push('继续投项目或投资判断失误时亏钱');
+      if (hasSealBreak) lossReasons.push('为了追收入而不断花钱准备、转型或补足资格时把钱用掉');
+      if (hasOfficerPressure) lossReasons.push('项目和职位带来的责任、垫资与成本一起增加时把钱压住');
+      if (!lossReasons.length) lossReasons.push('项目继续投入、家庭责任或临时支出增加时把钱花掉');
+      painPoint = '钱容易在' + lossReasons.join('，也容易在') + '，属于赚得到、却不容易全部留下的类型。';
+    }
+    var adversePathText = adverseScalePaths.map(function (row) { return textOf(row && row.type); }).join(' ');
     var source = /食伤生财/.test(pathText)
-      ? '财富主要通过专业输出、产品、技术、内容或项目成果形成。'
+      ? (/食伤生财/.test(adversePathText)
+        ? '钱主要靠手艺、技术、产品、内容或项目成果挣到；但这条路也会持续消耗你的时间、资金和精力，做得越大，跟着增加的投入和压力也越多。'
+        : '钱主要靠手艺、技术、产品、内容或项目成果挣到，做出的东西越能直接解决问题，收入越容易跟着增加。')
       : /财生官|财官印/.test(pathText)
-        ? '财富主要通过组织平台、管理职责和资源调度放大。'
+        ? (/财生官|财官印/.test(adversePathText)
+          ? '钱和工作责任往往一起出现：项目、职位和要扛的事情会增加，但这些责任也会吃掉大量时间和成本，事情做得多不等于最后留下的钱多。'
+          : '钱更容易随着职位、长期项目和手里能决定的事情一起增加。')
         : /财配印/.test(pathText)
           ? '知识、资质、专业信誉和长期资产更容易成为财富入口。'
           : /比劫/.test(pathText)
             ? '合作与圈层能够带来机会，同时也会产生更明显的利益分配。'
-            : '财富更常从稳定主业开始，再由可重复成交的能力或资源逐步放大。';
-    var retentionText = retentionRisks.length
-      ? '钱进来以后，容易继续投进项目、被合作伙伴分走，或者被家庭和责任性支出带走。'
-      : (capacity.state === '承压' || storageRetentionText.length
-        ? '钱能不能留下，要看机会变多后垫资、责任和实际支出会不会一起增加；进账不等于最后能留在手里。'
-        : '原局没有看到钱一进来就被明显分走的信号，收入形成后相对更容易留住；最后留下多少，还会受真实成交、成本和分配影响。');
-    var hasFinancialStorage = financialStorageRows.length > 0 || Boolean(wealth.storage && wealth.storage.candidates && wealth.storage.candidates.length);
-    var hasStrongWealthPath = actualPaths.length > 0;
+            : storageSourceText.length ? '' : '你的钱主要还是从一份做得久、能反复带来客户或项目的正经收入中来，不是靠突然碰到一笔横财。';
+    var strengthState = wealthStrengthState(facts, capacity);
+    var retentionText = strengthState === 'strong'
+      ? '你的日主偏强，担得住财。钱进来以后，更容易有一部分留在手里，并慢慢变成存款、资产或能继续回款的东西。'
+      : strengthState === 'weak'
+        ? '你的日主偏弱，容易出现“富屋贫人”：有挣钱的能力和想法，也能遇到赚钱机会，但钱一多，项目投入、家庭责任或意外支出也容易跟着增加，最后形成财来财去。'
+        : '你的日主力量处在中间，正常收入能够接住一部分，但项目、责任或支出突然放大时，手里的钱也会明显变少。';
+    if (retentionRisks.length) {
+      var retentionDetails = [];
+      if (hasPartnershipLoss) retentionDetails.push('合作、团队或同行会参与分钱，账面收入不会全部落到自己手里');
+      if (hasSealBreak) retentionDetails.push('为了挣钱更容易挤掉学习提升、资格积累、稳定支持或原有保障，钱也会继续花在准备和转型上');
+      if (hasInvestmentLoss) retentionDetails.push('继续投入项目或投资判断失误会直接造成亏损');
+      if (hasOfficerPressure) retentionDetails.push('收入机会会同时带来更多责任、垫资和成本，事情做多了，钱反而容易被压住');
+      if (!retentionDetails.length) retentionDetails.push('项目继续投入、家庭责任或临时支出会降低最后留下来的比例');
+      retentionText += retentionDetails.join('；') + '。';
+    }
+    var hasFinancialStorage = storageRows.some(function (row) { return row && row.storageRoleKey === 'wealth'; });
+    var hasStrongWealthPath = scalePaths.length > 0;
     var hasCongCai = capacity.method === '从格顺势';
     var partialWealth = wealth.partialWealth || { strong: false, exposedCount: 0, hiddenCount: 0, evidence: [] };
     var storageText = usefulRetainingWealthStorage.length
@@ -2589,33 +2780,41 @@
       : storageRetentionText.length
         ? storageRetentionText.join(' ')
       : hasFinancialStorage
-        ? '命局里能看到财星或财库，但现在还不满足“财为喜用、命局接得住、并且已接上赚钱路径”这几个条件，不能直接说钱会留下。'
+        ? '命局里虽然能看到财星或财库，但它没有同时满足“财是喜用、日主担得住、库已被真正引动”三个条件，所以有进账不等于都能留下。'
         : (!hasStrongWealthPath && !hasCongCai && !annualWealthEvidence && !partialWealth.strong
-          ? '命局没有形成财库，也没有看到把机会突然放大的明确链路。你的钱更适合一点点做大，把主业、客户或项目做稳，比押一次短期机会更容易留下成果。'
+          ? '命局没有形成财库，一笔机会突然把财富放大的信号较弱；财富更像是靠工资、客户或长期项目一点点积累起来。'
           : (partialWealth.strong
             ? '命局没有形成财库，但偏财连续透出两处，说明遇到项目、客户、市场变化或阶段性机会时，进账有被放大的可能；能不能留下，仍要看后续的合作分配和实际投入。'
-            : '命局没有形成财库，但已经有其他财富通路或岁运引动条件，不能只因没有财库就断定没有突然放大的机会。'));
+            : '命局没有形成财库，但已经有其他挣钱方式或岁运引动条件，所以仍可能出现收入突然增加，只是这不等于能一次性沉淀成大额资产。'));
     var totalText;
-    if (capacity.state === '承压') {
+    if (extremeWeakAdverse) {
+      totalText = '这张盘看得到挣钱机会，但日主太弱，财星又继续把力量推向压力和责任。事情越做越多，成本和负担也越重，真正留下的钱通常有限。';
+    } else if (capacity.state === '承压') {
       totalText = '你的赚钱机会并不少，但机会一多，需要垫的钱、扛的责任和花掉的精力也会一起增加。账面进账可能变大，真正能留下多少要看后面的路径和留存条件。';
     } else if (capacity.state === '顺势' || level >= 8) {
       totalText = '这张盘有把资源做大的基础。收入不只靠一份固定工资，更容易靠项目、客户、平台或长期经营把规模慢慢拉开。';
     } else if (capacity.state === '可承接' || capacity.state === '有缓解') {
-      totalText = '这张盘能接住正常的赚钱机会。收入上来以后，只要路径稳定，通常能把一部分机会变成看得见的成果；但不适合把每一次机会都放大到超出自己手里的资源。';
+      totalText = '这张盘能接住正常的赚钱机会。收入上来以后，稳定的工资、客户或项目能够变成看得见的成果；机会一旦超过手里能调动的钱和人，留下来的比例就会下降。';
     } else {
-      totalText = '这张盘的财富表现更看重具体路径。先把一个稳定的赚钱入口跑顺，再把它做成可重复的客户、项目或产品，比单纯追求机会数量更有效。';
+      totalText = '这张盘的收入起伏主要取决于有没有稳定的工资、客户、项目或产品；赚钱入口稳定时能持续进账，入口一断，收入也会跟着明显下降。';
     }
-    var sourceOutcome = source + (storageSourceText.length ? ' ' + storageSourceText.join(' ') : '');
+    var sourceOutcome = [source].concat(storageSourceText).filter(Boolean).join(' ');
     var retentionOutcome = retentionText + ' ' + storageText;
     var directionSource;
     var directionText;
     if (!direction.conflict) {
-      var role = classifyElementRole(direction.element, yongJi);
-      var directionPaths = actualPaths.filter(function (row) {
-        return wealthPathElements([row], wealth.wealthElement).indexOf(direction.element) >= 0;
-      });
-      directionSource = direction.element + '为本命' + role + '，并且已接入' + directionPaths.map(function (row) { return row.type; }).join('、') + '的实际财富通路。';
-      directionText = direction.directions.join('、') + '方向更容易打开财路。这里既包括去这些方向发展，也包括这些方向来的客户、市场、合作方和工作机会；因为它们更容易把现有的赚钱通路接成收入。';
+      var primaryText = list(direction.primary).map(function (element) { return element + '为用神'; }).join('、');
+      var secondaryText = list(direction.secondary).map(function (element) { return element + '为喜神'; }).join('、');
+      directionSource = [primaryText, secondaryText].filter(Boolean).join('，') + '。';
+      var primaryDirections = list(direction.primary).reduce(function (rows, element) {
+        return rows.concat((WEALTH_DIRECTIONS[element] || []).filter(function (item) { return rows.indexOf(item) < 0; }));
+      }, []);
+      var secondaryDirections = list(direction.secondary).reduce(function (rows, element) {
+        return rows.concat((WEALTH_DIRECTIONS[element] || []).filter(function (item) { return rows.indexOf(item) < 0; }));
+      }, []);
+      directionText = (primaryDirections.length ? primaryDirections.join('、') + '是更容易得财的主要方向。' : '') +
+        (secondaryDirections.length ? secondaryDirections.join('、') + '是第二顺位。' : '') +
+        '这里既指去这些方向工作或做生意，也指这些方向来的客户、市场、单位和项目更容易给你带来实际收入。';
     } else {
       directionSource = actualPaths.length
         ? '已见财富通路，但能接入通路的喜用元素没有形成单一优势。'
@@ -2624,8 +2823,8 @@
     }
     return {
       grade: 'A' + level,
-      level: wealthMagnitude(level),
-      difficulty: level >= 8 ? '平台、强运与长期经营同时到位时兑现更快' : level >= 5 ? '持续经营时更容易逐步达到' : '承载与变现通路偏弱',
+      level: '',
+      difficulty: '',
       headline: headline,
       painPoint: painPoint,
       paragraphs: [],
@@ -2636,8 +2835,8 @@
         ], {
           sourceText: '财星在原局中' + (Number(resource.visibleCount) > 0 ? '透干显现' : Number(resource.hiddenCount) > 0 ? '藏于地支' : '没有明显显现') + '；日主旺衰与财星喜忌综合后，财富承载状态为“' + (capacity.state || '中间状态') + '”。', outcomeText: totalText,
         }),
-        narrativeVerdict('钱主要从哪里来', '', actualPaths.length ? actualPaths.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
-          sourceText: (actualPaths.length ? '命局形成' + actualPaths.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。') + (storageSourceText.length ? ' ' + storageContributions.filter(function (item) { return item.source; }).map(function (item) { return item.basis; }).join('；') + '。' : ''), outcomeText: sourceOutcome,
+        narrativeVerdict('钱主要从哪里来', '', scalePaths.length ? scalePaths.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
+          sourceText: (scalePaths.length ? '命局形成' + scalePaths.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。') + (storageSourceText.length ? ' ' + storageContributions.filter(function (item) { return item.source; }).map(function (item) { return item.basis; }).join('；') + '。' : ''), outcomeText: sourceOutcome,
         }),
         narrativeVerdict('钱能不能留下', '', (retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR']).concat(['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : hasFinancialStorage ? 'present' : 'absent')]), {
           sourceText: (retentionRisks.length ? '原局存在' + retentionRisks.map(function (row) { return textOf(row.type || row); }).join('、') + '等财富留存证据。' : '原局未见明确财富留存风险。') + (storageFacts.length ? ' ' + storageFacts.join('；') + '。' : ''), outcomeText: retentionOutcome,
@@ -2646,7 +2845,7 @@
           sourceText: directionSource, outcomeText: directionText,
         }),
       ],
-      note: '财富等级表示个人净资产峰值的命局量级参考，不代表当前存款，也不是收益承诺。',
+      note: 'A等级是依据命局承财能力、财星喜忌、财富来源和留财情况综合得出的命理分级，不代表当前存款，也不是收益承诺。',
     };
   }
 
@@ -3036,6 +3235,15 @@
     });
   }
 
+  function publicTimingInteractions(interactions) {
+    return sortedTimingInteractions(interactions).filter(function (row) {
+      if (!row) return false;
+      if (row.direction === 'favorable' || row.direction === 'adverse') return true;
+      var domains = list(row.domains);
+      return !(domains.length === 1 && domains[0] === 'study');
+    });
+  }
+
   function timingInteractionOutcome(row) {
     row = row || {};
     var domains = list(row.domains);
@@ -3050,27 +3258,116 @@
     }
     if (domains.indexOf('wealth') >= 0) {
       if (row.direction === 'favorable' && row.type === '六冲') return '原来卡住收入或资产流动的部分被打破，进账、资金周转或资产调整更容易出现实质变化，但过程会先有波动。';
-      if (row.direction === 'favorable') return '财富通路被有利力量引动，收入、项目回款或资产沉淀更容易出现实际进展。';
-      if (row.direction === 'adverse') return '资金占用、责任支出或合作分配会放大，流水可能增加，但真正留下的钱反而容易减少。';
+      if (row.direction === 'favorable') return '这一年更容易看到实际进账，项目回款会更顺，手里的钱也更有机会存下来或变成资产。';
+      if (row.direction === 'adverse') return '这一年钱不是完全进不来，而是花出去得更快。项目垫款、家庭支出或合作分钱会增加，账面流水看着不少，最后真正留下的钱反而容易减少。';
       return '收入、支出或资产安排会发生变化，但现有证据不足以确定最后增加还是减少。';
     }
     if (domains.indexOf('career') >= 0) {
       return row.direction === 'favorable'
-        ? '岗位、职责、上级关系或项目节奏会出现有利变化，现实推进速度比平时更快。'
+        ? '工作上更容易接到重要任务，事情推进得比平时快。做出的成绩也更容易被领导或客户看见，职位、权限或收入有机会跟着往上动。'
         : row.direction === 'adverse'
-          ? '岗位、职责、上级关系或项目节奏更容易被打乱，工作中的摩擦和返工会增加。'
-          : '岗位、职责或项目节奏会变化，但最后走向仍取决于其他同时出现的岁运关系。';
+          ? /刑/.test(row.type || '')
+            ? '工作里同一个问题容易反复出现，沟通不顺、临时改要求和返工会增多。人会比平时更忙，但结果出来得更慢。'
+            : '工作安排容易临时改变，上级要求、项目进度或同事配合会让你来回返工。花的时间会增加，结果却容易晚一步出来。'
+          : '';
     }
     if (domains.indexOf('study') >= 0) {
       return row.direction === 'favorable'
-        ? '学习、考试、资格认证或专业成果更容易兑现，原有优势能在这一年发挥出来。'
+        ? '这一年学习和考试更容易出成绩，复习过的内容能真正用得上。考证、考试或作品评比，更容易拿到看得见的结果。'
         : row.direction === 'adverse'
-          ? '学习节奏更容易被压力、分心或输出不稳打断，成绩会低于真实能力。'
-          : '学习和考试议题会被加强，但现有证据不足以确定成绩一定上升或下降。';
+          ? '学习容易被工作和杂事打断，复习节奏不稳。考试时也容易因为分心、时间不够，把原本会做的题做错，成绩低于真实水平。'
+          : '';
     }
-    if (row.direction === 'favorable') return '这项岁运关系打通了原局中的有利部分，现实推进会比平时顺。';
-    if (row.direction === 'adverse') return '这项岁运关系触动了原局中的不利部分，现实阻力和反复会增加。';
+    if (row.direction === 'favorable') return '原来卡住的事情更容易往前推进，拖着不定的事更容易定下来，也更容易拿到看得见的结果。';
+    if (row.direction === 'adverse') return '事情更容易被临时变化打断，原本一次能做完的事会多跑几趟、多等一阵，结果也更容易反复。';
     return '该领域会出现明显变化和拉扯，但好坏暂不能定。';
+  }
+
+  function uniqueTimingTexts(rows) {
+    var seen = {};
+    return list(rows).map(textOf).filter(function (value) {
+      var key = value.replace(/\s+/g, '');
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function timingDomainVerdicts(interactions) {
+    var labels = {
+      relationship: '感情和相处', wealth: '钱和收入', career: '工作和职位',
+      study: '学习和考试', wellbeing: '身体和作息', health: '身体和作息', general: '这一年的现实变化',
+    };
+    var groups = {};
+    publicTimingInteractions(interactions).forEach(function (interaction) {
+      var domains = list(interaction && interaction.domains).map(function (domain) {
+        return domain === 'wellbeing' ? 'health' : domain;
+      }).filter(function (domain) { return labels[domain]; }).filter(function (domain, index, rows) {
+        return rows.indexOf(domain) === index;
+      }).filter(function (domain) {
+        return domain !== 'study' || interaction.direction === 'favorable' || interaction.direction === 'adverse';
+      }).sort();
+      if (!domains.length) domains = ['general'];
+      domains.forEach(function (domain) {
+        if (!groups[domain]) groups[domain] = { domains: [domain], rows: [] };
+        groups[domain].rows.push(interaction);
+      });
+    });
+    var domainOrder = ['relationship', 'career', 'wealth', 'study', 'health', 'general'];
+    return Object.keys(groups).sort(function (a, b) {
+      return domainOrder.indexOf(a) - domainOrder.indexOf(b);
+    }).map(function (key) {
+      var group = groups[key];
+      var title = group.domains.length === 1 && group.domains[0] === 'general'
+        ? '其他明显变化'
+        : group.domains.map(function (domain) { return labels[domain]; }).join('、') + '会怎么变';
+      return narrativeVerdict(title, '', group.rows.map(function (row) {
+        return 'ANNUAL_INTERACTION:' + (row.id || row.type);
+      }), {
+        sourceText: uniqueTimingTexts(group.rows.map(function (row) { return row && row.sourceText; })).join(' '),
+        outcomeText: uniqueTimingTexts(group.rows.map(function (row) {
+          return timingInteractionOutcome(Object.assign({}, row, { domains: group.domains }));
+        })).join(' '),
+      });
+    });
+  }
+
+  function timingDomainHeadline(interactions, directionLabel) {
+    var labels = { relationship: '感情', wealth: '钱和收入', career: '工作', study: '学习和考试', wellbeing: '身体状态', health: '身体状态' };
+    var domains = [];
+    list(interactions).forEach(function (interaction) {
+      list(interaction && interaction.domains).forEach(function (domain) {
+        if (domain === 'study' && interaction.direction !== 'favorable' && interaction.direction !== 'adverse') return;
+        var label = labels[domain];
+        if (label && domains.indexOf(label) < 0) domains.push(label);
+      });
+    });
+    var subject = domains.length ? domains.join('、') : '现实安排';
+    var directionText = directionLabel === '偏有利'
+      ? '结果偏有利'
+      : directionLabel === '偏不利'
+        ? '结果偏不利'
+        : directionLabel === '有利与压力并见'
+          ? '有进展，也有明显压力'
+          : '变化会很明显，但好坏暂时不能定';
+    return subject + '是今年变化最明显的地方，' + directionText + '。';
+  }
+
+  function aggregateFiveYearOutcomes(rows) {
+    var groups = [];
+    list(rows).forEach(function (row) {
+      list(row && row.priorityOutcomes).forEach(function (outcome) {
+        var existing = groups.filter(function (group) { return group.outcome === outcome; })[0];
+        if (!existing) {
+          existing = { outcome: outcome, years: [] };
+          groups.push(existing);
+        }
+        if (existing.years.indexOf(row.year) < 0) existing.years.push(row.year);
+      });
+    });
+    return groups.map(function (group) {
+      return group.years.join('、') + '年：' + group.outcome;
+    }).join(' ');
   }
 
   function daYunStatusLabel(year) {
@@ -3264,35 +3561,32 @@
 
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
-    var interactions = sortedTimingInteractions(year.interactions);
+    var interactions = publicTimingInteractions(year.interactions);
     var riskCopies = annualRiskCopies(year.triggeredRisks);
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var decisiveInteractions = prioritizedTimingInteractions(interactions);
-    var decisiveOutcome = decisiveInteractions.map(timingInteractionOutcome).filter(Boolean).join(' ');
-    var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions, directionLabel);
+    var decisiveOutcome = uniqueTimingTexts(timingDomainVerdicts(decisiveInteractions).map(function (row) {
+      return row.outcomeText;
+    })).join(' ');
+    var reliefCopies = interactions.length || hasTriggeredRisk
+      ? annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions, directionLabel)
+      : [];
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
     var timingBasis = year && year.daYun
       ? '按流年、大运与原局的实际关系判断。'
       : '当前大运未纳入，只按流年与原局的实际关系判断。';
     var headline = interactions.length
-      ? decisiveOutcome
+      ? timingDomainHeadline(decisiveInteractions, directionLabel)
       : hasTriggeredRisk
         ? '本年有风险信号被岁运触发，下面列出已有依据和可能出现的具体表现。'
         : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
-    if (reliefCopies.length && (directionLabel === '偏不利' || hasTriggeredRisk)) {
-      headline += reliefCopies[0].outcomeText;
-    }
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
       outcomeText: headline,
     })];
-    interactions.forEach(function (interaction) {
-      verdicts.push(narrativeVerdict((interaction.source || '岁运') + '·' + (interaction.type || '关系'), '', ['ANNUAL_INTERACTION:' + (interaction.id || interaction.type)], {
-        sourceText: textOf(interaction.sourceText), outcomeText: timingInteractionOutcome(interaction),
-      }));
-    });
+    verdicts = verdicts.concat(timingDomainVerdicts(interactions));
     var relationshipActivations = list(year.relationship && year.relationship.activations);
     if (!interactions.some(function (row) { return list(row.domains).indexOf('relationship') >= 0; })) {
       relationshipActivations.forEach(function (activation) {
@@ -3334,8 +3628,37 @@
     var sourceYears = list(fiveYear.years).slice().sort(function (a, b) {
       return Number(a && a.year) - Number(b && b.year);
     });
+    var daYunInteractions = [];
+    var seenDaYun = {};
+    var daYunCounts = {};
+    sourceYears.forEach(function (year) {
+      publicTimingInteractions(year && year.interactions).filter(function (row) {
+        return row && row.source === '大运';
+      }).forEach(function (row) {
+        var key = timingInteractionStableKey(row);
+        daYunCounts[key] = (daYunCounts[key] || 0) + 1;
+      });
+    });
+    sourceYears.forEach(function (year) {
+      publicTimingInteractions(year && year.interactions).filter(function (row) {
+        return row && row.source === '大运' && daYunCounts[timingInteractionStableKey(row)] > 1;
+      }).forEach(function (row) {
+        var key = timingInteractionStableKey(row);
+        if (!seenDaYun[key]) {
+          seenDaYun[key] = true;
+          daYunInteractions.push(row);
+        }
+      });
+    });
+    var daYunVerdicts = timingDomainVerdicts(daYunInteractions);
+    var daYunCommonVerdict = daYunVerdicts.length ? narrativeVerdict('这步大运的共同影响', '', ['FIVE_YEAR:DAYUN_BACKGROUND'], {
+      sourceText: uniqueTimingTexts(daYunInteractions.map(function (row) { return row.sourceText; })).join(' '),
+      outcomeText: uniqueTimingTexts(daYunVerdicts.map(function (row) { return row.outcomeText; })).join(' '),
+    }) : null;
     var years = sourceYears.map(function (year) {
-      var interactions = sortedTimingInteractions(year && year.interactions);
+      var interactions = publicTimingInteractions(year && year.interactions).filter(function (row) {
+        return row && !(row.source === '大运' && daYunCounts[timingInteractionStableKey(row)] > 1);
+      });
       var decisive = prioritizedTimingInteractions(interactions);
       var displaySelected = decisive.slice(0, 2);
       var legacyRelationship = !decisive.length ? list(year && year.relationship && year.relationship.activations) : [];
@@ -3343,9 +3666,14 @@
       var directionLabel = !interactions.length && riskCopies.length
         ? '风险已触发'
         : timingDirectionLabel(interactions);
-      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, decisive, directionLabel);
+      var reliefCopies = decisive.length || riskCopies.length
+        ? annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, decisive, directionLabel)
+        : [];
+      var decisiveOutcome = uniqueTimingTexts(timingDomainVerdicts(decisive).map(function (row) {
+        return row.outcomeText;
+      })).join(' ');
       var baseSummary = decisive.length
-        ? decisive.map(timingInteractionOutcome).join(' ')
+        ? decisiveOutcome
         : legacyRelationship.length
           ? legacyRelationship.map(annualRelationshipActivationText).join(' ')
           : riskCopies.length
@@ -3364,14 +3692,23 @@
           .concat(riskCopies.map(function (copy) { return copy.sourceText; }))
           .concat(reliefCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
-        prioritizedOutcome: decisive.length ? decisive.map(timingInteractionOutcome).join(' ') : baseSummary,
+        prioritizedOutcome: decisive.length ? decisiveOutcome : baseSummary,
+        priorityOutcomes: decisive.length ? uniqueTimingTexts(timingDomainVerdicts(decisive).map(function (row) {
+          return row.outcomeText;
+        })) : [],
         priority: decisive.length ? timingInteractionPriority(decisive[0]) : 0,
+        priorityCount: decisive.length,
         riskTriggered: riskCopies.length > 0,
       };
     });
-    var strongest = years.slice().sort(function (a, b) { return b.priority - a.priority || a.year - b.year; })[0];
+    var strongest = years.slice().sort(function (a, b) {
+      return b.priority - a.priority || b.priorityCount - a.priorityCount || a.year - b.year;
+    })[0];
     var highestPriority = strongest ? strongest.priority : 0;
-    var highestYears = highestPriority ? years.filter(function (row) { return row.priority === highestPriority; }) : [];
+    var highestCount = strongest ? strongest.priorityCount : 0;
+    var highestYears = highestPriority ? years.filter(function (row) {
+      return row.priority === highestPriority && row.priorityCount === highestCount;
+    }) : [];
     var highestLabels = highestYears.map(function (row) { return row.directionLabel; });
     var overallDirection = highestLabels.some(function (label) {
       return label === '变化明显、好坏暂不能定' || label === '有利与压力并见';
@@ -3379,9 +3716,7 @@
       : highestLabels.indexOf('偏有利') >= 0 && highestLabels.indexOf('偏不利') >= 0
         ? '有利与压力并见'
         : highestLabels[0] || '平稳延续';
-    var highestOutcome = highestYears.map(function (row) {
-      return row.year + '年：' + row.prioritizedOutcome;
-    }).join(' ');
+    var highestOutcome = aggregateFiveYearOutcomes(highestYears);
     var adverseYears = highestYears.filter(function (row) { return row.directionLabel === '偏不利'; });
     var riskYears = years.filter(function (row) { return row.riskTriggered; });
     var allDaYunActive = sourceYears.length > 0 && sourceYears.every(function (year) {
@@ -3391,7 +3726,7 @@
       return year && year.daYun && year.daYunStatus === 'active';
     });
     var headline = strongest && strongest.priority
-      ? highestYears.map(function (row) { return row.year; }).join('、') + '年变化最明显，主要方向为' + overallDirection + '：' + highestOutcome
+      ? highestYears.map(function (row) { return row.year; }).join('、') + '年是未来五年的变化重点，整体表现为' + overallDirection + '。'
       : riskYears.length
         ? '未来五年已有风险信号被岁运触发，具体表现以对应年份列出的结果为准。'
         : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
@@ -3408,15 +3743,17 @@
           ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
           : '五年内没有集中出现偏不利的强关系，主要差别在于事情落地的快慢。',
       paragraphs: [],
-      verdicts: [narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
+      verdicts: (daYunCommonVerdict ? [daYunCommonVerdict] : []).concat([narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
         sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),
         outcomeText: headline,
-      })],
+      })]),
       years: years.map(function (row) {
         var clean = Object.assign({}, row);
         delete clean.priority;
+        delete clean.priorityCount;
         delete clean.riskTriggered;
         delete clean.prioritizedOutcome;
+        delete clean.priorityOutcomes;
         return clean;
       }),
       note: allDaYunActive

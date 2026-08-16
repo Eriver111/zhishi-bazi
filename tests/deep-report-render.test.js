@@ -273,9 +273,9 @@ test('customer narrative hides internal evidence cards while keeping decisive Ch
   const page = rendered.nodes.wealthContent.innerHTML;
 
   assert.match(page, /A7/);
-  assert.match(page, /百万元级/);
+  assert.doesNotMatch(page, /百万元级|元级|万元级|亿元级/);
   assert.match(page, /真正的问题/);
-  assert.match(rendered.pdfHtml, /百万元级/);
+  assert.doesNotMatch(rendered.pdfHtml, /百万元级|元级|万元级|亿元级/);
   assert.doesNotMatch(page, /资源质量依据|月令与季节|根气|生源|关系质量|可信度|<strong>依据<\/strong>/);
   assert.doesNotMatch(page, /你最应该做的事/);
 });
@@ -320,6 +320,8 @@ test('wealth renderer preserves the four-part customer structure and escapes dir
   const titles = ['财富量级与总判断', '钱主要从哪里来', '钱能不能留下', '哪里更容易打开财路'];
   assert.deepEqual(titles.map(title => page.indexOf(title)), titles.map(title => page.indexOf(title)).slice().sort((a, b) => a - b));
   assert.equal((page.match(/deep-report-verdict-item/g) || []).length, 4);
+  assert.match(page, /A6/);
+  assert.doesNotMatch(page, /十万元级|持续经营时更容易逐步达到/);
   assert.match(page, /&lt;east&gt;/);
   assert.doesNotMatch(page, /<east>/);
 });
@@ -366,7 +368,7 @@ test('legacy text-only verdicts remain visible during source-outcome migration',
   assert.match(rendered.nodes.studyContent.innerHTML, /理解和表达能够连接起来/);
 });
 
-test('scoreless five-year rows render pillar, DaYun, direction, source and outcome', () => {
+test('paid five-year report keeps the overview but does not render repetitive yearly cards', () => {
   const facts = fixtureFacts();
   facts.fiveYear.narrative = {
     hideScore: true,
@@ -385,14 +387,11 @@ test('scoreless five-year rows render pillar, DaYun, direction, source and outco
   };
   const rendered = renderFixture({ facts });
   const page = rendered.nodes.fortuneContent.innerHTML;
-  assert.match(page, /2028年/);
-  assert.match(page, /戊申/);
-  assert.match(page, /甲辰大运/);
-  assert.match(page, /偏不利/);
-  assert.match(page, /流年申冲日支寅/);
-  assert.match(page, /争吵、分开住/);
+  assert.match(page, /五年变化/);
+  assert.doesNotMatch(page, /deep-report-year-verdicts|deep-report-year/);
+  assert.doesNotMatch(page, /戊申|甲辰大运|流年申冲日支寅|争吵、分开住/);
   assert.doesNotMatch(page, /\/10/);
-  assert.match(rendered.pdfHtml, /甲辰大运/);
+  assert.doesNotMatch(rendered.pdfHtml, /甲辰大运|流年申冲日支寅/);
 });
 
 test('relationship rendering exposes escaped palace, spouse quality, day events and conditional risks', () => {

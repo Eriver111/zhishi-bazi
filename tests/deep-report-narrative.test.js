@@ -69,12 +69,105 @@ test('narrative turns wealth facts into a stable A1-A10 asset magnitude without 
 
   assert.deepEqual(first, second);
   assert.match(first.wealth.grade, /^A(?:10|[1-9])$/);
-  assert.match(first.wealth.level, /元级|万元级|亿元级/);
+  assert.equal(first.wealth.level, '');
+  assert.equal(first.wealth.difficulty, '');
   assert.match(first.wealth.headline, /财富|赚钱|收入|资产/);
   assert.deepEqual(first.wealth.verdicts.map(row => row.title), [
     '财富量级与总判断', '钱主要从哪里来', '钱能不能留下', '哪里更容易打开财路',
   ]);
   assert.doesNotMatch(JSON.stringify(first.wealth), /relationEvents|structuralRisks|confidence|evidence|月令与季节|关系质量/);
+});
+
+test('wealth source turns a useful activated officer storage into a concrete plain-language earning route', () => {
+  const facts = favorableFacts();
+  facts.wealth.pathways = [];
+  facts.wealth.storage = {
+    present: true,
+    activated: true,
+    candidates: [{ zhi: '未' }],
+    storages: [{
+      pillarLabel: '月柱', zhi: '未', storageRoleKey: 'officer', storageRole: '官杀库',
+      elementRole: '用神', activated: true, wealthConnection: false,
+      hiddenRoles: [
+        { role: '正官', elementRole: '用神' },
+        { role: '正印', elementRole: '喜神' },
+        { role: '劫财', elementRole: '中性' },
+      ],
+    }],
+  };
+  const source = DeepReport.buildNarratives(facts).wealth.verdicts.find((row) => row.title === '钱主要从哪里来');
+  assert.match(source.sourceText, /官杀库/);
+  assert.match(source.outcomeText, /单位|职位|带团队|管项目|重要客户/);
+  assert.match(source.outcomeText, /把.*收入|挣到钱/);
+  assert.doesNotMatch(source.outcomeText, /平台背书|资源整合|专业资质|财富通路|官杀库|正印|劫财/);
+});
+
+test('mixed officer storage still explains the earning route while naming the real downside plainly', () => {
+  const facts = favorableFacts();
+  facts.wealth.pathways = [];
+  facts.wealth.storage = {
+    present: true, activated: true, candidates: [{ zhi: '未' }],
+    storages: [{
+      pillarLabel: '月柱', zhi: '未', storageRoleKey: 'officer', storageRole: '官杀库',
+      elementRole: '用神', activated: true, wealthConnection: false,
+      hiddenRoles: [{ role: '正印', elementRole: '忌神' }, { role: '劫财', elementRole: '忌神' }],
+    }],
+  };
+  const source = DeepReport.buildNarratives(facts).wealth.verdicts.find((row) => row.title === '钱主要从哪里来');
+  assert.match(source.outcomeText, /单位|职位|带团队|管项目/);
+  assert.match(source.outcomeText, /同事|朋友|团队/);
+  assert.match(source.outcomeText, /分|到手|扛/);
+  assert.doesNotMatch(source.outcomeText, /平台背书|资源整合|专业资质|官杀库|正印|劫财/);
+});
+
+test('money retention uses body strength as the first public conclusion', () => {
+  const strong = favorableFacts();
+  strong.core.strength = { score: 78, level: '偏强' };
+  strong.wealth.capacity = { state: '可承接', elementRole: '用神' };
+  strong.wealth.retention = { risks: [] };
+  strong.wealth.storage = { present: false, activated: false, candidates: [], storages: [] };
+  const strongText = DeepReport.buildNarratives(strong).wealth.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+  assert.match(strongText, /身强|担得住财/);
+  assert.match(strongText, /留在手里|存款|资产/);
+
+  const weak = favorableFacts();
+  weak.core.strength = { score: 28, level: '偏弱' };
+  weak.wealth.capacity = { state: '承压', elementRole: '忌神' };
+  weak.wealth.retention = { risks: [] };
+  weak.wealth.storage = { present: false, activated: false, candidates: [], storages: [] };
+  const weakText = DeepReport.buildNarratives(weak).wealth.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+  assert.match(weakText, /身弱|富屋贫人/);
+  assert.match(weakText, /有挣钱的能力和想法/);
+  assert.match(weakText, /意外支出|财来财去/);
+});
+
+test('wealth overview keeps peer sharing and wealth-breaks-seal consequences in their own evidence domains', () => {
+  const facts = favorableFacts();
+  facts.wealth.retention = {
+    risks: [{ type: '比劫分流' }, { type: '财破印' }],
+  };
+  const wealth = DeepReport.buildNarratives(facts).wealth;
+  const copy = wealth.headline + wealth.painPoint;
+  assert.match(copy, /有挣钱能力|具备赚钱条件/);
+  assert.match(copy, /合伙.*破财|合伙.*分钱/);
+  assert.match(copy, /学习|资格|稳定支持|原有保障|准备|转型/);
+  assert.doesNotMatch(copy, /投资.*失败|投资.*判断失误/);
+  assert.doesNotMatch(copy, /最大的财富漏洞|长期投入或责任支出迅速带走/);
+});
+
+test('wealth direction follows Yong first and Xi second even without a validated wealth pathway', () => {
+  const facts = favorableFacts();
+  facts.core.yongJi = { yongShen: ['木'], xiShen: ['水'], jiShen: ['金'] };
+  facts.wealth.yongJi = facts.core.yongJi;
+  facts.wealth.pathways = [];
+  facts.wealth.pathElements = [];
+  facts.wealth.direction = null;
+  const direction = DeepReport.buildNarratives(facts).wealth.verdicts.find((row) => row.title === '哪里更容易打开财路');
+  assert.match(direction.sourceText, /木为用神/);
+  assert.match(direction.sourceText, /水为喜神/);
+  assert.match(direction.outcomeText, /东方|东南/);
+  assert.match(direction.outcomeText, /北方/);
+  assert.doesNotMatch(direction.outcomeText, /方向不集中|不能.*断定|建议|可以考虑/);
 });
 
 test('study narrative states an attainable education level and the effort needed for the next level', () => {
@@ -295,13 +388,121 @@ test('wealth narrative groups magnitude source retention and direction into four
   assert.doesNotMatch(copy, /建议|应该|应当|优先|最好|宜|需注意|控制投入|建立|选择/);
 });
 
+test('current-year narrative merges repeated relations into one plain conclusion per domain', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [
+    { id: 'w1', source: '流年', type: '天干相克', targetPillar: 'month', direction: 'adverse', domains: ['wealth'], sourceText: '流年甲克月干戊。' },
+    { id: 'w2', source: '大运', type: '天干相克', targetPillar: 'month', direction: 'adverse', domains: ['wealth'], sourceText: '大运甲克月干戊。' },
+    { id: 's1', source: '流年', type: '六冲', targetPillar: 'year', direction: 'adverse', domains: ['study'], sourceText: '流年申冲年支寅。' },
+  ];
+  const narrative = DeepReport.buildNarratives(facts).currentYear;
+  const wealthRows = narrative.verdicts.filter((row) => /钱和收入/.test(row.title));
+  const studyRows = narrative.verdicts.filter((row) => /学习和考试/.test(row.title));
+  assert.equal(wealthRows.length, 1);
+  assert.equal(studyRows.length, 1);
+  assert.equal((wealthRows[0].outcomeText.match(/真正留下的钱反而容易减少/g) || []).length, 1);
+  assert.match(wealthRows[0].sourceText, /流年甲克月干戊/);
+  assert.match(wealthRows[0].sourceText, /大运甲克月干戊/);
+  assert.doesNotMatch(customerVisibleCopy(narrative), /财富通路|资源分流|结构压力/);
+  assert.notEqual(narrative.headline, narrative.painPoint);
+  assert.match(narrative.headline, /钱|工作|学习/);
+  assert.ok(narrative.headline.length < 80);
+});
+
+test('five-year rows collapse duplicate outcomes instead of repeating the same sentence', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years[0].interactions = [
+    { id: 'w1', source: '流年', type: '天干相克', targetPillar: 'month', direction: 'adverse', domains: ['wealth'], sourceText: '流年甲克月干戊。' },
+    { id: 'w2', source: '大运', type: '天干相克', targetPillar: 'month', direction: 'adverse', domains: ['wealth'], sourceText: '大运甲克月干戊。' },
+  ];
+  const row = DeepReport.buildNarratives(facts).fiveYear.years[0];
+  assert.equal((row.summary.match(/真正留下的钱反而容易减少/g) || []).length, 1);
+});
+
+test('five-year overview groups the same conclusion across years instead of repeating it year by year', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years.slice(0, 3).forEach((year, index) => {
+    year.interactions = [{
+      id: `w${index}`, source: '流年', type: '天干相克', formationStatus: 'qualified',
+      targetPillar: 'month', direction: 'favorable', domains: ['wealth'], sourceText: `${year.year}年财星被引动。`,
+    }];
+  });
+  const five = DeepReport.buildNarratives(facts).fiveYear;
+  const sentence = '这一年更容易看到实际进账';
+  assert.equal((five.headline.match(new RegExp(sentence, 'g')) || []).length, 0);
+  assert.equal((five.painPoint.match(new RegExp(sentence, 'g')) || []).length, 1);
+  assert.ok(five.headline.length < 100);
+});
+
+test('public wealth and annual copy uses everyday results rather than route jargon or advice', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '天干相克', targetPillar: 'month', direction: 'favorable',
+    domains: ['wealth'], sourceText: '流年财星被引动。',
+  }];
+  const narratives = DeepReport.buildNarratives(facts);
+  const copy = customerVisibleCopy(narratives.wealth) + '\n' + customerVisibleCopy(narratives.currentYear);
+  assert.doesNotMatch(copy, /财富通路|平台背书|资源整合|更适合|不适合|只要|建议|应该|应当/);
+  assert.match(copy, /实际进账|回款|收入/);
+});
+
+test('mixed study timing is omitted instead of telling the customer that grades cannot be determined', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '天干相生', targetPillar: 'day', direction: 'mixed',
+    domains: ['study'], sourceText: '流年甲生日干丙，喜忌不足。',
+  }];
+  facts.fiveYear.years[0] = facts.currentYear;
+  const narratives = DeepReport.buildNarratives(facts);
+  const copy = customerVisibleCopy(narratives.currentYear) + '\n' + customerVisibleCopy(narratives.fiveYear);
+  assert.doesNotMatch(copy, /成绩一定上升或下降|好坏暂不能定|学习和考试议题会被加强/);
+  assert.equal(narratives.currentYear.verdicts.some((row) => /学习和考试/.test(row.title)), false);
+});
+
+test('one multi-domain relation produces separate plain outcomes for work money and study', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '天干相克', targetPillar: 'month', direction: 'favorable',
+    domains: ['career', 'wealth', 'study'], sourceText: '流年癸克月干丙，癸水为喜神。',
+  }];
+  const verdicts = DeepReport.buildNarratives(facts).currentYear.verdicts;
+  const career = verdicts.find((row) => row.title === '工作和职位会怎么变');
+  const wealth = verdicts.find((row) => row.title === '钱和收入会怎么变');
+  const study = verdicts.find((row) => row.title === '学习和考试会怎么变');
+  assert.ok(career && wealth && study);
+  assert.match(career.outcomeText, /工作|岗位|项目/);
+  assert.match(wealth.outcomeText, /进账|回款|收入/);
+  assert.match(study.outcomeText, /考试|成绩|学习/);
+  assert.notEqual(career.outcomeText, wealth.outcomeText);
+  assert.notEqual(wealth.outcomeText, study.outcomeText);
+});
+
+test('five-year rows do not repeat the same DaYun background and rank years by annual additions', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years.forEach((year) => {
+    year.interactions = [{
+      source: '大运', type: '天干相克', targetPillar: 'month', direction: 'favorable',
+      formationStatus: 'qualified', domains: ['wealth'], sourceText: '同一大运持续带来稳定进账。',
+    }];
+  });
+  facts.fiveYear.years[2].interactions.push({
+    source: '流年', type: '六冲', targetPillar: 'day', direction: 'adverse',
+    domains: ['relationship'], sourceText: '2028年流年申冲夫妻宫寅。',
+  });
+  const narrative = DeepReport.buildNarratives(facts).fiveYear;
+  assert.match(narrative.headline, /2028/);
+  assert.doesNotMatch(narrative.headline, /2026、2027、2028、2029、2030/);
+  assert.equal(narrative.verdicts.filter((row) => row.title === '这步大运的共同影响').length, 1);
+  assert.equal(narrative.years.filter((row) => /同一大运持续带来稳定进账/.test(row.sourceText)).length, 0);
+});
+
 test('a generic annual wealth sentence does not override the no-storage steady-accumulation conclusion', () => {
   const facts = favorableFacts();
   facts.wealth.pathways = [];
   facts.wealth.storage = { present: false, activated: false, candidates: [], storages: [] };
   facts.currentYear.wealth = { conclusion: '财富条件被激活。', evidence: ['普通年度说明'], timing: { activation: [] } };
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
-  assert.match(retention.outcomeText, /一点点做大/);
+  assert.match(retention.outcomeText, /一点点积累/);
 });
 
 test('an activated Ji wealth storage under pressure never becomes a money-retention promise', () => {
@@ -625,7 +826,7 @@ test('neutral wealth storage under overall pressure does not invent storage debt
   };
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
   assert.doesNotMatch(retention.sourceText, /垫资|债务/);
-  assert.match(retention.outcomeText, /进账|承压|责任|机会/);
+  assert.match(retention.outcomeText, /担得住财|留在手里/);
 });
 
 test('negative wealth chains appear only in retention risk and never in income source', () => {
@@ -1007,7 +1208,7 @@ test('same-priority annual events produce identical complete narratives in eithe
   assert.deepEqual(forward.fiveYear, reverse.fiveYear);
 });
 
-test('wealth direction source names only paths that actually contain the selected element', () => {
+test('wealth direction source follows the selected Yong element without repeating unrelated path names', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';
   facts.wealth.yongJi = { yongShen: ['火'], xiShen: [], jiShen: ['金'] };
@@ -1017,7 +1218,7 @@ test('wealth direction source names only paths that actually contain the selecte
 
   const direction = DeepReport.buildNarratives(facts).wealth.verdicts
     .find(row => row.title === '哪里更容易打开财路');
-  assert.match(direction.sourceText, /火为本命用神/);
-  assert.match(direction.sourceText, /食伤生财/);
+  assert.match(direction.sourceText, /火为用神/);
+  assert.doesNotMatch(direction.sourceText, /食伤生财/);
   assert.doesNotMatch(direction.sourceText, /财配印/);
 });

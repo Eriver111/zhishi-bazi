@@ -527,7 +527,8 @@ function renderDeepWealth(facts) {
     var node = document.getElementById('wealthContent');
     if (!node) return;
     if (facts && facts.narrative) {
-        node.innerHTML = reportNarrative(facts.narrative);
+        var wealthNarrative = Object.assign({}, facts.narrative, { level: '', difficulty: '' });
+        node.innerHTML = reportNarrative(wealthNarrative);
         openPaidSection('wealthSection');
         return;
     }
@@ -582,17 +583,7 @@ function renderDeepFiveYear(facts) {
     var node = document.getElementById('fortuneContent');
     if (!node) return;
     if (facts && facts.narrative) {
-        var narrativeHtml = reportNarrative(facts.narrative);
-        if (Array.isArray(facts.narrative.years) && facts.narrative.years.length) {
-            narrativeHtml += '<div class="deep-report-years deep-report-year-verdicts">' + facts.narrative.years.map(function(year) {
-                var meta = [reportText(year.pillar), reportText(year.daYunLabel), reportText(year.directionLabel)].filter(Boolean).join(' · ');
-                var source = reportText(year.sourceText);
-                return '<article class="deep-report-year"><h3>' + reportEsc(reportText(year.year)) + '年' + (meta ? ' · ' + reportEsc(meta) : '') + '</h3>'
-                    + (source ? '<p class="deep-report-verdict-source">命理依据：' + reportEsc(source) + '</p>' : '')
-                    + '<p class="deep-report-verdict-outcome">' + reportEsc(reportText(year.summary)) + '</p></article>';
-            }).join('') + '</div>';
-        }
-        node.innerHTML = narrativeHtml;
+        node.innerHTML = reportNarrative(facts.narrative);
         openPaidSection('fortuneSection');
         return;
     }
