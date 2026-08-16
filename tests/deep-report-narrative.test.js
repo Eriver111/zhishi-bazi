@@ -713,6 +713,51 @@ test('relief facts enter annual and five-year copy but only soften the prioritiz
   assert.doesNotMatch(currentCopy + yearRow.sourceText + yearRow.summary, /加强印星支持|建议|应该|最好/);
 });
 
+test('favorable spouse-palace clash relief preserves the favorable lead direction', () => {
+  const facts = favorableFacts();
+  facts.currentYear.interactions = [{
+    source: '流年', type: '六冲', targetPillar: 'day', direction: 'favorable',
+    domains: ['relationship'], sourceText: '流年申冲开忌神夫妻宫寅。',
+  }];
+  facts.currentYear.triggeredRisks = [{ type: '财破印' }];
+  facts.currentYear.reliefs = [{ type: '结构风险救应', conclusion: '存在缓和条件' }];
+  facts.fiveYear.years[0] = facts.currentYear;
+  const narratives = DeepReport.buildNarratives(facts);
+  const relief = narratives.currentYear.verdicts.find(row => row.title === '本年已有缓和条件');
+  const year = narratives.fiveYear.years[0];
+  assert.equal(year.directionLabel, '偏有利');
+  assert.match(narratives.currentYear.headline + relief.outcomeText + year.summary, /偏有利|有利方向保持|方向保持偏有利/);
+  assert.doesNotMatch(relief.outcomeText + year.summary, /整体仍偏不利|不翻转为有利/);
+});
+
+test('relief copy stays inside the prioritized lead domain', async (t) => {
+  const cases = [
+    ['relationship', /沟通|关系/, /返工|资金|回款|考试|作息/],
+    ['career', /工作|岗位|项目/, /感情|争吵|资金|考试|作息/],
+    ['wealth', /资金|回款|收入/, /感情|争吵|返工|考试|作息/],
+    ['study', /学习|考试|准备/, /感情|争吵|返工|资金|作息/],
+    ['health', /作息|身体|状态/, /感情|争吵|返工|资金|考试/],
+    ['general', /影响有所缓和.*原方向不变/, /感情|争吵|返工|资金|考试|作息/],
+  ];
+  for (const [domain, expected, forbidden] of cases) {
+    await t.test(domain, () => {
+      const facts = favorableFacts();
+      facts.currentYear.interactions = [{
+        source: '流年', type: '伏吟', targetPillar: 'year', direction: 'adverse',
+        domains: domain === 'general' ? [] : [domain], sourceText: '本年对应领域被引动。',
+      }];
+      facts.currentYear.triggeredRisks = [];
+      facts.currentYear.reliefs = [{ type: '结构风险救应', conclusion: '存在缓和条件' }];
+      facts.fiveYear.years[0] = facts.currentYear;
+      const narratives = DeepReport.buildNarratives(facts);
+      const relief = narratives.currentYear.verdicts.find(row => row.title === '本年已有缓和条件');
+      const copy = relief.outcomeText + narratives.fiveYear.years[0].summary;
+      assert.match(copy, expected);
+      assert.doesNotMatch(relief.outcomeText, forbidden);
+    });
+  }
+});
+
 test('wealth direction source names only paths that actually contain the selected element', () => {
   const facts = favorableFacts();
   facts.wealth.wealthElement = '土';

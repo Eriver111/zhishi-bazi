@@ -184,6 +184,10 @@ test('known birth with empty or failed DaYun calculation has its own unavailable
     ['decimal year', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: 1995.5, endYear: 2004 }] })],
     ['NaN year', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: NaN, endYear: 2004 }] })],
     ['reversed range', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: 2005, endYear: 2004 }] })],
+    ['blank string year', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: '   ', endYear: 2004 }] })],
+    ['boolean year', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: true, endYear: 2004 }] })],
+    ['array year', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: [1995], endYear: 2004 }] })],
+    ['numeric string year', () => ({ list: [{ gan: '丙', zhi: '戌', startYear: '1995', endYear: 2004 }] })],
   ];
   for (const [name, calculateDaYun] of cases) {
     await t.test(name, () => {

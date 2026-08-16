@@ -2448,10 +2448,10 @@
     var daYunList = list(daYunData.list);
     var daYunListValid = daYunList.length && daYunList.every(function (item) {
       return item && ANNUAL_STEMS.indexOf(item.gan) >= 0 && ANNUAL_BRANCHES.indexOf(item.zhi) >= 0 &&
-        item.startYear !== null && item.startYear !== undefined && item.startYear !== '' &&
-        item.endYear !== null && item.endYear !== undefined && item.endYear !== '' &&
-        Number.isInteger(Number(item.startYear)) && Number.isInteger(Number(item.endYear)) &&
-        Number(item.endYear) >= Number(item.startYear);
+        typeof item.startYear === 'number' && typeof item.endYear === 'number' &&
+        Number.isFinite(item.startYear) && Number.isFinite(item.endYear) &&
+        Number.isInteger(item.startYear) && Number.isInteger(item.endYear) &&
+        item.endYear >= item.startYear;
     });
     var daYunStarts = daYunList.map(function (item) { return Number(item && item.startYear); })
       .filter(Number.isFinite).sort(function (a, b) { return a - b; });
@@ -3185,7 +3185,7 @@
     });
   }
 
-  function annualReliefCopies(reliefs, hasSupportedPressure, leadInteractions) {
+  function annualReliefCopies(reliefs, hasSupportedPressure, leadInteractions, leadDirection) {
     var seen = {};
     var leadDomains = list(leadInteractions).reduce(function (domains, interaction) {
       list(interaction && interaction.domains).forEach(function (domain) {
@@ -3193,7 +3193,24 @@
       });
       return domains;
     }, []);
-    var relationshipLead = leadDomains.indexOf('relationship') >= 0;
+    var domain = ['relationship', 'career', 'wealth', 'study', 'health', 'wellbeing'].find(function (name) {
+      return leadDomains.indexOf(name) >= 0;
+    }) || 'general';
+    if (domain === 'wellbeing') domain = 'health';
+    var domainLead = {
+      relationship: '双方仍有沟通和回转空间，关系上的紧张会缓和一些',
+      career: '工作推进中的返工和摩擦会减轻一些',
+      wealth: '资金占用和回款压力会减轻一些',
+      study: '学习准备和考试节奏受到的干扰会减轻一些',
+      health: '作息和身体状态受到的影响会减轻一些',
+    }[domain] || '';
+    var directionEnding = leadDirection === '偏有利'
+      ? '风险仍然存在，但整体方向保持偏有利。'
+      : leadDirection === '偏不利'
+        ? '有所缓和，但不会翻转原本偏不利的方向。'
+        : leadDirection === '有利与压力并见'
+          ? '影响有所缓和，但有利与压力并见的原方向不变。'
+          : '影响有所缓和，但原方向不变。';
     return list(reliefs).map(function (relief) {
       var type = textOf(relief && relief.type);
       var sourceText = type === '喜用岁运'
@@ -3204,11 +3221,11 @@
       return {
         title: '本年已有缓和条件',
         sourceText: sourceText,
-        outcomeText: hasSupportedPressure
-          ? relationshipLead
-            ? '这说明双方仍有沟通和回转空间，能缓和一部分矛盾，但不会把关系忽远忽近、发生争吵或重新考虑是否继续的变化完全消除，整体仍偏不利。'
-            : '这会让前面列出的争执、返工、资金占用或计划被打断减轻一些，但不会把已经出现的不利变化完全消掉。'
-          : '这会让事情推进时多一部分支撑，但没有明确不利结果时，也不能把它单独写成一定变好。',
+        outcomeText: domain === 'general'
+          ? '影响有所缓和，但原方向不变。'
+          : domain === 'relationship' && leadDirection === '偏不利'
+            ? domainLead + '，但不会把关系忽远忽近或重新考虑是否继续的变化完全消除，也不会翻转原本偏不利的方向。'
+            : domainLead + '；' + directionEnding,
       };
     }).filter(function (copy) {
       var key = [copy.sourceText, copy.outcomeText].join('|');
@@ -3225,7 +3242,7 @@
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var decisiveInteractions = prioritizedTimingInteractions(interactions);
-    var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions);
+    var reliefCopies = annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions, directionLabel);
     var pillarText = textOf(year.pillar && year.pillar.gan) + textOf(year.pillar && year.pillar.zhi);
     var daYunText = daYunStatusLabel(year);
     var timingBasis = year && year.daYun
@@ -3293,7 +3310,7 @@
       var directionLabel = !interactions.length && riskCopies.length
         ? '风险已触发'
         : timingDirectionLabel(interactions);
-      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, selected);
+      var reliefCopies = annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, selected, directionLabel);
       var baseSummary = selected.length
         ? selected.map(timingInteractionOutcome).join(' ')
         : legacyRelationship.length
