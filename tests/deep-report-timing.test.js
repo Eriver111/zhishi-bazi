@@ -429,3 +429,46 @@ test('undated direct pillars collect annual-original relations without fabricati
   assert.ok(facts.years[0].interactions.some(row => row.source === '流年'));
   assert.equal(facts.years.some(year => year.interactions.some(row => row.source === '大运' || row.source === '岁运')), false);
 });
+
+test('clashing a favorable target is adverse while clashing a Ji target can improve through change', () => {
+  assert.ok(DeepReport.__test && DeepReport.__test.adjudicateTimingInteraction);
+  const adjudicate = DeepReport.__test.adjudicateTimingInteraction;
+  const favorableTarget = adjudicate({ type: '六冲', targetRole: '用神', actorRole: '忌神' });
+  const adverseTarget = adjudicate({ type: '六冲', targetRole: '忌神', actorRole: '喜神' });
+  assert.equal(favorableTarget.direction, 'adverse');
+  assert.equal(adverseTarget.direction, 'favorable');
+  assert.equal(adverseTarget.changeCost, true);
+});
+
+test('combination direction follows the formed element instead of treating every combination as good', () => {
+  const adjudicate = DeepReport.__test.adjudicateTimingInteraction;
+  assert.equal(adjudicate({ type: '六合', formedRole: '忌神', formationStatus: 'potential' }).direction, 'adverse');
+  assert.equal(adjudicate({ type: '六合', formedRole: '喜神', formationStatus: 'potential' }).direction, 'favorable');
+});
+
+test('punishment and harm retain friction even when they touch a Ji target', () => {
+  const adjudicate = DeepReport.__test.adjudicateTimingInteraction;
+  for (const type of ['刑', '六害']) {
+    const result = adjudicate({ type, targetRole: '忌神', actorRole: '喜神' });
+    assert.notEqual(result.direction, 'favorable');
+    assert.equal(result.frictionPersists, true);
+  }
+});
+
+test('stem control follows the roles of the actual controller and controlled stem', () => {
+  const adjudicate = DeepReport.__test.adjudicateTimingInteraction;
+  assert.equal(adjudicate({ type: '天干相克', controllerRole: '喜神', controlledRole: '忌神' }).direction, 'favorable');
+  assert.equal(adjudicate({ type: '天干相克', controllerRole: '忌神', controlledRole: '用神' }).direction, 'adverse');
+});
+
+test('timing source text names the exact relation and domains require real matching evidence', () => {
+  const hooks = DeepReport.__test;
+  const row = {
+    source: '流年', type: '六冲', layer: '地支', actor: '申', target: '寅',
+    targetPillar: 'day', targetLabel: '日支', targetElement: '木', targetRole: '用神',
+  };
+  assert.equal(hooks.timingSourceText(row), '流年申冲日支寅，寅木为本命用神。');
+  assert.deepEqual(hooks.timingDomains(row, {}), ['relationship']);
+  assert.equal(hooks.timingDomains({ ...row, targetPillar: 'month', targetLabel: '月支' }, {}).includes('wealth'), false);
+  assert.equal(hooks.timingDomains({ ...row, targetPillar: 'month', targetLabel: '月干', actorTenGod: '正财' }, {}).includes('wealth'), true);
+});

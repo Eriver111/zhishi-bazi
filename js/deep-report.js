@@ -1627,6 +1627,105 @@
     });
   }
 
+  function adjudicateTimingInteraction(row) {
+    row = row || {};
+    var result = { direction: 'mixed', changeCost: false, frictionPersists: false, reasonKey: 'insufficient' };
+    if (row.type === '六冲') {
+      result.changeCost = true;
+      if (favorableRole(row.targetRole)) {
+        result.direction = 'adverse';
+        result.reasonKey = 'clash_favorable_target';
+      } else if (row.targetRole === '忌神' && favorableRole(row.actorRole)) {
+        result.direction = 'favorable';
+        result.reasonKey = 'clash_ji_target';
+      }
+    } else if (/^(六合|三合|半合|三会|半会|天干五合)$/.test(row.type)) {
+      if (favorableRole(row.formedRole)) {
+        result.direction = 'favorable';
+        result.reasonKey = 'combine_favorable_formation';
+      } else if (row.formedRole === '忌神') {
+        result.direction = 'adverse';
+        result.reasonKey = 'combine_ji_formation';
+      } else if (favorableRole(row.targetRole) && row.actorRole === '忌神') {
+        result.direction = 'adverse';
+        result.reasonKey = 'bind_favorable_target';
+      } else if (row.targetRole === '忌神') {
+        result.reasonKey = 'bind_ji_target';
+      }
+    } else if (row.type === '刑' || row.type === '六害') {
+      result.frictionPersists = true;
+      result.direction = favorableRole(row.targetRole) || row.actorRole === '忌神' ? 'adverse' : 'mixed';
+      result.reasonKey = row.type === '刑' ? 'repeated_friction' : 'hidden_distrust';
+    } else if (row.type === '伏吟') {
+      result.direction = favorableRole(row.targetRole) ? 'favorable' : (row.targetRole === '忌神' ? 'adverse' : 'mixed');
+      result.reasonKey = 'repeat_target_role';
+    } else if (row.type === '天干相克') {
+      if (favorableRole(row.controllerRole) && row.controlledRole === '忌神') result.direction = 'favorable';
+      else if (row.controllerRole === '忌神' && favorableRole(row.controlledRole)) result.direction = 'adverse';
+      result.reasonKey = 'stem_control_direction';
+    }
+    return Object.assign({}, row, result);
+  }
+
+  function timingRelationPhrase(row) {
+    var targetLabel = row.targetLabel || timingTargetLabel(row.targetPillar, row.layer);
+    if (row.type === '六冲') return row.actor + '冲' + targetLabel + row.target;
+    if (row.type === '六害') return row.actor + '害' + targetLabel + row.target;
+    if (row.type === '刑') return row.actor + '刑' + targetLabel + row.target;
+    if (row.type === '伏吟') return row.actor + '与' + targetLabel + row.target + '伏吟';
+    if (row.type === '天干相克') return row.controller + '克' + row.controlled + '，作用到' + targetLabel;
+    if (row.type === '天干相生') return row.actor + '与' + targetLabel + row.target + '相生';
+    if (row.type === '天干五合') return row.actor + '与' + targetLabel + row.target + '五合';
+    if (row.type === '六合') return row.actor + '与' + targetLabel + row.target + '六合';
+    if (/三合|半合|三会|半会/.test(row.type)) return (row.participants || [row.actor, row.target]).join('') + row.type;
+    return row.actor + '与' + targetLabel + row.target + row.type;
+  }
+
+  function timingSourceText(row) {
+    row = row || {};
+    var text = (row.source || '岁运') + timingRelationPhrase(row);
+    if (row.formedElement) {
+      if (row.formationStatus === 'qualified') text += '，合化为' + row.formedElement;
+      else if (row.formationStatus === 'tendency') text += '，形成' + row.formedElement + '势的趋势';
+      else text += '，合向' + row.formedElement;
+      if (row.formedRole && row.formedRole !== '中性') text += '，' + row.formedElement + '为本命' + row.formedRole;
+    } else if (row.targetElement && row.targetRole && row.targetRole !== '中性') {
+      text += '，' + row.target + row.targetElement + '为本命' + row.targetRole;
+    }
+    return text + '。';
+  }
+
+  function timingDomains(row, facts) {
+    row = row || {};
+    facts = facts || {};
+    var domains = list(row.domains).slice();
+    if (row.targetPillar === 'day' && row.layer === '地支') domains.push('relationship');
+    if (row.targetPillar === 'month') domains.push('career');
+    var tenGodText = [row.actorTenGod, row.targetTenGod].filter(Boolean).join(' ');
+    if (/正财|偏财/.test(tenGodText)) domains.push('wealth');
+    if (/正印|偏印|正官|七杀|食神|伤官/.test(tenGodText)) domains.push('study');
+
+    var storage = facts.wealth && facts.wealth.storage;
+    var storageBranches = list(storage && storage.candidates).map(function (item) { return item && item.zhi; }).filter(Boolean);
+    if (storageBranches.indexOf(row.actor) >= 0 || storageBranches.indexOf(row.target) >= 0) domains.push('wealth');
+
+    list(row.structuralDomains).forEach(function (domain) { domains.push(domain); });
+    return domains.filter(function (domain, index) { return domain && domains.indexOf(domain) === index; });
+  }
+
+  function enrichTimingInteraction(row, bazi, core, calculator) {
+    var enriched = Object.assign({}, row);
+    if (enriched.layer === '天干') {
+      var dayGan = bazi && bazi.day && bazi.day.gan;
+      enriched.actorTenGod = getStemRole(dayGan, enriched.actor, calculator);
+      enriched.targetTenGod = getStemRole(dayGan, enriched.target, calculator);
+    }
+    enriched = adjudicateTimingInteraction(enriched);
+    enriched.domains = timingDomains(enriched, core || {});
+    enriched.sourceText = timingSourceText(enriched);
+    return enriched;
+  }
+
   function collectAnnualInteractions(bazi, core, pillar, daYun, dynamic, calculator) {
     var rows = [];
     function collectMoving(source, moving, targetChart) {
@@ -1645,7 +1744,9 @@
       rows = rows.concat(collectStemTimingRelation('岁运', pillar && pillar.gan, daYun.gan, 'dayun', core, calculator));
       rows = rows.concat(collectBranchTimingRelations('岁运', pillar && pillar.zhi, daYun.zhi, 'dayun', core, calculator));
     }
-    return dedupeTimingInteractions(applyAuthoritativeFormationEvidence(rows, dynamic));
+    return dedupeTimingInteractions(applyAuthoritativeFormationEvidence(rows, dynamic)).map(function (row) {
+      return enrichTimingInteraction(row, bazi, core, calculator);
+    });
   }
 
   function movingPalaceRelations(source, movingBranch, palaceBranch, core, calculator) {
@@ -2387,6 +2488,9 @@
       collectBranchTimingRelations: collectBranchTimingRelations,
       collectGroupTimingRelations: collectGroupTimingRelations,
       collectAnnualInteractions: collectAnnualInteractions,
+      adjudicateTimingInteraction: adjudicateTimingInteraction,
+      timingSourceText: timingSourceText,
+      timingDomains: timingDomains,
     };
   }
   return api;
