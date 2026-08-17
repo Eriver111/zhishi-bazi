@@ -437,7 +437,7 @@ test('extremely weak charts do not gain wealth rank from adverse wealth-to-offic
   assert.ok(pathway);
   assert.equal(pathway.positive, false);
   assert.equal(pathway.effect, 'adverse');
-  assert.equal(facts.wealth.narrative.grade, 'A5');
+  assert.equal(facts.wealth.narrative.grade, 'A6');
   assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /压力|负担|难.*留下|事情.*多/);
   assert.doesNotMatch(facts.wealth.narrative.verdicts[1].outcomeText, /放大财富|职位.*收入.*放大/);
 });
@@ -479,13 +479,20 @@ test('calibrated wealth examples keep their accepted public A bands', () => {
     ['戊辰 乙丑 己巳 己巳', 'A8'],
     ['庚申 甲申 庚辰 庚辰', 'A9'],
     ['戊辰 癸亥 乙未 戊寅', 'A8'],
-    ['己酉 辛未 癸巳 丁巳', 'A5'],
-    ['甲戌 乙亥 戊申 壬子', 'A5'],
+    ['己酉 辛未 癸巳 丁巳', 'A6'],
+    ['甲戌 乙亥 戊申 壬子', 'A6'],
   ];
 
   for (const [pillars, expected] of cases) {
     assert.equal(buildRealWealthFacts(pillars).wealth.narrative.grade, expected, pillars);
   }
+});
+
+test('public wealth grade has A6 as its minimum while preserving higher grades', () => {
+  assert.equal(buildRealWealthFacts('己酉 辛未 癸巳 丁巳').wealth.narrative.grade, 'A6');
+  assert.equal(buildRealWealthFacts('甲戌 乙亥 戊申 壬子').wealth.narrative.grade, 'A6');
+  assert.equal(buildRealWealthFacts('戊寅 甲子 辛卯 辛卯').wealth.narrative.grade, 'A9');
+  assert.equal(buildRealWealthFacts('辛丑 乙未 丙寅 戊戌').wealth.narrative.grade, 'A10');
 });
 
 test('hidden wealth without a source chain or connected storage stays in a poor public band', () => {
@@ -495,7 +502,7 @@ test('hidden wealth without a source chain or connected storage stays in a poor 
   assert.equal(facts.wealth.resource.visibleCount, 0);
   assert.equal(facts.wealth.pathways.filter((row) => row && row.scalePotential !== false).length, 0);
   assert.ok(facts.wealth.storage.storages.filter((row) => row.storageRoleKey === 'wealth').every((row) => row.wealthConnection === false));
-  assert.ok(level <= 4, facts.wealth.narrative.grade);
+  assert.equal(level, 6, facts.wealth.narrative.grade);
   assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /藏在地支|没有接成|不等于/);
 });
 
@@ -506,7 +513,7 @@ test('an extremely weak body cannot become rich from adverse wealth scale alone'
   assert.equal(facts.core.strength.score, 21);
   assert.equal(facts.wealth.resource.elementRole, '忌神');
   assert.ok(facts.wealth.pathways.some((row) => row.scalePotential === true && row.effect === 'adverse'));
-  assert.ok(level <= 5, facts.wealth.narrative.grade);
+  assert.equal(level, 6, facts.wealth.narrative.grade);
 });
 
 test('multiple Yong elements retain all matching directions instead of returning no answer', () => {

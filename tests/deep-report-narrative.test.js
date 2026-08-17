@@ -62,13 +62,13 @@ function customerVisibleCopy(section) {
   return visible.filter(Boolean).join('\n');
 }
 
-test('narrative turns wealth facts into a stable A1-A10 asset magnitude without exposing evidence rows', () => {
+test('narrative turns wealth facts into a stable A6-A10 public magnitude without exposing evidence rows', () => {
   const facts = favorableFacts();
   const first = DeepReport.buildNarratives(facts);
   const second = DeepReport.buildNarratives(facts);
 
   assert.deepEqual(first, second);
-  assert.match(first.wealth.grade, /^A(?:10|[1-9])$/);
+  assert.match(first.wealth.grade, /^A(?:10|[6-9])$/);
   assert.equal(first.wealth.level, '');
   assert.equal(first.wealth.difficulty, '');
   assert.match(first.wealth.headline, /财富|赚钱|收入|资产/);
