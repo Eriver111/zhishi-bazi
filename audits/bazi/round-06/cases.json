@@ -1,0 +1,16 @@
+{
+  "roundId": "round-06",
+  "selectionPolicy": "第六轮十盘全部由真实出生输入经 county-centroid-v1 县级经度和真太阳时生成四柱；重点复核官印/杀印复合格的完整、财破印、伤官介入三组，以及食神格财透、财藏、无财三组对照；冻结前未读取网站判断接口",
+  "cases": [
+    {"id":"R06-C01","birth":{"year":1964,"month":9,"day":12,"hour":7,"clock":14,"minute":20,"gender":"male"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["甲辰","癸酉","甲子","辛未"],"coverageTags":["明确身弱","格局与旺衰冲突","制化临界"]},
+    {"id":"R06-C02","birth":{"year":1964,"month":9,"day":12,"hour":4,"clock":8,"minute":20,"gender":"female"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["甲辰","癸酉","甲子","戊辰"],"coverageTags":["明确身弱","透干/根气临界","制化临界"]},
+    {"id":"R06-C03","birth":{"year":1964,"month":9,"day":12,"hour":3,"clock":6,"minute":20,"gender":"male"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["甲辰","癸酉","甲子","丁卯"],"coverageTags":["明确身强","月令临界","格局与旺衰冲突","制化临界"]},
+    {"id":"R06-C04","birth":{"year":1964,"month":8,"day":13,"hour":8,"clock":16,"minute":20,"gender":"female"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["甲辰","壬申","甲午","壬申"],"coverageTags":["明确身弱","调候优先","制化临界"]},
+    {"id":"R06-C05","birth":{"year":1969,"month":8,"day":17,"hour":8,"clock":16,"minute":20,"gender":"male"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["己酉","壬申","甲子","壬申"],"coverageTags":["从格边界","透干/根气临界","格局与旺衰冲突"]},
+    {"id":"R06-C06","birth":{"year":1964,"month":8,"day":13,"hour":3,"clock":6,"minute":20,"gender":"female"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["甲辰","壬申","甲午","丁卯"],"coverageTags":["月令临界","格局与旺衰冲突","制化临界"]},
+    {"id":"R06-C07","birth":{"year":1962,"month":9,"day":18,"hour":6,"clock":12,"minute":20,"gender":"male"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["壬寅","己酉","己未","庚午"],"coverageTags":["明确身强","格局与旺衰冲突","透干/根气临界"]},
+    {"id":"R06-C08","birth":{"year":1961,"month":9,"day":13,"hour":6,"clock":12,"minute":20,"gender":"female"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["辛丑","丁酉","己酉","庚午"],"coverageTags":["明确身弱","透干/根气临界","制化临界"]},
+    {"id":"R06-C09","birth":{"year":1965,"month":9,"day":12,"hour":6,"clock":12,"minute":20,"gender":"male"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["乙巳","乙酉","己巳","庚午"],"coverageTags":["明确身强","专旺疑似或边界","格局与旺衰冲突"]},
+    {"id":"R06-C10","birth":{"year":1972,"month":12,"day":12,"hour":2,"clock":4,"minute":20,"gender":"female"},"location":{"province":"河北省","city":"石家庄市","district":"长安区"},"solarDataVersion":"county-centroid-v1","pillars":["壬子","壬子","丁丑","壬寅"],"coverageTags":["明确身弱","从格疑似","从格边界","调候优先","月令临界"]}
+  ]
+}
