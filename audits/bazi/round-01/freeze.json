@@ -8,5 +8,7 @@
   },
   "engineCommit": "224545723e69b208e3305ad7cd9e890ed3cfda2b",
   "solarDataVersion": "county-centroid-v1",
-  "rulingsFrozenAt": "2026-08-17T08:49:07.107Z"
+  "rulingsFrozenAt": "2026-08-17T08:49:07.107Z",
+  "engineCapturedAt": "2026-08-17T08:49:21.071Z",
+  "engineResultsSha256": "e377ae59e83d2b1b5e18d0766f8e9606bc2db19253b0d47c246a172cd6c8e70e"
 }
