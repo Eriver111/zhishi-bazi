@@ -1,0 +1,2556 @@
+{
+  "capturedAt": "2026-08-17T11:05:26.543Z",
+  "results": [
+    {
+      "id": "R07-C01",
+      "pillars": [
+        "己亥",
+        "丁丑",
+        "丙申",
+        "甲午"
+      ],
+      "strength": {
+        "level": "偏弱",
+        "label": "元气偏柔",
+        "score": 34,
+        "detail": "综合评定身偏弱（34分）。命局中克泄耗力量偏重，日主需印比扶助。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "偏弱",
+        "dayMasterScore": 34,
+        "xiShen": [
+          "火",
+          "木"
+        ],
+        "yongShen": [
+          "火"
+        ],
+        "jiShen": [
+          "土",
+          "金",
+          "水"
+        ],
+        "reasoning": "日主偏弱（34分），核心用神按结构评分取火：冬火微弱，火暖局扶身 喜：火、木。忌：土、金、水。 调候辅助：冬火微弱，需木来生火、火来扶身，双重暖局。\"火生冬月，无木不焚；烛微光弱，薪尽则灭。\" 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。",
+        "method": "扶抑为主·调候辅助",
+        "primaryReason": "核心用神为火：比劫同类，是本局首要的调节力量；透于月柱天干、日柱天干，见于时柱地支。调候辅助：冬火微弱，需木来生火、火来扶身，双重暖局。\"火生冬月，无木不焚；烛微光弱，薪尽则灭。\"",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主偏弱",
+            "detail": "综合评定身偏弱（34分）。命局中克泄耗力量偏重，日主需印比扶助。"
+          },
+          {
+            "category": "调候",
+            "title": "寒暖燥湿",
+            "detail": "冬火微弱，需木来生火、火来扶身，双重暖局。\"火生冬月，无木不焚；烛微光弱，薪尽则灭。\""
+          },
+          {
+            "category": "格局",
+            "title": "伤官格·成格",
+            "detail": "月支丑藏己，透于年柱 → 伤官"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "火：透于月柱天干、日柱天干，见于时柱地支"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取火（比劫，核心结构分 16.0，调候参考后 24.0）；未取木（印，核心结构分 16.0，调候参考后 22.0）、土（食伤，核心结构分 -16.0）、金（财，核心结构分 -16.0）、水（官杀，核心结构分 -16.0）"
+          }
+        ],
+        "elementReasons": {
+          "火": {
+            "role": "用神",
+            "reasons": [
+              "扶抑为主·调候辅助：比劫同类，是本局首要的调节力量",
+              "透于月柱天干、日柱天干，见于时柱地支"
+            ]
+          },
+          "木": {
+            "role": "喜神",
+            "reasons": [
+              "印星生身，用于辅助用神并维持命局流通",
+              "透于时柱天干"
+            ]
+          },
+          "土": {
+            "role": "忌神",
+            "reasons": [
+              "食伤泄秀，会加重当前失衡或破坏已有制化",
+              "透于年柱天干，见于月柱地支"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "财星耗身，会加重当前失衡或破坏已有制化",
+              "见于日柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "官杀制身，会加重当前失衡或破坏已有制化",
+              "见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "火": {
+            "score": 3,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "午本气根",
+              "透干month"
+            ]
+          },
+          "木": {
+            "score": 2,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "亥中气根",
+              "透干hour"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "伤官格",
+          "status": "成格",
+          "breakReasons": []
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "印",
+            "L1": 16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 6,
+            "SBase": 16,
+            "SNeed": 22,
+            "rootScore": 2,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "喜神"
+          },
+          {
+            "wx": "火",
+            "relation": "比劫",
+            "L1": 16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 8,
+            "SBase": 16,
+            "SNeed": 24,
+            "rootScore": 3,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "用神"
+          },
+          {
+            "wx": "土",
+            "relation": "食伤",
+            "L1": -16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -16,
+            "SNeed": -16,
+            "rootScore": 3.5,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "忌神"
+          },
+          {
+            "wx": "金",
+            "relation": "财",
+            "L1": -16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -16,
+            "SNeed": -16,
+            "rootScore": 1.5,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "官杀",
+            "L1": -16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -16,
+            "SNeed": -16,
+            "rootScore": 3,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": true,
+          "steps": [
+            {
+              "step": "结构需求分",
+              "values": "木=0，火=0",
+              "advance": [
+                "木",
+                "火"
+              ]
+            },
+            {
+              "step": "通关/救应价值",
+              "values": "木=0，火=0",
+              "advance": [
+                "木",
+                "火"
+              ]
+            },
+            {
+              "step": "根气质量",
+              "values": "木=2，火=3",
+              "advance": [
+                "火"
+              ]
+            }
+          ],
+          "winner": "火"
+        },
+        "elementClassification": {
+          "木": "喜神",
+          "火": "用神",
+          "土": "忌神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "伤官格",
+        "desc": "月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。",
+        "type": "透干取格",
+        "matchMode": "exact-canggan",
+        "matchedGan": "己",
+        "matchedPillar": "年柱",
+        "monthWx": "土",
+        "monthZhi": "丑",
+        "monthGan": "丁",
+        "source": "月支丑藏己，透于年柱 → 伤官",
+        "establishConditions": [
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主偏弱（34分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无正官被伤",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "有印星制伤或财星引化",
+            "met": true,
+            "detail": "印星制伤",
+            "category": "QUALITY"
+          }
+        ],
+        "breakReasons": [],
+        "isEstablished": true,
+        "status": "成格"
+      }
+    },
+    {
+      "id": "R07-C02",
+      "pillars": [
+        "己亥",
+        "丁丑",
+        "丙申",
+        "壬辰"
+      ],
+      "strength": {
+        "level": "极弱",
+        "label": "元气清秀",
+        "score": 19,
+        "detail": "综合评定身极弱（19分）。命局中克泄耗力量偏重，日主需印比扶助。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "极弱",
+        "dayMasterScore": 19,
+        "xiShen": [
+          "木",
+          "火"
+        ],
+        "yongShen": [
+          "木"
+        ],
+        "jiShen": [
+          "土",
+          "金",
+          "水"
+        ],
+        "reasoning": "日主极弱（19分），核心用神按结构评分取木：食伤成势，印星制食伤生身；冬火微弱，木生火暖局 喜：木、火。忌：土、金、水。 调候辅助：冬火微弱，需木来生火、火来扶身，双重暖局。\"火生冬月，无木不焚；烛微光弱，薪尽则灭。\" 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。",
+        "method": "扶抑为主·调候辅助",
+        "primaryReason": "核心用神为木：印星生身，是本局首要的调节力量；原局未直接出现。调候辅助：冬火微弱，需木来生火、火来扶身，双重暖局。\"火生冬月，无木不焚；烛微光弱，薪尽则灭。\"",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主极弱",
+            "detail": "综合评定身极弱（19分）。命局中克泄耗力量偏重，日主需印比扶助。"
+          },
+          {
+            "category": "调候",
+            "title": "寒暖燥湿",
+            "detail": "冬火微弱，需木来生火、火来扶身，双重暖局。\"火生冬月，无木不焚；烛微光弱，薪尽则灭。\""
+          },
+          {
+            "category": "格局",
+            "title": "伤官格·破格",
+            "detail": "日主极弱，难以承载格局用神"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "木：原局未直接出现"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取木（印，核心结构分 43.0，调候参考后 49.0）；未取火（比劫，核心结构分 31.0，调候参考后 39.0）、土（食伤，核心结构分 -31.0）、金（财，核心结构分 -31.0）、水（官杀，核心结构分 -31.0）"
+          }
+        ],
+        "elementReasons": {
+          "木": {
+            "role": "用神",
+            "reasons": [
+              "扶抑为主·调候辅助：印星生身，是本局首要的调节力量",
+              "原局未直接出现"
+            ]
+          },
+          "火": {
+            "role": "喜神",
+            "reasons": [
+              "比劫同类，用于辅助用神并维持命局流通",
+              "透于月柱天干、日柱天干"
+            ]
+          },
+          "土": {
+            "role": "忌神",
+            "reasons": [
+              "食伤泄秀，会加重当前失衡或破坏已有制化",
+              "透于年柱天干，见于月柱地支、时柱地支"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "财星耗身，会加重当前失衡或破坏已有制化",
+              "见于日柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "官杀制身，会加重当前失衡或破坏已有制化",
+              "透于时柱天干，见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "木": {
+            "score": 2,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "亥中气根",
+              "辰中气根"
+            ]
+          },
+          "火": {
+            "score": 0,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "透干month",
+              "被克：壬天干直克"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "伤官格",
+          "status": "破格",
+          "breakReasons": [
+            "日主极弱，难以承载格局用神"
+          ]
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "印",
+            "L1": 31,
+            "L2": 12,
+            "L3": 0,
+            "L4": 6,
+            "SBase": 43,
+            "SNeed": 49,
+            "rootScore": 2,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "用神"
+          },
+          {
+            "wx": "火",
+            "relation": "比劫",
+            "L1": 31,
+            "L2": 0,
+            "L3": 0,
+            "L4": 8,
+            "SBase": 31,
+            "SNeed": 39,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "喜神"
+          },
+          {
+            "wx": "土",
+            "relation": "食伤",
+            "L1": -31,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -31,
+            "SNeed": -31,
+            "rootScore": 5.5,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          },
+          {
+            "wx": "金",
+            "relation": "财",
+            "L1": -31,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -31,
+            "SNeed": -31,
+            "rootScore": 1.5,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "官杀",
+            "L1": -31,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -31,
+            "SNeed": -31,
+            "rootScore": 4.5,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "木"
+        },
+        "elementClassification": {
+          "木": "用神",
+          "火": "喜神",
+          "土": "忌神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "伤官格",
+        "desc": "月令透伤，聪明机敏创造力强。伤官需印制或生财化解锋芒。",
+        "type": "透干取格",
+        "matchMode": "exact-canggan",
+        "matchedGan": "己",
+        "matchedPillar": "年柱",
+        "monthWx": "土",
+        "monthZhi": "丑",
+        "monthGan": "丁",
+        "source": "月支丑藏己，透于年柱 → 伤官",
+        "establishConditions": [
+          {
+            "condition": "日主有承载格局之力",
+            "met": false,
+            "detail": "日主极弱（19分），身太弱难担格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无正官被伤",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "有印星制伤或财星引化",
+            "met": false,
+            "detail": "缺印缺财，伤官无制无化",
+            "category": "QUALITY"
+          }
+        ],
+        "breakReasons": [
+          "日主极弱，难以承载格局用神"
+        ],
+        "isEstablished": false,
+        "status": "破格"
+      }
+    },
+    {
+      "id": "R07-C03",
+      "pillars": [
+        "己亥",
+        "丁丑",
+        "壬子",
+        "辛亥"
+      ],
+      "strength": {
+        "level": "极强",
+        "label": "元气充沛",
+        "score": 91,
+        "detail": "综合评定身极强（91分）。命局中帮扶力量较强，日主底气充足。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "极强",
+        "dayMasterScore": 91,
+        "xiShen": [
+          "土",
+          "木",
+          "火"
+        ],
+        "yongShen": [
+          "土"
+        ],
+        "jiShen": [
+          "金",
+          "水"
+        ],
+        "reasoning": "日主极强（91分），核心用神按结构评分取土：比劫成势，官杀制比劫 喜：土、木、火。忌：金、水。",
+        "method": "扶抑为主",
+        "primaryReason": "日主极强（91分），以扶抑平衡为主确定用神。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主极强",
+            "detail": "综合评定身极强（91分）。命局中帮扶力量较强，日主底气充足。"
+          },
+          {
+            "category": "格局",
+            "title": "正官格·成格",
+            "detail": "月支丑藏己，透于年柱 → 正官"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "土：透于年柱天干，见于月柱地支"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取土（官杀，核心结构分 51.0）；未取木（食伤，核心结构分 45.0）、火（财，核心结构分 41.0）、金（印，核心结构分 -41.0）、水（比劫，核心结构分 -41.0）"
+          }
+        ],
+        "elementReasons": {
+          "土": {
+            "role": "用神",
+            "reasons": [
+              "扶抑为主：官杀制身，是本局首要的调节力量",
+              "透于年柱天干，见于月柱地支"
+            ]
+          },
+          "木": {
+            "role": "喜神",
+            "reasons": [
+              "食伤泄秀，用于辅助用神并维持命局流通",
+              "原局未直接出现"
+            ]
+          },
+          "火": {
+            "role": "喜神",
+            "reasons": [
+              "财星耗身，用于辅助用神并维持命局流通",
+              "透于月柱天干"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "印星生身，会加重当前失衡或破坏已有制化",
+              "透于时柱天干"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "比劫同类，会加重当前失衡或破坏已有制化",
+              "透于日柱天干，见于年柱地支、日柱地支、时柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "土": {
+            "score": 3,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "丑本气根",
+              "透干year"
+            ]
+          },
+          "木": {
+            "score": 1,
+            "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "roots": [
+              "亥中气根",
+              "亥中气根",
+              "被克：辛天干直克"
+            ]
+          },
+          "火": {
+            "score": 1,
+            "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "roots": [
+              "透干month"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正官格",
+          "status": "成格",
+          "breakReasons": []
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "食伤",
+            "L1": 41,
+            "L2": 4,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 45,
+            "SNeed": 45,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "喜神"
+          },
+          {
+            "wx": "火",
+            "relation": "财",
+            "L1": 41,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 41,
+            "SNeed": 41,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "喜神"
+          },
+          {
+            "wx": "土",
+            "relation": "官杀",
+            "L1": 41,
+            "L2": 10,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 51,
+            "SNeed": 51,
+            "rootScore": 3,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "用神"
+          },
+          {
+            "wx": "金",
+            "relation": "印",
+            "L1": -41,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -41,
+            "SNeed": -41,
+            "rootScore": 0.5,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "比劫",
+            "L1": -41,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -41,
+            "SNeed": -41,
+            "rootScore": 6,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "土"
+        },
+        "elementClassification": {
+          "木": "喜神",
+          "火": "喜神",
+          "土": "用神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "正官格",
+        "desc": "月令透官，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
+        "type": "透干取格",
+        "matchMode": "exact-canggan",
+        "matchedGan": "己",
+        "matchedPillar": "年柱",
+        "monthWx": "土",
+        "monthZhi": "丑",
+        "monthGan": "丁",
+        "source": "月支丑藏己，透于年柱 → 正官",
+        "establishConditions": [
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主极强（91分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "正官透干有根",
+            "met": true,
+            "detail": "月令正官透出天干",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "无伤官克官",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无官杀混杂",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [],
+        "isEstablished": true,
+        "status": "成格"
+      }
+    },
+    {
+      "id": "R07-C04",
+      "pillars": [
+        "己亥",
+        "丁丑",
+        "壬子",
+        "甲辰"
+      ],
+      "strength": {
+        "level": "偏强",
+        "label": "元气较足",
+        "score": 79,
+        "detail": "综合评定身偏强（79分）。命局中帮扶力量较强，日主底气充足。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "偏强",
+        "dayMasterScore": 79,
+        "xiShen": [
+          "土",
+          "木",
+          "火"
+        ],
+        "yongShen": [
+          "土"
+        ],
+        "jiShen": [
+          "金",
+          "水"
+        ],
+        "reasoning": "日主偏强（79分），核心用神按结构评分取土。 喜：土、木、火。忌：金、水。",
+        "method": "扶抑为主",
+        "primaryReason": "日主偏强（79分），以扶抑平衡为主确定用神。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主偏强",
+            "detail": "综合评定身偏强（79分）。命局中帮扶力量较强，日主底气充足。"
+          },
+          {
+            "category": "格局",
+            "title": "正官格·成格",
+            "detail": "月支丑藏己，透于年柱 → 正官"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "土：透于年柱天干，见于月柱地支、时柱地支"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取土（官杀，核心结构分 29.0）；未取木（食伤，核心结构分 29.0）、火（财，核心结构分 29.0）、金（印，核心结构分 -29.0）、水（比劫，核心结构分 -29.0）"
+          }
+        ],
+        "elementReasons": {
+          "土": {
+            "role": "用神",
+            "reasons": [
+              "扶抑为主：官杀制身，是本局首要的调节力量",
+              "透于年柱天干，见于月柱地支、时柱地支"
+            ]
+          },
+          "木": {
+            "role": "喜神",
+            "reasons": [
+              "食伤泄秀，用于辅助用神并维持命局流通",
+              "透于时柱天干"
+            ]
+          },
+          "火": {
+            "role": "喜神",
+            "reasons": [
+              "财星耗身，用于辅助用神并维持命局流通",
+              "透于月柱天干"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "印星生身，会加重当前失衡或破坏已有制化",
+              "原局未直接出现"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "比劫同类，会加重当前失衡或破坏已有制化",
+              "透于日柱天干，见于年柱地支、日柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "土": {
+            "score": 4,
+            "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "roots": [
+              "丑本气根",
+              "辰本气根",
+              "透干year",
+              "被克：甲天干直克"
+            ]
+          },
+          "木": {
+            "score": 3,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "亥中气根",
+              "辰中气根",
+              "透干hour"
+            ]
+          },
+          "火": {
+            "score": 1,
+            "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "roots": [
+              "透干month"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正官格",
+          "status": "成格",
+          "breakReasons": []
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "食伤",
+            "L1": 28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 28.999999999999996,
+            "SNeed": 28.999999999999996,
+            "rootScore": 3,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "喜神"
+          },
+          {
+            "wx": "火",
+            "relation": "财",
+            "L1": 28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 28.999999999999996,
+            "SNeed": 28.999999999999996,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "喜神"
+          },
+          {
+            "wx": "土",
+            "relation": "官杀",
+            "L1": 28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 28.999999999999996,
+            "SNeed": 28.999999999999996,
+            "rootScore": 4,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "用神"
+          },
+          {
+            "wx": "金",
+            "relation": "印",
+            "L1": -28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -28.999999999999996,
+            "SNeed": -28.999999999999996,
+            "rootScore": -0.5,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "比劫",
+            "L1": -28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -28.999999999999996,
+            "SNeed": -28.999999999999996,
+            "rootScore": 4.5,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": true,
+          "steps": [
+            {
+              "step": "结构需求分",
+              "values": "木=0，火=0，土=0",
+              "advance": [
+                "木",
+                "火",
+                "土"
+              ]
+            },
+            {
+              "step": "通关/救应价值",
+              "values": "木=0，火=0，土=0",
+              "advance": [
+                "木",
+                "火",
+                "土"
+              ]
+            },
+            {
+              "step": "根气质量",
+              "values": "木=3，火=1，土=4",
+              "advance": [
+                "土"
+              ]
+            }
+          ],
+          "winner": "土"
+        },
+        "elementClassification": {
+          "木": "喜神",
+          "火": "喜神",
+          "土": "用神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "正官格",
+        "desc": "月令透官，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
+        "type": "透干取格",
+        "matchMode": "exact-canggan",
+        "matchedGan": "己",
+        "matchedPillar": "年柱",
+        "monthWx": "土",
+        "monthZhi": "丑",
+        "monthGan": "丁",
+        "source": "月支丑藏己，透于年柱 → 正官",
+        "establishConditions": [
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主偏强（79分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "正官透干有根",
+            "met": true,
+            "detail": "月令正官透出天干",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "无伤官克官",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无官杀混杂",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [],
+        "isEstablished": true,
+        "status": "成格"
+      }
+    },
+    {
+      "id": "R07-C05",
+      "pillars": [
+        "庚子",
+        "戊寅",
+        "己卯",
+        "戊辰"
+      ],
+      "strength": {
+        "level": "极弱",
+        "label": "元气清秀",
+        "score": 21,
+        "detail": "综合评定身极弱（21分）。命局中克泄耗力量偏重，日主需印比扶助。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "极弱",
+        "dayMasterScore": 21,
+        "xiShen": [
+          "火",
+          "土"
+        ],
+        "yongShen": [
+          "火"
+        ],
+        "jiShen": [
+          "木",
+          "金",
+          "水"
+        ],
+        "reasoning": "日主极弱（21分），核心用神按结构评分取火：伤官克官，印星制伤护官 喜：火、土。忌：木、金、水。 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。",
+        "method": "格局救应",
+        "primaryReason": "正官格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主极弱",
+            "detail": "综合评定身极弱（21分）。命局中克泄耗力量偏重，日主需印比扶助。"
+          },
+          {
+            "category": "格局",
+            "title": "正官格·破格",
+            "detail": "伤官克官；日主极弱，难以承载格局用神"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "火：原局未直接出现"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取火（印，核心结构分 30.8）；未取土（比劫，核心结构分 29.0）、木（官杀，核心结构分 -29.0）、金（食伤，核心结构分 -29.0）、水（财，核心结构分 -29.0）"
+          }
+        ],
+        "elementReasons": {
+          "火": {
+            "role": "用神",
+            "reasons": [
+              "格局救应：印星生身，是本局首要的调节力量",
+              "原局未直接出现"
+            ]
+          },
+          "土": {
+            "role": "喜神",
+            "reasons": [
+              "比劫同类，用于辅助用神并维持命局流通",
+              "透于月柱天干、日柱天干、时柱天干，见于时柱地支"
+            ]
+          },
+          "木": {
+            "role": "忌神",
+            "reasons": [
+              "官杀制身，会加重当前失衡或破坏已有制化",
+              "见于月柱地支、日柱地支"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "食伤泄秀，会加重当前失衡或破坏已有制化",
+              "透于年柱天干"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "财星耗身，会加重当前失衡或破坏已有制化",
+              "见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "火": {
+            "score": 1,
+            "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "roots": [
+              "寅中气根"
+            ]
+          },
+          "土": {
+            "score": 4.5,
+            "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "roots": [
+              "寅余气根",
+              "辰本气根",
+              "透干month/hour"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正官格",
+          "status": "破格",
+          "breakReasons": [
+            "伤官克官",
+            "日主极弱，难以承载格局用神"
+          ]
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "官杀",
+            "L1": -28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -28.999999999999996,
+            "SNeed": -28.999999999999996,
+            "rootScore": 4,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          },
+          {
+            "wx": "火",
+            "relation": "印",
+            "L1": 28.999999999999996,
+            "L2": 0,
+            "L3": 1.7999999999999998,
+            "L4": 0,
+            "SBase": 30.799999999999997,
+            "SNeed": 30.799999999999997,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "用神"
+          },
+          {
+            "wx": "土",
+            "relation": "比劫",
+            "L1": 28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 28.999999999999996,
+            "SNeed": 28.999999999999996,
+            "rootScore": 4.5,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "喜神"
+          },
+          {
+            "wx": "金",
+            "relation": "食伤",
+            "L1": -28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -28.999999999999996,
+            "SNeed": -28.999999999999996,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "财",
+            "L1": -28.999999999999996,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -28.999999999999996,
+            "SNeed": -28.999999999999996,
+            "rootScore": 0.5,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "火"
+        },
+        "elementClassification": {
+          "木": "忌神",
+          "火": "用神",
+          "土": "喜神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "正官格",
+        "desc": "月令官星当令但未透干，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
+        "type": "月令取格",
+        "matchMode": "",
+        "matchedGan": "",
+        "matchedPillar": "",
+        "monthWx": "木",
+        "monthZhi": "寅",
+        "monthGan": "戊",
+        "source": "月支寅（正官）",
+        "establishConditions": [
+          {
+            "condition": "月令格神透干",
+            "met": false,
+            "detail": "月令格神当令但未透干，格局可以成立，但表现层次与显达程度受限",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "日主有承载格局之力",
+            "met": false,
+            "detail": "日主极弱（21分），身太弱难担格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "正官透干有根",
+            "met": false,
+            "detail": "月令正官未透干",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "无伤官克官",
+            "met": false,
+            "detail": "天干透伤官，克损正官",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无官杀混杂",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [
+          "伤官克官",
+          "日主极弱，难以承载格局用神"
+        ],
+        "isEstablished": false,
+        "status": "破格"
+      }
+    },
+    {
+      "id": "R07-C06",
+      "pillars": [
+        "庚子",
+        "戊寅",
+        "己卯",
+        "壬申"
+      ],
+      "strength": {
+        "level": "极弱",
+        "label": "元气清秀",
+        "score": 1,
+        "detail": "综合评定身极弱（1分）。命局中克泄耗力量偏重，日主需印比扶助。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "极弱",
+        "dayMasterScore": 1,
+        "xiShen": [
+          "火",
+          "土"
+        ],
+        "yongShen": [
+          "火"
+        ],
+        "jiShen": [
+          "木",
+          "金",
+          "水"
+        ],
+        "reasoning": "日主极弱（1分），核心用神按结构评分取火：伤官克官，印星制伤护官 喜：火、土。忌：木、金、水。 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。",
+        "method": "格局救应",
+        "primaryReason": "正官格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主极弱",
+            "detail": "综合评定身极弱（1分）。命局中克泄耗力量偏重，日主需印比扶助。"
+          },
+          {
+            "category": "格局",
+            "title": "正官格·破格",
+            "detail": "月令受时柱冲；伤官克官；日主极弱，难以承载格局用神"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "火：原局未直接出现"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取火（印，核心结构分 50.8）；未取土（比劫，核心结构分 49.0）、木（官杀，核心结构分 -49.0）、金（食伤，核心结构分 -49.0）、水（财，核心结构分 -49.0）"
+          }
+        ],
+        "elementReasons": {
+          "火": {
+            "role": "用神",
+            "reasons": [
+              "格局救应：印星生身，是本局首要的调节力量",
+              "原局未直接出现"
+            ]
+          },
+          "土": {
+            "role": "喜神",
+            "reasons": [
+              "比劫同类，用于辅助用神并维持命局流通",
+              "透于月柱天干、日柱天干"
+            ]
+          },
+          "木": {
+            "role": "忌神",
+            "reasons": [
+              "官杀制身，会加重当前失衡或破坏已有制化",
+              "见于月柱地支、日柱地支"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "食伤泄秀，会加重当前失衡或破坏已有制化",
+              "透于年柱天干，见于时柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "财星耗身，会加重当前失衡或破坏已有制化",
+              "透于时柱天干，见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "火": {
+            "score": 0,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "寅中气根",
+              "被克：壬天干直克"
+            ]
+          },
+          "土": {
+            "score": 2,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "寅余气根",
+              "申余气根",
+              "透干month"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正官格",
+          "status": "破格",
+          "breakReasons": [
+            "月令受时柱冲",
+            "伤官克官",
+            "日主极弱，难以承载格局用神"
+          ]
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "官杀",
+            "L1": -49,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -49,
+            "SNeed": -49,
+            "rootScore": 2,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "忌神"
+          },
+          {
+            "wx": "火",
+            "relation": "印",
+            "L1": 49,
+            "L2": 0,
+            "L3": 1.7999999999999998,
+            "L4": 0,
+            "SBase": 50.8,
+            "SNeed": 50.8,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "用神"
+          },
+          {
+            "wx": "土",
+            "relation": "比劫",
+            "L1": 49,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 49,
+            "SNeed": 49,
+            "rootScore": 2,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "喜神"
+          },
+          {
+            "wx": "金",
+            "relation": "食伤",
+            "L1": -49,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -49,
+            "SNeed": -49,
+            "rootScore": 2,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "财",
+            "L1": -49,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -49,
+            "SNeed": -49,
+            "rootScore": 3,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "火"
+        },
+        "elementClassification": {
+          "木": "忌神",
+          "火": "用神",
+          "土": "喜神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "正官格",
+        "desc": "月令官星当令但未透干，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
+        "type": "月令取格",
+        "matchMode": "",
+        "matchedGan": "",
+        "matchedPillar": "",
+        "monthWx": "木",
+        "monthZhi": "寅",
+        "monthGan": "戊",
+        "source": "月支寅（正官）",
+        "establishConditions": [
+          {
+            "condition": "月令格神透干",
+            "met": false,
+            "detail": "月令格神当令但未透干，格局可以成立，但表现层次与显达程度受限",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "日主有承载格局之力",
+            "met": false,
+            "detail": "日主极弱（1分），身太弱难担格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "正官透干有根",
+            "met": false,
+            "detail": "月令正官未透干",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "无伤官克官",
+            "met": false,
+            "detail": "天干透伤官，克损正官",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无官杀混杂",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [
+          "月令受时柱冲",
+          "伤官克官",
+          "日主极弱，难以承载格局用神"
+        ],
+        "isEstablished": false,
+        "status": "破格"
+      }
+    },
+    {
+      "id": "R07-C07",
+      "pillars": [
+        "庚子",
+        "壬午",
+        "庚辰",
+        "庚辰"
+      ],
+      "strength": {
+        "level": "中和",
+        "label": "元气均衡",
+        "score": 48,
+        "detail": "综合评定中和（48分）。命局五行相对均衡，日主不偏不倚。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "中和",
+        "dayMasterScore": 48,
+        "xiShen": [
+          "土",
+          "金"
+        ],
+        "yongShen": [
+          "土"
+        ],
+        "jiShen": [
+          "木",
+          "火",
+          "水"
+        ],
+        "reasoning": "日主中和（48分），核心用神按结构评分取土。 喜：土、金。忌：木、火、水。 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。",
+        "method": "格局救应",
+        "primaryReason": "正官格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主中和",
+            "detail": "综合评定中和（48分）。命局五行相对均衡，日主不偏不倚。"
+          },
+          {
+            "category": "格局",
+            "title": "正官格·破格",
+            "detail": "月令受年柱冲"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "土：见于日柱地支、时柱地支"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取土（印，核心结构分 2.0）；未取金（比劫，核心结构分 2.0）、木（财，核心结构分 -2.0）、火（官杀，核心结构分 -2.0）、水（食伤，核心结构分 -2.0）"
+          }
+        ],
+        "elementReasons": {
+          "土": {
+            "role": "用神",
+            "reasons": [
+              "格局救应：印星生身，是本局首要的调节力量",
+              "见于日柱地支、时柱地支"
+            ]
+          },
+          "金": {
+            "role": "喜神",
+            "reasons": [
+              "比劫同类，用于辅助用神并维持命局流通",
+              "透于年柱天干、日柱天干、时柱天干"
+            ]
+          },
+          "木": {
+            "role": "忌神",
+            "reasons": [
+              "财星耗身，会加重当前失衡或破坏已有制化",
+              "原局未直接出现"
+            ]
+          },
+          "火": {
+            "role": "忌神",
+            "reasons": [
+              "官杀制身，会加重当前失衡或破坏已有制化",
+              "见于月柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "食伤泄秀，会加重当前失衡或破坏已有制化",
+              "透于月柱天干，见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "土": {
+            "score": 5,
+            "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "roots": [
+              "午中气根",
+              "辰本气根",
+              "辰本气根"
+            ]
+          },
+          "金": {
+            "score": 2,
+            "quality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "roots": [
+              "透干year/hour"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正官格",
+          "status": "破格",
+          "breakReasons": [
+            "月令受年柱冲"
+          ]
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "财",
+            "L1": -2,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -2,
+            "SNeed": -2,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "中性"
+          },
+          {
+            "wx": "火",
+            "relation": "官杀",
+            "L1": -2,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -2,
+            "SNeed": -2,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "中性"
+          },
+          {
+            "wx": "土",
+            "relation": "印",
+            "L1": 2,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 2,
+            "SNeed": 2,
+            "rootScore": 5,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "用神"
+          },
+          {
+            "wx": "金",
+            "relation": "比劫",
+            "L1": 2,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 2,
+            "SNeed": 2,
+            "rootScore": 2,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "中性"
+          },
+          {
+            "wx": "水",
+            "relation": "食伤",
+            "L1": -2,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -2,
+            "SNeed": -2,
+            "rootScore": 3,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "中性"
+          }
+        ],
+        "tiebreak": {
+          "used": true,
+          "steps": [
+            {
+              "step": "结构需求分",
+              "values": "土=0，金=0",
+              "advance": [
+                "土",
+                "金"
+              ]
+            },
+            {
+              "step": "通关/救应价值",
+              "values": "土=0，金=0",
+              "advance": [
+                "土",
+                "金"
+              ]
+            },
+            {
+              "step": "根气质量",
+              "values": "土=5，金=2",
+              "advance": [
+                "土"
+              ]
+            }
+          ],
+          "winner": "土"
+        },
+        "elementClassification": {
+          "木": "弱忌",
+          "火": "弱忌",
+          "土": "用神",
+          "金": "弱喜",
+          "水": "弱忌"
+        }
+      },
+      "pattern": {
+        "name": "正官格",
+        "desc": "月令官星当令但未透干，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
+        "type": "月令取格",
+        "matchMode": "",
+        "matchedGan": "",
+        "matchedPillar": "",
+        "monthWx": "火",
+        "monthZhi": "午",
+        "monthGan": "壬",
+        "source": "月支午（正官）",
+        "establishConditions": [
+          {
+            "condition": "月令格神透干",
+            "met": false,
+            "detail": "月令格神当令但未透干，格局可以成立，但表现层次与显达程度受限",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主中和（48分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "正官透干有根",
+            "met": false,
+            "detail": "月令正官未透干",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "无伤官克官",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无官杀混杂",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [
+          "月令受年柱冲"
+        ],
+        "isEstablished": false,
+        "status": "破格"
+      }
+    },
+    {
+      "id": "R07-C08",
+      "pillars": [
+        "庚子",
+        "壬午",
+        "庚辰",
+        "壬午"
+      ],
+      "strength": {
+        "level": "偏弱",
+        "label": "元气偏柔",
+        "score": 34,
+        "detail": "综合评定身偏弱（34分）。命局中克泄耗力量偏重，日主需印比扶助。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "偏弱",
+        "dayMasterScore": 34,
+        "xiShen": [
+          "土",
+          "金"
+        ],
+        "yongShen": [
+          "土"
+        ],
+        "jiShen": [
+          "木",
+          "火",
+          "水"
+        ],
+        "reasoning": "日主偏弱（34分），核心用神按结构评分取土：食伤成势，印星制食伤生身 喜：土、金。忌：木、火、水。 月令官杀当权但为忌神——\"官多变鬼\"，需印星转化方为上策。",
+        "method": "格局救应",
+        "primaryReason": "正官格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主偏弱",
+            "detail": "综合评定身偏弱（34分）。命局中克泄耗力量偏重，日主需印比扶助。"
+          },
+          {
+            "category": "格局",
+            "title": "正官格·破格",
+            "detail": "月令受年柱冲"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "土：见于日柱地支"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取土（印，核心结构分 23.7）；未取金（比劫，核心结构分 16.0）、木（财，核心结构分 -16.0）、火（官杀，核心结构分 -16.0）、水（食伤，核心结构分 -16.0）"
+          }
+        ],
+        "elementReasons": {
+          "土": {
+            "role": "用神",
+            "reasons": [
+              "格局救应：印星生身，是本局首要的调节力量",
+              "见于日柱地支"
+            ]
+          },
+          "金": {
+            "role": "喜神",
+            "reasons": [
+              "比劫同类，用于辅助用神并维持命局流通",
+              "透于年柱天干、日柱天干"
+            ]
+          },
+          "木": {
+            "role": "忌神",
+            "reasons": [
+              "财星耗身，会加重当前失衡或破坏已有制化",
+              "原局未直接出现"
+            ]
+          },
+          "火": {
+            "role": "忌神",
+            "reasons": [
+              "官杀制身，会加重当前失衡或破坏已有制化",
+              "见于月柱地支、时柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "食伤泄秀，会加重当前失衡或破坏已有制化",
+              "透于月柱天干、时柱天干，见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "土": {
+            "score": 4,
+            "quality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "roots": [
+              "午中气根",
+              "辰本气根",
+              "午中气根"
+            ]
+          },
+          "金": {
+            "score": 1,
+            "quality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "roots": [
+              "透干year"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正官格",
+          "status": "破格",
+          "breakReasons": [
+            "月令受年柱冲"
+          ]
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "财",
+            "L1": -16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -16,
+            "SNeed": -16,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "忌神"
+          },
+          {
+            "wx": "火",
+            "relation": "官杀",
+            "L1": -16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -16,
+            "SNeed": -16,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "忌神"
+          },
+          {
+            "wx": "土",
+            "relation": "印",
+            "L1": 16,
+            "L2": 7.68,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 23.68,
+            "SNeed": 23.68,
+            "rootScore": 4,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "用神"
+          },
+          {
+            "wx": "金",
+            "relation": "比劫",
+            "L1": 16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 16,
+            "SNeed": 16,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "喜神"
+          },
+          {
+            "wx": "水",
+            "relation": "食伤",
+            "L1": -16,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -16,
+            "SNeed": -16,
+            "rootScore": 2.5,
+            "rootQuality": "偏真用神——有根但不够深固，如小树有根，中年后运势方能支撑",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "土"
+        },
+        "elementClassification": {
+          "木": "忌神",
+          "火": "忌神",
+          "土": "用神",
+          "金": "喜神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "正官格",
+        "desc": "月令官星当令但未透干，为人正直有责任心。\"官以任能，贵乎清正。\"——《耕寸集》",
+        "type": "月令取格",
+        "matchMode": "",
+        "matchedGan": "",
+        "matchedPillar": "",
+        "monthWx": "火",
+        "monthZhi": "午",
+        "monthGan": "壬",
+        "source": "月支午（正官）",
+        "establishConditions": [
+          {
+            "condition": "月令格神透干",
+            "met": false,
+            "detail": "月令格神当令但未透干，格局可以成立，但表现层次与显达程度受限",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主偏弱（34分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "正官透干有根",
+            "met": false,
+            "detail": "月令正官未透干",
+            "category": "QUALITY"
+          },
+          {
+            "condition": "无伤官克官",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无官杀混杂",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [
+          "月令受年柱冲"
+        ],
+        "isEstablished": false,
+        "status": "破格"
+      }
+    },
+    {
+      "id": "R07-C09",
+      "pillars": [
+        "庚子",
+        "甲申",
+        "癸酉",
+        "庚申"
+      ],
+      "strength": {
+        "level": "极强",
+        "label": "元气充沛",
+        "score": 94,
+        "detail": "综合评定身极强（94分）。命局中帮扶力量较强，日主底气充足。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "极强",
+        "dayMasterScore": 94,
+        "xiShen": [
+          "火",
+          "木",
+          "土"
+        ],
+        "yongShen": [
+          "火"
+        ],
+        "jiShen": [
+          "金",
+          "水"
+        ],
+        "reasoning": "日主极强（94分），核心用神按结构评分取火：印星成势，财星制印调结构 喜：火、木、土。忌：金、水。",
+        "method": "扶抑为主",
+        "primaryReason": "日主极强（94分），以扶抑平衡为主确定用神。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主极强",
+            "detail": "综合评定身极强（94分）。命局中帮扶力量较强，日主底气充足。"
+          },
+          {
+            "category": "格局",
+            "title": "正印格·成格",
+            "detail": "月支申藏庚，透于年柱 → 正印"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "火：原局未直接出现"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取火（财，核心结构分 54.0）；未取木（食伤，核心结构分 50.0）、土（官杀，核心结构分 44.0）、金（印，核心结构分 -44.0）、水（比劫，核心结构分 -44.0）"
+          }
+        ],
+        "elementReasons": {
+          "火": {
+            "role": "用神",
+            "reasons": [
+              "扶抑为主：财星耗身，是本局首要的调节力量",
+              "原局未直接出现"
+            ]
+          },
+          "木": {
+            "role": "喜神",
+            "reasons": [
+              "食伤泄秀，用于辅助用神并维持命局流通",
+              "透于月柱天干"
+            ]
+          },
+          "土": {
+            "role": "喜神",
+            "reasons": [
+              "官杀制身，用于辅助用神并维持命局流通",
+              "原局未直接出现"
+            ]
+          },
+          "金": {
+            "role": "忌神",
+            "reasons": [
+              "印星生身，会加重当前失衡或破坏已有制化",
+              "透于年柱天干、时柱天干，见于月柱地支、日柱地支、时柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "比劫同类，会加重当前失衡或破坏已有制化",
+              "透于日柱天干，见于年柱地支"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "火": {
+            "score": 0,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": []
+          },
+          "木": {
+            "score": -1,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "透干month",
+              "被克：庚天干直克；庚天干直克"
+            ]
+          },
+          "土": {
+            "score": 0,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "申余气根",
+              "申余气根",
+              "被克：甲天干直克"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "正印格",
+          "status": "成格",
+          "breakReasons": []
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "食伤",
+            "L1": 44,
+            "L2": 6,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 50,
+            "SNeed": 50,
+            "rootScore": -1,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "喜神"
+          },
+          {
+            "wx": "火",
+            "relation": "财",
+            "L1": 44,
+            "L2": 10,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 54,
+            "SNeed": 54,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "用神"
+          },
+          {
+            "wx": "土",
+            "relation": "官杀",
+            "L1": 44,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 44,
+            "SNeed": 44,
+            "rootScore": 0,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "喜神"
+          },
+          {
+            "wx": "金",
+            "relation": "印",
+            "L1": -44,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -44,
+            "SNeed": -44,
+            "rootScore": 8,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          },
+          {
+            "wx": "水",
+            "relation": "比劫",
+            "L1": -44,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -44,
+            "SNeed": -44,
+            "rootScore": 4,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "火"
+        },
+        "elementClassification": {
+          "木": "喜神",
+          "火": "用神",
+          "土": "喜神",
+          "金": "忌神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "正印格",
+        "desc": "月令透印，温厚善良学识渊博。印喜官杀来生，忌财星破印。",
+        "type": "透干取格",
+        "matchMode": "exact-canggan",
+        "matchedGan": "庚",
+        "matchedPillar": "年柱",
+        "monthWx": "金",
+        "monthZhi": "申",
+        "monthGan": "甲",
+        "source": "月支申藏庚，透于年柱 → 正印",
+        "establishConditions": [
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主极强（94分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "无财星破印",
+            "met": true,
+            "detail": "✓",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "日主有根纳印",
+            "met": true,
+            "detail": "✓",
+            "category": "QUALITY"
+          }
+        ],
+        "breakReasons": [],
+        "isEstablished": true,
+        "status": "成格"
+      }
+    },
+    {
+      "id": "R07-C10",
+      "pillars": [
+        "癸卯",
+        "乙卯",
+        "乙卯",
+        "乙酉"
+      ],
+      "strength": {
+        "level": "极强",
+        "label": "元气充沛",
+        "score": 100,
+        "detail": "综合评定身极强（100分）。命局中帮扶力量较强，日主底气充足。"
+      },
+      "cong": {
+        "isCong": false
+      },
+      "yongJi": {
+        "dayMasterLevel": "极强",
+        "dayMasterScore": 100,
+        "xiShen": [
+          "金",
+          "火",
+          "土"
+        ],
+        "yongShen": [
+          "金"
+        ],
+        "jiShen": [
+          "木",
+          "水"
+        ],
+        "reasoning": "日主极强（100分），核心用神按结构评分取金：比劫成势，官杀制比劫；建禄/羊刃喜财官制化 喜：金、火、土。忌：木、水。",
+        "method": "格局救应",
+        "primaryReason": "建禄格条件不足，先取能扶正旺衰并兼顾格局救应的五行。",
+        "evidence": [
+          {
+            "category": "旺衰",
+            "title": "日主极强",
+            "detail": "综合评定身极强（100分）。命局中帮扶力量较强，日主底气充足。"
+          },
+          {
+            "category": "格局",
+            "title": "建禄格·破格",
+            "detail": "月令受时柱冲；官杀藏支未透，财星不显"
+          },
+          {
+            "category": "根气/透干",
+            "title": "用神在原局的状态",
+            "detail": "金：见于时柱地支"
+          },
+          {
+            "category": "候选对比",
+            "title": "五行候选评分对比",
+            "detail": "取金（官杀，核心结构分 61.6）；未取火（食伤，核心结构分 54.0）、土（财，核心结构分 50.0）、木（比劫，核心结构分 -50.0）、水（印，核心结构分 -50.0）"
+          }
+        ],
+        "elementReasons": {
+          "金": {
+            "role": "用神",
+            "reasons": [
+              "格局救应：官杀制身，是本局首要的调节力量",
+              "见于时柱地支"
+            ]
+          },
+          "火": {
+            "role": "喜神",
+            "reasons": [
+              "食伤泄秀，用于辅助用神并维持命局流通",
+              "原局未直接出现"
+            ]
+          },
+          "土": {
+            "role": "喜神",
+            "reasons": [
+              "财星耗身，用于辅助用神并维持命局流通",
+              "原局未直接出现"
+            ]
+          },
+          "木": {
+            "role": "忌神",
+            "reasons": [
+              "比劫同类，会加重当前失衡或破坏已有制化",
+              "透于月柱天干、日柱天干、时柱天干，见于年柱地支、月柱地支、日柱地支"
+            ]
+          },
+          "水": {
+            "role": "忌神",
+            "reasons": [
+              "印星生身，会加重当前失衡或破坏已有制化",
+              "透于年柱天干"
+            ]
+          }
+        },
+        "chainHints": [],
+        "chainAdjustments": [],
+        "yongShenQuality": {
+          "金": {
+            "score": -1,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "酉本气根",
+              "被克：卯(year)地支根被冲；卯(month)地支根被冲；卯(day)地支根被冲"
+            ]
+          },
+          "火": {
+            "score": -1,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "被克：癸天干直克"
+            ]
+          },
+          "土": {
+            "score": -2,
+            "quality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "roots": [
+              "被克：乙天干直克；乙天干直克"
+            ]
+          }
+        },
+        "patternStatus": {
+          "name": "建禄格",
+          "status": "破格",
+          "breakReasons": [
+            "月令受时柱冲",
+            "官杀藏支未透，财星不显"
+          ]
+        },
+        "candidateScores": [
+          {
+            "wx": "木",
+            "relation": "比劫",
+            "L1": -50,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -50,
+            "SNeed": -50,
+            "rootScore": 5,
+            "rootQuality": "真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高",
+            "role": "忌神"
+          },
+          {
+            "wx": "火",
+            "relation": "食伤",
+            "L1": 50,
+            "L2": 4,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 54,
+            "SNeed": 54,
+            "rootScore": -1,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "喜神"
+          },
+          {
+            "wx": "土",
+            "relation": "财",
+            "L1": 50,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": 50,
+            "SNeed": 50,
+            "rootScore": -2,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "喜神"
+          },
+          {
+            "wx": "金",
+            "relation": "官杀",
+            "L1": 50,
+            "L2": 10,
+            "L3": 1.6,
+            "L4": 0,
+            "SBase": 61.6,
+            "SNeed": 61.6,
+            "rootScore": -1,
+            "rootQuality": "假用神——原局虚浮无根，徒有其名无其实，需行运见根方有用武之地",
+            "role": "用神"
+          },
+          {
+            "wx": "水",
+            "relation": "印",
+            "L1": -50,
+            "L2": 0,
+            "L3": 0,
+            "L4": 0,
+            "SBase": -50,
+            "SNeed": -50,
+            "rootScore": 1,
+            "rootQuality": "弱用神——根基浅薄，如浮萍水面，需大运流年补根方显其用",
+            "role": "忌神"
+          }
+        ],
+        "tiebreak": {
+          "used": false,
+          "steps": [],
+          "winner": "金"
+        },
+        "elementClassification": {
+          "木": "忌神",
+          "火": "喜神",
+          "土": "喜神",
+          "金": "用神",
+          "水": "忌神"
+        }
+      },
+      "pattern": {
+        "name": "建禄格",
+        "desc": "日主得月令禄位，自身强旺。禄喜财官——身强方能担财官。",
+        "type": "月令特别格",
+        "matchMode": "exact-canggan",
+        "matchedGan": "乙",
+        "matchedPillar": "月柱",
+        "monthWx": "木",
+        "monthZhi": "卯",
+        "monthGan": "乙",
+        "source": "月支卯（比肩）",
+        "establishConditions": [
+          {
+            "condition": "日主有承载格局之力",
+            "met": true,
+            "detail": "日主极强（100分），可承载格局",
+            "category": "HARD_BREAK"
+          },
+          {
+            "condition": "财官透出为用",
+            "met": false,
+            "detail": "官杀藏于时支酉但未透干",
+            "category": "HARD_BREAK"
+          }
+        ],
+        "breakReasons": [
+          "月令受时柱冲",
+          "官杀藏支未透，财星不显"
+        ],
+        "isEstablished": false,
+        "status": "破格"
+      }
+    }
+  ]
+}
