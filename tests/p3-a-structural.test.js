@@ -35,6 +35,15 @@ const riskRows = parseCSV('_p3_a2_risks.csv').slice(1);        // 59 行 × 17 �
 const evRows = parseCSV('_p3_a1_relation_events.csv').slice(1); // 271 行 × 12 列：set,id,gz,type,pillars,elements,distance,involvesMonth,involvesDay,source,target,evidence
 const replayRows = parseCSV('_p2_4a_replay.csv').slice(1);     // 53 盘：set,id,alias,gz,sC,lC,yC,xiC,jiC,pC,congC,...
 
+// 2026-08-17 裁决：月令格神未透干恢复为硬破格。仅这些已冻结样本允许
+// 用当前引擎的破格状态替代旧 replay/risk 文本，其他字段仍逐项锁定。
+const APPROVED_PATTERN_STATUS = new Set(['#10', 'A5', 'H11', 'P15-09', 'H15']);
+function approvedPatternStatus(id, value) {
+  return APPROVED_PATTERN_STATUS.has(id) && /格·成格$/.test(value)
+    ? value.replace(/格·成格$/, '格·破格')
+    : value;
+}
+
 const chartList = shaRows.map(function (r) { return { set: r[0], id: r[1], gz: r[2] }; });
 assert.equal(chartList.length, 53, 'sha_ab 冻结产物必须恰 53 盘');
 assert.equal(riskRows.length, 59, 'risks 冻结产物必须恰 59 风险行');
@@ -78,8 +87,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '863b258db1032ce1b74391181a41cb89d28d66e3aa7ff09df88f34d7ec482554',
-    'js/bazi.js sha256 与当前官印/杀印分流及藏支印星证据版本一致（CRLF 工作区原始字节口径）'
+    '64df394cb748816f19669a346190b0dba70833380d6bbddd8b7920abf1c0ebb0',
+    'js/bazi.js sha256 与已裁决的格局待定、未透破格及调候方向门控版本一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
@@ -100,7 +109,7 @@ test('A层：53 盘五行层仅含已批准的复合格状态修正', function (
     assert.equal(d.yj.yongShen.join('、'), r[6], c.id + ' 用神');
     assert.equal(d.yj.xiShen.join('、'), r[7], c.id + ' 喜神');
     assert.equal(d.yj.jiShen.join('、'), r[8], c.id + ' 忌神');
-    assert.equal(d.pat.name + '·' + d.pat.status, r[9], c.id + ' 格局');
+    assert.equal(d.pat.name + '·' + d.pat.status, approvedPatternStatus(c.id, r[9]), c.id + ' 格局');
     assert.equal(d.cong.isCong ? d.cong.name : '否', r[10], c.id + ' 从格');
   });
 });
@@ -152,7 +161,9 @@ test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全�
       ].join('');
     }).sort();
     const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) {
-      return r.join('');
+      const copy = r.slice();
+      copy[8] = approvedPatternStatus(c.id, copy[8]);
+      return copy.join('');
     }).sort();
     assert.equal(fresh.length, frozen.length, c.id + ' 风险行数与冻结一致');
     assert.deepEqual(fresh, frozen, c.id + ' 风险 17 列逐项一致');

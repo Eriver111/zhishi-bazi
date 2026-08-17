@@ -4117,6 +4117,7 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock, fallb
  */
 function finalizePatternStatus(bazi, pattern) {
     var reasons = [];
+  var pendingReasons = [];
   var chong = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   var monthZhi = bazi.month.zhi;
   // 燥土不生金：金日主生未/戌月，土印虚浮无力（不化杀、不配印）
@@ -4125,7 +4126,9 @@ function finalizePatternStatus(bazi, pattern) {
     if (chong[monthZhi] === bazi[pos].zhi) reasons.push('月令受' + pos.replace('year','年柱').replace('day','日柱').replace('hour','时柱') + '冲');
   });
 
-    if (pattern.name === '杂格') reasons.push('月令取格条件不清');
+    // 未透干仍按冻结口径作为月令取格的硬破格；杂格的条件不清仅表示待定。
+    if (pattern.type === '月令取格' && pattern.name !== '杂格') reasons.push('月令用神未透干');
+    if (pattern.name === '杂格') pendingReasons.push('月令取格条件不清');
 
     var visibleShiShen = ['year','month','hour'].map(function(pos) {
       return getShiShen(bazi.day.gan, bazi[pos].gan);
@@ -4436,8 +4439,11 @@ function finalizePatternStatus(bazi, pattern) {
 
   pattern.establishConditions = conditions;
   pattern.breakReasons = Array.from(new Set(reasons));
-  pattern.isEstablished = pattern.breakReasons.length === 0;
-  pattern.status = pattern.isEstablished ? '成格' : '破格';
+  pattern.pendingReasons = Array.from(new Set(pendingReasons));
+  pattern.isEstablished = pattern.breakReasons.length === 0 && pattern.pendingReasons.length === 0;
+  pattern.status = pattern.breakReasons.length > 0
+    ? '破格'
+    : (pattern.pendingReasons.length > 0 ? '条件待定' : '成格');
   return pattern;
 }
 
@@ -4685,6 +4691,7 @@ function finalizeYongJiResult(bazi, base, context) {
   var lists = normalizeYongJiLists(base.xiShen, base.yongShen, base.jiShen);
   var pattern = context.pattern || getPattern(bazi);
   var method = context.cong && context.cong.isCong ? '从格顺势'
+    : pattern.status === '条件待定' ? '格局救应'
     : context.tiaoHouNote ? '扶抑为主·调候辅助'
     : pattern.status === '破格' ? '格局救应'
     : '扶抑为主';
@@ -4693,7 +4700,8 @@ function finalizeYongJiResult(bazi, base, context) {
     : method === '扶抑为主·调候辅助'
       ? context.tiaoHouNote
       : method === '格局救应'
-        ? (pattern.name + '条件不足，先取能扶正旺衰并兼顾格局救应的五行。')
+        ? (pattern.name + (pattern.status === '条件待定' ? '条件待定' : '条件不足') + '，先取能扶正旺衰并兼顾格局救应的五行。'
+          + (pattern.status === '条件待定' && context.tiaoHouNote ? '调候辅助：' + context.tiaoHouNote : ''))
         : ('日主' + context.dmStr.level + '（' + context.dmStr.score + '分），以扶抑平衡为主确定用神。');
 
   var positions = ['year','month','day','hour'];
@@ -4754,7 +4762,8 @@ function finalizeYongJiResult(bazi, base, context) {
   if (context.tiaoHouNote) evidence.push({ category:'调候', title:'寒暖燥湿', detail:context.tiaoHouNote });
   evidence.push({
     category:'格局', title:pattern.name + '·' + pattern.status,
-    detail:pattern.status === '破格' ? pattern.breakReasons.join('；') : pattern.source
+    detail:pattern.status === '破格' ? pattern.breakReasons.join('；')
+      : (pattern.status === '条件待定' ? (pattern.pendingReasons || []).join('；') : pattern.source)
   });
   evidence.push({
     category:'根气/透干', title:'用神在原局的状态',
@@ -4814,7 +4823,8 @@ function finalizeYongJiResult(bazi, base, context) {
     patternStatus: {
       name: pattern.name,
       status: pattern.status,
-      breakReasons: (pattern.breakReasons || []).slice()
+      breakReasons: (pattern.breakReasons || []).slice(),
+      pendingReasons: (pattern.pendingReasons || []).slice()
     }
   };
   // P1 候选评分透传（GPT 对账用；从格/穷通特例短路时为空）
@@ -5004,7 +5014,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     }
   };
   var pn = pattern.name || '';
-  var isPo = pattern.status === '破格';
+  var isPo = pattern.status !== '成格';
   var factor = isPo ? 0.4 : 1;
   if (pn === '杀印相生格' || pn === '官印相生格' || pn === '印星化杀格') {
     // F6 方向门控：身弱侧 + 官杀成势 + 印未成势 → 印加分；
@@ -5267,10 +5277,8 @@ function getYongJi(bazi) {
     cs = calcCandidateScores(bazi, dmStr, pattern);
     tiaoHouNote = cs.tiaoHouNote;
 
-    // 调候裁决层：普通调候仍不改扶抑用神；只有已核准的寒暖燥湿硬边界才接管或抬升。
-    // 1) 丙火未月：保留扶抑用神，但水润燥的实际作用不得再被列为忌神。
-    // 2) 偏强/强旺庚金生亥月：冬金非火不暖，火优先成为核心调候用神。
-    var forceSummerFireWaterXi = dmWx === '火' && bazi.month.zhi === '未';
+    // 调候说明不覆盖扶抑喜忌；仅核准的核心用神硬边界可以接管候选赢家。
+    // 偏强/强旺庚金生亥月：冬金非火不暖，火优先成为核心调候用神。
     var forceWinterMetalFireYong = dmWx === '金' && bazi.month.zhi === '亥' && dmLevel.indexOf('强') >= 0;
     if (forceWinterMetalFireYong) {
       cs.yongWx = '火';
@@ -5289,14 +5297,6 @@ function getYongJi(bazi) {
     WX.forEach(function(wx) {
       elementClassification[wx] = c07ElementTier(wx, cs.SNeed[wx], cs.L1[wx], dmWx, wx === cs.yongWx);
     });
-    if (forceSummerFireWaterXi && cs.yongWx !== '水') {
-      elementClassification['水'] = '喜神';
-    }
-    if (forceSummerFireWaterXi) {
-      cs.candidates.filter(function(candidate) { return candidate.wx === '水'; }).forEach(function(candidate) {
-        candidate.role = '喜神';
-      });
-    }
     if (forceWinterMetalFireYong) {
       cs.candidates.forEach(function(candidate) {
         if (candidate.wx === '火') candidate.role = '用神';
@@ -5908,7 +5908,9 @@ function getProfessionalReportFacts(bazi, gender) {
   };
 
   addChain(4, pattern.name + '·' + pattern.status,
-    pattern.status === '破格' ? (pattern.breakReasons || []).join('；') : pattern.source);
+    pattern.status === '破格'
+      ? (pattern.breakReasons || []).join('；')
+      : (pattern.status === '条件待定' ? (pattern.pendingReasons || []).join('；') : pattern.source));
   getGanHe(bazi).forEach(function(item) {
     addChain(item.isTransformed ? 4 : 2, item.status, item.desc);
   });

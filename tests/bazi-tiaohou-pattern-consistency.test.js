@@ -16,7 +16,7 @@ function pillars(values) {
   return { year: records[0], month: records[1], day: records[2], hour: records[3] };
 }
 
-test('丙火生未月时水作为调候喜神而不推翻木用神', () => {
+test('丙火生未月时调候说明不覆盖水的正式扶抑忌神', () => {
   const calculator = loadCalculator();
   const chart = calculator.buildFromPillars(
     pillars(['辛丑', '乙未', '丙寅', '戊戌']),
@@ -27,10 +27,11 @@ test('丙火生未月时水作为调候喜神而不推翻木用神', () => {
 
   assert.equal(result.dayMasterScore, 38);
   assert.deepEqual(Array.from(result.yongShen), ['木']);
-  assert.ok(result.xiShen.includes('水'), '未月丙火需要水润燥，水至少应列为调候喜神');
-  assert.ok(!result.jiShen.includes('水'));
-  assert.equal(result.elementClassification['水'], '喜神');
-  assert.equal(water.role, '喜神');
+  assert.ok(result.jiShen.includes('水'), '扶抑方向为负时，水不能被调候强行升为正式喜神');
+  assert.ok(!result.xiShen.includes('水'));
+  assert.equal(result.elementClassification['水'], '忌神');
+  assert.equal(water.role, '忌神');
+  assert.match(result.primaryReason, /调候辅助/);
 });
 
 test('偏强庚金生亥月时火接管核心调候用神', () => {
@@ -51,7 +52,7 @@ test('偏强庚金生亥月时火接管核心调候用神', () => {
   assert.equal(fire.role, '用神');
 });
 
-test('月令食神未透只降低层次而不自动判破格', () => {
+test('月令食神未透保留冻结的硬破格依据', () => {
   const calculator = loadCalculator();
   const chart = calculator.buildFromPillars(
     pillars(['丙寅', '己亥', '庚申', '庚辰']),
@@ -60,12 +61,35 @@ test('月令食神未透只降低层次而不自动判破格', () => {
   const facts = calculator.getProfessionalReportFacts(chart, 'male');
 
   assert.equal(facts.pattern.name, '食神格');
-  assert.equal(facts.pattern.status, '成格');
-  assert.ok(!facts.pattern.breakReasons.includes('月令用神未透干'));
+  assert.equal(facts.pattern.status, '破格');
+  assert.ok(facts.pattern.breakReasons.includes('月令用神未透干'));
   assert.match(facts.pattern.desc, /月令食神当令但未透干/);
   assert.doesNotMatch(facts.pattern.desc, /月令透食/);
   assert.ok(facts.pattern.establishConditions.some(row =>
     row.condition === '月令格神透干' && row.met === false && row.category === 'QUALITY'
+  ));
+});
+
+test('杂格条件不清显示待定而不伪装成破格或成格', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['甲午', '丙辰', '戊寅', '庚申']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+  const yongJi = calculator.getYongJi(chart);
+  const facts = calculator.getProfessionalReportFacts(chart, 'male');
+
+  assert.equal(pattern.name, '杂格');
+  assert.equal(pattern.status, '条件待定');
+  assert.equal(pattern.isEstablished, false);
+  assert.deepEqual(Array.from(pattern.breakReasons), []);
+  assert.ok(Array.from(pattern.pendingReasons).includes('月令取格条件不清'));
+  assert.equal(yongJi.method, '格局救应');
+  assert.match(yongJi.primaryReason, /条件待定|条件不足/);
+  assert.match(facts.summary, /当前判为条件待定/);
+  assert.ok(facts.actionChains.some(row =>
+    row.title === '杂格·条件待定' && /月令取格条件不清/.test(row.detail)
   ));
 });
 
