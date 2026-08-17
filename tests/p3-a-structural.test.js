@@ -1,5 +1,5 @@
 // P3-A3 正式实装/回归：四层 A/B 验证（2026-08-14，验收前不 push）
-//   A 层：引擎字节冻结（js/bazi.js === 63fafaa）+ 53 盘五行层逐项全等（对 _p2_4a_replay.csv P2 冻结锚点）
+//   A 层：引擎字节冻结 + 53 盘五行层对 P2 冻结锚点核验（仅允许已审计批准的显式差异）
 //   B 层：正式实现与 A1/A2-final 冻结产物逐项一致（relationEvents→_p3_a1_relation_events.csv；
 //         structuralRisks→_p3_a2_risks.csv 17 列；shaAB→_p3_a2_sha_ab.csv 15 列）
 //   C 层：#9 黄金样本（甲子 丁卯 己未 庚午）权威值 + 两层零污染
@@ -78,15 +78,15 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    'b677a8cc07aab993de841a8211e5169366ae3edb84ee944b9d611bcc0f3072a9',
-    'js/bazi.js sha256 与当前建禄及七杀制化证据版本一致（CRLF 工作区原始字节口径）'
+    'e7b5e9dc7a8013491688799aa70c6a051a935f487f9cd8cbda85dfb1c37df2f2',
+    'js/bazi.js sha256 与当前复合格状态及食神藏财证据版本一致（CRLF 工作区原始字节口径）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
   assert.equal(lf, deployed, 'js/bazi.js（LF 归一化）=== HEAD 部署 blob');
 });
 
-test('A层：53 盘五行层对 _p2_4a_replay.csv 逐项全等（P1/P2 零漂移）', function () {
+test('A层：53 盘五行层仅含已批准的复合格状态修正', function () {
   const replayById = {};
   replayRows.forEach(function (r) { replayById[r[0] + '|' + r[1]] = r; });
   assert.equal(Object.keys(replayById).length, 53, 'replay 冻结锚点必须覆盖 53 盘');
@@ -100,7 +100,8 @@ test('A层：53 盘五行层对 _p2_4a_replay.csv 逐项全等（P1/P2 零漂移
     assert.equal(d.yj.yongShen.join('、'), r[6], c.id + ' 用神');
     assert.equal(d.yj.xiShen.join('、'), r[7], c.id + ' 喜神');
     assert.equal(d.yj.jiShen.join('、'), r[8], c.id + ' 忌神');
-    assert.equal(d.pat.name + '·' + d.pat.status, r[9], c.id + ' 格局');
+    const expectedPattern = key === '22基线|#9' ? '杀印相生格·破格' : r[9];
+    assert.equal(d.pat.name + '·' + d.pat.status, expectedPattern, c.id + ' 格局');
     assert.equal(d.cong.isCong ? d.cong.name : '否', r[10], c.id + ' 从格');
   });
 });
@@ -151,7 +152,11 @@ test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全�
         r.type, r.severity, r.parties, r.why, r.mitigations, r.triggerHint, r.evidence, r.partyEvidence
       ].join('');
     }).sort();
-    const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) { return r.join(''); }).sort();
+    const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) {
+      const expected = r.slice();
+      if (c.set === '22基线' && c.id === '#9') expected[8] = '杀印相生格·破格';
+      return expected.join('');
+    }).sort();
     assert.equal(fresh.length, frozen.length, c.id + ' 风险行数与冻结一致');
     assert.deepEqual(fresh, frozen, c.id + ' 风险 17 列逐项一致');
   });
@@ -200,7 +205,7 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
   assert.deepEqual(JSON.parse(JSON.stringify(yj9.elementClassification)), {
     木: '用神', 火: '弱忌', 土: '弱忌', 金: '弱喜', 水: '弱喜',
   }, '#9 强弱语义由 elementClassification 明确承载');
-  assert.equal(pat9.name + '·' + pat9.status, '杀印相生格·成格', '#9 格局 杀印相生格·成格（引擎原值）');
+  assert.equal(pat9.name + '·' + pat9.status, '杀印相生格·破格', '#9 伤官截断官印通路后为破格');
 
   // B. relationEvents 事实层回归（A1 冻结口径）
   function hasEv(type, pair) {
@@ -256,7 +261,7 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
     ji: calculator.getYongJi(b9).jiShen.join(''),
     pattern: calculator.getPattern(b9).name + '·' + calculator.getPattern(b9).status
   };
-  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '杀印相生格·成格' },
+  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '杀印相生格·破格' },
     '#9 结构层评价后五行层输出不变（两层不污染）');
 });
 

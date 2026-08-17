@@ -28,7 +28,7 @@ test('direct-pillar dependencies load in calculation order before main', () => {
   const scripts = [
     'js/lunar.js',
     'js/county-longitudes.js?v=county-centroid-v1',
-    'js/bazi.js?v=20260817h',
+    'js/bazi.js?v=20260817i',
     'js/pillar-input.js',
     'js/pillar-reverse-lookup.js',
     'js/region.js',

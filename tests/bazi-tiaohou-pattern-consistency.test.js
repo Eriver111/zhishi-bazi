@@ -222,3 +222,42 @@ test('七杀同时见伤官印财时仍保留极弱财党杀的破格依据', ()
   assert.equal(pattern.status, '破格');
   assert.ok(pattern.breakReasons.some(reason => /伤官透出制杀，但日主极弱且财星党杀，制化不足/.test(reason)));
 });
+
+test('杀印相生的核心通路被财与伤官截断时不能仍显示成格', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['甲寅', '己巳', '庚戌', '癸未']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+  const wealthBlock = pattern.establishConditions.find(row => row.condition === '印星不被财破');
+  const outputBlock = pattern.establishConditions.find(row => row.condition === '官/杀不被食伤制死');
+
+  assert.equal(pattern.name, '杀印相生格');
+  assert.equal(pattern.status, '破格');
+  assert.equal(pattern.isEstablished, false);
+  assert.equal(wealthBlock.met, false);
+  assert.equal(wealthBlock.category, 'HARD_BREAK');
+  assert.equal(outputBlock.met, false);
+  assert.equal(outputBlock.category, 'HARD_BREAK');
+  assert.ok(pattern.breakReasons.some(reason => /财星破印，官杀印通路中断/.test(reason)));
+  assert.ok(pattern.breakReasons.some(reason => /伤官克官，官印链断裂/.test(reason)));
+});
+
+test('食神格财星藏支未透时披露真实位置而不写成缺财', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['乙卯', '戊寅', '壬午', '己酉']),
+    'male'
+  );
+  const yongJi = calculator.getYongJi(chart);
+  const pattern = calculator.getPattern(chart);
+  const wealthPath = pattern.establishConditions.find(row => row.condition === '食神有生财之路');
+
+  assert.equal(yongJi.dayMasterLevel, '极弱');
+  assert.equal(pattern.name, '食神格');
+  assert.equal(pattern.status, '破格');
+  assert.equal(wealthPath.met, false);
+  assert.match(wealthPath.detail, /财星藏于日支午但未透干/);
+  assert.doesNotMatch(wealthPath.detail, /缺财星/);
+});

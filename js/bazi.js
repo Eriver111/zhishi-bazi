@@ -4273,7 +4273,25 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '日主有根纳印', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身极弱，印来难纳' });
     } else if (pn === '食神格') {
       conditions.push({ condition: '无枭神夺食', met: !hasVisible('偏印'), detail: hasVisible('偏印') ? '偏印夺食，才华受阻' : '✓' });
-      conditions.push({ condition: '食神有生财之路', met: hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正财')||hasVisible('偏财')) ? '食神生财，技艺得价' : '缺财星转化，秀而不实' });
+      var foodGodHasVisibleWealth = hasVisible('正财') || hasVisible('偏财');
+      var foodGodHiddenWealth = [];
+      var foodGodPositionLabels = { year:'年支', month:'月支', day:'日支', hour:'时支' };
+      ['year','month','day','hour'].forEach(function(pos) {
+        var hasWealth = getCangGan(bazi[pos].zhi).some(function(gan) {
+          var role = getShiShen(bazi.day.gan, gan);
+          return role === '正财' || role === '偏财';
+        });
+        if (hasWealth) foodGodHiddenWealth.push(foodGodPositionLabels[pos] + bazi[pos].zhi);
+      });
+      conditions.push({
+        condition: '食神有生财之路',
+        met: foodGodHasVisibleWealth,
+        detail: foodGodHasVisibleWealth
+          ? '食神生财，技艺得价'
+          : (foodGodHiddenWealth.length
+            ? foodGodHiddenWealth.map(function(position) { return '财星藏于' + position + '但未透干'; }).join('；')
+            : '缺财星转化，秀而不实')
+      });
     } else if (pn === '伤官格') {
       conditions.push({ condition: '无正官被伤', met: !hasVisible('正官'), detail: hasVisible('正官') ? '伤官见官，为祸百端' : '✓' });
       conditions.push({ condition: '有印星制伤或财星引化', met: hasVisible('正印')||hasVisible('偏印')||hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正印')||hasVisible('偏印')) ? '印星制伤' : (hasVisible('正财')||hasVisible('偏财')) ? '财星引化' : '缺印缺财，伤官无制无化' });
@@ -4292,8 +4310,12 @@ function finalizePatternStatus(bazi, pattern) {
   // 同柱复合格局的条件
   if (pt === '同柱复合') {
     if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0) {
-      conditions.push({ condition: '印星不被财破', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星破印，官杀印通路中断' : '✓' });
-      conditions.push({ condition: '官/杀不被食伤制死', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '伤官克官，官印链断裂' : '✓' });
+      var compoundWealthBreak = hasVisible('正财') || hasVisible('偏财');
+      var compoundOutputBreak = hasVisible('伤官');
+      conditions.push({ condition: '印星不被财破', met: !compoundWealthBreak, detail: compoundWealthBreak ? '财星破印，官杀印通路中断' : '✓' });
+      conditions.push({ condition: '官/杀不被食伤制死', met: !compoundOutputBreak, detail: compoundOutputBreak ? '伤官克官，官印链断裂' : '✓' });
+      if (compoundWealthBreak) reasons.push('财星破印，官杀印通路中断');
+      if (compoundOutputBreak) reasons.push('伤官克官，官印链断裂');
       conditions.push({ condition: '印星有力（非燥土虚浮）', met: !dryEarthYin, detail: dryEarthYin ? '金日主生未戌燥土月，燥土不生金，印虚不化杀' : '✓' });
       if (dryEarthYin) reasons.push('燥土印虚浮，不化杀生身');
     }
@@ -4364,7 +4386,7 @@ function finalizePatternStatus(bazi, pattern) {
   }
 
   // P5-A2B condition schema 分类：HARD_BREAK=与 breakReasons 对齐的硬条件；QUALITY=层次/配置条件（不驱动成破）；
-  // INFO=说明性条目。待攻条目（财党杀、官印复合双条、配印印星有力、伤官无制化）暂列 QUALITY，P5-A2 后续分层裁定再调整。
+  // INFO=说明性条目。待攻条目（财党杀、配印印星有力、伤官无制化）暂列 QUALITY，P5-A2 后续分层裁定再调整。
   // P5-A2-DESIGN-01：『日主有根纳印』由疑似硬条件降级 QUALITY——极弱印格（攻击集 C19/C20）不视为破格，印格承载语义待审。
   var CONDITION_CATEGORIES = {
     '月令格神透干': 'QUALITY',
@@ -4384,8 +4406,8 @@ function finalizePatternStatus(bazi, pattern) {
     '日主能担财': 'HARD_BREAK',
     '财官透出为用': 'HARD_BREAK',
     '官杀制刃': 'HARD_BREAK',
-    '印星不被财破': 'QUALITY',
-    '官/杀不被食伤制死': 'QUALITY',
+    '印星不被财破': 'HARD_BREAK',
+    '官/杀不被食伤制死': 'HARD_BREAK',
     '印星有力（非燥土虚浮）': 'HARD_BREAK',
     '印星有力': 'QUALITY',
     '制神有效制杀': 'HARD_BREAK'
