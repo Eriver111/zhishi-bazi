@@ -12,6 +12,14 @@ test('equivalent BaZi parameters produce one stable key', () => {
   assert.equal(makeReportKey('bazi', left), makeReportKey('bazi', right));
 });
 
+test('county data versions refresh calculation caches without changing paid entitlement', () => {
+  const base = { year:1990, month:6, day:15, hour:8, minute:5, gender:'male', clock:8, prov:'广东省', city:'广州市', dist:'天河区' };
+  assert.equal(
+    makeReportKey('bazi', base),
+    makeReportKey('bazi', { ...base, geo_v:'county-centroid-v2', solarDataVersion:'county-centroid-v2' })
+  );
+});
+
 test('every calculation-affecting field changes the report key', () => {
   const base = { year:1990, month:6, day:15, hour:8, minute:5, gender:'male', clock:8, prov:'广东省', city:'广州市', dist:'天河区', cal:'solar', ziHourRule:'next-day' };
   for (const [field, value] of [['minute',6], ['gender','female'], ['clock',9], ['city','深圳市'], ['ziHourRule','same-day']]) {

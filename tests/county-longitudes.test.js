@@ -123,3 +123,16 @@ test('snapshot includes Hong Kong, Macau, and all reviewed Taiwan districts', ()
   assert.equal(keys.filter((key) => key.startsWith('澳门特别行政区|')).length, 7);
   assert.equal(keys.filter((key) => key.startsWith('台湾省|')).length, 40);
 });
+
+test('legacy complete locations may fall back while new submissions can require an exact county', () => {
+  const longitudeData = loadLongitudeData();
+  const legacyLocation = { province: '北京市', city: '北京市', district: '旧朝阳区名称' };
+
+  const fallback = longitudeData.resolveLocation(legacyLocation, { allowFallback: true });
+  assert.equal(fallback.level, 'city_fallback');
+  assert.equal(fallback.estimated, true);
+  assert.throws(
+    () => longitudeData.resolveLocation(legacyLocation, { allowFallback: false }),
+    /县级经度未匹配/
+  );
+});

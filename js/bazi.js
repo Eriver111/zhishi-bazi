@@ -663,7 +663,15 @@ function normalizeBirthInput(params) {
     }
 
     if (params.trueSolarTime !== false) {
-        var location = params.location || params.dist || params.city || params.prov || '';
+        var location = params.location;
+        if (!location && (params.dist || params.city || params.prov)) {
+            location = {
+                province: params.prov || '',
+                city: params.city || '',
+                district: params.dist || '',
+                allowFallback: params.allowLocationFallback !== false
+            };
+        }
         if (location) {
             var solarInfo = getTrueSolarHour(
                 normalized.hour, location, normalized.year, normalized.month, normalized.day,
@@ -3990,8 +3998,25 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock, fallb
       return v;
     }
 
+    var locationResolution = null;
     var place = province || '';
-    var lng = resolveLng(place);
+    var lng = null;
+    if (province && typeof province === 'object' && typeof CountyLongitudeData !== 'undefined' && CountyLongitudeData && typeof CountyLongitudeData.resolveLocation === 'function') {
+      locationResolution = CountyLongitudeData.resolveLocation({
+        province: province.province || '',
+        city: province.city || '',
+        district: province.district || ''
+      }, { allowFallback: province.allowFallback !== false });
+      lng = locationResolution.longitude;
+      place = locationResolution.matchedKey || '';
+    } else {
+      if (province && typeof province === 'object') {
+        place = province.district || province.city || province.province || '';
+        fallbackCity = province.city || fallbackCity;
+        fallbackProv = province.province || fallbackProv;
+      }
+      lng = resolveLng(place);
+    }
     if (!lng && fallbackCity) lng = resolveLng(fallbackCity);
     if (!lng && fallbackProv) lng = resolveLng(fallbackProv);
     if (!lng) lng = BEIJING_LNG;
@@ -4070,7 +4095,8 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock, fallb
         lng: lng,
         lngOffsetMin: Math.round(lngOffsetMin),
         eotMin: Math.round(eotMin),
-        method: method
+        method: method,
+        locationResolution: locationResolution
     };
 }
 

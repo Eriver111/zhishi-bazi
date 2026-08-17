@@ -14535,8 +14535,7 @@
     var aliasKey = aliases[key];
     if (aliasKey && records[aliasKey]) return result(records[aliasKey], 'county_alias', aliasKey, false);
     var parts = key.split('|');
-    var complete = parts.length === 3 && parts.every(Boolean);
-    if (options.allowFallback === false || complete) throw new Error('县级经度未匹配: ' + key);
+    if (options.allowFallback === false) throw new Error('县级经度未匹配: ' + key);
     var candidates = Object.keys(records).filter(function (candidate) {
       var c = candidate.split('|');
       return parts[0] && c[0] === parts[0] && parts[1] && c[1] === parts[1];

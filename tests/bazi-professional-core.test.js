@@ -6,7 +6,8 @@ const assert = require('node:assert/strict');
 
 function loadCalculatorWithInternals() {
   const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'bazi.js'), 'utf8');
-  const context = { window: {} };
+  const countyData = require(path.join(__dirname, '..', 'js', 'county-longitudes.js'));
+  const context = { window: {}, CountyLongitudeData: countyData };
   vm.runInNewContext(
     source + '\nwindow.__baziInternals = { getNaYin, getJieQiDates };',
     context
@@ -16,6 +17,28 @@ function loadCalculatorWithInternals() {
     internals: context.window.__baziInternals,
   };
 }
+
+test('shared birth normalization records the exact county longitude source', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  const normalized = calculator.normalizeBirthInput({
+    year: 1990, month: 7, day: 12, hour: 9, clock: 18, minute: 0,
+    gender: 'male', trueSolarTime: true,
+    prov: '河北省', city: '石家庄市', dist: '长安区',
+    allowLocationFallback: false,
+  });
+  assert.equal(normalized.solarInfo.lng, 114.548151);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(normalized.solarInfo.locationResolution)),
+    {
+      longitude: 114.548151,
+      level: 'county',
+      source: 'administrative-center',
+      sourceVersion: 'county-centroid-v1',
+      matchedKey: '河北省|石家庄市|长安区',
+      estimated: false,
+    }
+  );
+});
 
 const GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 const ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];

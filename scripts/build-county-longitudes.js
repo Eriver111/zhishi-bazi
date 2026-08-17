@@ -407,11 +407,18 @@ function jsLiteral(value) {
   return JSON.stringify(value, null, 2);
 }
 
-function renderModule(data) {
+function renderModuleTemplate(data) {
   const sortedRecords = Object.fromEntries(Object.entries(data.records).sort(([a], [b]) => a.localeCompare(b)));
   const sortedAliases = Object.fromEntries(Object.entries(data.aliases || {}).sort(([a], [b]) => a.localeCompare(b)));
   const payload = jsLiteral({ VERSION, records: sortedRecords, aliases: sortedAliases });
   return `(function (root, factory) {\n  var data = factory();\n  if (typeof module === 'object' && module.exports) module.exports = data;\n  if (root) root.CountyLongitudeData = data;\n})(typeof globalThis !== 'undefined' ? globalThis : this, function () {\n  var payload = ${payload};\n  var records = Object.freeze(payload.records);\n  var aliases = Object.freeze(payload.aliases);\n  function clean(value) { return String(value == null ? '' : value).trim(); }\n  function keyOf(location) {\n    if (typeof location === 'string') return location.split('|').map(clean).join('|');\n    location = location || {};\n    return [location.province, location.city, location.district].map(clean).join('|');\n  }\n  function result(row, level, matchedKey, estimated) {\n    return { longitude: row.longitude, level: level, source: row.source, sourceVersion: payload.VERSION, matchedKey: matchedKey, estimated: estimated };\n  }\n  function resolveLocation(location, options) {\n    options = options || {};\n    var key = keyOf(location);\n    var row = records[key];\n    if (row) return result(row, 'county', key, false);\n    var aliasKey = aliases[key];\n    if (aliasKey && records[aliasKey]) return result(records[aliasKey], 'county_alias', aliasKey, false);\n    var parts = key.split('|');\n    var complete = parts.length === 3 && parts.every(Boolean);\n    if (options.allowFallback === false || complete) throw new Error('县级经度未匹配: ' + key);\n    var candidates = Object.keys(records).filter(function (candidate) {\n      var c = candidate.split('|');\n      return parts[0] && c[0] === parts[0] && parts[1] && c[1] === parts[1];\n    });\n    if (candidates.length) {\n      var cityLongitude = candidates.reduce(function (sum, candidate) { return sum + records[candidate].longitude; }, 0) / candidates.length;\n      return result({ longitude: Number(cityLongitude.toFixed(6)), source: 'estimated-city', }, 'city_fallback', parts.slice(0, 2).join('|'), true);\n    }\n    candidates = Object.keys(records).filter(function (candidate) { return parts[0] && candidate.indexOf(parts[0] + '|') === 0; });\n    if (candidates.length) {\n      var provinceLongitude = candidates.reduce(function (sum, candidate) { return sum + records[candidate].longitude; }, 0) / candidates.length;\n      return result({ longitude: Number(provinceLongitude.toFixed(6)), source: 'estimated-province' }, 'province_fallback', parts[0], true);\n    }\n    return result({ longitude: 120, source: 'default-fallback' }, 'default_fallback', '', true);\n  }\n  return { VERSION: payload.VERSION, records: records, aliases: aliases, resolveLocation: resolveLocation };\n});\n`;
+}
+
+function renderModule(data) {
+  return renderModuleTemplate(data).replace(
+    "    var complete = parts.length === 3 && parts.every(Boolean);\\n    if (options.allowFallback === false || complete)",
+    "    if (options.allowFallback === false)"
+  );
 }
 
 async function main() {

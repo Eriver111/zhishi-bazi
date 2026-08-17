@@ -132,6 +132,7 @@ test('direct result query restores all entered pillars and timing metadata', () 
     prov: '',
     city: '',
     dist: '',
+    geoVersion: '',
     minute: 0,
     clock: 22,
     solar: '',
@@ -177,6 +178,24 @@ test('result entry accepts only a complete integer clock from zero through twent
     const { context } = loadResult('?mode=pillars&timing=matched&clock=' + raw);
     assert.equal(context.getUrlParams().clock, Number(raw), raw);
   }
+});
+
+test('ordinary results keep timing when true-solar correction produces a fractional clock', () => {
+  const { context } = loadResult();
+  let daYunCalled = false;
+  context.window.BaZiCalculator = {
+    calculate() { return { month:{}, year:{} }; },
+    calculateDaYun() { daYunCalled = true; return { list: [] }; },
+    calculateShenSha() { return []; },
+  };
+
+  const result = context.buildResultData({
+    mode: '', gender: 'male', year: 1990, month: 7, day: 12,
+    hour: 9, clock: 17.55,
+  });
+
+  assert.equal(result.hasTiming, true);
+  assert.equal(daYunCalled, true);
 });
 
 test('matched direct result keeps entered chart while candidate timing drives DaYun', () => {

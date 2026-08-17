@@ -32,6 +32,7 @@ function getUrlParams() {
         prov: p.get('prov') || '',
         city: p.get('city') || '',
         dist: p.get('dist') || '',
+        geoVersion: p.get('geo_v') || '',
         minute: parseInt(p.get('minute')) || 0,
         clock: /^\d{1,2}$/.test(p.get('clock') || '') && Number(p.get('clock')) <= 23
             ? Number(p.get('clock')) : NaN,
@@ -53,10 +54,17 @@ function isValidBirthClock(clock) {
     return Number.isInteger(value) && value >= 0 && value <= 23;
 }
 
+function isValidCalculatedClock(clock) {
+    var value = Number(clock);
+    return Number.isFinite(value) && value >= 0 && value < 24;
+}
+
 function buildResultData(params) {
     var isDirect = params.mode === 'pillars';
     var requestedTiming = !isDirect || params.timing === 'matched';
-    var hasTiming = requestedTiming && isValidBirthClock(params.clock);
+    var hasTiming = requestedTiming && (isDirect
+        ? isValidBirthClock(params.clock)
+        : isValidCalculatedClock(params.clock));
     var birthDate = hasTiming
         ? { year: params.year, month: params.month, day: params.day, hour: params.hour, clock: params.clock }
         : null;
@@ -111,6 +119,7 @@ function reportAnchorKey(params) {
         mode: params.mode || '', year: params.year, month: params.month, day: params.day,
         hour: params.hour, gender: params.gender, cal: params.cal || '',
         prov: params.prov || '', city: params.city || '', dist: params.dist || '',
+        solarDataVersion: params.solarDataVersion || '',
         minute: params.minute || 0, clock: params.clock || 0,
         solar: params.solar || '', zishi: params.zishi || '', timing: params.timing || ''
     };
@@ -144,8 +153,10 @@ function render(data) {
     } else if (hasTiming && bazi.originalHour !== undefined && bazi.originalHour !== bazi.birthDate.hour) {
         hourText += ' <span style="font-size:11px;color:var(--gold)">真太阳时</span>';
         hourText += ' <span style="font-size:10px;color:var(--text-dim)">原北京时间：' + SHI_CHEN_NAMES[bazi.originalHour] + '</span>';
-    } else if (hasTiming && bazi.solarInfo && bazi.solarInfo.lng !== 120) {
-        hourText += ' <span style="font-size:10px;color:var(--text-dim)">（经度已校正）</span>';
+    } else if (hasTiming && bazi.solarInfo && bazi.solarInfo.locationResolution) {
+        hourText += bazi.solarInfo.locationResolution.estimated
+            ? ' <span style="font-size:10px;color:var(--text-dim)">（经度按上级地区估算）</span>'
+            : ' <span style="font-size:10px;color:var(--text-dim)">（县级经度已校正）</span>';
     }
     document.getElementById('birthHourText').innerHTML = hourText;
     document.getElementById('nayinText').textContent = bazi.naYin;
@@ -1635,7 +1646,10 @@ function renderSolarTime(year, month, day, birthHour) {
     // 优先使用已计算好的 solarInfo（含经度+均时差调整）
     var solarInfo = (_bazi && _bazi.solarInfo) || null;
     if (!solarInfo) {
-        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, _params.dist || _params.city || _params.prov || '', year, month, day, 0, 0, _params.city || '', _params.prov || '');
+        var fallbackLocation = (_params.prov || _params.city || _params.dist) ? {
+            province:_params.prov || '', city:_params.city || '', district:_params.dist || '', allowFallback:true
+        } : '';
+        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, fallbackLocation, year, month, day, 0, 0);
     }
 
     // 用 solarMinutes 直接取真太阳时间
@@ -1647,14 +1661,26 @@ function renderSolarTime(year, month, day, birthHour) {
     var solarStr = String(sH).padStart(2,'0') + ':' + String(sM).padStart(2,'0');
 
     var sign = Math.abs(solarInfo.eotMin) < 0.5 ? '≈' : (solarInfo.eotMin > 0 ? '+' : '');
-    el.innerHTML = solarStr + ' <span style="font-size:11px;color:var(--text-dim)">（均时差' + sign + Math.abs(solarInfo.eotMin) + '分'
-
-    // 省份经度信息
-    if (_params.prov && solarInfo.lng !== 120) {
-        var offsetSign = solarInfo.lngOffsetMin > 0 ? '东' : '西';
-        el.innerHTML += ' • ' + _params.prov + '经度' + solarInfo.lng + '°（北京偏' + offsetSign + Math.abs(solarInfo.lngOffsetMin) + '分）';
+    var resolution = solarInfo.locationResolution;
+    var locationText = '';
+    if (resolution) {
+        if (resolution.level === 'county') {
+            locationText = '按' + (_params.dist || '所选县区') + '的县级行政中心经度 ' + solarInfo.lng + '°E 校正';
+        } else if (resolution.level === 'county_alias') {
+            locationText = '旧地名已映射；按当前县级行政中心经度 ' + solarInfo.lng + '°E 校正';
+        } else if (resolution.level === 'city_fallback') {
+            locationText = '县级经度未匹配，当前按' + (_params.city || '所选城市') + '经度估算';
+        } else if (resolution.level === 'province_fallback') {
+            locationText = '县级经度未匹配，当前按' + (_params.prov || '所选省份') + '经度估算';
+        } else {
+            locationText = '出生地经度未匹配，当前按东经 120° 估算';
+        }
+    } else if (!_params.prov && !_params.city && !_params.dist) {
+        locationText = '未选择出生地，当前未使用县级经度';
+    } else {
+        locationText = '旧版地点数据，当前按可识别的上级地区估算';
     }
-    el.innerHTML += '）</span>';
+    el.textContent = solarStr + '（均时差' + sign + Math.abs(solarInfo.eotMin) + '分 • ' + locationText + '）';
 }
 
 // ==================== 抽屉式开关 ====================
@@ -1697,14 +1723,18 @@ document.addEventListener('DOMContentLoaded', function() {
         var normalizedBirth = window.BaZiCalculator.normalizeBirthInput({
             year:_params.year, month:_params.month, day:_params.day, hour:_params.hour,
             clock:_params.clock, minute:_params.minute, gender:_params.gender,
-            location:_params.dist || _params.city || _params.prov || '',
-            city:_params.city || '', prov:_params.prov || '',
+            location:(_params.prov || _params.city || _params.dist) ? {
+                province:_params.prov || '', city:_params.city || '', district:_params.dist || '', allowFallback:true
+            } : '',
+            dist:_params.dist || '', city:_params.city || '', prov:_params.prov || '',
             trueSolarTime:_params.solar !== '0', ziHourNextDay:_params.zishi === '1'
         });
         _params.year=normalizedBirth.year;_params.month=normalizedBirth.month;_params.day=normalizedBirth.day;
         _params.hour=normalizedBirth.hour;_params.clock=normalizedBirth.clock;
         _params.dayPillarOffset=normalizedBirth.dayPillarOffset;
         solarInfo=normalizedBirth.solarInfo;
+        _params.solarDataVersion = solarInfo && solarInfo.locationResolution
+            ? solarInfo.locationResolution.sourceVersion : '';
     }
 
     if (typeof DeepReportAnchor !== 'undefined' && DeepReportAnchor.resolve) {

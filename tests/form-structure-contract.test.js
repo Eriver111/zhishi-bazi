@@ -11,7 +11,8 @@ test('bazi input retains every calculation control and script', () => {
   for (const id of ['sYear','sMonth','sDay','sHour','sMinute','zishiHuanri','solarEnabled','province','city','district']) {
     assert.match(html, new RegExp(`id=["']${id}["']`), `missing ${id}`);
   }
-  for (const script of ['js/lunar.js','js/region.js','js/main.js']) assert.ok(html.includes(script));
+  for (const script of ['js/lunar.js','js/region.js','js/county-longitudes.js','js/main.js']) assert.ok(html.includes(script));
+  assert.ok(html.indexOf('js/county-longitudes.js') < html.indexOf('js/bazi.js'));
   assert.match(html, /name=["']gender["']/);
   const ziHourInput = html.match(/<input[^>]+id=["']zishiHuanri["'][^>]*>/)?.[0] || '';
   assert.doesNotMatch(ziHourInput, /\bchecked\b/, 'Zi-hour rollover must default off');
