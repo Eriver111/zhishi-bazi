@@ -66,8 +66,25 @@ test('月令食神未透保留冻结的硬破格依据', () => {
   assert.match(facts.pattern.desc, /月令食神当令但未透干/);
   assert.doesNotMatch(facts.pattern.desc, /月令透食/);
   assert.ok(facts.pattern.establishConditions.some(row =>
-    row.condition === '月令格神透干' && row.met === false && row.category === 'QUALITY'
+    row.condition === '月令格神透干' && row.met === false && row.category === 'HARD_BREAK'
   ));
+});
+
+test('丙火未月水调候不通过候选加分升为正式喜神', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['甲子', '辛未', '丙寅', '甲子']),
+    'male'
+  );
+  const result = calculator.getYongJi(chart);
+  const water = result.candidateScores.find(row => row.wx === '水');
+
+  assert.ok(water.SBase < 0, '该盘水的扶抑基线为负');
+  assert.equal(water.SNeed, water.SBase, '未月丙火的水调候仅作说明，不进入正式候选加分');
+  assert.ok(result.jiShen.includes('水'));
+  assert.notEqual(result.elementClassification['水'], '喜神');
+  assert.notEqual(water.role, '喜神');
+  assert.match(result.primaryReason, /调候辅助/);
 });
 
 test('杂格条件不清显示待定而不伪装成破格或成格', () => {
@@ -85,7 +102,7 @@ test('杂格条件不清显示待定而不伪装成破格或成格', () => {
   assert.equal(pattern.isEstablished, false);
   assert.deepEqual(Array.from(pattern.breakReasons), []);
   assert.ok(Array.from(pattern.pendingReasons).includes('月令取格条件不清'));
-  assert.equal(yongJi.method, '格局救应');
+  assert.equal(yongJi.method, '格局条件待定');
   assert.match(yongJi.primaryReason, /条件待定|条件不足/);
   assert.match(facts.summary, /当前判为条件待定/);
   assert.ok(facts.actionChains.some(row =>
@@ -124,7 +141,7 @@ test('同五行外透不能冒充月令格神本星透干', () => {
   assert.match(pattern.desc, /月令印星当令但本星未透干/);
   assert.doesNotMatch(pattern.desc, /月令透印/);
   assert.ok(pattern.establishConditions.some(row =>
-    row.condition === '月令格神透干' && row.met === false && row.category === 'QUALITY'
+    row.condition === '月令格神透干' && row.met === false && row.category === 'HARD_BREAK'
   ));
 });
 

@@ -52,12 +52,12 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
 
   charts.forEach(chart => {
     const result = calculator.getYongJi(chart);
-    assert.ok(['从格顺势', '扶抑为主·调候辅助', '扶抑为主', '格局救应'].includes(result.method));
+    assert.ok(['从格顺势', '扶抑为主·调候辅助', '扶抑为主', '格局救应', '格局条件待定'].includes(result.method));
     assert.ok(result.primaryReason.length >= 8);
     assert.ok(result.evidence.some(row => row.category === '旺衰'));
     assert.ok(result.evidence.some(row => row.category === '格局'));
     assert.ok(result.evidence.some(row => row.category === '根气/透干'));
-    assert.ok(['成格', '破格'].includes(result.patternStatus.status));
+    assert.ok(['成格', '破格', '条件待定'].includes(result.patternStatus.status));
 
     [...new Set([...result.xiShen, ...result.jiShen])].forEach(wx => {
       assert.ok(result.elementReasons[wx]);

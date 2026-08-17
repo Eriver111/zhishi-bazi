@@ -94,6 +94,12 @@ test('broken or unsupported pattern labels cannot create a strong study path', (
   assert.match(result.path.conclusion, /条件|证据|路径/);
 });
 
+test('pending pattern is disclosed as pending rather than routed as broken', () => {
+  const result = buildStudyFixture({ chain: '官印相生', patternStatus: '条件待定', sealCount: 2 });
+  assert.ok(result.path.evidence.some((item) => /条件待定/.test(item)));
+  assert.doesNotMatch(result.path.evidence.join(' '), /格局未满足强路径条件/);
+});
+
 test('study path evidence names occurrences and their frozen yongJi roles', () => {
   const result = buildStudyFixture({ chain: '官印相生', sealRole: '用神', sealCount: 2 });
   assert.ok(result.path.evidence.some((item) => /月柱|时柱|正官|偏印|正印/.test(item)));

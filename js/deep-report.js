@@ -177,6 +177,11 @@
     return /成格|成立|有效|真格/.test(status);
   }
 
+  function studyPatternPending(core) {
+    var pattern = core && core.pattern || {};
+    return textOf(pattern.status || pattern.state || pattern.result) === '条件待定';
+  }
+
   function studyPathOccurrenceEvidence(occurrences, core) {
     return list(occurrences).map(function (item) {
       return item.pillarLabel + item.layer + '出现' + item.gan + item.role +
@@ -189,6 +194,8 @@
     var rows = studyPathOccurrenceEvidence(occurrences, core);
     if (studyPatternEffective(core)) {
       rows.push('有效格局证据：' + (pattern.name || pattern.label || '已确认格局') + '·' + (pattern.status || '成立'));
+    } else if (studyPatternPending(core)) {
+      rows.push('格局条件待定，暂不按成格或破格强路径下结论，需结合实际十神与现实反馈验证。');
     } else {
       rows.push('格局未满足强路径条件，需结合实际十神与现实反馈验证。');
     }
@@ -340,7 +347,7 @@
     if (!seals.length) blockers.push('缺少印星实际出现证据');
     if (!officers.length) blockers.push('缺少官杀实际出现证据');
     if (!effectivePattern && !explicitChain) blockers.push('缺少有效杀印/官印链证据');
-    if (!studyPatternEffective(core) && /破格|未成|不成|失效|无效/.test(textOf(core && core.pattern && (core.pattern.status || core.pattern.state || core.pattern.result)))) {
+    if (!studyPatternEffective(core) && !studyPatternPending(core) && /破格|未成|不成|失效|无效/.test(textOf(core && core.pattern && (core.pattern.status || core.pattern.state || core.pattern.result)))) {
       blockers.push('格局破格或未成立');
     }
     if (sealRole === '忌神') blockers.push('印星为忌神，不能直接转为承接优势');

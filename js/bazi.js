@@ -4255,8 +4255,8 @@ function finalizePatternStatus(bazi, pattern) {
       condition: '月令格神透干',
       met: false,
       detail: pattern.matchMode === 'same-element'
-        ? '月令格神本星未透，仅有同五行异干透出；格局可以成立，但表现层次与显达程度受限'
-        : '月令格神当令但未透干，格局可以成立，但表现层次与显达程度受限'
+        ? '月令格神本星未透，仅有同五行异干透出；月令格神未透干，按硬条件判为破格'
+        : '月令格神当令但未透干；月令格神未透干，按硬条件判为破格'
     });
   }
 
@@ -4409,7 +4409,7 @@ function finalizePatternStatus(bazi, pattern) {
   // INFO=说明性条目。待攻条目（财党杀、配印印星有力、伤官无制化）暂列 QUALITY，P5-A2 后续分层裁定再调整。
   // P5-A2-DESIGN-01：『日主有根纳印』由疑似硬条件降级 QUALITY——极弱印格（攻击集 C19/C20）不视为破格，印格承载语义待审。
   var CONDITION_CATEGORIES = {
-    '月令格神透干': 'QUALITY',
+    '月令格神透干': 'HARD_BREAK',
     '日主有承载格局之力': 'HARD_BREAK',
     '正官透干有根': 'QUALITY',
     '无伤官克官': 'HARD_BREAK',
@@ -4691,7 +4691,7 @@ function finalizeYongJiResult(bazi, base, context) {
   var lists = normalizeYongJiLists(base.xiShen, base.yongShen, base.jiShen);
   var pattern = context.pattern || getPattern(bazi);
   var method = context.cong && context.cong.isCong ? '从格顺势'
-    : pattern.status === '条件待定' ? '格局救应'
+    : pattern.status === '条件待定' ? '格局条件待定'
     : context.tiaoHouNote ? '扶抑为主·调候辅助'
     : pattern.status === '破格' ? '格局救应'
     : '扶抑为主';
@@ -4699,7 +4699,7 @@ function finalizeYongJiResult(bazi, base, context) {
     ? (context.cong.source + '，取顺势之五行为用。')
     : method === '扶抑为主·调候辅助'
       ? context.tiaoHouNote
-      : method === '格局救应'
+      : method === '格局救应' || method === '格局条件待定'
         ? (pattern.name + (pattern.status === '条件待定' ? '条件待定' : '条件不足') + '，先取能扶正旺衰并兼顾格局救应的五行。'
           + (pattern.status === '条件待定' && context.tiaoHouNote ? '调候辅助：' + context.tiaoHouNote : ''))
         : ('日主' + context.dmStr.level + '（' + context.dmStr.score + '分），以扶抑平衡为主确定用神。');
@@ -5014,7 +5014,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     }
   };
   var pn = pattern.name || '';
-  var isPo = pattern.status !== '成格';
+  var isPo = pattern.status === '破格';
   var factor = isPo ? 0.4 : 1;
   if (pn === '杀印相生格' || pn === '官印相生格' || pn === '印星化杀格') {
     // F6 方向门控：身弱侧 + 官杀成势 + 印未成势 → 印加分；
@@ -5086,7 +5086,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     addL4('火', 6, '冬水寒凝，火暖局');
     tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
   }
-  if (dmWx === '火' && ['巳','午','未'].indexOf(mz) >= 0) {
+  if (dmWx === '火' && ['巳','午'].indexOf(mz) >= 0) {
     addL4('水', 8, '夏火炎炎，水润局');
     tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
   }
@@ -5111,7 +5111,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
   }
   if ((dmWx === '火' || dmWx === '土') && mz === '未') {
-    addL4('水', 6, '未月火土燥烈，水润局');
+    if (dmWx !== '火') addL4('水', 6, '未月火土燥烈，水润局');
     tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
   }
   if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
