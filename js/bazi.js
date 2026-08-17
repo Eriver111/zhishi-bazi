@@ -2809,11 +2809,17 @@ function analyzeParents(bazi, gender) {
 
     // 判断某十神对日主来说是否"喜用"——改为 getYongJi elementClassification 同源口径：
     // 用神/喜神/弱喜 = 喜侧；忌神/弱忌 = 忌侧；不再用旺衰标签粗判（中和盘也有真实档位）。
-    var yongJiCls = getYongJi(bazi).elementClassification || {};
+    var yongJiResult = getYongJi(bazi);
+    var yongJiCls = yongJiResult.elementClassification || {};
+    var yongJiXi = yongJiResult.xiShen || [], yongJiJi = yongJiResult.jiShen || [];
     function starRole(ssName) {
         var wx = ssToWx(ssName);
         if (!wx) return '';
-        return yongJiCls[wx] || '';
+        if (yongJiCls[wx]) return yongJiCls[wx];
+        // 从格等无 elementClassification 的路径：按 xiShen/jiShen 方向兜底
+        if (yongJiXi.indexOf(wx) >= 0) return '喜神';
+        if (yongJiJi.indexOf(wx) >= 0) return '忌神';
+        return '';
     }
 
     // === 2. 查找父母星位置 ===
@@ -5106,7 +5112,9 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       ? '原局有火暖局，寒谷回春，调候已得。'
       : '冬土生于丑月，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
   }
-  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
+  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0 && dmStr.level.indexOf('弱') >= 0) {
+    // 门控（对齐冬金"强"门控先例）：冬火调候只在身弱时加分——中和/偏强冬火（坐羊刃/火透干暖局已足）
+    // 不再无条件 +8/+6，避免把扶抑忌侧的木火硬抬成喜神（乙酉丁亥丙午丙申 类全喜翻转盘）。
     addL4('火', 8, '冬火微弱，火暖局扶身');
     addL4('木', 6, '冬火微弱，木生火暖局');
     tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
