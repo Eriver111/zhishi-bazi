@@ -4621,6 +4621,13 @@ function finalizeYongJiResult(bazi, base, context) {
     elementReasons[wx] = { role: role, reasons: [mechanism, presenceFor(wx)] };
   });
 
+  if (method === '扶抑为主·调候辅助' && lists.yongShen.length) {
+    var primaryYong = lists.yongShen[0];
+    primaryReason = '核心用神为' + primaryYong + '：' + relationFor(primaryYong)
+      + '，是本局首要的调节力量；' + presenceFor(primaryYong) + '。'
+      + '调候辅助：' + context.tiaoHouNote;
+  }
+
   // 生克链调整注入 elementReasons
   if (context.chain && context.chain.adjustments && context.chain.adjustments.length > 0) {
     context.chain.adjustments.forEach(function(adj) {
@@ -5186,7 +5193,7 @@ function getYongJi(bazi) {
       + (yongReasons.length > 0 ? '：' + yongReasons.join('；') : '。')
       + ' 喜：' + [cs.yongWx].concat(xiShen).join('、')
       + '。忌：' + (jiShen.length > 0 ? jiShen.join('、') : '无') + '。';
-    if (tiaoHouNote) reasoning = tiaoHouNote + ' ' + reasoning;
+    if (tiaoHouNote) reasoning += ' 调候辅助：' + tiaoHouNote;
   }
 
   // ---- v5.0 生克链分析 ----

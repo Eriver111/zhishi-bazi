@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260817d/, `${page} must load the county-aware core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260817e/, `${page} must load the explanation-consistent core bundle`);
   }
 });
 
@@ -69,6 +69,23 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
   const winterEarth = calculator.getYongJi(charts[1]);
   assert.equal(winterEarth.method, '扶抑为主·调候辅助');
   assert.ok(winterEarth.evidence.some(row => row.category === '调候'));
+});
+
+test('调候辅助不能覆盖最终核心用神的首要理由', () => {
+  const calculator = loadCalculator();
+  const cases = [
+    ['木', ['己酉', '丁丑', '乙未', '庚辰']],
+    ['木', ['庚戌', '癸未', '丙申', '甲午']],
+    ['土', ['壬子', '癸丑', '辛亥', '甲午']],
+  ];
+
+  for (const [expectedYong, gz] of cases) {
+    const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+    assert.deepEqual(Array.from(result.yongShen), [expectedYong]);
+    assert.match(result.primaryReason, new RegExp(`^核心用神为${expectedYong}`));
+    assert.match(result.primaryReason, /调候辅助：/);
+    assert.ok(result.reasoning.indexOf(`取${expectedYong}为用神`) < result.reasoning.indexOf('调候辅助：'));
+  }
 });
 
 test('深度报告事实对同一命盘生成稳定的专业证据链', () => {
