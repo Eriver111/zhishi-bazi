@@ -78,8 +78,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '835df4d8b4afce7aa4fcd883c4bb5676397f87add8b80e95b861ff1942affb6a',
-    'js/bazi.js sha256 与 C07 冻结+文案补丁（2026-08-17 复合格 desc 透→当权）一致（CRLF 工作区原始字节口径）'
+    '448495400b4ba9cbb7cb07ca4bb1557c51dddfdb89034d105ea47ad3befdbe9e',
+    'js/bazi.js sha256 与当前 C07 弱档分类及后续格局校准版本一致（CRLF 工作区原始字节口径）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
@@ -195,8 +195,11 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
   assert.equal(dm9.score, 51, '#9 分数 51');
   assert.equal(dm9.level, '中和', '#9 旺衰 中和');
   assert.equal(yj9.yongShen.join(''), '木', '#9 用神 木');
-  assert.equal(yj9.xiShen.join(''), '木', '#9 喜神 木（权威值锁定，旧 CSV 木金水作废）');
-  assert.equal(yj9.jiShen.length, 0, '#9 忌神 空');
+  assert.equal(yj9.xiShen.join(''), '木金水', '#9 方向集合含用神木与弱喜金水');
+  assert.equal(yj9.jiShen.join(''), '火土', '#9 方向集合含弱忌火土');
+  assert.deepEqual(JSON.parse(JSON.stringify(yj9.elementClassification)), {
+    木: '用神', 火: '弱忌', 土: '弱忌', 金: '弱喜', 水: '弱喜',
+  }, '#9 强弱语义由 elementClassification 明确承载');
   assert.equal(pat9.name + '·' + pat9.status, '杀印相生格·成格', '#9 格局 杀印相生格·成格（引擎原值）');
 
   // B. relationEvents 事实层回归（A1 冻结口径）
@@ -253,7 +256,7 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
     ji: calculator.getYongJi(b9).jiShen.join(''),
     pattern: calculator.getPattern(b9).name + '·' + calculator.getPattern(b9).status
   };
-  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木', ji: '', pattern: '杀印相生格·成格' },
+  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '杀印相生格·成格' },
     '#9 结构层评价后五行层输出不变（两层不污染）');
 });
 
