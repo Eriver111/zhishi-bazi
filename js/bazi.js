@@ -4304,7 +4304,10 @@ function finalizePatternStatus(bazi, pattern) {
       });
     } else if (pn === '伤官格') {
       conditions.push({ condition: '无正官被伤', met: !hasVisible('正官'), detail: hasVisible('正官') ? '伤官见官，为祸百端' : '✓' });
-      conditions.push({ condition: '有印星制伤或财星引化', met: hasVisible('正印')||hasVisible('偏印')||hasVisible('正财')||hasVisible('偏财'), detail: (hasVisible('正印')||hasVisible('偏印')) ? '印星制伤' : (hasVisible('正财')||hasVisible('偏财')) ? '财星引化' : '缺印缺财，伤官无制无化' });
+      var shangguanHiddenSealPositions = hiddenRolePositions(['正印','偏印']);
+      var shangguanHasVisibleSeal = hasVisible('正印') || hasVisible('偏印');
+      var shangguanHasVisibleWealth = hasVisible('正财') || hasVisible('偏财');
+      conditions.push({ condition: '有印星制伤或财星引化', met: shangguanHasVisibleSeal || shangguanHasVisibleWealth, detail: shangguanHasVisibleSeal ? '印星制伤' : shangguanHasVisibleWealth ? '财星引化' : shangguanHiddenSealPositions.length ? '印星藏于' + shangguanHiddenSealPositions.join('、') + '但未透干，制伤力量不足' : '缺印缺财，伤官无制无化' });
     } else if (pn === '正财格' || pn === '偏财格') {
       conditions.push({ condition: '比劫不过重', met: visibleCount(['比肩','劫财']) < 2, detail: visibleCount(['比肩','劫财']) >= 2 ? '比劫重重夺财' : '✓' });
       conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱不担财，富屋贫人' });

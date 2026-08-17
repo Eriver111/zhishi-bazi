@@ -314,3 +314,22 @@ test('七杀格藏印说明细化后仍沿用无制化救应取用', () => {
   assert.ok(pattern.breakReasons.includes('印星藏支未透，化杀力量不足'));
   assert.deepEqual(Array.from(yongJi.yongShen), ['火']);
 });
+
+test('伤官格只见藏支印星时披露制伤不足而不写缺印', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['己亥', '丁丑', '丙申', '壬辰']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+  const yongJi = calculator.getYongJi(chart);
+  const control = pattern.establishConditions.find(row => row.condition === '有印星制伤或财星引化');
+
+  assert.equal(yongJi.dayMasterLevel, '极弱');
+  assert.deepEqual(Array.from(yongJi.yongShen), ['木']);
+  assert.equal(pattern.name, '伤官格');
+  assert.equal(pattern.status, '破格');
+  assert.equal(control.met, false);
+  assert.match(control.detail, /印星藏于年支亥、时支辰但未透干，制伤力量不足/);
+  assert.doesNotMatch(control.detail, /缺印|无制无化/);
+});
