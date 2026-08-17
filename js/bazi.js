@@ -4654,18 +4654,24 @@ function finalizeYongJiResult(bazi, base, context) {
       evidence.push({ category:'生克链·' + (h.category || '结构'), title:h.type === 'warning' ? '⚠ ' + h.category : h.category, detail:h.text });
     });
   }
-  // P5-B(B1) 候选对比证据：只解释已有评分、不重算（GPT 裁决「只解释已有结果」）。
-  // 从 candidateScores 的 SNeed 组装「取X弃Y」结构化说明——落选元素此前无负面证据。
+  // P5-B(B1) 候选对比证据：核心用神按 SBase 选择，SNeed 只披露调候后的参考方向。
   if (context.candidateScores && context.candidateScores.candidates) {
-    var cands = context.candidateScores.candidates.slice().sort(function(a, b) { return b.SNeed - a.SNeed; });
+    var cands = context.candidateScores.candidates.slice().sort(function(a, b) {
+      return b.SBase - a.SBase || b.SNeed - a.SNeed;
+    });
     var pickedC = cands.filter(function(c) { return c.role === '用神'; });
     var droppedC = cands.filter(function(c) { return c.role !== '用神'; });
     if (pickedC.length && droppedC.length) {
+      var formatCandidateScore = function(c) {
+        var score = '核心结构分 ' + c.SBase.toFixed(1);
+        if (c.SNeed !== c.SBase) score += '，调候参考后 ' + c.SNeed.toFixed(1);
+        return c.wx + '（' + c.relation + '，' + score + '）';
+      };
       var pickedLine = pickedC.map(function(c) {
-        return c.wx + '（' + c.relation + '，综合分 ' + c.SNeed.toFixed(1) + '）';
+        return formatCandidateScore(c);
       }).join('、');
       var droppedLine = droppedC.map(function(c) {
-        return c.wx + '（' + c.relation + '，' + c.SNeed.toFixed(1) + '）';
+        return formatCandidateScore(c);
       }).join('、');
       evidence.push({ category:'候选对比', title:'五行候选评分对比', detail:'取' + pickedLine + '；未取' + droppedLine });
     }
@@ -4943,7 +4949,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     addL4('火', 8, '冬土冻土，火暖局');
     tiaoHouNote = hasWxGlobal('火')
       ? '原局有火暖局，寒谷回春，调候已得。'
-      : '《穷通宝鉴》：己土冬生，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
+      : '冬土生于丑月，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
   }
   if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0) {
     addL4('火', 8, '冬火微弱，火暖局扶身');
@@ -5189,7 +5195,7 @@ function getYongJi(bazi) {
     var yongReasons = cs.l2Details.concat(cs.l3Details).concat(cs.l4Details).filter(function(dt) {
       return dt.wx === cs.yongWx && dt.val > 0;
     }).map(function(dt) { return dt.note; });
-    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），候选五行评分后取' + cs.yongWx + '为用神'
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），核心用神按结构评分取' + cs.yongWx
       + (yongReasons.length > 0 ? '：' + yongReasons.join('；') : '。')
       + ' 喜：' + [cs.yongWx].concat(xiShen).join('、')
       + '。忌：' + (jiShen.length > 0 ? jiShen.join('、') : '无') + '。';
