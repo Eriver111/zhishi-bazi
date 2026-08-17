@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260817n/, `${page} must load the hidden-seal-evidence-consistent core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260817o/, `${page} must load the hidden-seal-evidence-consistent core bundle`);
   }
 });
 
@@ -74,9 +74,9 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
 test('调候辅助不能覆盖最终核心用神的首要理由', () => {
   const calculator = loadCalculator();
   const cases = [
-    ['木', ['己酉', '丁丑', '乙未', '庚辰']],
+    ['土', ['乙未', '戊子', '甲辰', '己酉']],
     ['木', ['庚戌', '癸未', '丙申', '甲午']],
-    ['土', ['壬子', '癸丑', '辛亥', '甲午']],
+    ['木', ['癸巳', '乙丑', '庚申', '癸巳']],
   ];
 
   for (const [expectedYong, gz] of cases) {

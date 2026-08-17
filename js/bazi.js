@@ -5096,6 +5096,8 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   }
 
   // —— L4 调候（现状 11 条规则转写为加分；同元素多规则命中取最大，防重复计分）——
+  // 门控纪律（调候非开关）：加成五行落在印比侧（生扶日主）→ 仅身弱时加；落在克泄耗侧（官杀食伤财）→ 仅身强时加。
+  // 避免把扶抑对侧的五行硬抬成喜神（冬火全喜翻转类 bug）。身弱=偏弱/极弱，身强=偏强/极强，中和不加。
   var L4 = zeroMap();
   var tiaoHouNote = '';
   var addL4 = function(wx, val, note) {
@@ -5106,52 +5108,59 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       return WU_XING[bazi[p].gan] === wx || DI_ZHI_WU_XING[bazi[p].zhi] === wx;
     });
   };
-  if (dmWx === '土' && mz === '丑') {
+  var dmRuo = dmStr.level.indexOf('弱') >= 0;
+  var dmQiang = dmStr.level.indexOf('强') >= 0;
+  if (dmWx === '土' && mz === '丑' && dmRuo) {
     addL4('火', 8, '冬土冻土，火暖局');
     tiaoHouNote = hasWxGlobal('火')
       ? '原局有火暖局，寒谷回春，调候已得。'
       : '冬土生于丑月，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
   }
-  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0 && dmStr.level.indexOf('弱') >= 0) {
-    // 门控（对齐冬金"强"门控先例）：冬火调候只在身弱时加分——中和/偏强冬火（坐羊刃/火透干暖局已足）
-    // 不再无条件 +8/+6，避免把扶抑忌侧的木火硬抬成喜神（乙酉丁亥丙午丙申 类全喜翻转盘）。
+  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0 && dmRuo) {
     addL4('火', 8, '冬火微弱，火暖局扶身');
     addL4('木', 6, '冬火微弱，木生火暖局');
     tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
   }
-  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0) {
+  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0 && dmQiang) {
     addL4('火', 6, '冬水寒凝，火暖局');
     tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
   }
-  if (dmWx === '火' && ['巳','午'].indexOf(mz) >= 0) {
+  if (dmWx === '火' && ['巳','午'].indexOf(mz) >= 0 && dmQiang) {
     addL4('水', 8, '夏火炎炎，水润局');
     tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
   }
-  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
+  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0 && dmQiang) {
     addL4('火', 6, '冬木寒湿，火暖局');
     tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
   }
-  if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmStr.level.indexOf('强') >= 0) {
+  if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmQiang) {
     addL4('火', 6, '秋金当令过旺，火炼金成器');
     tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
   }
-  if ((dmWx === '土' || dmWx === '火' || dmWx === '水') && mz === '辰') {
+  if (dmWx === '水' && mz === '辰' && dmQiang) {
+    // 辰月：火=财（克泄耗侧）→ 身强才加
     addL4('火', 6, '辰月湿土，火暖局');
     tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
   }
-  if ((dmWx === '火' || dmWx === '土') && mz === '戌') {
+  if ((dmWx === '土' || dmWx === '火') && mz === '辰' && dmRuo) {
+    // 辰月：火=印/比劫（印比侧）→ 身弱才加
+    addL4('火', 6, '辰月湿土，火暖局');
+    tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
+  }
+  if ((dmWx === '火' || dmWx === '土') && mz === '戌' && dmQiang) {
     addL4('水', 6, '戌月燥土，水润局');
     tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
   }
-  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0) {
+  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0 && dmQiang) {
     addL4('水', 6, '巳午月火炎土燥，水润局');
     tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
   }
   if ((dmWx === '火' || dmWx === '土') && mz === '未') {
-    if (dmWx !== '火') addL4('水', 6, '未月火土燥烈，水润局');
+    // 火日主本无加分（水官杀不抬升），说明无条件保留；土日主水财仅在身强时加（克泄耗侧对齐）。
+    if (dmWx !== '火' && dmQiang) addL4('水', 6, '未月火土燥烈，水润局');
     tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
   }
-  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0) {
+  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0 && dmQiang) {
     addL4('火', 6, '冬金寒冻，火暖局');
     tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
   }

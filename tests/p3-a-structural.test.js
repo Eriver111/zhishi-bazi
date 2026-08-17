@@ -87,8 +87,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '4f2df185188b287242d9d6d90d50cb82f93751cb170cad4995d5838ad22faf40',
-    'js/bazi.js sha256 与已裁决的格局待定、未透破格及调候方向门控版本一致'
+    '8838af2985b5608146433feae6e701b604c704608786acf7584cf85d72d6ad41',
+    'js/bazi.js sha256 与 L4 调候全家族门控版本一致（印比侧→身弱、克泄耗侧→身强，2026-08-17 用户授权）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
