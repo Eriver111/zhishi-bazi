@@ -2,184 +2,94 @@
   "total": 543,
   "drift": [
     {
-      "gz": "辛酉 癸巳 壬子 庚子",
-      "id": "#10",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "辛酉 癸巳 壬子 庚子",
-      "id": "#10",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "辛酉 癸巳 壬子 庚子",
-      "id": "#10",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
-    },
-    {
-      "gz": "壬辰 癸卯 戊戌 丁巳",
-      "id": "A5",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "壬辰 癸卯 戊戌 丁巳",
-      "id": "A5",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "壬辰 癸卯 戊戌 丁巳",
-      "id": "A5",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
-    },
-    {
-      "gz": "丁丑 癸卯 庚申 丙戌",
-      "id": "P15-09",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "丁丑 癸卯 庚申 丙戌",
-      "id": "P15-09",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "丁丑 癸卯 庚申 丙戌",
-      "id": "P15-09",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
-    },
-    {
-      "gz": "甲寅 庚午 庚辰 乙酉",
-      "id": "H15",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "甲寅 庚午 庚辰 乙酉",
-      "id": "H15",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "甲寅 庚午 庚辰 乙酉",
-      "id": "H15",
-      "sets": {
-        "53freeze": true
-      },
-      "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
-    },
-    {
-      "gz": "庚辰 戊寅 辛未 丁酉",
-      "id": "BND07",
+      "gz": "甲申 壬申 乙卯 丙子",
+      "id": "PAT03",
       "sets": {
         "50blind": true
       },
       "key": "status",
-      "old": "破格",
-      "now": "成格"
+      "old": "成格",
+      "now": "破格"
     },
     {
-      "gz": "庚辰 戊寅 辛未 丁酉",
-      "id": "BND07",
+      "gz": "甲申 壬申 乙卯 丙子",
+      "id": "PAT03",
       "sets": {
         "50blind": true
       },
       "key": "est",
-      "old": false,
-      "now": true
+      "old": true,
+      "now": false
     },
     {
-      "gz": "庚辰 戊寅 辛未 丁酉",
-      "id": "BND07",
+      "gz": "甲申 壬申 乙卯 丙子",
+      "id": "PAT03",
       "sets": {
         "50blind": true
       },
       "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
+      "old": "扶抑为主",
+      "now": "格局救应"
     },
     {
-      "gz": "庚午 癸未 甲子 壬申",
-      "id": "00-P5A1-格局攻击集#28",
+      "gz": "乙酉 庚辰 甲午 辛未",
+      "id": "00-P5A1-格局攻击集#3",
       "sets": {
         "attack": true
       },
       "key": "status",
       "old": "破格",
-      "now": "成格"
+      "now": "条件待定"
     },
     {
-      "gz": "庚午 癸未 甲子 壬申",
-      "id": "00-P5A1-格局攻击集#28",
-      "sets": {
-        "attack": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "庚午 癸未 甲子 壬申",
-      "id": "00-P5A1-格局攻击集#28",
+      "gz": "乙酉 庚辰 甲午 辛未",
+      "id": "00-P5A1-格局攻击集#3",
       "sets": {
         "attack": true
       },
       "key": "method",
       "old": "格局救应",
-      "now": "扶抑为主"
+      "now": "格局条件待定"
+    },
+    {
+      "gz": "丁卯 庚戌 丙午 己丑",
+      "id": "00-P5A1-格局攻击集#15",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "破格",
+      "now": "条件待定"
+    },
+    {
+      "gz": "丁卯 庚戌 丙午 己丑",
+      "id": "00-P5A1-格局攻击集#15",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主·调候辅助",
+      "now": "格局条件待定"
+    },
+    {
+      "gz": "乙酉 辛未 甲午 庚午",
+      "id": "00-P5A1-格局攻击集#25",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "破格",
+      "now": "条件待定"
+    },
+    {
+      "gz": "乙酉 辛未 甲午 庚午",
+      "id": "00-P5A1-格局攻击集#25",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "格局救应",
+      "now": "格局条件待定"
     },
     {
       "gz": "甲午 丙辰 戊寅 庚申",
@@ -199,7 +109,7 @@
       },
       "key": "status",
       "old": "成格",
-      "now": "破格"
+      "now": "条件待定"
     },
     {
       "gz": "甲午 丙辰 戊寅 庚申",
@@ -222,44 +132,74 @@
       "now": "木金水"
     },
     {
-      "gz": "甲寅 壬午 癸酉 庚辰",
-      "id": "00-P5A1-格局攻击集#96",
-      "sets": {
-        "attack": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "甲寅 壬午 癸酉 庚辰",
-      "id": "00-P5A1-格局攻击集#96",
-      "sets": {
-        "attack": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "甲寅 壬午 癸酉 庚辰",
-      "id": "00-P5A1-格局攻击集#96",
+      "gz": "甲午 丙辰 戊寅 庚申",
+      "id": "00-P5A1-格局攻击集#30",
       "sets": {
         "attack": true
       },
       "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
+      "old": "扶抑为主·调候辅助",
+      "now": "格局条件待定"
     },
     {
-      "gz": "庚午 辛未 丙午 戊子",
-      "id": "00-P5A1-格局攻击集#120",
+      "gz": "丁亥 戊午 辛酉 甲辰",
+      "id": "00-P5A1-格局攻击集#47",
       "sets": {
         "attack": true
       },
-      "key": "xi",
-      "old": "火木",
-      "now": "火木水"
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "丁亥 戊午 辛酉 甲辰",
+      "id": "00-P5A1-格局攻击集#47",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "丁亥 戊午 辛酉 甲辰",
+      "id": "00-P5A1-格局攻击集#47",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "甲午 己巳 辛酉 己酉",
+      "id": "00-P5A1-格局攻击集#117",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "甲午 己巳 辛酉 己酉",
+      "id": "00-P5A1-格局攻击集#117",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲午 己巳 辛酉 己酉",
+      "id": "00-P5A1-格局攻击集#117",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
     },
     {
       "gz": "庚午 辛未 丙午 戊子",
@@ -269,27 +209,217 @@
       },
       "key": "ji",
       "old": "土金水",
-      "now": "土金"
+      "now": "水土金"
     },
     {
-      "gz": "庚午 辛未 丙午 戊子",
-      "id": "00-P5A1-格局攻击集#120",
+      "gz": "甲子 己巳 辛酉 己酉",
+      "id": "00-P5A2-格局成败攻击集#61",
       "sets": {
         "attack": true
       },
-      "key": "cls",
-      "old": "{\"木\":\"喜神\",\"火\":\"用神\",\"土\":\"忌神\",\"金\":\"忌神\",\"水\":\"忌神\"}",
-      "now": "{\"木\":\"喜神\",\"火\":\"用神\",\"土\":\"忌神\",\"金\":\"忌神\",\"水\":\"喜神\"}"
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
     },
     {
-      "gz": "庚申 辛未 丙申 丙子",
-      "id": "00-P5A2-格局成败攻击集#75",
+      "gz": "甲子 己巳 辛酉 己酉",
+      "id": "00-P5A2-格局成败攻击集#61",
       "sets": {
         "attack": true
       },
-      "key": "xi",
-      "old": "火木",
-      "now": "火木水"
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲子 己巳 辛酉 己酉",
+      "id": "00-P5A2-格局成败攻击集#61",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "甲寅 己巳 辛酉 己酉",
+      "id": "00-P5A2-格局成败攻击集#62",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "甲寅 己巳 辛酉 己酉",
+      "id": "00-P5A2-格局成败攻击集#62",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲寅 己巳 辛酉 己酉",
+      "id": "00-P5A2-格局成败攻击集#62",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "癸巳 己巳 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#63",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "癸巳 己巳 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#63",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "癸巳 己巳 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#63",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "甲子 己巳 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#64",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "甲子 己巳 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#64",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲子 己巳 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#64",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 戊辰",
+      "id": "00-P5A2-格局成败攻击集#65",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 戊辰",
+      "id": "00-P5A2-格局成败攻击集#65",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 戊辰",
+      "id": "00-P5A2-格局成败攻击集#65",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 乙丑",
+      "id": "00-P5A2-格局成败攻击集#66",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 乙丑",
+      "id": "00-P5A2-格局成败攻击集#66",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 乙丑",
+      "id": "00-P5A2-格局成败攻击集#66",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#68",
+      "sets": {
+        "attack": true
+      },
+      "key": "status",
+      "old": "成格",
+      "now": "破格"
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#68",
+      "sets": {
+        "attack": true
+      },
+      "key": "est",
+      "old": true,
+      "now": false
+    },
+    {
+      "gz": "甲寅 戊午 辛酉 壬辰",
+      "id": "00-P5A2-格局成败攻击集#68",
+      "sets": {
+        "attack": true
+      },
+      "key": "method",
+      "old": "扶抑为主",
+      "now": "格局救应"
     },
     {
       "gz": "庚申 辛未 丙申 丙子",
@@ -299,107 +429,7 @@
       },
       "key": "ji",
       "old": "土金水",
-      "now": "土金"
-    },
-    {
-      "gz": "庚申 辛未 丙申 丙子",
-      "id": "00-P5A2-格局成败攻击集#75",
-      "sets": {
-        "attack": true
-      },
-      "key": "cls",
-      "old": "{\"木\":\"喜神\",\"火\":\"用神\",\"土\":\"忌神\",\"金\":\"忌神\",\"水\":\"忌神\"}",
-      "now": "{\"木\":\"喜神\",\"火\":\"用神\",\"土\":\"忌神\",\"金\":\"忌神\",\"水\":\"喜神\"}"
-    },
-    {
-      "gz": "戊戌 乙未 丙午 己丑",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "xi",
-      "old": "木火",
-      "now": "木火水"
-    },
-    {
-      "gz": "戊戌 乙未 丙午 己丑",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "ji",
-      "old": "土金水",
-      "now": "土金"
-    },
-    {
-      "gz": "戊戌 乙未 丙午 己丑",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "cls",
-      "old": "{\"木\":\"用神\",\"火\":\"喜神\",\"土\":\"忌神\",\"金\":\"忌神\",\"水\":\"忌神\"}",
-      "now": "{\"木\":\"用神\",\"火\":\"喜神\",\"土\":\"忌神\",\"金\":\"忌神\",\"水\":\"喜神\"}"
-    },
-    {
-      "gz": "壬申 己酉 丙午 甲午",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "壬申 己酉 丙午 甲午",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "壬申 己酉 丙午 甲午",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
-    },
-    {
-      "gz": "甲申 庚午 甲辰 乙丑",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "status",
-      "old": "破格",
-      "now": "成格"
-    },
-    {
-      "gz": "甲申 庚午 甲辰 乙丑",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "est",
-      "old": false,
-      "now": true
-    },
-    {
-      "gz": "甲申 庚午 甲辰 乙丑",
-      "id": "IMPACT",
-      "sets": {
-        "105impact": true
-      },
-      "key": "method",
-      "old": "格局救应",
-      "now": "扶抑为主"
+      "now": "水土金"
     }
   ],
   "descChanged": [
@@ -1690,19 +1720,15 @@
     }
   ],
   "byKey": {
-    "status": 10,
-    "est": 10,
-    "method": 9,
+    "status": 14,
+    "est": 11,
+    "method": 14,
     "name": 1,
-    "ji": 4,
-    "xi": 3,
-    "cls": 3
+    "ji": 3
   },
   "bySet": {
-    "53freeze": 12,
     "50blind": 3,
-    "attack": 16,
-    "105impact": 9
+    "attack": 40
   },
-  "driftedDiskCount": 13
+  "driftedDiskCount": 16
 }

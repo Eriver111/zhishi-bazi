@@ -8,12 +8,13 @@ var ROOT = path.join(__dirname, '..');
 
 function shaOf(p) { return crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'); }
 function load(src) { var ctx = { window: {} }; vm.runInNewContext(src, ctx); return ctx.window.BaZiCalculator; }
-var OLD_SRC = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'), 'utf8');
-var NEW_SRC = fs.readFileSync(path.join(__dirname, 'bazi.remote-2026-08-17.js'), 'utf8');
-var OLD = load(OLD_SRC);
-var NEW = load(NEW_SRC);
-console.log('old_sha=' + shaOf(path.join(ROOT, 'js', 'bazi.js')));
-console.log('new_sha=' + shaOf(path.join(__dirname, 'bazi.remote-2026-08-17.js')));
+// OLD/NEW 引擎源可用环境变量覆盖（复现时 OLD=冻结基线 git show d49e60b:js/bazi.js、NEW=待测引擎）
+var OLD_PATH = process.env.OLD_ENGINE || path.join(ROOT, 'js', 'bazi.js');
+var NEW_PATH = process.env.NEW_ENGINE || path.join(__dirname, 'bazi.remote-2026-08-17.js');
+var OLD = load(fs.readFileSync(OLD_PATH, 'utf8'));
+var NEW = load(fs.readFileSync(NEW_PATH, 'utf8'));
+console.log('old_sha=' + shaOf(OLD_PATH));
+console.log('new_sha=' + shaOf(NEW_PATH));
 
 // ---- 盘池（p5c08-congge-evidence.js:110-162 同源，gz 去重）----
 var DISKS = {};
