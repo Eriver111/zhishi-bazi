@@ -172,3 +172,53 @@ test('羊刃藏官杀未透时说明制刃不足而不是完全无制', () => {
     assert.ok(!pattern.breakReasons.includes('羊刃无制'));
   }
 });
+
+test('建禄财星藏支未透时披露真实位置而不写成无财官', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['庚戌', '辛巳', '戊子', '庚申']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+  const support = pattern.establishConditions.find(row => row.condition === '财官透出为用');
+
+  assert.equal(pattern.name, '建禄格');
+  assert.equal(pattern.status, '破格');
+  assert.ok(support);
+  assert.equal(support.met, false);
+  assert.match(support.detail, /财星藏于日支子但未透干/);
+  assert.match(support.detail, /天干食伤已透出泄秀/);
+  assert.doesNotMatch(support.detail, /无财官/);
+  assert.ok(pattern.breakReasons.some(reason => /财星藏支未透/.test(reason)));
+});
+
+test('七杀格把透干伤官计入制杀证据但不改变极弱盘破格状态', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['甲寅', '丁丑', '癸丑', '戊午']),
+    'female'
+  );
+  const pattern = calculator.getPattern(chart);
+  const control = pattern.establishConditions.find(row => row.condition === '有食伤制杀或印星化杀');
+
+  assert.equal(pattern.name, '七杀格');
+  assert.equal(pattern.status, '破格');
+  assert.ok(control);
+  assert.equal(control.met, true);
+  assert.match(control.detail, /伤官制杀/);
+  assert.ok(pattern.breakReasons.some(reason => /伤官透出制杀，但日主极弱且财星党杀，制化不足/.test(reason)));
+  assert.ok(!pattern.breakReasons.includes('七杀无制化'));
+});
+
+test('七杀同时见伤官印财时仍保留极弱财党杀的破格依据', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['壬子', '戊申', '甲戌', '丁卯']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+
+  assert.equal(pattern.name, '七杀格');
+  assert.equal(pattern.status, '破格');
+  assert.ok(pattern.breakReasons.some(reason => /伤官透出制杀，但日主极弱且财星党杀，制化不足/.test(reason)));
+});

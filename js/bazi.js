@@ -4134,6 +4134,36 @@ function finalizePatternStatus(bazi, pattern) {
     var visibleCount = function(names) {
       return visibleShiShen.filter(function(name) { return names.indexOf(name) >= 0; }).length;
     };
+    var jianLuSupport = function() {
+      if (visibleCount(['正财','偏财','正官','七杀']) > 0) return { met:true, detail:'✓', reason:'' };
+      var positions = ['year','month','day','hour'];
+      var positionLabels = { year:'年支', month:'月支', day:'日支', hour:'时支' };
+      var hidden = [];
+      positions.forEach(function(pos) {
+        var roles = getCangGan(bazi[pos].zhi).map(function(gan) {
+          return getShiShen(bazi.day.gan, gan);
+        });
+        if (roles.some(function(role) { return role === '正财' || role === '偏财'; })) {
+          hidden.push({ type:'财星', position:positionLabels[pos] + bazi[pos].zhi });
+        }
+        if (roles.some(function(role) { return role === '正官' || role === '七杀'; })) {
+          hidden.push({ type:'官杀', position:positionLabels[pos] + bazi[pos].zhi });
+        }
+      });
+      if (!hidden.length) {
+        return { met:false, detail:'禄旺无财官，英雄无用武之地', reason:'禄旺而财官不显' };
+      }
+      var details = hidden.map(function(item) {
+        return item.type + '藏于' + item.position + '但未透干';
+      });
+      if (hasVisible('食神') || hasVisible('伤官')) details.push('天干食伤已透出泄秀');
+      var hasWealth = hidden.some(function(item) { return item.type === '财星'; });
+      var hasOfficer = hidden.some(function(item) { return item.type === '官杀'; });
+      var reason = hasWealth && hasOfficer
+        ? '财官藏支未透'
+        : (hasWealth ? '财星藏支未透，官杀不显' : '官杀藏支未透，财星不显');
+      return { met:false, detail:details.join('；'), reason:reason };
+    };
     var yangRenControl = function() {
       if (visibleCount(['正官','七杀']) > 0) return { met:true, detail:'✓', reason:'' };
       var positions = ['year','month','day','hour'];
@@ -4163,9 +4193,13 @@ function finalizePatternStatus(bazi, pattern) {
         if (hasVisible('伤官')) reasons.push('伤官克官');
         if (hasVisible('七杀')) reasons.push('官杀混杂');
       } else if (pattern.name === '七杀格') {
-        if (!hasVisible('食神') && !hasVisible('正印') && !hasVisible('偏印')) reasons.push('七杀无制化');
+        if (!hasVisible('食神') && !hasVisible('伤官') && !hasVisible('正印') && !hasVisible('偏印')) {
+          reasons.push('七杀无制化');
+        } else if (hasVisible('伤官') && !hasVisible('食神') && !hasVisible('正印') && !hasVisible('偏印')) {
+          reasons.push('伤官透出制杀，制化有效性仍需结合日主承载与财星党杀');
+        }
         // 燥土不生金：印星虚浮不化杀（如金日主生未戌月，土印无力化杀）
-        if (!hasVisible('食神') && (hasVisible('正印') || hasVisible('偏印')) && dryEarthYin) reasons.push('印星为燥土，虚浮不化杀');
+        if (!hasVisible('食神') && !hasVisible('伤官') && (hasVisible('正印') || hasVisible('偏印')) && dryEarthYin) reasons.push('印星为燥土，虚浮不化杀');
       } else if (pattern.name === '正印格' || pattern.name === '偏印格' || pattern.name === '印绶格') {
         if (hasVisible('正财') || hasVisible('偏财')) reasons.push('财星破印');
       } else if (pattern.name === '食神格') {
@@ -4175,7 +4209,8 @@ function finalizePatternStatus(bazi, pattern) {
       } else if (pattern.name === '正财格' || pattern.name === '偏财格') {
         if (visibleCount(['比肩','劫财']) >= 2) reasons.push('比劫过重，财星受夺');
       } else if (pattern.name === '建禄格') {
-        if (visibleCount(['正财','偏财','正官','七杀']) === 0) reasons.push('禄旺而财官不显');
+        var jianLuBreak = jianLuSupport();
+        if (!jianLuBreak.met) reasons.push(jianLuBreak.reason);
       } else if (pattern.name === '羊刃格') {
         var yangRenBreak = yangRenControl();
         if (!yangRenBreak.met) reasons.push(yangRenBreak.reason);
@@ -4184,7 +4219,18 @@ function finalizePatternStatus(bazi, pattern) {
 
   var strength = calcDayMasterStrength(bazi);
   var needsBearing = /财|官|杀|食|伤/.test(pattern.name || '');
-  if (needsBearing && strength.level === '极弱' && !getCongGe(bazi).isCong) {
+  var qishaWeakShangGuan = pattern.name === '七杀格' && hasVisible('伤官') &&
+    (hasVisible('正财') || hasVisible('偏财')) && strength.level === '极弱' && !getCongGe(bazi).isCong;
+  if (qishaWeakShangGuan) {
+    var genericShangGuanReason = '伤官透出制杀，制化有效性仍需结合日主承载与财星党杀';
+    var genericShangGuanIndex = reasons.indexOf(genericShangGuanReason);
+    if (genericShangGuanIndex >= 0) {
+      reasons[genericShangGuanIndex] = '伤官透出制杀，但日主极弱且财星党杀，制化不足';
+    } else {
+      reasons.push('伤官透出制杀，但日主极弱且财星党杀，制化不足');
+    }
+  }
+  if (needsBearing && strength.level === '极弱' && !getCongGe(bazi).isCong && !qishaWeakShangGuan) {
     reasons.push('日主极弱，难以承载格局用神');
   }
 
@@ -4219,8 +4265,9 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '无伤官克官', met: !hasVisible('伤官'), detail: hasVisible('伤官') ? '天干透伤官，克损正官' : '✓' });
       conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
     } else if (pn === '七杀格') {
-      conditions.push({ condition: '有食神制杀或印星化杀', met: hasVisible('食神') || ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin), detail: hasVisible('食神') ? '食神制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '无制无化' });
-      conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? ((hasVisible('食神')||hasVisible('正印')||hasVisible('偏印')) ? '财星生杀，助纣为虐；局有食制/印化，财党杀暂作提示不翻成破（待3×3分层裁定）' : '财星生杀，助纣为虐') : '✓' });
+      var qishaHasControl = hasVisible('食神') || hasVisible('伤官') || ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin);
+      conditions.push({ condition: '有食伤制杀或印星化杀', met: qishaHasControl, detail: hasVisible('食神') ? '食神制杀' : hasVisible('伤官') ? '伤官制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '无制无化' });
+      conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? (qishaHasControl ? '财星生杀，助纣为虐；局有食伤制杀或印化，财党杀暂作提示不单独翻成破' : '财星生杀，助纣为虐') : '✓' });
     } else if (pn === '正印格' || pn === '偏印格' || pn === '印绶格') {
       conditions.push({ condition: '无财星破印', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星克印，印格受损' : '✓' });
       conditions.push({ condition: '日主有根纳印', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身极弱，印来难纳' });
@@ -4234,7 +4281,8 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '比劫不过重', met: visibleCount(['比肩','劫财']) < 2, detail: visibleCount(['比肩','劫财']) >= 2 ? '比劫重重夺财' : '✓' });
       conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱不担财，富屋贫人' });
     } else if (pn === '建禄格') {
-      conditions.push({ condition: '财官透出为用', met: visibleCount(['正财','偏财','正官','七杀']) > 0, detail: visibleCount(['正财','偏财','正官','七杀']) > 0 ? '✓' : '禄旺无财官，英雄无用武之地' });
+      var jianLuCondition = jianLuSupport();
+      conditions.push({ condition: '财官透出为用', met: jianLuCondition.met, detail: jianLuCondition.detail });
     } else if (pn === '羊刃格') {
       var yangRenCondition = yangRenControl();
       conditions.push({ condition: '官杀制刃', met: yangRenCondition.met, detail: yangRenCondition.detail });
