@@ -1,0 +1,16 @@
+{
+  "roundId": "round-03",
+  "selectionPolicy": "第三轮十种日主各一盘；全部由真实出生输入经 county-centroid-v1 真太阳时只生成四柱；重点复核三合生印、从格、根受冲及强金财官取用；冻结前未读取网站判断接口",
+  "cases": [
+    {"id":"R03-C01","birth":{"year":1974,"month":4,"day":5,"clock":0,"minute":20,"gender":"female"},"location":{"province":"新疆","city":"喀什地区","district":"塔什库尔干塔吉克自治县"},"solarDataVersion":"county-centroid-v1","pillars":["甲寅","丁卯","乙亥","丁亥"],"coverageTags":["明确身强","专旺疑似或边界","月令临界"]},
+    {"id":"R03-C02","birth":{"year":1985,"month":10,"day":8,"clock":17,"minute":45,"gender":"male"},"location":{"province":"新疆","city":"乌鲁木齐市","district":"天山区"},"solarDataVersion":"county-centroid-v1","pillars":["乙丑","乙酉","庚辰","甲申"],"coverageTags":["明确身强","格局与旺衰冲突","透干/根气临界"]},
+    {"id":"R03-C03","birth":{"year":1993,"month":6,"day":6,"clock":12,"minute":20,"gender":"female"},"location":{"province":"海南省","city":"三亚市","district":"吉阳区"},"solarDataVersion":"county-centroid-v1","pillars":["癸酉","戊午","戊午","戊午"],"coverageTags":["明确身强","专旺疑似或边界","调候优先"]},
+    {"id":"R03-C04","birth":{"year":1997,"month":11,"day":7,"clock":22,"minute":50,"gender":"male"},"location":{"province":"澳门特别行政区","city":"澳门半岛","district":"花地玛堂区"},"solarDataVersion":"county-centroid-v1","pillars":["丁丑","辛亥","癸丑","癸亥"],"coverageTags":["明确身强","专旺疑似或边界","调候优先"]},
+    {"id":"R03-C05","birth":{"year":2005,"month":1,"day":5,"clock":23,"minute":30,"gender":"female"},"location":{"province":"新疆","city":"哈密市","district":"伊州区"},"solarDataVersion":"county-centroid-v1","pillars":["甲申","丁丑","己丑","乙亥"],"coverageTags":["从格边界","制化临界","月令临界"]},
+    {"id":"R03-C06","birth":{"year":2009,"month":8,"day":7,"clock":16,"minute":50,"gender":"male"},"location":{"province":"台湾省","city":"台北市","district":"中正区"},"solarDataVersion":"county-centroid-v1","pillars":["己丑","辛未","甲申","壬申"],"coverageTags":["明确身弱","从格边界","透干/根气临界","制化临界"]},
+    {"id":"R03-C07","birth":{"year":2012,"month":10,"day":8,"clock":0,"minute":10,"gender":"female"},"location":{"province":"香港特别行政区","city":"香港岛","district":"中西区"},"solarDataVersion":"county-centroid-v1","pillars":["壬辰","己酉","辛丑","戊子"],"coverageTags":["明确身强","格局与旺衰冲突","透干/根气临界"]},
+    {"id":"R03-C08","birth":{"year":2014,"month":12,"day":7,"clock":21,"minute":40,"gender":"male"},"location":{"province":"广东省","city":"广州市","district":"越秀区"},"solarDataVersion":"county-centroid-v1","pillars":["甲午","丙子","壬子","辛亥"],"coverageTags":["明确身强","专旺疑似或边界","调候优先"]},
+    {"id":"R03-C09","birth":{"year":2018,"month":5,"day":5,"clock":23,"minute":55,"gender":"female"},"location":{"province":"广东省","city":"珠海市","district":"香洲区"},"solarDataVersion":"county-centroid-v1","pillars":["戊戌","丁巳","丁酉","庚子"],"coverageTags":["格局与旺衰冲突","制化临界","月令临界"]},
+    {"id":"R03-C10","birth":{"year":2016,"month":2,"day":4,"clock":4,"minute":30,"gender":"male"},"location":{"province":"甘肃省","city":"酒泉市","district":"敦煌市"},"solarDataVersion":"county-centroid-v1","pillars":["乙未","己丑","丙辰","己丑"],"coverageTags":["明确身弱","从格疑似","从格边界","透干/根气临界"]}
+  ]
+}
