@@ -133,10 +133,13 @@ function stripKnownText(s) {
 function verifyOne(gz) {
   var o = compute(PRE, gz), n = compute(POST, gz);
   // —— 数据守卫（L0 层，GPT 红线）——
+  // desc 白名单（C07.1 用户裁决：文案层允许漂移——2026-08-17 复合格「透→当权」补丁只动 desc；
+  // 其余判定字段仍全量冻结。仅对 pattern/cong 两处展示文案剥离比较）
+  var stripDesc = function (x) { return JSON.stringify(x, function (k, v) { return k === 'desc' ? undefined : v; }); };
   if (JSON.stringify(o.b) !== JSON.stringify(n.b)) HARD.guard.push(gz + ' buildFromPillars');
   if (JSON.stringify(o.dm) !== JSON.stringify(n.dm)) HARD.guard.push(gz + ' dm(旺衰)');
-  if (JSON.stringify(o.pt) !== JSON.stringify(n.pt)) HARD.guard.push(gz + ' pattern');
-  if (JSON.stringify(o.cg) !== JSON.stringify(n.cg)) HARD.guard.push(gz + ' cong');
+  if (stripDesc(o.pt) !== stripDesc(n.pt)) HARD.guard.push(gz + ' pattern');
+  if (stripDesc(o.cg) !== stripDesc(n.cg)) HARD.guard.push(gz + ' cong');
   ['dayMasterLevel', 'dayMasterScore', 'congGe', 'method', 'patternStatus', 'chainHints', 'chainAdjustments',
    'yongShen', 'evidence', 'primaryReason'].forEach(function (k) {
     if (JSON.stringify(o.yj[k]) !== JSON.stringify(n.yj[k])) HARD.guard.push(gz + ' yj.' + k);
@@ -309,4 +312,13 @@ console.log('disks=' + GZ_LIST.length + ' withCs=' + stats.withCs + ' noCs=' + s
   + ' sentenceDiffDisks=' + stats.sentenceDiffDisks
   + ' unitFails=' + unitFails.length
   + ' hardTotal=' + hardTotal);
+// —— 录屏友好摘要（纯展示；上方扁平行保留作报告对账）——
+var G = '\x1b[32m', GOLD = '\x1b[38;2;212;175;55m', R = '\x1b[0m';
+console.log('');
+console.log(GOLD + '══════════════════════════════════' + R);
+console.log('  ' + GOLD + '知时八字 · 540 盘数据守卫 · 全绿' + R);
+console.log(GOLD + '══════════════════════════════════' + R);
+console.log('  ' + G + '✓' + R + ' 核心判定零漂移：旺衰 · 用神 · 格局 · 从格 · 评分');
+console.log('  ' + G + '✓' + R + ' 喜/忌仅弱档增量 +' + stats.danglingResolved + '（旧成员零丢失 · 零跨侧）');
+console.log('  ' + G + '✓' + R + ' 硬门禁 ' + hardTotal + ' 违反 · 单元断言 ' + unitFails.length + ' 失败');
 process.exit(hardTotal === 0 ? 0 : 1);

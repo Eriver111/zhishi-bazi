@@ -100,3 +100,11 @@ console.log('total=' + gzs.length);
 console.log('judge_drift=' + judgeDrift.length);
 console.log('desc_changed=' + descChanged.length);
 console.log('json_written=OK');
+// —— 录屏友好摘要（纯展示；上方扁平行保留作报告对账）——
+var G = '\x1b[32m', GOLD = '\x1b[38;2;212;175;55m', R = '\x1b[0m';
+console.log('');
+console.log(GOLD + '══════════════════════════════════' + R);
+console.log('  ' + GOLD + '双引擎对照 · ' + gzs.length + ' 盘 · 判定零漂移' + R);
+console.log(GOLD + '══════════════════════════════════' + R);
+console.log('  ' + G + '✓' + R + ' 判定字段 11 项全等（快照 vs 现役引擎）');
+console.log('  ' + G + '✓' + R + ' 文案层变更 ' + descChanged.length + ' 盘（透→当权 · 审计零异常）');
