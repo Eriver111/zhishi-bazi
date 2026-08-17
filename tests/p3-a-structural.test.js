@@ -78,8 +78,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    'e7b5e9dc7a8013491688799aa70c6a051a935f487f9cd8cbda85dfb1c37df2f2',
-    'js/bazi.js sha256 与当前复合格状态及食神藏财证据版本一致（CRLF 工作区原始字节口径）'
+    '8debb4d3a00485fa0f02e64f0c16c6355efd5cef86f17c06d1708091f4a4e433',
+    'js/bazi.js sha256 与当前官印/杀印分流及藏支印星证据版本一致（CRLF 工作区原始字节口径）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
@@ -100,8 +100,7 @@ test('A层：53 盘五行层仅含已批准的复合格状态修正', function (
     assert.equal(d.yj.yongShen.join('、'), r[6], c.id + ' 用神');
     assert.equal(d.yj.xiShen.join('、'), r[7], c.id + ' 喜神');
     assert.equal(d.yj.jiShen.join('、'), r[8], c.id + ' 忌神');
-    const expectedPattern = key === '22基线|#9' ? '杀印相生格·破格' : r[9];
-    assert.equal(d.pat.name + '·' + d.pat.status, expectedPattern, c.id + ' 格局');
+    assert.equal(d.pat.name + '·' + d.pat.status, r[9], c.id + ' 格局');
     assert.equal(d.cong.isCong ? d.cong.name : '否', r[10], c.id + ' 从格');
   });
 });
@@ -153,9 +152,7 @@ test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全�
       ].join('');
     }).sort();
     const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) {
-      const expected = r.slice();
-      if (c.set === '22基线' && c.id === '#9') expected[8] = '杀印相生格·破格';
-      return expected.join('');
+      return r.join('');
     }).sort();
     assert.equal(fresh.length, frozen.length, c.id + ' 风险行数与冻结一致');
     assert.deepEqual(fresh, frozen, c.id + ' 风险 17 列逐项一致');
@@ -205,7 +202,7 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
   assert.deepEqual(JSON.parse(JSON.stringify(yj9.elementClassification)), {
     木: '用神', 火: '弱忌', 土: '弱忌', 金: '弱喜', 水: '弱喜',
   }, '#9 强弱语义由 elementClassification 明确承载');
-  assert.equal(pat9.name + '·' + pat9.status, '杀印相生格·破格', '#9 伤官截断官印通路后为破格');
+  assert.equal(pat9.name + '·' + pat9.status, '杀印相生格·成格', '#9 伤官制杀与印化杀并见，不套用伤官克官硬破');
 
   // B. relationEvents 事实层回归（A1 冻结口径）
   function hasEv(type, pair) {
@@ -261,7 +258,7 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
     ji: calculator.getYongJi(b9).jiShen.join(''),
     pattern: calculator.getPattern(b9).name + '·' + calculator.getPattern(b9).status
   };
-  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '杀印相生格·破格' },
+  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '杀印相生格·成格' },
     '#9 结构层评价后五行层输出不变（两层不污染）');
 });
 

@@ -223,7 +223,7 @@ test('七杀同时见伤官印财时仍保留极弱财党杀的破格依据', ()
   assert.ok(pattern.breakReasons.some(reason => /伤官透出制杀，但日主极弱且财星党杀，制化不足/.test(reason)));
 });
 
-test('杀印相生的核心通路被财与伤官截断时不能仍显示成格', () => {
+test('杀印相生同时见财与伤官时只由财破印判破并保留制杀证据', () => {
   const calculator = loadCalculator();
   const chart = calculator.buildFromPillars(
     pillars(['甲寅', '己巳', '庚戌', '癸未']),
@@ -231,17 +231,18 @@ test('杀印相生的核心通路被财与伤官截断时不能仍显示成格',
   );
   const pattern = calculator.getPattern(chart);
   const wealthBlock = pattern.establishConditions.find(row => row.condition === '印星不被财破');
-  const outputBlock = pattern.establishConditions.find(row => row.condition === '官/杀不被食伤制死');
+  const outputControl = pattern.establishConditions.find(row => row.condition === '伤官制杀参与制化');
 
   assert.equal(pattern.name, '杀印相生格');
   assert.equal(pattern.status, '破格');
   assert.equal(pattern.isEstablished, false);
   assert.equal(wealthBlock.met, false);
   assert.equal(wealthBlock.category, 'HARD_BREAK');
-  assert.equal(outputBlock.met, false);
-  assert.equal(outputBlock.category, 'HARD_BREAK');
+  assert.equal(outputControl.met, true);
+  assert.equal(outputControl.category, 'QUALITY');
+  assert.match(outputControl.detail, /伤官制杀/);
   assert.ok(pattern.breakReasons.some(reason => /财星破印，官杀印通路中断/.test(reason)));
-  assert.ok(pattern.breakReasons.some(reason => /伤官克官，官印链断裂/.test(reason)));
+  assert.ok(!pattern.breakReasons.some(reason => /伤官克官|官印链断裂/.test(reason)));
 });
 
 test('食神格财星藏支未透时披露真实位置而不写成缺财', () => {
@@ -260,4 +261,56 @@ test('食神格财星藏支未透时披露真实位置而不写成缺财', () =>
   assert.equal(wealthPath.met, false);
   assert.match(wealthPath.detail, /财星藏于日支午但未透干/);
   assert.doesNotMatch(wealthPath.detail, /缺财星/);
+});
+
+test('杀印相生见伤官时按制杀并行判断而不套用伤官克官', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['甲辰', '壬申', '甲子', '丁卯']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+  const outputControl = pattern.establishConditions.find(row => row.condition === '伤官制杀参与制化');
+
+  assert.equal(calculator.calcDayMasterStrength(chart).level, '中和');
+  assert.equal(pattern.name, '杀印相生格');
+  assert.equal(pattern.status, '成格');
+  assert.ok(outputControl);
+  assert.equal(outputControl.met, true);
+  assert.equal(outputControl.category, 'QUALITY');
+  assert.match(outputControl.detail, /伤官制杀/);
+  assert.doesNotMatch(outputControl.detail, /伤官克官|官印链断裂/);
+  assert.ok(!pattern.breakReasons.some(reason => /伤官克官|官印链断裂/.test(reason)));
+});
+
+test('七杀格只见藏支印星时说明化杀不足而不写无制无化', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['壬子', '壬子', '丁丑', '壬寅']),
+    'female'
+  );
+  const pattern = calculator.getPattern(chart);
+  const control = pattern.establishConditions.find(row => row.condition === '有食伤制杀或印星化杀');
+
+  assert.equal(pattern.name, '七杀格');
+  assert.equal(pattern.status, '破格');
+  assert.equal(control.met, false);
+  assert.match(control.detail, /印星藏于时支寅但未透干，化杀力量不足/);
+  assert.doesNotMatch(control.detail, /无制无化/);
+  assert.ok(pattern.breakReasons.some(reason => /印星藏支未透，化杀力量不足/.test(reason)));
+  assert.ok(!pattern.breakReasons.includes('七杀无制化'));
+});
+
+test('七杀格藏印说明细化后仍沿用无制化救应取用', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['癸酉', '乙卯', '己丑', '己巳']),
+    'male'
+  );
+  const pattern = calculator.getPattern(chart);
+  const yongJi = calculator.getYongJi(chart);
+
+  assert.equal(pattern.status, '破格');
+  assert.ok(pattern.breakReasons.includes('印星藏支未透，化杀力量不足'));
+  assert.deepEqual(Array.from(yongJi.yongShen), ['火']);
 });

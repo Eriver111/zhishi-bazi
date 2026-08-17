@@ -4134,6 +4134,14 @@ function finalizePatternStatus(bazi, pattern) {
     var visibleCount = function(names) {
       return visibleShiShen.filter(function(name) { return names.indexOf(name) >= 0; }).length;
     };
+    var hiddenRolePositions = function(names) {
+      var labels = { year:'年支', month:'月支', day:'日支', hour:'时支' };
+      return ['year','month','day','hour'].filter(function(pos) {
+        return getCangGan(bazi[pos].zhi).some(function(gan) {
+          return names.indexOf(getShiShen(bazi.day.gan, gan)) >= 0;
+        });
+      }).map(function(pos) { return labels[pos] + bazi[pos].zhi; });
+    };
     var jianLuSupport = function() {
       if (visibleCount(['正财','偏财','正官','七杀']) > 0) return { met:true, detail:'✓', reason:'' };
       var positions = ['year','month','day','hour'];
@@ -4194,7 +4202,8 @@ function finalizePatternStatus(bazi, pattern) {
         if (hasVisible('七杀')) reasons.push('官杀混杂');
       } else if (pattern.name === '七杀格') {
         if (!hasVisible('食神') && !hasVisible('伤官') && !hasVisible('正印') && !hasVisible('偏印')) {
-          reasons.push('七杀无制化');
+          if (hiddenRolePositions(['正印','偏印']).length) reasons.push('印星藏支未透，化杀力量不足');
+          else reasons.push('七杀无制化');
         } else if (hasVisible('伤官') && !hasVisible('食神') && !hasVisible('正印') && !hasVisible('偏印')) {
           reasons.push('伤官透出制杀，制化有效性仍需结合日主承载与财星党杀');
         }
@@ -4266,7 +4275,8 @@ function finalizePatternStatus(bazi, pattern) {
       conditions.push({ condition: '无官杀混杂', met: !hasVisible('七杀'), detail: hasVisible('七杀') ? '天干透七杀，官杀混杂' : '✓' });
     } else if (pn === '七杀格') {
       var qishaHasControl = hasVisible('食神') || hasVisible('伤官') || ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin);
-      conditions.push({ condition: '有食伤制杀或印星化杀', met: qishaHasControl, detail: hasVisible('食神') ? '食神制杀' : hasVisible('伤官') ? '伤官制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '无制无化' });
+      var qishaHiddenSealPositions = hiddenRolePositions(['正印','偏印']);
+      conditions.push({ condition: '有食伤制杀或印星化杀', met: qishaHasControl, detail: hasVisible('食神') ? '食神制杀' : hasVisible('伤官') ? '伤官制杀' : (hasVisible('正印')||hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : qishaHiddenSealPositions.length ? '印星藏于' + qishaHiddenSealPositions.join('、') + '但未透干，化杀力量不足' : '无制无化' });
       conditions.push({ condition: '无财星党杀', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? (qishaHasControl ? '财星生杀，助纣为虐；局有食伤制杀或印化，财党杀暂作提示不单独翻成破' : '财星生杀，助纣为虐') : '✓' });
     } else if (pn === '正印格' || pn === '偏印格' || pn === '印绶格') {
       conditions.push({ condition: '无财星破印', met: !(hasVisible('正财')||hasVisible('偏财')), detail: (hasVisible('正财')||hasVisible('偏财')) ? '财星克印，印格受损' : '✓' });
@@ -4311,11 +4321,15 @@ function finalizePatternStatus(bazi, pattern) {
   if (pt === '同柱复合') {
     if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0) {
       var compoundWealthBreak = hasVisible('正财') || hasVisible('偏财');
-      var compoundOutputBreak = hasVisible('伤官');
       conditions.push({ condition: '印星不被财破', met: !compoundWealthBreak, detail: compoundWealthBreak ? '财星破印，官杀印通路中断' : '✓' });
-      conditions.push({ condition: '官/杀不被食伤制死', met: !compoundOutputBreak, detail: compoundOutputBreak ? '伤官克官，官印链断裂' : '✓' });
       if (compoundWealthBreak) reasons.push('财星破印，官杀印通路中断');
-      if (compoundOutputBreak) reasons.push('伤官克官，官印链断裂');
+      if (pn.indexOf('官印') >= 0) {
+        var compoundOfficerBreak = hasVisible('伤官');
+        conditions.push({ condition: '官星不被伤官克破', met: !compoundOfficerBreak, detail: compoundOfficerBreak ? '伤官克官，官印链断裂' : '✓' });
+        if (compoundOfficerBreak) reasons.push('伤官克官，官印链断裂');
+      } else if (hasVisible('伤官')) {
+        conditions.push({ condition: '伤官制杀参与制化', met: true, detail: '伤官制杀，与印化杀并见；制化层次仍需结合日主承载判断' });
+      }
       conditions.push({ condition: '印星有力（非燥土虚浮）', met: !dryEarthYin, detail: dryEarthYin ? '金日主生未戌燥土月，燥土不生金，印虚不化杀' : '✓' });
       if (dryEarthYin) reasons.push('燥土印虚浮，不化杀生身');
     }
@@ -4407,7 +4421,8 @@ function finalizePatternStatus(bazi, pattern) {
     '财官透出为用': 'HARD_BREAK',
     '官杀制刃': 'HARD_BREAK',
     '印星不被财破': 'HARD_BREAK',
-    '官/杀不被食伤制死': 'HARD_BREAK',
+    '官星不被伤官克破': 'HARD_BREAK',
+    '伤官制杀参与制化': 'QUALITY',
     '印星有力（非燥土虚浮）': 'HARD_BREAK',
     '印星有力': 'QUALITY',
     '制神有效制杀': 'HARD_BREAK'
@@ -5024,7 +5039,11 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       if (r === '伤官克官' || r === '伤官见官') { addJiuYing(SHENG_WO, 6, '伤官克官，印星制伤护官'); addJiuYing(WO_KE, 3, '伤官克官，财星化伤生官'); }
       else if (r === '枭神夺食') { addJiuYing(WO_KE, 6, '枭神夺食，财星制枭护食'); }
       else if (r === '财星破印') { addJiuYing(TONG, 6, '财星破印，比劫制财护印'); }
-      else if (r === '七杀无制化') { addJiuYing(WO_SHENG, 3, '七杀无制化，食伤制杀'); addJiuYing(SHENG_WO, 3, '七杀无制化，印星化杀'); }
+      else if (r === '七杀无制化' || r === '印星藏支未透，化杀力量不足') {
+        var qishaRescueLabel = r === '七杀无制化' ? '七杀无制化' : '印星藏支未透，化杀力量不足';
+        addJiuYing(WO_SHENG, 3, qishaRescueLabel + '，食伤制杀');
+        addJiuYing(SHENG_WO, 3, qishaRescueLabel + '，印星化杀');
+      }
     });
   }
 
