@@ -4134,6 +4134,28 @@ function finalizePatternStatus(bazi, pattern) {
     var visibleCount = function(names) {
       return visibleShiShen.filter(function(name) { return names.indexOf(name) >= 0; }).length;
     };
+    var yangRenControl = function() {
+      if (visibleCount(['正官','七杀']) > 0) return { met:true, detail:'✓', reason:'' };
+      var positions = ['year','month','day','hour'];
+      var hiddenPositions = positions.filter(function(pos) {
+        return getCangGan(bazi[pos].zhi).some(function(gan) {
+          return ['正官','七杀'].indexOf(getShiShen(bazi.day.gan, gan)) >= 0;
+        });
+      });
+      if (!hiddenPositions.length) {
+        return { met:false, detail:'羊刃无制，刚暴自伤', reason:'羊刃无制' };
+      }
+      var details = ['官杀藏支未透，制刃不足'];
+      var rootClashed = hiddenPositions.some(function(pos) {
+        return positions.some(function(other) {
+          return other !== pos && chong[bazi[pos].zhi] === bazi[other].zhi;
+        });
+      });
+      if (rootClashed) details.push('官杀根受冲');
+      if (hasVisible('食神') || hasVisible('伤官')) details.push('天干食伤牵制官杀');
+      var detail = details.join('；');
+      return { met:false, detail:detail, reason:detail };
+    };
 
     // 只记录各格最关键、无流派争议的阻断条件；其余交给解读层说明。
     if (pattern.type !== '同柱复合') {
@@ -4155,7 +4177,8 @@ function finalizePatternStatus(bazi, pattern) {
       } else if (pattern.name === '建禄格') {
         if (visibleCount(['正财','偏财','正官','七杀']) === 0) reasons.push('禄旺而财官不显');
       } else if (pattern.name === '羊刃格') {
-        if (visibleCount(['正官','七杀']) === 0) reasons.push('羊刃无制');
+        var yangRenBreak = yangRenControl();
+        if (!yangRenBreak.met) reasons.push(yangRenBreak.reason);
       }
     }
 
@@ -4213,7 +4236,8 @@ function finalizePatternStatus(bazi, pattern) {
     } else if (pn === '建禄格') {
       conditions.push({ condition: '财官透出为用', met: visibleCount(['正财','偏财','正官','七杀']) > 0, detail: visibleCount(['正财','偏财','正官','七杀']) > 0 ? '✓' : '禄旺无财官，英雄无用武之地' });
     } else if (pn === '羊刃格') {
-      conditions.push({ condition: '官杀制刃', met: visibleCount(['正官','七杀']) > 0, detail: visibleCount(['正官','七杀']) > 0 ? '✓' : '羊刃无制，刚暴自伤' });
+      var yangRenCondition = yangRenControl();
+      conditions.push({ condition: '官杀制刃', met: yangRenCondition.met, detail: yangRenCondition.detail });
     }
   }
 
@@ -5003,6 +5027,11 @@ function calcCandidateScores(bazi, dmStr, pattern) {
 
   // —— 根气质量（F7：不参与主评分，仅并列 tiebreak 与质量报告）——
   var rootQ = evaluateYongShenQuality(bazi, { yongShen: WX.slice(), xiShen: [] });
+  if (dmWx === '土' && mz === '丑' && hasWxGlobal('火')) {
+    tiaoHouNote = rootQ['火'] && rootQ['火'].score >= 3
+      ? '原局火有根，暖局条件已有基础。'
+      : '原局虽见火，但根气有限，暖局作用仍需结合根气与受制情况。';
+  }
 
   // —— 用神 = argmax S_base；严格并列时按 F11 链决胜 ——
   var maxBase = -Infinity;

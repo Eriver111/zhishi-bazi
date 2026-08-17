@@ -133,3 +133,42 @@ test('临官月即使比肩透干仍然保留真正的建禄格', () => {
   assert.equal(pattern.type, '月令特别格');
   assert.match(pattern.desc, /临官|建禄|禄/);
 });
+
+test('冬土仅见弱火时不把调候作用写成已经完成', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['甲申', '丁丑', '己丑', '乙亥']),
+    'female'
+  );
+  const result = calculator.getYongJi(chart);
+
+  assert.deepEqual(Array.from(result.yongShen), ['水']);
+  assert.equal(result.elementClassification['火'], '忌神');
+  assert.match(result.primaryReason, /原局虽见火/);
+  assert.match(result.primaryReason, /根气有限/);
+  assert.doesNotMatch(result.primaryReason, /寒谷回春|调候已得/);
+});
+
+test('羊刃藏官杀未透时说明制刃不足而不是完全无制', () => {
+  const calculator = loadCalculator();
+  const cases = [
+    { gz: ['丁丑', '辛亥', '癸丑', '癸亥'], detail: /官杀藏支未透，制刃不足/ },
+    { gz: ['甲午', '丙子', '壬子', '辛亥'], detail: /官杀根受冲/ },
+    { gz: ['戊戌', '丁巳', '丁酉', '庚子'], detail: /天干食伤牵制官杀/ },
+  ];
+
+  for (const item of cases) {
+    const chart = calculator.buildFromPillars(pillars(item.gz), 'male');
+    const pattern = calculator.getPattern(chart);
+    const control = pattern.establishConditions.find(row => row.condition === '官杀制刃');
+
+    assert.equal(pattern.name, '羊刃格');
+    assert.equal(pattern.status, '破格');
+    assert.ok(control);
+    assert.equal(control.met, false);
+    assert.match(control.detail, /官杀藏支未透，制刃不足/);
+    assert.match(control.detail, item.detail);
+    assert.ok(pattern.breakReasons.some(reason => /官杀藏支未透，制刃不足/.test(reason)));
+    assert.ok(!pattern.breakReasons.includes('羊刃无制'));
+  }
+});
