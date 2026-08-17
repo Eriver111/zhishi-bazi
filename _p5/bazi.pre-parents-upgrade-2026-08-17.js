@@ -2807,24 +2807,29 @@ function analyzeParents(bazi, gender) {
     var dmLabel = dmResult.level;
     var dmScore = dmResult.score;
 
-    // 判断某十神对日主来说是否"喜用"——改为 getYongJi elementClassification 同源口径：
-    // 用神/喜神/弱喜 = 喜侧；忌神/弱忌 = 忌侧；不再用旺衰标签粗判（中和盘也有真实档位）。
-    var yongJiCls = getYongJi(bazi).elementClassification || {};
-    function starRole(ssName) {
-        var wx = ssToWx(ssName);
-        if (!wx) return '';
-        return yongJiCls[wx] || '';
+    // 判断某十神对日主来说是否"喜用"
+    function isXiShen(ssName) {
+        var wax = ssToWx(ssName);
+        if (!wax) return false;
+        if (dmLabel === '偏强' || dmLabel === '极强') {
+            return ssName === '正官' || ssName === '七杀' || ssName === '食神' || ssName === '伤官' || ssName === '正财' || ssName === '偏财';
+        } else if (dmLabel === '偏弱' || dmLabel === '极弱') {
+            return ssName === '正印' || ssName === '偏印' || ssName === '比肩' || ssName === '劫财';
+        }
+        // 中和：无明显喜忌
+        return false;
     }
 
     // === 2. 查找父母星位置 ===
     var fatherPos = [], motherPos = [];
+    var fatherGan = null, motherGan = null, fatherShiShenOnGan = null, motherShiShenOnGan = null;
     var fatherInYear = false, motherInYear = false;
     var posNameMap = { year: '年', month: '月' };
 
     ['year','month'].forEach(function(pos) {
         var ganSS = getShiShen(DAY, bazi[pos].gan);
-        if (ganSS === fatherStar) { fatherPos.push(posNameMap[pos] + '干'); if (pos==='year') fatherInYear = true; }
-        if (ganSS === motherStar) { motherPos.push(posNameMap[pos] + '干'); if (pos==='year') motherInYear = true; }
+        if (ganSS === fatherStar) { fatherPos.push(posNameMap[pos] + '干'); fatherGan = bazi[pos].gan; fatherShiShenOnGan = ganSS; if (pos==='year') fatherInYear = true; }
+        if (ganSS === motherStar) { motherPos.push(posNameMap[pos] + '干'); motherGan = bazi[pos].gan; motherShiShenOnGan = ganSS; if (pos==='year') motherInYear = true; }
 
         var cg = getCangGan(bazi[pos].zhi);
         cg.forEach(function(g) {
@@ -2870,34 +2875,12 @@ function analyzeParents(bazi, gender) {
     var yearDamaged = yearClash.length + yearHarm.length + yearPenalty.length;
     var yearZhiIsYangRen = YANG_REN_SET[yearGan + yearZhi];
 
-    // === 4.5 父母星生克链（全柱扫描，替换原单步"月干克星"检查）===
-    // 生我=(i+4)%5、克我=(i+3)%5；天干为明、地支本气/藏干为暗。
-    function starChain(starWx) {
-        var idx = WX_LIST.indexOf(starWx);
-        var shengWx = WX_LIST[(idx + 4) % 5]; // 生星者
-        var keWx = WX_LIST[(idx + 3) % 5];    // 克星者
-        var posCn = { year: '年', month: '月', day: '日', hour: '时' };
-        var shengGan = [], keGan = [], shengZhi = [], keZhi = [];
-        ['year','month','day','hour'].forEach(function(pos){
-            var g = bazi[pos].gan, z = bazi[pos].zhi;
-            if (WU_XING[g] === shengWx) shengGan.push(posCn[pos] + '干' + g);
-            if (WU_XING[g] === keWx) keGan.push(posCn[pos] + '干' + g);
-            if (DI_ZHI_WU_XING[z] === shengWx) shengZhi.push(posCn[pos] + '支' + z);
-            if (DI_ZHI_WU_XING[z] === keWx) keZhi.push(posCn[pos] + '支' + z);
-            getCangGan(z).forEach(function(cg){
-                if (WU_XING[cg] === shengWx) shengZhi.push(posCn[pos] + '支藏' + cg);
-                if (WU_XING[cg] === keWx) keZhi.push(posCn[pos] + '支藏' + cg);
-            });
-        });
-        return { shengWx: shengWx, keWx: keWx, shengGan: shengGan, keGan: keGan, shengZhi: shengZhi, keZhi: keZhi };
-    }
-
     // === 5. 生成文本 ===
     var fatherText = '', motherText = '', summaryText = '', yearNote = '';
     var posName = { year: '年柱', month: '月柱' };
 
     // ---- 父亲 ----
-    var fRole = starRole(fatherStar);
+    var fIsXi = isXiShen(fatherStar);
     if (fatherPos.length > 0) {
         var fPositions = fatherPos.join('、');
         fatherText = '父亲星（' + fatherStar + '）出现在' + fPositions;
@@ -2910,28 +2893,23 @@ function analyzeParents(bazi, gender) {
             fatherText += '。父星根基扎实，意味着父亲自身能力或资源较充足，对你的人生有实质性帮助';
         }
 
-        // 喜用还是压力（同源口径：直接读命局喜用忌档位）
-        if (fRole === '用神' || fRole === '喜神') {
-            fatherText += '。从命局喜用看，父星' + fatherWx + '为' + fRole + '——父亲特质恰好是你所需要的，他对你的教导和要求大多对你有益，属于「严是爱」的类型';
-        } else if (fRole === '弱喜') {
-            fatherText += '。父星' + fatherWx + '为弱喜——父亲的助力温和而不张扬，关键时候能扶你一把，但不会大包大揽';
-        } else if (fRole === '弱忌') {
-            fatherText += '。父星' + fatherWx + '为弱忌——父亲的要求偶尔让你觉得不自在，但影响有限，找到彼此的节奏就好';
+        // 喜用还是压力
+        if (fIsXi) {
+            fatherText += '。从命局看，父亲特质恰好是你所需要的，他对你的教导和要求大多对你有益，属于「严是爱」的类型';
         } else {
-            fatherText += '。从命局喜忌看，父星' + fatherWx + '为忌神——你命局日主' + dmLabel + '，父星对你的要求有时候会超出你的承受范围，需要学会把父亲的期望转化成动力而不是压力';
+            fatherText += '。不过要注意，你命局日主' + dmLabel + '，父星对你的要求有时候会超出你的承受范围，需要学会把父亲的期望转化成动力而不是压力';
         }
 
-        // 父星生克链（生源/克星，分天干明、地支暗两档）
-        var fChain = starChain(fatherWx);
-        if (fChain.keGan.length > 0) {
-            fatherText += '。父星' + fatherWx + '受' + fChain.keWx + '明克（' + fChain.keGan.join('、') + '），父亲的付出容易被外界消耗，需多留意他的身体与事业压力，尤其在年长之后';
-        } else if (fChain.keZhi.length > 0) {
-            fatherText += '。' + fChain.keWx + '藏于地支（' + fChain.keZhi.join('、') + '）暗克父星，压力偏隐性——父亲不爱诉苦，健康与事业上的隐患需要你主动关心';
-        }
-        if (fChain.shengGan.length > 0) {
-            fatherText += '。父星得' + fChain.shengWx + '生扶（' + fChain.shengGan.join('、') + '），后劲充足，父亲的事业或资源有可持续性';
-        } else if (fChain.shengZhi.length > 0) {
-            fatherText += '。' + fChain.shengWx + '藏于地支（' + fChain.shengZhi.join('、') + '）暗生父星，生源不断但作用慢，父亲属于厚积薄发型';
+        // 父星是否被克
+        if (fatherGan) {
+            var keMap = {};
+            ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
+                keMap[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10]; // 间隔7位为克
+            });
+            var keGan = keMap[fatherGan];
+            if (bazi.month.gan === keGan) {
+                fatherText += '。特别提醒：父星在年干被月干' + keGan + '克制，需多留意父亲的身体健康，尤其在父亲年长之后';
+            }
         }
     } else {
         if (fatherWx && hasWuxingRoot(fatherWx)) {
@@ -2942,7 +2920,7 @@ function analyzeParents(bazi, gender) {
     }
 
     // ---- 母亲 ----
-    var mRole = starRole(motherStar);
+    var mIsXi = isXiShen(motherStar);
     if (motherPos.length > 0) {
         var mPositions = motherPos.join('、');
         motherText = '母亲星（' + motherStar + '）出现在' + mPositions;
@@ -2954,27 +2932,20 @@ function analyzeParents(bazi, gender) {
             motherText += '。母星根基扎实，母亲是很坚实的后盾，在你需要的时候总能提供情感和实际上的支持';
         }
 
-        if (mRole === '用神' || mRole === '喜神') {
-            motherText += '。从命局喜用看，母星' + motherWx + '为' + mRole + '——母亲的包容和支持正是你最需要的东西，你们之间有一种天然的互相理解，这对你的性格形成很关键';
-        } else if (mRole === '弱喜') {
-            motherText += '。母星' + motherWx + '为弱喜——母亲的关怀细水长流，不喧哗却一直在，是你情绪上最稳定的来处';
-        } else if (mRole === '弱忌') {
-            motherText += '。母星' + motherWx + '为弱忌——母亲的过度保护偶尔让你「喘不过气」，但程度不重，学会温和地说「我可以自己来」就好';
+        if (mIsXi) {
+            motherText += '。从命局看，母亲的包容和支持正是你最需要的东西，你们之间有一种天然的互相理解，这对你的性格形成很关键';
         } else {
-            motherText += '。但需留意——你命局日主' + dmLabel + '，母星' + motherWx + '为忌神，母亲的过度保护和关注有时候反而会让你觉得「喘不过气」来。学会对母亲说「我可以自己来」也是长大的一部分';
+            motherText += '。但需留意——你命局日主' + dmLabel + '，母亲的过度保护和关注有时候反而会让你觉得「喘不过气」来。学会对母亲说「我可以自己来」也是长大的一部分';
         }
 
-        // 母星生克链
-        var mChain = starChain(motherWx);
-        if (mChain.keGan.length > 0) {
-            motherText += '。母星' + motherWx + '受' + mChain.keWx + '明克（' + mChain.keGan.join('、') + '），母亲操劳较多，平时应多关心她的身体和情绪';
-        } else if (mChain.keZhi.length > 0) {
-            motherText += '。' + mChain.keWx + '藏于地支（' + mChain.keZhi.join('、') + '）暗克母星，母亲的压力偏隐性，她的情绪需要被看见';
-        }
-        if (mChain.shengGan.length > 0) {
-            motherText += '。母星得' + mChain.shengWx + '生扶（' + mChain.shengGan.join('、') + '），母亲能量充足，晚年福气不薄';
-        } else if (mChain.shengZhi.length > 0) {
-            motherText += '。' + mChain.shengWx + '藏于地支（' + mChain.shengZhi.join('、') + '）暗生母星，母亲的情感滋养源源不断，只是不张扬';
+        if (motherGan) {
+            var keMap2 = {};
+            ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'].forEach(function(g,i){
+                keMap2[g] = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'][(i+7)%10];
+            });
+            if (bazi.month.gan === keMap2[motherGan]) {
+                motherText += '。母星在年干受月干克制，平时应多关心母亲的身体和情绪';
+            }
         }
     } else {
         if (motherWx && hasWuxingRoot(motherWx)) {
