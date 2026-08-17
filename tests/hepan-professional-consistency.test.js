@@ -49,9 +49,13 @@ test('Zi-hour day change affects only day/hour pillars at the shared boundary', 
   assert.equal(typeof calculator.calculateFromBirthInput, 'function');
   const base = { year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 0, gender: 'male', trueSolarTime: false };
   const sameDay = calculator.calculateFromBirthInput({ ...base, ziHourNextDay: false });
-  const nextDay = calculator.calculateFromBirthInput({ ...base, ziHourNextDay: true });
+  const earlyZi = calculator.calculateFromBirthInput({ ...base, ziHourNextDay: true });
+  const nextDay = calculator.calculateFromBirthInput({ ...base, clock: 23, ziHourNextDay: true });
 
   assert.deepEqual(pillars(sameDay.bazi), ['癸卯', '乙丑', '戊寅', '壬子']);
+  // 早子时（00:00-01:00）不换日（2026-08-10 约定：仅晚子时 23:00-24:00 换日）
+  assert.deepEqual(pillars(earlyZi.bazi), ['癸卯', '乙丑', '戊寅', '壬子']);
+  // 晚子时（23:00-24:00）换日：仅日柱/时柱滚动
   assert.deepEqual(pillars(nextDay.bazi), ['癸卯', '乙丑', '己卯', '甲子']);
   assert.equal(nextDay.normalized.year, 2024);
   assert.equal(nextDay.normalized.month, 1);

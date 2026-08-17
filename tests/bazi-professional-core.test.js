@@ -152,7 +152,13 @@ test('shared birth normalization separates true-solar civil-date changes from Zi
     year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 10,
     gender: 'male', location: '新疆', trueSolarTime: true, ziHourNextDay: false,
   });
+  // 晚子时（23:00-24:00）换日：civil 日期不变、日柱滚动一天
   const ziHour = calculator.normalizeBirthInput({
+    year: 2024, month: 1, day: 15, hour: 0, clock: 23, minute: 0,
+    gender: 'male', trueSolarTime: false, ziHourNextDay: true,
+  });
+  // 早子时（00:00-01:00）不换日（2026-08-10 约定：仅晚子时换日）
+  const earlyZi = calculator.normalizeBirthInput({
     year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 0,
     gender: 'male', trueSolarTime: false, ziHourNextDay: true,
   });
@@ -160,6 +166,8 @@ test('shared birth normalization separates true-solar civil-date changes from Zi
   assert.equal(solar.dayPillarOffset, 0);
   assert.deepEqual({ year: ziHour.year, month: ziHour.month, day: ziHour.day }, { year: 2024, month: 1, day: 15 });
   assert.equal(ziHour.dayPillarOffset, 1);
+  assert.deepEqual({ year: earlyZi.year, month: earlyZi.month, day: earlyZi.day }, { year: 2024, month: 1, day: 15 });
+  assert.equal(earlyZi.dayPillarOffset, 0);
 });
 
 test('Zi-hour rollover affects only branch index zero when enabled', () => {

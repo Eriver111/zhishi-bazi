@@ -15,7 +15,7 @@ test('static assets have correct content type and browser caching', async (t) =>
   let response;
   for (let attempt = 0; attempt < 20; attempt++) {
     try {
-      response = await fetch(`http://127.0.0.1:${port}/images/cleveland_screen_print.jpg`);
+      response = await fetch(`http://127.0.0.1:${port}/images/zhishi-hero-ink-v2.webp`);
       break;
     } catch (_) {
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -24,6 +24,6 @@ test('static assets have correct content type and browser caching', async (t) =>
 
   assert.ok(response, 'development server did not start');
   assert.equal(response.status, 200);
-  assert.equal(response.headers.get('content-type'), 'image/jpeg');
+  assert.equal(response.headers.get('content-type'), 'image/webp');
   assert.match(response.headers.get('cache-control') || '', /max-age=/);
 });

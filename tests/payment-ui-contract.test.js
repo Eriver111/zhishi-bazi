@@ -115,6 +115,7 @@ test('desktop report payment renders the gateway QR image instead of treating QR
   const context = {
     console,
     URL,
+    AbortController,
     navigator: { userAgent: 'Desktop Browser' },
     document: {
       getElementById(id) { return nodes[id] || null; },
@@ -140,7 +141,8 @@ test('desktop report payment renders the gateway QR image instead of treating QR
     },
     setInterval() { return 1; },
     clearInterval() {},
-    setTimeout(fn) { fn(); return 1; }
+    setTimeout(fn) { fn(); return 1; },
+    clearTimeout() {}
   };
   context.window = context;
   vm.createContext(context);
@@ -437,6 +439,7 @@ test('hepan deep report creates a hepan order instead of falling through to the 
   const context = {
     console,
     URL,
+    AbortController,
     alert() {},
     navigator: { userAgent: 'Desktop Browser' },
     document: {
@@ -464,7 +467,9 @@ test('hepan deep report creates a hepan order instead of falling through to the 
       };
     },
     setInterval() { return 1; },
-    clearInterval() {}
+    clearInterval() {},
+    setTimeout() { return 1; },
+    clearTimeout() {}
   };
   context.window = context;
   vm.createContext(context);
@@ -551,7 +556,7 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v7');
+  assert.equal(openedCache, 'zhishi-v12');
   assert.ok(cachedAssets.includes('/js/payment.js'));
   assert.ok(cachedAssets.includes('/js/paywall.js'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js'));

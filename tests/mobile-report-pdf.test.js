@@ -268,7 +268,7 @@ test('result page loads local PDF dependencies in order and exposes one accessib
     '/js/report-pdf.js',
     'js/result.js',
   ];
-  const indexes = scripts.map((src) => html.indexOf(`src="${src}"`));
+  const indexes = scripts.map((src) => html.indexOf(`src="${src}`));
 
   indexes.forEach((index, position) => {
     assert.ok(index >= 0, `result page must load ${scripts[position]}`);
@@ -655,10 +655,10 @@ test('desktop export retains the existing new-tab print-to-PDF route', () => {
   assert.deepEqual(calls.open, [{ url: 'blob:desktop-report', target: '_blank' }]);
 });
 
-test('service worker rolls the mobile PDF cache to v7 and precaches all local PDF scripts', () => {
+test('service worker rolls the mobile PDF cache to v12 and precaches all local PDF scripts', () => {
   const source = read('sw.js');
-  assert.equal((source.match(/const CACHE_NAME\s*=\s*'zhishi-v7'/g) || []).length, 1);
-  assert.equal((source.match(/const CACHE_NAME\s*=/g) || []).length, 1);
+  assert.equal((source.match(/CACHE_NAME\s*=\s*'zhishi-v12'/g) || []).length, 1);
+  assert.equal((source.match(/CACHE_NAME\s*=/g) || []).length, 1);
   for (const asset of [
     '/js/vendor/html2canvas.min.js',
     '/js/vendor/jspdf.umd.min.js',

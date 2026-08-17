@@ -15,8 +15,9 @@ test('homepage uses v3 mobile artwork while preserving the v2 desktop artwork', 
   assert.match(html, /<source[^>]+media=["']\(max-width:\s*600px\)["'][^>]+zhishi-hero-ink-mobile-v3\.webp/);
   assert.match(html, /<source[^>]+zhishi-hero-ink-v2\.webp[^>]+image\/webp/);
   assert.match(html, /<img[^>]+zhishi-hero-ink-v2\.png/);
-  assert.ok(fs.existsSync(path.join(root, 'images', 'zhishi-hero-ink-mobile-v3.png')));
+  // 2026-08-10 清理（7e3a2f8）后主图仅保留 webp 格式
   assert.ok(fs.existsSync(path.join(root, 'images', 'zhishi-hero-ink-mobile-v3.webp')));
+  assert.ok(fs.existsSync(path.join(root, 'images', 'zhishi-hero-ink-v2.webp')));
 });
 
 test('mobile hero fits the portrait artwork to the viewport without intrinsic-size cropping', () => {
