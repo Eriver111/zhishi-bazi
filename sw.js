@@ -8,7 +8,9 @@ var STATIC_ASSETS = [
   '/css/interactions.css', '/css/poster.css',
   '/js/bazi.js?v=1781962250', '/js/mo-xing-he.js?v=1781962250',
   '/js/ai-chat-integration.js?v=1781962250',
-  '/js/vendor/html2canvas.min.js', '/js/vendor/jspdf.umd.min.js'
+  '/js/payment.js', '/js/paywall.js', '/js/hepan-paywall.js',
+  '/js/vendor/html2canvas.min.js', '/js/vendor/jspdf.umd.min.js',
+  '/js/report-pdf.js'
 ];
 
 self.addEventListener('install', function(e) {
