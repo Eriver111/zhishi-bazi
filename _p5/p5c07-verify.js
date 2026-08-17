@@ -313,12 +313,19 @@ console.log('disks=' + GZ_LIST.length + ' withCs=' + stats.withCs + ' noCs=' + s
   + ' unitFails=' + unitFails.length
   + ' hardTotal=' + hardTotal);
 // —— 录屏友好摘要（纯展示；上方扁平行保留作报告对账）——
-var G = '\x1b[32m', GOLD = '\x1b[38;2;212;175;55m', R = '\x1b[0m';
+// 2026-08-17：摘要改条件化——基线漂移（如远端并行线引擎改动）时如实显示红卡，
+// 不再静态宣称全绿；绿卡仅在 hardTotal=0 且 unitFails=0 时出现。
+var G = '\x1b[32m', RED = '\x1b[31m', GOLD = '\x1b[38;2;212;175;55m', R = '\x1b[0m';
+var ok = hardTotal === 0 && unitFails.length === 0;
 console.log('');
 console.log(GOLD + '══════════════════════════════════' + R);
-console.log('  ' + GOLD + '知时八字 · 540 盘数据守卫 · 全绿' + R);
+console.log('  ' + GOLD + '知时八字 · ' + GZ_LIST.length + ' 盘数据守卫 · ' + (ok ? '全绿' : RED + '发现漂移' + GOLD) + R);
 console.log(GOLD + '══════════════════════════════════' + R);
-console.log('  ' + G + '✓' + R + ' 核心判定零漂移：旺衰 · 用神 · 格局 · 从格 · 评分');
-console.log('  ' + G + '✓' + R + ' 喜/忌仅弱档增量 +' + stats.danglingResolved + '（旧成员零丢失 · 零跨侧）');
-console.log('  ' + G + '✓' + R + ' 硬门禁 ' + hardTotal + ' 违反 · 单元断言 ' + unitFails.length + ' 失败');
+if (ok) {
+  console.log('  ' + G + '✓' + R + ' 核心判定零漂移：旺衰 · 用神 · 格局 · 从格 · 评分');
+  console.log('  ' + G + '✓' + R + ' 喜/忌仅弱档增量 +' + stats.danglingResolved + '（旧成员零丢失 · 零跨侧）');
+} else {
+  console.log('  ' + RED + '✗' + R + ' 判定漂移 ' + hardTotal + ' 项（对比基线 _p5/bazi.pre-c07.js，明细见上方 HARD.*）');
+}
+console.log('  ' + (hardTotal === 0 ? G : RED) + (hardTotal === 0 ? '✓' : '✗') + R + ' 硬门禁 ' + hardTotal + ' 违反 · 单元断言 ' + unitFails.length + ' 失败');
 process.exit(hardTotal === 0 ? 0 : 1);

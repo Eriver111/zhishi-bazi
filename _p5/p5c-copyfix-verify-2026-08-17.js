@@ -101,10 +101,18 @@ console.log('judge_drift=' + judgeDrift.length);
 console.log('desc_changed=' + descChanged.length);
 console.log('json_written=OK');
 // —— 录屏友好摘要（纯展示；上方扁平行保留作报告对账）——
-var G = '\x1b[32m', GOLD = '\x1b[38;2;212;175;55m', R = '\x1b[0m';
+// 2026-08-17：摘要改条件化——现役引擎与快照出现判定漂移时如实显示红卡，
+// 不再静态宣称零漂移；绿卡仅在 11 判定字段全等时出现。
+var G = '\x1b[32m', RED = '\x1b[31m', GOLD = '\x1b[38;2;212;175;55m', R = '\x1b[0m';
+var ok = judgeDrift.length === 0;
 console.log('');
 console.log(GOLD + '══════════════════════════════════' + R);
-console.log('  ' + GOLD + '双引擎对照 · ' + gzs.length + ' 盘 · 判定零漂移' + R);
+console.log('  ' + GOLD + '双引擎对照 · ' + gzs.length + ' 盘 · ' + (ok ? '判定零漂移' : RED + '判定漂移 ' + judgeDrift.length + ' 项' + GOLD) + R);
 console.log(GOLD + '══════════════════════════════════' + R);
-console.log('  ' + G + '✓' + R + ' 判定字段 11 项全等（快照 vs 现役引擎）');
-console.log('  ' + G + '✓' + R + ' 文案层变更 ' + descChanged.length + ' 盘（透→当权 · 审计零异常）');
+if (ok) {
+  console.log('  ' + G + '✓' + R + ' 判定字段 11 项全等（快照 vs 现役引擎）');
+  console.log('  ' + G + '✓' + R + ' 文案层变更 ' + descChanged.length + ' 盘（透→当权 · 审计零异常）');
+} else {
+  console.log('  ' + RED + '✗' + R + ' 判定字段漂移（快照 vs 现役引擎），明细见 JSON');
+  console.log('  ' + GOLD + '·' + R + ' 文案层变更 ' + descChanged.length + ' 盘');
+}
