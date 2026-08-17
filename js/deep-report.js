@@ -2830,8 +2830,10 @@
         : '原局未见同时符合喜用与实际财富通路的单一方向。';
       directionText = '得财方向不集中，不能只凭某一个五行或方位断定哪里一定更赚钱。真正决定收入的，是哪一种客户、项目、平台或合作方式能把现有路径接成收入。';
     }
+    // 财富分数和内部等级继续保留原始结果；公开报告最低只显示 A6。
+    var publicLevel = Math.max(6, level);
     return {
-      grade: 'A' + level,
+      grade: 'A' + publicLevel,
       level: '',
       difficulty: '',
       headline: headline,

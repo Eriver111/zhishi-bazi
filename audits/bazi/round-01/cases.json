@@ -1,0 +1,86 @@
+{
+  "roundId": "round-01",
+  "selectionPolicy": "四季、十日主、东西经度极端、港澳台与制化边界分层覆盖；未读取网站判断接口",
+  "cases": [
+    {
+      "id": "R01-C01",
+      "birth": { "year": 1970, "month": 1, "day": 15, "clock": 12, "minute": 0, "gender": "male" },
+      "location": { "province": "新疆", "city": "喀什地区", "district": "塔什库尔干塔吉克自治县" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["己酉", "丁丑", "乙未", "庚辰"],
+      "coverageTags": ["明确身弱", "调候优先", "制化临界"]
+    },
+    {
+      "id": "R01-C02",
+      "birth": { "year": 1970, "month": 3, "day": 15, "clock": 12, "minute": 0, "gender": "female" },
+      "location": { "province": "台湾省", "city": "台北市", "district": "中正区" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["庚戌", "己卯", "甲午", "庚午"],
+      "coverageTags": ["明确身强", "专旺疑似或边界", "格局与旺衰冲突"]
+    },
+    {
+      "id": "R01-C03",
+      "birth": { "year": 1970, "month": 7, "day": 15, "clock": 12, "minute": 0, "gender": "male" },
+      "location": { "province": "澳门特别行政区", "city": "澳门半岛", "district": "花地玛堂区" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["庚戌", "癸未", "丙申", "甲午"],
+      "coverageTags": ["明确身强", "调候优先", "制化临界"]
+    },
+    {
+      "id": "R01-C04",
+      "birth": { "year": 1970, "month": 9, "day": 15, "clock": 12, "minute": 0, "gender": "female" },
+      "location": { "province": "福建省", "city": "厦门市", "district": "思明区" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["庚戌", "乙酉", "戊戌", "戊午"],
+      "coverageTags": ["明确身强", "格局与旺衰冲突", "透干/根气临界"]
+    },
+    {
+      "id": "R01-C05",
+      "birth": { "year": 1970, "month": 11, "day": 15, "clock": 12, "minute": 0, "gender": "male" },
+      "location": { "province": "新疆", "city": "喀什地区", "district": "塔什库尔干塔吉克自治县" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["庚戌", "丁亥", "己亥", "己巳"],
+      "coverageTags": ["从格边界", "调候优先", "月令临界"]
+    },
+    {
+      "id": "R01-C06",
+      "birth": { "year": 1973, "month": 1, "day": 15, "clock": 12, "minute": 0, "gender": "female" },
+      "location": { "province": "黑龙江省", "city": "大兴安岭地区", "district": "漠河市" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["壬子", "癸丑", "辛亥", "甲午"],
+      "coverageTags": ["明确身弱", "从格疑似", "调候优先"]
+    },
+    {
+      "id": "R01-C07",
+      "birth": { "year": 1973, "month": 3, "day": 15, "clock": 12, "minute": 0, "gender": "male" },
+      "location": { "province": "香港特别行政区", "city": "香港岛", "district": "中西区" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["癸丑", "乙卯", "庚戌", "壬午"],
+      "coverageTags": ["明确身弱", "格局与旺衰冲突", "制化临界"]
+    },
+    {
+      "id": "R01-C08",
+      "birth": { "year": 1973, "month": 7, "day": 15, "clock": 12, "minute": 0, "gender": "female" },
+      "location": { "province": "北京市", "city": "北京市", "district": "朝阳区" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["癸丑", "己未", "壬子", "丙午"],
+      "coverageTags": ["从格边界", "透干/根气临界", "制化临界"]
+    },
+    {
+      "id": "R01-C09",
+      "birth": { "year": 1976, "month": 5, "day": 15, "clock": 12, "minute": 0, "gender": "male" },
+      "location": { "province": "新疆", "city": "喀什地区", "district": "塔什库尔干塔吉克自治县" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["丙辰", "癸巳", "丁卯", "乙巳"],
+      "coverageTags": ["明确身强", "专旺疑似或边界", "月令临界"]
+    },
+    {
+      "id": "R01-C10",
+      "birth": { "year": 1979, "month": 7, "day": 15, "clock": 12, "minute": 0, "gender": "female" },
+      "location": { "province": "香港特别行政区", "city": "香港岛", "district": "中西区" },
+      "solarDataVersion": "county-centroid-v1",
+      "pillars": ["己未", "辛未", "癸未", "戊午"],
+      "coverageTags": ["明确身弱", "从格疑似", "透干/根气临界"]
+    }
+  ]
+}

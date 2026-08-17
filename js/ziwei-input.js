@@ -50,7 +50,13 @@
       clock: hour,
       minute: minute,
       gender: input.gender,
-      location: input.dist || input.city || input.prov || input.location || '',
+      location: (input.prov || input.city || input.dist) ? {
+        province: input.prov || '',
+        city: input.city || '',
+        district: input.dist || '',
+        allowFallback: true
+      } : (input.location || ''),
+      dist: input.dist || '',
       city: input.city || '',
       prov: input.prov || '',
       trueSolarTime: useTrueSolarTime,

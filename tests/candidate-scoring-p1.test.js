@@ -54,12 +54,14 @@ test('B2 财成势身弱——比劫帮身分财进入第一（L2 结构需求�
   assert.equal(yj.yongShen[0], '木');
 });
 
-test('#9 ±3 中性带——中和盘无断崖式喜忌切割', () => {
-  // 51分中和：五元素 S_need 全在 ±3 内 → 除用神外不入喜不入忌
+test('#9 ±3 弱档——中和盘保留方向但不冒充强喜强忌', () => {
+  // 51分中和：五元素 S_need 全在 ±3 内 → 除用神外按符号进入弱喜/弱忌
   const yj = yjOf(['甲子', '丁卯', '己未', '庚午']);
-  assert.equal(yj.jiShen.length, 0, '忌神应为空（全中性）');
-  assert.equal(yj.xiShen.length, 1, '喜神应仅含用神');
-  assert.equal(yj.xiShen[0], yj.yongShen[0]);
+  assert.deepEqual(Array.from(yj.xiShen), ['木', '金', '水']);
+  assert.deepEqual(Array.from(yj.jiShen), ['火', '土']);
+  assert.deepEqual(JSON.parse(JSON.stringify(yj.elementClassification)), {
+    木: '用神', 火: '弱忌', 土: '弱忌', 金: '弱喜', 水: '弱喜',
+  });
 });
 
 test('candidateScores 输出五元素 L1/L2/L3/L4/S_need/根气质量/最终角色', () => {

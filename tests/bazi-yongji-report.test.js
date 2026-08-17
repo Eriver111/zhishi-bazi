@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260817c/, `${page} must load the single-core-yongshen bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260817k/, `${page} must load the hidden-seal-evidence-consistent core bundle`);
   }
 });
 
@@ -69,6 +69,57 @@ test('喜用忌说明判定方法、格局状态和每个五行的理由', () =>
   const winterEarth = calculator.getYongJi(charts[1]);
   assert.equal(winterEarth.method, '扶抑为主·调候辅助');
   assert.ok(winterEarth.evidence.some(row => row.category === '调候'));
+});
+
+test('调候辅助不能覆盖最终核心用神的首要理由', () => {
+  const calculator = loadCalculator();
+  const cases = [
+    ['木', ['己酉', '丁丑', '乙未', '庚辰']],
+    ['木', ['庚戌', '癸未', '丙申', '甲午']],
+    ['土', ['壬子', '癸丑', '辛亥', '甲午']],
+  ];
+
+  for (const [expectedYong, gz] of cases) {
+    const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+    assert.deepEqual(Array.from(result.yongShen), [expectedYong]);
+    assert.match(result.primaryReason, new RegExp(`^核心用神为${expectedYong}`));
+    assert.match(result.primaryReason, /调候辅助：/);
+    const coreReason = `核心用神按结构评分取${expectedYong}`;
+    assert.match(result.reasoning, new RegExp(coreReason));
+    assert.ok(result.reasoning.indexOf(coreReason) < result.reasoning.indexOf('调候辅助：'));
+  }
+});
+
+test('候选对比先展示核心结构分并把调候分明确标为参考', () => {
+  const calculator = loadCalculator();
+  const cases = [
+    ['土', ['癸亥', '乙丑', '戊辰', '壬子']],
+    ['金', ['庚午', '癸未', '戊寅', '辛酉']],
+  ];
+
+  for (const [expectedYong, gz] of cases) {
+    const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+    const comparison = result.evidence.find(row => row.category === '候选对比');
+
+    assert.deepEqual(Array.from(result.yongShen), [expectedYong]);
+    assert.match(result.reasoning, new RegExp(`核心用神按结构评分取${expectedYong}`));
+    assert.doesNotMatch(result.reasoning, /候选五行评分后取/);
+    assert.ok(comparison);
+    assert.match(comparison.detail, /核心结构分/);
+    assert.match(comparison.detail, /调候参考/);
+    assert.doesNotMatch(comparison.detail, /综合分/);
+  }
+});
+
+test('戊土丑月调候说明不误写成己土', () => {
+  const calculator = loadCalculator();
+  const result = calculator.getYongJi(calculator.buildFromPillars(
+    pillars(['癸亥', '乙丑', '戊辰', '壬子']),
+    'male'
+  ));
+
+  assert.match(result.primaryReason, /冬土生于丑月/);
+  assert.doesNotMatch(result.primaryReason, /己土冬生/);
 });
 
 test('深度报告事实对同一命盘生成稳定的专业证据链', () => {

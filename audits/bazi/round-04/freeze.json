@@ -1,0 +1,14 @@
+{
+  "casesSha256": "07778bd8898cf830a38c75bacb04c6fe2ba486e6b3c084de5166e922a633b903",
+  "rulingsSha256": "172cd4f2c272f7ca28e4da6810211f847ec9c224ec94ee6edb7e0179c2d715ad",
+  "engineFiles": {
+    "js/bazi.js": "67d4da84ea75a459c5e4192bb432784ef5656cd28483e6c4d70c4d6760c7024f",
+    "js/bazi-chain.js": "3d1901d2e148c1999f872387069579e8214e6e21fc14a44acf716d4aeca2b0a5",
+    "js/structural.js": "4e4037943d21a640f333d1e880225bd729229c7b2522375a71bd9ec04b5a261b"
+  },
+  "engineCommit": "66f9af217173399a4867376e7397c09fffb068e7",
+  "solarDataVersion": "county-centroid-v1",
+  "rulingsFrozenAt": "2026-08-17T09:56:32.990Z",
+  "engineCapturedAt": "2026-08-17T09:56:48.347Z",
+  "engineResultsSha256": "669efdaa79a510c679e359841cf62e76664ace72822925f6c8fa81c6d39f2cfd"
+}

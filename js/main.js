@@ -484,6 +484,19 @@ function handleSubmit(e) {
   prov = document.getElementById('province').value;
   city = document.getElementById('city') ? document.getElementById('city').value : '';
   dist = document.getElementById('district') ? document.getElementById('district').value : '';
+  var hasAnyLocation = !!(prov || city || dist);
+  var hasCompleteLocation = !!(prov && city && dist);
+  if (hasAnyLocation && !hasCompleteLocation) {
+    alert('请完整选择省、市、县'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+  }
+  if (hasCompleteLocation) {
+    try {
+      if (typeof CountyLongitudeData === 'undefined') throw new Error('县级经度数据未加载');
+      CountyLongitudeData.resolveLocation({ province:prov, city:city, district:dist }, { allowFallback:false });
+    } catch (locationError) {
+      alert('县级经度未匹配，请重新选择出生地'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+    }
+  }
 
   if (currentMode === 'solar') {
     year = parseInt(document.getElementById('sYear').value);
@@ -531,6 +544,7 @@ function handleSubmit(e) {
   if (prov) params.set('prov', prov);
   if (city) params.set('city', city);
   if (dist) params.set('dist', dist);
+  if (hasCompleteLocation && typeof CountyLongitudeData !== 'undefined') params.set('geo_v', CountyLongitudeData.VERSION);
   // 子时换日
   var zishi = document.getElementById('zishiHuanri');
   if (zishi && zishi.checked) params.set('zishi', '1');
