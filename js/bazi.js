@@ -2200,6 +2200,8 @@ function calcDayMasterStrength(bazi) {
   });
 
   var score = 50; // 基准分
+  // v2: 记录失令命中类型，供 ②½ 得令×得地联动使用
+  var _deadOrder = false, _restOrder = false, _prisonOrder = false;
 
   // ---------- ① 得令：月令地支本气与日主关系 (权重最大) ----------
   // v5.4: 三会局改写月令 — 寅卯辰/巳午未/申酉戌/亥子丑成局时，月支参与则五行按会局重算
@@ -2229,9 +2231,9 @@ function calcDayMasterStrength(bazi) {
     // 燥土不生金：金日主生未/戌月，火炎土燥，土印不得令（金被埋脆）
     if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 20;
   }
-  else if (WOSHENG[dgWx] === mwx) score -= 15;
-  else if (WOKE[dgWx] === mwx)   score -= 10;
-  else if (KEWO[dgWx] === mwx)   score -= (25 - wetEarthAdj); // 湿土克水：-25→-13
+  else if (WOSHENG[dgWx] === mwx) { score -= 15; _restOrder = true; }
+  else if (WOKE[dgWx] === mwx)   { score -= 10; _prisonOrder = true; }
+  else if (KEWO[dgWx] === mwx)   { score -= (25 - wetEarthAdj); _deadOrder = true; } // 湿土克水：-25→-13
 
   // --- v5.3 人元司令分野（独立计算，不覆盖本气得令，仅作参考标注）---
   var _siLingWx = null, _siLingGan = null, _siLingSeg = null, _siLingDays = -1, _siLingDiff = 0;
@@ -2262,7 +2264,12 @@ function calcDayMasterStrength(bazi) {
 
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
-  if (dayZhiWx === dgWx)          score += 12; // 日支同五行（自坐强根）
+  if (dayZhiWx === dgWx) {       // 日支同五行（自坐强根）
+    var dayStageB = getChangSheng(dg)[bazi.day.zhi].stage;
+    if (dayStageB === '帝旺') score += 16;        // 日坐羊刃
+    else if (dayStageB === '临官') score += 14;    // 日坐禄
+    else score += 12;                               // 其他同气（墓库/冠带/衰等）不变
+  }
   else if (SHENGWO[dgWx] === dayZhiWx) {
     // 燥土不生金：金日主生未/戌月，日支燥土印不记得地
     if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 8;
@@ -2270,6 +2277,21 @@ function calcDayMasterStrength(bazi) {
   else if (KEWO[dgWx] === dayZhiWx)   score -= 10; // 日支克日主（官杀攻身）
   else if (WOKE[dgWx] === dayZhiWx)   score -= 6;  // 日主克日支（我克为财，耗力）
   else if (WOSHENG[dgWx] === dayZhiWx) score -= 7;  // 日主生日支（我生为泄，泄气）
+
+  // ---------- ②½ 得令×得地联动 (v2) ----------
+  // 虽失令，但日支自坐强根(禄/刃)且另有比劫/印根辅助时，失令惩罚收缩
+  var dayStageA = getChangSheng(dg)[bazi.day.zhi].stage;
+  var strongDayRoot = (dayZhiWx === dgWx) && (dayStageA === '帝旺' || dayStageA === '临官');
+  var auxRoots = 0;
+  ['year','month','hour'].forEach(function(pos) {
+    var zwx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    if (zwx === dgWx || zwx === SHENGWO[dgWx]) auxRoots++;  // 比劫根或印根
+  });
+  if (strongDayRoot && auxRoots >= 1) {
+    if (_deadOrder)        score += (wetEarthAdj > 0 ? 3 : 7); // 燥土死令 −25→−18，湿土 −13→−10
+    else if (_restOrder)   score += 4;  // 休令 −15→−11
+    else if (_prisonOrder) score += 3;  // 囚令 −10→−7
+  }
 
   // ---------- ③ 得势：各柱天干比劫/印星 vs 克泄耗 ----------
   // 不含日干自身：基准50已代表日主，再自加比劫+6属重复计分
@@ -2406,6 +2428,23 @@ function calcDayMasterStrength(bazi) {
         else if (WOKE[dgWx] === heWx) score -= 1;    // 合化为财星 → 耗力
       }
     }
+  });
+
+  // ---------- ⑦½ 天干贴身合绊 (v2) ----------
+  // 贴身合（月日/日时）合而不化时，被合克泄耗十神有效力量 ×0.6（返还 40%）
+  var _hePartners = ['month','hour'].filter(function(pos) {
+    return GAN_HE[bazi[pos].gan] === bazi.day.gan;
+  });
+  var _perMult = (_hePartners.length >= 2) ? 0.2 : 0.4; // 争合：两干争合日主，合力分散减半
+  _hePartners.forEach(function(pos) {
+    var g = bazi[pos].gan;
+    var heWx = GAN_HE_RES[g + bazi.day.gan] || GAN_HE_RES[bazi.day.gan + g] || '';
+    if (!heWx || DI_ZHI_WU_XING[bazi.month.zhi] === heWx) return; // 已化则走⑦，不在此返还
+    var gwx = WU_XING[g];
+    if (gwx === dgWx || SHENGWO[dgWx] === gwx) return;           // 比劫/印不涉及
+    if (KEWO[dgWx] === gwx)       score += Math.round(4 * _perMult); // 官杀 −4
+    else if (WOKE[dgWx] === gwx)  score += Math.round(5 * _perMult); // 财 −5
+    else if (WOSHENG[dgWx] === gwx) score += Math.round(3 * _perMult); // 食伤 −3
   });
 
   // ---------- ⑧ 地支合冲刑害修正 ----------

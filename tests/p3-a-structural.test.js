@@ -1,4 +1,12 @@
 // P3-A3 正式实装/回归：四层 A/B 验证（2026-08-14，验收前不 push）
+//   2026-08-21 v2 旺衰评分重冻（用户授权）：A 层 22 盘锚点更新 + 6 盘旗标陈旧修正 + sha 重钉 c6c323fc。
+//   2026-08-21 用户复核六处结构性翻转（照单重冻）——阈值敏感锚点注册表（详见 _v2_threshold_sensitive_anchors.md）：
+//     跨 50 用神反转：B5 庚子甲申乙卯丙子 42→51（A死+7/B禄+2）；P15-09 丁丑癸卯庚申丙戌 47→52（A囚+3/B禄+2）；
+//       P15-19 己亥丙子辛酉戊子 49→51（B禄+2）
+//     跨 30 格局级联：P15-15/H01 癸未戊午乙卯丙戌 29.75→31.75 食神生财格成格（B禄+2，距线+1.75）；
+//       H12 甲申丁丑壬辰己酉 28.5→30.5 正官格成格（C丁壬合绊+2，距线+0.5，最高优先级）
+//     处理：全部接受、照单重冻、A/B/C 本轮不回调；留待下一阶段「格局承载连续化/置信度」与「50 线迟滞」。
+//     本轮原则（用户裁定）：允许有命理上可解释的边界翻转；不为了保持旧标签而反向污染上游评分。
 //   A 层：引擎字节冻结 + 53 盘五行层对 P2 冻结锚点核验（仅允许已审计批准的显式差异）
 //   B 层：正式实现与 A1/A2-final 冻结产物逐项一致（relationEvents→_p3_a1_relation_events.csv；
 //         structuralRisks→_p3_a2_risks.csv 17 列；shaAB→_p3_a2_sha_ab.csv 15 列）
@@ -87,8 +95,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '8838af2985b5608146433feae6e701b604c704608786acf7584cf85d72d6ad41',
-    'js/bazi.js sha256 与 L4 调候全家族门控版本一致（印比侧→身弱、克泄耗侧→身强，2026-08-17 用户授权）'
+    'c6c323fce52a34aa038992b8101811c6082b9de8d287cc8649e1d31a75b1005e',
+    'js/bazi.js sha256 与 v2 旺衰评分版本一致（得令×得地联动、日支根气分级、天干贴身合绊，2026-08-21 用户授权重冻 53 盘）'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');

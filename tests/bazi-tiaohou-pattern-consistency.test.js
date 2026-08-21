@@ -44,7 +44,7 @@ test('偏强庚金生亥月时火接管核心调候用神', () => {
   const fire = result.candidateScores.find(row => row.wx === '火');
 
   assert.equal(result.dayMasterLevel, '偏强');
-  assert.equal(result.dayMasterScore, 60);
+  assert.equal(result.dayMasterScore, 66); // v2: 日坐禄+2、休令强根联动+4，60→66
   assert.deepEqual(Array.from(result.yongShen), ['火']);
   assert.ok(result.xiShen.includes('火'));
   assert.ok(!result.jiShen.includes('火'));
@@ -79,7 +79,9 @@ test('丙火未月水调候不通过候选加分升为正式喜神', () => {
   const result = calculator.getYongJi(chart);
   const water = result.candidateScores.find(row => row.wx === '水');
 
-  assert.ok(water.SBase < 0, '该盘水的扶抑基线为负');
+  // v2 合绊后该盘落中和边界 50（SBase=0），基线不再为负；
+  // 核心意图不变：水不得经调候加分升为正式喜神
+  assert.ok(water.SBase <= 0, '该盘水的扶抑基线不为正');
   assert.equal(water.SNeed, water.SBase, '未月丙火的水调候仅作说明，不进入正式候选加分');
   assert.ok(result.jiShen.includes('水'));
   assert.notEqual(result.elementClassification['水'], '喜神');
