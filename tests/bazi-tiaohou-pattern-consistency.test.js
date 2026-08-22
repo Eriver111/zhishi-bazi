@@ -192,6 +192,8 @@ test('冬土仅见弱火时不把调候作用写成已经完成', () => {
   assert.doesNotMatch(result.primaryReason, /寒谷回春|调候已得/);
 });
 
+// 注：下列三盘中 丁巳月、癸亥月两盘为阴干帝旺月（阴刃口径）。2026-08-23 用户裁定
+// 下一阶段改判月劫（预案见 _yinren_yuejie_ruling.md），届时这两处断言需随改。
 test('羊刃藏官杀未透时说明制刃不足而不是完全无制', () => {
   const calculator = loadCalculator();
   const cases = [
