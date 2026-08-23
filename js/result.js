@@ -36,6 +36,7 @@ function getUrlParams() {
         day: parseInt(p.get('day')),
         hour: parseInt(p.get('hour')),
         gender: p.get('gender'),
+        name: (p.get('name') || '').trim().slice(0, 20),
         cal: p.get('cal') || '',
         prov: p.get('prov') || '',
         city: p.get('city') || '',
@@ -672,7 +673,7 @@ function renderDaYun(daYunData, dayGan, currentYear) {
         <div class="dayun-col ${cls}" data-index="${i}"
              onclick="showLiuNian(${i})">
             <div class="dayun-age">${dy.displayAge}岁</div>
-            <div class="dayun-gz">${dy.gan}${dy.zhi}</div>
+            <div class="dayun-gz"><span style="color:${WX_COLORS[window.BaZiCalculator.WU_XING[dy.gan]]}">${dy.gan}</span><span style="color:${WX_COLORS[window.BaZiCalculator.DI_ZHI_WU_XING[dy.zhi]]}">${dy.zhi}</span></div>
             <div class="dayun-ss">${ss}</div>
         </div>`;
     });
@@ -728,7 +729,7 @@ function renderLiuNian(daYunItem, dayGan, currentYear) {
         <div class="liunian-col ${cls}" data-index="${i}"
              onclick="selectLiuNian(${i})">
             <div class="liunian-year-label">${ln.year}年</div>
-            <div class="liunian-gz">${ln.gan}${ln.zhi}</div>
+            <div class="liunian-gz"><span style="color:${WX_COLORS[window.BaZiCalculator.WU_XING[ln.gan]]}">${ln.gan}</span><span style="color:${WX_COLORS[window.BaZiCalculator.DI_ZHI_WU_XING[ln.zhi]]}">${ln.zhi}</span></div>
             <div class="liunian-ss">${ln.shiShen}</div>
         </div>`;
     });
@@ -785,19 +786,18 @@ function renderSiZhu(bazi, dayGan) {
             document.getElementById(`ss-${pos}-gan`).textContent = pillar.shiShen.gan;
         }
 
-        // 十神 - 地支
-        if (pos !== 'day') {
-            document.getElementById(`ss-${pos}-zhi`).textContent = pillar.shiShen.zhi;
-        }
-
-        // 藏干（含十神）：列内竖排 "甲\n食神"  "丙\n比肩"  "戊\n偏财"
+        // 藏干与副星分行展示，二者按相同顺序逐项对应。
         const cangEl = document.getElementById(`cang-${pos}`);
         const cangItems = pillar.cangGan.map(gan => {
             const wx = window.BaZiCalculator.WU_XING[gan];
-            const ss = (pos === 'day' && gan === dayGan) ? '日主' : window.BaZiCalculator.getShiShen(dayGan, gan);
-            return `<div class="cang-entry"><span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span><span class="cang-ss-text">${ss}</span></div>`;
+            return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
         });
         cangEl.innerHTML = cangItems.join('');
+
+        const fuXingEl = document.getElementById(`ss-${pos}-zhi`);
+        fuXingEl.innerHTML = pillar.cangGan
+            .map(gan => `<span class="fuxing-entry">${window.BaZiCalculator.getShiShen(dayGan, gan)}</span>`)
+            .join('');
     });
 }
 
@@ -831,17 +831,17 @@ function updateDayunColumn(daYunIndex) {
     const ssGanEl = document.getElementById('ss-dayun-gan');
     ssGanEl.innerHTML = `<span class="pp-ss-text">${window.BaZiCalculator.getShiShen(_dayGan, dy.gan)}</span>`;
 
-    // 十神（地支）- 用藏干本气
+    // 藏干与副星
     const cangGan = window.BaZiCalculator.getCangGan(dy.zhi);
     const ssZhiEl = document.getElementById('ss-dayun-zhi');
-    ssZhiEl.innerHTML = `<span class="pp-ss-text">${window.BaZiCalculator.getShiShen(_dayGan, cangGan[0])}</span>`;
+    ssZhiEl.innerHTML = cangGan
+        .map(gan => `<span class="fuxing-entry">${window.BaZiCalculator.getShiShen(_dayGan, gan)}</span>`)
+        .join('');
 
-    // 藏干（含十神）
     const cangEl = document.getElementById('cang-dayun');
     const cangItems = cangGan.map(gan => {
         const wx = window.BaZiCalculator.WU_XING[gan];
-        const ss = window.BaZiCalculator.getShiShen(_dayGan, gan);
-        return `<div class="cang-entry"><span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span><span class="cang-ss-text">${ss}</span></div>`;
+        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
     });
     cangEl.innerHTML = cangItems.join('');
 
@@ -879,17 +879,17 @@ function updateLiuNianColumn(daYunItem, liuNianIndex) {
     const ssGanEl = document.getElementById('ss-liunian-gan');
     ssGanEl.innerHTML = `<span class="pp-ss-text">${ln.shiShen}</span>`;
 
-    // 十神（地支）- 用藏干本气
+    // 藏干与副星
     const cangGan = window.BaZiCalculator.getCangGan(ln.zhi);
     const ssZhiEl = document.getElementById('ss-liunian-zhi');
-    ssZhiEl.innerHTML = `<span class="pp-ss-text">${window.BaZiCalculator.getShiShen(_dayGan, cangGan[0])}</span>`;
+    ssZhiEl.innerHTML = cangGan
+        .map(gan => `<span class="fuxing-entry">${window.BaZiCalculator.getShiShen(_dayGan, gan)}</span>`)
+        .join('');
 
-    // 藏干（含十神）
     const cangEl = document.getElementById('cang-liunian');
     const cangItems = cangGan.map(gan => {
         const wx = window.BaZiCalculator.WU_XING[gan];
-        const ss = window.BaZiCalculator.getShiShen(_dayGan, gan);
-        return `<div class="cang-entry"><span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span><span class="cang-ss-text">${ss}</span></div>`;
+        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
     });
     cangEl.innerHTML = cangItems.join('');
 
@@ -1799,7 +1799,8 @@ document.addEventListener('DOMContentLoaded', function() {
             try { charts = JSON.parse(existing || '[]'); } catch(e){}
             // 找到并更新已有条目，或新增
             var found = charts.find(function(c){ return c.params === paramStr; });
-            var label = _params.gender === 'male' ? '乾造' : '坤造';
+            var genderLabel = _params.gender === 'male' ? '乾造' : '坤造';
+            var label = (_params.name ? _params.name + ' · ' : '') + genderLabel;
             if (isDirect) {
               label += ' · ' + ['year','month','day','hour'].map(function(position) {
                 var pillar = _params.enteredPillars[position];
@@ -1808,11 +1809,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
               label += ' · ' + _params.year + '年' + _params.month + '月' + _params.day + '日';
             }
-            var entry = { label: label, params: paramStr, dayGan: bazi.day.gan, dayZhi: bazi.day.zhi, saved_at: new Date().toISOString() };
+            var entry = { name: _params.name || '', label: label, params: paramStr, dayGan: bazi.day.gan, dayZhi: bazi.day.zhi, saved_at: new Date().toISOString() };
             if (found) {
               // 更新已有条目，补充日柱数据
               found.dayGan = entry.dayGan; found.dayZhi = entry.dayZhi;
-              found.saved_at = entry.saved_at; found.label = entry.label;
+              found.saved_at = entry.saved_at; found.label = entry.label; found.name = entry.name;
             } else {
               charts.unshift(entry);
             }
@@ -1859,6 +1860,17 @@ var PAYWALLED_SECTIONS = ['thisYearSection', 'marriageSection', 'wealthSection',
 
 function buildReportHTML() {
     var paywallActive = _isPaywallActive();
+    var inheritedStyles = '';
+
+    // PDF 在独立 iframe 中渲染。复制当前结果页样式，避免四柱、
+    // 大运等组件因缺少原页面布局规则而退化成纵向文本或被裁切。
+    try {
+        if (document && typeof document.querySelectorAll === 'function') {
+            Array.prototype.forEach.call(document.querySelectorAll('style'), function(styleNode) {
+                inheritedStyles += styleNode.textContent || '';
+            });
+        }
+    } catch (styleError) {}
 
     var sections = [
         { id: 'sizhuSection', title: '四柱解析', html: '', pageBreak: false },
@@ -1899,6 +1911,37 @@ function buildReportHTML() {
         clone.querySelectorAll('script').forEach(function(s) { s.remove(); });
         // 移除 onclick 等事件属性（避免打印页中误触）
         clone.querySelectorAll('[onclick]').forEach(function(el) { el.removeAttribute('onclick'); });
+
+        // html2canvas 对嵌套 flex 命盘在部分 Android WebView 中会漏列、漏字。
+        // 仅在导出副本中转成标准 table；网页本身的布局和交互不受影响。
+        if (sec.id === 'sizhuSection' && typeof clone.querySelector === 'function') {
+            var paipan = clone.querySelector('.paipan-table');
+            if (paipan && paipan.ownerDocument) {
+                var exportTable = paipan.ownerDocument.createElement('table');
+                exportTable.className = 'pdf-paipan-table';
+                Array.prototype.forEach.call(paipan.querySelectorAll('.pp-row'), function(row) {
+                    if (row.hidden || row.classList.contains('pp-shensha-row')) return;
+                    var tr = paipan.ownerDocument.createElement('tr');
+                    Array.prototype.forEach.call(row.children, function(cell, cellIndex) {
+                        var tagName = row.classList.contains('pp-header') ? 'th' : 'td';
+                        var td = paipan.ownerDocument.createElement(tagName);
+                        var colored = cell.querySelector('[style*="color"]');
+                        var pieces = Array.prototype.map.call(cell.children, function(child) {
+                            return (child.textContent || '').replace(/\s+/g, ' ').trim();
+                        }).filter(Boolean);
+                        var plainText = (cell.textContent || '').replace(/\s+/g, ' ').trim();
+                        td.textContent = pieces.length > 1 ? pieces.join(' · ') : (plainText || (cellIndex === 0 ? '' : '—'));
+                        if (cellIndex === 0) td.className = 'pdf-paipan-label';
+                        if (colored && colored.style && colored.style.color) {
+                            td.style.color = colored.style.color;
+                        }
+                        tr.appendChild(td);
+                    });
+                    exportTable.appendChild(tr);
+                });
+                paipan.parentNode.replaceChild(exportTable, paipan);
+            }
+        }
         sec.html = clone.innerHTML;
     });
 
@@ -1914,9 +1957,11 @@ function buildReportHTML() {
 
     var css = ''
     // ===== 基础重置 =====
-    + '*{margin:0;padding:0;box-sizing:border-box}'
+    + '@font-face{font-family:"Zhishi Report Serif";src:url("/fonts/posters/NotoSerifSC-SemiBold.woff2") format("woff2");font-style:normal;font-weight:400 900;font-display:block}'
+    + ':root{--gold:#c9a84c;--gold-light:#e2cb75;--gold-l:#e2cb75;--gold-glow:rgba(201,168,76,.35);--text-primary:#d5cebb;--text-secondary:#a79c87;--text-dim:#756f65;--tx2:#a79c87;--tx3:#756f65;--bd:rgba(201,168,76,.16)}'
+    + '*{box-sizing:border-box}'
     + 'html{font-size:15px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + 'body{max-width:820px;margin:0 auto;font-family:"Source Han Serif SC","Noto Serif SC","PingFang SC","Songti SC","SimSun",serif;color:#d5cebb;background:#0d0f18;padding:0;line-height:1.8;orphans:3;widows:3}'
+    + 'body{max-width:820px;margin:0 auto;font-family:"Zhishi Report Serif","Source Han Serif SC","Noto Serif SC","PingFang SC","Songti SC","SimSun",serif;color:#d5cebb;background:#0d0f18;padding:0;line-height:1.8;orphans:3;widows:3}'
 
     // ===== 封面 =====
     + '.cover{text-align:center;padding:90px 30px 70px;background:linear-gradient(180deg,#111320 0%,#0d0f18 100%);position:relative;border-bottom:1px solid rgba(201,168,76,.1);page-break-after:always}'
@@ -1942,6 +1987,12 @@ function buildReportHTML() {
     + 'th{background:rgba(201,168,76,.07);color:#d4b850;font-weight:600;font-size:12px;letter-spacing:2px;white-space:nowrap}'
     + 'td{color:#b8a888;font-size:13px}'
     + 'tr:nth-child(even) td{background:rgba(255,255,255,.01)}'
+    + '.pdf-paipan-table{width:100%!important;table-layout:fixed!important;border-collapse:collapse!important;margin:0 0 12px!important}'
+    + '.pdf-paipan-table th,.pdf-paipan-table td{height:48px!important;padding:7px 4px!important;border:1px solid rgba(201,168,76,.1)!important;white-space:normal!important;word-break:keep-all!important;color:#d5cebb;font-size:13px!important;line-height:1.35!important}'
+    + '.pdf-paipan-table th{height:40px!important;color:#d4b850!important;background:rgba(201,168,76,.06)!important}'
+    + '.pdf-paipan-table th:first-child,.pdf-paipan-table td:first-child{width:56px!important;color:#857d70!important;font-size:11px!important}'
+    + '.pdf-paipan-table th:nth-child(2),.pdf-paipan-table td:nth-child(2),.pdf-paipan-table th:nth-child(3),.pdf-paipan-table td:nth-child(3){width:80px!important}'
+    + '.pdf-paipan-table tr:nth-child(3) td:not(:first-child),.pdf-paipan-table tr:nth-child(4) td:not(:first-child){font-size:24px!important;font-weight:700!important}'
 
     // ===== 抽屉/正文 =====
     + '.drawer-body{color:#b0a090;font-size:14px;line-height:2.0;padding:10px 0}'
@@ -1964,6 +2015,17 @@ function buildReportHTML() {
     + '.dayun-table td.active,.dayun-table td.current{background:rgba(201,168,76,.1);font-weight:600;color:#e0c860}'
     + '.liunian-col{display:inline-block;min-width:74px;text-align:center;padding:10px 6px;border:1px solid rgba(255,255,255,.04);border-radius:8px;margin:5px;font-size:12px;color:#a0a090}'
     + '.liunian-col.current-year{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);font-weight:600;color:#d8be58}'
+
+    // PDF 横向命盘与运势表必须完整展开，不能保留网页滚动裁切。
+    + '.paipan-table{width:100%!important;max-width:100%!important;overflow:visible!important}'
+    + '.pp-row{display:grid!important;grid-template-columns:56px 80px 80px repeat(4,minmax(0,1fr))!important;width:100%!important}'
+    + '.pp-label{min-width:0!important}'
+    + '.pp-col{display:block!important;min-width:0!important;text-align:center!important}'
+    + '.pp-dayun-col,.pp-liunian-col{min-width:0!important}'
+    + '.pp-cang-row .pp-col,.pp-fuxing-row .pp-col{display:flex!important;align-items:center!important;justify-content:center!important}'
+    + '.pp-col>span{opacity:1!important;visibility:visible!important}'
+    + '.dayun-scroll-wrapper,.liunian-scroll-wrapper{overflow:visible!important;width:100%!important}'
+    + '.dayun-table,.liunian-table{display:flex!important;width:max-content!important;min-width:100%!important}'
 
     // ===== 占位（付费内容未解锁） =====
     + '.locked-placeholder{text-align:center;padding:48px 24px;margin:20px 0;border:2px dashed rgba(201,168,76,.15);border-radius:14px;background:rgba(201,168,76,.02);page-break-inside:avoid}'
@@ -2026,7 +2088,7 @@ function buildReportHTML() {
     var html = '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
     + '<title>知时命理报告 · ' + (gender==='男'?'乾造':'坤造') + ' · ' + birthStr + '</title>\n'
-    + '<style>' + css + '</style>\n'
+    + '<style>' + inheritedStyles + '\n' + css + '</style>\n'
     + '</head>\n<body>\n'
 
     // 屏幕操作栏（打印时隐藏）
@@ -2289,7 +2351,9 @@ function prepareMobileReportPdf() {
             _preparedReportPdfFile = file;
             _preparedReportPdfFilename = filename;
             updatePdfProgress(100);
-            setMobileReportPdfStatus('PDF 已生成，请选择下载或分享');
+            setMobileReportPdfStatus(canSharePreparedReportPdf(file)
+                ? 'PDF 已生成，手机建议使用“保存或分享”存入文件。'
+                : 'PDF 已生成，可直接下载；若未响应请使用 HTML 备用。');
             if (downloadButton) downloadButton.disabled = false;
             if (shareButton) shareButton.disabled = !canSharePreparedReportPdf(file);
             return file;

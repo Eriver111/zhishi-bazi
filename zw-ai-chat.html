@@ -18,6 +18,8 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 .topbar .title{flex:1;font-size:18px;color:var(--gold-l);letter-spacing:3px;font-weight:700}
 .topbar .mode-btn{padding:5px 14px;border-radius:14px;border:1px solid var(--bd2);background:none;color:var(--tx2);font-size:12px;cursor:pointer;letter-spacing:1px;font-family:inherit}
 .topbar .mode-btn.pro{color:var(--gold-l);border-color:var(--gold);background:rgba(201,168,76,.08)}
+.topbar .history-btn{padding:5px 10px;border-radius:14px;border:1px solid var(--bd2);background:none;color:var(--tx2);font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.topbar .history-btn.saved{color:#486f61;border-color:rgba(72,111,97,.28);background:rgba(72,111,97,.06)}
 .topbar .credits{font-size:13px;color:var(--tx2)}
 .topbar .credits strong{color:var(--gold-l);font-size:16px}
 /* 消息区 */
@@ -77,6 +79,7 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
   <div class="topbar">
     <a href="javascript:history.back()" class="back">←</a>
     <span class="title">紫微斗数</span>
+    <button class="history-btn" id="historyBtn" type="button" onclick="restoreChatHistory(true)">登录保存</button>
     <button class="mode-btn" id="modeBtn" onclick="toggleMode()">白话</button>
     <span class="credits" id="creditsLabel"></span>
   </div>
@@ -109,8 +112,9 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 
 <script src="js/chat-viewport.js?v=1"></script>
 <script src="js/ziwei-chat.js?v=1"></script>
+<script src="js/chat-persistence.js?v=1"></script>
 <script>
-var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:''};
+var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:'',conversationId:'',chartKey:'',historyLoaded:false};
 
 // 天眼加载
 setTimeout(function(){var e=document.getElementById('eyeSplash');if(e){e.style.opacity='0';setTimeout(function(){e.remove()},500)}},2500);
@@ -163,6 +167,7 @@ function syncUserCredits(){
   if(typeof Auth==='undefined'){setTimeout(syncUserCredits,1000);return}
   Auth.ready(function(){
     if(!Auth.isLoggedIn())return;
+    restoreChatHistory(false);
     fetch('/api/auth/profile',{headers:{'Authorization':'Bearer '+Auth.getToken()}})
     .then(function(r){return r.json()})
     .then(function(d){
@@ -171,6 +176,23 @@ function syncUserCredits(){
       if(d.credits>0){AI.credits=d.credits;updateCreditsUI()}
     });
   });
+}
+
+function currentZiweiChart(){try{var raw=localStorage.getItem('ai_ziwei_data');return raw?JSON.parse(raw):null}catch(e){return null}}
+function setHistoryButton(text,saved){var b=document.getElementById('historyBtn');if(!b)return;b.textContent=text;b.classList.toggle('saved',!!saved)}
+function restoreChatHistory(force){
+  if(!window.ChatPersistence)return;
+  if(AI.historyLoaded&&!force)return;
+  ChatPersistence.load('ziwei',currentZiweiChart()).then(function(data){
+    AI.chartKey=data.chart_key||'';
+    if(!data.logged_in){setHistoryButton('登录保存',false);return}
+    AI.conversationId=data.conversation_id||'';AI.historyLoaded=true;
+    setHistoryButton(data.storage_ready===false?'待启用':'已保存',data.storage_ready!==false);
+    if(force||AI.messages.length===0){
+      document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];
+      (data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)});
+    }
+  }).catch(function(){setHistoryButton('记录异常',false)});
 }
 
 function updateCreditsUI(){
@@ -216,6 +238,7 @@ function send(){
   }
   var body=ZiweiChat.buildRequest({question:text,responseMode:AI.mode,messages:AI.messages,chartData:chartData,
     freeRemaining:AI.freeRemaining,credits:AI.credits,isMonthly:AI.isMonthly,freeId:AI.freeId,code:AI.code});
+  ChatPersistence.decorate(body,'ziwei',chartData,AI.conversationId);
 
   var headers={'Content-Type':'application/json'};
   if(typeof Auth!=='undefined'&&Auth.isLoggedIn())headers['Authorization']='Bearer '+Auth.getToken();
@@ -223,6 +246,7 @@ function send(){
   .then(function(r){return r.json()}).then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
+    if(d.conversation_id){AI.conversationId=d.conversation_id;setHistoryButton('已保存',true)}
     addMsg('ai',ZiweiChat.buildPrelude(chartData)+d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}

@@ -2529,18 +2529,7 @@
                     <div class="pp-col"><span class="di-zhi" id="zhi-hour"></span></div>
                 </div>
 
-                <!-- 十神（地支） -->
-                <div class="pp-row pp-ss-row">
-                    <div class="pp-label">十神</div>
-                    <div class="pp-col pp-liunian-col" id="ss-liunian-zhi"></div>
-                    <div class="pp-col pp-dayun-col" id="ss-dayun-zhi"></div>
-                    <div class="pp-col" id="ss-year-zhi"></div>
-                    <div class="pp-col" id="ss-month-zhi"></div>
-                    <div class="pp-col pp-day" id="ss-day-zhi"></div>
-                    <div class="pp-col" id="ss-hour-zhi"></div>
-                </div>
-
-                <!-- 藏干（含十神） -->
+                <!-- 藏干 -->
                 <div class="pp-row pp-cang-row">
                     <div class="pp-label">藏干</div>
                     <div class="pp-col pp-cang pp-liunian-col" id="cang-liunian"></div>
@@ -2551,8 +2540,19 @@
                     <div class="pp-col pp-cang" id="cang-hour"></div>
                 </div>
 
+                <!-- 副星：与藏干逐项对应的十神 -->
+                <div class="pp-row pp-fuxing-row">
+                    <div class="pp-label">副星</div>
+                    <div class="pp-col pp-fuxing pp-liunian-col" id="ss-liunian-zhi"></div>
+                    <div class="pp-col pp-fuxing pp-dayun-col" id="ss-dayun-zhi"></div>
+                    <div class="pp-col pp-fuxing" id="ss-year-zhi"></div>
+                    <div class="pp-col pp-fuxing" id="ss-month-zhi"></div>
+                    <div class="pp-col pp-fuxing pp-day" id="ss-day-zhi"></div>
+                    <div class="pp-col pp-fuxing" id="ss-hour-zhi"></div>
+                </div>
+
                 <!-- 神煞 -->
-                <div class="pp-row pp-shensha-row">
+                <div class="pp-row pp-shensha-row" hidden style="display:none!important" aria-hidden="true">
                     <div class="pp-label">神煞</div>
                     <div class="pp-col pp-shensha pp-liunian-col" id="shensha-liunian"></div>
                     <div class="pp-col pp-shensha pp-dayun-col" id="shensha-dayun"></div>
@@ -2718,8 +2718,8 @@
                 <div id="reportPdfProgressBar" class="report-pdf-progress-bar"></div>
             </div>
             <div class="report-pdf-actions">
-                <button id="reportPdfDownload" class="report-pdf-action" type="button" disabled>下载 PDF</button>
-                <button id="reportPdfShare" class="report-pdf-action secondary" type="button" disabled>保存或分享</button>
+                <button id="reportPdfShare" class="report-pdf-action" type="button" disabled>保存或分享</button>
+                <button id="reportPdfDownload" class="report-pdf-action secondary" type="button" disabled>直接下载</button>
             </div>
             <button id="reportHtmlFallback" class="report-pdf-fallback" type="button">下载 HTML 备用</button>
         </div>
@@ -2881,14 +2881,14 @@
     <script src="js/poster-ui.js?v=2"></script>
     <script src="/js/vendor/html2canvas.min.js?v=2"></script>
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
-    <script src="/js/report-pdf.js?v=2"></script>
+    <script src="/js/report-pdf.js?v=3"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=14"></script>
+    <script src="js/result.js?v=16"></script>
     <script src="js/pro-analysis.js?v=6"></script>
-<script src="js/auth.js?v=2"></script>
+<script src="js/auth.js?v=16"></script>
     <script src="js/payment.js?v=2"></script>
     <script src="js/paywall.js?v=7"></script>
-<script src="js/ai-chat-integration.js?v=1786795966"></script>
+<script src="js/ai-chat-integration.js?v=1786795968"></script>
     <script>
         MoXingHe.start('mxhCanvas', false);
     function shareResult() {

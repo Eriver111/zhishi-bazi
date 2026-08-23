@@ -8,7 +8,10 @@
   var DEFAULT_FILENAME = '知时命理报告.pdf';
   var PDF_TYPE = 'application/pdf';
   var JPEG_QUALITY = 0.85;
-  var JPEG_COMPRESSION = 'FAST';
+  var JPEG_COMPRESSION = 'NONE';
+  var MAX_RENDER_SCALE = 1.35;
+  var MAX_CANVAS_SIDE = 8192;
+  var MAX_CANVAS_PIXELS = 12000000;
 
   function removeNode(node) {
     if (!node) return;
@@ -78,6 +81,16 @@
     return options.JsPdfCtor
       || windowRef.jsPDF
       || (windowRef.jspdf && windowRef.jspdf.jsPDF);
+  }
+
+  function getRenderScale(block, windowRef) {
+    var width = Math.max(1, Number(block && (block.scrollWidth || block.offsetWidth)) || 820);
+    var height = Math.max(1, Number(block && (block.scrollHeight || block.offsetHeight)) || 1);
+    var deviceScale = Math.max(1, Number(windowRef && windowRef.devicePixelRatio) || 1);
+    var sideScale = Math.min(MAX_CANVAS_SIDE / width, MAX_CANVAS_SIDE / height);
+    var pixelScale = Math.sqrt(MAX_CANVAS_PIXELS / (width * height));
+
+    return Math.max(0.25, Math.min(MAX_RENDER_SCALE, deviceScale, sideScale, pixelScale));
   }
 
   function addPdfImage(pdf, canvas, height, state, signal) {
@@ -186,11 +199,14 @@
       iframe.setAttribute('aria-hidden', 'true');
       iframe.setAttribute('sandbox', 'allow-same-origin');
       iframe.style.position = 'fixed';
-      iframe.style.left = '-10000px';
+      // html2canvas 在部分移动内核中会裁掉放在巨大负坐标上的内容。
+      // 将 iframe 留在正常坐标系并置于页面背后，可完整捕获横向表格。
+      iframe.style.left = '0';
       iframe.style.top = '0';
       iframe.style.width = '1280px';
       iframe.style.height = '1px';
-      iframe.style.opacity = '0';
+      iframe.style.opacity = '1';
+      iframe.style.zIndex = '-2147483647';
       iframe.style.pointerEvents = 'none';
       iframe.style.border = '0';
       documentRef.body.appendChild(iframe);
@@ -203,6 +219,9 @@
       if (!frameDocument) throw new Error('无法读取报告页面');
       if (frameDocument.fonts && frameDocument.fonts.ready) {
         await waitForAbortable(frameDocument.fonts.ready, signal);
+        if (typeof frameDocument.fonts.load === 'function') {
+          await waitForAbortable(frameDocument.fonts.load('15px "Zhishi Report Serif"'), signal);
+        }
       }
       throwIfAborted(signal);
 
@@ -224,14 +243,17 @@
         compress: true,
       });
       var state = { hasImage: false };
-      var scale = Math.min(1.6, windowRef.devicePixelRatio || 1);
-
       for (var index = 0; index < blocks.length; index += 1) {
         throwIfAborted(signal);
+        var block = blocks[index];
+        var scale = getRenderScale(block, windowRef);
         var canvas = await html2canvasImpl(blocks[index], {
           useCORS: true,
           backgroundColor: '#0d0f18',
           scale: scale,
+          windowWidth: Math.max(820, block.scrollWidth || block.offsetWidth || 820),
+          scrollX: 0,
+          scrollY: 0,
         });
 
         try {
@@ -270,6 +292,10 @@
   function download(file, filename) {
     var documentRef = global.document;
     var urlApi = global.URL;
+    if (global.navigator && typeof global.navigator.msSaveOrOpenBlob === 'function') {
+      global.navigator.msSaveOrOpenBlob(file, filename || DEFAULT_FILENAME);
+      return 'native';
+    }
     var objectUrl = urlApi.createObjectURL(file);
     var anchor;
 
@@ -277,14 +303,17 @@
       anchor = documentRef.createElement('a');
       anchor.href = objectUrl;
       anchor.download = filename || DEFAULT_FILENAME;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
       documentRef.body.appendChild(anchor);
       anchor.click();
     } finally {
       removeNode(anchor);
       global.setTimeout(function () {
         urlApi.revokeObjectURL(objectUrl);
-      }, 60000);
+      }, 300000);
     }
+    return 'download';
   }
 
   var ReportPdf = {

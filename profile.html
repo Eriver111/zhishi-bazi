@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>知时 · 我的档案</title>
+<title>知时 · 个人中心</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/landing.css">
 <link rel="stylesheet" href="css/auth.css"><link rel="stylesheet" href="css/interactions.css"><link rel="stylesheet" href="css/ink-wash.css">
@@ -64,8 +64,8 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
 
 
 <div class="profile-page">
-  <h1>我的档案</h1>
-  <div class="sub">积分 · 记录 · 排盘</div>
+  <h1>个人中心</h1>
+  <div class="sub">账户 · 积分 · 报告</div>
   <div id="content"></div>
   <section id="profileCustomerService" class="profile-customer-service" aria-labelledby="profileCustomerServiceTitle">
     <p class="profile-customer-service__kicker">使用帮助</p>
@@ -94,7 +94,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
   </form>
 </div>
 
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=5"></script>
 <script src="js/deep-report-anchor.js?v=2"></script>
 <script>
 (function(){
@@ -466,19 +466,10 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
           html += '<div style="text-align:center;padding:16px;color:var(--tx3);font-size:12px">暂无购买记录</div>';
         }      }
 
-      // 排盘记录
-      html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">排盘记录</h3>';
-      if (charts.length === 0) {
-        html += '<div class="empty-state" style="padding:30px"><p style="font-size:12px">还没有排盘记录</p></div>';
-      } else {
-        charts.forEach(function(c, i) {
-          html += '<div class="chart-card" style="cursor:pointer" onclick="location.href=\'/result?' + c.params + '\'">' +
-            '<button class="del" onclick="event.stopPropagation();deleteChart(' + i + ')">删除</button>' +
-            '<div class="label">' + c.label + '</div>' +
-            '<div class="meta"><span>' + (c.saved_at ? c.saved_at.slice(0,10) : '') + '</span></div>' +
-            '<span class="arrow">→</span></div>';
-        });
-      }
+      // 命盘档案独立管理，个人中心只保留入口与数量。
+      html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">命盘档案</h3>';
+      html += '<a class="chart-card" href="/archives"><div class="label">进入命盘档案库</div>' +
+        '<div class="meta"><span>' + charts.length + ' 份已保存命盘</span><span>搜索 · 筛选 · 管理</span></div><span class="arrow">→</span></a>';
       html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">我的深度报告</h3>';
       if (reports.length === 0) {
         html += '<div class="empty-state" style="padding:30px"><p style="font-size:12px">还没有已购报告</p></div>';
@@ -520,18 +511,6 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
       if(d.success)msg.innerHTML="<span style=color:#4CAF50>"+d.message+"</span>";
       else msg.innerHTML="<span style=color:#F44336>"+(d.message||d.error||"兑换失败")+"</span>";
     }).catch(function(){msg.innerHTML="<span style=color:#F44336>网络异常</span>";});
-  };
-
-  window.deleteChart = function(i) {
-    if (!confirm('确定删除这条记录？')) return;
-    Auth.getData('saved_charts').then(function(val) {
-      var charts = [];
-      try { charts = JSON.parse(val || '[]'); } catch(e) {}
-      charts.splice(i, 1);
-      Auth.syncData('saved_charts', JSON.stringify(charts)).then(function() {
-        render();
-      });
-    });
   };
 
   render();

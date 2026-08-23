@@ -187,9 +187,9 @@ test('renders report blocks in DOM order and reports 100 percent progress', asyn
   assert.equal(result.type, 'application/pdf');
   assert.deepEqual(rendered.map((entry) => entry.id), ['cover', 'section', 'footer']);
   assert.deepEqual(rendered.map((entry) => entry.options), [
-    { useCORS: true, backgroundColor: '#0d0f18', scale: 1.6 },
-    { useCORS: true, backgroundColor: '#0d0f18', scale: 1.6 },
-    { useCORS: true, backgroundColor: '#0d0f18', scale: 1.6 },
+    { useCORS: true, backgroundColor: '#0d0f18', scale: 1.35, windowWidth: 820, scrollX: 0, scrollY: 0 },
+    { useCORS: true, backgroundColor: '#0d0f18', scale: 1.35, windowWidth: 820, scrollX: 0, scrollY: 0 },
+    { useCORS: true, backgroundColor: '#0d0f18', scale: 1.35, windowWidth: 820, scrollX: 0, scrollY: 0 },
   ]);
   assert.deepEqual(progress, [33, 67, 100]);
   assert.deepEqual(instances[0].options, {
@@ -202,9 +202,9 @@ test('renders report blocks in DOM order and reports 100 percent progress', asyn
   assert.deepEqual(
     instances[0].images.map(({ format, compression }) => ({ format, compression })),
     [
-      { format: 'JPEG', compression: 'FAST' },
-      { format: 'JPEG', compression: 'FAST' },
-      { format: 'JPEG', compression: 'FAST' },
+      { format: 'JPEG', compression: 'NONE' },
+      { format: 'JPEG', compression: 'NONE' },
+      { format: 'JPEG', compression: 'NONE' },
     ],
   );
   assert.deepEqual(
@@ -267,8 +267,29 @@ test('slices a tall canvas across A4 pages without distorting any slice', async 
     [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 1457 }],
     [{ format: 'image/jpeg', quality: 0.85, width: 1000, height: 86 }],
   ]);
-  assert.ok(pdf.images.every((image) => image.format === 'JPEG' && image.compression === 'FAST'));
+  assert.ok(pdf.images.every((image) => image.format === 'JPEG' && image.compression === 'NONE'));
   assert.deepEqual([sourceCanvas.width, sourceCanvas.height], [0, 0]);
+});
+
+test('reduces render scale for a very tall mobile section before allocating its canvas', async () => {
+  const block = { id: 'long-section', scrollWidth: 820, scrollHeight: 20000 };
+  const documentRef = createFakeDocument([block]);
+  const { FakePdf } = createPdfHarness();
+  let renderOptions;
+
+  await ReportPdf.prepare({
+    html: '<main>very long report</main>',
+    documentRef,
+    windowRef: { devicePixelRatio: 3 },
+    JsPdfCtor: FakePdf,
+    html2canvasImpl: async (_block, options) => {
+      renderOptions = options;
+      return createSourceCanvas(336, 8192);
+    },
+  });
+
+  assert.ok(renderOptions.scale < 0.42 && renderOptions.scale > 0.4);
+  assert.ok(block.scrollHeight * renderOptions.scale <= 8192);
 });
 
 test('aborting after html2canvas stops later block renders and releases canvas and iframe state', async () => {
@@ -386,7 +407,7 @@ test('an abort racing with html2canvas rejection remains abort-classified', asyn
 });
 
 test('production JPEG boundary creates a real application/pdf blob with jsPDF', async () => {
-  const { jsPDF } = require('jspdf');
+  const { jsPDF } = require('../js/vendor/jspdf.umd.min.js');
   const documentRef = createFakeDocument([{ id: 'cover' }]);
   const canvas = createSourceCanvas(1, 1);
   canvas.toDataURL = function toDataURL(format, quality) {
@@ -485,7 +506,9 @@ test('downloads through a temporary anchor and revokes the object URL after a de
     assert.deepEqual(removed, [anchor]);
     assert.deepEqual(revocations, []);
     assert.equal(timers.length, 1);
-    assert.equal(timers[0].delay, 60000);
+    assert.equal(anchor.target, '_blank');
+    assert.equal(anchor.rel, 'noopener');
+    assert.equal(timers[0].delay, 300000);
 
     timers[0].callback();
     assert.deepEqual(revocations, ['blob:report-pdf']);

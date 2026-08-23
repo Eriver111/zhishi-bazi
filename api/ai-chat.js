@@ -7,7 +7,7 @@
  * 支持完整排盘数据注入（chartData）和简版信息（bazi）
  */
 
-const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits, deductCreditByUser, isMonthlyActiveByUserId } = require('../lib/supabase.js');
+const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits, deductCreditByUser, isMonthlyActiveByUserId, getOrCreateChatConversation, getChatConversation, getConversationMessages, updateConversationMemory } = require('../lib/supabase.js');
 const { requireAuth } = require('../lib/auth.js');
 const { buildZiweiContext } = require('../lib/ziwei-context.js');
 
@@ -253,10 +253,49 @@ const LIUREN_SYSTEM_PROMPT = `你是"知时先生"，一位精通大六壬占卜
 ## 特别提醒
 你是知时先生，提供文化解读和心理启发。六壬是古人观天察地、推演人事的智慧结晶。占卜的结果反映当下时空的象意趋势，但人的主观能动性和后续选择同样重要。"占而不迷，卜而不惑"——六壬是指南针，不是判决书。`;
 
+function scheduleMemoryRefresh(userId, conversation, conversationMode) {
+  if (!userId || !conversation || !conversation.id || !AI_API_KEY ||
+      typeof getConversationMessages !== 'function' || typeof updateConversationMemory !== 'function') return;
+  setImmediate(async function() {
+    try {
+      var rows = await getConversationMessages(userId, conversation.id, 60);
+      // 每累计六轮对话更新一次摘要，避免每次提问额外调用模型。
+      if (rows.length < 12 || rows.length % 12 !== 0) return;
+      var transcript = rows.slice(-36).map(function(row) {
+        return (row.role === 'user' ? '用户：' : '知时先生：') + String(row.content || '').slice(0, 700);
+      }).join('\n');
+      var oldSummary = String(conversation.memory_summary || '').slice(0, 1200);
+      var memoryResp = await fetch(AI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          messages: [
+            { role: 'system', content: '把同一命盘的长期对话压缩为不超过600字的中文记忆。只记录用户明确说过或确认过的经历、关注点、称呼与回答偏好；不要重新判断命盘，不要把AI推测写成用户事实。输出纯文本。' },
+            { role: 'user', content: (oldSummary ? '旧摘要：\n' + oldSummary + '\n\n' : '') + '最近对话：\n' + transcript }
+          ],
+          thinking: { type: 'disabled' },
+          temperature: 0.1,
+          max_tokens: 700
+        })
+      });
+      if (!memoryResp.ok) return;
+      var memoryData = await memoryResp.json();
+      var summary = memoryData.choices && memoryData.choices[0] && memoryData.choices[0].message
+        ? memoryData.choices[0].message.content : '';
+      if (summary && summary.trim().length >= 20) {
+        await updateConversationMemory(userId, conversation.id, summary.trim());
+      }
+    } catch (error) {
+      console.warn('[chat-memory] 摘要更新失败:', error.message);
+    }
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -267,7 +306,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode, qa_debug } = req.body || {};
+    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode, qa_debug, conversation_id, chart_key, chat_type } = req.body || {};
 
     if (!question) {
       return res.status(400).json({ error: '请输入问题' });
@@ -279,6 +318,29 @@ module.exports = async function handler(req, res) {
     // ---- 登录用户：free_mode 使用 user_id 追踪 ----
     var authUser = requireAuth(req);
     var userId = authUser ? authUser.uid : null;
+    var conversationMode = chat_type || (mode === 'ziwei' ? 'ziwei' : mode === 'liuren' ? 'liuren' : 'bazi');
+    var conversation = null;
+    var conversationMeta = {};
+    var effectiveHistory = Array.isArray(history) ? history : [];
+    var memorySummary = '';
+
+    // 登录用户的历史按“术数类型 + 当前命盘”隔离。会话表未迁移时自动降级，回答和扣费不受影响。
+    if (userId && typeof getOrCreateChatConversation === 'function') {
+      if (conversation_id && typeof getChatConversation === 'function') {
+        conversation = await getChatConversation(userId, conversation_id);
+      }
+      if (!conversation) {
+        conversation = await getOrCreateChatConversation(userId, conversationMode, chart_key, String(question).slice(0, 24));
+      }
+      if (conversation) {
+        conversationMeta = { conversationId: conversation.id, mode: conversation.mode, chartKey: conversation.chart_key };
+        memorySummary = conversation.memory_summary || '';
+        var storedHistory = typeof getConversationMessages === 'function'
+          ? await getConversationMessages(userId, conversation.id, 12)
+          : [];
+        if (storedHistory.length) effectiveHistory = storedHistory;
+      }
+    }
 
     // ---- 免费模式：前 N 次免费 ----
     if (free_mode && free_id) {
@@ -287,19 +349,21 @@ module.exports = async function handler(req, res) {
         var freeInfo = await trackFreeUsageByUser(userId);
         var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2; // 基础2+注册奖励2=4次
         if (freeInfo.used < maxFree) {
-          await saveUserChatHistory(userId, 'user', question);
+          await saveUserChatHistory(userId, 'user', question, conversationMeta);
 
-          var freeReply; try { freeReply = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
+          var freeReply; try { freeReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary); } catch(aiErr) {
             return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
           }
           await bumpFreeUsageByUser(userId);
-          await saveUserChatHistory(userId, 'assistant', freeReply);
+          await saveUserChatHistory(userId, 'assistant', freeReply, conversationMeta);
+          scheduleMemoryRefresh(userId, conversation, conversationMode);
           return res.status(200).json({
             reply: freeReply,
             credits_left: -1,
             free_remaining: maxFree - freeInfo.used - 1,
             is_free: true,
-            is_auth: true
+            is_auth: true,
+            conversation_id: conversation ? conversation.id : null
           });
         } else {
           // 免费次数用完 → 检查用户是否有关联的付费积分或会员
@@ -307,8 +371,8 @@ module.exports = async function handler(req, res) {
           var userMonthlyFallback = await isMonthlyActiveByUserId(userId);
           if (userMonthlyFallback || userCreditsFallback > 0) {
             // 有付费积分或会员，自动使用付费模式
-            await saveUserChatHistory(userId, 'user', question);
-            var paidReply; try { paidReply = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
+            await saveUserChatHistory(userId, 'user', question, conversationMeta);
+            var paidReply; try { paidReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary); } catch(aiErr) {
               return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
             }
             var creditsAfterDeduct;
@@ -318,7 +382,8 @@ module.exports = async function handler(req, res) {
                 return res.status(500).json({ error: '扣减次数失败，请稍后重试' });
               }
             }
-            await saveUserChatHistory(userId, 'assistant', paidReply);
+            await saveUserChatHistory(userId, 'assistant', paidReply, conversationMeta);
+            scheduleMemoryRefresh(userId, conversation, conversationMode);
             var creditsLeftPaid = userMonthlyFallback ? -1 : (creditsAfterDeduct ? creditsAfterDeduct.credits : 0);
             return res.status(200).json({
               reply: paidReply,
@@ -326,7 +391,8 @@ module.exports = async function handler(req, res) {
               is_monthly: userMonthlyFallback ? true : undefined,
               monthly_expires: userMonthlyFallback ? userMonthlyFallback.expires_at : undefined,
               is_auth: true,
-              from_purchased: true
+              from_purchased: true,
+              conversation_id: conversation ? conversation.id : null
             });
           }
           return res.status(403).json({
@@ -351,7 +417,7 @@ module.exports = async function handler(req, res) {
       if (maxRemaining > 0) {
         await saveChatHistory('free_' + free_id, 'user', question);
 
-        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, history, mode, response_mode); } catch(aiErr) {
+        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode); } catch(aiErr) {
           return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
         }
         // 同时以两个标识记录（防止用户换ID或换IP任一方式绕过）
@@ -416,7 +482,7 @@ module.exports = async function handler(req, res) {
 
     // 保存用户问题
     if (code) await saveChatHistory(code, 'user', question);
-    if (userId) await saveUserChatHistory(userId, 'user', question);
+    if (userId) await saveUserChatHistory(userId, 'user', question, conversationMeta);
 
     // ---- 构建 AI 请求 ----
     var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
@@ -463,7 +529,7 @@ module.exports = async function handler(req, res) {
 
     // ---- 调用 AI（失败不扣费）----
     var reply; var aiMeta = {};
-    try { reply = await callAI(question, chartData, bazi, history, mode, response_mode, aiMeta); } catch(aiErr) {
+    try { reply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, aiMeta, memorySummary); } catch(aiErr) {
       console.error('AI call failed:', aiErr);
       return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
     }
@@ -482,7 +548,8 @@ module.exports = async function handler(req, res) {
 
     // ---- 保存 AI 回答 ----
     if (code) await saveChatHistory(code, 'assistant', reply);
-    if (userId) await saveUserChatHistory(userId, 'assistant', reply);
+    if (userId) await saveUserChatHistory(userId, 'assistant', reply, conversationMeta);
+    scheduleMemoryRefresh(userId, conversation, conversationMode);
 
     // 月度会员返回特殊标记，次数制返回剩余次数
     const creditsLeft = monthlyActive ? -1 : (credits ? credits.credits : 0);
@@ -490,7 +557,8 @@ module.exports = async function handler(req, res) {
       reply: reply,
       credits_left: creditsLeft,
       is_monthly: monthlyActive ? true : undefined,
-      monthly_expires: monthlyActive ? monthlyActive.expires_at : undefined
+      monthly_expires: monthlyActive ? monthlyActive.expires_at : undefined,
+      conversation_id: conversation ? conversation.id : null
     };
     // QA 回归专用：透出 V1 validator warnings + V2 触发标记（生产用户请求不带 qa_debug，行为不变）
     if (qa_debug) { resp.validation_warnings = aiMeta.warnings || []; resp.v2_applied = !!aiMeta.v2Applied; }
@@ -505,7 +573,7 @@ module.exports = async function handler(req, res) {
 /**
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
-async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut) {
+async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary) {
   var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
   const messages = [{ role: 'system', content: sysPrompt }];
 
@@ -559,8 +627,18 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     });
   }
 
+  if (memorySummary) {
+    messages.push({
+      role: 'system',
+      content: '以下是同一用户、同一命盘以往对话形成的长期记忆摘要。它只用于理解用户已经谈过的重点和表达偏好；若与本次 chartData 冲突，必须以本次排盘事实为准，不得用记忆改盘：\n' + memorySummary
+    });
+  }
+
   if (history && Array.isArray(history)) {
-    history.forEach(h => {
+    history.filter(function(h, index, list) {
+      // 页面通常先把当前问题放入本地数组，避免历史与末尾问题重复注入。
+      return !(index === list.length - 1 && h && h.role === 'user' && String(h.content || '').trim() === String(question).trim());
+    }).slice(-12).forEach(h => {
       messages.push({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content });
     });
   }

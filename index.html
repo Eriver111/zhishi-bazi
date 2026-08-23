@@ -582,6 +582,7 @@ body::before{
 <style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
 <link rel="stylesheet" href="css/theme-light.css?v=3">
 <link rel="stylesheet" href="css/theme-light-home.css?v=4">
+<link rel="stylesheet" href="css/mobile-app-shell.css?v=6">
 </head>
 <body>
 <!-- ====== 墨色山水背景 v3 · 古画真迹 ====== -->
@@ -601,7 +602,7 @@ body::before{
   <a href="/" class="zhishi-brand" style="font-size:18px;font-weight:900;letter-spacing:4px;text-decoration:none;margin-right:8px">知时</a>
   <div class="zhishi-nav-links" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
     <a href="/paipan" class="nav-primary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">命理</a>
-    <a href="/liuren" class="nav-primary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">卜筮</a>
+    <a href="/liuyao" class="nav-primary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">卜筮</a>
     <a href="/face" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观相</a>
     <a href="/fengshui" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">堪舆</a>
     <a href="/fortune" class="nav-secondary" style="text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">运势</a>
@@ -615,8 +616,6 @@ body::before{
         <a href="/palm" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">AI 观手</a>
         <a href="/hepan" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a>
         <a href="/meihua" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a>
-        <a href="/liuyao" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a>
-        <a href="/liuren" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a>
         <a href="/profile" style="display:block;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a>
       </div>
     </div>
@@ -653,6 +652,11 @@ body::before{
       <a href="paipan" class="hero-cta cta-paipan">开始排盘</a>
       <a href="fortune" class="hero-cta" style="background:linear-gradient(135deg,rgba(91,127,165,.15),rgba(91,127,165,.04));border:1px solid rgba(91,127,165,.2);color:#a0c8e8;border-radius:30px;position:relative;overflow:hidden">今日运势</a>
     </div>
+    <section class="mobile-home-fortune" id="mobileHomeFortune" aria-live="polite">
+      <div class="mobile-home-fortune__head"><span data-home-fortune-title>今日黄历</span><a href="/fortune">查看完整内容</a></div>
+      <div class="mobile-home-fortune__meta" data-home-fortune-meta>正在读取今日干支与宜忌…</div>
+      <p data-home-fortune-tip>登录并保存命盘后，还可以查看与你命盘对应的专属今日运势。</p>
+    </section>
     </div>
     <div class="book-scroll-wrap">
       <div class="book-scroll-track" id="bookTrack"></div>
@@ -671,11 +675,6 @@ body::before{
       <div class="feat-icon"><span>斗</span></div>
       <h3>紫微斗数</h3>
       <p>三合飞星四化 · 十二宫精断<br>十四主星 · 辅星杂曜 · 格局论断</p>
-    </a>
-    <a href="/liuren" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>壬</span></div>
-      <h3>大六壬</h3>
-      <p>月将加时 · 天地盘转 · 四课三传<br>九宗门起课 · 十二天将神煞</p>
     </a>
     <a href="/liuyao" class="feat-card" style="text-decoration:none">
       <div class="feat-icon"><span>爻</span></div>
@@ -774,6 +773,7 @@ body::before{
   </footer>
 </div>
 
+<script src="js/mobile-app-shell.js?v=5"></script>
 <script>
 (function initHomepageNavMore(){
   var wrap=document.querySelector('#zhishi-nav .nav-more');
@@ -863,6 +863,7 @@ body::before{
 <script src="js/bg-animation.js"></script>
 <script src="js/effects.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/home-fortune.js?v=2"></script>
 <script>
 MoXingHe.start('mxhCanvas');
 

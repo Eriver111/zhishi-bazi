@@ -95,6 +95,25 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_expires ON user_subscriptions(expir
 CREATE INDEX IF NOT EXISTS idx_free_log_identifier ON free_credits_log(identifier);
 CREATE INDEX IF NOT EXISTS idx_chat_code ON chat_history(code);
 
+-- AI 对话会话：每个用户、术数类型和命盘分别保存，避免跨盘串话。
+CREATE TABLE IF NOT EXISTS ai_conversations (
+  id              UUID PRIMARY KEY,
+  user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mode            VARCHAR(16) NOT NULL DEFAULT 'bazi',
+  chart_key       VARCHAR(96) NOT NULL DEFAULT 'general',
+  title           VARCHAR(60) NOT NULL DEFAULT '命理解读',
+  memory_summary  TEXT NOT NULL DEFAULT '',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, mode, chart_key)
+);
+ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS conversation_id UUID REFERENCES ai_conversations(id) ON DELETE CASCADE;
+ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS mode VARCHAR(16);
+ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS chart_key VARCHAR(96);
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_user_updated ON ai_conversations(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_history_conversation_created ON chat_history(conversation_id, created_at DESC);
+ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS report_orders (
   order_id      VARCHAR(96) PRIMARY KEY,
   user_id       BIGINT REFERENCES users(id),

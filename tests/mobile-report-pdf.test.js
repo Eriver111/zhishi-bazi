@@ -265,8 +265,8 @@ test('result page loads local PDF dependencies in order and exposes one accessib
   const scripts = [
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
-    '/js/report-pdf.js?v=2',
-    'js/result.js?v=14',
+    '/js/report-pdf.js?v=3',
+    'js/result.js?v=16',
   ];
   const indexes = scripts.map((src) => html.indexOf(`src="${src}`));
 
@@ -278,7 +278,7 @@ test('result page loads local PDF dependencies in order and exposes one accessib
   assert.match(html, /id="reportPdfSheet"[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-labelledby="reportPdfTitle"/);
   assert.match(html, /id="reportPdfProgress"[^>]*role="progressbar"[^>]*aria-valuemin="0"[^>]*aria-valuemax="100"/);
   assert.match(html, /id="reportPdfClose"[^>]*aria-label="关闭 PDF 操作面板"/);
-  assert.match(html, /id="reportPdfDownload"[^>]*disabled[^>]*>[\s\S]*?下载 PDF/);
+  assert.match(html, /id="reportPdfDownload"[^>]*disabled[^>]*>[\s\S]*?直接下载/);
   assert.match(html, /id="reportPdfShare"[^>]*disabled[^>]*>[\s\S]*?保存或分享/);
   assert.match(html, /id="reportHtmlFallback"[^>]*>[\s\S]*?下载 HTML 备用/);
 });
@@ -303,7 +303,7 @@ test('mobile generation opens immediately and prepares the current report with p
 
   fixture.resolvePrepare(fixture.file);
   await promise;
-  assert.equal(status.textContent, 'PDF 已生成，请选择下载或分享');
+  assert.equal(status.textContent, 'PDF 已生成，手机建议使用“保存或分享”存入文件。');
   assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, false);
   assert.equal(fixture.document.getElementById('reportPdfShare').disabled, false);
 });
@@ -403,7 +403,7 @@ test('share cancellation leaves the prepared PDF ready for download', async () =
   fixture.document.getElementById('reportPdfShare').dispatch('click');
   await settle();
 
-  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，请选择下载或分享');
+  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，手机建议使用“保存或分享”存入文件。');
   assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, false);
 });
 
@@ -458,7 +458,7 @@ test('closing and reopening ignores an older success and its stale progress', as
   await olderPromise;
 
   assert.equal(fixture.document.getElementById('reportPdfProgress').getAttribute('aria-valuenow'), '100');
-  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，请选择下载或分享');
+  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，手机建议使用“保存或分享”存入文件。');
   fixture.document.getElementById('reportPdfDownload').dispatch('click');
   assert.equal(downloads.length, 1);
   assert.equal(downloads[0].prepared, newerFile);
@@ -500,7 +500,7 @@ test('a stale rejection cannot clear a newer prepared PDF', async () => {
   await olderPromise;
 
   assert.equal(fixture.document.getElementById('reportPdfDownload').disabled, false);
-  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，请选择下载或分享');
+  assert.equal(fixture.document.getElementById('reportPdfStatus').textContent, 'PDF 已生成，手机建议使用“保存或分享”存入文件。');
   fixture.document.getElementById('reportPdfDownload').dispatch('click');
   assert.equal(downloads.length, 1);
   assert.equal(downloads[0].prepared, newerFile);
@@ -655,14 +655,14 @@ test('desktop export retains the existing new-tab print-to-PDF route', () => {
   assert.deepEqual(calls.open, [{ url: 'blob:desktop-report', target: '_blank' }]);
 });
 
-test('service worker rolls the mobile PDF cache to v13 and precaches all local PDF scripts', () => {
+test('service worker rolls the mobile PDF cache to v14 and precaches all local PDF scripts', () => {
   const source = read('sw.js');
-  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v13'/g) || []).length, 1);
+  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v14'/g) || []).length, 1);
   assert.equal((source.match(/var CACHE_NAME\s*=/g) || []).length, 1);
   for (const asset of [
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
-    '/js/report-pdf.js?v=2',
+    '/js/report-pdf.js?v=3',
   ]) {
     assert.equal((source.match(new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length, 1);
   }

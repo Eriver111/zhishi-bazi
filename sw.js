@@ -1,5 +1,5 @@
-// 知时 Service Worker v13 — 缓存优先+后台更新，兼顾速度与新鲜度
-var CACHE_NAME = 'zhishi-v13';
+// 知时 Service Worker v14 — 缓存优先+后台更新，兼顾速度与新鲜度
+var CACHE_NAME = 'zhishi-v14';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
@@ -11,7 +11,7 @@ var STATIC_ASSETS = [
   '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=7',
   '/js/hepan-paywall.js?v=2',
   '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',
-  '/js/report-pdf.js?v=2'
+  '/js/report-pdf.js?v=3'
 ];
 
 self.addEventListener('install', function(e) {

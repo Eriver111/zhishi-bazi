@@ -18,6 +18,8 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 .topbar .title{flex:1;font-size:18px;color:var(--gold-l);letter-spacing:3px;font-weight:700}
 .topbar .mode-btn{padding:5px 14px;border-radius:14px;border:1px solid var(--bd2);background:none;color:var(--tx2);font-size:12px;cursor:pointer;letter-spacing:1px;font-family:inherit}
 .topbar .mode-btn.pro{color:var(--gold-l);border-color:var(--gold);background:rgba(201,168,76,.08)}
+.topbar .history-btn{padding:5px 10px;border-radius:14px;border:1px solid var(--bd2);background:none;color:var(--tx2);font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.topbar .history-btn.saved{color:#486f61;border-color:rgba(72,111,97,.28);background:rgba(72,111,97,.06)}
 .topbar .credits{font-size:13px;color:var(--tx2)}
 .topbar .credits strong{color:var(--gold-l);font-size:16px}
 /* 消息区 */
@@ -77,6 +79,7 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
   <div class="topbar">
     <a href="javascript:history.back()" class="back">←</a>
     <span class="title">知时先生</span>
+    <button class="history-btn" id="historyBtn" type="button" onclick="restoreChatHistory(true)">登录保存</button>
     <button class="mode-btn" id="modeBtn" onclick="toggleMode()">白话</button>
     <span class="credits" id="creditsLabel"></span>
   </div>
@@ -108,8 +111,9 @@ html,body{height:100%;overflow:hidden;font-family:'PingFang SC','Microsoft YaHei
 </div>
 
 <script src="js/chat-viewport.js?v=1"></script>
+<script src="js/chat-persistence.js?v=1"></script>
 <script>
-var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:''};
+var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:'',conversationId:'',chartKey:'',historyLoaded:false};
 
 // 天眼加载
 setTimeout(function(){var e=document.getElementById('eyeSplash');if(e){e.style.opacity='0';setTimeout(function(){e.remove()},500)}},2500);
@@ -162,6 +166,7 @@ function syncUserCredits(){
   if(typeof Auth==='undefined'){setTimeout(syncUserCredits,1000);return}
   Auth.ready(function(){
     if(!Auth.isLoggedIn())return;
+    restoreChatHistory(false);
     fetch('/api/auth/profile',{headers:{'Authorization':'Bearer '+Auth.getToken()}})
     .then(function(r){return r.json()})
     .then(function(d){
@@ -170,6 +175,33 @@ function syncUserCredits(){
       if(d.credits>0){AI.credits=d.credits;updateCreditsUI()}
     });
   });
+}
+
+function currentChatContext(){
+  var zwMode=false;try{zwMode=new URLSearchParams(location.search).get('t')==='zw'}catch(e){}
+  var type=zwMode?'ziwei':'bazi',data=null;
+  try{var raw=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data');if(raw)data=JSON.parse(raw)}catch(e){}
+  if(data&&data.type==='hepan')type='hepan';
+  return{type:type,data:data};
+}
+
+function setHistoryButton(text,saved){var b=document.getElementById('historyBtn');if(!b)return;b.textContent=text;b.classList.toggle('saved',!!saved)}
+
+function restoreChatHistory(force){
+  if(!window.ChatPersistence)return;
+  if(AI.historyLoaded&&!force)return;
+  var ctx=currentChatContext();
+  ChatPersistence.load(ctx.type,ctx.data).then(function(data){
+    AI.chartKey=data.chart_key||'';
+    if(!data.logged_in){setHistoryButton('登录保存',false);return}
+    AI.conversationId=data.conversation_id||'';
+    AI.historyLoaded=true;
+    setHistoryButton(data.storage_ready===false?'待启用':'已保存',data.storage_ready!==false);
+    if(force||AI.messages.length===0){
+      document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];
+      (data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)});
+    }
+  }).catch(function(){setHistoryButton('记录异常',false)});
 }
 function updateCreditsUI(){
   var el=document.getElementById('creditsLabel');
@@ -219,12 +251,15 @@ function send(){
   }
   if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}
   else{body.code=AI.code}
+  var persistContext=currentChatContext();
+  ChatPersistence.decorate(body,persistContext.type,body.chartData,AI.conversationId);
 
   var headers={'Content-Type':'application/json'};if(typeof Auth!=='undefined'&&Auth.isLoggedIn())headers['Authorization']='Bearer '+Auth.getToken();
   fetch('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
   .then(function(r){return r.json()}).then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
     if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
+    if(d.conversation_id){AI.conversationId=d.conversation_id;setHistoryButton('已保存',true)}
     var pre='';try{var cd3=JSON.parse(localStorage.getItem('ai_chart_data')||'{}');if(cd3.pattern&&cd3.pattern.name)pre+='【系统判定】格局：'+cd3.pattern.name+'。';if(cd3.dayMasterStrength)pre+='日主旺衰：'+cd3.dayMasterStrength.level+'（'+cd3.dayMasterStrength.score+'/100）。';if(pre)pre+='以下为AI详细解读：\n\n---\n\n';}catch(ex){}addMsg('ai',pre+d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}

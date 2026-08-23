@@ -47,7 +47,22 @@
       restoreSession();
       migrateLegacyUsers();
       syncUserCredits();
+      resumeArchivedChat();
     });
+  }
+
+  function openStandaloneChat() {
+    var pt=detectPageType(),cd=buildChartData(),tgt='ai-chat.html';
+    if(pt==='ziwei'){tgt='zw-ai-chat.html';if(cd)try{localStorage.setItem('ai_ziwei_data',JSON.stringify(cd))}catch(ex){}}
+    else if(pt==='liuren'){tgt='lr-ai-chat.html';if(cd)try{localStorage.setItem('ai_liuren_data',JSON.stringify(cd))}catch(ex){}}
+    else{if(cd)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){}}
+    window.location.href=tgt;
+  }
+
+  function resumeArchivedChat() {
+    var shouldResume=false;
+    try{shouldResume=sessionStorage.getItem('zhishi_open_archive_ai')==='1';if(shouldResume)sessionStorage.removeItem('zhishi_open_archive_ai')}catch(e){}
+    if(shouldResume)setTimeout(openStandaloneChat,0);
   }
 
   function initFreeId() {
@@ -201,12 +216,9 @@
     // FAB 点击跳转到独立AI对话页
     var fab = document.getElementById('aiFab');
     if (fab) {
-      fab.addEventListener('click', function(e) {
-        var pt=detectPageType();var cd=buildChartData();var tgt='ai-chat.html';
-        if(pt==='ziwei'){tgt='zw-ai-chat.html';if(cd)try{localStorage.setItem('ai_ziwei_data',JSON.stringify(cd))}catch(ex){}}
-        else if(pt==='liuren'){tgt='lr-ai-chat.html';if(cd)try{localStorage.setItem('ai_liuren_data',JSON.stringify(cd))}catch(ex){}}
-        else{if(cd)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){}}
-        window.location.href=tgt;
+      fab.addEventListener('click', function(e){
+        if(fab.getAttribute('data-ai-suppress-click')==='1'){e.preventDefault();return}
+        openStandaloneChat();
       });
     }
   }
@@ -864,20 +876,16 @@
   var _origPS=handlePaymentSuccess;handlePaymentSuccess=function(c,cr){_origPS(c,cr);showMyCode(c);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp}};
   var _origMS=handleMonthlySuccess;handleMonthlySuccess=function(c,e){_origMS(c,e);showMyCode(c)};
   var _origRS=restoreSession;restoreSession=function(){var sc=localStorage.getItem('ai_chat_code');if(sc)showMyCode(sc);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp};_origRS();
-    // 登录用户：从服务端加载聊天历史
-    if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){Auth.getData().then(function(d){if(!d||!d.ai_chat_history)return;try{var msgs=JSON.parse(d.ai_chat_history);msgs.forEach(function(m){addMessage(m.role,m.content)})}catch(e){}}).catch(function(){})}
   };
-  // 登录用户：发消息时同步到服务端
-  var _origAdd=addMessage;addMessage=function(role,content){_origAdd(role,content);if(typeof Auth!=='undefined'&&Auth.isLoggedIn()){try{var msgs=AI.messages.slice(-20).map(function(m){return{role:m.role,content:m.content}});Auth.syncData('ai_chat_history',JSON.stringify(msgs));}catch(e){}}};
 
   // AI按钮拖动
   (function(){
-    var fab=null, dragging=false, startX=0, startY=0, origLeft=0, origTop=0;
+    var fab=null, dragging=false, moved=false, startX=0, startY=0, origLeft=0, origTop=0;
     function initFab(){
       fab=document.getElementById('aiFab'); if(!fab) { setTimeout(initFab,500); return }
       fab.style.touchAction='none';
       fab.addEventListener('pointerdown',function(e){
-        dragging=true; startX=e.clientX; startY=e.clientY;
+        dragging=true; moved=false; startX=e.clientX; startY=e.clientY;
         var r=fab.getBoundingClientRect();
         origLeft=r.left; origTop=r.top;
         fab.style.transition='none'; fab.style.cursor='grabbing';
@@ -885,14 +893,12 @@
       fab.addEventListener('pointermove',function(e){
         if(!dragging)return;
         var dx=e.clientX-startX, dy=e.clientY-startY;
-        if(Math.abs(dx)>5||Math.abs(dy)>5){fab.style.right='auto';fab.style.bottom='auto';fab.style.left=(origLeft+dx)+'px';fab.style.top=(origTop+dy)+'px'}
+        if(Math.abs(dx)>5||Math.abs(dy)>5){moved=true;fab.style.right='auto';fab.style.bottom='auto';fab.style.left=(origLeft+dx)+'px';fab.style.top=(origTop+dy)+'px'}
       });
       fab.addEventListener('pointerup',function(e){
         if(!dragging)return;
         dragging=false; fab.style.transition=''; fab.style.cursor='pointer';
-        var dx=e.clientX-startX,dy=e.clientY-startY;
-        if(Math.abs(dx)<5&&Math.abs(dy)<5){var pt2=detectPageType();var cd2=buildChartData();var t2='ai-chat.html';if(pt2==='ziwei'){t2='zw-ai-chat.html';if(cd2)try{localStorage.setItem('ai_ziwei_data',JSON.stringify(cd2))}catch(ex){}}else if(pt2==='liuren'){t2='lr-ai-chat.html';if(cd2)try{localStorage.setItem('ai_liuren_data',JSON.stringify(cd2))}catch(ex){}}else{if(cd2)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd2))}catch(ex){}}window.location.href=t2}
-        else{var r=fab.getBoundingClientRect();if(r.top<60)fab.style.top='65px';if(r.left<0)fab.style.left='10px'}
+        if(moved){fab.setAttribute('data-ai-suppress-click','1');setTimeout(function(){fab.removeAttribute('data-ai-suppress-click')},0);var r=fab.getBoundingClientRect();if(r.top<60)fab.style.top='65px';if(r.left<0)fab.style.left='10px'}
       });
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initFab);else initFab();

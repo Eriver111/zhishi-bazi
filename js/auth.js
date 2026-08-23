@@ -487,6 +487,29 @@ var Auth = (function () {
   };
 })();
 
+// 手机端统一导航外壳。仅对功能入口页启用，聊天页保持原有键盘适配。
+(function loadUnifiedMobileShell() {
+  var path = (location.pathname || '/').replace(/\.html$/, '') || '/';
+  var supported = [
+    '/', '/index', '/paipan', '/result', '/ziwei', '/hepan', '/hepan-result', '/fortune',
+    '/liuyao', '/meihua', '/face', '/palm', '/fengshui', '/archives',
+    '/profile', '/pricing'
+  ];
+  if (supported.indexOf(path) < 0) return;
+
+  if (!document.querySelector('link[href*="mobile-app-shell.css"]')) {
+    var style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = '/css/mobile-app-shell.css?v=18';
+    document.head.appendChild(style);
+  }
+  if (!window.__ZHISHI_MOBILE_APP_SHELL__ && !document.querySelector('script[src*="mobile-app-shell.js"]')) {
+    var script = document.createElement('script');
+    script.src = '/js/mobile-app-shell.js?v=5';
+    (document.body || document.head).appendChild(script);
+  }
+})();
+
 // 自动初始化
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function () { Auth.init(); });

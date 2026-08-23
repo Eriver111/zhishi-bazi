@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>命盘档案库 - 知时</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/theme-light.css?v=3">
+<link rel="stylesheet" href="css/archive-library.css?v=2">
+<link rel="stylesheet" href="css/mobile-app-shell.css?v=6">
+</head>
+<body>
+<div id="zhishi-nav" class="top-nav archive-top-nav">
+  <a class="archive-top-nav__brand" href="/">知时</a>
+  <nav aria-label="主导航"><a href="/paipan">八字排盘</a><a href="/archives" aria-current="page">命盘档案</a><a href="/profile">个人中心</a><a href="/pricing">积分</a></nav>
+  <span id="nav-user-area" class="nav-user"></span>
+</div>
+
+<main class="archive-page">
+  <header class="archive-hero">
+    <p>命盘管理</p>
+    <h1>命盘档案库</h1>
+    <div class="archive-hero__meta"><span id="archiveCount">0 份档案</span><a href="/paipan">＋ 新建命盘</a></div>
+  </header>
+
+  <section class="archive-tools" aria-label="筛选命盘档案">
+    <label class="archive-search"><span aria-hidden="true">⌕</span><input id="archiveSearch" type="search" placeholder="搜索姓名、日期或四柱" autocomplete="off"></label>
+    <div class="archive-filters" role="group" aria-label="性别筛选">
+      <button type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-filter="male" aria-pressed="false">乾造</button>
+      <button type="button" data-filter="female" aria-pressed="false">坤造</button>
+    </div>
+  </section>
+
+  <div id="archiveContent" class="archive-content" aria-live="polite">
+    <div class="archive-loading">正在整理档案…</div>
+  </div>
+</main>
+
+<script src="js/county-longitudes.js"></script>
+<script src="js/bazi.js"></script>
+<script src="js/auth.js?v=5"></script>
+<script src="js/archive-library.js?v=2"></script>
+<script src="js/mobile-app-shell.js?v=5"></script>
+</body>
+</html>

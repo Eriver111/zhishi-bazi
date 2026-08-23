@@ -131,13 +131,14 @@ test('purchased reports escape fields and restore normalized parameters in their
   });
 });
 
-test('a rejected report request leaves credits and saved charts visible', async () => {
+test('a rejected report request leaves credits and the archive-library entry visible', async () => {
   const { html, fetches } = await renderProfile({ reportReject: true });
 
   assert.deepEqual(fetches.sort(), ['/api/auth/profile', '/api/reports']);
   assert.match(html, /积分余额/);
   assert.match(html, />3</);
-  assert.match(html, /saved-chart/);
+  assert.match(html, /进入命盘档案库/);
+  assert.match(html, /1 份已保存命盘/);
   assert.doesNotMatch(html, /加载失败：/);
 });
 
@@ -175,14 +176,14 @@ test('historical true-solar report with a fractional clock receives a safe resto
   assert.equal(makeReportKey('bazi', Object.fromEntries(url.searchParams)), makeReportKey('bazi', normalized));
 });
 
-test('a rejected credits request leaves reports and saved charts visible', async () => {
+test('a rejected credits request leaves reports and the archive-library entry visible', async () => {
   const { html } = await renderProfile({
     profileReject: true,
     reports: [{ label: 'paid-report', paid_at: '2026-07-31', report_params: { year: 1990, month: 6, day: 15, hour: 8, gender: 'female' } }]
   });
 
   assert.match(html, /paid-report/);
-  assert.match(html, /saved-chart/);
+  assert.match(html, /进入命盘档案库/);
   assert.doesNotMatch(html, /加载失败：/);
 });
 

@@ -128,6 +128,7 @@ test('direct result query restores all entered pillars and timing metadata', () 
     day: 20,
     hour: 11,
     gender: 'female',
+    name: '',
     cal: '',
     prov: '',
     city: '',

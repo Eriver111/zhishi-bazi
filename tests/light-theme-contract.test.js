@@ -22,7 +22,7 @@ const publicPages = [
   'index.html', 'paipan.html', 'result.html', 'ziwei.html', 'liuren.html',
   'hepan.html', 'hepan-result.html', 'liuyao.html', 'meihua.html',
   'face.html', 'palm.html', 'fengshui.html', 'fortune.html', 'pricing.html',
-  'profile.html', 'ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html',
+  'profile.html', 'archives.html', 'ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html',
 ];
 
 test('every public page loads the light theme after existing styles', () => {
@@ -130,16 +130,15 @@ test('inline legacy navigations expose a light-theme hook and light dropdown', (
   assert.match(css, /\.top-nav\s+a(?:\s*,|\s*\{)[\s\S]*?color:\s*var\(--tx2\)\s*!important/);
 });
 
-test('homepage exposes the approved ten uniform tools and no standalone AI consultation CTA', () => {
+test('homepage exposes the available nine uniform tools and no standalone AI consultation CTA', () => {
   const html = read('index.html');
   const featureSection = activeMarkup(html).match(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\bfeatures\b[^"']*\1[^>]*>([\s\S]*?)<\/section\s*>/i);
   assert.ok(featureSection, 'homepage is missing the feature grid');
   const featureLinks = [...featureSection[2].matchAll(/<a\b[^>]*\bclass\s*=\s*(["'])[^"']*\bfeat-card\b[^"']*\1[^>]*>[\s\S]*?<\/a\s*>/gi)];
-  assert.equal(featureLinks.length, 10);
+  assert.equal(featureLinks.length, 9);
   const expectedTools = [
     ['/paipan', '八字排盘'],
     ['/ziwei', '紫微斗数'],
-    ['/liuren', '大六壬'],
     ['/liuyao', '六爻占卜'],
     ['/meihua', '梅花易数'],
     ['/hepan', '合盘缘分'],
@@ -178,12 +177,12 @@ test('homepage navigation uses five practical categories and retains every tool 
     .map(({ 0: tag }) => [attributeValue(tag, 'href'), textContent(tag)]);
   assert.deepEqual(categoryLinks, [
     ['/paipan', '命理'],
-    ['/liuren', '卜筮'],
+    ['/liuyao', '卜筮'],
     ['/face', '观相'],
     ['/fengshui', '堪舆'],
     ['/fortune', '运势'],
   ]);
-  for (const route of ['/paipan', '/ziwei', '/liuren', '/liuyao', '/meihua', '/hepan', '/fengshui', '/fortune', '/face', '/palm', '/pricing', '/profile']) {
+  for (const route of ['/paipan', '/ziwei', '/liuyao', '/meihua', '/hepan', '/fengshui', '/fortune', '/face', '/palm', '/pricing', '/profile']) {
     assert.ok(links.some(({ 0: tag }) => attributeValue(tag, 'href') === route), `homepage navigation is missing ${route}`);
   }
   assert.match(nav[2], /\bid\s*=\s*(["'])nav-user-area\1/i);

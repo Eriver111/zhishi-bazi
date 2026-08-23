@@ -12,12 +12,49 @@ document.addEventListener('DOMContentLoaded', function() {
   initProvince();
   initHourSelects();
   initEvents();
+  initChartName();
   // 页面初始：隐藏面板中的字段禁用，防止浏览器校验
   var lp = document.getElementById('lunarPanel');
   if (lp) setPanelFields(lp, true);
   var pp = document.getElementById('pillarsPanel');
   if (pp) setPanelFields(pp, true);
 });
+
+function readChartName() {
+  if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return '案例1';
+  var input = document.getElementById('chartName');
+  var value = input ? String(input.value || '').trim().slice(0, 20) : '';
+  return value || '案例1';
+}
+
+function initChartName() {
+  var input = document.getElementById('chartName');
+  if (!input) return;
+  input.addEventListener('input', function() { input.dataset.userEdited = '1'; });
+
+  function setNextLoggedInName() {
+    if (typeof Auth === 'undefined') return setTimeout(setNextLoggedInName, 300);
+    Auth.ready(function() {
+      if (!Auth.isLoggedIn() || input.dataset.userEdited || input.dataset.restored) return;
+      Auth.getData('saved_charts').then(function(raw) {
+        if (input.dataset.userEdited || input.dataset.restored) return;
+        var charts = [];
+        try { charts = JSON.parse(raw || '[]'); } catch(e) {}
+        var max = 0;
+        charts.forEach(function(chart) {
+          var explicit = String(chart && chart.name || '').trim();
+          if (!explicit && chart && chart.params) {
+            try { explicit = new URLSearchParams(chart.params).get('name') || ''; } catch(e) {}
+          }
+          var match = explicit.match(/^案例\s*(\d+)$/);
+          if (match) max = Math.max(max, parseInt(match[1], 10) || 0);
+        });
+        input.value = '案例' + (max + 1);
+      }).catch(function() {});
+    });
+  }
+  setNextLoggedInName();
+}
 
 function initSolarSelects() {
   var yS = document.getElementById('sYear');
@@ -360,6 +397,7 @@ function buildDirectResultParams(pillars, gender, candidate) {
   params.set('mode', 'pillars');
   params.set('timing', candidate ? 'matched' : 'unknown');
   params.set('gender', gender);
+  params.set('name', readChartName());
   if (candidate) {
     params.set('year', candidate.year);
     params.set('month', candidate.month);
@@ -539,6 +577,7 @@ function handleSubmit(e) {
   }
 
   var params = new URLSearchParams({ year:year, month:month, day:day, hour:hour, gender:gender });
+  params.set('name', readChartName());
   if (clock) params.set('clock', clock);
   if (minute) params.set('minute', minute);
   if (prov) params.set('prov', prov);

@@ -15,6 +15,7 @@ test('paipan exposes a direct-pillar mode without location controls inside it', 
     'pYearGan', 'pYearZhi', 'pMonthGan', 'pMonthZhi',
     'pDayGan', 'pDayZhi', 'pHourGan', 'pHourZhi',
     'pillarCandidates',
+    'chartName',
   ]) {
     assert.match(html, new RegExp(`id=["']${id}["']`), `missing ${id}`);
   }
@@ -125,7 +126,7 @@ test('matched candidates serialize pillars plus the selected candidate timing', 
   });
   assert.equal(
     params.toString(),
-    'yg=%E7%94%B2&yz=%E5%AD%90&mg=%E4%B8%99&mz=%E5%AF%85&dg=%E6%88%8A&dz=%E8%BE%B0&hg=%E5%BA%9A&hz=%E5%8D%88&mode=pillars&timing=matched&gender=female&year=1996&month=2&day=19&hour=6&clock=12'
+    'yg=%E7%94%B2&yz=%E5%AD%90&mg=%E4%B8%99&mz=%E5%AF%85&dg=%E6%88%8A&dz=%E8%BE%B0&hg=%E5%BA%9A&hz=%E5%8D%88&mode=pillars&timing=matched&gender=female&name=%E6%A1%88%E4%BE%8B1&year=1996&month=2&day=19&hour=6&clock=12'
   );
 });
 
@@ -135,6 +136,7 @@ test('base-chart continuation keeps pillars and omits every fabricated date fiel
   assert.equal(params.get('mode'), 'pillars');
   assert.equal(params.get('timing'), 'unknown');
   assert.equal(params.get('gender'), 'male');
+  assert.equal(params.get('name'), '案例1');
   for (const key of ['year', 'month', 'day', 'hour', 'clock']) {
     assert.equal(params.has(key), false, `${key} must be omitted without a match`);
   }

@@ -3,6 +3,7 @@
  * POST: 返回完整黄历 + AI 个性化八字运势（免费）
  */
 const crypto = require('crypto');
+const { calculator, calendar, chartFromQuery } = require('./_bazi-runtime');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
@@ -87,51 +88,45 @@ const SOLAR_TERMS_DATA = {
 };
 const BASE_MONTHS = [2,3,4,5,6,7,8,9,10,11,12,1]; // 各节气对应月份
 
-function getSolarTerm(month, day) {
-  var y = new Date().getFullYear();
-  var data = SOLAR_TERMS_DATA[y] || SOLAR_TERMS_DATA[2026];
+function getSolarTerm(year, month, day) {
+  var target = new Date(year, month - 1, day, 12, 0, 0);
   var terms = [];
-  for (var i = 0; i < 12; i++) {
-    terms.push({ m: BASE_MONTHS[i], d: data[i], name: ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'][i] });
-  }
-  for (var i = terms.length - 1; i >= 0; i--) {
-    var t = terms[i];
-    if (month > t.m || (month === t.m && day >= t.d)) {
-      var next = terms[(i + 1) % 12];
-      var diffDays = (next.m - month) * 30 + (next.d - day);
-      if (diffDays < 0) diffDays += 365;
-      return { cur: t.name, next: next.name, days: diffDays };
-    }
-  }
-  return { cur:'未知', next:'未知', days:0 };
+  [year - 1, year, year + 1].forEach(function(termYear) {
+    calendar.getJieQiDates(termYear).forEach(function(term) {
+      terms.push({ name: term.name, date: term.date });
+    });
+  });
+  terms.sort(function(a, b) { return a.date - b.date; });
+  var current = null, next = null;
+  terms.forEach(function(term) {
+    if (term.date <= target) current = term;
+    else if (!next) next = term;
+  });
+  return {
+    cur: current ? current.name : '—',
+    next: next ? next.name : '—',
+    days: next ? Math.max(0, Math.ceil((next.date - target) / 86400000)) : 0
+  };
 }
 
 function buildHuangli(y, m, d) {
-  // 日柱用 UTC 精确计算（1900-01-01=甲戌, index=10）
-  var t = new Date(Date.UTC(y, m-1, d, 12, 0, 0));
-  var base = new Date(Date.UTC(1900, 0, 1, 12, 0, 0));
-  var days = Math.round((t - base) / 86400000);
-  var idx = ((10 + days) % 60 + 60) % 60;
-  var dayG = TG[idx % 10], dayZ = DZ[idx % 12];
+  // 与八字排盘共用同一套节气与干支算法，避免两个页面口径不同。
+  var dayPillar = calendar.getDayPillar(y, m, d);
+  var yearPillar = calendar.getYearPillar(y, m, d, 12);
+  var monthPillar = calendar.getMonthPillar(y, m, d, 12, 12);
+  var dayG = dayPillar.gan, dayZ = dayPillar.zhi;
   var gzStr = dayG + dayZ;
-  var yGanIdx = (y-4)%10, yZhiIdx = (y-4)%12;
-  var yGan = TG[yGanIdx], yZhi = DZ[yZhiIdx];
-  var monZhi = DZ[m%12];      // 月支：1丑2寅3卯...12子
-  var monGan = TG[(yGanIdx * 2 + (m%12||12)) % 10];
+  var yGan = yearPillar.gan, yZhi = yearPillar.zhi;
+  var monZhi = monthPillar.zhi, monGan = monthPillar.gan;
   var weekDays = ['日','一','二','三','四','五','六'];
   var wd = '星期' + weekDays[new Date(y,m-1,d).getDay()];
 
   // 建除
-  var dayZhiIdx = idx % 12;  // 日支索引
-  var jcIdx = (dayZhiIdx - (m-1) + 12) % 12;
+  var dayZhiIdx = dayPillar.zhiIndex;
+  var jcIdx = (dayZhiIdx - monthPillar.zhiIndex + 12) % 12;
   var jc = JIANCHU[jcIdx];
   var jcLuck = JIANCHU_LUCK[jc];
-  // 星宿
-  var xiuIdx = (y*7 + d + m) % 28;
-  var xiuName = XIU28[xiuIdx];
-  var xiuFull = xiuName + XIU_ANIMAL[xiuIdx];
-
-  var term = getSolarTerm(m, d);
+  var term = getSolarTerm(y, m, d);
   var chongAnimal = ANIMALS[DZ.indexOf(CHONG[dayZ])];
 
   // 每日方向神煞（基于日干）
@@ -154,11 +149,11 @@ function buildHuangli(y, m, d) {
     term: term,
     nayin: NAYIN[gzStr] || '',
     jianchu: jc + '（' + (jcLuck==='黄'?'黄道':'黑道') + ' · ' + (jcLuck==='黄'?'吉':'凶') + '）',
-    chong: '冲(' + CHONG[dayZ] + ')' + chongAnimal + ' · 煞' + SHA_DIR[CHONG[dayZ]],
+    chong: '冲(' + CHONG[dayZ] + ')' + chongAnimal + ' · 煞' + ({'申':'南','子':'南','辰':'南','寅':'北','午':'北','戌':'北','亥':'西','卯':'西','未':'西','巳':'东','酉':'东','丑':'东'}[dayZ] || ''),
     pengzu: PENGZU_G[dayG] + '；' + PENGZU_Z[dayZ],
-    xiu: xiuFull + ' · ' + XIU_LUCK[xiuName],
-    yi: JD_YI[jc] || [],
-    ji: JD_JI[jc] || [],
+    xiu: '',
+    yi: (JD_YI[jc] || []).filter(function(item) { return (JD_JI[jc] || []).indexOf(item) < 0; }),
+    ji: (JD_JI[jc] || []).filter(function(item) { return (JD_YI[jc] || []).indexOf(item) < 0; }),
     dirGods: dirGods
   };
 }
@@ -173,21 +168,64 @@ module.exports = async function handler(req, res) {
     var body = req.body || {};
     var dayGan = body.dayGan, dayZhi = body.dayZhi;
     var gender = body.gender || 'male', chartLabel = body.label || '';
+    var query = typeof body.params === 'string' ? body.params : '';
     var now = new Date();
     var nY = now.getFullYear(), nM = now.getMonth()+1, nD = now.getDate();
     var todayKey = nY + '-' + nM + '-' + nD;
     var huangli = buildHuangli(nY, nM, nD);
 
+    var chartContext = '';
+    if (query) {
+      try {
+        var chartData = chartFromQuery(query);
+        var bazi = chartData.bazi;
+        gender = chartData.gender;
+        dayGan = bazi.day.gan;
+        dayZhi = bazi.day.zhi;
+        var strength = calculator.calcDayMasterStrength(bazi);
+        var pattern = calculator.getPattern(bazi);
+        var yongJi = calculator.getYongJi(bazi);
+        var branches = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
+        var pillars = [bazi.year, bazi.month, bazi.day, bazi.hour].map(function(p) { return p.gan + p.zhi; }).join(' ');
+        var todayWx = WU_XING[huangli.dayGZ.charAt(0)] || '';
+        var todayRole = yongJi.elementClassification && yongJi.elementClassification[todayWx] || '中性';
+        var LIUHE = {'子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午'};
+        var LIUCHONG = CHONG;
+        var positions = ['年支','月支','夫妻宫','时支'];
+        var events = [];
+        branches.forEach(function(zhi, index) {
+          if (LIUCHONG[huangli.dayGZ.charAt(1)] === zhi) events.push('今日支冲' + positions[index] + zhi);
+          if (LIUHE[huangli.dayGZ.charAt(1)] === zhi) events.push('今日支合' + positions[index] + zhi);
+        });
+        chartContext = [
+          '四柱：' + pillars,
+          '日主：' + dayGan,
+          '旺衰：' + strength.level + '（' + strength.score + '分）',
+          '格局：' + pattern.name + '·' + pattern.status,
+          '用神：' + yongJi.yongShen.join('、'),
+          '喜神：' + yongJi.xiShen.join('、'),
+          '忌神：' + yongJi.jiShen.join('、'),
+          '今日五行：' + todayWx + '，在此命局中属于' + todayRole,
+          '今日与原局的明确关系：' + (events.length ? events.join('；') : '无明显六合或六冲')
+        ].join('\n');
+      } catch (chartError) {
+        console.warn('[fortune] chart context failed:', chartError.message);
+      }
+    }
+
     if (!dayGan) return res.status(200).json({ huangli: huangli, fortune: null });
 
-    var cacheKey = crypto.createHash('md5').update((chartLabel||'') + todayKey).digest('hex');
+    var cacheKey = crypto.createHash('sha256').update((query || chartLabel || (dayGan + dayZhi)) + '|' + todayKey).digest('hex');
     for (var k in _cache) { if (!_cache[k]._date || _cache[k]._date !== todayKey) delete _cache[k]; }
     if (_cache[cacheKey]) return res.status(200).json({ huangli: huangli, fortune: _cache[cacheKey] });
 
     var wx = WU_XING[dayGan] || '';
-    var prompt = `你是"知时"。用户的信息：八字${chartLabel}，日主是${dayGan}（五行属${wx}），日柱地支${dayZhi}。今天是${huangli.dayGZ}日。
+    var prompt = `你是“知时”今日运势的解释员。引擎已给出命盘事实，你不能重新计算或改判。
 
-请用大白话给这位${dayGan}${wx}日主写一段今日运势提醒，像朋友聊天一样亲切，不要用任何专业术语、古文或引用。150字左右，温暖随性，不要半途截断。
+${chartContext || ('保存档案：' + chartLabel + '\n日主：' + dayGan + wx + '\n日支：' + dayZhi)}
+今天：${huangli.dayGZ}日。
+
+请只根据以上事实，用大白话写一段90至140字的今日提醒。必须说清今天更容易出现的具体感受或事情；若没有明确引动，就直说“今天没有特别强的变化信号”，不要硬编吉凶。不要写专业术语、古文、空泛鸡汤或确定性灾祸。
 
 直接返回JSON：{"tip":"写好的那段话"}`;
 
@@ -196,8 +234,10 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], thinking:{type:'disabled'}, max_tokens:800, temperature:0.3 })
     });
     var aiData = await aiResp.json();
+    if (!aiResp.ok) throw new Error('AI error ' + aiResp.status);
     console.log("[fortune] respModel=" + (aiData.model || "?") + " at=" + new Date().toISOString());
     var content = aiData.choices?.[0]?.message?.content || '';
+    if (!content.trim()) throw new Error('AI 返回内容为空');
     // 去除可能的免责声明
     content = content.replace(/以上[^。]*生成[^。]*参考[^。]*[\n。]/g, '').replace(/以上[^。]*由[^。]*生成[^。]*/g, '').replace(/(本文|此内容|以上内容)[^。]*免责[^。]*[。\n]/g, '').replace(/\n*---\n.*$/s, '').replace(/（以上[^）]*）/, '').trim();
     var fortune = {};
