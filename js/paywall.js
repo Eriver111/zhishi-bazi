@@ -85,7 +85,17 @@ function reportSearchParams(params){
 }
 
 var _accountAccessFailed=false;
-function isAccountLoggedIn(){return typeof Auth!=='undefined'&&Auth.isLoggedIn()}
+// 页面首次打开时，auth.js 可能已经读到 token，但 /api/auth/verify 尚未
+// 返回，Auth.isLoggedIn() 会短暂为 false。报告权限由服务端 token 校验，
+// 因此此处只要存在 token 就应发起核验，不能先误判成游客。
+function isAccountLoggedIn(){
+  if(typeof Auth==='undefined')return false;
+  // result.js 的 DOMContentLoaded 监听可能早于 auth.js；init 是幂等的，
+  // 先调用可同步恢复 localStorage 中的 token，再由服务端判定其有效性。
+  if(typeof Auth.init==='function')Auth.init();
+  if(typeof Auth.getToken==='function'&&Auth.getToken())return true;
+  return typeof Auth.isLoggedIn==='function'&&Auth.isLoggedIn();
+}
 function showAccountAccessGate(){
   var wrap=document.getElementById('unifiedReport');
   if(!wrap||document.getElementById('rptAccessGate'))return;

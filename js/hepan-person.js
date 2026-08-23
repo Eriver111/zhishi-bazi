@@ -50,10 +50,19 @@
     if (!calculator || typeof calculator.calculateFromBirthInput !== 'function') {
       throw new Error('个人八字专业计算模块未加载');
     }
+    var hasLocation = !!(params.prov || params.city || params.dist);
     var calculated = calculator.calculateFromBirthInput({
       year: params.year, month: params.month, day: params.day, hour: params.hour,
       clock: params.clock, minute: params.minute, gender: params.gender,
-      location: params.dist || params.city || params.prov || '',
+      // 与个人排盘保持相同的县级经度输入格式。只传区县名称会绕过
+      // CountyLongitudeData，靠近时辰交界时可能排出不同的时柱。
+      location: hasLocation ? {
+        province: params.prov || '',
+        city: params.city || '',
+        district: params.dist || '',
+        allowFallback: true,
+      } : '',
+      dist: params.dist || '',
       city: params.city || '', prov: params.prov || '',
       trueSolarTime: params.trueSolarTime,
       ziHourNextDay: params.ziHourNextDay,

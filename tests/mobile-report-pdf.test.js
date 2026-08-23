@@ -655,9 +655,9 @@ test('desktop export retains the existing new-tab print-to-PDF route', () => {
   assert.deepEqual(calls.open, [{ url: 'blob:desktop-report', target: '_blank' }]);
 });
 
-test('service worker rolls the mobile PDF cache to v14 and precaches all local PDF scripts', () => {
+test('service worker rolls the mobile PDF cache to v15 and precaches all local PDF scripts', () => {
   const source = read('sw.js');
-  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v14'/g) || []).length, 1);
+  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v15'/g) || []).length, 1);
   assert.equal((source.match(/var CACHE_NAME\s*=/g) || []).length, 1);
   for (const asset of [
     '/js/vendor/html2canvas.min.js?v=2',

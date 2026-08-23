@@ -207,6 +207,45 @@ test('purchased account access removes the report paywall before any new order i
   assert.ok(!nodes.rptPaywall || nodes.rptPaywall.removed);
 });
 
+test('saved account token restores a purchased report while user verification is still pending', async () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  let accessCalls = 0;
+  let authInitialized = false;
+  let restoredToken = '';
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    Auth: {
+      init() { authInitialized = true; restoredToken = 'saved-account-token'; },
+      isLoggedIn() { return false; }, // /api/auth/verify 尚未恢复 _user
+      getToken() { return restoredToken; }
+    },
+    fetch: async (url, options) => {
+      assert.match(String(url), /^\/api\/reports\/access\?/);
+      assert.equal(options.headers.Authorization, 'Bearer saved-account-token');
+      accessCalls++;
+      return { ok: true, async json() { return { unlocked: true, paid_at: '2026-08-23T12:00:00.000Z' }; } };
+    },
+    setInterval() { return 1; },
+    clearInterval() {},
+    setTimeout() { return 1; },
+    clearTimeout() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  await context.initPaywall({ year: 2007, month: 2, day: 2, hour: 6, clock: 11, minute: 25, gender: 'male' });
+
+  assert.equal(authInitialized, true);
+  assert.equal(accessCalls, 1);
+  assert.ok(!nodes.rptPaywall || nodes.rptPaywall.removed);
+});
+
 test('lunar result URL keeps calendar identity in the logged-in report access request', async () => {
   const { document } = createPaywallDocument();
   addReportSections(document);
@@ -593,9 +632,9 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v13');
+  assert.equal(openedCache, 'zhishi-v15');
   assert.ok(cachedAssets.includes('/js/payment.js'));
-  assert.ok(cachedAssets.includes('/js/paywall.js?v=7'));
+  assert.ok(cachedAssets.includes('/js/paywall.js?v=8'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js?v=2'));
 });
 

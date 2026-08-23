@@ -9,6 +9,9 @@ const root = path.join(__dirname, '..');
 function loadCalculatorAndHepan() {
   const context = { window: {}, console, Date, Math, setTimeout, clearTimeout, module: { exports: {} }, exports: {} };
   vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'county-longitudes.js'), 'utf8'), context, { filename: 'county-longitudes.js' });
+  context.module = { exports: {} };
+  context.exports = {};
   vm.runInContext(fs.readFileSync(path.join(root, 'js', 'bazi.js'), 'utf8'), context, { filename: 'bazi.js' });
   context.BaZiCalculator = context.window.BaZiCalculator;
   context.calculateBaZi = context.BaZiCalculator.calculate;
@@ -73,6 +76,26 @@ test('Hepan parser retains every timing option used by personal charts', () => {
     year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 10, gender: 'male', cal: 'solar',
     prov: '新疆', city: '喀什市', dist: '喀什市', trueSolarTime: false, ziHourNextDay: true,
   });
+});
+
+test('Hepan and personal charts use the same county longitude at an hour boundary', () => {
+  const { calculator } = loadCalculatorAndHepan();
+  const builder = loadPersonBuilder();
+  const params = {
+    year: 1995, month: 11, day: 17, hour: 5, clock: 9, minute: 10,
+    gender: 'male', cal: 'solar', prov: '湖北省', city: '神农架林区', dist: '神农架林区',
+    trueSolarTime: true, ziHourNextDay: false,
+  };
+  const personal = calculator.calculateFromBirthInput({
+    ...params,
+    location: { province: params.prov, city: params.city, district: params.dist, allowFallback: true },
+  });
+  const hepan = builder.buildPerson('甲方', params, calculator);
+
+  assert.equal(hepan._normalizedBirth.solarInfo.lng, personal.normalized.solarInfo.lng);
+  assert.equal(hepan._normalizedBirth.hour, personal.normalized.hour);
+  assert.deepEqual(pillars(hepan._bazi), pillars(personal.bazi));
+  assert.deepEqual(pillars(hepan._bazi), ['乙亥', '丁亥', '壬子', '甲辰']);
 });
 
 test('Hepan uses the exact personal professional facts for the same chart', () => {
