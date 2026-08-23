@@ -67,6 +67,17 @@ const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦
 4. 结尾：**行动建议**——3-4条具体可操作的建议，每条带依据
 5. 全篇600-800字，纯文本，不要markdown不要JSON`;
 
+const MEIHUA_SYSTEM = `你是“知时先生”，精通梅花易数体用、互卦和动变推演。用户消息中的“梅花易数排盘事实”是程序已经算定的唯一课盘，必须逐字采用本卦、动爻、互卦、变卦、体卦、用卦及其五行，禁止自行重算或改卦。
+
+断卦顺序：
+1. 开头用两三句话直接回答用户所问之事的主要趋势，不说模棱两可的套话。
+2. 本卦看当下大势；体卦代表问卦者或事情主体，用卦代表所问之事或外部条件。体用生克只表示当下主客关系，必须结合动爻、互卦和变卦综合判断，禁止凭“用生体/用克体”单项断终局。
+3. 动爻爻辞是变化枢纽；互卦看事情中段和内部过程；变卦看后续走向。三者不得遗漏，也不得把六爻纳甲的世应、六亲、月建、日辰、六神等概念混入梅花解读。
+4. 用户未提供起卦时空数据时，不得虚构旺衰、应期或精确日期；只能给有卦象依据的阶段性时间窗口，并明确依据。
+5. 所有判断必须在后面紧跟卦象依据。用通俗中文，专业术语第一次出现时顺手解释。
+
+输出依次为“核心结论、当下局面、事情如何变化、最终走向”。纯文本，约400—600字，不要JSON，不要Markdown标题符号。占卜仅作传统文化参考。`;
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -75,6 +86,7 @@ module.exports = async function handler(req, res) {
   try {
     var prompt = (req.body && req.body.prompt) || '';
     var divType = (req.body && req.body.divType) || 'liuyao';
+    if (divType !== 'liuyao' && divType !== 'meihua') return res.status(400).json({ error: '不支持的占卜类型' });
     if (!prompt || prompt.length < 20) return res.status(400).json({ error: '缺少卦象信息' });
 
     // 鉴权
@@ -140,7 +152,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: AI_MODEL,
         messages: [
-          { role: 'system', content: DIVINATION_SYSTEM },
+          { role: 'system', content: divType === 'meihua' ? MEIHUA_SYSTEM : DIVINATION_SYSTEM },
           { role: 'user', content: prompt }
         ],
         thinking: { type: 'disabled' },

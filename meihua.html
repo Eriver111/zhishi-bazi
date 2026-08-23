@@ -81,33 +81,51 @@
 <script src="js/auth.js?v=5"></script>
 <script>
 var TG=['乾','兑','离','震','巽','坎','艮','坤'];
-var TG_ELEM=['天','泽','火','雷','风','水','山','地'];
+var TG_IMAGE=['天','泽','火','雷','风','水','山','地'];
+var TG_WX=['金','金','火','木','木','水','土','土'];
+// 爻象统一按“从上到下”保存；动爻仍按易学惯例从初爻（最下）向上数。
+var TG_LINES={乾:'111',兑:'011',离:'101',震:'001',巽:'110',坎:'010',艮:'100',坤:'000'};
+var LINES_TG={};Object.keys(TG_LINES).forEach(function(k){LINES_TG[TG_LINES[k]]=k;});
 
 function yaoStr(y){ return y.map(function(v){ return v===1?'━━━':'━ ━'; }).join('<br>'); }
 function findGua(name){ return YIJING.find(function(g){ return g.name===name; }); }
 
 function getGua(n1,n2,n3){
   var up=n1%8||8, dn=n2%8||8, mv=n3%6||6;
-  var upBin=(up-1).toString(2).padStart(3,'0');
-  var dnBin=(dn-1).toString(2).padStart(3,'0');
+  var upName=TG[up-1],dnName=TG[dn-1];
+  var upBin=TG_LINES[upName],dnBin=TG_LINES[dnName];
   var origBin=upBin+dnBin;
-  var tri=['乾','兑','离','震','巽','坎','艮','坤'];
-  var gName=tri[up-1]+'为'+tri[dn-1];
-  var found=YIJING.find(function(g){ return g.upper===tri[up-1]&&g.lower===tri[dn-1]; });
+  var gName=upName+'为'+dnName;
+  var found=YIJING.find(function(g){ return g.upper===upName&&g.lower===dnName; });
   if(found) gName=found.name;
   var yao=upBin.split('').map(Number).concat(dnBin.split('').map(Number));
-  var chgBin=origBin.split(''); chgBin[mv-1]=chgBin[mv-1]==='1'?'0':'1'; chgBin=chgBin.join('');
-  var chgFound=YIJING.find(function(g){
-    var bu=(g.upper===tri[parseInt(chgBin.slice(0,3),2)]||tri.indexOf(g.upper)===parseInt(chgBin.slice(0,3),2));
-    var bd=(g.lower===tri[parseInt(chgBin.slice(3,6),2)]||tri.indexOf(g.lower)===parseInt(chgBin.slice(3,6),2));
-    return bu&&bd;
-  });
-  var chgName=chgFound?chgFound.name:(tri[parseInt(chgBin.slice(0,3),2)]+'为'+tri[parseInt(chgBin.slice(3,6),2)]);
+  var chgBin=origBin.split('');var movingIndex=6-mv;chgBin[movingIndex]=chgBin[movingIndex]==='1'?'0':'1';chgBin=chgBin.join('');
+  var chgUp=LINES_TG[chgBin.slice(0,3)],chgDn=LINES_TG[chgBin.slice(3,6)];
+  var chgFound=YIJING.find(function(g){return g.upper===chgUp&&g.lower===chgDn;});
+  var chgName=chgFound?chgFound.name:(chgUp+'为'+chgDn);
+  // 互卦：二三四爻为下互，三四五爻为上互。
+  var bottomUp=origBin.split('').reverse();
+  var mutualDn=LINES_TG[[bottomUp[3],bottomUp[2],bottomUp[1]].join('')];
+  var mutualUp=LINES_TG[[bottomUp[4],bottomUp[3],bottomUp[2]].join('')];
+  var mutualFound=YIJING.find(function(g){return g.upper===mutualUp&&g.lower===mutualDn;});
+  var mutualName=mutualFound?mutualFound.name:(mutualUp+'为'+mutualDn);
+  var bodyName=mv<=3?upName:dnName,useName=mv<=3?dnName:upName;
   return {
-    orig:{name:gName,yao:yao,up:tri[up-1],dn:tri[dn-1],upElem:TG_ELEM[up-1],dnElem:TG_ELEM[dn-1]},
-    change:{name:chgName,yao:chgBin.split('').map(Number)},
+    orig:{name:gName,yao:yao,up:upName,dn:dnName,upImage:TG_IMAGE[up-1],dnImage:TG_IMAGE[dn-1],upWX:TG_WX[up-1],dnWX:TG_WX[dn-1]},
+    mutual:{name:mutualName,up:mutualUp,dn:mutualDn},
+    change:{name:chgName,yao:chgBin.split('').map(Number),up:chgUp,dn:chgDn},
+    body:{name:bodyName,wx:TG_WX[TG.indexOf(bodyName)]},use:{name:useName,wx:TG_WX[TG.indexOf(useName)]},
     moving:mv,line:mv
   };
+}
+
+function tiYongRelation(g){
+  var t=g.body.wx,u=g.use.wx,sheng={木:'火',火:'土',土:'金',金:'水',水:'木'},ke={木:'土',土:'水',水:'火',火:'金',金:'木'};
+  if(t===u)return'体用比和';
+  if(sheng[u]===t)return'用生体';
+  if(sheng[t]===u)return'体生用';
+  if(ke[t]===u)return'体克用';
+  return'用克体';
 }
 
 function randomGua(){
@@ -143,7 +161,7 @@ function doGua(){
   res._g=g; res._anchor=anchor; res._origDB=origDB;
   showGuaReveal(g.orig.name,g.orig.yao,function(){
   res.innerHTML=
-    '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
+    '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upImage+'／'+g.orig.upWX+'）下'+g.orig.dn+'（'+g.orig.dnImage+'／'+g.orig.dnWX+'）</div><div class="gua-desc">体卦 '+g.body.name+'（'+g.body.wx+'） · 用卦 '+g.use.name+'（'+g.use.wx+'） · '+tiYongRelation(g)+'<br>互卦「'+g.mutual.name+'」</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
     '<button class="btn-submit" onclick="window.unlockReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
@@ -157,9 +175,9 @@ window.unlockReading=function(){
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()){ if(typeof Auth!=='undefined')Auth.showModal('login'); else alert('请先登录'); return; }
   res.innerHTML='<div class="loading"><div class="spinner"></div><p>正在AI解读...</p></div>';
   var qStr=question?'用户问："'+question+'"。':'';
-  var prompt='你是"知时先生"，精通易经。'+qStr+'请基于以下经典原文，做一次完整的专业解卦。\n\n上卦'+g.orig.up+'('+g.orig.upElem+')下卦'+g.orig.dn+'('+g.orig.dnElem+')，本卦「'+g.orig.name+'」，第'+g.line+'爻动，变卦「'+g.change.name+'」。\n\n参考原文：'+anchor+'\n\n请按以下结构写300字左右的解读：\n1. 卦象分析：本卦的含义和整体态势\n2. 动爻解读：这一爻动意味着什么关键变化\n3. 变卦启示：变卦给这件事带来什么转机\n4. 综合建议：结合用户问题给出具体建议\n\n语气专业但不玄乎，让人感觉有深度又听得懂。返回JSON：{"analysis":"1.","yao_reading":"2.","change_insight":"3.","advice":"4."}';
+  var prompt='【梅花易数排盘事实】'+qStr+'上卦'+g.orig.up+'（'+g.orig.upWX+'）下卦'+g.orig.dn+'（'+g.orig.dnWX+'），本卦「'+g.orig.name+'」，第'+g.line+'爻动，互卦「'+g.mutual.name+'」，变卦「'+g.change.name+'」。体卦为'+g.body.name+'（'+g.body.wx+'），用卦为'+g.use.name+'（'+g.use.wx+'），体用关系为「'+tiYongRelation(g)+'」。\n\n经典原文：'+anchor+'\n\n请严格按上述事实解读，不得自行改卦。';
   var token=null,code='';try{token=localStorage.getItem('ai_auth_token');code=localStorage.getItem('ai_auth_code')||'';}catch(e){}
-  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({prompt:prompt,code:code})})
+  fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({prompt:prompt,code:code,divType:'meihua'})})
   .then(function(r){return r.json();}).then(function(d){
     if(d.error){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:#e07050;margin-top:12px">'+d.error+'</div></div>';return;}
     var r=d.reading||'';

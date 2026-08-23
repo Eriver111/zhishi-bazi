@@ -14,13 +14,23 @@ module.exports = async function handler(req, res) {
     var y = parseInt(b.year), m = parseInt(b.month), d = parseInt(b.day);
     var h = parseInt(b.hour) || 0, min = parseInt(b.minute) || 0;
 
-    if (!y || !m || !d) {
-      return res.status(400).json({ error: '请提供完整的出生日期' });
+    var validDate = Number.isInteger(y) && Number.isInteger(m) && Number.isInteger(d) &&
+      Number.isInteger(h) && Number.isInteger(min) && y >= 1900 && y <= 2100 &&
+      m >= 1 && m <= 12 && d >= 1 && d <= 31 && h >= 0 && h <= 23 && min >= 0 && min <= 59;
+    var calendarCheck = validDate ? new Date(Date.UTC(y, m - 1, d)) : null;
+    validDate = validDate && calendarCheck.getUTCFullYear() === y && calendarCheck.getUTCMonth() === m - 1 && calendarCheck.getUTCDate() === d;
+    if (!validDate) {
+      return res.status(400).json({ error: '请提供有效的起课日期与时间' });
     }
 
     // 动态导入 ESM 模块
     var liuren = await import('liuren-ts-lib');
-    var result = liuren.getLiuRenByDate(new Date(y, m - 1, d, h, min));
+    // Date 的本地字段保持用户输入的中国民用时间；算法读取的是年月日时字段，而不是 UTC 时间戳。
+    var result = liuren.getLiuRenByDate(new Date(y, m - 1, d, h, min, 0, 0));
+
+    if (!result || !result.dateInfo || !result.tianDiPan || !result.siKe || !result.sanChuan) {
+      throw new Error('排盘库返回的数据不完整');
+    }
 
     // 拼音→汉字映射（liuren-ts-lib 返回拼音 key）
     var PY2CN={zi:'子',chou:'丑',yin:'寅',mao:'卯',chen:'辰',si:'巳',wu:'午',wei:'未',shen:'申',you:'酉',xu:'戌',hai:'亥'};

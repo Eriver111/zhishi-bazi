@@ -105,6 +105,7 @@ var ZHI=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"
 var ZHI_WX={子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
 var WX_SK={木:'土',土:'水',水:'火',火:'金',金:'木'};
 var KETI_MEANING={"元首":"一上克下，事由外起，以上制下。主事有头绪。","重审":"一下贼上，事需反复审核。暗藏逆袭之机。","知一":"多克取一，取与日比者为用。事需挑明主线。","涉害":"同阴阳多克，取涉害最深者。盘根错节。","遥克":"无上下克，取遥克为用。事出意料之外。","昴星":"四课无克，虎视眈眈。事有隐伏之机。","别责":"四课不全，需另辟蹊径，借力而行。","八专":"干支同位，事态胶着，需打破僵局。","伏吟":"天地盘同，宜守不宜攻，等待时机。","返吟":"天地盘冲，反复变动，需随机应变。"};
+function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 function getSiKeRel(gz1,gz2){if(!gz1||!gz2)return'—';var w1=ZHI_WX[gz1[0]]||'',w2=ZHI_WX[gz2[0]]||'';if(w1===w2)return'<span style="color:#c9a84c">⇌ 比</span>';if(WX_SK[w2]===w1)return'<span style="color:#F44336;font-weight:700">↡ 克</span>';if(WX_SK[w1]===w2)return'<span style="color:#FF9800;font-weight:700">↥ 贼</span>';return'<span style="color:#4CAF50">↑ 生</span>';}
 
@@ -119,11 +120,10 @@ function findPatterns(d){
     var hasZe=false,hasKe=false;
     var kk=[d.siKe.ke1||[],d.siKe.ke2||[],d.siKe.ke3||[],d.siKe.ke4||[]];
     kk.forEach(function(kv){var gz=kv[0]||'';if(gz.length>=2){var w1=ZHI_WX[gz[0]]||'',w2=ZHI_WX[gz[1]]||{甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[gz[1]]||'';if(w1&&w2&&WX_SK[w2]===w1)hasZe=true;if(w1&&w2&&WX_SK[w1]===w2)hasKe=true;}});
-    var prefix=hasZe?'贼克·':hasKe?'克·':'';
     var desc='';
     if(hasZe)desc='下贼上，事起于内、外应当谨。';
     else if(hasKe)desc='上克下，事由外起，以上制下。';
-    pats.push({name:prefix+keti,desc:(desc||'')+(chuan.length===3?'三传：'+chuan.join('/'):''),score:0});
+    pats.push({name:keti+'课',desc:(desc||'')+(chuan.length===3?'三传：'+chuan.join('/'):'')+'。课体只定结构，不单独判吉凶。',score:0});
   }
 
   // 2. 三传值空（单传即报）
@@ -132,7 +132,7 @@ function findPatterns(d){
   chuan.forEach(function(z,i){if(z&&di.kong&&di.kong.indexOf(z)>=0)kongParts.push(cNames[i]+z);});
   if(kongParts.length){
     var isAll=kongParts.length===3;
-    pats.push({name:'三传值空',desc:kongParts.join('、')+'落旬空。空者事难落实，形多于实'+(isAll?'，三传俱空事必无成。':'。'),score:isAll?-2:-1,detail:kongParts.join('/')});
+    pats.push({name:'三传值空',desc:kongParts.join('、')+'落旬空。当下容易只有声势、尚未落实'+(isAll?'；后续仍须结合冲空、填实和天将再判断。':'。'),score:-1,detail:kongParts.join('/')});
   }
 
   // 3. 特殊格局
@@ -141,8 +141,8 @@ function findPatterns(d){
 
   if(chuan.length===3){
     var idxs=chuan.map(function(z){return ZHI.indexOf(z);});
-    if(idxs[0]===4&&idxs[1]===2&&idxs[2]===0)pats.push({name:'轩盖格',desc:'三传午卯子，主升迁远行。占前程大利。',score:1});
-    if(idxs[0]===5&&idxs[1]===10&&idxs[2]===3)pats.push({name:'铸印格',desc:'三传巳戌卯，主功名印信。考试求职大利。',score:1});
+    if(idxs[0]===6&&idxs[1]===3&&idxs[2]===0)pats.push({name:'午卯子 · 轩盖候选',desc:'三传为午、卯、子，具有车马、出行和职位变化之象；能否按轩盖取吉，还要结合占类、月份、天将、空亡及年命。',score:0});
+    if(idxs[0]===5&&idxs[1]===10&&idxs[2]===3)pats.push({name:'巳戌卯 · 铸印候选',desc:'三传为巳、戌、卯，具有印信、职位和变动之象；是否成吉格仍须结合旺相、吉将、空破及所占之事。',score:0});
     if(idxs[1]===(idxs[0]+1)%12&&idxs[2]===(idxs[1]+1)%12)pats.push({name:'进连茹',desc:'三传顺连，事态向前推进，宜顺势而为。',score:1,detail:'三传：'+chuan.join('/')});
     if(idxs[1]===(idxs[0]+11)%12&&idxs[2]===(idxs[1]+11)%12)pats.push({name:'退连茹',desc:'三传退连，事呈节节回退，宜守不宜进。',score:-1,detail:'三传：'+chuan.join('/')});
   }
@@ -162,7 +162,7 @@ async function doLiuRen(){
   out.innerHTML='<div style="text-align:center;padding:40px;color:var(--tx3)">月将加时，天地盘转…</div>';
   try{
     var resp=await fetch('/api/liuren',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:y,month:m,day:d2,hour:h,minute:min})});
-    if(!resp.ok){out.innerHTML='<div class="card"><div class="card-title">起课失败</div><p style="text-align:center;color:var(--tx3)">HTTP '+resp.status+'</p></div>';btn.disabled=false;btn.textContent='重 新 起 课';return;}
+    if(!resp.ok){var er={};try{er=await resp.json();}catch(_e){}out.innerHTML='<div class="card"><div class="card-title">起课失败</div><p style="text-align:center;color:var(--tx3)">'+esc(er.error||('服务返回 '+resp.status))+'</p></div>';btn.disabled=false;btn.textContent='重 新 起 课';return;}
     var d=await resp.json();
     if(d.error){out.innerHTML='<div class="card"><div class="card-title">起课失败</div><p style="text-align:center;color:var(--tx3)">'+d.error+'</p></div>';btn.disabled=false;btn.textContent='重 新 起 课';return;}
     renderFull(d,y,m,d2,h,min,question,direction);
@@ -172,8 +172,8 @@ async function doLiuRen(){
 
 function renderFull(d,y,m,d2,h,min,question,direction){
   var sc=d.sanChuan||{},di=d.dateInfo||{},pats=findPatterns(d),hh='';
-  hh+='<div style="text-align:center;font-size:12px;color:var(--tx3);margin-bottom:4px;line-height:2">'+di.date+' | 月将：<b>'+di.yuejiang+'</b> | 空亡：<b>'+di.kong.join('、')+'</b> | 驿马：<b>'+di.yima+'</b>';
-  if(direction||question)hh+='<br>参断：'+(direction?'<b style="color:var(--gold-l)">「'+direction+'」</b> ':'')+(question?'<b style="color:var(--gold-l)">'+question.replace(/</g,'&lt;')+'</b>':'');
+  hh+='<div style="text-align:center;font-size:12px;color:var(--tx3);margin-bottom:4px;line-height:2">'+esc(di.date)+' | 月将：<b>'+esc(di.yuejiang)+'</b> | 空亡：<b>'+esc((di.kong||[]).join('、'))+'</b> | 驿马：<b>'+esc(di.yima)+'</b>';
+  if(direction||question)hh+='<br>参断：'+(direction?'<b style="color:var(--gold-l)">「'+esc(direction)+'」</b> ':'')+(question?'<b style="color:var(--gold-l)">'+esc(question)+'</b>':'');
   hh+='</div>';
 
   // 1. 课体题眼
@@ -234,13 +234,14 @@ var GOD_SHORT={贵人:'貴',腾蛇:'蛇',朱雀:'雀',六合:'合',勾陈:'勾',
   // 7. 神煞落位（仅关键位置）
   hh+='<div class="card"><div class="card-title">神 煞 落 位</div><div style="font-size:10px;color:var(--tx3);text-align:center;margin-bottom:12px">仅列落在三传 / 四课上神 / 干支寄宫的</div>';
   var keySet=new Set();cg.forEach(function(z){keySet.add(z);});kk.forEach(function(kv){if(kv[0])keySet.add(kv[0][0]);});var bz=di.bazi.split(' ');if(bz[2]){keySet.add(bz[2][1]);}
-  var shown=0;(d.shenSha||[]).forEach(function(ss){if(!ss.value||!keySet.has(ss.value))return;shown++;var tag='中',tc='#c9a84c';if(['天乙贵人','天德','月德','禄神','天医','文昌','天喜','龙德'].indexOf(ss.name)>=0){tag='吉';tc='#4CAF50';}if(['孤辰','寡宿','白虎','丧门','吊客','劫煞','大耗','岁破','病符'].indexOf(ss.name)>=0){tag='凶';tc='#F44336';}hh+='<div style="margin-bottom:6px;padding:8px 12px;background:rgba(28,26,22,.4);border-radius:8px;font-size:12px"><span style="display:inline-block;padding:1px 6px;font-size:9px;border-radius:6px;margin-right:8px;font-weight:600;color:'+tc+';background:rgba('+(tag==='吉'?'76,175,80':tag==='凶'?'244,67,54':'201,168,76')+',.12)">'+tag+'</span><b style="color:var(--gold-l)">'+ss.name+'</b><span style="color:var(--gold)"> 落 '+ss.value+'</span><div style="font-size:10px;color:var(--tx3);margin-top:2px">'+(ss.description||'')+'</div></div>';});
-  if(!shown)hh+='<p style="text-align:center;color:var(--tx3)">关键位置未匹配到神煞</p>';
+  var ssItems=[];(d.shenSha||[]).forEach(function(ss){if(!ss.value||!keySet.has(ss.value))return;var tag='中',tc='#c9a84c';if(['天乙贵人','天德','月德','禄神','天医','文昌','天喜','龙德'].indexOf(ss.name)>=0){tag='吉';tc='#4CAF50';}if(['孤辰','寡宿','白虎','丧门','吊客','劫煞','大耗','岁破','病符'].indexOf(ss.name)>=0){tag='凶';tc='#F44336';}ssItems.push('<div style="margin-bottom:6px;padding:8px 12px;background:rgba(28,26,22,.4);border-radius:8px;font-size:12px"><span style="display:inline-block;padding:1px 6px;font-size:9px;border-radius:6px;margin-right:8px;font-weight:600;color:'+tc+';background:rgba('+(tag==='吉'?'76,175,80':tag==='凶'?'244,67,54':'201,168,76')+',.12)">'+tag+'</span><b style="color:var(--gold-l)">'+esc(ss.name)+'</b><span style="color:var(--gold)"> 落 '+esc(ss.value)+'</span><div style="font-size:10px;color:var(--tx3);margin-top:2px">'+esc(ss.description||'')+'</div></div>');});
+  if(!ssItems.length)hh+='<p style="text-align:center;color:var(--tx3)">关键位置未匹配到神煞</p>';
+  else{hh+=ssItems.slice(0,8).join('');if(ssItems.length>8){hh+='<div id="lrMoreShenSha" style="display:none">'+ssItems.slice(8).join('')+'</div><button type="button" onclick="toggleLrShenSha(this)" style="display:block;margin:10px auto 0;padding:7px 18px;border:1px solid var(--bd2);border-radius:18px;background:transparent;color:var(--tx2);font-family:inherit">展开其余 '+(ssItems.length-8)+' 条</button>';}}
   hh+='</div>';
 
   // 8. 课盘速读
   var cz=ck.map(function(k){return(sc[k]||[])[0]||'';}),cq=ck.map(function(k){return(sc[k]||[])[2]||'';});
-  var kongChuan=[];if(di.kong.indexOf(cz[1])>=0)kongChuan.push('中传'+cz[1]);if(di.kong.indexOf(cz[2])>=0)kongChuan.push('末传'+cz[2]);
+  var kongChuan=[];cz.forEach(function(z,i){if((di.kong||[]).indexOf(z)>=0)kongChuan.push(['初传','中传','末传'][i]+z);});
   hh+='<div class="card"><div class="card-title">课 盘 速 读</div>';
   hh+='<div style="font-size:15px;font-weight:700;color:var(--gold-l);text-align:center;margin-bottom:16px;letter-spacing:2px">'+(kongChuan.length?'三传逢空 · 所谋之事尚难落实':'三传有气 · 事有可成之机')+'</div>';
   hh+='<div style="margin-bottom:14px"><div style="font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:4px">大 局 基 调</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">本课取传为<b style="color:var(--gold-l)">「'+(sc.keTi||'')+'」</b>。三传走势：初传<b>'+cz[0]+'</b>（'+cq[0]+'）&rarr; 中传<b>'+cz[1]+'</b>（'+cq[1]+'）&rarr; 末传<b>'+cz[2]+'</b>（'+cq[2]+'）。</p></div>';
@@ -257,9 +258,10 @@ var GOD_SHORT={贵人:'貴',腾蛇:'蛇',朱雀:'雀',六合:'合',勾陈:'勾',
   hh+='</div>';
 
   document.getElementById("lrOutput").innerHTML=hh;
-  localStorage.setItem('ai_liuren_data',JSON.stringify({type:'liuren',question:question,direction:direction,dateInfo:d.dateInfo,tianDiPan:d.tianDiPan,siKe:d.siKe,sanChuan:d.sanChuan,dunGan:d.dunGan,shenSha:d.shenSha}));
+  localStorage.setItem('ai_liuren_data',JSON.stringify({type:'liuren',question:question,direction:direction,dateInfo:d.dateInfo,tianDiPan:d.tianDiPan,siKe:d.siKe,sanChuan:d.sanChuan,dunGan:d.dunGan,shenSha:d.shenSha,yinYangGuiRen:d.yinYangGuiRen,derivedPatterns:pats}));
   setTimeout(function(){document.getElementById("lrOutput").scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
+function toggleLrShenSha(btn){var box=document.getElementById('lrMoreShenSha');if(!box)return;var open=box.style.display!=='none';box.style.display=open?'none':'block';btn.textContent=open?'展开其余神煞':'收起神煞';}
 </script>
 <script src="js/auth.js"></script>
 </body></html>

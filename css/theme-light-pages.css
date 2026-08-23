@@ -32,8 +32,5 @@
 .msg.user .avatar { background: #efe0d6 !important; color: #84362f !important; }
 .msg.ai .bubble strong { color: #84362f !important; }
 .page .empty-state { color: #655b51 !important; }
-.share-bar button { background: linear-gradient(135deg, #365d50, #27483e) !important; color: #fff !important; }
-.share-bar .hint a { color: #84362f !important; }
-.redeem-row input,
 .input-row textarea { color: #2d261f !important; background: #fffaf0 !important; border-color: rgba(72,52,31,.16) !important; }
-.redeem-row input::placeholder { color: var(--tx3); opacity: 1; }
+.quota-bar a { color: #84362f !important; }

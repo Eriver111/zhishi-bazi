@@ -6,6 +6,23 @@ try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.f
 try{const e=fs.readFileSync(path.join(__dirname,'.env.local'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0){const k=t.slice(0,i).trim();process.env[k]=t.slice(i+1).trim()}}})}catch(_){}
 const DEPLOY_SECRET=process.env.DEPLOY_SECRET||'zhishi-deploy-2026';
 
+// 大六壬是按需加载的运行依赖。旧版自动部署只 git pull，不安装新增依赖，
+// 会导致页面正常打开但起课接口持续 500。缺失时只补装依赖，不改环境变量或业务数据。
+function ensureRuntimeDependencies(dir){
+  try{
+    execSync('node -e "import(\'liuren-ts-lib\')"',{cwd:dir,timeout:10000,stdio:'ignore'});
+    return true;
+  }catch(_){
+    try{
+      console.log('[deps] 检测到运行依赖缺失，正在补齐…');
+      execSync('npm install --omit=dev --no-audit --no-fund 2>&1',{cwd:dir,timeout:120000,stdio:'pipe'});
+      console.log('[deps] 运行依赖已补齐');
+      return true;
+    }catch(e){console.error('[deps] 安装失败: '+e.message);return false;}
+  }
+}
+setTimeout(function(){ensureRuntimeDependencies(__dirname);},2000).unref();
+
 // Fatal errors are intentionally left to Node/PM2: Node prints the stack and
 // exits, then PM2 starts a clean process instead of keeping corrupted state.
 // Periodic memory telemetry makes gradual growth visible without log spam.
@@ -26,6 +43,7 @@ function autoPull(){
       console.log('[autoPull] 检测到更新 '+local.slice(0,7)+' �?'+remote.slice(0,7));
       var out=execSync('git pull origin main 2>&1',{cwd:dir,timeout:30000}).toString();
       console.log('[autoPull] git pull: '+out.trim());
+      ensureRuntimeDependencies(dir);
       _lastPull=Date.now();
       // 通知 pm2 重启
       try{ execSync('pm2 restart zhishi 2>&1',{cwd:dir,timeout:5000}); }catch(e){}

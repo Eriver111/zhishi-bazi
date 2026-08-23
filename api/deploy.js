@@ -6,6 +6,21 @@
 const execSync = require('child_process').execSync;
 const DEPLOY_SECRET = process.env.DEPLOY_SECRET || 'zhishi-deploy-2026';
 
+function ensureRuntimeDependencies(dir) {
+  try {
+    execSync('node -e "import(\'liuren-ts-lib\')"', { cwd: dir, timeout: 10000, stdio: 'ignore' });
+    return true;
+  } catch (_) {
+    try {
+      execSync('npm install --omit=dev --no-audit --no-fund 2>&1', { cwd: dir, timeout: 120000, stdio: 'pipe' });
+      return true;
+    } catch (e) {
+      console.error('[deploy] dependency install failed: ' + e.message);
+      return false;
+    }
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -41,6 +56,7 @@ module.exports = async function handler(req, res) {
     // pulled modules are loaded exactly once by a clean PM2 worker.
     if (changed) {
       setTimeout(function () {
+        ensureRuntimeDependencies(dir);
         try { execSync('pm2 restart zhishi 2>&1', { cwd: dir, timeout: 5000 }); } catch (_) {}
       }, 250).unref();
     }

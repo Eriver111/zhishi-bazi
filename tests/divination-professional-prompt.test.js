@@ -79,3 +79,33 @@ test('divination system prompt treats the computed chart as authoritative and us
     if (previous.endpoint) require.cache[endpointPath] = previous.endpoint; else delete require.cache[endpointPath];
   }
 });
+
+test('Meihua requests use isolated body-use and mutual-hexagram rules', async () => {
+  const previous = { fetch: global.fetch, auth: require.cache[authPath], supabase: require.cache[supabasePath], endpoint: require.cache[endpointPath] };
+  let upstream;
+  try {
+    require.cache[authPath] = { id: authPath, filename: authPath, loaded: true, exports: { requireAuth: () => ({ uid: 'meihua-user' }) } };
+    const asyncNull = async () => null;
+    require.cache[supabasePath] = { id: supabasePath, filename: supabasePath, loaded: true, exports: {
+      deductCredit: asyncNull, deductCreditByUser: asyncNull, getUserCredits: async () => 1,
+      isMonthlyActive: asyncNull, isMonthlyActiveByUserId: async () => ({ expires_at: '2099-01-01' }),
+      saveUserChatHistory: asyncNull, trackFreeUsageByUser: async () => ({ used: 0 }), bumpFreeUsageByUser: asyncNull
+    } };
+    global.fetch = async (_url, options) => { upstream = JSON.parse(options.body); return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: '这是一段足够长的梅花易数测试解读内容。' } }] }), text: async () => '' }; };
+    delete require.cache[endpointPath];
+    const handler = require(endpointPath);
+    const res = responseRecorder();
+    await handler({ method: 'POST', body: { prompt: '【梅花易数排盘事实】本卦乾为天，初爻动，互卦乾为天，变卦天风姤，体用比和。', divType: 'meihua' }, headers: {} }, res);
+    assert.equal(res.statusCode, 200);
+    const system = upstream.messages[0].content;
+    assert.match(system, /体卦、用卦/);
+    assert.match(system, /互卦看事情中段/);
+    assert.match(system, /不得.*世应、六亲、月建、日辰、六神/);
+    assert.doesNotMatch(system, /妻财爻就是你的钱/);
+  } finally {
+    global.fetch = previous.fetch;
+    if (previous.auth) require.cache[authPath] = previous.auth; else delete require.cache[authPath];
+    if (previous.supabase) require.cache[supabasePath] = previous.supabase; else delete require.cache[supabasePath];
+    if (previous.endpoint) require.cache[endpointPath] = previous.endpoint; else delete require.cache[endpointPath];
+  }
+});

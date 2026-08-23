@@ -78,6 +78,55 @@
     });
   }
 
+  function huangliHtml(h) {
+    if (!h) return '';
+    var html = '<div class="fortune-card"><div class="section-label">公共黄历 · 建除民俗参考</div>';
+    html += '<div style="font-size:11px;color:var(--tx3);text-align:center;margin-bottom:8px">' + esc(h.date) + '</div>';
+    html += '<div style="text-align:center;margin-bottom:12px"><span style="font-size:28px;font-weight:800;color:var(--gold-l);letter-spacing:4px">' + esc(h.dayGZ) + '日</span></div>';
+    html += '<div style="text-align:center;font-size:11px;color:var(--tx2);margin-bottom:10px;letter-spacing:1px"><span>' + esc(h.yearGZ) + '</span><span style="color:var(--tx3);margin:0 6px">|</span><span>' + esc(h.monthGZ) + '</span></div>';
+    html += '<div style="font-size:12px;color:var(--tx2);line-height:2"><div><span style="color:var(--tx3)">节气</span> ' + esc(h.term.cur) + ' → ' + esc(h.term.next) + '（' + esc(h.term.days) + '天）</div>';
+    html += '<div><span style="color:var(--tx3)">纳音</span> ' + esc(h.nayin) + '</div><div><span style="color:var(--tx3)">建除</span> ' + esc(h.jianchu) + '</div><div><span style="color:var(--tx3)">冲煞</span> ' + esc(h.chong) + '</div>';
+    html += '<div style="font-size:10px;color:var(--tx3);margin-top:4px">' + esc(h.pengzu) + '</div></div>';
+    if (h.dirGods) {
+      html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">';
+      [['喜神','xishen'],['财神','caishen'],['福神','fushen'],['阳贵','yanggui'],['阴贵','yingui']].forEach(function(row){
+        var value=h.dirGods[row[1]]; if(value)html+='<span style="font-size:10px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);border-radius:6px;padding:2px 8px;color:var(--tx2)">'+row[0]+' '+esc(value)+'</span>';
+      });
+      html += '</div>';
+    }
+    html += '<div style="display:flex;gap:12px;margin-top:12px"><div style="flex:1;background:rgba(100,180,120,.04);border:1px solid rgba(100,180,120,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#56866c;letter-spacing:2px;margin-bottom:4px">宜</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.yi.length ? h.yi.map(esc).join('、') : '—') + '</div></div>';
+    html += '<div style="flex:1;background:rgba(200,100,100,.04);border:1px solid rgba(200,100,100,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#9a4c45;letter-spacing:2px;margin-bottom:4px">忌</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.ji.length ? h.ji.map(esc).join('、') : '—') + '</div></div></div>';
+    html += '<div style="font-size:10px;color:var(--tx3);line-height:1.7;margin-top:10px">黄历宜忌属于传统民俗择日参考，不等同于个人命盘结论。</div></div>';
+    return html;
+  }
+
+  function personalHtml(f) {
+    if (!f || !f.tip) return '';
+    var tone = (f.tendency === '偏顺' || f.tendency === '有利变化') ? '#486f61' : (f.tendency === '偏紧' || f.tendency === '需要留意') ? '#8d3c35' : '#8a6b2d';
+    var html = '<div class="fortune-card"><div class="section-label">专属今日推演</div>';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px"><strong style="font-size:19px;color:var(--tx)">' + esc(f.headline || '今日提醒') + '</strong><span style="font-size:11px;color:'+tone+';border:1px solid currentColor;border-radius:999px;padding:2px 9px">' + esc(f.tendency || '平稳') + '</span></div>';
+    if (Array.isArray(f.focus) && f.focus.length) html += '<div style="font-size:12px;color:var(--tx2);margin-bottom:14px">今天最容易被带动：' + f.focus.map(esc).join('、') + '</div>';
+    if (Array.isArray(f.basis) && f.basis.length) {
+      html += '<div style="background:rgba(132,54,47,.035);border-left:2px solid rgba(132,54,47,.38);padding:10px 12px;margin-bottom:14px"><div style="font-size:10px;color:var(--tx3);letter-spacing:2px;margin-bottom:5px">推演依据</div>';
+      f.basis.forEach(function(line){html += '<div style="font-size:11px;color:var(--tx2);line-height:1.75">' + esc(line) + '</div>';});
+      html += '</div>';
+    }
+    html += '<div class="overview">' + esc(f.tip) + '</div><div style="font-size:10px;color:var(--tx3);line-height:1.7;margin-top:12px">命理推演用于观察当天更容易出现的倾向，不代表现实事件必然发生。</div></div>';
+    return html;
+  }
+
+  function publicPrompt(message, actionHtml) {
+    return '<div class="fortune-card" style="text-align:center"><div class="section-label">专属今日推演</div><p style="font-size:13px;color:var(--tx2);line-height:1.8">' + esc(message) + '</p>' + (actionHtml || '') + '</div>';
+  }
+
+  function loadPublicHuangli(extraHtml) {
+    content.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:16px">正在读取今日黄历...</p></div>';
+    return fetch('/api/fortune',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(function(r){if(!r.ok)throw new Error('请求失败');return r.json();})
+      .then(function(d){if(d.huangli)todayDate.textContent=d.huangli.date;content.innerHTML=huangliHtml(d.huangli)+(extraHtml||'');})
+      .catch(function(){content.innerHTML='<div class="empty"><p>今日黄历暂时未能载入，请稍后重试</p></div>';});
+  }
+
   // 日柱计算：1900-01-01=甲戌日，用UTC消除时区影响
   var TG=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
   var DZ=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -95,14 +144,14 @@
     if (typeof Auth === 'undefined') return setTimeout(render, 300);
     Auth.ready(function() {
       if (!Auth.isLoggedIn()) {
-        content.innerHTML = '<div class="empty"><div class="icon">🔐</div><p>登录后可查看专属今日运势</p><button class="btn" onclick="Auth.showModal(\'login\')" style="padding:12px 32px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none;margin-top:16px">登录</button></div>';
+        loadPublicHuangli(publicPrompt('登录并保存命盘后，可以查看结合大运、流年、流月和流日的专属推演。','<button class="btn" onclick="Auth.showModal(\'login\')" style="padding:10px 26px;border-radius:22px;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:#84362f;color:#fff;border:none;margin-top:14px">登录查看</button>'));
         return;
       }
       Auth.getData('saved_charts').then(function(val) {
         var charts = [];
         try { charts = JSON.parse(val || '[]'); } catch(e) {}
         if (charts.length === 0) {
-          content.innerHTML = '<div class="empty"><div class="icon">📋</div><p>还没有保存的排盘</p><p style="font-size:11px;color:var(--tx3)">去排盘页面生成你的命盘，即可查看今日运势</p><a href="/paipan" style="display:inline-block;margin-top:12px;padding:10px 28px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border-radius:25px;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:2px">去排盘</a></div>';
+          loadPublicHuangli(publicPrompt('你还没有保存的八字命盘。完成排盘并保存后，这里会显示专属今日推演。','<a href="/paipan" style="display:inline-block;margin-top:12px;padding:10px 26px;background:#84362f;color:#fff;border-radius:22px;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:2px">去排盘</a>'));
           return;
         }
         chartSelect.style.display = '';
@@ -146,31 +195,8 @@
       }).then(function(r){ clearTimeout(timeout); if(!r.ok) throw new Error('请求失败'); return r.json(); })
       .then(function(d){
         if (d.error) { content.innerHTML = '<div class="empty"><p>'+esc(d.error)+'</p></div>'; return; }
-        var h = d.huangli, f = d.fortune;
-        var html = '';
-        html += '<div class="fortune-card"><div class="section-label">' + h.date + '</div>';
-        html += '<div style="text-align:center;margin-bottom:12px"><span style="font-size:28px;font-weight:900;color:var(--gold-l);letter-spacing:4px">' + h.dayGZ + '日</span></div>';
-        html += '<div style="text-align:center;font-size:11px;color:var(--tx2);margin-bottom:10px;letter-spacing:1px">';
-        html += '<span>' + h.yearGZ + '</span>';
-        html += '<span style="color:var(--tx3);margin:0 6px">|</span>';
-        html += '<span>' + h.monthGZ + '</span>';
-        html += '</div>';
-        html += '<div style="font-size:12px;color:var(--tx2);line-height:2"><div><span style="color:var(--tx3)">节气</span> ' + h.term.cur + ' → ' + h.term.next + '（' + h.term.days + '天）</div>';
-        html += '<div><span style="color:var(--tx3)">纳音</span> ' + h.nayin + '</div>' + (h.xiu ? '<div><span style="color:var(--tx3)">星宿</span> ' + h.xiu + '</div>' : '') + '<div><span style="color:var(--tx3)">建除</span> ' + h.jianchu + '</div><div><span style="color:var(--tx3)">冲煞</span> ' + h.chong + '</div>';
-        html += '<div style="font-size:10px;color:var(--tx3);margin-top:4px">' + h.pengzu + '</div></div>';
-        // 方向神煞
-        if (h.dirGods) {
-          html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">';
-          ['喜神','财神','福神','阳贵','阴贵'].forEach(function(k){
-            var ek={'喜神':'xishen','财神':'caishen','福神':'fushen','阳贵':'yanggui','阴贵':'yingui'};
-            var v=h.dirGods[ek[k]]; if(v) html+='<span style="font-size:10px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);border-radius:6px;padding:2px 8px;color:var(--tx2)">'+k+' '+v+'</span>';
-          });
-          html += '</div>';
-        }
-        html += '<div style="display:flex;gap:12px;margin-top:12px"><div style="flex:1;background:rgba(100,180,120,.04);border:1px solid rgba(100,180,120,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#7ec87e;letter-spacing:2px;margin-bottom:4px">宜</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.yi.length ? h.yi.join('、') : '—') + '</div></div>';
-        html += '<div style="flex:1;background:rgba(200,100,100,.04);border:1px solid rgba(200,100,100,.1);border-radius:8px;padding:10px"><div style="font-size:10px;color:#e07050;letter-spacing:2px;margin-bottom:4px">忌</div><div style="font-size:12px;color:var(--tx2);line-height:1.8">' + (h.ji.length ? h.ji.join('、') : '—') + '</div></div></div></div>';
-        if (f && f.tip) { html += '<div class="fortune-card"><div class="section-label">今日提醒</div><div class="overview">' + esc(f.tip) + '</div></div>'; }
-        content.innerHTML = html;
+        if(d.huangli)todayDate.textContent=d.huangli.date;
+        content.innerHTML = huangliHtml(d.huangli) + personalHtml(d.fortune);
       }).catch(function(){ content.innerHTML = '<div class="empty"><p>网络错误，请稍后重试</p></div>'; });
     }).catch(function(){ content.innerHTML = '<div class="empty"><p>加载档案失败，请确认已登录并有排盘记录</p></div>'; });
   };
@@ -180,8 +206,8 @@
 </script>
 <script>
 (function(){
-var G=['111111乾为天|元亨利贞','000000坤为地|厚德载物','010001水雷屯|刚柔始交','100010山水蒙|童蒙求我','010111水天需|险在前也','111010天水讼|讼不可成','000010地水师|师出以律','010000水地比|亲附辅弼','110111风天小畜|以懿文德','111011天泽履|履虎尾也','000111地天泰|天地交泰','111000天地否|大往小来','111101天火同人|类族辨物','101111火天大有|顺天休命','000100地山谦|裒多益寡','001000雷地豫|作乐崇德','011001泽雷随|随时之义','100110山风蛊|振民育德','000011地泽临|教思无穷','110000风地观|观民设教','101001火雷噬嗑|明罚敕法','100101山火贲|明庶政也','000001山地剥|上厚下安','100000地雷复|闭关休息','111001天雷无妄|天命不佑','100111山天大畜|多识前言','100001山雷颐|节饮食也','011110泽风大过|独立不惧','010010坎为水|常德行也','101101离为火|明照四方','011100泽山咸|感而遂通','001110雷风恒|立不易方','111100天山遁|远小人也','001111雷天大壮|非礼弗履','101000火地晋|自昭明德','000101地火明夷|用晦而明','110101风火家人|言有物也','101011火泽睽|以同而异','010100水山蹇|反身修德','001010雷水解|赦过宥罪','110001山泽损|惩忿窒欲','100011风雷益|迁善改过','011111泽天夬|施禄及下','111110天风姤|施命诰四方','011000泽地萃|除戎器也','000110地风升|积小高大','011010泽水困|致命遂志','010110水风井|劳民劝相','101110泽火革|治历明时','011101火风鼎|正位凝命','001001震为雷|恐惧修省','100100艮为山|思不出位','110100风山渐|居贤德善','001011雷泽归妹|永终知敝','001101雷火丰|折狱致刑','101100火山旅|明慎用刑','110110巽为风|申命行事','011011兑为泽|朋友讲习','110010风水涣|享于帝也','010011水泽节|制数度也','110011风泽中孚|议狱缓死','001100雷山小过|行过恭也','010101水火既济|思患预防','101010火水未济|慎辨物居'];
-var h=G[Math.floor(Math.random()*64)],b=h.substring(0,6),r=h.substring(6).split('|'),n=r[0],s=r[1];
+// 仅作加载动效，不随机生成或暗示任何卦象结论。
+var b='101010',n='今日运势',s='正在校准中国标准时间';
 var box=document.getElementById('hexaReveal'),delays=[800,650,500,350,200,80];
 for(var i=0;i<6;i++){
   if(b[i]==='1'){var el=document.createElement('div');el.className='hexa-yao-yang';el.style.animationDelay=delays[i]+'ms';box.appendChild(el)}

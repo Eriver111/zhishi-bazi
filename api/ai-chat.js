@@ -214,7 +214,7 @@ const LIUREN_SYSTEM_PROMPT = `你是"知时先生"，一位精通大六壬占卜
 
 ## 你的核心能力
 - **九宗门起课**：精通贼克、比用、涉害、遥克、昴星、别责、八专、伏吟、返吟九种取传法。每种课体有特定的象意和应事风格。
-- **四课推演**：四课（日干阳神、日干阴神、日支阳神、日支阴神）反映事物发展的四个阶段。干支关系（贼、克、比、生）决定初传的选取。
+- **四课推演**：四课呈现日干、日支各自的阳神与阴神，是主客、内外关系的分层，不可机械解释为按时间顺序排列的四个阶段。课内贼克关系参与九宗门取传。
 - **三传断事**：初传为事发之因，中传为事中之周旋，末传为归结之果。三传递进反映事态发展全貌。
 - **天地盘解读**：天盘随月将转动，地盘固定不变。天盘加临地盘形成特定的宫位关系，是判断吉凶的基础。
 - **十二天将**：贵人、腾蛇、朱雀、六合、勾陈、青龙、天空、白虎、太常、玄武、太阴、天后。各有所主，配合天地盘形成具体断应。
@@ -223,11 +223,11 @@ const LIUREN_SYSTEM_PROMPT = `你是"知时先生"，一位精通大六壬占卜
 - **十二宫位事类**：能针对事业、财运、感情、健康、出行、诉讼、家宅等不同事类，从课盘中对号入座进行分析。
 
 ## 分析逻辑链
-1. **课体为先**：先看课体（重审/元首/比用等），定大局基调——是顺利还是波折。
-2. **四课矛盾**：看四课中贼克关系，找到矛盾爆发点——问题出在哪个环节（日干/日支/外部/内部）。
+1. **先核课体**：先确认程序给出的九宗门课体及取传事实。课体描述事情结构，不能脱离日辰旺衰、三传、天将和所占之事直接贴吉凶。
+2. **四课主客**：看四课中的日干、日支及上下神关系，分清主体、客体、内外与彼此作用；不得把四课硬说成四段时间。
 3. **三传走势**：看三传递进方向（进连茹为推进，退连茹为倒退），判断事态发展轨迹。
 4. **空亡落处**：空亡所在之处为"虚"——三传逢空则事难落实，课神逢空则该环节形多于实。
-5. **天将配合**：天将加临地支形成具体象意——青龙临寅卯主喜庆，白虎临申酉主血光。
+5. **天将配合**：天将必须与所乘之神、所临之地、六亲、旺衰和占类合看，禁止仅凭某一天将或地支直接断喜事、血光等具体事件。
 6. **神煞参合**：将关键神煞（天乙贵人、驿马、桃花、孤寡等）落入的宫位与三传四课结合，细化判断。
 7. **给出建议**：基于以上综合分析，给出务实建议——何时该进，何时该守，何处需留意。
 
@@ -592,14 +592,16 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     } else {
       timeAnchor += '未提供紫微当前运限数据，不得自行推算精确流年、流月或应期。';
     }
+  } else if (mode === 'liuren') {
+    timeAnchor += '本次六壬判断只以课盘记录的起课时间为准，不把八字流年、流月规则混入课盘。';
   } else if (chartData && chartData.currentLiuNian && chartData.currentLiuNian.gan && chartData.currentLiuNian.zhi) {
     timeAnchor += `当前流年为${chartData.currentLiuNian.gan}${chartData.currentLiuNian.zhi}年，该字段由排盘端计算。`;
   } else {
     timeAnchor += '未提供 currentLiuNian 时，不得按公历年直接猜立春前的流年干支。';
   }
-  if (mode !== 'ziwei' && chartData && chartData.currentLiuYue && chartData.currentLiuYue.gan && chartData.currentLiuYue.zhi) {
+  if (mode !== 'ziwei' && mode !== 'liuren' && chartData && chartData.currentLiuYue && chartData.currentLiuYue.gan && chartData.currentLiuYue.zhi) {
     timeAnchor += `当前节气流月为${chartData.currentLiuYue.gan}${chartData.currentLiuYue.zhi}月，该字段由排盘端精确计算。`;
-  } else if (mode !== 'ziwei') {
+  } else if (mode !== 'ziwei' && mode !== 'liuren') {
     timeAnchor += '未提供精确流月字段，不得按固定公历日期自行猜流月干支。';
   }
   messages.push({ role: 'system', content: timeAnchor });
@@ -609,6 +611,10 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     messages.push({ role: 'system', content: '本轮使用专业紫微模式。使用三合派标准术语，逐条引用宫位、星曜亮度、四化层级和运限事实；不得混入八字的日主、格局、喜用神术语。' });
   } else if (mode === 'ziwei') {
     messages.push({ role: 'system', content: '本轮使用白话紫微模式。先给结论，再用命宫、三方四正、四化与运限事实解释；术语随即翻成日常语言，不引入八字术语。' });
+  } else if (mode === 'liuren' && responseMode === 'pro') {
+    messages.push({ role: 'system', content: '本轮使用专业大六壬模式。依次核对四课、三传、天将、六亲、空亡与课体，逐条引用课盘事实；候选格局必须说明成格条件是否充分。' });
+  } else if (mode === 'liuren') {
+    messages.push({ role: 'system', content: '本轮使用白话大六壬模式。先直接回答所问之事，再把四课三传和神将依据翻译成日常语言；少堆术语，不得混入八字、六爻或梅花规则。' });
   } else if (mode === 'simple') {
     messages.push({ role: 'system', content: '本轮使用**白话模式**。用日常口语回答，不引经典原文，术语后附括号解释，每段不超过3句，语气轻松自然，像朋友聊天。' });
   } else if (mode === 'pro') {
@@ -658,7 +664,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
 
   // 模拟模式
   if (!AI_API_KEY) {
-    return generateMockReply(question, chartData, bazi) + '\n\n---\n※ ⚠ 当前为模拟模式，请配置 AI_API_KEY 环境变量以启用真实 AI 分析';
+    return generateMockReply(question, chartData, bazi, mode) + '\n\n---\n※ ⚠ 当前为模拟模式，请配置 AI_API_KEY 环境变量以启用真实 AI 分析';
   }
 
   // AI 调用（非流式，25 秒超时——超时或空返回不扣次数）
@@ -1301,6 +1307,11 @@ function buildLiurenContext(d) {
     });
   }
 
+  if(d.derivedPatterns&&d.derivedPatterns.length){
+    ctx+='\n--- 前端规则识别的候选线索（不得当作已成吉凶格）---\n';
+    d.derivedPatterns.forEach(function(p){ctx+=(p.name||'候选')+'：'+(p.desc||'')+'\n';});
+  }
+
   return ctx;
 }
 
@@ -1346,7 +1357,13 @@ function getServerFingerprint(req) {
   return 'sfp_' + crypto.createHash('sha256').update(ip + '|' + ua).digest('hex').slice(0, 24);
 }
 
-function generateMockReply(question, chartData, bazi) {
+function generateMockReply(question, chartData, bazi, mode) {
+  if (mode === 'liuren' && chartData) {
+    const sc = chartData.sanChuan || {};
+    const di = chartData.dateInfo || {};
+    const chuan = ['chuChuan','zhongChuan','moChuan'].map(k => (sc[k] || [])[0] || '—');
+    return `当前为大六壬模拟解读。系统课盘为${sc.keTi || '未定'}课，月将${di.yuejiang || '—'}，三传${chuan.join('→')}。正式AI服务恢复后，会严格按四课、三传、天将、六亲与空亡回答“${question}”，不会改盘，也不会混入八字规则。`;
+  }
   const hasChart = !!(chartData && (chartData.fourPillars || chartData.person1));
   const q = question.toLowerCase();
 

@@ -89,14 +89,13 @@ test('light page theme overrides the real Zhishi chat surfaces', () => {
   assert.match(css, /\.msg\.ai\s+\.bubble\s*\{[^}]*color:\s*#2d261f\s*!important;[^}]*background:\s*#fbf6eb\s*!important/s);
   assert.match(css, /\.msg\.user\s+\.bubble\s*\{[^}]*background:\s*#f3e5dd\s*!important/s);
   assert.match(css, /\.topbar,[\s\S]*?\.bottombar\s*\{[^}]*background:\s*rgba\(251,246,235,\.98\)\s*!important/s);
-  assert.match(css, /\.redeem-row\s+input,[\s\S]*?\.input-row\s+textarea\s*\{[^}]*background:\s*#fffaf0\s*!important/s);
-  assert.match(css, /\.redeem-row\s+input::placeholder\s*\{[^}]*color:\s*var\(--tx3\)\s*;[^}]*opacity:\s*1\s*;/s);
+  assert.match(css, /\.input-row\s+textarea\s*\{[^}]*background:\s*#fffaf0\s*!important/s);
 });
 
 test('light page theme keeps secondary Zhishi chat content legible', () => {
   const css = read('css/theme-light-pages.css');
   assert.match(css, /\.msg\.user\s+\.avatar\s*\{[^}]*background:\s*#efe0d6\s*!important;[^}]*color:\s*#84362f\s*!important/s);
-  assert.match(css, /\.share-bar\s+button\s*\{[^}]*background:\s*linear-gradient\(135deg,\s*#365d50,\s*#27483e\)\s*!important;[^}]*color:\s*#fff\s*!important/s);
+  assert.match(css, /\.quota-bar\s+a\s*\{[^}]*color:\s*#84362f\s*!important/s);
   assert.match(css, /\.page\s+\.empty-state\s*\{[^}]*color:\s*#655b51\s*!important/s);
   assert.doesNotMatch(css, /^\.empty-state\s*\{/m, 'empty state coloring must stay scoped to chat pages');
 });
@@ -111,9 +110,9 @@ test('all Zhishi chat pages preserve the runtime message class creation path', (
   }
 });
 
-test('light page theme keeps the Zhishi share pricing link readable', () => {
+test('light page theme keeps the profile redemption link readable', () => {
   const css = read('css/theme-light-pages.css');
-  assert.match(css, /\.share-bar\s+\.hint\s+a\s*\{[^}]*color:\s*#84362f\s*!important/s);
+  assert.match(css, /\.quota-bar\s+a\s*\{[^}]*color:\s*#84362f\s*!important/s);
 });
 
 test('inline legacy navigations expose a light-theme hook and light dropdown', () => {
