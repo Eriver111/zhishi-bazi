@@ -95,7 +95,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
 </div>
 
 <script src="js/auth.js"></script>
-<script src="js/deep-report-anchor.js?v=1"></script>
+<script src="js/deep-report-anchor.js?v=2"></script>
 <script>
 (function(){
   var profileFeedbackOpener = null;
@@ -379,6 +379,9 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
       .forEach(function(key) {
         if (params[key] !== undefined && params[key] !== '') query.set(key, params[key]);
       });
+    if (params.mode !== 'pillars' && Number.isFinite(Number(params.clock)) && !Number.isInteger(Number(params.clock))) {
+      query.set('report_clock_normalized', '1');
+    }
     var paidYear = Number(String(report.paid_at || '').slice(0, 4));
     if (paidYear >= 1900 && paidYear <= 2200) query.set('report_year', String(paidYear));
     return '/result?' + query.toString();

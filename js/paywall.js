@@ -42,7 +42,25 @@ function legacyPipeReportKey(params){
 }
 function iru(){var s=localStorage.getItem('bazi_rpt');if(!s)return false;try{var d=JSON.parse(s),legacy=legacyPipeReportKey(_baziPayParams);return d.e>Date.now()&&(d.h===_baziHash||!!legacy&&d.h===legacy)}catch(e){return false}}
 function sru(){localStorage.setItem('bazi_rpt',JSON.stringify({h:_baziHash,e:Date.now()+365*86400000}))}
-function getBaziPending(){var s=localStorage.getItem('rpt_ord');if(!s)return null;try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k?d:null}catch(e){return s.startsWith('credit_')?{oid:s,h:_baziHash,k:'legacy-credit',legacy:true}:null}}
+var BAZI_PENDING_STORE='rpt_orders_v2';
+function readBaziPendingStore(){var s=localStorage.getItem(BAZI_PENDING_STORE);if(!s)return {};try{var d=JSON.parse(s);return d&&typeof d==='object'&&!Array.isArray(d)?d:{}}catch(e){return {}}}
+function saveBaziPending(pending){
+  var store=readBaziPendingStore(),now=Date.now();
+  Object.keys(store).forEach(function(hash){var item=store[hash];if(!item||!item.oid||!item.k||(item.t&&now-item.t>86400000))delete store[hash]});
+  pending.t=now;store[pending.h]=pending;
+  localStorage.setItem(BAZI_PENDING_STORE,JSON.stringify(store));
+}
+function clearBaziPending(pending){
+  var store=readBaziPendingStore();
+  if(pending&&store[pending.h]&&store[pending.h].oid===pending.oid){delete store[pending.h];localStorage.setItem(BAZI_PENDING_STORE,JSON.stringify(store))}
+  var legacy=localStorage.getItem('rpt_ord');
+  if(legacy){try{var d=JSON.parse(legacy);if(pending&&d&&d.oid===pending.oid)localStorage.removeItem('rpt_ord')}catch(e){}}
+}
+function getBaziPending(){
+  var current=readBaziPendingStore()[_baziHash];if(current&&current.oid&&current.h&&current.k)return current;
+  var s=localStorage.getItem('rpt_ord');if(!s)return null;
+  try{var d=JSON.parse(s);return d&&d.oid&&d.h&&d.k&&d.h===_baziHash?d:null}catch(e){return s.startsWith('credit_')?{oid:s,h:_baziHash,k:'legacy-credit',legacy:true}:null}
+}
 
 function reportSearchParams(params){
   var query=new URLSearchParams();
@@ -234,7 +252,7 @@ function startRP(retryCount){
     }
     var pending={oid:d.out_trade_no,h:_baziHash,k:d.report_key};
     if(!pending.oid||!pending.k){if(status)status.textContent='订单信息不完整，请重新支付';if(retry)retry.style.display='block';return}
-    localStorage.setItem('rpt_ord',JSON.stringify(pending));
+    saveBaziPending(pending);
     var payment=window.PaymentFlow?window.PaymentFlow.resolvePayment(d):{payUrl:d.pay_url||'',qrImageUrl:''};
     var payUrl=payment.payUrl;
     var mobileBtn=document.getElementById('qrMobileBtn');
@@ -283,7 +301,7 @@ function startQRPoll(pending){
     n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
     if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
     fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
-      if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+      if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);clearBaziPending(pending);
         var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     }).catch(function(){});
   },2000);
@@ -292,7 +310,7 @@ function startQRPoll(pending){
 function manualUnlock(){
   var pending=getBaziPending();if(!pending||pending.h!==_baziHash)return;
   fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
-    if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);localStorage.removeItem('rpt_ord');
+    if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);clearBaziPending(pending);
       var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
     else{alert('尚未检测到支付，请确认已付款后重试')}
   }).catch(function(){alert('网络错误，请稍后重试')});

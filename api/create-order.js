@@ -59,6 +59,9 @@ function buildBaziReturnUrl(params) {
     .forEach(key => {
       if (params[key] !== undefined && params[key] !== '') query.set(key, params[key]);
     });
+  if (params.mode !== 'pillars' && Number.isFinite(Number(params.clock)) && !Number.isInteger(Number(params.clock))) {
+    query.set('report_clock_normalized', '1');
+  }
   return SITE + '/result.html?' + query.toString();
 }
 

@@ -139,6 +139,7 @@ test('direct result query restores all entered pillars and timing metadata', () 
     zishi: '',
     mode: 'pillars',
     timing: 'matched',
+    reportClockNormalized: false,
     enteredPillars: pillars,
   });
 });
@@ -178,6 +179,13 @@ test('result entry accepts only a complete integer clock from zero through twent
     const { context } = loadResult('?mode=pillars&timing=matched&clock=' + raw);
     assert.equal(context.getUrlParams().clock, Number(raw), raw);
   }
+});
+
+test('ordinary historical report accepts a fractional restored clock and marks it normalized', () => {
+  const { context } = loadResult('?year=1990&month=7&day=12&hour=9&clock=17.55&gender=male&report_clock_normalized=1');
+  const params = context.getUrlParams();
+  assert.equal(params.clock, 17.55);
+  assert.equal(params.reportClockNormalized, true);
 });
 
 test('ordinary results keep timing when true-solar correction produces a fractional clock', () => {

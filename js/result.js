@@ -22,6 +22,14 @@ function getUrlParams() {
     const p = new URLSearchParams(window.location.search);
     var mode = p.get('mode') || '';
     var timing = mode === 'pillars' && p.get('timing') === 'matched' ? 'matched' : (mode === 'pillars' ? 'unknown' : '');
+    var rawClock = p.get('clock') || '';
+    var clockIsInteger = /^\d{1,2}$/.test(rawClock);
+    var clockIsNumber = /^\d{1,2}(?:\.\d+)?$/.test(rawClock);
+    var parsedClock = clockIsNumber && Number(rawClock) >= 0 && Number(rawClock) < 24
+        ? Number(rawClock) : NaN;
+    // 普通排盘的原始钟点一定是整数。历史订单中的小数钟点是已经
+    // 校正过的真太阳时，恢复时不得再次校正。四柱反查仍只接受整数钟点。
+    var restoredNormalizedClock = mode !== 'pillars' && Number.isFinite(parsedClock) && !clockIsInteger;
     return {
         year: parseInt(p.get('year')),
         month: parseInt(p.get('month')),
@@ -34,12 +42,12 @@ function getUrlParams() {
         dist: p.get('dist') || '',
         geoVersion: p.get('geo_v') || '',
         minute: parseInt(p.get('minute')) || 0,
-        clock: /^\d{1,2}$/.test(p.get('clock') || '') && Number(p.get('clock')) <= 23
-            ? Number(p.get('clock')) : NaN,
+        clock: mode === 'pillars' && !clockIsInteger ? NaN : parsedClock,
         solar: p.get('solar') || '',
         zishi: p.get('zishi') || '',
         mode: mode,
         timing: timing,
+        reportClockNormalized: p.get('report_clock_normalized') === '1' || restoredNormalizedClock,
         reportYear: p.get('report_year') ? parseInt(p.get('report_year')) : undefined,
         enteredPillars: mode === 'pillars' && window.PillarInput
             ? window.PillarInput.fromSearchParams(p)
@@ -108,6 +116,7 @@ let _nativeShenSha = [];  // 四柱神煞
 let _dayunShenSha = [];   // 大运柱神煞
 let _liunianShenSha = []; // 流年柱神煞
 let _params = null;       // URL参数（供后续函数使用）
+let _reportIdentityParams = null; // 用户原始输入/历史订单身份，不参与二次真太阳时校正
 let _reportYear = 0;      // 只读购买年份，不进入报告/订单身份
 let _reportAnchorYear = 0;
 let _reportPaidAt = '';
@@ -221,7 +230,7 @@ function render(data) {
 
 
     // 初始化付费遮罩（渐变模糊，透出前两行）
-    initPaywall(_params);
+    initPaywall(_reportIdentityParams || _params);
     // 自动存储排盘数据到 localStorage，确保 AI 对话页总能获取到
     try {
       var d={birthInfo:{gender:_params.gender}};
@@ -1645,6 +1654,14 @@ function renderSolarTime(year, month, day, birthHour) {
 
     // 优先使用已计算好的 solarInfo（含经度+均时差调整）
     var solarInfo = (_bazi && _bazi.solarInfo) || null;
+    if (!solarInfo && _params && _params.reportClockNormalized && isValidCalculatedClock(_params.clock)) {
+        var restoredMinutes = Math.round(Number(_params.clock) * 60);
+        var restoredHour = Math.floor(restoredMinutes / 60) % 24;
+        var restoredMinute = restoredMinutes % 60;
+        el.textContent = String(restoredHour).padStart(2, '0') + ':'
+            + String(restoredMinute).padStart(2, '0') + '（已按购买记录恢复真太阳时）';
+        return;
+    }
     if (!solarInfo) {
         var fallbackLocation = (_params.prov || _params.city || _params.dist) ? {
             province:_params.prov || '', city:_params.city || '', district:_params.dist || '', allowFallback:true
@@ -1697,10 +1714,13 @@ document.addEventListener('DOMContentLoaded', function() {
     _reportPaidAt = '';
     _accountReportAccessResolved = false;
     delete _params.reportYear;
+    _reportIdentityParams = JSON.parse(JSON.stringify(_params));
     var isDirect = _params.mode === 'pillars';
     var hasTiming = !isDirect || _params.timing === 'matched';
     var invalidDate = !_params.year || !_params.month || !_params.day || isNaN(_params.hour);
-    var invalidClock = hasTiming && !isValidBirthClock(_params.clock);
+    var invalidClock = hasTiming && (isDirect
+        ? !isValidBirthClock(_params.clock)
+        : !isValidCalculatedClock(_params.clock));
     var invalidParams = !_params.gender
         || invalidClock
         || (isDirect ? (!_params.enteredPillars || (hasTiming && invalidDate)) : invalidDate);
@@ -1727,7 +1747,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 province:_params.prov || '', city:_params.city || '', district:_params.dist || '', allowFallback:true
             } : '',
             dist:_params.dist || '', city:_params.city || '', prov:_params.prov || '',
-            trueSolarTime:_params.solar !== '0', ziHourNextDay:_params.zishi === '1'
+            trueSolarTime:_params.reportClockNormalized ? false : _params.solar !== '0',
+            ziHourNextDay:_params.zishi === '1'
         });
         _params.year=normalizedBirth.year;_params.month=normalizedBirth.month;_params.day=normalizedBirth.day;
         _params.hour=normalizedBirth.hour;_params.clock=normalizedBirth.clock;

@@ -46,6 +46,11 @@ class FakeElement {
   addEventListener() {}
 }
 
+class FakeAbortController {
+  constructor() { this.signal = {}; }
+  abort() { this.signal.aborted = true; }
+}
+
 function createPaywallDocument() {
   const nodes = {};
   const register = element => {
@@ -115,7 +120,7 @@ test('desktop report payment renders the gateway QR image instead of treating QR
   const context = {
     console,
     URL,
-    AbortController,
+    AbortController: FakeAbortController,
     navigator: { userAgent: 'Desktop Browser' },
     document: {
       getElementById(id) { return nodes[id] || null; },
@@ -387,6 +392,38 @@ test('guest unlocks for direct pillar charts remain isolated by all four pillars
   assert.equal(context.iru(), false);
 });
 
+test('two simultaneous BaZi report orders keep independent pending recovery records', () => {
+  const storage = new Map();
+  const context = {
+    console,
+    document: { getElementById() { return null; } },
+    localStorage: {
+      getItem(key) { return storage.get(key) || null; },
+      setItem(key, value) { storage.set(key, String(value)); },
+      removeItem(key) { storage.delete(key); }
+    }
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  const first = { year: 1990, month: 6, day: 15, hour: 8, clock: 16, gender: 'male' };
+  const second = { year: 1992, month: 8, day: 20, hour: 3, clock: 6, gender: 'female' };
+  context.initPaywall(first);
+  const firstHash = context._baziHash;
+  context.saveBaziPending({ oid: 'bazi_first', h: firstHash, k: 'first-key' });
+  context.initPaywall(second);
+  const secondHash = context._baziHash;
+  context.saveBaziPending({ oid: 'bazi_second', h: secondHash, k: 'second-key' });
+
+  assert.equal(Object.keys(JSON.parse(storage.get('rpt_orders_v2'))).length, 2);
+  context.initPaywall(first);
+  assert.equal(context.getBaziPending().oid, 'bazi_first');
+  context.clearBaziPending(context.getBaziPending());
+  context.initPaywall(second);
+  assert.equal(context.getBaziPending().oid, 'bazi_second');
+});
+
 test('ordinary report local keys ignore absent and explicit default calendar fields', () => {
   const context = {
     console,
@@ -439,7 +476,7 @@ test('hepan deep report creates a hepan order instead of falling through to the 
   const context = {
     console,
     URL,
-    AbortController,
+    AbortController: FakeAbortController,
     alert() {},
     navigator: { userAgent: 'Desktop Browser' },
     document: {
@@ -556,10 +593,10 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v12');
+  assert.equal(openedCache, 'zhishi-v13');
   assert.ok(cachedAssets.includes('/js/payment.js'));
-  assert.ok(cachedAssets.includes('/js/paywall.js'));
-  assert.ok(cachedAssets.includes('/js/hepan-paywall.js'));
+  assert.ok(cachedAssets.includes('/js/paywall.js?v=7'));
+  assert.ok(cachedAssets.includes('/js/hepan-paywall.js?v=2'));
 });
 
 test('bazi paywall sends account credentials and supports account report recovery', () => {
@@ -573,5 +610,5 @@ test('bazi paywall sends account credentials and supports account report recover
   assert.match(paywallSource, /登录后购买可在个人中心长期查看/);
   assert.doesNotMatch(paywallSource, /report_year/);
   assert.match(resultSource, /delete\s+_params\.reportYear/);
-  assert.match(resultSource, /initPaywall\(_params\)/);
+  assert.match(resultSource, /initPaywall\(_reportIdentityParams \|\| _params\)/);
 });

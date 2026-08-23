@@ -118,7 +118,7 @@ function renderFixture(options = {}) {
   };
 }
 
-function createInitFixture({ search, storage, now, facts = fixtureFacts(), authenticated = false, accessResponse = null }) {
+function createInitFixture({ search, storage, now, facts = fixtureFacts(), authenticated = false, accessResponse = null, normalizeBirthInput = null }) {
   const ids = ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent', 'thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'];
   const nodes = {};
   const rootNode = { id: 'root', children: [], appendChild(node) { node.parentNode = this; this.children.push(node); if (node.id) nodes[node.id] = node; return node; }, insertBefore(node) { return this.appendChild(node); } };
@@ -168,7 +168,11 @@ function createInitFixture({ search, storage, now, facts = fixtureFacts(), authe
       localStorage: storage,
       PillarInput: { fromSearchParams() { return { year: {}, month: {}, day: {}, hour: {} }; } },
       BaZiCalculator: {
-        normalizeBirthInput(input) { return { ...input, dayPillarOffset: 0, solarInfo: null }; },
+        normalizeBirthInput(input) {
+          return normalizeBirthInput
+            ? normalizeBirthInput(input)
+            : { ...input, dayPillarOffset: 0, solarInfo: null };
+        },
       },
     },
   };
@@ -256,6 +260,41 @@ test('guest result initialization ignores report_year and strips it from paywall
   assert.doesNotMatch(fixture.makeLocalReportKey(fixture.paywallParams), /report_year|reportYear/);
   assert.equal(fixture.context._baziHash, fixture.makeLocalReportKey(fixture.paywallParams));
   assert.equal(fixture.buildResultParams.reportYear, undefined);
+});
+
+test('payment identity keeps the original birth clock before true-solar normalization', () => {
+  const storage = { getItem() { return null; }, setItem() {} };
+  const fixture = createInitFixture({
+    search: '?year=1990&month=7&day=12&hour=9&clock=18&gender=male&prov=广东省&city=广州市&dist=天河区',
+    storage,
+    now: '2026-08-23T12:00:00+08:00',
+    normalizeBirthInput(input) {
+      return { ...input, hour: 9, clock: 17.55, dayPillarOffset: 0, solarInfo: { solarMinutes: 1053 } };
+    },
+  });
+
+  assert.equal(fixture.paywallParams.clock, 18);
+  assert.equal(fixture.paywallParams.reportClockNormalized, false);
+  assert.equal(fixture.buildResultParams.clock, 17.55);
+});
+
+test('historical fractional-clock report restores without rejecting or normalizing twice', () => {
+  const storage = { getItem() { return null; }, setItem() {} };
+  let normalizationInput;
+  const fixture = createInitFixture({
+    search: '?year=1990&month=7&day=12&hour=9&clock=17.55&gender=male&prov=广东省&city=广州市&dist=天河区&solar=1&report_clock_normalized=1',
+    storage,
+    now: '2026-08-23T12:00:00+08:00',
+    normalizeBirthInput(input) {
+      normalizationInput = input;
+      return { ...input, dayPillarOffset: 0, solarInfo: null };
+    },
+  });
+
+  assert.equal(fixture.paywallParams.clock, 17.55);
+  assert.equal(fixture.paywallParams.reportClockNormalized, true);
+  assert.equal(normalizationInput.trueSolarTime, false);
+  assert.equal(fixture.buildResultParams.clock, 17.55);
 });
 
 test('customer narrative hides internal evidence cards while keeping decisive Chinese conclusions in page and PDF', () => {

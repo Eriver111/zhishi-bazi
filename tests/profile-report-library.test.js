@@ -158,6 +158,23 @@ test('a normalized solar report maps enabled timing settings to result URL flags
   assert.equal(makeReportKey('bazi', Object.fromEntries(url.searchParams)), makeReportKey('bazi', solarSameDayEnabled));
 });
 
+test('historical true-solar report with a fractional clock receives a safe restore marker', async () => {
+  const normalized = normalizeBaziReportParams({
+    year: 1990, month: 7, day: 12, hour: 9, clock: 17.55, minute: 0,
+    gender: 'male', prov: '广东省', city: '广州市', dist: '天河区', solar: '1'
+  });
+  const { html } = await renderProfile({
+    reports: [{ label: 'historical-solar', paid_at: '2026-08-23', report_params: normalized }]
+  });
+  const url = new URL(`https://example.test${resultLinks(html)[0]}`);
+  const resultParams = readResultParams(url.search);
+
+  assert.equal(url.searchParams.get('report_clock_normalized'), '1');
+  assert.equal(resultParams.clock, 17.55);
+  assert.equal(resultParams.reportClockNormalized, true);
+  assert.equal(makeReportKey('bazi', Object.fromEntries(url.searchParams)), makeReportKey('bazi', normalized));
+});
+
 test('a rejected credits request leaves reports and saved charts visible', async () => {
   const { html } = await renderProfile({
     profileReject: true,
