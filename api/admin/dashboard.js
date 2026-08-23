@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const { getSupabase } = require('../../lib/supabase.js');
 
 const ALLOWED_RANGES = new Set([7, 30, 90]);
@@ -8,7 +10,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: '仅支持读取数据' });
 
-  const configuredKey = String(process.env.ADMIN_KEY || '');
+  const configuredKey = readConfiguredKey();
   if (!configuredKey) return res.status(503).json({ ok: false, error: '后台管理密钥尚未配置' });
   const suppliedKey = String((req.headers && req.headers['x-admin-key']) || '');
   if (!sameSecret(suppliedKey, configuredKey)) {
@@ -140,6 +142,17 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ ok: false, error: '后台数据读取失败' });
   }
 };
+
+function readConfiguredKey() {
+  const keyFile = process.env.ADMIN_KEY_FILE
+    ? path.resolve(process.env.ADMIN_KEY_FILE)
+    : path.join(__dirname, '..', '..', '.admin-key');
+  try {
+    const fileKey = fs.readFileSync(keyFile, 'utf8').trim();
+    if (fileKey) return fileKey;
+  } catch (_) { /* The environment variable remains a supported fallback. */ }
+  return String(process.env.ADMIN_KEY || '').trim();
+}
 
 function sameSecret(a, b) {
   const left = Buffer.from(String(a));

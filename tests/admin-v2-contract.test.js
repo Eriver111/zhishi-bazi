@@ -64,6 +64,10 @@ test('新版后台独立存在并保留旧后台', () => {
   assert.doesNotMatch(html, /fetch\([^\n]+(?:delete|update|grant|credit-admin)/i);
   assert.match(html, /function esc\(value\)/);
   assert.match(html, /@media\(max-width:760px\)/);
+  const gitignore = fs.readFileSync(path.join(root, '.gitignore'), 'utf8');
+  const endpoint = fs.readFileSync(path.join(root, 'api', 'admin', 'dashboard.js'), 'utf8');
+  assert.match(gitignore, /^\.admin-key$/m);
+  assert.match(endpoint, /readFileSync\(keyFile, 'utf8'\)\.trim\(\)/);
 });
 
 test('新版后台 API 在服务端未配置密钥时关闭', async () => withAdminKey(undefined, async () => {
