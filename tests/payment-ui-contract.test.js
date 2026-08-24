@@ -44,6 +44,15 @@ class FakeElement {
   querySelectorAll() { return []; }
 
   addEventListener() {}
+
+  setAttribute(name, value) {
+    this.attributes = this.attributes || {};
+    this.attributes[name] = String(value);
+  }
+
+  removeAttribute(name) {
+    if (this.attributes) delete this.attributes[name];
+  }
 }
 
 class FakeAbortController {
@@ -205,6 +214,36 @@ test('purchased account access removes the report paywall before any new order i
   assert.equal(accessCalls, 1);
   assert.equal(orderCalls, 0);
   assert.ok(!nodes.rptPaywall || nodes.rptPaywall.removed);
+});
+
+test('locked report keeps paid copy out of the DOM and uses an opaque purchase surface', async () => {
+  const { document, nodes } = createPaywallDocument();
+  addReportSections(document);
+  let paidRenderCalls = 0;
+  const context = {
+    console,
+    URLSearchParams,
+    navigator: { userAgent: 'Desktop Browser' },
+    document,
+    localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
+    renderPaidContent() { paidRenderCalls++; },
+    setInterval() { return 1; }, clearInterval() {},
+    setTimeout() { return 1; }, clearTimeout() {}
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8'), context);
+
+  await context.initPaywall({ year: 2004, month: 8, day: 14, hour: 1, clock: 2, gender: 'male' });
+
+  assert.equal(paidRenderCalls, 0);
+  for (const id of ['thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection']) {
+    assert.equal(nodes[id].style.display, 'none');
+    assert.equal(nodes[id].attributes['aria-hidden'], 'true');
+  }
+  assert.ok(nodes.rptPaywall && !nodes.rptPaywall.removed);
+  assert.match(nodes.rptPaywall.style.cssText, /background:#14110d/);
+  assert.doesNotMatch(nodes.rptPaywall.style.cssText, /backdrop-filter|rgba\(/);
 });
 
 test('saved account token restores a purchased report while user verification is still pending', async () => {
@@ -632,9 +671,10 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v15');
+  assert.equal(openedCache, 'zhishi-v17');
   assert.ok(cachedAssets.includes('/js/payment.js'));
-  assert.ok(cachedAssets.includes('/js/paywall.js?v=8'));
+  assert.ok(cachedAssets.includes('/js/paywall.js?v=9'));
+  assert.ok(cachedAssets.includes('/js/result.js?v=17'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js?v=2'));
 });
 

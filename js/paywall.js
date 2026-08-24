@@ -157,13 +157,15 @@ function renderPaywall(skipLayout,prepareOnly){
     var first=document.getElementById(secs[0]);
     if(!first||document.getElementById('unifiedReport'))return false;
 
-  // 先渲染付费内容
-  if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
-  // 折叠所有板块
-  secs.forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('drawer-open')});
+  // 未解锁时不生成正文，并从布局和辅助技术中隐藏全部付费板块。
+  secs.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){el.classList.remove('drawer-open');el.style.display='none';el.setAttribute('aria-hidden','true')}
+  });
 
   wrap=document.createElement('div');wrap.id='unifiedReport';
-  wrap.style.cssText='position:relative;padding-bottom:20px';
+  wrap.className='report-locked';
+  wrap.style.cssText='position:relative;min-height:520px;padding-bottom:20px';
   first.parentNode.insertBefore(wrap,first);
   secs.forEach(function(id){var el=document.getElementById(id);if(el)wrap.appendChild(el)});
 
@@ -176,12 +178,8 @@ function renderPaywall(skipLayout,prepareOnly){
   if(!isAccountLoggedIn()&&iru()){unlock();return}
   injectQRModal();
 
-  // 计算付费内容实际高度
-  var contentH=0;
-  secs.forEach(function(id){var el=document.getElementById(id);if(el)contentH+=el.offsetHeight||160;});
-
   var pw=document.createElement('div');pw.id='rptPaywall';
-  pw.style.cssText='position:absolute;top:0;left:0;right:0;height:'+(contentH||500)+'px;background:linear-gradient(180deg,rgba(14,12,10,.88) 0%,rgba(18,16,12,.94) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)';
+  pw.style.cssText='position:absolute;inset:0;min-height:520px;background:#14110d;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px;overflow:hidden';
   pw.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">'
     +'<div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-bottom:24px"></div>'
     +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">深度命理分析报告</h3>'
@@ -331,7 +329,12 @@ function unlock(options){
   if(options.persistLocal!==false)sru();
   var pw=document.getElementById('rptPaywall');if(pw)pw.remove();
   var wrap=document.getElementById('unifiedReport');
-  if(wrap)wrap.querySelectorAll('.section-drawer').forEach(function(s){s.classList.add('drawer-open')});
+  if(wrap){
+    wrap.classList.remove('report-locked');wrap.style.minHeight='';
+    wrap.querySelectorAll('.section-drawer').forEach(function(s){
+      s.style.display='';s.removeAttribute('aria-hidden');s.classList.add('drawer-open')
+    });
+  }
   if(typeof renderPaidContent==='function'){try{renderPaidContent()}catch(e){}}
   var b=document.getElementById('downloadBanner');if(b)b.style.display='flex';
 }

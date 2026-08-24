@@ -200,7 +200,16 @@ function createInitFixture({ search, storage, now, facts = fixtureFacts(), authe
     context[name] = function() {};
   }
   ready();
-  return { context, nodes, buildOptions, buildOptionsHistory, paywallParams: context._baziPayParams, buildResultParams, makeLocalReportKey: context.makeLocalReportKey };
+  return {
+    context,
+    nodes,
+    buildOptions,
+    buildOptionsHistory,
+    anchorYear: vm.runInContext('_reportAnchorYear', context),
+    paywallParams: context._baziPayParams,
+    buildResultParams,
+    makeLocalReportKey: context.makeLocalReportKey,
+  };
 }
 
 test('five paid sections render from one deep report fact object', () => {
@@ -254,7 +263,11 @@ test('guest result initialization ignores report_year and strips it from paywall
     storage,
     now: '2030-01-01T00:00:00+08:00',
   });
-  assert.equal(fixture.buildOptions.anchorYear, 2030);
+  assert.equal(fixture.buildOptions, undefined, 'locked guest must not build paid report facts');
+  assert.equal(fixture.anchorYear, 2030);
+  for (const id of ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent']) {
+    assert.equal(fixture.nodes[id].innerHTML, '');
+  }
   assert.equal(fixture.paywallParams.reportYear, undefined);
   assert.doesNotMatch(JSON.stringify(fixture.paywallParams), /report_year|reportYear/);
   assert.doesNotMatch(fixture.makeLocalReportKey(fixture.paywallParams), /report_year|reportYear/);
@@ -601,8 +614,10 @@ test('real guest result initialization reuses the first anchor year across a Chi
     storage,
     now: '2027-01-01T00:00:00+08:00',
   });
-  assert.equal(first.buildOptions.anchorYear, 2026);
-  assert.equal(second.buildOptions.anchorYear, 2026);
+  assert.equal(first.buildOptions, undefined);
+  assert.equal(second.buildOptions, undefined);
+  assert.equal(first.anchorYear, 2026);
+  assert.equal(second.anchorYear, 2026);
 });
 
 test('missing chart or params renders one explicit error card in every paid section', () => {

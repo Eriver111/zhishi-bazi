@@ -226,11 +226,8 @@ function render(data) {
     try{renderParents(bazi, _params.gender)}catch(e){console.log("parents error:",e)}
     document.getElementById('parentsSection').classList.add('drawer-open');
 
-    // 付费板块：自动渲染（付费遮罩由paywall.js处理）
-    renderPaidContent();
-
-
-    // 初始化付费遮罩（渐变模糊，透出前两行）
+    // 先初始化付费访问控制。正文只在确认解锁后生成，避免遮盖层、
+    // 布局变化或移动端合成导致付费内容提前可见。
     initPaywall(_reportIdentityParams || _params);
     // 自动存储排盘数据到 localStorage，确保 AI 对话页总能获取到
     try {
@@ -475,7 +472,8 @@ function applyAuthenticatedReportAccess(data) {
     _reportAnchorYear = 0;
     _reportAnchorYear = resolveDeepReportAnchor(_params || {});
     _deepReportFacts = null;
-    renderPaidContent();
+    // 未解锁时不得提前把付费正文写进 DOM。
+    if (data.unlocked) renderPaidContent();
 }
 
 function renderDeepCurrentYear(facts) {
@@ -1758,9 +1756,9 @@ document.addEventListener('DOMContentLoaded', function() {
             ? solarInfo.locationResolution.sourceVersion : '';
     }
 
-    if (typeof DeepReportAnchor !== 'undefined' && DeepReportAnchor.resolve) {
+    if (typeof window !== 'undefined' && window.DeepReportAnchor && window.DeepReportAnchor.resolve) {
         try {
-            _reportAnchorYear = DeepReportAnchor.resolve({
+            _reportAnchorYear = window.DeepReportAnchor.resolve({
                 chartKey: reportAnchorKey(_params),
                 storage: window.localStorage
             });

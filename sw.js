@@ -1,5 +1,5 @@
-// 知时 Service Worker v15 — 缓存优先+后台更新，兼顾速度与新鲜度
-var CACHE_NAME = 'zhishi-v15';
+// 知时 Service Worker v17 — 缓存优先+后台更新，兼顾速度与新鲜度
+var CACHE_NAME = 'zhishi-v17';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
@@ -7,8 +7,8 @@ var STATIC_ASSETS = [
   '/css/theme-light.css?v=3', '/css/theme-light-results.css?v=2',
   '/css/interactions.css', '/css/poster.css',
   '/js/bazi.js?v=1781962250', '/js/mo-xing-he.js?v=1781962250',
-  '/js/ai-chat-integration.js?v=1781962250',
-  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=8',
+  '/js/ai-chat-integration.js?v=1781962250', '/js/result.js?v=17',
+  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=9',
   '/js/hepan-paywall.js?v=2',
   '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',
   '/js/report-pdf.js?v=3'
