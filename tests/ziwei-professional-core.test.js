@@ -132,7 +132,8 @@ test('Ziwei page loads the BaZi calculator before its normalization adapter', ()
   const input = html.indexOf('js/ziwei-input.js');
   assert.ok(bazi >= 0 && input > bazi);
   assert.match(html, /js\/ziwei-input\.js\?v=4/);
-  assert.match(html, /js\/ziwei-render\.js\?v=9/);
+  assert.match(html, /js\/ziwei-professional\.js\?v=6/);
+  assert.match(html, /js\/ziwei-render\.js\?v=12/);
   const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
   assert.doesNotMatch(render, /var\s+(?:PROV_LNG|CITY_LNG)\s*=/);
 });
@@ -190,6 +191,153 @@ test('surrounded evidence includes target, two trines, and opposite palace', () 
   const evidence = professional.getSurroundedEvidence(chart, '命宫');
   assert.deepEqual(evidence.map(item => item.role), ['target', 'wealth', 'career', 'opposite']);
   assert.deepEqual(evidence.map(item => item.palace), ['命宫', '财帛', '官禄', '迁移']);
+});
+
+test('palace flying transformations come from the palace stem instead of generic trine lines', () => {
+  const professional = require(professionalPath);
+  const chart = iztro.astro.bySolar('2004-8-14', 1, 'male', true, 'zh-CN');
+  const facts = professional.getPalaceFlights(chart, '命宫', iztro.util.getMutagensByHeavenlyStem);
+  assert.deepEqual(
+    facts,
+    {
+      source: '命', sourceZhi: '午', heavenlyStem: '庚',
+      flights: [
+        { hua: '禄', star: '太阳', target: '子女', targetZhi: '卯', selfMutagen: false },
+        { hua: '权', star: '武曲', target: '财帛', targetZhi: '寅', selfMutagen: false },
+        { hua: '科', star: '太阴', target: '仆役', targetZhi: '亥', selfMutagen: false },
+        { hua: '忌', star: '天同', target: '疾厄', targetZhi: '丑', selfMutagen: false },
+      ],
+    },
+  );
+});
+
+test('leap-month female reference chart matches the professional software anchor', () => {
+  const input = loadInput();
+  const professional = require(professionalPath);
+  const chart = iztro.astro.bySolar('2023-3-25', 5, 'female', true, 'zh-CN');
+
+  assert.deepEqual(input.getSoulBodyBranches(chart), { soul: '戌', body: '申' });
+  assert.equal(chart.fiveElementsClass, '水二局');
+  assert.equal(chart.soul, '禄存');
+  assert.equal(chart.body, '天同');
+
+  assert.deepEqual(
+    chart.palaces.map(palace => ({
+      palace: palace.name,
+      branch: palace.earthlyBranch,
+      major: palace.majorStars.map(star => star.name + (star.mutagen || '')),
+      decadal: palace.decadal.range,
+    })),
+    [
+      { palace: '官禄', branch: '寅', major: ['天机', '太阴科'], decadal: [42, 51] },
+      { palace: '仆役', branch: '卯', major: ['紫微', '贪狼忌'], decadal: [52, 61] },
+      { palace: '迁移', branch: '辰', major: ['巨门权'], decadal: [62, 71] },
+      { palace: '疾厄', branch: '巳', major: ['天相'], decadal: [72, 81] },
+      { palace: '财帛', branch: '午', major: ['天梁'], decadal: [82, 91] },
+      { palace: '子女', branch: '未', major: ['廉贞', '七杀'], decadal: [92, 101] },
+      { palace: '夫妻', branch: '申', major: [], decadal: [102, 111] },
+      { palace: '兄弟', branch: '酉', major: [], decadal: [112, 121] },
+      { palace: '命宫', branch: '戌', major: ['天同'], decadal: [2, 11] },
+      { palace: '父母', branch: '亥', major: ['武曲', '破军禄'], decadal: [12, 21] },
+      { palace: '福德', branch: '子', major: ['太阳'], decadal: [22, 31] },
+      { palace: '田宅', branch: '丑', major: ['天府'], decadal: [32, 41] },
+    ],
+  );
+
+  assert.deepEqual(
+    professional.collectMutagens(chart).map(item => [item.star, item.hua, item.palace]),
+    [['破军', '禄', '父母'], ['巨门', '权', '迁移'], ['太阴', '科', '官禄'], ['贪狼', '忌', '仆役']],
+  );
+  assert.deepEqual(
+    professional.getPalaceFlights(chart, '命宫', iztro.util.getMutagensByHeavenlyStem).flights,
+    [
+      { hua: '禄', star: '天梁', target: '财帛', targetZhi: '午', selfMutagen: false },
+      { hua: '权', star: '紫微', target: '仆役', targetZhi: '卯', selfMutagen: false },
+      { hua: '科', star: '左辅', target: '疾厄', targetZhi: '巳', selfMutagen: false },
+      { hua: '忌', star: '武曲', target: '父母', targetZhi: '亥', selfMutagen: false },
+    ],
+  );
+});
+
+test('true-solar-time boundary chart keeps the corrected hour and minor-star transformation', () => {
+  const input = loadInput();
+  const calculator = loadBaziCalculator();
+  const professional = require(professionalPath);
+  const normalized = input.normalizeBirth({
+    year: 1992, month: 6, day: 15, hour: 3, minute: 30,
+    prov: '新疆', city: '乌鲁木齐市', dist: '天山区',
+    calculator, useTrueSolarTime: true, ziHourNextDay: false,
+  });
+  assert.equal(normalized.summary, '真太阳时 01:20 · 丑时');
+  assert.equal(normalized.timeIndex, 1);
+
+  const chart = iztro.astro.bySolar(normalized.solarDate, normalized.timeIndex, 'female', true, 'zh-CN');
+  assert.equal(chart.chineseDate, '壬申 丙午 壬戌 辛丑');
+  assert.deepEqual(input.getSoulBodyBranches(chart), { soul: '巳', body: '未' });
+  assert.equal(chart.fiveElementsClass, '火六局');
+  assert.equal(chart.soul, '武曲');
+  assert.equal(chart.body, '天梁');
+  assert.deepEqual(
+    chart.palaces.map(palace => [palace.name, palace.earthlyBranch, palace.decadal.range]),
+    [
+      ['子女', '寅', [36, 45]], ['夫妻', '卯', [26, 35]], ['兄弟', '辰', [16, 25]],
+      ['命宫', '巳', [6, 15]], ['父母', '午', [116, 125]], ['福德', '未', [106, 115]],
+      ['田宅', '申', [96, 105]], ['官禄', '酉', [86, 95]], ['仆役', '戌', [76, 85]],
+      ['迁移', '亥', [66, 75]], ['疾厄', '子', [56, 65]], ['财帛', '丑', [46, 55]],
+    ],
+  );
+  assert.deepEqual(
+    professional.collectMutagens(chart).map(item => [item.star, item.hua, item.palace]),
+    [['天梁', '禄', '田宅'], ['紫微', '权', '财帛'], ['左辅', '科', '田宅'], ['武曲', '忌', '官禄']],
+  );
+  assert.deepEqual(
+    professional.getPalaceFlights(chart, '命宫', iztro.util.getMutagensByHeavenlyStem).flights,
+    [
+      { hua: '禄', star: '天机', target: '疾厄', targetZhi: '子', selfMutagen: false },
+      { hua: '权', star: '天梁', target: '田宅', targetZhi: '申', selfMutagen: false },
+      { hua: '科', star: '紫微', target: '财帛', targetZhi: '丑', selfMutagen: false },
+      { hua: '忌', star: '太阴', target: '兄弟', targetZhi: '辰', selfMutagen: false },
+    ],
+  );
+});
+
+test('Wenmo auxiliary convention uses one 截空 without changing 三合派命主 or 天伤天使', () => {
+  const input = loadInput();
+  const professional = require(professionalPath);
+  const chart = iztro.astro.bySolar('2008-1-9', 10, 'male', true, 'zh-CN');
+  professional.applyWenmoAuxiliaryConvention(chart);
+
+  const palace = name => chart.palaces.find(item => item.name === name);
+  const adjectives = name => palace(name).adjectiveStars.map(star => star.name);
+  const allAdjectives = chart.palaces.flatMap(item => item.adjectiveStars.map(star => star.name));
+  assert.equal(chart.chineseDate, '丁亥 癸丑 戊申 壬戌');
+  assert.equal(chart.soul, '文曲');
+  assert.deepEqual(input.getSoulBodyBranches(chart), { soul: '卯', body: '亥' });
+  assert.ok(adjectives('命宫').includes('截空'));
+  assert.equal(palace('命宫').adjectiveStars.find(star => star.name === '截空').brightness, '平');
+  assert.equal(allAdjectives.includes('截路'), false);
+  assert.equal(allAdjectives.includes('空亡'), false);
+  assert.ok(adjectives('父母').includes('大耗'));
+  assert.ok(adjectives('田宅').includes('龙德'));
+  assert.ok(adjectives('仆役').includes('劫煞'));
+  assert.ok(adjectives('仆役').includes('天伤'));
+  assert.ok(adjectives('疾厄').includes('天使'));
+
+  professional.applyWenmoAuxiliaryConvention(chart);
+  assert.equal(chart.palaces.flatMap(item => item.adjectiveStars).filter(star => star.name === '截空').length, 1);
+  assert.equal(adjectives('父母').filter(name => name === '大耗').length, 1);
+});
+
+test('Ziwei mode rendering does not substitute generic trines for flying transformations', () => {
+  const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
+  const professionalSource = fs.readFileSync(professionalPath, 'utf8');
+  assert.match(render, /getPalaceFlights/);
+  assert.match(professionalSource, /mutagedPlaces/);
+  assert.match(render, /targetCounts/);
+  assert.match(render, /真太阳时校正为/);
+  assert.match(render, /applyWenmoAuxiliaryConvention/);
+  assert.doesNotMatch(render, /var\s+tr\s*=\s*\{\s*0:\s*\[0,\s*4,\s*8\]/);
+  assert.doesNotMatch(render, /sm\[ord\[\(i\s*\+\s*1\)\s*%\s*4\]\]/);
 });
 
 test('empty-palace borrowing returns opposite evidence without a deterministic conclusion', () => {

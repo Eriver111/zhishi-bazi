@@ -83,6 +83,82 @@
     catch (error) { return null; }
   }
 
+  function getPalaceFlights(zi, palaceName, getMutagenStars) {
+    if (!zi || typeof zi.palace !== 'function') return null;
+    var source = zi.palace(palaceName);
+    if (!source || typeof source.mutagedPlaces !== 'function') return null;
+    var mutagens = ['禄', '权', '科', '忌'];
+    var stars = typeof getMutagenStars === 'function'
+      ? (getMutagenStars(source.heavenlyStem) || [])
+      : [];
+    var targets = source.mutagedPlaces() || [];
+    return {
+      source: normalizePalaceName(source.name),
+      sourceZhi: source.earthlyBranch || '',
+      heavenlyStem: source.heavenlyStem || '',
+      flights: mutagens.map(function (hua, index) {
+        var target = targets[index];
+        return {
+          hua: hua,
+          star: stars[index] || '',
+          target: target ? normalizePalaceName(target.name) : '',
+          targetZhi: target ? target.earthlyBranch || '' : '',
+          selfMutagen: !!(target && target.name === source.name)
+        };
+      })
+    };
+  }
+
+  // 文墨天机的三合盘采用单星“截空”，同时保留中州辅曜，
+  // 但天伤、天使及命主等仍沿用三合盘规则，不能直接全局切换 zhongzhou。
+  function applyWenmoAuxiliaryConvention(zi) {
+    var palaces = (zi && zi.palaces) || [];
+    if (!palaces.length) return zi;
+    var yearPillar = String(zi.chineseDate || '').trim().split(/\s+/)[0] || '';
+    var yearBranch = yearPillar.charAt(1);
+    var isYangYear = '子寅辰午申戌'.indexOf(yearBranch) >= 0;
+    var selectedName = isYangYear ? '截路' : '空亡';
+    var selectedPalace = null;
+    var selectedStar = null;
+
+    palaces.forEach(function (palace) {
+      (palace.adjectiveStars || []).forEach(function (star) {
+        if (!selectedStar && star && star.name === selectedName) {
+          selectedPalace = palace;
+          selectedStar = star;
+        }
+        if (!selectedStar && star && star.name === '截空') {
+          selectedPalace = palace;
+          selectedStar = star;
+        }
+      });
+    });
+    palaces.forEach(function (palace) {
+      palace.adjectiveStars = (palace.adjectiveStars || []).filter(function (star) {
+        return star && ['截路', '空亡', '截空'].indexOf(star.name) < 0;
+      });
+    });
+    if (selectedPalace) {
+      var jiekong = selectedStar || { type:'adjective', scope:'origin' };
+      jiekong.name = '截空';
+      jiekong.brightness = jiekong.brightness || '平';
+      selectedPalace.adjectiveStars.push(jiekong);
+    }
+
+    function addAdjective(palace, name) {
+      if (!palace || (palace.adjectiveStars || []).some(function (star) { return star.name === name; })) return;
+      palace.adjectiveStars.push({ name:name, brightness:'', mutagen:'', type:'adjective', scope:'origin' });
+    }
+    addAdjective(palaces.find(function (palace) { return palace.suiqian12 === '龙德'; }), '龙德');
+    addAdjective(palaces.find(function (palace) { return palace.jiangqian12 === '劫煞'; }), '劫煞');
+    var dahaoBranch = {
+      '子':'未', '丑':'午', '寅':'酉', '卯':'申', '辰':'亥', '巳':'戌',
+      '午':'丑', '未':'子', '申':'卯', '酉':'寅', '戌':'巳', '亥':'辰'
+    }[yearBranch];
+    addAdjective(palaces.find(function (palace) { return palace.earthlyBranch === dahaoBranch; }), '大耗');
+    return zi;
+  }
+
   function compactScope(scope) {
     if (!scope) return null;
     return {
@@ -187,6 +263,8 @@
     getSurroundedEvidence: getSurroundedEvidence,
     getBorrowedOpposite: getBorrowedOpposite,
     getCurrentHoroscope: getCurrentHoroscope,
+    getPalaceFlights: getPalaceFlights,
+    applyWenmoAuxiliaryConvention: applyWenmoAuxiliaryConvention,
     normalizePalaceName: normalizePalaceName,
     buildChatData: buildChatData,
     getPalaceTriadGroups: getPalaceTriadGroups
