@@ -370,7 +370,9 @@ test('live AI context omits fabricated timing only for unknown direct charts', (
     clock: 22,
   }, bazi);
   assert.deepEqual(matched.birthInfo, {
-    year: 2004, month: 8, day: 20, hour: 11, gender: 'female', clock: 22,
+    year: 2004, month: 8, day: 20,
+    hour: 22, minute: 0, hourIndex: 11, clock: 22, timeText: '22:00',
+    timeBasis: '四柱反查时间', gender: 'female', mode: 'pillars', timing: 'matched',
   });
 
   const ordinary = buildAiChartContext({
@@ -382,6 +384,22 @@ test('live AI context omits fabricated timing only for unknown direct charts', (
     clock: 6,
   }, bazi);
   assert.deepEqual(ordinary.birthInfo, {
-    year: 1990, month: 1, day: 2, hour: 3, gender: 'male', clock: 6,
+    year: 1990, month: 1, day: 2,
+    hour: 6, minute: 0, hourIndex: 3, clock: 6, timeText: '06:00',
+    timeBasis: '北京时间', gender: 'male',
+  });
+});
+
+test('AI birth context keeps true solar clock separate from the Chen-hour index', () => {
+  const { context } = loadResult();
+  const actual = vm.runInNewContext(`buildAIBirthInfo(
+    {year:2007,month:1,day:27,hour:4,clock:7.5166666667,minute:0,gender:'male',prov:'广西壮族自治区',city:'贵港市',dist:'港北区'},
+    {solarInfo:{solarMinutes:451}},
+    {year:2007,month:1,day:27,hour:4,clock:8,minute:0,gender:'male',prov:'广西壮族自治区',city:'贵港市',dist:'港北区'}
+  )`, context);
+  assert.deepEqual(JSON.parse(JSON.stringify(actual)), {
+    year: 2007, month: 1, day: 27, gender: 'male', hourIndex: 4,
+    timeBasis: '真太阳时', hour: 7, minute: 31, clock: 451 / 60,
+    timeText: '07:31', originalTimeText: '08:00', location: '广西壮族自治区贵港市港北区',
   });
 });

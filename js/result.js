@@ -137,6 +137,66 @@ function reportAnchorKey(params) {
     return JSON.stringify(key);
 }
 
+function aiClockParts(clock, minute, clockAlreadyPrecise) {
+    var value = Number(clock);
+    if (!Number.isFinite(value) || value < 0 || value >= 24) return null;
+    var total = clockAlreadyPrecise || !Number.isInteger(value)
+        ? Math.round(value * 60)
+        : Math.round(value * 60 + (Number(minute) || 0));
+    total = ((total % 1440) + 1440) % 1440;
+    var hour = Math.floor(total / 60);
+    var min = total % 60;
+    return {
+        hour: hour,
+        minute: min,
+        decimal: total / 60,
+        text: String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0')
+    };
+}
+
+// AI 使用的出生信息必须区分“24 小时钟点”和“时辰索引”。
+// _params.hour 是 0—11 的时辰索引，绝不能直接写成“几点”。
+function buildAIBirthInfo(params, bazi, identityParams) {
+    params = params || {};
+    var directUnknown = params.mode === 'pillars' && params.timing === 'unknown';
+    if (directUnknown) return { gender: params.gender, mode: params.mode, timing: params.timing };
+
+    var source = identityParams || (typeof _reportIdentityParams !== 'undefined' && _reportIdentityParams) || params;
+    var info = {
+        year: Number(source.year || params.year),
+        month: Number(source.month || params.month),
+        day: Number(source.day || params.day),
+        gender: params.gender,
+        hourIndex: Number(params.hour)
+    };
+    if (params.mode) info.mode = params.mode;
+    if (params.timing) info.timing = params.timing;
+
+    var solarInfo = bazi && bazi.solarInfo;
+    var precise = null;
+    if (solarInfo && Number.isFinite(Number(solarInfo.solarMinutes))) {
+        precise = aiClockParts(Number(solarInfo.solarMinutes) / 60, 0, true);
+        info.timeBasis = '真太阳时';
+    } else {
+        precise = aiClockParts(params.clock, params.minute, params.reportClockNormalized || !Number.isInteger(Number(params.clock)));
+        info.timeBasis = params.reportClockNormalized ? '真太阳时（购买记录恢复）'
+            : (params.mode === 'pillars' ? '四柱反查时间' : '北京时间');
+    }
+    if (precise) {
+        info.hour = precise.hour;
+        info.minute = precise.minute;
+        info.clock = precise.decimal;
+        info.timeText = precise.text;
+    }
+
+    var original = aiClockParts(source.clock, source.minute, false);
+    if (original) info.originalTimeText = original.text;
+    if (source.prov || source.city || source.dist) {
+        info.location = [source.prov, source.city, source.dist].filter(Boolean).join('');
+    }
+    return info;
+}
+
 // ==================== 主渲染 ====================
 function render(data) {
     const bazi = data.bazi;
@@ -231,13 +291,7 @@ function render(data) {
     initPaywall(_reportIdentityParams || _params);
     // 自动存储排盘数据到 localStorage，确保 AI 对话页总能获取到
     try {
-      var d={birthInfo:{gender:_params.gender}};
-      if(hasTiming){
-        d.birthInfo.year=_params.year;d.birthInfo.month=_params.month;d.birthInfo.day=_params.day;d.birthInfo.hour=_params.hour;
-      }
-      if(isDirect){
-        d.birthInfo.mode=_params.mode;d.birthInfo.timing=_params.timing;
-      }
+      var d={birthInfo:buildAIBirthInfo(_params,_bazi,_reportIdentityParams)};
       if(_bazi){
         d.fourPillars={};
         ['year','month','day','hour'].forEach(function(p){

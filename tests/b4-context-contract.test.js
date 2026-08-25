@@ -55,6 +55,26 @@ const DISKS = {
   '#61': '己丑 壬申 丙午 壬辰'
 };
 
+test('AI context states the precise true-solar time instead of the internal hour index', () => {
+  const ctx = buildSingleChart({
+    birthInfo: {
+      year: 2007, month: 1, day: 27,
+      hour: 7, minute: 31, hourIndex: 4, clock: 451 / 60,
+      timeText: '07:31', timeBasis: '真太阳时', originalTimeText: '08:00',
+      location: '广西壮族自治区贵港市港北区', gender: 'male'
+    },
+    fourPillars: {
+      year: { gan: '丙', zhi: '戌' }, month: { gan: '辛', zhi: '丑' },
+      day: { gan: '辛', zhi: '酉' }, hour: { gan: '壬', zhi: '辰' }
+    }
+  });
+  assert.match(ctx, /2007年1月27日 07:31（真太阳时）/);
+  assert.match(ctx, /原始北京时间 08:00/);
+  assert.match(ctx, /出生地 广西壮族自治区贵港市港北区/);
+  assert.doesNotMatch(ctx, /27日 4时/);
+  assert.match(ctx, /时柱：壬辰/);
+});
+
 test('B4 源码：mechanism 输出行与提示词三锁存在', () => {
   assert.ok(apiSource.includes('格局机制：${pt.mechanism}'), 'buildSingleChart 需输出 pattern.mechanism');
   assert.ok(apiSource.includes('pattern.mechanism**（格局机制）'), '提示词需含 mechanism 锁（解释字段不是裁决字段）');

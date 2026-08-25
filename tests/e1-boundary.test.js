@@ -55,3 +55,14 @@ test('E1 边界⑤：其余 E1 子类不受影响（五合）', () => {
   const w = runReplyValidation({ type: 'bazi' }, '甲庚相合，主事业有变。');
   assert.ok(w.some(x => x.indexOf('E1-五合错误') === 0), '五合校验不受生克边界改动影响');
 });
+
+test('E1 出生时间锁：辰时索引4不得被回复成凌晨4时', () => {
+  const chartData = {
+    type: 'bazi',
+    birthInfo: { timeText: '07:31', timeBasis: '真太阳时', hourIndex: 4 }
+  };
+  const wrong = runReplyValidation(chartData, '你出生于2007年1月27日凌晨4时，时柱为壬辰。');
+  assert.ok(wrong.some(x => x.indexOf('E1-出生时间索引误读') === 0));
+  const correct = runReplyValidation(chartData, '你出生于2007年1月27日07:31（真太阳时），属于辰时。');
+  assert.ok(!correct.some(x => x.indexOf('E1-出生时间索引误读') === 0));
+});

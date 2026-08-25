@@ -534,12 +534,28 @@
   function buildResultContext() {
     var data = {};
     if (typeof _params !== 'undefined' && _params) {
-      var isUnknownDirect = _params.mode === 'pillars' && _params.timing === 'unknown';
-      if (isUnknownDirect) {
-        data.birthInfo = { gender: _params.gender, mode: _params.mode, timing: _params.timing };
+      if (typeof buildAIBirthInfo === 'function') {
+        data.birthInfo = buildAIBirthInfo(_params, typeof _bazi !== 'undefined' ? _bazi : null);
       } else {
-        data.birthInfo = { year: _params.year, month: _params.month, day: _params.day, hour: _params.hour, gender: _params.gender };
-        if (_params.clock !== undefined) data.birthInfo.clock = _params.clock;
+        var isUnknownDirect = _params.mode === 'pillars' && _params.timing === 'unknown';
+        if (isUnknownDirect) {
+          data.birthInfo = { gender: _params.gender, mode: _params.mode, timing: _params.timing };
+        } else {
+          var totalMinutes = Math.round(Number(_params.clock) * 60 + (Number.isInteger(Number(_params.clock)) ? (Number(_params.minute) || 0) : 0));
+          var displayHour = Math.floor(totalMinutes / 60) % 24;
+          var displayMinute = totalMinutes % 60;
+          data.birthInfo = {
+            year: _params.year, month: _params.month, day: _params.day,
+            hour: displayHour, minute: displayMinute, hourIndex: _params.hour,
+            clock: totalMinutes / 60,
+            timeText: String(displayHour).padStart(2,'0') + ':' + String(displayMinute).padStart(2,'0'),
+            timeBasis: _params.reportClockNormalized ? '真太阳时（购买记录恢复）'
+              : (_params.mode === 'pillars' ? '四柱反查时间' : '北京时间'),
+            gender: _params.gender
+          };
+          if (_params.mode) data.birthInfo.mode = _params.mode;
+          if (_params.timing) data.birthInfo.timing = _params.timing;
+        }
       }
     }
     if (typeof _bazi !== 'undefined' && _bazi) {

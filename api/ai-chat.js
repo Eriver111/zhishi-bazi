@@ -104,6 +104,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 2. **若 chartData 已提供结构化结论，必须以它为本次解读的单一事实源**——不要另起一套算法。若字段缺失或互相冲突，应明确说明暂时无法确认，不得补造结论。
 3. **若没有 chartData**（用户只提供了出生信息但未排盘），你必须明确告知："请先通过排盘功能获取完整的八字分析数据，这样我才能给你精准解读。当前只能做初步参考。"
 4. **禁止跨体系混用术语**——绝对禁止在八字分析中使用六爻/梅花的术语（如：世爻、应爻、动爻、用神（六爻）、卦象、六亲（卦）、装卦、飞伏）。八字自有八字的十神体系和术语，用八字原生的概念（正官、七杀、正印、比肩、食神、财星、官星、印星、十神、日主、月令、大运、流年）回答。
+5. **出生时间字段锁定**——涉及出生钟点时，只能逐字引用 chartData.birthInfo.timeText 与 timeBasis；hourIndex 是 0—11 的内部时辰索引，绝不是 24 小时制钟点，禁止把 hourIndex=4 说成“凌晨4时”。若只有时柱而没有 timeText，只能说“辰时/巳时”等地支时辰，不得猜具体几点。
 
 ## 关键：如何使用预计算数据（降低幻觉）
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
@@ -739,6 +740,20 @@ function runReplyValidation(chartData, reply) {
   var WX = '金木水火土';
   var m;
 
+  // ---------- ⓪ 出生钟点与内部时辰索引混淆（E1） ----------
+  var birth = chartData.birthInfo || {};
+  if (birth.timeText && Number.isInteger(Number(birth.hourIndex))) {
+    var internalHour = Number(birth.hourIndex);
+    var preciseHour = Number(String(birth.timeText).slice(0, 2));
+    if (internalHour !== preciseHour) {
+      var wrongHourRe = new RegExp('(?:出生|生于|出生时间|出生钟点)[^。；\\n]{0,18}(?:凌晨|早上|上午|下午|晚上)?\\s*' + internalHour + '(?:点|时)');
+      if (wrongHourRe.test(reply)) {
+        warnings.push('E1-出生时间索引误读：系统真太阳时=「' + birth.timeText + '（' + (birth.timeBasis || '排盘口径') + '）」；' +
+          'hourIndex=' + internalHour + ' 只是内部时辰索引，不是“' + internalHour + '点/时”');
+      }
+    }
+  }
+
   // ---------- ① 冻结档位漂移（E4） ----------
   var ds = chartData.dayMasterStrength;
   if (ds && ds.level && !(chartData.congGe && chartData.congGe.isCong)) {
@@ -964,7 +979,29 @@ function buildSingleChart(data) {
   // 基本信息
   if (data.birthInfo) {
     const b = data.birthInfo;
-    ctx += `出生：${b.year}年${b.month}月${b.day}日 ${b.hour}时`;
+    const hasBirthDate = [b.year, b.month, b.day].every(value => Number.isFinite(Number(value)) && Number(value) > 0);
+    ctx += hasBirthDate
+      ? `出生：${b.year}年${b.month}月${b.day}日`
+      : '出生时间：未定位（用户直接提供四柱）';
+    if (hasBirthDate) {
+      if (b.timeText) {
+        ctx += ` ${b.timeText}`;
+        if (b.timeBasis) ctx += `（${b.timeBasis}）`;
+      } else if (b.clock !== null && b.clock !== '' && Number.isFinite(Number(b.clock))) {
+        const total = Math.round(Number(b.clock) * 60);
+        const hour = Math.floor(total / 60) % 24;
+        const minute = total % 60;
+        ctx += ` ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      } else if (data.fourPillars && data.fourPillars.hour && data.fourPillars.hour.zhi) {
+        ctx += ` ${data.fourPillars.hour.zhi}时`;
+      } else if (Number(b.hour) > 11 && Number(b.hour) < 24) {
+        ctx += ` ${b.hour}时`;
+      }
+    }
+    if (b.originalTimeText && b.timeBasis && b.timeBasis.indexOf('真太阳时') >= 0 && b.originalTimeText !== b.timeText) {
+      ctx += `；原始北京时间 ${b.originalTimeText}`;
+    }
+    if (b.location) ctx += `；出生地 ${b.location}`;
     if (b.gender) ctx += ` 性别：${b.gender === 'male' ? '男' : '女'}`;
     ctx += '\n';
   }
