@@ -1284,23 +1284,35 @@ function renderParents(bazi, gender) {
     if (!el) return;
 
     el.innerHTML = `
+        <div class="pr-card pr-family">
+            <div class="pr-card-body">
+                <div class="pr-card-title">原生家庭 <span class="pr-method-tag">年柱为宫</span></div>
+                <div class="pr-card-text">${parents.familyText || parents.yearNote || ''}</div>
+            </div>
+        </div>
         <div class="pr-card pr-father">
-            <div class="pr-card-icon" style="display:none"></div>
             <div class="pr-card-body">
                 <div class="pr-card-title">父亲 <span class="pr-star-tag">${parents.fatherStar}</span></div>
                 <div class="pr-card-text">${parents.fatherText}</div>
             </div>
         </div>
         <div class="pr-card pr-mother">
-            <div class="pr-card-icon" style="display:none"></div>
             <div class="pr-card-body">
                 <div class="pr-card-title">母亲 <span class="pr-star-tag">${parents.motherStar}</span></div>
                 <div class="pr-card-text">${parents.motherText}</div>
             </div>
         </div>
-        <div class="pr-summary">
-            <div class="pr-summary-label">综合</div>
-            <div class="pr-summary-text">${parents.summaryText}</div>
+        <div class="pr-card pr-between">
+            <div class="pr-card-body">
+                <div class="pr-card-title">父母相处 <span class="pr-method-tag">年干看父 · 年支看母</span></div>
+                <div class="pr-card-text">${parents.parentsRelationshipText || parents.summaryText || ''}</div>
+            </div>
+        </div>
+        <div class="pr-card pr-with-you">
+            <div class="pr-card-body">
+                <div class="pr-card-title">你与父母 <span class="pr-method-tag">年柱与日柱</span></div>
+                <div class="pr-card-text">${parents.childRelationshipText || parents.summaryText || ''}</div>
+            </div>
         </div>
     `;
 }

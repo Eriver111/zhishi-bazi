@@ -2807,7 +2807,7 @@ function calcDayMasterStrength(bazi) {
 }
 
 // ==================== 父母关系分析（强化版） ====================
-function analyzeParents(bazi, gender) {
+function analyzeParentsLegacy(bazi, gender) {
     const DAY = bazi.day.gan;
     const DAY_WX = WU_XING[DAY];
     const isMale = gender === 'male';
@@ -3083,6 +3083,328 @@ function analyzeParents(bazi, gender) {
         motherStar: motherStar,
         fatherPresent: fatherPos.length > 0,
         motherPresent: motherPos.length > 0
+    };
+}
+
+
+// ==================== 父母关系分析 v2（宫星同参） ====================
+// 年柱为父母宫：年干取父、年支取母；偏财为父星、正印为母星。
+// 宫位只说明家庭结构，父母星只说明父母本人，二者分开判断后再合并。
+function analyzeParents(bazi, gender) {
+    var DAY = bazi.day.gan;
+    var DAY_WX = WU_XING[DAY];
+    var POSITIONS = ['year', 'month', 'day', 'hour'];
+    var POS_CN = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
+    var SHORT_CN = { year: '年', month: '月', day: '日', hour: '时' };
+    var WX_LIST = ['木', '火', '土', '金', '水'];
+    var SHENG = { '木':'火', '火':'土', '土':'金', '金':'水', '水':'木' };
+    var KE = { '木':'土', '土':'水', '水':'火', '火':'金', '金':'木' };
+    var CHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+    var HAI = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
+    var HE_RESULT = { '子丑':'土','丑子':'土','寅亥':'木','亥寅':'木','卯戌':'火','戌卯':'火','辰酉':'金','酉辰':'金','巳申':'水','申巳':'水','午未':'土','未午':'土' };
+    var XING = {
+        '子':['卯'], '卯':['子'], '寅':['巳','申'], '巳':['寅','申'], '申':['寅','巳'],
+        '丑':['戌','未'], '戌':['丑','未'], '未':['丑','戌'],
+        '辰':['辰'], '午':['午'], '酉':['酉'], '亥':['亥']
+    };
+
+    var dm = calcDayMasterStrength(bazi);
+    var yj = getYongJi(bazi);
+    var cls = yj.elementClassification || {};
+    var xi = yj.xiShen || [];
+    var ji = yj.jiShen || [];
+
+    function ssToWx(ss) {
+        var idx = WX_LIST.indexOf(DAY_WX);
+        if (ss === '比肩' || ss === '劫财') return DAY_WX;
+        if (ss === '食神' || ss === '伤官') return WX_LIST[(idx + 1) % 5];
+        if (ss === '正财' || ss === '偏财') return WX_LIST[(idx + 2) % 5];
+        if (ss === '正官' || ss === '七杀') return WX_LIST[(idx + 3) % 5];
+        if (ss === '正印' || ss === '偏印') return WX_LIST[(idx + 4) % 5];
+        return null;
+    }
+
+    function elementRole(wx) {
+        var label = cls[wx] || '';
+        if (label === '用神' || label === '喜神' || label === '弱喜') return 'favorable';
+        if (label === '忌神' || label === '弱忌') return 'unfavorable';
+        if (xi.indexOf(wx) >= 0) return 'favorable';
+        if (ji.indexOf(wx) >= 0) return 'unfavorable';
+        return 'neutral';
+    }
+
+    function roleLabel(wx) {
+        if (cls[wx]) return cls[wx];
+        if (xi.indexOf(wx) >= 0) return '喜神';
+        if (ji.indexOf(wx) >= 0) return '忌神';
+        return '中性';
+    }
+
+    function wxRelation(a, b) {
+        if (!a || !b) return '无';
+        if (a === b) return '比和';
+        if (SHENG[a] === b) return '生';
+        if (SHENG[b] === a) return '被生';
+        if (KE[a] === b) return '克';
+        if (KE[b] === a) return '被克';
+        return '无';
+    }
+
+    function branchEvent(a, b) {
+        var pair = a + b;
+        if (CHONG[a] === b) return { type: '冲', resultElement: null };
+        if (HAI[a] === b) return { type: '害', resultElement: null };
+        if (XING[a] && XING[a].indexOf(b) >= 0) return { type: '刑', resultElement: null };
+        if (HE_RESULT[pair]) return { type: '合', resultElement: HE_RESULT[pair] };
+        return null;
+    }
+
+    function allBranchEvents() {
+        var result = [];
+        for (var i = 0; i < POSITIONS.length; i++) {
+            for (var j = i + 1; j < POSITIONS.length; j++) {
+                var pa = POSITIONS[i], pb = POSITIONS[j];
+                var evt = branchEvent(bazi[pa].zhi, bazi[pb].zhi);
+                if (evt) result.push({
+                    from: pa, to: pb, type: evt.type,
+                    pair: bazi[pa].zhi + bazi[pb].zhi,
+                    resultElement: evt.resultElement,
+                    resultRole: evt.resultElement ? elementRole(evt.resultElement) : null
+                });
+            }
+        }
+        return result;
+    }
+
+    var branchEvents = allBranchEvents();
+    var yearEvents = branchEvents.filter(function(e) { return e.from === 'year' || e.to === 'year'; });
+    var yearDamageEvents = yearEvents.filter(function(e) { return e.type === '冲' || e.type === '害' || e.type === '刑'; });
+    var yearCombineEvents = yearEvents.filter(function(e) { return e.type === '合'; });
+    var distanceWeight = { month: 3, day: 2, hour: 1 };
+    var damageWeight = { '冲': 3, '刑': 2, '害': 1 };
+    var palaceDamageScore = yearDamageEvents.reduce(function(sum, evt) {
+        var other = evt.from === 'year' ? evt.to : evt.from;
+        return sum + (distanceWeight[other] || 1) * (damageWeight[evt.type] || 1);
+    }, 0);
+
+    var fatherStar = '偏财';
+    var motherStar = '正印';
+
+    function collectParentStar(starName) {
+        var wx = ssToWx(starName);
+        var appearances = [];
+        var roots = [];
+        POSITIONS.forEach(function(pos) {
+            var gan = bazi[pos].gan;
+            if (getShiShen(DAY, gan) === starName) {
+                appearances.push({ pos: pos, layer: 'stem', label: SHORT_CN[pos] + '干' + gan, weight: pos === 'month' ? 3 : 2 });
+            }
+            var hidden = getCangGan(bazi[pos].zhi) || [];
+            hidden.forEach(function(g, index) {
+                if (getShiShen(DAY, g) === starName) {
+                    var layerName = index === 0 ? '本气' : (index === 1 ? '中气' : '余气');
+                    var weight = index === 0 ? 2 : (index === 1 ? 1 : 0.5);
+                    appearances.push({ pos: pos, layer: 'branch', label: SHORT_CN[pos] + '支' + layerName + g, weight: weight });
+                    roots.push(pos);
+                }
+            });
+        });
+        roots = roots.filter(function(v, i, arr) { return arr.indexOf(v) === i; });
+        var exposed = appearances.some(function(a) { return a.layer === 'stem'; });
+        var score = appearances.reduce(function(sum, a) { return sum + a.weight; }, 0);
+        var monthWx = DI_ZHI_WU_XING[bazi.month.zhi];
+        if (monthWx === wx) score += 2;
+        else if (SHENG[monthWx] === wx) score += 1;
+        var starDamageEvents = branchEvents.filter(function(e) {
+            if (e.type === '合') return false;
+            return roots.indexOf(e.from) >= 0 || roots.indexOf(e.to) >= 0;
+        });
+        var state = 'mixed';
+        if (appearances.length === 0) state = 'weak';
+        else if ((exposed && roots.length) || score >= 5) state = 'strong';
+        else if (!exposed && roots.length === 0) state = 'weak';
+        if (starDamageEvents.length && state === 'strong') state = 'mixed';
+        else if (starDamageEvents.length > 1 && state === 'mixed') state = 'weak';
+        return {
+            name: starName, element: wx, role: elementRole(wx), roleLabel: roleLabel(wx),
+            appearances: appearances, roots: roots, exposed: exposed,
+            damageEvents: starDamageEvents, score: score, state: state
+        };
+    }
+
+    var father = collectParentStar(fatherStar);
+    var mother = collectParentStar(motherStar);
+    var yearGan = bazi.year.gan, yearZhi = bazi.year.zhi;
+    var yearGanWx = WU_XING[yearGan], yearZhiWx = DI_ZHI_WU_XING[yearZhi];
+    var yearGanSS = getShiShen(DAY, yearGan);
+    var yearZhiHidden = getCangGan(yearZhi) || [];
+    var yearZhiSS = yearZhiHidden.length ? getShiShen(DAY, yearZhiHidden[0]) : '';
+    var intraRelation = wxRelation(yearGanWx, yearZhiWx);
+    var palaceState = palaceDamageScore >= 7 ? 'damaged' : (palaceDamageScore > 0 ? 'mixed' : 'stable');
+    if (yearCombineEvents.some(function(e) { return e.resultRole === 'unfavorable'; }) && palaceState === 'stable') palaceState = 'mixed';
+
+    function hasStarInPositions(names, positions) {
+        return positions.some(function(pos) {
+            if (names.indexOf(getShiShen(DAY, bazi[pos].gan)) >= 0) return true;
+            var hidden = getCangGan(bazi[pos].zhi) || [];
+            return hidden.some(function(g) { return names.indexOf(getShiShen(DAY, g)) >= 0; });
+        });
+    }
+
+    var yearMonthGanRel = wxRelation(WU_XING[bazi.year.gan], WU_XING[bazi.month.gan]);
+    var yearMonthZhiRel = wxRelation(DI_ZHI_WU_XING[bazi.year.zhi], DI_ZHI_WU_XING[bazi.month.zhi]);
+    var yearMonthFlow = ['生', '被生'].indexOf(yearMonthGanRel) >= 0 || ['生', '被生'].indexOf(yearMonthZhiRel) >= 0;
+    var exactOfficialSeal = [yearGanSS, yearZhiSS].indexOf('正官') >= 0 && [yearGanSS, yearZhiSS].indexOf('正印') >= 0;
+    var officialSealHelpful = exactOfficialSeal && elementRole(ssToWx('正官')) !== 'unfavorable' && elementRole(ssToWx('正印')) !== 'unfavorable';
+    var yearHasFather = father.appearances.some(function(a) { return a.pos === 'year'; });
+    var outputPresent = hasStarInPositions(['食神','伤官'], POSITIONS);
+    var businessPattern = yearHasFather && outputPresent && father.state !== 'weak' && father.role !== 'unfavorable';
+    var badPeerYear = (yearGanSS === '比肩' || yearGanSS === '劫财' || yearZhiSS === '比肩' || yearZhiSS === '劫财') && elementRole(DAY_WX) === 'unfavorable';
+    var sealNeeded = elementRole(ssToWx('正印')) === 'favorable';
+    var wealthInEarly = hasStarInPositions(['正财','偏财'], ['year','month']);
+    var sealInEarly = hasStarInPositions(['正印','偏印'], ['year','month']);
+    var wealthBlocksSeal = sealNeeded && wealthInEarly && sealInEarly;
+
+    var foundationScore = 0;
+    if (elementRole(yearGanWx) === 'favorable') foundationScore++;
+    if (elementRole(yearZhiWx) === 'favorable') foundationScore++;
+    if (yearMonthFlow) foundationScore++;
+    if (officialSealHelpful) foundationScore += 2;
+    if (businessPattern) foundationScore += 2;
+    if (badPeerYear) foundationScore -= 2;
+    if (wealthBlocksSeal) foundationScore -= 2;
+    if (palaceState === 'damaged') foundationScore -= 2;
+    else if (palaceState === 'mixed') foundationScore--;
+    var foundationLevel = foundationScore >= 3 ? 'supportive' : (foundationScore <= -2 ? 'limited' : 'mixed');
+
+    function eventText(events) {
+        return events.map(function(e) {
+            var other = e.from === 'year' ? e.to : e.from;
+            return '年支与' + POS_CN[other] + e.type;
+        }).join('、');
+    }
+
+    var familyParts = [];
+    if (officialSealHelpful) {
+        familyParts.push('年柱形成正官、正印的组合，而且这股力量没有落到忌神一侧。原生家庭更看重规矩、学历和名声，父母的工作与生活路线通常较稳定，你年轻时较容易得到家庭托底。');
+    } else if (businessPattern) {
+        familyParts.push('年柱见偏财，命局又有食伤去生财。父亲更像靠生意、手艺、项目或人脉挣钱的人，家里的经济条件通常不是只靠固定工资撑起来。');
+    } else if (foundationLevel === 'supportive') {
+        familyParts.push('年柱本身落在喜用一侧，年月之间也能接得上。家里的基础不一定显赫，但父母给你的资源、见识或稳定感是真能用得上的，遇到关键事情通常有人托底。');
+    } else if (foundationLevel === 'limited') {
+        familyParts.push('年柱受到明显牵制，原生家庭能直接给你的资源有限。家里早年的钱、工作或住处更容易有反复，很多事情需要靠自己慢慢建立起来。');
+    } else {
+        familyParts.push('原生家庭的底子有好有坏：能给你一部分支持，但很难把所有路都替你铺好。父母自身也有现实压力，所以家庭帮助往往是阶段性的。');
+    }
+    if (badPeerYear) familyParts.push('年柱的比劫落在忌神一侧，家里的钱和资源容易被多人分走，父亲求财也更辛苦，祖上留下的现成条件不算多。');
+    if (wealthBlocksSeal) familyParts.push('命局需要印星扶身，但年月的财星同时压住印星。小时候较容易出现“家里先顾挣钱和现实开支，学习与情绪支持排在后面”的情况。');
+    if (yearDamageEvents.length) familyParts.push(eventText(yearDamageEvents) + '，说明家庭结构不是一直平稳，搬迁、父母工作变化或长期矛盾中至少有一类会比较明显。');
+    var familyText = familyParts.join('');
+
+    function parentPositionSentence(star, who) {
+        if (!star.appearances.length) return who + '星在四柱中没有直接出现，说明这个人在你成长中的存在感和可调用资源偏弱，影响更多通过家庭环境或其他长辈间接传递。';
+        var labels = star.appearances.map(function(a) { return a.label; }).filter(function(v, i, arr) { return arr.indexOf(v) === i; });
+        var maxWeight = Math.max.apply(null, star.appearances.map(function(a) { return a.weight; }));
+        var primaryPositions = star.appearances.filter(function(a) { return a.weight === maxWeight; }).map(function(a) { return a.pos; });
+        var direct = primaryPositions.some(function(pos) { return pos === 'month' || pos === 'day'; });
+        var text = who + '星（' + star.name + '）落在' + labels.join('、') + '。';
+        if (direct) text += '它靠近月柱或日柱，说明' + who + '对你的成长和成年选择参与得比较直接。';
+        else if (primaryPositions.indexOf('year') >= 0) text += '力量较实的一处在年柱，影响更多来自早年家庭背景和原生家庭留下的生活方式。';
+        else text += '力量较实的一处在时柱，影响往往来得较晚，或平时联系不算密集，但后期互动会增加。';
+        if (star.state === 'strong') text += who + '星既有出现又有根，代表' + who + '本人做事有底气，能给出的实际帮助相对稳定。';
+        else if (star.state === 'weak' && star.roots.length && star.damageEvents.length) text += who + '星本身有根，但根所在的位置同时受冲害，力量不够稳定。' + who + '不是没有能力，只是工作、家庭角色或现实条件容易反复，能给你的帮助也会时多时少。';
+        else if (star.state === 'weak') text += who + '星根气偏弱，代表' + who + '自身也有局限，想帮你时未必有足够的时间、钱或现实条件。';
+        else text += who + '星有力量但不算完整，代表' + who + '能提供帮助，只是这种帮助会随着工作、健康或家庭阶段而起伏。';
+        if (star.role === 'favorable' && star.roleLabel === '弱喜') text += '这颗星在命局里属于弱喜，' + who + '能给你一些帮助，但力度温和，不是决定你人生走向的主要力量。';
+        else if (star.role === 'favorable') text += '这颗星在命局里属于' + star.roleLabel + '，所以' + who + '带给你的影响总体是帮你站稳、补足短板。';
+        else if (star.role === 'unfavorable' && star.roleLabel === '弱忌') text += '这颗星在命局里属于弱忌，' + who + '的要求或安排偶尔会让你有压力，但影响有限，不会成为亲子关系的主导矛盾。';
+        else if (star.role === 'unfavorable') text += '这颗星在命局里属于' + star.roleLabel + '，所以' + who + '的要求、安排或生活方式更容易给你造成压力，关系不是没有感情，而是彼此容易用错力。';
+        if (star.damageEvents.length) text += '星根又受到' + star.damageEvents.map(function(e) { return e.pair + e.type; }).join('、') + '，说明' + who + '自己的工作、身体状态或家庭角色容易出现反复；这里只能判断压力趋势，不能据此断具体疾病或寿命。';
+        return text;
+    }
+
+    var fatherText = parentPositionSentence(father, '父亲');
+    var motherText = parentPositionSentence(mother, '母亲');
+
+    var relationParts = [];
+    if (intraRelation === '生') relationParts.push('年干生年支，父亲更愿意迁就、支持母亲，家里很多事情由父亲出力、母亲落地。');
+    else if (intraRelation === '被生') relationParts.push('年支生年干，母亲对父亲的支持更多，家里往往是母亲在背后操心和托底。');
+    else if (intraRelation === '克') relationParts.push('年干克年支，父亲在两个人中更强势，家里的重要决定更容易由父亲拍板，母亲承受的约束更多。');
+    else if (intraRelation === '被克') relationParts.push('年支克年干，母亲在家里更强势、更能做主，父亲容易退让或被管着，两个人平时拌嘴的概率也更高。');
+    else relationParts.push('年干与年支同气，父母处理事情的出发点相近，但两个人都认定自己有道理时，也容易谁都不肯先松口。');
+
+    var yearMonthDamage = yearDamageEvents.filter(function(e) { return e.from === 'month' || e.to === 'month'; });
+    if (yearMonthDamage.length) {
+        relationParts.push('父母宫与月柱出现' + yearMonthDamage.map(function(e) { return e.pair + e.type; }).join('、') + '，日常生活中的钱、工作、住处或长辈问题容易反复引发争执，关系很难一直保持轻松。');
+    }
+    var yearMonthCombines = yearCombineEvents.filter(function(e) { return e.from === 'month' || e.to === 'month'; });
+    yearMonthCombines.forEach(function(e) {
+        if (e.resultRole === 'favorable') relationParts.push(e.pair + '相合后落到' + e.resultElement + '，而' + e.resultElement + '在命局里偏有利。父母虽然彼此牵连很深，但遇到大事通常能站到同一边。');
+        else if (e.resultRole === 'unfavorable') relationParts.push(e.pair + '相合后落到' + e.resultElement + '，而' + e.resultElement + '在命局里偏不利。这种合不是单纯和睦，而是两个人绑得很紧，容易围绕同一件事反复拉扯。');
+        else relationParts.push(e.pair + '相合，说明父母彼此牵连较深；但只凭一个合不能断感情一定好，更不能直接断外人介入。');
+    });
+    var parentsRelationshipText = relationParts.join('');
+
+    var childParts = [];
+    var yearDayEvents = yearEvents.filter(function(e) { return e.from === 'day' || e.to === 'day'; });
+    var yearDayStemRel = wxRelation(WU_XING[bazi.year.gan], WU_XING[bazi.day.gan]);
+    if (yearDayEvents.length) {
+        childParts.push('年柱与日柱出现' + yearDayEvents.map(function(e) { return e.pair + e.type; }).join('、') + '，你和父母在生活方式、婚恋选择或未来方向上容易意见不一。长大后拉开居住距离、各自生活，反而更容易减少摩擦。');
+    } else if (yearDayStemRel === '克' || yearDayStemRel === '被克') {
+        childParts.push('年干与日干形成相克，你和父母说话容易各站各的立场，感情不一定淡，但沟通时很容易觉得对方不理解自己。');
+    }
+    function isStarClose(star) {
+        if (!star.appearances.length) return false;
+        var nearWeight = Math.max.apply(null, [0].concat(star.appearances.filter(function(a) { return a.pos === 'month' || a.pos === 'day'; }).map(function(a) { return a.weight; })));
+        var farWeight = Math.max.apply(null, [0].concat(star.appearances.filter(function(a) { return a.pos === 'year' || a.pos === 'hour'; }).map(function(a) { return a.weight; })));
+        return nearWeight >= 1 && nearWeight >= farWeight;
+    }
+    var motherClose = isStarClose(mother);
+    var fatherClose = isStarClose(father);
+    if (!mother.appearances.length) childParts.push('正印不现，母亲对你的关心更可能通过日常照料或家庭安排间接表达，你不容易从命局里直接感受到这种影响。');
+    else if (motherClose) childParts.push('正印的主要力量靠近日主，你从小受母亲影响更深，遇到大事更容易先考虑母亲的看法。');
+    else childParts.push('正印的主要力量离日主较远，你和母亲的感情表达偏含蓄，很多关心不会直接说出来。');
+    if (!father.appearances.length) childParts.push('偏财不现，父亲在你成长中的直接参与感偏弱，你们之间容易少说心里话，更多靠实际事情维持联系。');
+    else if (fatherClose) childParts.push('偏财的主要力量靠近日主，你和父亲之间有较多现实层面的来往，钱、工作或重要决定更容易直接沟通。');
+    else childParts.push('偏财的主要力量离日主较远，你和父亲平时话不算多，彼此的关心更常通过做事而不是说话表达。');
+    if (!childParts.length) childParts.push('年柱与日柱没有明显冲克，父母星也能在命局中接得上。你和父母的关系整体不算疏远，主要差别在表达方式，而不是感情本身。');
+    var childRelationshipText = childParts.join('');
+
+    var strongParentCount = (father.state === 'strong' ? 1 : 0) + (mother.state === 'strong' ? 1 : 0);
+    var weakParentCount = (father.state === 'weak' ? 1 : 0) + (mother.state === 'weak' ? 1 : 0);
+    var summaryText = '';
+    if (palaceState === 'damaged' && strongParentCount > 0) summaryText = '父母宫受损，但父母星本身仍有力量：家里容易经历变动或争执，不过父母个人并非没有能力，问题更多出在家庭结构与相处方式。';
+    else if (palaceState === 'stable' && weakParentCount > 0) summaryText = '父母宫整体尚稳，但至少一方父母星偏弱：家庭框架能维持，真正吃力的是父母个人的时间、能力或现实条件。';
+    else if (palaceState === 'damaged' && weakParentCount === 2) summaryText = '父母宫和父母星同时偏弱：家庭变化与父母自身压力容易叠在一起，早年更难完全依靠家庭，需要较早建立自己的生活支点。';
+    else summaryText = '父母宫与父母星没有同时出现严重受损，家庭虽有各自的问题，但整体仍有可以依靠的部分。';
+
+    return {
+        fatherText: fatherText,
+        motherText: motherText,
+        familyText: familyText,
+        parentsRelationshipText: parentsRelationshipText,
+        childRelationshipText: childRelationshipText,
+        summaryText: summaryText,
+        yearNote: familyText,
+        fatherStar: fatherStar,
+        motherStar: motherStar,
+        fatherPresent: father.appearances.length > 0,
+        motherPresent: mother.appearances.length > 0,
+        facts: {
+            methodVersion: 'parents-v2-palace-star',
+            strength: { level: dm.level, score: dm.score },
+            parentStars: { father: father, mother: mother },
+            palace: {
+                stem: yearGan, branch: yearZhi, stemElement: yearGanWx, branchElement: yearZhiWx,
+                intraRelation: intraRelation, state: palaceState,
+                damageEvents: yearDamageEvents, combinationEvents: yearCombineEvents
+            },
+            family: {
+                level: foundationLevel, officialSealHelpful: officialSealHelpful,
+                businessPattern: businessPattern, badPeerYear: badPeerYear,
+                wealthBlocksSeal: wealthBlocksSeal, yearMonthFlow: yearMonthFlow
+            }
+        }
     };
 }
 
