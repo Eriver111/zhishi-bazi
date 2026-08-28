@@ -73,6 +73,17 @@ body {
   box-shadow: 0 12px 34px rgba(67,46,24,.055) !important;
 }
 
+.result-container { width: min(1180px, calc(100% - 32px)); }
+.result-header,
+.section-dayun,
+.section-liunian,
+.section-sizhu,
+.result-section,
+.analysis-section,
+.pro-section { border-radius: 16px !important; }
+.section-dayun,
+.section-liunian { overflow: hidden; }
+
 .section-dayun .section-header,
 .section-liunian .section-header,
 .section-sizhu .section-header {
@@ -87,6 +98,29 @@ body {
   background: #fbf6eb !important;
   border-color: rgba(72,52,31,.12) !important;
 }
+
+.dayun-table,
+.liunian-table {
+  width: 100% !important;
+  min-width: 760px;
+}
+.dayun-col,
+.liunian-col {
+  flex: 1 0 68px;
+  min-width: 0 !important;
+}
+.dayun-scroll-wrapper,
+.liunian-scroll-wrapper { background: rgba(255,253,248,.72); }
+.section-dayun .section-header h2,
+.section-liunian .section-header h2,
+.section-sizhu .section-header h2 { color: #6f332e !important; }
+.section-dayun .section-sub,
+.section-liunian .section-sub,
+.section-sizhu .section-sub { color: #6f665d !important; }
+.paipan-table { border-color: rgba(72,52,31,.13) !important; }
+.pp-row { border-bottom-color: rgba(72,52,31,.1) !important; }
+.pp-row:nth-child(even) { background: rgba(231,220,202,.18); }
+.pp-label { color: #6f665d !important; font-weight: 500; }
 
 .dayun-col .dayun-gz,
 .liunian-col .liunian-gz,
@@ -242,10 +276,45 @@ body:has(#lrOutput) #lrOutput [style*="color:#d4b860"] {
 @media (max-width: 768px) {
   .dayun-scroll-wrapper,
   .liunian-scroll-wrapper { overscroll-behavior-inline: contain; }
+  .result-container { width: 100%; }
+  .result-header,
+  .section-dayun,
+  .section-liunian,
+  .section-sizhu,
+  .result-section,
+  .analysis-section,
+  .pro-section { border-radius: 12px !important; }
 }
 
 .ai-float-btn,
 #aiFloatBtn {
   background: linear-gradient(145deg, #963f38, #6d2925) !important;
   color: #fff8ea !important;
+}
+
+/* AI 入口保留辨识度，但不再像悬浮广告一样压住正文。 */
+.ai-fab {
+  width: 50px !important;
+  height: 50px !important;
+  right: 18px !important;
+  bottom: 22px !important;
+  background: #8a3c35 !important;
+  border: 1px solid rgba(255,248,234,.7) !important;
+  box-shadow: 0 8px 24px rgba(86,42,34,.2) !important;
+  font-size: 14px !important;
+  letter-spacing: 1px;
+}
+.ai-fab:hover { transform: translateY(-2px) !important; }
+.ai-drawer { border-color: rgba(72,52,31,.14) !important; box-shadow: 0 -18px 50px rgba(57,40,25,.16) !important; }
+.ai-drawer .chat-buy-bar { background: #f4ecdf !important; }
+
+@media (min-width: 900px) {
+  .section-dayun,
+  .section-liunian { padding-bottom: 6px; }
+  .dayun-scroll-wrapper,
+  .liunian-scroll-wrapper { overflow-x: hidden; }
+}
+
+@media (max-width: 768px) {
+  .ai-fab { width: 46px !important; height: 46px !important; right: 12px !important; bottom: 74px !important; }
 }

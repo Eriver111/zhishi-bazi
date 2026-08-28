@@ -885,21 +885,9 @@ body.has-mobile-nav{padding-bottom:60px}
   body.has-mobile-nav{padding-bottom:60px}
   
 }
-</style><style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style><link rel="stylesheet" href="css/theme-light.css?v=3"><link rel="stylesheet" href="css/theme-light-forms.css?v=2"><link rel="stylesheet" href="css/mobile-app-shell.css?v=6"></head>
+</style><link rel="stylesheet" href="css/theme-light.css?v=3"><link rel="stylesheet" href="css/theme-light-forms.css?v=3"><link rel="stylesheet" href="css/mobile-app-shell.css?v=6"></head>
 <body>
 <div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
-<div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#181612 0%,#0e0c0a 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
-<div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0" id="eyeParticles"></div><svg viewBox="0 0 100 60" style="width:120px;height:72px;position:relative;z-index:1">
-<defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150" filter="url(#eyeGlow)"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1.2s" fill="freeze"/></path>
-<circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1s" fill="freeze"/><animate attributeName="r" from="3" to="7" dur="0.4s" begin="1s" fill="freeze"/></circle>
-<circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0"><animate attributeName="opacity" from="0.6" to="0" dur="0.8s" begin="1.3s" fill="freeze"/><animate attributeName="r" from="8" to="25" dur="0.8s" begin="1.3s" fill="freeze"/></circle>
-</svg>
-<div style="color:#e8cf70;margin-top:16px;font-size:13px;letter-spacing:4px;position:relative;z-index:1">知 时 命 理</div>
-<div style="color:rgba(180,160,140,.35);margin-top:8px;font-size:11px;letter-spacing:6px;position:relative;z-index:1">盲 派 · 天 眼 观 命</div>
-</div>
 
 <div class="bg-layer"><canvas id="bgCanvas"></canvas><div class="bg-overlay"></div></div>
 <div class="ink-splash tl"></div>
@@ -917,7 +905,7 @@ body.has-mobile-nav{padding-bottom:60px}
       <button class="mode-tab active" data-mode="solar" onclick="switchMode('solar')">公历</button>
       <button class="mode-tab" data-mode="lunar" onclick="switchMode('lunar')">农历</button>
       <button class="mode-tab" data-mode="pillars" onclick="switchMode('pillars')">四柱</button>
-      <a href="hepan" style="margin-left:auto;color:var(--tx3);text-decoration:none;font-size:13px;letter-spacing:2px;padding:4px 12px;border-radius:20px;transition:all .25s" onmouseenter="this.style.color='var(--gold-l)';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='var(--tx3)';this.style.background='transparent'">合盘 ›</a>
+      <a href="hepan" class="mode-related-link">合盘 ›</a>
     </div>
 
     <form id="birthForm" novalidate>
@@ -1016,16 +1004,16 @@ body.has-mobile-nav{padding-bottom:60px}
       </div>
 
       <div class="row calendar-only-fields">
-        <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
-            <input type="checkbox" id="zishiHuanri" value="1" style="width:16px;height:16px">
+        <div class="field toggle-row">
+          <label class="toggle-option">
+            <input type="checkbox" id="zishiHuanri" value="1">
             子时换日
           </label>
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
-            <input type="checkbox" id="solarEnabled" checked value="1" style="width:16px;height:16px">
+          <label class="toggle-option">
+            <input type="checkbox" id="solarEnabled" checked value="1">
             真太阳时
           </label>
-          <span style="font-size:10px;color:var(--tx3)">默认：子时换日关 · 真太阳时开</span>
+          <span class="toggle-hint">默认：子时换日关 · 真太阳时开</span>
         </div>
       </div>
 
@@ -1061,7 +1049,7 @@ body.has-mobile-nav{padding-bottom:60px}
 
     <div class="trust">
       <span>🔒 全程加密</span>
-      <span>☁️ 不留存数据</span>
+      <span>☁️ 游客不自动保存</span>
       <span>⚡ 秒出结果</span>
     </div>
   </div>
@@ -1082,9 +1070,6 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/region.js"></script>
 <script src="js/main.js"></script>
 <script src="js/mobile-app-shell.js?v=5"></script>
-
-
-<script>setTimeout(function(){var o=document.getElementById("eyeOverlay");if(o){o.style.opacity="0";o.style.visibility="hidden";setTimeout(function(){o.remove()},300)}},800)</script>
 
 
 <script>

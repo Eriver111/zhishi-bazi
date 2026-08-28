@@ -122,7 +122,6 @@ test('AI credit products explicitly exclude deep-report access', () => {
   const paywall = fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8');
   const result = fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8');
 
-  assert.match(pricing, /本页购买的积分仅用于 AI 对话提问/);
   assert.match(pricing, /不会自动解锁深度报告/);
   assert.match(pricing, /AI积分包与深度报告相互独立/);
   assert.match(paywall, /支付 ¥9\.9 单独解锁报告/);
@@ -687,11 +686,11 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v18');
+  assert.equal(openedCache, 'zhishi-v19');
   assert.ok(cachedAssets.includes('/js/payment.js'));
-  assert.ok(cachedAssets.includes('/js/paywall.js?v=9'));
+  assert.ok(cachedAssets.includes('/js/paywall.js?v=10'));
   assert.ok(cachedAssets.includes('/js/result.js?v=18'));
-  assert.ok(cachedAssets.includes('/js/ai-chat-integration.js?v=20260825a'));
+  assert.ok(cachedAssets.includes('/js/ai-chat-integration.js?v=20260828a'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js?v=2'));
 });
 

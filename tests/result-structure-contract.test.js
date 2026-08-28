@@ -53,13 +53,14 @@ test('hepan result keeps its existing result and AI integration hooks', () => {
 test('result-capable pages load the result skin after every existing stylesheet', () => {
   for (const page of ['result.html', 'hepan-result.html', 'ziwei.html', 'liuren.html']) {
     const hrefs = stylesheetHrefs(read(page));
-    assert.equal(hrefs.at(-1), 'css/theme-light-results.css?v=2', `${page} must load the result skin last`);
+    assert.match(hrefs.at(-1), /^css\/theme-light-results\.css\?v=\d+$/, `${page} must load the result skin last`);
   }
 
   for (const page of ['ziwei.html', 'liuren.html']) {
     const hrefs = stylesheetHrefs(read(page));
     assert.ok(
-      hrefs.indexOf('css/theme-light-forms.css?v=1') < hrefs.indexOf('css/theme-light-results.css?v=2'),
+      hrefs.findIndex((href) => /^css\/theme-light-forms\.css\?v=\d+$/.test(href)) <
+        hrefs.findIndex((href) => /^css\/theme-light-results\.css\?v=\d+$/.test(href)),
       `${page} must keep the form skin before the result skin`,
     );
   }

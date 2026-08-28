@@ -1,14 +1,14 @@
-// 知时 Service Worker v18 — 缓存优先+后台更新，兼顾速度与新鲜度
-var CACHE_NAME = 'zhishi-v18';
+// 知时 Service Worker v19 — 代码资源网络优先，避免更新后首屏仍展示旧功能。
+var CACHE_NAME = 'zhishi-v19';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
   '/css/style.css', '/css/landing.css', '/css/auth.css',
-  '/css/theme-light.css?v=3', '/css/theme-light-results.css?v=2',
+  '/css/theme-light.css?v=3', '/css/theme-light-results.css?v=3',
   '/css/interactions.css', '/css/poster.css',
   '/js/bazi.js?v=1781962250', '/js/mo-xing-he.js?v=1781962250',
-  '/js/ai-chat-integration.js?v=20260825a', '/js/result.js?v=18',
-  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=9',
+  '/js/ai-chat-integration.js?v=20260828a', '/js/result.js?v=18',
+  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=10',
   '/js/hepan-paywall.js?v=2',
   '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',
   '/js/report-pdf.js?v=3'
@@ -38,7 +38,7 @@ self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// 策略：HTML始终走网络；JS/CSS缓存优先+后台更新；其他缓存优先
+// 策略：HTML和代码资源优先取最新版本；断网时再回退缓存。
 self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
   var path = url.pathname;
@@ -49,18 +49,15 @@ self.addEventListener('fetch', function(e) {
     return;
   }
 
-  // JS/CSS：stale-while-revalidate（缓存秒开+后台静默更新）
+  // JS/CSS：network-first，避免部署后的第一次访问仍命中旧交互。
   if (path.endsWith('.js') || path.endsWith('.css')) {
     e.respondWith(
       caches.open(CACHE_NAME).then(function(cache) {
-        return cache.match(e.request).then(function(cached) {
-          // 后台发起网络请求更新缓存
-          var fetchPromise = fetch(e.request).then(function(response) {
-            cache.put(e.request, response.clone());
+        return fetch(e.request).then(function(response) {
+            if (response && response.ok) cache.put(e.request, response.clone());
             return response;
-          }).catch(function() { /* 网络失败，忽略 */ });
-          // 立即返回缓存（有就秒开），没有则等网络
-          return cached || fetchPromise;
+          }).catch(function() {
+            return cache.match(e.request);
         });
       })
     );

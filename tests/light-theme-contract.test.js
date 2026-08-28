@@ -83,7 +83,7 @@ test('light page theme overrides the real Zhishi chat surfaces', () => {
   for (const page of ['ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html']) {
     const html = read(page);
     assert.match(html, /className\s*=\s*['"]msg ai['"]/, `${page} must retain the runtime AI message class`);
-    assert.match(html, /css\/theme-light-pages\.css\?v=2/);
+    assert.match(html, /css\/theme-light-pages\.css\?v=3/);
   }
   assert.match(css, /\.page\s*\{[^}]*background:\s*#f0e6d1\s*!important/s);
   assert.match(css, /\.msg\.ai\s+\.bubble\s*\{[^}]*color:\s*#2d261f\s*!important;[^}]*background:\s*#fbf6eb\s*!important/s);

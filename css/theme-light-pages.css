@@ -33,4 +33,54 @@
 .msg.ai .bubble strong { color: #84362f !important; }
 .page .empty-state { color: #655b51 !important; }
 .input-row textarea { color: #2d261f !important; background: #fffaf0 !important; border-color: rgba(72,52,31,.16) !important; }
+
+/* 档案库与个人中心共用同一套“账户空间”视觉语言。 */
+body:has(.profile-page) { background: #eee3cf !important; }
+.profile-page { max-width: 760px !important; margin: 44px auto 70px !important; padding: 0 16px !important; }
+.profile-kicker { margin: 0 0 6px; color: #84362f; font-size: 11px; font-weight: 700; letter-spacing: 4px; }
+.profile-page > h1 {
+  margin: 0 !important;
+  color: #372d25 !important;
+  font: 700 30px/1.25 STKaiti,KaiTi,serif !important;
+  letter-spacing: 7px !important;
+  text-align: left !important;
+}
+.profile-page > .sub {
+  margin: 8px 0 22px !important;
+  color: #7b7066 !important;
+  font-size: 12px !important;
+  letter-spacing: 2px !important;
+  text-align: left !important;
+}
+.profile-card,
+.chart-card,
+.profile-customer-service {
+  background: rgba(255,253,248,.88) !important;
+  border-color: rgba(100,75,47,.15) !important;
+  border-radius: 15px !important;
+  box-shadow: 0 8px 24px rgba(70,49,28,.05) !important;
+}
+.chart-card { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.chart-card:hover { transform: translateY(-2px); border-color: rgba(132,54,47,.26) !important; box-shadow: 0 12px 28px rgba(70,49,28,.08) !important; }
+.profile-customer-service { margin-top: 18px !important; }
+.profile-customer-service__action:focus-visible,
+.chart-card:focus-visible { outline: 3px solid rgba(132,54,47,.2); outline-offset: 2px; }
+
+/* 独立 AI 对话页在桌面端减少空旷感，手机端保持全屏键盘适配。 */
+body:has(.page .messages) { background: #eee3cf !important; }
+body:has(.page .messages) .page {
+  max-width: 900px;
+  background: rgba(251,246,235,.96);
+  border-left: 1px solid rgba(72,52,31,.1);
+  border-right: 1px solid rgba(72,52,31,.1);
+  box-shadow: 0 0 40px rgba(67,46,24,.06);
+}
+body:has(.page .messages) .topbar { min-height: 58px; }
+body:has(.page .messages) .empty-state { max-width: 460px; margin: auto; }
+
+@media (max-width: 768px) {
+  .profile-page { margin: 0 auto !important; padding: 25px 14px 34px !important; }
+  .profile-page > h1 { font-size: 27px !important; }
+  body:has(.page .messages) .page { max-width: none; border: 0; box-shadow: none; }
+}
 .quota-bar a { color: #84362f !important; }

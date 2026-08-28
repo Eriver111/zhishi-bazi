@@ -32,6 +32,62 @@ button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
 .zw-check input { width: 16px; height: 16px; accent-color: var(--zh-vermilion); }
 .zw-default-hint { color: var(--tx3); font-size: 10px; }
 
+/* 八字排盘页：桌面端利用横向空间，手机端仍保持单列。 */
+body:has(#birthForm) .app { max-width: 860px; padding-top: 26px; }
+body:has(#birthForm) .header { margin-bottom: 22px; }
+body:has(#birthForm) .header h1 { font-size: 40px; }
+body:has(#birthForm) .card { width: min(100%, 760px); padding: 26px 30px; }
+body:has(#birthForm) .archive-name-input,
+body:has(#birthForm) input:not([type="radio"]):not([type="checkbox"]) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--tx);
+  background: rgba(255,253,248,.86);
+  border: 1px solid rgba(72,52,31,.16);
+  border-radius: 9px;
+  font: 14px/1.4 inherit;
+  outline: 0;
+}
+body:has(#birthForm) input:focus,
+body:has(#birthForm) select:focus {
+  border-color: rgba(132,54,47,.46) !important;
+  box-shadow: 0 0 0 3px rgba(132,54,47,.08) !important;
+}
+.archive-name-hint,
+.minute-hint { color: #766b60 !important; opacity: 1 !important; line-height: 1.55; }
+.mode-related-link {
+  margin-left: 12px;
+  padding: 8px 13px;
+  color: var(--zh-pine);
+  background: rgba(54,93,80,.055);
+  border: 1px solid rgba(54,93,80,.18);
+  border-radius: 18px;
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.mode-related-link:hover { background: rgba(54,93,80,.1); }
+.toggle-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.toggle-option {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  margin: 0 !important;
+  padding: 7px 11px;
+  color: var(--tx2) !important;
+  background: rgba(255,253,248,.62);
+  border: 1px solid rgba(72,52,31,.13);
+  border-radius: 9px;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+  cursor: pointer;
+}
+.toggle-option input { width: 17px; height: 17px; accent-color: var(--zh-vermilion); }
+.toggle-hint { color: #766b60; font-size: 10px; line-height: 1.5; }
+
 .pillar-intro {
   margin: 0 0 16px;
   color: var(--tx2);
@@ -157,6 +213,10 @@ button[disabled] { opacity: .56; cursor: not-allowed; box-shadow: none; }
 }
 @media (max-width: 768px) {
   select, input, textarea, button, .radio, .mode-tab { min-height: 44px; }
+  body:has(#birthForm) .app { padding: 18px 12px 54px; }
+  body:has(#birthForm) .header { margin-bottom: 16px; }
+  body:has(#birthForm) .header h1 { font-size: 34px; }
+  body:has(#birthForm) .card { width: 100%; padding: 20px 14px; }
   .pillar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
   .pillar-column { padding: 10px 6px 7px; }
 }

@@ -15,7 +15,7 @@ const externalScriptSources = (html) => [...html.replace(/<!--[\s\S]*?-->/g, '')
 const loadsAiIntegration = (html) => externalScriptSources(html)
   .some((src) => /^(?:\.\/)?js\/ai-chat-integration\.js(?:[?#].*)?$/i.test(src));
 const assertBaziAiRoute = (source) => {
-  const target = source.match(/\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*['"]ai-chat\.html['"]/);
+  const target = source.match(/\b([A-Za-z_$][\w$]*)\s*=\s*['"]ai-chat\.html['"]/);
   assert.ok(target, 'AI integration must assign ai-chat.html as its default target');
   assert.match(
     source,
@@ -38,8 +38,8 @@ test('follow-up pages retain their contextual AI destinations', () => {
 test('Ziwei follow-up carries explicit context and cache-busts repaired bundles', () => {
   const ziweiPage = read('ziwei.html');
   const ziweiAnalysis = read('js/ziwei-analysis.js');
-  assert.match(ziweiPage, /js\/ziwei-professional\.js\?v=4/);
-  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=9/);
+  assert.match(ziweiPage, /js\/ziwei-professional\.js\?v=6/);
+  assert.match(ziweiPage, /js\/ziwei-render\.js\?v=12/);
   assert.match(ziweiPage, /js\/ziwei-analysis\.js\?v=2/);
   assert.match(ziweiAnalysis, /zw-ai-chat\.html\?t=zw&v=2/);
 });

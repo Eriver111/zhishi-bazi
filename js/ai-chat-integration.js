@@ -21,7 +21,7 @@
   };
 
   var $fab, $badge, $backdrop, $drawer, $messages, $input, $sendBtn, $emptyState,
-      $creditsLabel, $buyBar, $inputWrap, $redeemRow, $statusLine;
+      $creditsLabel, $buyBar, $inputWrap, $statusLine;
 
   // 检测页面类型（顶层，所有事件处理器都能访问）
   function detectPageType(){
@@ -128,14 +128,14 @@
   function injectUI() {
     var html = '';
 
-    html += '<div id="aiFab" class="ai-fab" title="知时先生">AI';
+    html += '<div id="aiFab" class="ai-fab" title="知时AI">AI';
     html += '<span class="ai-fab-badge" id="aiFabBadge"></span></div>';
     html += '<div class="ai-drawer-backdrop" id="aiBackdrop" onclick="window._aiClose()"></div>';
 
     html += '<div class="ai-drawer" id="aiDrawer">';
     html += '<div class="ai-drawer-handle"></div>';
     html += '<div class="ai-drawer-header">';
-    html += '<span class="ai-drawer-title">知时先生</span>';
+    html += '<span class="ai-drawer-title">知时AI</span>';
     html += '<button class="ai-mode-toggle" id="aiModeToggle" onclick="window._aiToggleMode()" title="切换专业/白话模式">白话</button>';
     html += '<span class="ai-drawer-credits" id="aiCreditsLabel">未激活</span>';
     html += '<button class="ai-drawer-close" onclick="window._aiClose()">✕</button>';
@@ -145,33 +145,14 @@
     html += '<div class="chat-messages-wrap" id="aiMessages">';
     html += '<div class="chat-empty-wrap" id="aiEmpty">';
     html += '<div class="empty-icon">🏮</div>';
-    html += '<h4>知时先生</h4>';
+    html += '<h4>知时AI</h4>';
     html += '<p id="aiEmptyDesc">首次体验免费，可提问 2 次</p>';
     html += '<code id="aiEmptyCode">免费体验中 · 无需付费</code>';
     html += '</div></div>';
 
-    // 分享/购买条（免费耗尽时显示分享，已购买用户显示积分信息）
+    // 次数用尽时只保留统一购买入口，兑换统一放在个人中心。
     html += '<div class="chat-buy-bar" id="aiBuyBar" style="display:none;flex-wrap:wrap;gap:8px;justify-content:center">';
-    html += '<button class="buy-btn" id="aiShareBtn" onclick="window._aiShare()" style="font-size:13px;background:linear-gradient(135deg,#4CAF50,#2d8a4a);color:#fff">分享给好友 · 得1次提问</button>';
-    html += '<span class="buy-hint" id="aiBuyHint" style="width:100%;text-align:center;font-size:11px">如需多次提问，请前往 <a href="pricing.html" style="color:var(--gold)">积分方案</a> 购买次数包或会员</span>';
-    html += '</div>';
-
-    // 我的兑换码（激活后显示）
-    html += '<div id="aiMyCode" style="display:none;padding:8px 16px;border-top:1px solid var(--bd);font-size:12px;color:var(--tx2);text-align:center">';
-    html += '🔑 你的兑换码：<strong id="aiCodeDisplay" style="color:var(--gold-l);font-size:14px;letter-spacing:2px;user-select:all"></strong>';
-    html += '<button onclick="window._aiCopyCode()" style="margin-left:8px;background:none;border:1px solid var(--bd2);color:var(--gold);padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer">复制</button>';
-    html += '</div>';
-    // 手机绑定（找回用）
-    html += '<div id="aiBindPhone" style="display:none;padding:4px 16px 8px;text-align:center;font-size:11px;color:var(--tx3)">';
-    html += '绑定手机找回：<input type="tel" id="aiPhoneInput" placeholder="输入手机号" maxlength="11" style="width:120px;padding:4px 8px;background:var(--bg-input);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:11px;margin:0 4px">';
-    html += '<button onclick="window._aiBindPhone()" style="background:none;border:1px solid var(--bd2);color:var(--gold);padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer">绑定</button>';
-    html += '<span id="aiBindMsg" style="margin-left:4px"></span>';
-    html += '</div>';
-    // 兑换码输入
-
-    html += '<div class="redeem-row" id="aiRedeemRow">';
-    html += '<input type="text" id="aiRedeemInput" placeholder="输入兑换码" maxlength="32">';
-    html += '<button onclick="window._aiRedeem()">激活</button>';
+    html += '<span class="buy-hint" id="aiBuyHint" style="width:100%;text-align:center;font-size:11px">提问次数已用完，可前往 <a href="pricing.html" style="color:var(--gold)">积分方案</a> 购买，兑换码请在 <a href="profile.html" style="color:var(--gold)">个人中心</a> 使用</span>';
     html += '</div>';
 
     // 输入区
@@ -198,7 +179,6 @@
     $creditsLabel = document.getElementById('aiCreditsLabel');
     $buyBar = document.getElementById('aiBuyBar');
     $inputWrap = document.getElementById('aiInputWrap');
-    $redeemRow = document.getElementById('aiRedeemRow');
     $statusLine = document.getElementById('aiEmptyCode');
 
     window._aiToggle = toggle;
@@ -206,7 +186,6 @@
     window._aiOpen = open;
     window._aiSend = sendMessage;
     window._aiBuy = startPayment;
-    window._aiRedeem = redeemCode;
     window._aiToggleMode = toggleMode;
     window._aiKey = handleKey;
 
@@ -485,8 +464,6 @@
 
   function showBuyBar() {
     // 隐藏购买提示
-    var shareBtn = document.getElementById('aiShareBtn');
-    if (shareBtn) shareBtn.style.display = 'none';
     var hint = document.getElementById('aiBuyHint');
     if (hint) hint.style.display = 'none';
 
@@ -503,7 +480,6 @@
       if ($input) $input.disabled = true;
       if ($sendBtn) $sendBtn.disabled = true;
       if ($inputWrap) $inputWrap.style.display = 'flex';
-      if (shareBtn) shareBtn.style.display = 'inline-block';
       if (hint) hint.style.display = 'block';
       return;
     }
@@ -803,7 +779,7 @@
 
   function addGreeting() {
     var cd = buildChartData();
-    var g = '🧧 **知时先生已就绪**\n\n';
+    var g = '🧧 **知时AI已就绪**\n\n';
     if (cd && cd.dayMaster) { g += '你的日主为**' + cd.dayMaster.gan + '**' + (cd.dayMaster.wuXing ? '（' + cd.dayMaster.wuXing + '）' : '') + (cd.dayMasterStrength && cd.dayMasterStrength.level ? '，命局**' + cd.dayMasterStrength.level + '**' : '') + '。\n\n可以问我任何命理问题：\n• 我的喜用神是什么？\n• 财运事业如何？\n• 今年运势怎么样？\n• 婚姻感情如何？'; }
     else { g += '你可以问我任何八字命理问题。'; }
     if (AI.isMonthly) g = '👑 **会员已激活**\n\n' + g;
@@ -877,7 +853,7 @@
         // 老付费用户：给一个有价值的迁移提示
         var migratedCode = 'MIG' + Math.random().toString(36).slice(2, 6).toUpperCase();
         // 弹窗提示
-        var migrateMsg = '🎁 **老用户权益升级**\n\n感谢你之前的支持！作为早期付费用户，你已获得：\n• 30 天免费会员（价值 ¥29.9）\n• 20 次额外 AI 提问额度\n\n你的专属兑换码：**' + migratedCode + '**\n\n请在兑换码输入框中激活。';
+        var migrateMsg = '🎁 **老用户权益升级**\n\n感谢你之前的支持！作为早期付费用户，你已获得：\n• 30 天免费会员（价值 ¥29.9）\n• 20 次额外 AI 提问额度\n\n你的专属兑换码：**' + migratedCode + '**\n\n请前往个人中心兑换。';
         addMessage('ai', migrateMsg);
         open();
         localStorage.setItem('ai_migrated', '1');
