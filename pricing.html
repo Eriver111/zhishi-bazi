@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>知时 · 积分方案</title>
+<title>知时 · AI提问次数与会员</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/landing.css">
 <link rel="stylesheet" href="css/auth.css">
@@ -34,7 +34,10 @@
 .btn-gold-pricing:hover{box-shadow:0 6px 24px rgba(201,168,76,.3);transform:translateY(-1px)}
 .btn-outline-pricing{background:transparent;border:2px solid var(--bd2);color:var(--gold-l)}
 .btn-outline-pricing:hover{background:rgba(201,168,76,.08)}
-.pricing-note{text-align:center;margin-top:24px;color:var(--tx3);font-size:11px}
+.pricing-scope{max-width:760px;margin:0 auto 24px;padding:14px 18px;border:1px solid rgba(150,59,52,.24);border-radius:12px;background:rgba(150,59,52,.07);text-align:center;line-height:1.75}
+.pricing-scope strong{display:block;color:var(--red,#963b34);font-size:15px;letter-spacing:1px}
+.pricing-scope span{display:block;color:var(--tx2);font-size:13px}
+.pricing-note{text-align:center;margin-top:24px;color:var(--tx3);font-size:11px;line-height:1.8}
 @media(max-width:600px){.pricing-grid{grid-template-columns:1fr 1fr;gap:12px}.pricing-card{padding:20px 14px}.pricing-price{font-size:28px}}@media(max-width:400px){.pricing-wrap{padding:40px 8px 60px}.pricing-hero h1{font-size:26px;letter-spacing:3px}.pricing-grid{grid-template-columns:1fr;gap:10px}.pricing-card{padding:16px 12px}.pricing-price{font-size:24px}.pricing-name{font-size:15px}.pricing-btn{font-size:14px;padding:10px}}
 </style>
 <link rel="stylesheet" href="css/theme-light.css?v=3">
@@ -47,29 +50,34 @@
 
 <div class="pricing-wrap">
   <div class="pricing-hero">
-    <h1>积分方案</h1>
-    <p>按需购买积分，灵活使用 AI 命理师</p>
+    <h1>AI提问次数与会员</h1>
+    <p>按需购买 AI 提问次数，或开通 30 天无限次会员</p>
+  </div>
+
+  <div class="pricing-scope" role="note" aria-label="商品范围说明">
+    <strong>本页购买的积分仅用于 AI 对话提问</strong>
+    <span>不包含深度命理报告，也不会自动解锁报告；深度报告需在对应报告页单独购买。</span>
   </div>
 
   <div class="pricing-grid">
     <div class="pricing-card">
       <div class="pricing-icon"></div>
       <div class="pricing-name">体验包</div>
-      <div class="pricing-price"><small>¥</small>4.9<span class="unit"> / 3次</span></div>
+      <div class="pricing-price"><small>¥</small>4.9<span class="unit"> / 3次AI提问</span></div>
       <p class="pricing-desc">初次尝试，超低价体验</p>
       <ul class="pricing-features">
         <li>3 次 AI 命理对话</li>
         <li>子平八字+盲派理论</li>
-        <li>完整排盘数据注入</li>
+        <li>AI可读取当前命盘信息</li>
         <li>兑换码永久有效</li>
       </ul>
-      <button class="pricing-btn btn-outline-pricing" onclick="buyCredits('credit_3',4.9,'AI体验包·3次')">¥4.9 购买</button>
+      <button class="pricing-btn btn-outline-pricing" onclick="buyCredits('credit_3',4.9,'AI体验包·3次')">¥4.9 购买3次AI提问</button>
     </div>
 
     <div class="pricing-card">
       <div class="pricing-icon"></div>
       <div class="pricing-name">进阶包</div>
-      <div class="pricing-price"><small>¥</small>9.9<span class="unit"> / 10次</span></div>
+      <div class="pricing-price"><small>¥</small>9.9<span class="unit"> / 10次AI提问</span></div>
       <p class="pricing-desc">最受欢迎，性价比最高</p>
       <ul class="pricing-features">
         <li>10 次 AI 命理对话</li>
@@ -77,21 +85,21 @@
         <li>八字命盘上下文</li>
         <li>兑换码永久有效</li>
       </ul>
-      <button class="pricing-btn btn-gold-pricing" onclick="buyCredits('credit_10',9.9,'AI进阶包·10次')">¥9.9 购买</button>
+      <button class="pricing-btn btn-gold-pricing" onclick="buyCredits('credit_10',9.9,'AI进阶包·10次')">¥9.9 购买10次AI提问</button>
     </div>
 
     <div class="pricing-card">
       <div class="pricing-icon"></div>
       <div class="pricing-name">专业包</div>
-      <div class="pricing-price"><small>¥</small>14.9<span class="unit"> / 20次</span></div>
+      <div class="pricing-price"><small>¥</small>14.9<span class="unit"> / 20次AI提问</span></div>
       <p class="pricing-desc">重度用户，超值选择</p>
       <ul class="pricing-features">
         <li>20 次 AI 命理对话</li>
-        <li>完整排盘+大运流年</li>
+        <li>AI可读取排盘与大运流年</li>
         <li>单次仅 ¥0.75</li>
         <li>兑换码永久有效</li>
       </ul>
-      <button class="pricing-btn btn-outline-pricing" onclick="buyCredits('credit_20',14.9,'AI专业包·20次')">¥14.9 购买</button>
+      <button class="pricing-btn btn-outline-pricing" onclick="buyCredits('credit_20',14.9,'AI专业包·20次')">¥14.9 购买20次AI提问</button>
     </div>
 
     <div class="pricing-card">
@@ -101,7 +109,7 @@
       <p class="pricing-desc">无限提问，专属特权</p>
       <ul class="pricing-features">
         <li>30天无限次AI对话</li>
-        <li>所有积分包功能</li>
+        <li>AI命理师全部对话功能</li>
         <li>新功能优先体验</li>
         <li>支持随时续费</li>
       </ul>
@@ -110,7 +118,7 @@
 
     
 
-  <p class="pricing-note">所有方案前2次AI提问免费 · 兑换码绑定手机可找回</p>
+  <p class="pricing-note">所有方案前2次AI提问免费 · 兑换码绑定手机可找回<br>AI积分包与深度报告相互独立，购买AI提问积分不会自动解锁深度报告。</p>
 </div>
 
 <script src="js/auth.js?v=5"></script>

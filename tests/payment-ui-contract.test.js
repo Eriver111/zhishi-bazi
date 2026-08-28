@@ -117,6 +117,22 @@ function resultParamsFromSearch(search) {
   return context.params;
 }
 
+test('AI credit products explicitly exclude deep-report access', () => {
+  const pricing = fs.readFileSync(path.join(root, 'pricing.html'), 'utf8');
+  const paywall = fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8');
+  const result = fs.readFileSync(path.join(root, 'js', 'result.js'), 'utf8');
+
+  assert.match(pricing, /本页购买的积分仅用于 AI 对话提问/);
+  assert.match(pricing, /不会自动解锁深度报告/);
+  assert.match(pricing, /AI积分包与深度报告相互独立/);
+  assert.match(paywall, /支付 ¥9\.9 单独解锁报告/);
+  assert.match(paywall, /不使用 AI 提问积分/);
+  assert.doesNotMatch(paywall, /AI 会员也不包含本报告/);
+  assert.match(result, /需单独购买深度报告/);
+  assert.doesNotMatch(paywall, />积分解锁完整报告</);
+  assert.doesNotMatch(result, /需使用积分兑换后查看完整报告/);
+});
+
 test('desktop report payment renders the gateway QR image instead of treating QR content as an image', async () => {
   const nodes = {
     qrModal: new FakeElement('div'),

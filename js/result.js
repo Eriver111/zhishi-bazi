@@ -1958,8 +1958,8 @@ function buildReportHTML() {
         if (sec.paywalled && paywallActive) {
             sec.html = '<div class="locked-placeholder">'
                 + '<div class="locked-icon">🔒</div>'
-                + '<p class="locked-title">此内容需积分解锁</p>'
-                + '<p class="locked-desc">「' + sec.title + '」为深度命理分析内容，需使用积分兑换后查看完整报告。</p>'
+                + '<p class="locked-title">此内容需单独购买深度报告</p>'
+                + '<p class="locked-desc">「' + sec.title + '」为深度命理分析内容，不使用 AI 提问积分，需在报告页单独购买后查看。</p>'
                 + '<p class="locked-hint">请返回知时官网（knowbazi.online）完成支付后，重新生成完整 PDF 报告。</p>'
                 + '</div>';
             return;
