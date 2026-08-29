@@ -610,6 +610,32 @@
           data.structuralRisks = sa.structuralRisks;
         } catch(e) {}
       }
+      // v6.0 生克事实图 + 取象候选。事实由程序计算，AI负责综合表达，不把候选文案当固定答案。
+      if (typeof BaZiChain !== 'undefined' && BaZiChain.interpret && data.yongJi) {
+        try {
+          var chainInterpretation = BaZiChain.interpret(_bazi, data.yongJi);
+          var graphEdges = chainInterpretation.factGraph && chainInterpretation.factGraph.edges || [];
+          var specialEdges = graphEdges.filter(function(edge) {
+            return ['生','克','同气'].indexOf(edge.type) < 0;
+          });
+          var energyEdges = graphEdges.filter(function(edge) {
+            return (edge.type === '生' || edge.type === '克') && edge.strength >= 0.72;
+          }).sort(function(a,b) { return b.strength - a.strength; }).slice(0, 36);
+          data.chainAnalysis = {
+            version: chainInterpretation.version,
+            mechanisms: chainInterpretation.mechanisms,
+            paths: chainInterpretation.paths,
+            imageryCandidates: chainInterpretation.imagery,
+            constraints: chainInterpretation.constraints,
+            evidenceEdges: specialEdges.concat(energyEdges).map(function(edge) {
+              return {
+                type:edge.type, evidence:edge.evidence, strength:edge.strength,
+                formedWx:edge.formedWx || null, distance:edge.distance
+              };
+            })
+          };
+        } catch(e) { /* 取象增强层不阻断基础命盘 */ }
+      }
     }
     // 大运
     if (typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list) {

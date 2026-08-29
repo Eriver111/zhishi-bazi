@@ -122,3 +122,27 @@ test('B4 白名单：候选对比证据出现在有 candidateScores 的盘', () 
     }
   });
 });
+
+test('AI context receives chain facts and XiangFa as editable candidates rather than fixed copy', () => {
+  const ctx = buildSingleChart({
+    yongJi: { yongShen: [], xiShen: [], jiShen: [] },
+    chainAnalysis: {
+      version: '3.0',
+      mechanisms: [{ name: '食伤生财', strength: '强', evidence: ['月柱食神生时柱偏财'] }],
+      paths: [{ name: '才华资源连续流通', steps: ['食伤生财', '财生官杀'] }],
+      imageryCandidates: [{
+        name: '食伤生财', direction: '有利', confidence: '强',
+        basis: '月柱食神生时柱偏财', placement: '成长环境牵动长期落点',
+        conclusion: '能力与产出存在通向收入的明确路径。'
+      }],
+      evidenceEdges: [{ type: '生', evidence: '月柱食神生时柱偏财' }],
+      constraints: ['AI可综合改写，不得改写事实关系']
+    }
+  });
+
+  assert.match(ctx, /完整生克事实链与取象候选 v3\.0/);
+  assert.match(ctx, /取象候选（供综合，不是固定答案）/);
+  assert.match(ctx, /月柱食神生时柱偏财/);
+  assert.match(apiSource, /取象不是复读模板/);
+  assert.match(apiSource, /它的目的不是锁死你的措辞/);
+});
