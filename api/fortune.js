@@ -5,6 +5,8 @@
 const crypto = require('crypto');
 const { calculator, calendar, chartFromQuery } = require('./_bazi-runtime');
 const { chinaDateParts, buildDailyFacts, fallbackCopy } = require('./_daily-fortune');
+const { requireAuth } = require('../lib/auth.js');
+const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
@@ -205,6 +207,13 @@ module.exports = async function handler(req, res) {
 
     if (!dayGan) return res.status(200).json({ huangli: huangli, fortune: null });
 
+    // 公共黄历无需登录；只要请求个性化推演，就必须使用真实登录身份。
+    // 过去此处未鉴权，任何人都能绕过页面无限调用付费模型。
+    var authUser = requireAuth(req);
+    if (!authUser || !authUser.uid) {
+      return res.status(401).json({ error: '请先登录查看专属今日运势', needLogin: true });
+    }
+
     var cacheKey = crypto.createHash('sha256').update((query || chartLabel || (dayGan + dayZhi)) + '|' + todayKey).digest('hex');
     for (var k in _cache) { if (!_cache[k]._date || _cache[k]._date !== todayKey) delete _cache[k]; }
     if (_cache[cacheKey]) return res.status(200).json({ huangli: huangli, fortune: _cache[cacheKey] });
@@ -219,6 +228,10 @@ ${chartContext || ('保存档案：' + chartLabel + '\n日主：' + dayGan + wx 
 
 直接返回JSON：{"headline":"今日概括","tip":"大白话推演"}`;
 
+    var guard = beginAiRequest(req, { route: 'fortune', identity: authUser.uid, minuteMax: 3, hourMax: 12 });
+    if (!guard.ok) {
+      return res.status(429).json({ error: guard.reason === 'concurrent' ? '上一次运势还在生成，请稍候' : '今日运势请求过于频繁，请稍后再试' });
+    }
     var content = '';
     try {
       var aiResp = await fetch(AI_API_URL, {
@@ -232,6 +245,8 @@ ${chartContext || ('保存档案：' + chartLabel + '\n日主：' + dayGan + wx 
       if (!content.trim()) throw new Error('AI 返回内容为空');
     } catch (aiError) {
       console.warn('[fortune] AI fallback:', aiError.message);
+    } finally {
+      guard.release();
     }
     // 去除可能的免责声明
     content = content.replace(/以上[^。]*生成[^。]*参考[^。]*[\n。]/g, '').replace(/以上[^。]*由[^。]*生成[^。]*/g, '').replace(/(本文|此内容|以上内容)[^。]*免责[^。]*[。\n]/g, '').replace(/\n*---\n.*$/s, '').replace(/（以上[^）]*）/, '').trim();

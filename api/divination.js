@@ -9,6 +9,7 @@ const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_MODEL = 'deepseek-v4-flash';
 
 const { requireAuth } = require('../lib/auth.js');
+const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 const { deductCredit, deductCreditByUser, isMonthlyActive, isMonthlyActiveByUserId, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');
 
 const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦。用户来问卦是求结果、求时间、求方向——不是来听学术报告的。你必须直接回答"能不能""什么时候""该怎么办"。
@@ -104,7 +105,7 @@ module.exports = async function handler(req, res) {
       if (code) monthlyActive = await isMonthlyActive(code);
     }
     var freeInfo = await trackFreeUsageByUser(userId);
-    var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2; // 与 ai-chat 统一：基础2+注册奖励2=4次
+    var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2;
     var freeUsed = false;
     var creditOk = !!monthlyActive || freeInfo.used < maxFree;
 
@@ -145,8 +146,13 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // 同一账号只允许一个占卜请求在途，避免并发请求穿透次数检查。
+    var guard = beginAiRequest(req, { route: 'divination', identity: userId, minuteMax: 4, hourMax: 24 });
+    if (!guard.ok) return res.status(429).json({ error: guard.reason === 'concurrent' ? '上一次解读还在生成，请稍候' : '请求过于频繁，请稍后再试' });
+
     // 调用 AI
-    var aiResp = await fetch(AI_API_URL, {
+    var aiResp;
+    try { aiResp = await fetch(AI_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
       body: JSON.stringify({
@@ -159,7 +165,7 @@ module.exports = async function handler(req, res) {
         max_tokens: 1500,
         temperature: 0.3
       })
-    });
+    }); } finally { guard.release(); }
 
     if (!aiResp.ok) {
       var errText = '';

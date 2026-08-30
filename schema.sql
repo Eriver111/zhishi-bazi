@@ -114,6 +114,40 @@ CREATE INDEX IF NOT EXISTS idx_ai_conversations_user_updated ON ai_conversations
 CREATE INDEX IF NOT EXISTS idx_chat_history_conversation_created ON chat_history(conversation_id, created_at DESC);
 ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
 
+-- 命盘过往事件校准：候选事实先生成并锁定，用户只确认是否发生。
+CREATE TABLE IF NOT EXISTS chart_calibrations (
+  id UUID PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  chart_key VARCHAR(96) NOT NULL,
+  chart_signature VARCHAR(80) NOT NULL DEFAULT '',
+  candidate_version VARCHAR(24) NOT NULL DEFAULT 'bazi-cal-v1',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, chart_key)
+);
+CREATE TABLE IF NOT EXISTS chart_calibration_events (
+  id UUID PRIMARY KEY,
+  calibration_id UUID NOT NULL REFERENCES chart_calibrations(id) ON DELETE CASCADE,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  event_key VARCHAR(80) NOT NULL,
+  event_year INTEGER NOT NULL CHECK (event_year BETWEEN 1900 AND 2200),
+  domain VARCHAR(20) NOT NULL,
+  prompt VARCHAR(180) NOT NULL,
+  evidence JSONB NOT NULL DEFAULT '[]'::jsonb,
+  confidence VARCHAR(12) NOT NULL DEFAULT 'medium',
+  answer VARCHAR(12) CHECK (answer IN ('yes', 'no', 'unsure')),
+  actual_year INTEGER CHECK (actual_year BETWEEN 1900 AND 2200),
+  note VARCHAR(240) NOT NULL DEFAULT '',
+  answered_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(calibration_id, event_key)
+);
+CREATE INDEX IF NOT EXISTS idx_chart_calibrations_user_updated ON chart_calibrations(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chart_calibration_events_lookup ON chart_calibration_events(user_id, calibration_id, event_year DESC);
+ALTER TABLE chart_calibrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chart_calibration_events ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS report_orders (
   order_id      VARCHAR(96) PRIMARY KEY,
   user_id       BIGINT REFERENCES users(id),

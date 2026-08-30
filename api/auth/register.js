@@ -3,7 +3,7 @@
  * Body: { email, password, code, phone? }
  * 需要先调用 /api/auth/send-code 获取邮箱验证码
  */
-const { hashPassword, signToken, rateLimit } = require('../../lib/auth.js');
+const { hashPassword, signToken, rateLimit, getClientIp } = require('../../lib/auth.js');
 const { getUserByEmail, createUser, bumpFreeUsageByUser } = require('../../lib/supabase.js');
 const { verifyCode } = require('./send-code.js');
 
@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
     if (password.length < 6) return res.status(400).json({ error: '密码至少 6 位' });
 
     // 频率限制：同一 IP 每小时最多 5 次注册
-    const clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+    const clientIp = getClientIp(req);
     if (!rateLimit('reg_' + clientIp, 5, 3600000)) {
       return res.status(429).json({ error: '注册太频繁，请稍后再试' });
     }
@@ -49,7 +49,8 @@ module.exports = async function handler(req, res) {
     const hashed = hashPassword(password);
     const user = await createUser(email, hashed, phone || null);
 
-    // 新注册用户赠送 3 次免费提问（注册激励）
+    // 兼容旧额度口径：内部总上限为基础次数+2，新账号从已用2起步，
+    // 因而新老账号实际都只有基础免费次数；这不是注册赠送。
     try { await bumpFreeUsageByUser(user.id); await bumpFreeUsageByUser(user.id); } catch (e) {}
 
     // 签发 token
@@ -57,8 +58,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       token,
-      user: { id: user.id, email: user.email, phone: user.phone, created_at: user.created_at },
-      bonus: 3
+      user: { id: user.id, email: user.email, phone: user.phone, created_at: user.created_at }
     });
   } catch (e) {
     return res.status(500).json({ error: '服务器内部错误，请稍后重试' });

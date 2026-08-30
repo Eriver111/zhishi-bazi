@@ -7,8 +7,9 @@
  * 支持完整排盘数据注入（chartData）和简版信息（bazi）
  */
 
-const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits, deductCreditByUser, isMonthlyActiveByUserId, getOrCreateChatConversation, getChatConversation, getConversationMessages, updateConversationMemory } = require('../lib/supabase.js');
+const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackFreeUsage, getFreeUsage, saveUserChatHistory, trackFreeUsageByUser, bumpFreeUsageByUser, getUserCredits, deductCreditByUser, isMonthlyActiveByUserId, getOrCreateChatConversation, getChatConversation, getConversationMessages, updateConversationMemory, getChartCalibrationSummary } = require('../lib/supabase.js');
 const { requireAuth } = require('../lib/auth.js');
+const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 const { buildZiweiContext } = require('../lib/ziwei-context.js');
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
@@ -16,6 +17,13 @@ const AI_API_KEY = process.env.AI_API_KEY || '';
 // Text generation is intentionally pinned: a stale PM2 AI_MODEL value must not
 // silently switch production traffic back to the much more expensive pro tier.
 const AI_MODEL = 'deepseek-v4-flash';
+
+function sanitizeGuestCalibrationSummary(value) {
+  return String(value || '').split(/\r?\n/).slice(0, 20).map(function(line) {
+    line = line.trim().slice(0, 260);
+    return /^\d{4}年【(?:学业|事业|财务|感情|家庭|身心状态|生活变化|经历)】用户确认(?:发生|没有发生)：/.test(line) ? line : '';
+  }).filter(Boolean).join('\n').slice(0, 2000);
+}
 
 const now2 = new Date();
 const currentYear2 = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(now2));
@@ -300,7 +308,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode, qa_debug, conversation_id, chart_key, chat_type } = req.body || {};
+    const { code, question, bazi, chartData, history, free_mode, free_id, mode, response_mode, qa_debug, conversation_id, chart_key, chat_type, calibration_summary } = req.body || {};
 
     if (!question) {
       return res.status(400).json({ error: '请输入问题' });
@@ -317,6 +325,8 @@ module.exports = async function handler(req, res) {
     var conversationMeta = {};
     var effectiveHistory = Array.isArray(history) ? history : [];
     var memorySummary = '';
+    var calibrationSummary = '';
+    if (!userId && calibration_summary) calibrationSummary = sanitizeGuestCalibrationSummary(calibration_summary);
 
     // 登录用户的历史按“术数类型 + 当前命盘”隔离。会话表未迁移时自动降级，回答和扣费不受影响。
     if (userId && typeof getOrCreateChatConversation === 'function') {
@@ -336,19 +346,27 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    if (userId && conversationMode === 'bazi' && chart_key && typeof getChartCalibrationSummary === 'function') {
+      try { calibrationSummary = await getChartCalibrationSummary(userId, chart_key); } catch (e) { calibrationSummary = ''; }
+    }
+
     // ---- 免费模式：前 N 次免费 ----
     if (free_mode && free_id) {
-      // 登录用户：按 user_id 追踪免费次数 + 注册奖励
+      // 登录用户：按 user_id 追踪统一免费次数
       if (userId) {
         var freeInfo = await trackFreeUsageByUser(userId);
-        var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2; // 基础2+注册奖励2=4次
+        var fb = parseInt(process.env.FREE_CREDITS_PER_DEVICE); var base = isNaN(fb) ? 2 : fb; var maxFree = base + 2;
         if (freeInfo.used < maxFree) {
           await saveUserChatHistory(userId, 'user', question, conversationMeta);
 
-          var freeReply; try { freeReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary); } catch(aiErr) {
-            return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
+          var freeGuard = beginAiRequest(req, { route: 'ai-chat', identity: userId });
+          if (!freeGuard.ok) return res.status(429).json({ error: freeGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
+          var freeReply; try { freeReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
+            freeGuard.release();
+            return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
           }
           await bumpFreeUsageByUser(userId);
+          freeGuard.release();
           await saveUserChatHistory(userId, 'assistant', freeReply, conversationMeta);
           scheduleMemoryRefresh(userId, conversation, conversationMode);
           return res.status(200).json({
@@ -366,16 +384,21 @@ module.exports = async function handler(req, res) {
           if (userMonthlyFallback || userCreditsFallback > 0) {
             // 有付费积分或会员，自动使用付费模式
             await saveUserChatHistory(userId, 'user', question, conversationMeta);
-            var paidReply; try { paidReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary); } catch(aiErr) {
-              return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
+            var fallbackGuard = beginAiRequest(req, { route: 'ai-chat', identity: userId });
+            if (!fallbackGuard.ok) return res.status(429).json({ error: fallbackGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
+            var paidReply; try { paidReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
+              fallbackGuard.release();
+              return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
             }
             var creditsAfterDeduct;
             if (!userMonthlyFallback) {
               creditsAfterDeduct = await deductCreditByUser(userId);
               if (!creditsAfterDeduct) {
+                fallbackGuard.release();
                 return res.status(500).json({ error: '扣减次数失败，请稍后重试' });
               }
             }
+            fallbackGuard.release();
             await saveUserChatHistory(userId, 'assistant', paidReply, conversationMeta);
             scheduleMemoryRefresh(userId, conversation, conversationMode);
             var creditsLeftPaid = userMonthlyFallback ? -1 : (creditsAfterDeduct ? creditsAfterDeduct.credits : 0);
@@ -411,11 +434,15 @@ module.exports = async function handler(req, res) {
       if (maxRemaining > 0) {
         await saveChatHistory('free_' + free_id, 'user', question);
 
-        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode); } catch(aiErr) {
-          return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
+        var anonGuard = beginAiRequest(req, { route: 'ai-chat', identity: serverFingerprint });
+        if (!anonGuard.ok) return res.status(429).json({ error: anonGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
+        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, '', calibrationSummary); } catch(aiErr) {
+          anonGuard.release();
+          return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
         }
         // 同时以两个标识记录（防止用户换ID或换IP任一方式绕过）
         const trackResult = await trackFreeUsage(free_id, serverFingerprint);
+        anonGuard.release();
         await saveChatHistory('free_' + free_id, 'assistant', freeReplyAnon);
         return res.status(200).json({
           reply: freeReplyAnon,
@@ -522,10 +549,13 @@ module.exports = async function handler(req, res) {
     messages.push({ role: 'user', content: question });
 
     // ---- 调用 AI（失败不扣费）----
+    var paidGuard = beginAiRequest(req, { route: 'ai-chat', identity: userId || code });
+    if (!paidGuard.ok) return res.status(429).json({ error: paidGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
     var reply; var aiMeta = {};
-    try { reply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, aiMeta, memorySummary); } catch(aiErr) {
+    try { reply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, aiMeta, memorySummary, calibrationSummary); } catch(aiErr) {
       console.error('AI call failed:', aiErr);
-      return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）', detail: aiErr.message });
+      paidGuard.release();
+      return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
     }
 
     // ---- AI 成功后才真正扣减 ----
@@ -536,9 +566,11 @@ module.exports = async function handler(req, res) {
         credits = await deductCredit(code);
       }
       if (!credits) {
+        paidGuard.release();
         return res.status(500).json({ error: '扣减次数失败，请稍后重试' });
       }
     }
+    paidGuard.release();
 
     // ---- 保存 AI 回答 ----
     if (code) await saveChatHistory(code, 'assistant', reply);
@@ -567,7 +599,7 @@ module.exports = async function handler(req, res) {
 /**
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
-async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary) {
+async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary, calibrationSummary) {
   var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
   const messages = [{ role: 'system', content: sysPrompt }];
 
@@ -631,6 +663,13 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     messages.push({
       role: 'system',
       content: '以下是同一用户、同一命盘以往对话形成的长期记忆摘要。它只用于理解用户已经谈过的重点和表达偏好；若与本次 chartData 冲突，必须以本次排盘事实为准，不得用记忆改盘：\n' + memorySummary
+    });
+  }
+
+  if (calibrationSummary) {
+    messages.push({
+      role: 'system',
+      content: '以下是用户在“过往事件校盘”中亲自确认或否认的经历，属于这个人的现实反馈。可用它判断同一命局中哪条取象更贴近本人；不得据此改写四柱、旺衰、格局、喜用忌，也不得把未确认候选当成事实。用户否认的事件应降权，不要换个说法强行断成发生：\n' + calibrationSummary
     });
   }
 
@@ -1408,10 +1447,8 @@ function buildBasicBaziContext(bazi) {
  */
 const crypto = require('crypto');
 function getServerFingerprint(req) {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-          || req.headers['x-real-ip']
-          || req.connection?.remoteAddress
-          || '0.0.0.0';
+  const { getClientIp } = require('../lib/auth.js');
+  const ip = getClientIp(req);
   const ua = (req.headers['user-agent'] || '').slice(0, 200);
   return 'sfp_' + crypto.createHash('sha256').update(ip + '|' + ua).digest('hex').slice(0, 24);
 }

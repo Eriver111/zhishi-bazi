@@ -214,7 +214,7 @@ function send(){
   // 检测紫微/八字模式
   var zwMode=false;try{var sp2=new URLSearchParams(window.location.search);zwMode=sp2.get('t')==='zw'}catch(e){}
   // 附加上次保存的排盘数据
-  try { var cd2=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data'); if(cd2) {body.chartData=JSON.parse(cd2);if(zwMode)body.mode='ziwei';} } catch(ex) {}
+  try { var cd2=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data'); if(cd2) {body.chartData=JSON.parse(cd2);if(body.chartData.calibrationSummary)body.calibration_summary=body.chartData.calibrationSummary;if(zwMode)body.mode='ziwei';} } catch(ex) {}
   // 无排盘数据时提醒
   if(!body.chartData){
     if(zwMode){

@@ -250,7 +250,7 @@ var Auth = (function () {
     var subtitle = isLogin ? '登录后同步你的排盘数据和对话历史' : '创建账户，永久保存你的命理数据';
     var btnText = isLogin ? '登录' : '注册';
     var switchText = isLogin
-      ? '还没有账户？<a onclick="Auth.showModal(\'register\')">立即注册</a>，送3次免费提问'
+      ? '还没有账户？<a onclick="Auth.showModal(\'register\')">立即注册</a>'
       : '已有账户？<a onclick="Auth.showModal(\'login\')">直接登录</a>';
 
     var codeHTML = '';
@@ -277,7 +277,6 @@ var Auth = (function () {
       (isLogin ? '' : '<div class="auth-field"><label>手机号（选填，用于找回）</label><input type="tel" id="authPhone" placeholder="如 13812345678"></div>') +
       codeHTML +
       '<div class="auth-error" id="authError"></div>' +
-      (!isLogin ? '<div class="auth-bonus">🎁 注册即送 <strong>3 次</strong> 免费 AI 提问</div>' : '') +
       '<button class="auth-btn" id="authSubmitBtn" onclick="Auth.doSubmit()">' + btnText + '</button>' +
       '<div class="auth-switch">' + switchText + '</div>' +
       '</div>';
@@ -362,10 +361,7 @@ var Auth = (function () {
       setAuth(d.token, d.user);
       closeModal();
 
-      // 注册成功提示
-      if (_currentMode === 'register' && d.bonus) {
-        showToast('注册成功！已赠送 ' + d.bonus + ' 次免费提问');
-      }
+      showToast(_currentMode === 'register' ? '注册成功！' : '登录成功！');
 
       // 自动迁移本地数据
       migrate().then(function (m) {

@@ -2,7 +2,7 @@
  * POST /api/auth/login
  * Body: { email, password }
  */
-const { verifyPassword, signToken, rateLimit } = require('../../lib/auth.js');
+const { verifyPassword, signToken, rateLimit, getClientIp } = require('../../lib/auth.js');
 const { getUserByEmail } = require('../../lib/supabase.js');
 
 module.exports = async function handler(req, res) {
@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     if (!email || !password) return res.status(400).json({ error: '请填写邮箱和密码' });
 
     // 频率限制：同一 IP 每分钟最多 10 次尝试
-    const clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+    const clientIp = getClientIp(req);
     if (!rateLimit('login_' + clientIp, 10, 60000)) {
       return res.status(429).json({ error: '登录尝试太频繁，请稍后再试' });
     }

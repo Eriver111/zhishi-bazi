@@ -24,7 +24,7 @@ test('archive library is separate from profile while reusing saved_charts', () =
   assert.match(script, /继续问 AI/);
   assert.match(script, /sessionStorage\.setItem\('zhishi_open_archive_ai','1'\)/);
   assert.match(script, /ask\.addEventListener\('click',openAi\)/);
-  assert.match(page, /archive-library\.js\?v=2/);
+  assert.match(page, /archive-library\.js\?v=3/);
   assert.match(profile, /进入命盘档案库/);
   assert.doesNotMatch(profile, /charts\.forEach\(function\(c, i\)/);
 });
@@ -38,7 +38,7 @@ test('archive AI continuation rebuilds the chart before restoring its conversati
   assert.match(integration, /function openStandaloneChat\(\)/);
   assert.match(integration, /buildChartData\(\)/);
   assert.match(integration, /localStorage\.setItem\('ai_chart_data'/);
-  assert.match(result, /ai-chat-integration\.js\?v=20260829a/);
+  assert.match(result, /ai-chat-integration\.js\?v=20260829d/);
 });
 
 test('mobile drawer exposes the archive library without replacing personal center', () => {

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 
 const root = path.resolve(__dirname, '..');
 const runtime = require('../api/_bazi-runtime');
+const { signToken } = require('../lib/auth');
 
 test('fortune calendar reuses the frozen BaZi calendar engine', () => {
   const day = runtime.calendar.getDayPillar(2026, 8, 23);
@@ -52,7 +53,7 @@ test('fortune endpoint sends strength, pattern and yong-xi-ji facts to AI', asyn
     json(value) { payload = value; return value; }
   };
   try {
-    await handler({ method: 'POST', body: { params: 'year=1990&month=5&day=10&hour=6&clock=11&gender=male&solar=0' } }, response);
+    await handler({ method: 'POST', headers: { authorization: 'Bearer ' + signToken({ uid: 'fortune-test-user' }) }, body: { params: 'year=1990&month=5&day=10&hour=6&clock=11&gender=male&solar=0' } }, response);
   } finally {
     global.fetch = originalFetch;
   }

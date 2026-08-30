@@ -6,7 +6,7 @@
 const crypto = require('crypto');
 const { sendCode } = require('../../lib/email.js');
 const { getUserByEmail } = require('../../lib/supabase.js');
-const { rateLimit } = require('../../lib/auth.js');
+const { rateLimit, getClientIp } = require('../../lib/auth.js');
 
 // 验证码存储（内存 + 文件持久化，服务器重启不丢）
 const path = require('path');
@@ -61,7 +61,7 @@ module.exports = async function handler(req, res) {
     if (existing) return res.status(409).json({ error: '该邮箱已注册' });
 
     // IP 频率限制：同一 IP 每分钟最多发 3 封
-    var clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+    var clientIp = getClientIp(req);
     if (!rateLimit('sc_ip_' + clientIp, 3, 60000)) {
       return res.status(429).json({ error: '发送太频繁，请 1 分钟后重试' });
     }

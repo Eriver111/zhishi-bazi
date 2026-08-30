@@ -1,4 +1,5 @@
 const http=require('http');const fs=require('fs');const path=require('path');
+const {resolvePublicFile}=require('./lib/static-security.js');
 const execSync=require('child_process').execSync;
 const M={'.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp','.gif':'image/gif','.ico':'image/x-icon','.mp4':'video/mp4','.mp3':'audio/mpeg'};
 try{const e=fs.readFileSync(path.join(__dirname,'.env'),'utf-8').split('\n');e.forEach(l=>{const t=l.trim();if(t&&t[0]!=='#'){const i=t.indexOf('=');if(i>0){const k=t.slice(0,i).trim();if(process.env[k]===undefined)process.env[k]=t.slice(i+1).trim()}}})}catch(_){}
@@ -207,17 +208,17 @@ if(!pn||pn==='/')pn='/index.html';
 trackPV(pn);
 
 // API
-if(pn.startsWith('/api/')){const n=pn.slice(5);try{const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,{maxBytes:apiBodyLimit(pn)});// 注入渠道标记�?body
+if(pn.startsWith('/api/')){const n=pn.slice(5);if(!/^[a-z0-9_\/-]+$/i.test(n)||n.split('/').includes('..')){res.writeHead(404);res.end('404');return}try{const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,{maxBytes:apiBodyLimit(pn)});// 注入渠道标记�?body
 if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
 await h(req,res)}catch(e){if(!_sent){if(e&&e.code==='REQUEST_BODY_TOO_LARGE')res.status(413).json({ok:false,error:e.message});else res.json({error:e.message})}}return}
-const fp=__dirname+pn;try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
+const fp=resolvePublicFile(__dirname,pn);if(fp)try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
 // HTML 页面注入渠道持久化脚�?
 if(ct==='text/html'&&channel){
   var injectScript='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';
   b=b.toString().replace('</head>',injectScript+'</head>');
 }
 res.writeHead(200,{'Content-Type':ct,'Cache-Control':ct==='text/html'?'no-cache':ct==='application/javascript'||ct==='text/css'?'public, max-age=3600':'public, max-age=86400'});res.end(b);return}catch(e){}
-if(!path.extname(pn)){try{let b=fs.readFileSync(fp+'.html');if(channel){var injectScript2='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';b=b.toString().replace('</head>',injectScript2+'</head>')}
+if(!path.extname(pn)){const htmlFp=resolvePublicFile(__dirname,pn+'.html');if(htmlFp)try{let b=fs.readFileSync(htmlFp);if(channel){var injectScript2='<script>if(!document.cookie.match(/channel=([^;]+)/)){document.cookie="channel='+channel+';path=/;max-age=7776000"}localStorage.setItem("channel","'+channel+'");document.querySelectorAll("a").forEach(function(a){if(!a.href.match(/channel=/)){var s=a.href.indexOf("?")>=0?"&":"?";a.href+=s+"channel='+channel+'"}})</script>';b=b.toString().replace('</head>',injectScript2+'</head>')}
 res.writeHead(200,{'Content-Type':'text/html','Cache-Control':'no-cache'});res.end(b);return}catch(e){}}
 res.writeHead(404);res.end('404')});s.listen(process.env.PORT||3000,()=>console.log('OK'));
 // force rebuild 1781971871

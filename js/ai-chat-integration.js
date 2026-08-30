@@ -53,6 +53,7 @@
 
   function openStandaloneChat() {
     var pt=detectPageType(),cd=buildChartData(),tgt='ai-chat.html';
+    if(cd&&pt==='result'&&window.ZhishiCalibration&&typeof window.ZhishiCalibration.summary==='function')cd.calibrationSummary=window.ZhishiCalibration.summary(cd);
     if(pt==='ziwei'){tgt='zw-ai-chat.html';if(cd)try{localStorage.setItem('ai_ziwei_data',JSON.stringify(cd))}catch(ex){}}
     else if(pt==='liuren'){tgt='lr-ai-chat.html';if(cd)try{localStorage.setItem('ai_liuren_data',JSON.stringify(cd))}catch(ex){}}
     else{if(cd)try{localStorage.setItem('ai_chart_data',JSON.stringify(cd))}catch(ex){}}
@@ -197,6 +198,10 @@
     if (fab) {
       fab.addEventListener('click', function(e){
         if(fab.getAttribute('data-ai-suppress-click')==='1'){e.preventDefault();return}
+        if (window.ZhishiCalibration && typeof window.ZhishiCalibration.beforeAI === 'function') {
+          window.ZhishiCalibration.beforeAI(openStandaloneChat);
+          return;
+        }
         openStandaloneChat();
       });
     }
@@ -267,6 +272,12 @@
 
     var chartData = buildChartData();
     var body = { question: text, chartData: chartData, history: AI.messages.slice(-6), mode: AI.mode };
+    if (window.ZhishiCalibration && typeof window.ZhishiCalibration.summary === 'function') {
+      body.calibration_summary = window.ZhishiCalibration.summary(chartData);
+    }
+    if (window.ChatPersistence && chartData && detectPageType() === 'result') {
+      window.ChatPersistence.decorate(body, 'bazi', chartData, '');
+    }
 
     // 免费模式
     if (AI.freeRemaining > 0 && !AI.isMonthly && AI.credits <= 0) {
@@ -280,9 +291,11 @@
     // 却扣分+保存，用户误以为失败而重试 → 双扣。改为 300s 与 Vercel 服务端上限对齐。
     var ctrl=new AbortController();
     var timer=setTimeout(function(){ctrl.abort();hideTyping();addMessage('ai','AI 响应超时（5 分钟），请稍后重试。');AI.isWaiting=false;updateSendBtn()},300000);
+    var requestHeaders = { 'Content-Type': 'application/json' };
+    if (window.Auth && window.Auth.isLoggedIn && window.Auth.isLoggedIn()) requestHeaders.Authorization = 'Bearer ' + window.Auth.getToken();
     fetch('/api/ai-chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: requestHeaders,
       body: JSON.stringify(body),
       signal: ctrl.signal
     })
@@ -954,6 +967,9 @@
       }
     });
   })();
+
+  window.ZhishiAIContext = window.ZhishiAIContext || {};
+  window.ZhishiAIContext.buildChartData = buildChartData;
 
   // ===== 启动 =====
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }

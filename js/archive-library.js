@@ -57,10 +57,12 @@
       var copy=document.createElement('div'),name=document.createElement('div'),sub=document.createElement('div');name.className='archive-record__name';name.textContent=displayName(item.chart,item.index)+' · '+(item.gender==='female'?'坤造':'乾造');sub.className='archive-record__sub';sub.textContent=dateText(item.chart);copy.append(name,sub);
       var ps=document.createElement('div');ps.className='archive-record__pillars';item.pillars.forEach(function(p){ps.appendChild(coloredPillar(p))});
       var ask=document.createElement('button');ask.type='button';ask.className='archive-record__ai';ask.textContent='继续问 AI';ask.setAttribute('aria-label','继续询问'+displayName(item.chart,item.index)+'的命盘');
+      var calibrate=document.createElement('button');calibrate.type='button';calibrate.className='archive-record__calibrate';calibrate.textContent='校对命盘';calibrate.setAttribute('aria-label','校对'+displayName(item.chart,item.index)+'的过往经历');
       var del=document.createElement('button');del.type='button';del.className='archive-record__delete';del.setAttribute('aria-label','删除'+displayName(item.chart,item.index));del.textContent='×';del.addEventListener('click',function(e){e.stopPropagation();deleteChart(item.index)});
       function open(){location.href='/result?'+item.chart.params}
       function openAi(e){e.stopPropagation();try{sessionStorage.setItem('zhishi_open_archive_ai','1')}catch(ex){}open()}
-      ask.addEventListener('click',openAi);row.addEventListener('click',open);row.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});row.append(copy,ps,ask,del);list.appendChild(row);
+      function openCalibration(e){e.stopPropagation();try{sessionStorage.setItem('zhishi_open_archive_calibration','1')}catch(ex){}open()}
+      ask.addEventListener('click',openAi);calibrate.addEventListener('click',openCalibration);row.addEventListener('click',open);row.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});row.append(copy,ps,calibrate,ask,del);list.appendChild(row);
     });content.appendChild(list);
   }
   function deleteChart(index){if(!confirm('确定删除这份命盘档案？'))return;var next=charts.slice();next.splice(index,1);Auth.syncData('saved_charts',JSON.stringify(next)).then(function(){charts=next;render()}).catch(function(){alert('删除失败，请稍后重试')})}

@@ -189,7 +189,7 @@
       var controller = new AbortController();
       var timeout = setTimeout(function(){ controller.abort(); }, 30000);
       fetch('/api/fortune', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
         body: JSON.stringify({ params: params, year: year, month: month, day: day, dayGan: dp.dayGan, dayZhi: dp.dayZhi, gender: gender, label: chart.label }),
         signal: controller.signal
       }).then(function(r){ clearTimeout(timeout); if(!r.ok) throw new Error('请求失败'); return r.json(); })

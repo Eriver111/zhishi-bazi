@@ -50,7 +50,7 @@
         show('正在参照你的命盘生成今日提醒…');
         return fetch('/api/fortune', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
           body: JSON.stringify({
             params: chart.params,
             label: chart.label || '',
