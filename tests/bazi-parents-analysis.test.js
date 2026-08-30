@@ -77,7 +77,7 @@ test('父母报告提供五段事实输出且保留结构化依据', () => {
   for (const field of ['familyText', 'fatherText', 'motherText', 'parentsRelationshipText', 'childRelationshipText']) {
     assert.ok(result[field].length > 20, field);
   }
-  assert.equal(result.facts.methodVersion, 'parents-v2-palace-star');
+  assert.equal(result.facts.methodVersion, 'parents-v3-palace-star-relationship');
   assert.ok(['supportive', 'mixed', 'limited'].includes(result.facts.family.level));
 });
 
@@ -110,4 +110,20 @@ test('父母星完全不现时不再误写成远隔或藏而不透', () => {
   assert.match(result.childRelationshipText, /正印不现/);
   assert.match(result.childRelationshipText, /偏财不现/);
   assert.doesNotMatch(result.childRelationshipText, /远隔或藏而不透/);
+});
+
+test('时柱透根且日支食伤生父星时不误判父子疏远', () => {
+  const calculator = loadCalculator();
+  const result = calculator.analyzeParents(chart(['癸未', '庚申', '甲寅', '戊辰']), 'male');
+  const fatherRelationship = result.facts.relationship.father;
+
+  assert.equal(fatherRelationship.close, true);
+  assert.equal(fatherRelationship.exposedNear, true);
+  assert.ok(fatherRelationship.interestChannels.some(item => item.pos === 'day'));
+  assert.match(result.childRelationshipText, /不是疏远型关系/);
+  assert.match(result.childRelationshipText, /共同话题/);
+  assert.match(result.childRelationshipText, /理解并支持你想做的方向/);
+  assert.doesNotMatch(result.childRelationshipText, /父亲平时话不算多/);
+  assert.doesNotMatch(result.fatherText, /平时联系不算密集/);
+  assert.match(result.fatherText, /不能直接拿来判断亲子感情、沟通多少或对方是否支持你/);
 });

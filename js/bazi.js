@@ -3414,15 +3414,15 @@ function analyzeParents(bazi, gender) {
         var text = who + '星（' + star.name + '）落在' + labels.join('、') + '。';
         if (direct) text += '它靠近月柱或日柱，说明' + who + '对你的成长和成年选择参与得比较直接。';
         else if (primaryPositions.indexOf('year') >= 0) text += '力量较实的一处在年柱，影响更多来自早年家庭背景和原生家庭留下的生活方式。';
-        else text += '力量较实的一处在时柱，影响往往来得较晚，或平时联系不算密集，但后期互动会增加。';
+        else text += '力量较实的一处在时柱，说明这种影响在成年后的做事方向、长期选择或现实安排中更明显；时柱只表示作用阶段偏晚，不能据此判断平时联系较少。';
         if (star.state === 'strong') text += who + '星既有出现又有根，代表' + who + '本人做事有底气，能给出的实际帮助相对稳定。';
         else if (star.state === 'weak' && star.roots.length && star.damageEvents.length) text += who + '星本身有根，但根所在的位置同时受冲害，力量不够稳定。' + who + '不是没有能力，只是工作、家庭角色或现实条件容易反复，能给你的帮助也会时多时少。';
         else if (star.state === 'weak') text += who + '星根气偏弱，代表' + who + '自身也有局限，想帮你时未必有足够的时间、钱或现实条件。';
         else text += who + '星有力量但不算完整，代表' + who + '能提供帮助，只是这种帮助会随着工作、健康或家庭阶段而起伏。';
-        if (star.role === 'favorable' && star.roleLabel === '弱喜') text += '这颗星在命局里属于弱喜，' + who + '能给你一些帮助，但力度温和，不是决定你人生走向的主要力量。';
+        if (star.role === 'favorable' && star.roleLabel === '弱喜') text += '这颗星在命局里属于弱喜，' + who + '所代表的资源与安排能给你一些帮助，但力度温和，不是决定你人生走向的主要力量。';
         else if (star.role === 'favorable') text += '这颗星在命局里属于' + star.roleLabel + '，所以' + who + '带给你的影响总体是帮你站稳、补足短板。';
-        else if (star.role === 'unfavorable' && star.roleLabel === '弱忌') text += '这颗星在命局里属于弱忌，' + who + '的要求或安排偶尔会让你有压力，但影响有限，不会成为亲子关系的主导矛盾。';
-        else if (star.role === 'unfavorable') text += '这颗星在命局里属于' + star.roleLabel + '，所以' + who + '的要求、安排或生活方式更容易给你造成压力，关系不是没有感情，而是彼此容易用错力。';
+        else if (star.role === 'unfavorable' && star.roleLabel === '弱忌') text += '这颗星在命局里属于弱忌，表示与' + who + '有关的资源、责任或现实安排偶尔会增加你的负担；这只说明作用方式，不代表感情疏远或对方不支持你。';
+        else if (star.role === 'unfavorable') text += '这颗星在命局里属于' + star.roleLabel + '，表示与' + who + '有关的金钱、责任或现实安排更容易成为你需要承受的课题；喜忌只判断这股力量对命局的作用，不能直接拿来判断亲子感情、沟通多少或对方是否支持你。';
         if (star.damageEvents.length) text += '星根又受到' + star.damageEvents.map(function(e) { return e.pair + e.type; }).join('、') + '，说明' + who + '自己的工作、身体状态或家庭角色容易出现反复；这里只能判断压力趋势，不能据此断具体疾病或寿命。';
         return text;
     }
@@ -3457,20 +3457,63 @@ function analyzeParents(bazi, gender) {
     } else if (yearDayStemRel === '克' || yearDayStemRel === '被克') {
         childParts.push('年干与日干形成相克，你和父母说话容易各站各的立场，感情不一定淡，但沟通时很容易觉得对方不理解自己。');
     }
-    function isStarClose(star) {
-        if (!star.appearances.length) return false;
-        var nearWeight = Math.max.apply(null, [0].concat(star.appearances.filter(function(a) { return a.pos === 'month' || a.pos === 'day'; }).map(function(a) { return a.weight; })));
-        var farWeight = Math.max.apply(null, [0].concat(star.appearances.filter(function(a) { return a.pos === 'year' || a.pos === 'hour'; }).map(function(a) { return a.weight; })));
-        return nearWeight >= 1 && nearWeight >= farWeight;
+    // 柱位首先代表作用阶段，不直接等同感情远近。亲疏应看父母星与日柱的实际连接：
+    // 日柱最直接，月柱和时柱都与日柱相邻，只有年柱属于较远的背景位。
+    function getStarCloseness(star) {
+        if (!star.appearances.length) return { close: false, nearScore: 0, farScore: 0, exposedNear: false };
+        var positionFactor = { year: 1, month: 2, day: 3, hour: 2 };
+        var nearScore = 0, farScore = 0, exposedNear = false;
+        star.appearances.forEach(function(a) {
+            var contribution = a.weight * (positionFactor[a.pos] || 1);
+            if (a.pos === 'year') farScore += contribution;
+            else nearScore += contribution;
+            if (a.layer === 'stem' && (a.pos === 'month' || a.pos === 'hour')) exposedNear = true;
+        });
+        return {
+            close: (nearScore >= 2 && nearScore >= farScore) || exposedNear,
+            nearScore: nearScore,
+            farScore: farScore,
+            exposedNear: exposedNear
+        };
     }
-    var motherClose = isStarClose(mother);
-    var fatherClose = isStarClose(father);
+
+    // 食伤代表兴趣、表达、技能；食伤生偏财且与父星同柱，是父子之间容易
+    // 因共同兴趣、做事方法或项目形成交流通道的严格证据。这里只认同柱共现，
+    // 不把全局任意一个食伤机械拼接到父星上。
+    function getFatherInterestChannels() {
+        var channels = [];
+        POSITIONS.forEach(function(pos) {
+            var nodes = [{ gan: bazi[pos].gan, layer: 'stem', role: getShiShen(DAY, bazi[pos].gan) }];
+            (getCangGan(bazi[pos].zhi) || []).forEach(function(g, index) {
+                nodes.push({ gan: g, layer: 'branch', hiddenIndex: index, role: getShiShen(DAY, g) });
+            });
+            var fatherNodes = nodes.filter(function(n) { return n.role === fatherStar; });
+            var outputNodes = nodes.filter(function(n) { return n.role === '食神' || n.role === '伤官'; });
+            if (!fatherNodes.length || !outputNodes.length) return;
+            channels.push({
+                pos: pos,
+                label: POS_CN[pos] + (fatherNodes.some(function(n) { return n.layer === 'branch'; }) && outputNodes.some(function(n) { return n.layer === 'branch'; }) ? '地支' : ''),
+                fatherStems: fatherNodes.map(function(n) { return n.gan; }),
+                outputStems: outputNodes.map(function(n) { return n.gan; }),
+                outputRoles: outputNodes.map(function(n) { return n.role; })
+            });
+        });
+        return channels;
+    }
+    var motherCloseness = getStarCloseness(mother);
+    var fatherCloseness = getStarCloseness(father);
+    var motherClose = motherCloseness.close;
+    var fatherClose = fatherCloseness.close;
+    var fatherInterestChannels = getFatherInterestChannels();
     if (!mother.appearances.length) childParts.push('正印不现，母亲对你的关心更可能通过日常照料或家庭安排间接表达，你不容易从命局里直接感受到这种影响。');
     else if (motherClose) childParts.push('正印的主要力量靠近日主，你从小受母亲影响更深，遇到大事更容易先考虑母亲的看法。');
     else childParts.push('正印的主要力量离日主较远，你和母亲的感情表达偏含蓄，很多关心不会直接说出来。');
     if (!father.appearances.length) childParts.push('偏财不现，父亲在你成长中的直接参与感偏弱，你们之间容易少说心里话，更多靠实际事情维持联系。');
-    else if (fatherClose) childParts.push('偏财的主要力量靠近日主，你和父亲之间有较多现实层面的来往，钱、工作或重要决定更容易直接沟通。');
+    else if (fatherClose) childParts.push('偏财在日柱附近形成了直接连接，你和父亲之间不是疏远型关系，平时有事情愿意直接交流，工作、钱或重要决定也更容易当面说清楚。');
     else childParts.push('偏财的主要力量离日主较远，你和父亲平时话不算多，彼此的关心更常通过做事而不是说话表达。');
+    if (fatherInterestChannels.length) {
+        childParts.push(fatherInterestChannels.map(function(channel) { return channel.label; }).join('、') + '同时出现食伤与偏财，形成食伤生父星的通道。你的兴趣、技能、想法或准备做的事情容易成为父子之间的共同话题，父亲通常更愿意听你讲，也更容易理解并支持你想做的方向。');
+    }
     if (!childParts.length) childParts.push('年柱与日柱没有明显冲克，父母星也能在命局中接得上。你和父母的关系整体不算疏远，主要差别在表达方式，而不是感情本身。');
     var childRelationshipText = childParts.join('');
 
@@ -3495,9 +3538,24 @@ function analyzeParents(bazi, gender) {
         fatherPresent: father.appearances.length > 0,
         motherPresent: mother.appearances.length > 0,
         facts: {
-            methodVersion: 'parents-v2-palace-star',
+            methodVersion: 'parents-v3-palace-star-relationship',
             strength: { level: dm.level, score: dm.score },
             parentStars: { father: father, mother: mother },
+            relationship: {
+                father: {
+                    close: fatherClose,
+                    nearScore: fatherCloseness.nearScore,
+                    farScore: fatherCloseness.farScore,
+                    exposedNear: fatherCloseness.exposedNear,
+                    interestChannels: fatherInterestChannels
+                },
+                mother: {
+                    close: motherClose,
+                    nearScore: motherCloseness.nearScore,
+                    farScore: motherCloseness.farScore,
+                    exposedNear: motherCloseness.exposedNear
+                }
+            },
             palace: {
                 stem: yearGan, branch: yearZhi, stemElement: yearGanWx, branchElement: yearZhiWx,
                 intraRelation: intraRelation, state: palaceState,
