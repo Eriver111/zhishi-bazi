@@ -5115,7 +5115,9 @@ function getPattern(bazi) {
       establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。', category: 'INFO' }],
       congGe: true,
       basePattern: pResult.name + '·' + pResult.status,
-      mechanism: null
+      mechanism: null,
+      trueFollowing: cong.trueFollowing,
+      zhuanWang: !!cong.zhuanWang
     });
   }
 
@@ -5199,6 +5201,203 @@ function getPattern(bazi) {
   });
   // 从格优先于正格：从格成立时不论月令正格（"从格成则舍正格而从之"）
   return applyCongGePriority(bazi, pResult);
+}
+
+/**
+ * 后置格局裁决层。
+ * 月令格先参与喜用忌候选计算；这里仅使用已经完成的五行分类，对跨柱结构作最终命名，
+ * 不把裁决结果反向写回旺衰或候选分，避免“格局决定喜忌、喜忌又决定格局”的循环。
+ */
+function adjudicatePattern(bazi, basePattern, elementClassification) {
+  var base = basePattern || getPattern(bazi);
+  if (!base || base.congGe) return base;
+  var GAN_HE = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' };
+  var positions = ['year','month','hour'];
+  var allPositions = ['year','month','day','hour'];
+  var positionLabel = { year:'年干', month:'月干', hour:'时干' };
+  var visible = positions.map(function(pos, index) {
+    return { pos:pos, index:index, gan:bazi[pos].gan, role:getShiShen(bazi.day.gan, bazi[pos].gan) };
+  });
+  var byRole = function(roles) {
+    return visible.filter(function(item) { return roles.indexOf(item.role) >= 0; });
+  };
+  var exactRootPower = function(item) {
+    var power = 2;
+    allPositions.forEach(function(pos) {
+      var hidden = getCangGan(bazi[pos].zhi);
+      var idx = hidden.indexOf(item.gan);
+      if (idx >= 0) power += idx === 0 ? 2 : 1;
+    });
+    return power;
+  };
+  var rooted = function(item) { return exactRootPower(item) > 2; };
+  var strongest = function(items) {
+    return items.slice().sort(function(a, b) { return exactRootPower(b) - exactRootPower(a); })[0] || null;
+  };
+  var rolePower = function(items) {
+    return items.reduce(function(total, item) { return total + exactRootPower(item); }, 0);
+  };
+  var cls = elementClassification || {};
+  var isHelpful = function(wx) { return cls[wx] === '用神' || cls[wx] === '喜神'; };
+  var isAdverse = function(wx) { return cls[wx] === '忌神'; };
+  var relationWx = function(role) {
+    var item = strongest(byRole([role]));
+    return item ? WU_XING[item.gan] : '';
+  };
+  var candidate = function(name, status, source, desc, conditions, breakReasons) {
+    return {
+      name:name,
+      status:status,
+      isEstablished:status === '成格',
+      type:'后置格局裁决',
+      source:source,
+      desc:desc,
+      establishConditions:conditions || [],
+      breakReasons:breakReasons || [],
+      pendingReasons:status === '条件待定' ? (breakReasons || []) : [],
+      basePattern:base.name + '·' + base.status,
+      basePatternFacts:base
+    };
+  };
+  var hard = function(condition, met, detail) {
+    return { condition:condition, met:met, detail:detail, category:'HARD_BREAK' };
+  };
+  var quality = function(condition, met, detail) {
+    return { condition:condition, met:met, detail:detail, category:'QUALITY' };
+  };
+  var outputs = [];
+
+  var wealth = byRole(['正财','偏财']);
+  var officer = byRole(['正官']);
+  var killing = byRole(['七杀']);
+  var seal = byRole(['正印','偏印']);
+  var food = byRole(['食神']);
+  var hurting = byRole(['伤官']);
+  var owl = byRole(['偏印']);
+
+  // 财官印相生：三者必须全部透干且各自有根；伤官破官、七杀混杂均不成立。
+  if (wealth.length && officer.length && seal.length) {
+    var w = strongest(wealth), o = strongest(officer), s = strongest(seal);
+    var chainRooted = rooted(w) && rooted(o) && rooted(s);
+    var chainClean = !hurting.length && !killing.length;
+    var chainMet = chainRooted && chainClean;
+    outputs.push(candidate('财官印相生格', chainMet ? '成格' : '破格',
+      positionLabel[w.pos] + w.gan + '财→' + positionLabel[o.pos] + o.gan + '官→' + positionLabel[s.pos] + s.gan + '印',
+      '财、官、印三气透出并形成财生官、官生印、印生身的连续通路。',
+      [hard('财官印全部透干有根', chainRooted, chainRooted ? '三者均透干有根' : '财、官、印中至少一项虚透无根'), hard('官星清纯不受伤混', chainClean, chainClean ? '无伤官克官、无七杀混杂' : (hurting.length ? '伤官透出克官' : '七杀透出导致官杀混杂'))],
+      chainMet ? [] : [chainRooted ? '官星受伤或官杀混杂，财官印通路不清' : '财官印至少一项虚透，连续相生无力']));
+  }
+
+  // 伤官合杀：只认天干真实五合，且伤官、七杀均须有根；同现正官则格局不清。
+  var shangShaPair = null;
+  hurting.some(function(shang) {
+    return killing.some(function(sha) {
+      if (GAN_HE[shang.gan] === sha.gan) { shangShaPair = { shang:shang, sha:sha }; return true; }
+      return false;
+    });
+  });
+  if (shangShaPair) {
+    var shangShaRooted = rooted(shangShaPair.shang) && rooted(shangShaPair.sha);
+    var shangShaClean = !officer.length;
+    var shangShaMet = shangShaRooted && shangShaClean;
+    outputs.push(candidate('伤官合杀格', shangShaMet ? '成格' : '破格',
+      positionLabel[shangShaPair.shang.pos] + shangShaPair.shang.gan + '伤官与' + positionLabel[shangShaPair.sha.pos] + shangShaPair.sha.gan + '七杀五合',
+      '伤官以天干五合牵制七杀；只认真实合局关系，不以普通相见代替。',
+      [hard('伤官与七杀真实五合', true, shangShaPair.shang.gan + shangShaPair.sha.gan + '相合'), hard('伤官七杀双方有根', shangShaRooted, shangShaRooted ? '双方有根，合杀有力' : '至少一方虚透，合杀不实'), hard('无正官混入', shangShaClean, shangShaClean ? '✓' : '正官同时透出，官杀去留不清')],
+      shangShaMet ? [] : [!shangShaRooted ? '伤官或七杀虚透，合杀无力' : '正官混入，伤官合杀格不清']));
+  }
+
+  // 羊刃驾杀：必须先是羊刃格，七杀透干有根且无正官混杂。
+  if (base.name === '羊刃格' && killing.length) {
+    var shaForRen = strongest(killing);
+    var renShaRooted = rooted(shaForRen);
+    var renShaClean = !officer.length;
+    var renShaMet = renShaRooted && renShaClean && base.status !== '破格';
+    outputs.push(candidate('羊刃驾杀格', renShaMet ? '成格' : '破格',
+      base.source + '；' + positionLabel[shaForRen.pos] + shaForRen.gan + '七杀透出',
+      '月令羊刃旺而有根，七杀透干有根，用杀制刃、以刃敌杀。',
+      [hard('羊刃格基础成立', base.status !== '破格', base.status === '破格' ? (base.breakReasons || []).join('；') : '✓'), hard('七杀透干有根', renShaRooted, renShaRooted ? '七杀透而有根' : '七杀虚透无根'), hard('无正官混杂', renShaClean, renShaClean ? '✓' : '正官同透，官杀混杂')],
+      renShaMet ? [] : ['羊刃与七杀未形成清纯有效的制衡']));
+  }
+
+  // 官杀去留：只认天干五合明确绊住其中一方；普通食伤相见不能证明只去官或只去杀。
+  if (officer.length && killing.length) {
+    var combinedWithOther = function(target) {
+      return visible.some(function(other) { return other !== target && GAN_HE[target.gan] === other.gan; });
+    };
+    var guanGone = officer.some(combinedWithOther);
+    var shaGone = killing.some(combinedWithOther);
+    if (shaGone && !guanGone && !hurting.length) {
+      outputs.push(candidate('去杀留官格', '成格', '七杀被天干五合绊住，正官独留', '原局官杀同透，但七杀有明确去处，保留清纯正官。', [hard('七杀有明确去处', true, '七杀被合绊'), hard('正官未受伤', true, '无伤官克官')], []));
+    } else if (guanGone && !shaGone) {
+      var shaControlled = food.length || hurting.length || seal.length;
+      outputs.push(candidate('去官留杀格', shaControlled ? '成格' : '破格', '正官被天干五合绊住，七杀独留', '原局官杀同透，正官有明确去处；留下的七杀仍须有制化。', [hard('正官有明确去处', true, '正官被合绊'), hard('所留七杀有制化', !!shaControlled, shaControlled ? '食伤制杀或印星化杀' : '七杀无制无化')], shaControlled ? [] : ['去官后七杀无制化']));
+    }
+  }
+
+  // 伤官见官 / 制官：同一克制事实，按最终喜用忌与双方力量分流。
+  if (hurting.length && officer.length && !killing.length) {
+    var shangPower = rolePower(hurting), guanPower = rolePower(officer);
+    var guanWx = WU_XING[officer[0].gan], shangWx = WU_XING[hurting[0].gan];
+    var shangEffective = hurting.some(rooted);
+    if (isAdverse(guanWx) && isHelpful(shangWx) && shangEffective) {
+      var excessive = shangPower > guanPower * 2;
+      outputs.push(candidate(excessive ? '伤官制官太过格' : '伤官制官格', excessive ? '破格' : '成格',
+        '伤官克正官；官星为忌，伤官为喜用',
+        excessive ? '正官虽为忌，但伤官力量超过官星两倍，制约失去分寸。' : '正官为忌，伤官有根有力并适度约束官星。',
+        [hard('正官为忌神', true, '官星五行为' + cls[guanWx]), hard('伤官为喜用且有根', true, '伤官五行为' + cls[shangWx]), quality('制官不过度', !excessive, '伤官力量' + shangPower + '，正官力量' + guanPower)],
+        excessive ? ['伤官制官太过'] : []));
+    } else if (isHelpful(guanWx) && shangEffective) {
+      outputs.push(candidate('伤官见官格', '破格', '伤官克正官；正官为喜用', '正官承担有利作用，却被有根伤官直接克损。', [hard('正官不受伤官克破', false, '正官为' + cls[guanWx] + '，伤官透出有根')], ['伤官克损喜用正官']));
+    } else {
+      outputs.push(candidate('伤官官星相见', '条件待定', '伤官与正官同时透出', '双方已经形成相克事实，但喜忌强度或伤官根气不足以直接裁成制官或见官。', [quality('喜忌与制约力度明确', false, '官星' + (cls[guanWx] || '未定') + '；伤官' + (cls[shangWx] || '未定'))], ['喜忌或制约力度证据不足']));
+    }
+  }
+
+  // 枭神夺食 / 制食：先保护食神承担的制杀、生喜财任务，再按喜忌和力度分流。
+  if (owl.length && food.length) {
+    var owlPower = rolePower(owl), foodPower = rolePower(food);
+    var foodWx = WU_XING[food[0].gan], owlWx = WU_XING[owl[0].gan];
+    var wealthWx = wealth.length ? WU_XING[wealth[0].gan] : '';
+    var foodHasTask = killing.length > 0 || (wealth.length > 0 && isHelpful(wealthWx));
+    var owlEffective = owl.some(rooted);
+    if (!foodHasTask && isAdverse(foodWx) && isHelpful(owlWx) && owlEffective) {
+      var owlExcessive = owlPower > foodPower * 2;
+      outputs.push(candidate(owlExcessive ? '枭神制食太过格' : '枭神制食格', owlExcessive ? '破格' : '成格',
+        '偏印克食神；食神为忌，偏印为喜用',
+        owlExcessive ? '食神虽为忌，但偏印力量超过食神两倍，制食过度转成夺食。' : '食神泄身过度为忌，偏印有根有力并适度制食。',
+        [hard('食神为忌且无关键任务', true, '食神五行为' + cls[foodWx]), hard('偏印为喜用且有根', true, '偏印五行为' + cls[owlWx]), quality('制食不过度', !owlExcessive, '偏印力量' + owlPower + '，食神力量' + foodPower)],
+        owlExcessive ? ['枭神制食太过'] : []));
+    } else if ((isHelpful(foodWx) || foodHasTask) && owlEffective) {
+      outputs.push(candidate('枭神夺食格', '破格', '偏印克食神；食神为喜用或承担制杀、生财任务', '食神承担命局需要的泄秀、制杀或生财通路，却被有根偏印克损。', [hard('食神不被偏印克夺', false, foodHasTask ? '食神承担制杀或生喜财任务' : '食神为' + cls[foodWx])], ['枭神克损有用食神']));
+    } else {
+      outputs.push(candidate('枭食相战', '条件待定', '偏印与食神同时透出', '偏印克食神的事实成立，但喜忌强度、任务或根气不足以直接裁成夺食或制食。', [quality('喜忌与制约力度明确', false, '食神' + (cls[foodWx] || '未定') + '；偏印' + (cls[owlWx] || '未定'))], ['喜忌、任务或制约力度证据不足']));
+    }
+  }
+
+  if (!outputs.length) return base;
+  var priority = ['羊刃驾杀格','财官印相生格','伤官合杀格','去杀留官格','去官留杀格','伤官制官格','枭神制食格','伤官见官格','枭神夺食格'];
+  outputs.sort(function(a, b) {
+    var ai = priority.indexOf(a.name), bi = priority.indexOf(b.name);
+    if (ai < 0) ai = 999;
+    if (bi < 0) bi = 999;
+    return ai - bi;
+  });
+  var establishedOutput = outputs.find(function(item) { return item.status === '成格'; });
+  var selected = establishedOutput || (base.status === '破格'
+    ? outputs.find(function(item) { return item.status === '破格'; })
+    : null);
+  if (!selected) {
+    var preservedBase = Object.assign({}, base);
+    preservedBase.relatedPatterns = outputs.map(function(item) {
+      return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons };
+    });
+    return preservedBase;
+  }
+  selected.relatedPatterns = outputs.filter(function(item) { return item !== selected; }).map(function(item) {
+    return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons };
+  });
+  return selected;
 }
 
 /**
@@ -5357,7 +5556,8 @@ function finalizeYongJiResult(bazi, base, context) {
       status: pattern.status,
       breakReasons: (pattern.breakReasons || []).slice(),
       pendingReasons: (pattern.pendingReasons || []).slice()
-    }
+    },
+    resolvedPattern: pattern
   };
   // P1 候选评分透传（GPT 对账用；从格/穷通特例短路时为空）
   if (context.candidateScores) {
@@ -5916,6 +6116,15 @@ function getYongJi(bazi) {
     adjustments: chainAdjustments
   };
 
+  // 后置格局只读取已经完成的喜用忌分类，不回写候选评分与旺衰。
+  var adjudicationClassification = elementClassification || {};
+  if (!elementClassification) {
+    [cs && cs.yongWx].filter(Boolean).forEach(function(wx) { adjudicationClassification[wx] = '用神'; });
+    xiShen.forEach(function(wx) { if (!adjudicationClassification[wx]) adjudicationClassification[wx] = '喜神'; });
+    jiShen.forEach(function(wx) { if (!adjudicationClassification[wx]) adjudicationClassification[wx] = '忌神'; });
+  }
+  pattern = adjudicatePattern(bazi, pattern, adjudicationClassification);
+
   return finalizeYongJiResult(bazi, {
     dayMasterLevel: dmLevel,
     dayMasterScore: dmStr.score,
@@ -6083,6 +6292,30 @@ function getCongGe(bazi) {
 
   var level = ds.level, score = ds.score;
 
+  // 五行专旺：必须得本气月令，四支至少三支同气，余支只能是同气或印星，
+  // 年/月/时天干不得透出财、官杀、食伤逆势。藏干余气只作层次证据，不再一票否决，
+  // 否则午必藏己、申必藏壬等会令炎上/从革在算法上永远不可达。
+  var zhuanWangNames = { '木':'曲直仁寿格', '火':'炎上格', '土':'稼穑格', '金':'从革格', '水':'润下格' };
+  var branchMainElements = ['year','month','day','hour'].map(function(pos) { return DI_ZHI_WU_XING[bazi[pos].zhi]; });
+  var sameBranchCount = branchMainElements.filter(function(wx) { return wx === dgWx; }).length;
+  var branchDirectionClean = branchMainElements.every(function(wx) { return wx === dgWx || wx === SHENGWO; });
+  var visibleDirectionClean = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].every(function(gan) {
+    var wx = WU_XING[gan];
+    return wx === dgWx || wx === SHENGWO;
+  });
+  var getsOwnCommand = DI_ZHI_WU_XING[bazi.month.zhi] === dgWx;
+  if (level === '极强' && getsOwnCommand && sameBranchCount >= 3 && branchDirectionClean && visibleDirectionClean) {
+    return {
+      isCong:true,
+      name:zhuanWangNames[dgWx],
+      desc:'日主得月令，至少三支同气成势，天干与地支主气均无逆神，构成五行专旺。喜印比顺势，忌财官食伤逆局。',
+      xiOverride:[SHENGWO, dgWx],
+      jiOverride:[KEWO, WOSHENG, WOKE],
+      source:'五行专旺：得令、三支同势、干支主气无逆神',
+      zhuanWang:true
+    };
+  }
+
   // 检查日支藏干是否有日主之根（有根则不能从）
   var dayCangGanAll = getCangGan(bazi.day.zhi);
   var hasDayRoot = false;
@@ -6123,11 +6356,13 @@ function getCongGe(bazi) {
   var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
   var dayZhiIsKeXie = (KEWO === dayZhiGuanXi || WOSHENG === dayZhiGuanXi || WOKE === dayZhiGuanXi);
   if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie && !hasCangKeXie) {
+    var zhuanWangName = zhuanWangNames[dgWx] || '从强格';
     return {
-      isCong: true, name: '从强格',
+      isCong: true, name: zhuanWangName,
       desc: '日主极强，局中无克泄耗，一气专旺，顺势而行。喜印比生扶，忌克泄耗破格。',
       xiOverride: [SHENGWO, dgWx], jiOverride: [KEWO, WOSHENG, WOKE],
-      source: '从旺/从强'
+      source: '五行专旺（原从旺/从强分类）',
+      zhuanWang: true
     };
   }
   // 从杀/从财/从儿/从势：日主需极弱(<30分)、日支无根、天干无印
@@ -6160,15 +6395,23 @@ function getCongGe(bazi) {
       source: '弃命从儿'
     };
   }
-  // 从势格（假从）：日主弱且克泄耗总量远超生扶
+  // 从势格：无单一财/官杀/食伤独占，但克泄耗共同成势。
+  // 仅余气中残留印比、未透且不成根者标为假从；连余气救应也没有才是真从势。
   var keXieHaoTotal = kePower + caiPower + shiPower;
   var shengFuTotal = dgPower + yinPower;
   if (canCong && keXieHaoTotal >= shengFuTotal * 2) {
+    var hasResidualHelp = ['year','month','hour'].some(function(pos) {
+      return getCangGan(bazi[pos].zhi).slice(1).some(function(g) {
+        var wx = WU_XING[g];
+        return wx === SHENGWO || wx === dgWx;
+      });
+    });
     return {
-      isCong: true, name: '假从势格',
+      isCong: true, name: hasResidualHelp ? '假从势格' : '从势格',
       desc: '日主极弱，克泄耗成势，不能自立，不得不从。喜克泄耗顺势而行，忌印比生扶破格。',
       xiOverride: [KEWO, WOKE, WOSHENG], jiOverride: [SHENGWO, dgWx],
-      source: '弃命从势'
+      source: hasResidualHelp ? '弃命从势（余气尚有微弱印比，按假从）' : '弃命从势（无有效印比救应）',
+      trueFollowing: !hasResidualHelp
     };
   }
   return { isCong: false };
@@ -6440,8 +6683,8 @@ function analyzeDayBranch(bazi) {
 function getProfessionalReportFacts(bazi, gender) {
   var strength = calcDayMasterStrength(bazi);
   var renYuan = getRenYuanEvidence(bazi);
-  var pattern = getPattern(bazi);
   var yongJi = getYongJi(bazi);
+  var pattern = yongJi.resolvedPattern || getPattern(bazi);
   var thisYear = analyzeThisYear(bazi, gender || bazi.gender || 'male', yongJi);
   var candidates = [];
 
@@ -6454,6 +6697,10 @@ function getProfessionalReportFacts(bazi, gender) {
     pattern.status === '破格'
       ? (pattern.breakReasons || []).join('；')
       : (pattern.status === '条件待定' ? (pattern.pendingReasons || []).join('；') : pattern.source));
+  (pattern.relatedPatterns || []).forEach(function(item) {
+    addChain(item.status === '成格' ? 4 : 3, item.name + '·' + item.status,
+      item.status === '破格' && item.breakReasons && item.breakReasons.length ? item.breakReasons.join('；') : item.source);
+  });
   getGanHe(bazi).forEach(function(item) {
     addChain(item.isTransformed ? 4 : 2, item.status, item.desc);
   });
@@ -6535,6 +6782,7 @@ window.BaZiCalculator = {
     analyzeParents: analyzeParents,
     calcDayMasterStrength: calcDayMasterStrength,
     getPattern: getPattern,
+    adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,
     getPillarRelations: getPillarRelations,
     getBranchRelations: getBranchRelations,

@@ -214,7 +214,7 @@ function buildDailyFacts(calculator, bazi, gender, transit) {
 
   return {
     pillars:[bazi.year,bazi.month,bazi.day,bazi.hour].map(p => p.gan + p.zhi).join(' '),
-    strength:calculator.calcDayMasterStrength(bazi), pattern:calculator.getPattern(bazi), yongJi,
+    strength:calculator.calcDayMasterStrength(bazi), pattern:yongJi.resolvedPattern || calculator.getPattern(bazi), yongJi,
     day:{gan:dayGan,zhi:dayZhi,ganElement:STEM_ELEMENT[dayGan],zhiElement:BRANCH_ELEMENT[dayZhi],
       ganRole,zhiRole,shiShen:calculator.getShiShen(bazi.day.gan, dayGan)},
     context, events:strongEvents, focus, score, tendency,

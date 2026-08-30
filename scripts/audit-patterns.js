@@ -38,12 +38,15 @@ const representativeCharts = {};
 for (let i = 0; i < sampleSize; i++) {
   const values = [0, 1, 2, 3].map(() => jiazi[Math.floor(random() * jiazi.length)]);
   const bazi = chart(values);
-  const pattern = calculator.getPattern(bazi);
+  const basePattern = calculator.getPattern(bazi);
+  const yongJi = calculator.getYongJi(bazi);
+  const pattern = yongJi.resolvedPattern || basePattern;
   const key = pattern.name + '·' + pattern.status;
   counts[key] = (counts[key] || 0) + 1;
   if (!representativeCharts[key]) {
     representativeCharts[key] = {
       pillars:values.join(' '),
+      basePattern:basePattern.name + '·' + basePattern.status,
       conditions:(pattern.establishConditions || []).map(row => ({ condition:row.condition, met:row.met, category:row.category })),
       breakReasons:pattern.breakReasons || []
     };

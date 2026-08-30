@@ -571,13 +571,16 @@
         if (BaZiCalculator.calcDayMasterStrength) {
           try { data.dayMasterStrength = BaZiCalculator.calcDayMasterStrength(_bazi); } catch(e) {}
         }
-        // v3.1: 格局
-        if (BaZiCalculator.getPattern) {
-          try { data.pattern = BaZiCalculator.getPattern(_bazi); } catch(e) {}
-        }
         // v3.1: 喜用忌神
         if (BaZiCalculator.getYongJi) {
-          try { data.yongJi = BaZiCalculator.getYongJi(_bazi); } catch(e) {}
+          try {
+            data.yongJi = BaZiCalculator.getYongJi(_bazi);
+            if (data.yongJi && data.yongJi.resolvedPattern) data.pattern = data.yongJi.resolvedPattern;
+          } catch(e) {}
+        }
+        // 无法完成后置裁决时才退回基础月令格。
+        if (!data.pattern && BaZiCalculator.getPattern) {
+          try { data.pattern = BaZiCalculator.getPattern(_bazi); } catch(e) {}
         }
         // v3.1: 四柱生克
         if (BaZiCalculator.getPillarRelations) {
