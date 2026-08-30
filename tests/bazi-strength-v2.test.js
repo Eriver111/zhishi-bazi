@@ -146,3 +146,31 @@ test('禄旺根被原局六冲时不得按完整多重强根加分', () => {
     assert.equal(r.level, c.level, c.gz.join(' ') + ' 档位漂移');
   }
 });
+
+test('禄旺根被异类六合或半合牵走时不得按完整强根补分', () => {
+  const cases = [
+    // 真实出生盘：2016-12-25 16:00，双申均被日支巳合向子月水势。
+    { gz: ['丙申', '庚子', '辛巳', '丙申'], score: 26, level: '极弱' },
+    // 真实出生盘：1965-04-23 12:00，午根被未六合为土，只余巳根完整。
+    { gz: ['乙巳', '庚辰', '丁未', '丙午'], score: 43, level: '中和' },
+  ];
+  for (const c of cases) {
+    const r = strength(c.gz);
+    assert.equal(r.score, c.score, c.gz.join(' ') + ' 异类合局仍被误计强根');
+    assert.equal(r.level, c.level, c.gz.join(' ') + ' 档位漂移');
+  }
+});
+
+test('刑害落到禄旺根本身时不启用高额双根补偿', () => {
+  const cases = [
+    // 真实出生盘：2010-05-25 06:00，寅根被巳刑害。
+    { gz: ['庚寅', '辛巳', '乙亥', '己卯'], score: 39, level: '偏弱' },
+    // 真实出生盘：1968-06-10 16:00，双申根均受日支亥害。
+    { gz: ['戊申', '戊午', '辛亥', '丙申'], score: 32, level: '偏弱' },
+  ];
+  for (const c of cases) {
+    const r = strength(c.gz);
+    assert.equal(r.score, c.score, c.gz.join(' ') + ' 受刑害强根仍被误计');
+    assert.equal(r.level, c.level, c.gz.join(' ') + ' 档位漂移');
+  }
+});

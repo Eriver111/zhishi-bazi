@@ -2327,23 +2327,60 @@ function calcDayMasterStrength(bazi) {
   // ---------- ④½ 多重强根成势修正 ----------
   // 旧主评分只给年/月/时支本气同类各 +3，哪怕同为日主禄、旺也与普通余根等价；
   // 这会漏判“失令但两处禄旺夹扶”的命局。这里采用窄门控：
-  //   1) 日主必须失令；2) 非日支至少两处未被六冲破坏的临官/帝旺强根；
-  //   3) 进入本段前尚未达到中和，避免已偏强命局再次拔高；
+  //   1) 日主必须失令；2) 非日支至少两处未被冲破、也未被异类合局牵走的临官/帝旺强根；
+  //   3) 全部原局规则结算后的基准分仍低于50，避免已足够中和偏强的命局再次拔高；
   // 普通单根盘不触发，避免全局抬分。藏干根、半合与有根之印只在门控成立后加权。
   var _externalStrongRoots = [];
+  var _rootClusterPendingAdj = 0;
   var _rootClashMap = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+  var _rootHarmMap = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
+  var _rootPunishPairs = { '子卯':true,'卯子':true,'寅巳':true,'巳寅':true,'寅申':true,'申寅':true,'巳申':true,'申巳':true,'丑戌':true,'戌丑':true,'丑未':true,'未丑':true,'戌未':true,'未戌':true };
+  var _rootHeMap = {
+    '子':{ partner:'丑', wx:'土' }, '丑':{ partner:'子', wx:'土' },
+    '寅':{ partner:'亥', wx:'木' }, '亥':{ partner:'寅', wx:'木' },
+    '卯':{ partner:'戌', wx:'火' }, '戌':{ partner:'卯', wx:'火' },
+    '辰':{ partner:'酉', wx:'金' }, '酉':{ partner:'辰', wx:'金' },
+    '巳':{ partner:'申', wx:'水' }, '申':{ partner:'巳', wx:'水' },
+    '午':{ partner:'未', wx:'土' }, '未':{ partner:'午', wx:'土' }
+  };
+  var _rootSanHe = [
+    ['寅','午','戌','火'], ['亥','卯','未','木'],
+    ['申','子','辰','水'], ['巳','酉','丑','金']
+  ];
+  var _rootSanHui = [
+    ['寅','卯','辰','木'], ['巳','午','未','火'],
+    ['申','酉','戌','金'], ['亥','子','丑','水']
+  ];
+  function _rootIsDiverted(zhi) {
+    var he = _rootHeMap[zhi];
+    if (he && he.wx !== dgWx && _allZhiForHui.indexOf(he.partner) >= 0) return true;
+    var diverted = false;
+    _rootSanHe.forEach(function(tri) {
+      if (diverted || tri[3] === dgWx || tri.slice(0,3).indexOf(zhi) < 0) return;
+      var present = tri.slice(0,3).filter(function(z) { return _allZhiForHui.indexOf(z) >= 0; });
+      // 全三合，或带中神的两支半合，均足以让该根不再作为“无争议完整强根”。
+      if (present.length === 3 || (present.length === 2 && present.indexOf(tri[1]) >= 0)) diverted = true;
+    });
+    _rootSanHui.forEach(function(hui) {
+      if (diverted || hui[3] === dgWx || hui.slice(0,3).indexOf(zhi) < 0) return;
+      if (hui.slice(0,3).every(function(z) { return _allZhiForHui.indexOf(z) >= 0; })) diverted = true;
+    });
+    return diverted;
+  }
   ['year','month','hour'].forEach(function(pos) {
     var zhi = bazi[pos].zhi;
     var cs = getChangSheng(dg)[zhi];
     var cang = getCangGan(zhi);
     var benQiSame = cang.length > 0 && WU_XING[cang[0]] === dgWx;
     var rootIsClashed = _allZhiForHui.indexOf(_rootClashMap[zhi]) >= 0;
-    if (benQiSame && !rootIsClashed && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
+    var rootIsHarmed = _allZhiForHui.indexOf(_rootHarmMap[zhi]) >= 0;
+    var rootIsPunished = _allZhiForHui.some(function(other) { return _rootPunishPairs[zhi + other]; });
+    if (benQiSame && !rootIsClashed && !rootIsHarmed && !rootIsPunished && !_rootIsDiverted(zhi) && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
       _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage });
     }
   });
   var _isOutOfSeason = _deadOrder || _restOrder || _prisonOrder;
-  if (_isOutOfSeason && score < 50 && _externalStrongRoots.length >= 2) {
+  if (_isOutOfSeason && _externalStrongRoots.length >= 2) {
     // 非日支禄旺原已各计 +3；再补 +7，使其总权重接近日坐禄(+14)但仍略低。
     var _rootClusterAdj = _externalStrongRoots.length * 7;
     // 两处以上强根不是孤根相加，而是根气成势。
@@ -2383,7 +2420,8 @@ function calcDayMasterStrength(bazi) {
     });
     if (_visibleRootedSeal) _rootClusterAdj += 3;
 
-    score += _rootClusterAdj;
+    // 此处只记录候选值；必须等后续合冲、调候、制化及宫位权重全部结算后再决定是否启用。
+    _rootClusterPendingAdj = _rootClusterAdj;
   }
 
   // ---------- ⑤ 五行过耗修正（日主克月令时，月令五行过旺则日主被反耗） ----------
@@ -2844,6 +2882,10 @@ function calcDayMasterStrength(bazi) {
   if (KEWO[dgWx] === _yGanWx)         _posAdj += 1;  // 年官杀远，不如月柱紧迫
   if (WOKE[dgWx] === _yGanWx)         _posAdj += 1;  // 年财星远，不如月柱耗身
   score += _posAdj;
+
+  // 多重强根是对旧评分漏计禄旺根的补偿，不是无条件奖励。
+  // 用完整原局基准分作最终门控，防止流程中段偏低、后续已经中和偏强的盘被二次拔高。
+  if (_rootClusterPendingAdj > 0 && score < 50) score += _rootClusterPendingAdj;
 
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
