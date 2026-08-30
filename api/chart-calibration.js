@@ -41,7 +41,10 @@ module.exports = async function handler(req, res) {
     }
 
     if (body.action === 'answer') {
-      var event = await answerChartCalibrationEvent(user.uid, chartKey, body.event_key, body.answer, body.actual_year, body.note);
+      var event = await answerChartCalibrationEvent(
+        user.uid, chartKey, body.event_key, body.answer, body.actual_year, body.note,
+        body.selected_option, body.selected_detail, body.match_level
+      );
       if (!event) return send(res, 400, { error: '该校准题不存在或保存失败' });
       return send(res, 200, { success: true, event: event });
     }

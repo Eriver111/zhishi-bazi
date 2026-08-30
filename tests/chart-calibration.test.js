@@ -5,12 +5,15 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const calibrationModel = require('../lib/calibration-model.js');
 
 test('calibration schema is isolated from payment and locks generated candidates', () => {
   const migration = read('schema-chart-calibration.sql');
   const storage = read('lib/supabase.js');
   assert.match(migration, /CREATE TABLE IF NOT EXISTS chart_calibrations/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS chart_calibration_events/);
+  assert.match(migration, /options\s+JSONB/);
+  assert.match(migration, /selected_option/);
   assert.match(migration, /UNIQUE\(calibration_id, event_key\)/);
   assert.doesNotMatch(migration, /orders|payment|credits/i);
   assert.match(storage, /if \(existing\) return existing/);
@@ -21,14 +24,14 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   const client = read('js/chart-calibration.js');
   const archive = read('js/archive-library.js');
   const result = read('result.html');
-  assert.match(client, /要不要先校对命盘/);
+  assert.match(client, /要不要先做应事校对/);
   assert.match(client, /先校对再问/);
   assert.match(client, /直接问 AI/);
-  assert.match(client, /候选在你作答前已经生成并锁定/);
+  assert.match(client, /问题和依据在回答前已经锁定/);
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=6/);
+  assert.match(result, /chart-calibration\.js\?v=7/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -43,8 +46,13 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /刑\|自刑\|六害\|六破/);
   assert.doesNotMatch(client, /投资失利、被人分走钱/);
   assert.match(client, /var scores = \{ study:0, career:0, wealth:0, relationship:0, family:0, change:1 \}/);
-  assert.match(client, /seenPrompts\[item\.prompt\]/);
-  assert.match(client, /domainCounts\[item\.domain\].*>= 3/);
+  assert.match(client, /annualDomainScores/);
+  assert.match(client, /optionDomains\.slice|rankedDomains\.slice/);
+  assert.match(client, /followupSets/);
+  assert.match(client, /data-selected-option/);
+  assert.match(client, /很符合/);
+  assert.match(client, /大致符合/);
+  assert.match(client, /slice\(0, 5\)/);
 });
 
 test('confirmed calibration is added to AI context without changing frozen facts', () => {
@@ -52,7 +60,50 @@ test('confirmed calibration is added to AI context without changing frozen facts
   const integration = read('js/ai-chat-integration.js');
   assert.match(endpoint, /getChartCalibrationSummary/);
   assert.match(endpoint, /不得据此改写四柱、旺衰、格局、喜用忌/);
-  assert.match(endpoint, /用户否认的事件应降权/);
+  assert.match(endpoint, /降低被用户明确否认的表现/);
   assert.match(integration, /ChatPersistence\.decorate\(body, 'bazi'/);
   assert.match(integration, /requestHeaders\.Authorization/);
+});
+
+test('structured calibration rejects contradictory or forged follow-up answers', () => {
+  const event = {
+    event_year: 2024,
+    options: [{
+      key: 'wealth:partnership-loss', label: '合伙或人情带来损失', detail: '钱被合作分配带走',
+      domain: 'wealth', manifestation: 'partnership-loss', mechanism_key: 'peer-wealth',
+      followup_options: [{ key: 'partnership_money', label: '合伙分钱' }]
+    }]
+  };
+  assert.equal(calibrationModel.normalizeCalibrationResponse(event, {
+    answer: 'yes', selected_option: '', actual_year: 2024
+  }).error, '请选择一项最接近的真实经历');
+  assert.equal(calibrationModel.normalizeCalibrationResponse(event, {
+    answer: 'yes', selected_option: 'wealth:partnership-loss', selected_detail: 'forged', actual_year: 2024
+  }).error, '补充选项与主选项不一致');
+  assert.equal(calibrationModel.normalizeCalibrationResponse(event, {
+    answer: 'yes', selected_option: 'wealth:partnership-loss', actual_year: 2027
+  }).error, '实际年份只能在推断年份前后一年内调整');
+  const denied = calibrationModel.normalizeCalibrationResponse(event, {
+    answer: 'no', selected_option: 'wealth:partnership-loss', selected_detail: 'partnership_money', actual_year: 2024
+  }).value;
+  assert.equal(denied.selected_option, null);
+  assert.equal(denied.selected_detail, null);
+  assert.equal(denied.match_level, 'none');
+});
+
+test('personal manifestation model weights exact matches above partial matches', () => {
+  const option = {
+    key: 'wealth:partnership-loss', label: '合伙或人情带来损失', detail: '钱被合作分配带走',
+    domain: 'wealth', manifestation: 'partnership-loss', mechanism_key: 'peer-wealth',
+    followup_options: [{ key: 'partnership_money', label: '合伙分钱' }]
+  };
+  const profile = calibrationModel.buildCalibrationProfile([
+    { event_year: 2022, answer: 'yes', match_level: 'exact', selected_option: option.key, selected_detail: 'partnership_money', options: [option] },
+    { event_year: 2024, answer: 'yes', match_level: 'partial', selected_option: option.key, selected_detail: 'partnership_money', options: [option] },
+    { event_year: 2025, answer: 'no', domain: 'career', options: [] }
+  ]);
+  assert.equal(profile.patterns[0].score, 3);
+  assert.equal(profile.patterns[0].count, 2);
+  assert.deepEqual(profile.patterns[0].years, [2022, 2024]);
+  assert.equal(profile.denied.career, 1);
 });

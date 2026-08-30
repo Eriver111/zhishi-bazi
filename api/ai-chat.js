@@ -21,7 +21,8 @@ const AI_MODEL = 'deepseek-v4-flash';
 function sanitizeGuestCalibrationSummary(value) {
   return String(value || '').split(/\r?\n/).slice(0, 20).map(function(line) {
     line = line.trim().slice(0, 260);
-    return /^\d{4}年【(?:学业|事业|财务|感情|家庭|身心状态|生活变化|经历)】用户确认(?:发生|没有发生)：/.test(line) ? line : '';
+    if (/^【个人应事模型】/.test(line)) return line;
+    return /^\d{4}年【(?:学业|事业|财务|感情|家庭|身心状态|生活变化|经历)】用户确认(?:明显发生|部分符合|发生|没有发生)：/.test(line) ? line : '';
   }).filter(Boolean).join('\n').slice(0, 2000);
 }
 
@@ -669,7 +670,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (calibrationSummary) {
     messages.push({
       role: 'system',
-      content: '以下是用户在“过往事件校盘”中亲自确认或否认的经历，属于这个人的现实反馈。可用它判断同一命局中哪条取象更贴近本人；不得据此改写四柱、旺衰、格局、喜用忌，也不得把未确认候选当成事实。用户否认的事件应降权，不要换个说法强行断成发生：\n' + calibrationSummary
+      content: '以下是用户在“命盘应事校对”中亲自确认或否认的经历，以及由多次确认归纳出的个人应事模型。它只用于在多个合理取象之间调整解释权重：优先采用用户反复命中的现实表现，降低被用户明确否认的表现。不得据此改写四柱、旺衰、格局、喜用忌，也不得把未确认候选当成事实；用户否认的事件不要换个说法强行断成发生：\n' + calibrationSummary
     });
   }
 

@@ -133,7 +133,7 @@
     });
   }
 
-  function annualDomain(analysis, liuNian, age) {
+  function annualDomainScores(analysis, liuNian, age) {
     var scores = { study:0, career:0, wealth:0, relationship:0, family:0, change:1 };
     (analysis.triggers || []).forEach(function(trigger) {
       if (trigger.target === 'day' || /日柱|日支|夫妻/.test(trigger.detail || '')) scores.relationship += 4;
@@ -154,11 +154,84 @@
       if (/食神|伤官/.test(ss)) { if (age <= 23) scores.study += 2; else scores.career += 2; }
       if (/比肩|劫财/.test(ss)) { scores.wealth += 2; scores.relationship += 1; }
     } catch (e) {}
-    var domain = Object.keys(scores).sort(function(a,b) { return scores[b] - scores[a]; })[0];
-    if (age < 18 && domain === 'career') domain = 'study';
-    if (age < 16 && domain === 'wealth') domain = 'family';
-    if (age < 14 && domain === 'relationship') domain = 'family';
-    return domain;
+    if (age < 18) { scores.study += scores.career; scores.career = -1; }
+    if (age < 16) { scores.family += scores.wealth; scores.wealth = -1; }
+    if (age < 14) { scores.family += scores.relationship; scores.relationship = -1; }
+    return scores;
+  }
+
+  function annualDomain(analysis, liuNian, age) {
+    var scores = annualDomainScores(analysis, liuNian, age);
+    return Object.keys(scores).sort(function(a,b) { return scores[b] - scores[a]; })[0];
+  }
+
+  var followupSets = {
+    study: [
+      {key:'admission_exam',label:'升学、录取或重要考试'}, {key:'school_major',label:'换学校、班级或专业'},
+      {key:'grade_focus',label:'成绩和专注度明显变化'}, {key:'teacher_conflict',label:'与老师、规则或学习压力有关'}
+    ],
+    career: [
+      {key:'job_team',label:'入职、离职、换岗位或换团队'}, {key:'promotion_duty',label:'升职、转正或责任突然加重'},
+      {key:'authority_conflict',label:'与领导、制度或审核发生冲突'}, {key:'project_rework',label:'项目反复、返工或工作节奏被打乱'}
+    ],
+    wealth: [
+      {key:'partnership_money',label:'合伙分钱、朋友借钱或替人承担开支'}, {key:'investment_business',label:'投资、生意、项目回款或资金周转'},
+      {key:'family_property',label:'家庭、住房或大件消费'}, {key:'income_change',label:'工资、收入来源或手里现金明显变化'}
+    ],
+    relationship: [
+      {key:'start_commit',label:'认识重要对象或确定关系'}, {key:'break_distance',label:'争吵、分开或异地'},
+      {key:'hot_cold',label:'反复拉扯、忽近忽远'}, {key:'old_person',label:'旧人旧事重新出现'}
+    ],
+    family: [
+      {key:'parent_work_money',label:'父母工作或家庭经济变化'}, {key:'home_move',label:'搬家、住房或居住安排变化'},
+      {key:'family_relation',label:'父母关系或家庭争执变化'}, {key:'elder_health',label:'长辈身体、治疗或需要照顾'}
+    ],
+    change: [
+      {key:'move_city',label:'搬家、异地或长期离开原环境'}, {key:'school_job_change',label:'学校、工作或主要圈子改变'},
+      {key:'identity_plan',label:'身份、计划或生活重心改变'}, {key:'forced_restart',label:'原计划被打断后重新开始'}
+    ]
+  };
+
+  function mechanismKey(domain, analysis, tenGod) {
+    var triggers = (analysis.triggers || []).map(function(item){return item.type || ''}).join('|');
+    if (domain === 'relationship' && /六冲|天克地冲/.test(triggers)) return 'day-palace:clash';
+    if (domain === 'relationship' && /六合|半合|三合/.test(triggers)) return 'day-palace:combine';
+    if (domain === 'career' && /伤官见官|官逢伤官/.test(triggers)) return 'output-controls-officer';
+    if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return 'peer-wealth';
+    if (domain === 'family' && /印/.test(tenGod || '')) return 'seal-family';
+    return domain + ':' + String(tenGod || 'annual-trigger').replace(/[^\u4e00-\u9fa5a-zA-Z0-9_-]/g,'').slice(0,30);
+  }
+
+  function manifestationKey(domain, analysis, tenGod) {
+    var direction = directionOf(null, analysis);
+    if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return direction === 'good' ? 'network-income' : 'partnership-loss';
+    if (domain === 'career' && /(伤官见官|官逢伤官)/.test((analysis.triggers || []).map(function(t){return t.type||''}).join('|'))) return 'authority-conflict';
+    if (domain === 'relationship') return direction === 'good' ? 'relationship-progress' : (direction === 'bad' ? 'relationship-instability' : 'relationship-change');
+    if (domain === 'family') return direction === 'good' ? 'family-support' : (direction === 'bad' ? 'family-pressure' : 'family-change');
+    if (domain === 'study') return direction === 'good' ? 'study-progress' : (direction === 'bad' ? 'study-pressure' : 'study-change');
+    if (domain === 'career') return direction === 'good' ? 'career-progress' : (direction === 'bad' ? 'career-pressure' : 'career-change');
+    if (domain === 'wealth') return direction === 'good' ? 'income-growth' : (direction === 'bad' ? 'money-outflow' : 'money-change');
+    return 'environment-change';
+  }
+
+  function conciseLabel(domain, analysis, tenGod) {
+    var labels = {study:'升学考试或学习状态',career:'工作岗位或责任变化',wealth:'收入、支出或资金变化',relationship:'感情关系出现转折',family:'父母、住房或家庭变化',change:'生活环境或人生计划变化'};
+    if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return directionOf(null, analysis)==='good'?'朋友团队带来赚钱机会':'合伙、人情或竞争带来损失';
+    if (domain === 'career' && /(伤官见官|官逢伤官)/.test((analysis.triggers || []).map(function(t){return t.type||''}).join('|'))) return '与领导、制度或审核发生冲突';
+    return labels[domain] || labels.change;
+  }
+
+  function competingOption(domain, analysis, age, tenGod) {
+    return {
+      key: domain + ':' + manifestationKey(domain, analysis, tenGod),
+      label: conciseLabel(domain, analysis, tenGod),
+      detail: predictedPrompt(domain, analysis, age, tenGod).replace(/^这一年是否/, '').replace(/[？?]$/, ''),
+      domain: domain,
+      manifestation: manifestationKey(domain, analysis, tenGod),
+      mechanism_key: mechanismKey(domain, analysis, tenGod),
+      followup_prompt: '如果是这一类，具体更接近哪件事？',
+      followup_options: followupSets[domain] || followupSets.change
+    };
   }
 
   function generateCandidates(data) {
@@ -181,7 +254,16 @@
         var age = birthYear ? year - birthYear : 20;
         var tenGod = '';
         try { tenGod = BaZiCalculator.getShiShen(_bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
-        var domain = annualDomain(analysis, liuNian, age);
+        var scores = annualDomainScores(analysis, liuNian, age);
+        var rankedDomains = Object.keys(scores).filter(function(name){return scores[name] >= 0}).sort(function(a,b){return scores[b]-scores[a]});
+        var domain = rankedDomains[0] || annualDomain(analysis, liuNian, age);
+        var optionDomains = rankedDomains.slice(0,3);
+        ['change','family','wealth','relationship','career','study'].some(function(name){
+          if (optionDomains.length >= 3) return true;
+          if (optionDomains.indexOf(name) < 0 && scores[name] >= 0) optionDomains.push(name);
+          return optionDomains.length >= 3;
+        });
+        var options = optionDomains.map(function(name){return competingOption(name, analysis, age, tenGod)});
         var gz = (liuNian.gan || '') + (liuNian.zhi || '');
         var dyGz = (dy.gan || '') + (dy.zhi || '');
         var evidence = (analysis.triggers || []).slice().sort(function(a,b) {
@@ -190,18 +272,18 @@
         evidence.unshift(year + '年' + gz + '，处于' + dyGz + '大运；流年天干为' + analysis.stemRole + '，地支为' + analysis.branchRole + '。');
         out.push({
           event_key: year + '-' + domain + '-' + gz, year: year, domain: domain,
-          prompt: predictedPrompt(domain, analysis, age, tenGod), evidence: evidence,
+          prompt: year + '年前后，下面哪一种情况最接近你的真实经历？', evidence: evidence,
+          options: options, mechanism_key: options[0] ? options[0].mechanism_key : '',
           confidence: score >= 8 ? 'high' : (score >= 4 ? 'medium' : 'low'), _score: score
         });
       }
       out.sort(function(a,b) { return b._score - a._score || b.year - a.year; });
-      var seenPrompts = {}, domainCounts = {};
+      var domainCounts = {};
       out = out.filter(function(item) {
-        if (seenPrompts[item.prompt] || Number(domainCounts[item.domain] || 0) >= 3) return false;
-        seenPrompts[item.prompt] = true;
+        if (Number(domainCounts[item.domain] || 0) >= 2) return false;
         domainCounts[item.domain] = Number(domainCounts[item.domain] || 0) + 1;
         return true;
-      }).slice(0, 8).sort(function(a,b) { return b.year - a.year; });
+      }).slice(0, 5).sort(function(a,b) { return b.year - a.year; });
       out.forEach(function(item) { delete item._score; });
     } catch (error) { console.warn('[calibration] 候选生成失败:', error.message); }
     return out;
@@ -225,7 +307,7 @@
 
   function showConsent(key, originalToggle) {
     var storageText=token()?'确认结果只保存在你的账号下':'未登录时确认结果只保存在当前设备';
-    openHtml('<header class="calibration-head"><span>第一次问这张命盘前</span><h2 id="calibrationTitle">要不要先校对命盘？</h2><p>系统会先根据岁运断几段已经过去的经历。你只需要回答“有、没有、记不清”，之后 AI 会更清楚同一套命理结构在你身上具体表现在哪一面。</p></header><div class="calibration-privacy">不会修改四柱、旺衰、格局和喜用忌；'+storageText+'，也不影响购买记录。</div><div class="calibration-actions"><button type="button" class="calibration-primary" id="calibrationStart">先校对再问</button><button type="button" class="calibration-secondary" id="calibrationSkip">直接问 AI</button></div>');
+    openHtml('<header class="calibration-head"><span>第一次问这张命盘前</span><h2 id="calibrationTitle">要不要先做应事校对？</h2><p>系统先找出几个过去最容易发生变化的年份。你从互不重复的现实表现里选最接近的一项，AI以后会优先按你真正的应事方式分析。</p></header><div class="calibration-privacy">不会修改四柱、旺衰、格局和喜用忌；'+storageText+'，也不影响购买记录。</div><div class="calibration-actions"><button type="button" class="calibration-primary" id="calibrationStart">先校对再问</button><button type="button" class="calibration-secondary" id="calibrationSkip">直接问 AI</button></div>');
     document.getElementById('calibrationStart').onclick = function() { start(key, originalToggle); };
     document.getElementById('calibrationSkip').onclick = function() { try { localStorage.setItem(choiceKey(key), 'skip'); } catch(e) {} close(); originalToggle(); };
   }
@@ -246,44 +328,100 @@
   function renderEvents(key, events, originalToggle) {
     if (!events.length) { close(); if (originalToggle) originalToggle(); return; }
     var answered = events.filter(function(event) { return event.answer; }).length;
-    var html = '<header class="calibration-head"><span>过往事件校盘</span><h2 id="calibrationTitle">我先断，你来核对</h2><p>以下候选在你作答前已经生成并锁定。年份相差一年也可以按“有”确认，再选择实际年份。</p><div class="calibration-progress"><i style="width:' + Math.round(answered / events.length * 100) + '%"></i></div><small>' + answered + ' / ' + events.length + ' 已确认</small></header><div class="calibration-list">';
+    var html = '<header class="calibration-head"><span>命盘应事校对</span><h2 id="calibrationTitle">我先判断，你选最接近的一项</h2><p>每个年份只选最接近真实经历的一类，再补充具体发生了什么。问题和依据在回答前已经锁定，不会根据你的选择倒推命盘。</p><div class="calibration-progress"><i style="width:' + Math.round(answered / events.length * 100) + '%"></i></div><small>' + answered + ' / ' + events.length + ' 已完成</small></header><div class="calibration-list">';
     events.forEach(function(event) {
       var answer = event.answer || '';
-      html += '<article class="calibration-event" data-event="' + event.event_key + '"><div class="calibration-event__year">' + event.event_year + '<small>' + (domainNames[event.domain] || '经历') + '</small></div><div class="calibration-event__content"><p>' + event.prompt + '</p><details><summary>查看判断依据</summary><ul>' + (event.evidence || []).map(function(text){return '<li>'+escapeHtml(text)+'</li>'}).join('') + '</ul></details><div class="calibration-answers"><button data-answer="yes" class="' + (answer==='yes'?'is-selected':'') + '">有</button><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">没有</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div><div class="calibration-followup ' + (answer==='yes'?'is-visible':'') + '"><label>实际发生年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><input maxlength="240" placeholder="可选：补充发生了什么" value="'+escapeAttr(event.note||'')+'"><button data-save-note="1">保存补充</button></div></div></article>';
+      var options = Array.isArray(event.options) ? event.options : [];
+      html += '<article class="calibration-event ' + (options.length?'is-structured':'is-legacy') + '" data-event="' + escapeAttr(event.event_key) + '" data-answer="' + escapeAttr(answer) + '" data-selected-option="' + escapeAttr(event.selected_option||'') + '" data-selected-detail="' + escapeAttr(event.selected_detail||'') + '" data-match-level="' + escapeAttr(event.match_level||'exact') + '"><div class="calibration-event__year">' + event.event_year + '<small>' + (domainNames[event.domain] || '经历') + '</small></div><div class="calibration-event__content"><p>' + escapeHtml(event.prompt) + '</p><details><summary>为什么重点看这一年</summary><ul>' + (event.evidence || []).map(function(text){return '<li>'+escapeHtml(text)+'</li>'}).join('') + '</ul></details>';
+      if (options.length) {
+        html += '<div class="calibration-options">';
+        options.forEach(function(option, optionIndex) {
+          html += '<button type="button" data-option="'+escapeAttr(option.key)+'" class="calibration-option '+(event.selected_option===option.key&&answer==='yes'?'is-selected':'')+'"><b>'+(optionIndex+1)+'</b><span><strong>'+escapeHtml(option.label)+'</strong><small>'+escapeHtml(option.detail)+'</small></span></button>';
+        });
+        html += '</div><div class="calibration-answers calibration-answers--negative"><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">都不符合</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div>';
+        options.forEach(function(option) {
+          var visible = answer==='yes' && event.selected_option===option.key;
+          html += '<div class="calibration-followup calibration-followup--structured '+(visible?'is-visible':'')+'" data-followup-for="'+escapeAttr(option.key)+'"><p>'+escapeHtml(option.followup_prompt||'具体更接近哪件事？')+'</p><div class="calibration-detail-options">';
+          (option.followup_options||[]).forEach(function(detail) {
+            html += '<button type="button" data-detail="'+escapeAttr(detail.key)+'" class="'+(event.selected_detail===detail.key?'is-selected':'')+'">'+escapeHtml(detail.label)+'</button>';
+          });
+          html += '</div><div class="calibration-match"><span>符合程度</span><button type="button" data-match="exact" class="'+((event.match_level||'exact')==='exact'?'is-selected':'')+'">很符合</button><button type="button" data-match="partial" class="'+(event.match_level==='partial'?'is-selected':'')+'">大致符合</button></div><div class="calibration-note-row"><label>实际年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><input maxlength="240" placeholder="可选：补充真实情况" value="'+escapeAttr(event.note||'')+'"><button type="button" data-save-note="1">保存补充</button></div></div>';
+        });
+      } else {
+        html += '<div class="calibration-answers"><button data-answer="yes" class="' + (answer==='yes'?'is-selected':'') + '">有</button><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">没有</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div><div class="calibration-followup ' + (answer==='yes'?'is-visible':'') + '"><label>实际发生年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><input maxlength="240" placeholder="可选：补充发生了什么" value="'+escapeAttr(event.note||'')+'"><button data-save-note="1">保存补充</button></div>';
+      }
+      html += '</div></article>';
     });
-    html += '</div><div class="calibration-footer"><button type="button" class="calibration-primary" id="calibrationFinish">完成校对，进入 AI</button><p>命理分析仅供传统文化研究与参考。</p></div>';
+    html += '</div><div class="calibration-footer"><div id="calibrationConsistency" class="calibration-consistency">结构化选项会自动避免互相矛盾的记录</div><button type="button" class="calibration-primary" id="calibrationFinish">完成校对，进入 AI</button><p>命理分析仅供传统文化研究与参考。</p></div>';
     openHtml(html);
     document.querySelectorAll('.calibration-event').forEach(function(card) {
+      card.querySelectorAll('[data-option]').forEach(function(button) {
+        button.onclick = function() { selectStructuredOption(key, card, button.getAttribute('data-option')); };
+      });
       card.querySelectorAll('[data-answer]').forEach(function(button) {
         button.onclick = function() { saveAnswer(key, card, button.getAttribute('data-answer')); };
       });
-      var save = card.querySelector('[data-save-note]'); if (save) save.onclick = function() { saveAnswer(key, card, 'yes', true); };
+      card.querySelectorAll('[data-detail]').forEach(function(button) {
+        button.onclick = function() { card.setAttribute('data-selected-detail',button.getAttribute('data-detail')); syncStructuredCard(card); saveAnswer(key,card,'yes'); };
+      });
+      card.querySelectorAll('[data-match]').forEach(function(button) {
+        button.onclick = function() { card.setAttribute('data-match-level',button.getAttribute('data-match')); syncStructuredCard(card); saveAnswer(key,card,'yes'); };
+      });
+      card.querySelectorAll('[data-save-note]').forEach(function(save) { save.onclick = function() { saveAnswer(key, card, 'yes', true); }; });
     });
     document.getElementById('calibrationFinish').onclick = function() { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} close(); if (originalToggle) originalToggle(); };
   }
 
+  function selectStructuredOption(key, card, optionKey) {
+    var changed = card.getAttribute('data-selected-option') !== optionKey;
+    card.setAttribute('data-answer','yes');
+    card.setAttribute('data-selected-option',optionKey);
+    if (changed) { card.setAttribute('data-selected-detail',''); card.setAttribute('data-match-level','exact'); }
+    syncStructuredCard(card);
+    saveAnswer(key,card,'yes');
+  }
+
+  function syncStructuredCard(card) {
+    var answer=card.getAttribute('data-answer')||'', option=card.getAttribute('data-selected-option')||'', detail=card.getAttribute('data-selected-detail')||'', match=card.getAttribute('data-match-level')||'exact';
+    card.querySelectorAll('[data-option]').forEach(function(button){button.classList.toggle('is-selected',answer==='yes'&&button.getAttribute('data-option')===option)});
+    card.querySelectorAll('[data-answer]').forEach(function(button){button.classList.toggle('is-selected',button.getAttribute('data-answer')===answer)});
+    card.querySelectorAll('[data-followup-for]').forEach(function(box){box.classList.toggle('is-visible',answer==='yes'&&box.getAttribute('data-followup-for')===option)});
+    card.querySelectorAll('[data-detail]').forEach(function(button){button.classList.toggle('is-selected',button.getAttribute('data-detail')===detail)});
+    card.querySelectorAll('[data-match]').forEach(function(button){button.classList.toggle('is-selected',button.getAttribute('data-match')===match)});
+  }
+
   function saveAnswer(key, card, answer, withNote) {
-    var buttons = card.querySelectorAll('[data-answer]'), followup = card.querySelector('.calibration-followup');
-    buttons.forEach(function(button) { button.classList.toggle('is-selected', button.getAttribute('data-answer') === answer); });
-    followup.classList.toggle('is-visible', answer === 'yes');
-    var year = answer === 'yes' ? Number(followup.querySelector('select').value) : null;
-    var note = answer === 'yes' ? followup.querySelector('input').value : '';
+    var structured=card.classList.contains('is-structured');
+    if (answer!=='yes') { card.setAttribute('data-answer',answer); card.setAttribute('data-selected-option',''); card.setAttribute('data-selected-detail',''); card.setAttribute('data-match-level',answer==='no'?'none':'unsure'); }
+    else card.setAttribute('data-answer','yes');
+    if (structured) syncStructuredCard(card);
+    var followup = structured ? card.querySelector('.calibration-followup.is-visible') : card.querySelector('.calibration-followup');
+    if (!structured) {
+      card.querySelectorAll('[data-answer]').forEach(function(button) { button.classList.toggle('is-selected', button.getAttribute('data-answer') === answer); });
+      followup.classList.toggle('is-visible', answer === 'yes');
+    }
+    var year = answer === 'yes' && followup ? Number(followup.querySelector('select').value) : null;
+    var note = answer === 'yes' && followup ? followup.querySelector('input').value : '';
+    var payload={action:'answer',chart_key:key,event_key:card.getAttribute('data-event'),answer:answer,actual_year:year,note:note,
+      selected_option:structured?(card.getAttribute('data-selected-option')||null):null,
+      selected_detail:structured?(card.getAttribute('data-selected-detail')||null):null,
+      match_level:structured?(card.getAttribute('data-match-level')||'exact'):(answer==='yes'?'exact':answer==='no'?'none':'unsure')};
     if (!token()) {
       var localEvents=readLocalEvents(key), eventKey=card.getAttribute('data-event');
-      localEvents.forEach(function(event){if(event.event_key===eventKey){event.answer=answer;event.actual_year=year;event.note=note}});
+      localEvents.forEach(function(event){if(event.event_key===eventKey){Object.assign(event,payload);delete event.action;delete event.chart_key}});
       writeLocalEvents(key,localEvents); updateProgress();
-      if(withNote){var localSave=followup.querySelector('[data-save-note]');localSave.textContent='已保存';setTimeout(function(){localSave.textContent='保存补充'},1200)}
+      if(withNote&&followup){var localSave=followup.querySelector('[data-save-note]');localSave.textContent='已保存';setTimeout(function(){localSave.textContent='保存补充'},1200)}
       return;
     }
-    request('POST', key, { action:'answer', chart_key:key, event_key:card.getAttribute('data-event'), answer:answer, actual_year:year, note:note })
+    request('POST', key, payload)
       .then(function() { if (withNote) { var save=followup.querySelector('[data-save-note]'); save.textContent='已保存'; setTimeout(function(){save.textContent='保存补充'},1200); } updateProgress(); })
       .catch(function() { alert('保存失败，请稍后重试'); });
   }
   function updateProgress() {
     var total = document.querySelectorAll('.calibration-event').length;
-    var done = document.querySelectorAll('.calibration-event .calibration-answers .is-selected').length;
+    var done = Array.prototype.filter.call(document.querySelectorAll('.calibration-event'),function(card){return !!card.getAttribute('data-answer')}).length;
     var bar = document.querySelector('.calibration-progress i'), label = document.querySelector('.calibration-progress + small');
-    if (bar) bar.style.width = Math.round(done / total * 100) + '%'; if (label) label.textContent = done + ' / ' + total + ' 已确认';
+    if (bar) bar.style.width = Math.round(done / total * 100) + '%'; if (label) label.textContent = done + ' / ' + total + ' 已完成';
   }
   function escapeHtml(text) { var div=document.createElement('div'); div.textContent=String(text||''); return div.innerHTML; }
   function escapeAttr(text) { return escapeHtml(text).replace(/"/g,'&quot;'); }
@@ -299,7 +437,8 @@
       return;
     }
     request('GET', key).then(function(result) {
-      if (result.ready) { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} originalToggle(); }
+      if (result.ready && (result.events||[]).some(function(event){return !event.answer})) renderEvents(key,result.events||[],originalToggle);
+      else if (result.ready) { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} originalToggle(); }
       else showConsent(key, originalToggle);
     }).catch(function() { originalToggle(); });
   }
@@ -321,7 +460,19 @@
   root.ZhishiCalibration.beforeAI = inspectFirstClick;
   root.ZhishiCalibration.summary = function(data) {
     var key=chartKey(data||chartData()), events=key?readLocalEvents(key):[];
-    return events.filter(function(event){return event.answer==='yes'||event.answer==='no'}).map(function(event){return (event.actual_year||event.event_year)+'年【'+(domainNames[event.domain]||'经历')+'】'+(event.answer==='yes'?'用户确认发生':'用户确认没有发生')+'：'+event.prompt+(event.note?'；用户补充：'+event.note:'')}).join('\n').slice(0,2000);
+    var weights={};
+    var lines=events.filter(function(event){return event.answer==='yes'||event.answer==='no'}).map(function(event){
+      var picked=(event.options||[]).filter(function(option){return option.key===event.selected_option})[0];
+      var detail=picked&&(picked.followup_options||[]).filter(function(item){return item.key===event.selected_detail})[0];
+      var domain=picked?picked.domain:event.domain;
+      if(event.answer==='yes'&&picked){var profileKey=domain+':'+picked.manifestation;weights[profileKey]=weights[profileKey]||{score:0,domain:domain,label:picked.label,detail:detail&&detail.label};weights[profileKey].score+=event.match_level==='partial'?1:2}
+      var state=event.answer==='yes'?(event.match_level==='partial'?'用户确认部分符合':'用户确认明显发生'):'用户确认没有发生';
+      var statement=picked?(picked.label+(detail?'，具体是'+detail.label:'')):event.prompt;
+      return (event.actual_year||event.event_year)+'年【'+(domainNames[domain]||'经历')+'】'+state+'：'+statement+(picked&&picked.mechanism_key?'；对应机制='+picked.mechanism_key:'')+(event.note?'；用户补充：'+event.note:'');
+    });
+    var patterns=Object.keys(weights).map(function(name){return weights[name]}).sort(function(a,b){return b.score-a.score}).slice(0,6);
+    if(patterns.length)lines.unshift('【个人应事模型】'+patterns.map(function(item){return (domainNames[item.domain]||'经历')+'更常落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这是现实反馈形成的取象权重，只调整解释方向，不得改写命盘事实。');
+    return lines.join('\n').slice(0,2000);
   };
   root.ZhishiCalibration.open = function() {
     var data=chartData(), key=chartKey(data); if (!data || !key) return;
