@@ -4627,7 +4627,7 @@ function finalizePatternStatus(bazi, pattern) {
   });
 
     // 未透干仍按冻结口径作为月令取格的硬破格；杂格的条件不清仅表示待定。
-    if (pattern.type === '月令取格' && pattern.name !== '杂格') reasons.push('月令用神未透干');
+    if ((pattern.type === '月令取格' || pattern.matchMode === 'same-element') && pattern.name !== '杂格') reasons.push('月令用神未透干');
     if (pattern.name === '杂格') pendingReasons.push('月令取格条件不清');
 
     var visibleShiShen = ['year','month','hour'].map(function(pos) {
@@ -4825,7 +4825,7 @@ function finalizePatternStatus(bazi, pattern) {
 
   // 同柱复合格局的条件
   if (pt === '同柱复合') {
-    if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0) {
+    if (pn.indexOf('官印') >= 0 || pn.indexOf('杀印') >= 0 || pn === '印星化杀格') {
       var compoundWealthBreak = hasVisible('正财') || hasVisible('偏财');
       conditions.push({ condition: '印星不被财破', met: !compoundWealthBreak, detail: compoundWealthBreak ? '财星破印，官杀印通路中断' : '✓' });
       if (compoundWealthBreak) reasons.push('财星破印，官杀印通路中断');
@@ -4838,6 +4838,32 @@ function finalizePatternStatus(bazi, pattern) {
       }
       conditions.push({ condition: '印星有力（非燥土虚浮）', met: !dryEarthYin, detail: dryEarthYin ? '金日主生未戌燥土月，燥土不生金，印虚不化杀' : '✓' });
       if (dryEarthYin) reasons.push('燥土印虚浮，不化杀生身');
+    }
+    if (pn === '财生官格') {
+      var caiGuanCanBear = dmStr2.level !== '极弱' || getCongGe(bazi).isCong;
+      var caiGuanHasShang = hasVisible('伤官');
+      var caiGuanMixed = hasVisible('七杀');
+      conditions.push({ condition: '日主能担财官', met: caiGuanCanBear, detail: caiGuanCanBear ? '日主有力承接财官' : '日主极弱，财来耗身、官来克身，财官虽见也难承接' });
+      conditions.push({ condition: '官星不被伤官克破', met: !caiGuanHasShang, detail: caiGuanHasShang ? '伤官克官，财生官的去路受损' : '✓' });
+      conditions.push({ condition: '无官杀混杂', met: !caiGuanMixed, detail: caiGuanMixed ? '正官、七杀同透，财同时生官杀，格局不清' : '✓' });
+      if (!caiGuanCanBear) {
+        reasons = reasons.filter(function(reason) { return reason !== '日主极弱，难以承载格局用神'; });
+        reasons.push('日主极弱，难担财官');
+      }
+      if (caiGuanHasShang) reasons.push('伤官克官，财生官通路受损');
+      if (caiGuanMixed) reasons.push('官杀混杂，财生官格不清');
+    }
+    if (pn === '财生杀格') {
+      var caiShaCanBear = dmStr2.level !== '极弱' || getCongGe(bazi).isCong;
+      var caiShaHasControl = hasVisible('食神') || hasVisible('伤官') ||
+        ((hasVisible('正印') || hasVisible('偏印')) && !dryEarthYin);
+      conditions.push({ condition: '日主能担财杀', met: caiShaCanBear, detail: caiShaCanBear ? '日主有力承接财与七杀' : '日主极弱，财又生杀，压力集中攻身' });
+      conditions.push({ condition: '七杀有制化', met: caiShaHasControl, detail: hasVisible('食神') ? '食神制杀' : hasVisible('伤官') ? '伤官制杀' : (hasVisible('正印') || hasVisible('偏印')) ? (dryEarthYin ? '印为燥土，虚浮不化杀' : '印星化杀') : '财生七杀，但食伤与印星均未透，七杀无制无化' });
+      if (!caiShaCanBear) {
+        reasons = reasons.filter(function(reason) { return reason !== '日主极弱，难以承载格局用神'; });
+        reasons.push('日主极弱，财生杀而难承载');
+      }
+      if (!caiShaHasControl) reasons.push('财生七杀，七杀无制化');
     }
     // P5-A2B-EVID03：原 pn.indexOf('食伤生财') 对『食神生财格』『伤官生财格』均不命中（神≠伤），
     // 「日主能担财」对两个生财复合格都是死代码。显式精确匹配两格名。
@@ -4930,11 +4956,17 @@ function finalizePatternStatus(bazi, pattern) {
     '官星不被伤官克破': 'HARD_BREAK',
     '伤官制杀参与制化': 'QUALITY',
     '印星有力（非燥土虚浮）': 'HARD_BREAK',
+    '日主能担财官': 'HARD_BREAK',
+    '日主能担财杀': 'HARD_BREAK',
+    '七杀有制化': 'HARD_BREAK',
     '印星有力': 'QUALITY',
     '制神有效制杀': 'HARD_BREAK'
   };
   conditions.forEach(function (c) {
     c.category = CONDITION_CATEGORIES[c.condition] || 'INFO';
+    // 印格本身即以生扶日主为机制，不与财官食伤共用“身弱不能承载”的硬破口径。
+    // 否则会出现正偏印格状态成格、条件却显示 HARD_BREAK 的自相矛盾。
+    if (c.condition === '日主有承载格局之力' && !needsBearing) c.category = 'QUALITY';
   });
 
   pattern.establishConditions = conditions;

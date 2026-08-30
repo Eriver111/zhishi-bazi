@@ -45,7 +45,7 @@ const replayRows = parseCSV('_p2_4a_replay.csv').slice(1);     // 53 盘：set,i
 
 // 2026-08-17 裁决：月令格神未透干恢复为硬破格。仅这些已冻结样本允许
 // 用当前引擎的破格状态替代旧 replay/risk 文本，其他字段仍逐项锁定。
-const APPROVED_PATTERN_STATUS = new Set(['#10', 'A5', 'H11', 'P15-09', 'H15']);
+const APPROVED_PATTERN_STATUS = new Set(['#10', 'A5', 'H11', 'P15-09', 'H15', 'SY2']);
 function approvedPatternStatus(id, value) {
   return APPROVED_PATTERN_STATUS.has(id) && /格·成格$/.test(value)
     ? value.replace(/格·成格$/, '格·破格')
@@ -95,8 +95,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    'fc81f7c3af60e6f0f0d010849ead71232e0ad25223d34d80ea3067a74b21e775',
-    'js/bazi.js sha256 与多重禄旺强根修正版的仓库标准 LF blob 一致'
+    'b0a0247d8e32a2fe47bd5dc583320044e730ea7415567382e15c68a9ca0bf04b',
+    'js/bazi.js sha256 与格局成破一致性修正版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');

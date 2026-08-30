@@ -145,6 +145,61 @@ test('同五行外透不能冒充月令格神本星透干', () => {
   assert.ok(pattern.establishConditions.some(row =>
     row.condition === '月令格神透干' && row.met === false && row.category === 'HARD_BREAK'
   ));
+  assert.equal(pattern.status, '破格');
+  assert.ok(pattern.breakReasons.includes('月令用神未透干'));
+});
+
+test('极弱印格的承载条目只评价层次，不与成格状态互相矛盾', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['癸丑', '壬辰', '丁亥', '乙巳']), 'male');
+  const pattern = calculator.getPattern(chart);
+  const bearing = pattern.establishConditions.find(row => row.condition === '日主有承载格局之力');
+  assert.equal(pattern.name, '偏印格');
+  assert.equal(pattern.status, '成格');
+  assert.equal(bearing.met, false);
+  assert.equal(bearing.category, 'QUALITY');
+});
+
+test('财生官格同时检查承载、伤官破官和官杀混杂', () => {
+  const calculator = loadCalculator();
+  const established = calculator.getPattern(calculator.buildFromPillars(pillars(['壬子', '己巳', '壬午', '癸酉']), 'male'));
+  const broken = calculator.getPattern(calculator.buildFromPillars(pillars(['壬戌', '丙辰', '辛丑', '乙酉']), 'male'));
+
+  assert.equal(established.name, '财生官格');
+  assert.equal(established.status, '成格');
+  assert.deepEqual(Array.from(established.establishConditions, row => row.condition), ['日主能担财官', '官星不被伤官克破', '无官杀混杂']);
+  assert.ok(established.establishConditions.every(row => row.category === 'HARD_BREAK' && row.met));
+  assert.equal(broken.name, '财生官格');
+  assert.equal(broken.status, '破格');
+  assert.ok(broken.breakReasons.includes('伤官克官，财生官通路受损'));
+});
+
+test('财生杀格必须能担财杀且七杀有制化', () => {
+  const calculator = loadCalculator();
+  const established = calculator.getPattern(calculator.buildFromPillars(pillars(['己亥', '乙亥', '己未', '辛未']), 'male'));
+  const broken = calculator.getPattern(calculator.buildFromPillars(pillars(['癸酉', '庚戌', '甲申', '壬申']), 'male'));
+
+  assert.equal(established.name, '财生杀格');
+  assert.equal(established.status, '成格');
+  assert.ok(established.establishConditions.some(row => row.condition === '七杀有制化' && row.met && row.category === 'HARD_BREAK'));
+  assert.equal(broken.name, '财生杀格');
+  assert.equal(broken.status, '破格');
+  assert.ok(broken.breakReasons.includes('日主极弱，财生杀而难承载'));
+  assert.ok(!broken.breakReasons.includes('日主极弱，难以承载格局用神'));
+});
+
+test('印星化杀格接入杀印体系的财破印与印力条件', () => {
+  const calculator = loadCalculator();
+  const established = calculator.getPattern(calculator.buildFromPillars(pillars(['乙酉', '戊申', '壬戌', '乙亥']), 'male'));
+  const broken = calculator.getPattern(calculator.buildFromPillars(pillars(['庚寅', '甲午', '戊申', '壬辰']), 'male'));
+
+  assert.equal(established.name, '印星化杀格');
+  assert.equal(established.status, '成格');
+  assert.ok(established.establishConditions.some(row => row.condition === '印星不被财破' && row.met));
+  assert.ok(established.establishConditions.some(row => row.condition === '印星有力（非燥土虚浮）' && row.met));
+  assert.equal(broken.name, '印星化杀格');
+  assert.equal(broken.status, '破格');
+  assert.ok(broken.breakReasons.includes('财星破印，官杀印通路中断'));
 });
 
 test('同五行月令不在临官帝旺位时不能冒充建禄格', () => {
