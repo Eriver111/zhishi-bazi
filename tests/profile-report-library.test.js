@@ -142,6 +142,14 @@ test('a rejected report request leaves credits and the archive-library entry vis
   assert.doesNotMatch(html, /加载失败：/);
 });
 
+test('logged-in personal center exposes a mobile-safe change-password entry', async () => {
+  const { html } = await renderProfile({});
+
+  assert.match(html, /账号与安全/);
+  assert.match(html, /登录密码/);
+  assert.match(html, /type="button" onclick="Auth\.showChangePwd\(\)"[^>]*>修改密码<\/button>/);
+});
+
 test('a normalized solar report maps enabled timing settings to result URL flags', async () => {
   const solarSameDayEnabled = normalizeBaziReportParams({
     year: 1990, month: 6, day: 15, hour: 0, clock: 0, minute: 30,

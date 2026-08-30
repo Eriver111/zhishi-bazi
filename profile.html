@@ -28,6 +28,12 @@
 .empty-state p{font-size:13px;line-height:2}
 .login-prompt{text-align:center;padding:60px 20px}
 .login-prompt .btn{padding:12px 32px;border-radius:25px;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--ink);border:none}
+.profile-security{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.profile-security__copy{min-width:0}
+.profile-security__title{margin:0 0 5px;color:var(--tx);font-size:15px;font-weight:700}
+.profile-security__meta{margin:0;color:var(--tx3);font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+.profile-security__button{flex:0 0 auto;min-height:40px;padding:9px 16px;border:1px solid var(--bd2);border-radius:20px;background:rgba(201,168,76,.08);color:var(--gold-l);font:600 12px/1 inherit;cursor:pointer}
+.profile-security__button:hover{border-color:var(--gold);background:rgba(201,168,76,.14)}
 .profile-customer-service{margin:24px 0 0;padding:20px;border:1px solid rgba(181,64,56,.22);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(250,247,239,.94));box-shadow:0 10px 24px rgba(68,54,40,.08)}
 .profile-customer-service__kicker{margin:0 0 6px;color:#a55044;font-size:11px;font-weight:700;letter-spacing:2px}
 .profile-customer-service__title{margin:0;color:var(--tx);font-size:19px}
@@ -52,7 +58,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
 .profile-feedback__submit{width:100%;min-height:44px;margin-top:18px;border:1px solid #b95047;border-radius:9px;background:#b95047;color:#fff;font:700 14px/1 inherit;cursor:pointer}
 .profile-feedback__submit:disabled{cursor:wait;opacity:.65}
 .profile-feedback__status{min-height:20px;margin:10px 0 0;color:#735149;font-size:12px;line-height:1.6}
-@media (max-width:480px){.profile-customer-service__wechat{align-items:flex-start;flex-direction:column}.profile-customer-service__actions{flex-direction:column}.profile-customer-service__action{min-height:44px}.profile-feedback{align-items:flex-end;padding:12px}.profile-feedback__form{max-height:calc(100vh - 24px);overflow:auto;padding:20px;border-radius:14px}}
+@media (max-width:480px){.profile-security{align-items:stretch;flex-direction:column}.profile-security__button{width:100%;min-height:44px}.profile-customer-service__wechat{align-items:flex-start;flex-direction:column}.profile-customer-service__actions{flex-direction:column}.profile-customer-service__action{min-height:44px}.profile-feedback{align-items:flex-end;padding:12px}.profile-feedback__form{max-height:calc(100vh - 24px);overflow:auto;padding:20px;border-radius:14px}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(201,168,76,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 </style>
@@ -466,6 +472,14 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
         } else if (!profile.error) {
           html += '<div style="text-align:center;padding:16px;color:var(--tx3);font-size:12px">暂无购买记录</div>';
         }      }
+
+      // 账号安全入口必须放在个人中心内容区，移动端隐藏桌面导航后仍可使用。
+      var account = Auth.getUser && Auth.getUser();
+      html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">账号与安全</h3>';
+      html += '<div class="chart-card profile-security">' +
+        '<div class="profile-security__copy"><p class="profile-security__title">登录密码</p>' +
+        '<p class="profile-security__meta">' + esc(account && account.email ? account.email : '当前登录账号') + ' · 建议定期更换密码</p></div>' +
+        '<button class="profile-security__button" type="button" onclick="Auth.showChangePwd()">修改密码</button></div>';
 
       // 命盘档案独立管理，个人中心只保留入口与数量。
       html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">命盘档案</h3>';
