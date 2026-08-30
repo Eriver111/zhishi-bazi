@@ -2327,20 +2327,23 @@ function calcDayMasterStrength(bazi) {
   // ---------- ④½ 多重强根成势修正 ----------
   // 旧主评分只给年/月/时支本气同类各 +3，哪怕同为日主禄、旺也与普通余根等价；
   // 这会漏判“失令但两处禄旺夹扶”的命局。这里采用窄门控：
-  //   1) 日主必须失令；2) 非日支至少两处临官/帝旺强根；
+  //   1) 日主必须失令；2) 非日支至少两处未被六冲破坏的临官/帝旺强根；
+  //   3) 进入本段前尚未达到中和，避免已偏强命局再次拔高；
   // 普通单根盘不触发，避免全局抬分。藏干根、半合与有根之印只在门控成立后加权。
   var _externalStrongRoots = [];
+  var _rootClashMap = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   ['year','month','hour'].forEach(function(pos) {
     var zhi = bazi[pos].zhi;
     var cs = getChangSheng(dg)[zhi];
     var cang = getCangGan(zhi);
     var benQiSame = cang.length > 0 && WU_XING[cang[0]] === dgWx;
-    if (benQiSame && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
+    var rootIsClashed = _allZhiForHui.indexOf(_rootClashMap[zhi]) >= 0;
+    if (benQiSame && !rootIsClashed && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
       _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage });
     }
   });
   var _isOutOfSeason = _deadOrder || _restOrder || _prisonOrder;
-  if (_isOutOfSeason && _externalStrongRoots.length >= 2) {
+  if (_isOutOfSeason && score < 50 && _externalStrongRoots.length >= 2) {
     // 非日支禄旺原已各计 +3；再补 +7，使其总权重接近日坐禄(+14)但仍略低。
     var _rootClusterAdj = _externalStrongRoots.length * 7;
     // 两处以上强根不是孤根相加，而是根气成势。

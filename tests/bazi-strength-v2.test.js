@@ -127,3 +127,22 @@ test('单处年支强根仍由原规则裁决，不触发多重强根成势', ()
   assert.equal(r.score, 28);
   assert.equal(r.level, '极弱');
 });
+
+test('已足够偏强的双禄根盘不重复拔高为极强', () => {
+  const r = strength(['辛酉', '戊子', '辛丑', '丁酉']);
+  assert.equal(r.score, 61);
+  assert.equal(r.level, '偏强');
+});
+
+test('禄旺根被原局六冲时不得按完整多重强根加分', () => {
+  const cases = [
+    { gz: ['甲寅', '庚申', '甲午', '丙寅'], score: 13, level: '极弱' },
+    { gz: ['丙午', '庚子', '丙辰', '丁巳'], score: 41, level: '中和' },
+    { gz: ['壬子', '丙午', '壬辰', '癸亥'], score: 37, level: '偏弱' },
+  ];
+  for (const c of cases) {
+    const r = strength(c.gz);
+    assert.equal(r.score, c.score, c.gz.join(' ') + ' 受冲强根仍被误计');
+    assert.equal(r.level, c.level, c.gz.join(' ') + ' 档位漂移');
+  }
+});
