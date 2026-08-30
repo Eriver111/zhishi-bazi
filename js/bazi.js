@@ -2324,6 +2324,65 @@ function calcDayMasterStrength(bazi) {
     else if (WOKE[dgWx] === gwx)   score -= 2;  // 本气财星
   });
 
+  // ---------- ④½ 多重强根成势修正 ----------
+  // 旧主评分只给年/月/时支本气同类各 +3，哪怕同为日主禄、旺也与普通余根等价；
+  // 这会漏判“失令但两处禄旺夹扶”的命局。这里采用窄门控：
+  //   1) 日主必须失令；2) 非日支至少两处临官/帝旺强根；
+  // 普通单根盘不触发，避免全局抬分。藏干根、半合与有根之印只在门控成立后加权。
+  var _externalStrongRoots = [];
+  ['year','month','hour'].forEach(function(pos) {
+    var zhi = bazi[pos].zhi;
+    var cs = getChangSheng(dg)[zhi];
+    var cang = getCangGan(zhi);
+    var benQiSame = cang.length > 0 && WU_XING[cang[0]] === dgWx;
+    if (benQiSame && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
+      _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage });
+    }
+  });
+  var _isOutOfSeason = _deadOrder || _restOrder || _prisonOrder;
+  if (_isOutOfSeason && _externalStrongRoots.length >= 2) {
+    // 非日支禄旺原已各计 +3；再补 +7，使其总权重接近日坐禄(+14)但仍略低。
+    var _rootClusterAdj = _externalStrongRoots.length * 7;
+    // 两处以上强根不是孤根相加，而是根气成势。
+    _rootClusterAdj += 6;
+
+    // 中气/余气中的同类根只在强根集群成立后计入，单个普通命局仍沿用“只取本气”。
+    var _secondarySameRoots = 0;
+    ['year','month','day','hour'].forEach(function(pos) {
+      getCangGan(bazi[pos].zhi).slice(1).forEach(function(g) {
+        if (WU_XING[g] === dgWx) _secondarySameRoots++;
+      });
+    });
+    _rootClusterAdj += Math.min(2, _secondarySameRoots);
+
+    // 三合半局含中神且合局为日主同类，视作已有强根之间进一步连气。
+    var _supportiveHalfCombine = false;
+    [
+      ['寅','午','戌','火'], ['亥','卯','未','木'],
+      ['申','子','辰','水'], ['巳','酉','丑','金']
+    ].forEach(function(tri) {
+      var present = tri.slice(0,3).filter(function(z) { return _allZhiForHui.indexOf(z) >= 0; });
+      if (tri[3] === dgWx && present.length === 2 && present.indexOf(tri[1]) >= 0) {
+        _supportiveHalfCombine = true;
+      }
+    });
+    if (_supportiveHalfCombine) _rootClusterAdj += 4;
+
+    // 透印若在地支藏干另有根，才作为强根集群的稳定来源；无根虚印不加。
+    var _visibleRootedSeal = false;
+    ['year','month','hour'].forEach(function(pos) {
+      if (WU_XING[bazi[pos].gan] !== SHENGWO[dgWx]) return;
+      _visibleRootedSeal = ['year','month','day','hour'].some(function(rootPos) {
+        return getCangGan(bazi[rootPos].zhi).some(function(g) {
+          return WU_XING[g] === SHENGWO[dgWx];
+        });
+      });
+    });
+    if (_visibleRootedSeal) _rootClusterAdj += 3;
+
+    score += _rootClusterAdj;
+  }
+
   // ---------- ⑤ 五行过耗修正（日主克月令时，月令五行过旺则日主被反耗） ----------
   // 统计月令五行在盘面中的出现次数（天干+地支）
   var mwxCount = 0, totalKeXieHao = 0;

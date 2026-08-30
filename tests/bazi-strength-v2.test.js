@@ -104,3 +104,26 @@ test('贴身财合边界盘 甲子辛未丙寅甲子：48→50 跨档为正式�
   assert.equal(r.score, 50);
   assert.equal(r.level, '中和');
 });
+
+test('失令辛金两酉禄根并见巳酉半合，不得按普通单根判身弱', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['乙酉', '戊子', '辛巳', '丁酉']),
+    'male'
+  );
+  const r = calculator.calcDayMasterStrength(chart);
+  assert.equal(r.score, 60);
+  assert.equal(r.level, '偏强');
+
+  const yj = calculator.getYongJi(chart);
+  assert.equal(yj.dayMasterLevel, '偏强');
+  assert.equal(yj.yongShen.join('、'), '火');
+  assert.equal(yj.xiShen.join('、'), '火、木、水');
+  assert.equal(yj.jiShen.join('、'), '土、金');
+});
+
+test('单处年支强根仍由原规则裁决，不触发多重强根成势', () => {
+  const r = strength(['戊寅', '壬戌', '乙未', '乙酉']);
+  assert.equal(r.score, 28);
+  assert.equal(r.level, '极弱');
+});
