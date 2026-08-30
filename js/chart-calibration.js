@@ -2,6 +2,7 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
+  var CANDIDATE_VERSION = 'bazi-cal-v3';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
@@ -24,9 +25,71 @@
     return 'neutral';
   }
 
-  function predictedPrompt(domain, analysis, age, tenGod) {
-    var good = Number(analysis.opportunityScore || 0) > Number(analysis.dangerScore || 0);
-    var bad = Number(analysis.dangerScore || 0) > Number(analysis.opportunityScore || 0);
+  function domainTriggers(domain, analysis) {
+    return (analysis.triggers || []).filter(function(t) {
+      var text = (t.type || '') + '|' + (t.detail || '');
+      if (domain === 'relationship') return t.target === 'day' || /日柱|日支|夫妻/.test(text);
+      if (domain === 'family') return t.target === 'year' || /年柱|父母/.test(text);
+      if (domain === 'study') return t.target === 'month' || /月柱|月支|印星|学业/.test(text);
+      if (domain === 'career') return t.target === 'month' || t.target === 'hour' || /月柱|时柱|伤官见官|官逢伤官/.test(text);
+      if (domain === 'wealth') return /财|比肩|劫财|资金/.test(text);
+      if (domain === 'health') return t.target === 'day' || t.target === 'hour' || /天克地冲|六冲|刑|自刑|六害|伏吟/.test(t.type || '');
+      return /天克地冲|六冲|刑|自刑|六害|六破|伏吟/.test(t.type || '');
+    });
+  }
+
+  function domainDirection(domain, analysis) {
+    var relevant = domainTriggers(domain, analysis), good = 0, bad = 0;
+    relevant.forEach(function(t) {
+      var weight = t.severity === 'high' ? 3 : (t.severity === 'medium' ? 2 : 1);
+      if (t.isGood === true) good += weight;
+      else if (t.isGood === false) bad += weight;
+    });
+    return good > bad ? 'good' : (bad > good ? 'bad' : 'neutral');
+  }
+
+  function parentYearContext(parentAnalysis, analysis, tenGod, dy, liuNian, age) {
+    if (!parentAnalysis || !parentAnalysis.facts) return null;
+    var facts = parentAnalysis.facts, yearHits = domainTriggers('family', analysis);
+    var dyTenGod = '', branchGods = [];
+    try { dyTenGod = BaZiCalculator.getShiShen(_bazi.day.gan, dy.gan) || ''; } catch (e) {}
+    try { branchGods = (BaZiCalculator.getCangGan(liuNian.zhi) || []).map(function(g){ return BaZiCalculator.getShiShen(_bazi.day.gan, g); }); } catch (e) {}
+    var fatherDirect = /偏财/.test((tenGod || '') + dyTenGod) || branchGods.indexOf('偏财') >= 0;
+    var motherDirect = /正印/.test((tenGod || '') + dyTenGod) || branchGods.indexOf('正印') >= 0;
+    var fatherHits = (facts.parentStars.father.appearances || []).filter(function(a){ return yearHits.some(function(t){ return t.target === a.pos; }); });
+    var motherHits = (facts.parentStars.mother.appearances || []).filter(function(a){ return yearHits.some(function(t){ return t.target === a.pos; }); });
+    var target = fatherDirect || fatherHits.length > motherHits.length ? 'father' : (motherDirect || motherHits.length ? 'mother' : 'palace');
+    var star = target === 'father' ? facts.parentStars.father : (target === 'mother' ? facts.parentStars.mother : null);
+    if (target === 'palace' && !yearHits.length) {
+      if (facts.parentStars.father.damageEvents.length > facts.parentStars.mother.damageEvents.length) target = 'father';
+      else if (facts.parentStars.mother.damageEvents.length) target = 'mother';
+      star = target === 'father' ? facts.parentStars.father : (target === 'mother' ? facts.parentStars.mother : null);
+    }
+    var relevantHits = target === 'palace' ? yearHits : yearHits.filter(function(t) {
+      return (star.appearances || []).some(function(a){ return t.target === a.pos; });
+    });
+    var good = relevantHits.filter(function(t){return t.isGood === true}).length;
+    var bad = relevantHits.filter(function(t){return t.isGood === false}).length;
+    var direction = good > bad ? 'good' : (bad > good ? 'bad' : domainDirection('family', analysis));
+    var palaceGood = facts.palace.state === 'stable';
+    var starGood = star ? star.state === 'strong' : (facts.parentStars.father.state !== 'weak' && facts.parentStars.mother.state !== 'weak');
+    var quadrant = palaceGood ? (starGood ? 'palace-good-star-good' : 'palace-good-star-weak') : (starGood ? 'palace-damaged-star-good' : 'palace-damaged-star-weak');
+    var consequences = target === 'father'
+      ? [{key:'father_work',label:'父亲换工作、收入起伏或事业安排改变'},{key:'family_money',label:'家里收入、支出或经济压力随之变化'},{key:'father_health',label:'父亲检查、治疗或身体状态反复'}]
+      : (target === 'mother'
+        ? [{key:'mother_role',label:'母亲承担的家事、工作或照顾责任改变'},{key:'mother_health',label:'母亲检查、治疗或身体状态反复'},{key:'home_support',label:'住房、学习或生活安排受到母亲影响'}]
+        : [{key:'parent_relation',label:'父母争执、冷淡或相处方式改变'},{key:'home_move',label:'搬家、住房或共同生活安排改变'},{key:'family_money',label:'家庭经济和生活条件随之变化'}]);
+    if (age <= 23) consequences.push({key:'study_impact',label:'家庭变化进一步影响转学、升学或学习状态'});
+    else consequences.push({key:'work_impact',label:'家庭变化进一步影响你的工作、城市或生活计划'});
+    return { target:target, star:star, palace:facts.palace, family:facts.family, yearHits:yearHits,
+      relevantHits:relevantHits, direction:direction, quadrant:quadrant, consequences:consequences,
+      activationScore:yearHits.length + (fatherDirect || motherDirect ? 2 : 0), dyTenGod:dyTenGod, annualTenGod:tenGod };
+  }
+
+  function predictedPrompt(domain, analysis, age, tenGod, parentContext) {
+    var domainTrend = domainDirection(domain, analysis);
+    var good = domainTrend === 'good';
+    var bad = domainTrend === 'bad';
     var monthHit = triggerFor(analysis, function(t){ return t.target === 'month' || /月柱|月支|月提|提纲/.test(t.detail || ''); });
     var dayHit = triggerFor(analysis, function(t){ return t.target === 'day' || /日柱|日支|夫妻/.test(t.detail || ''); });
     var yearHit = triggerFor(analysis, function(t){ return t.target === 'year' || /年柱/.test(t.detail || ''); });
@@ -85,6 +148,13 @@
       return prompts.relationship;
     }
     if (domain === 'family') {
+      if (parentContext) { good = parentContext.direction === 'good'; bad = parentContext.direction === 'bad'; }
+      if (parentContext && parentContext.target === 'father') return bad
+        ? '这一年父亲的工作、收入或身体状态是否出现过明显波动，需要家里替他操心、出钱或调整安排？'
+        : (good ? '这一年父亲的工作和收入是否出现过明显机会，或者他给家庭的实际支持比之前更多？' : '这一年父亲的工作、收入、身体状态或他在家中的角色是否发生过明显变化？');
+      if (parentContext && parentContext.target === 'mother') return bad
+        ? '这一年母亲是否更劳累、身体状态反复，或家里有一件事主要由她承担，让你明显为她操心？'
+        : (good ? '这一年母亲的生活状态是否更稳定，或者她在住房、学习、工作等现实事情上给过你明显帮助？' : '这一年母亲的生活、身体状态或她在家中的责任是否发生过明显变化？');
       if (yearHit && /六冲|天克地冲/.test(yearHit.type || '')) return yearDirection === 'good'
         ? '这一年家里是否经历过搬迁、父母工作变化或家庭关系调整，变化之后整体状态反而有所改善？'
         : '这一年家里是否发生过搬迁、父母工作变化、争执增多，或某位长辈的事情让全家明显操心？';
@@ -96,6 +166,12 @@
         ? '这一年父母的收入、工作或家里经济条件是否明显改善，生活上的选择比以前宽松一些？'
         : '这一年家里是否因为父母挣钱不稳、大额开支或资金周转而压力增大，你也明显感受到钱不够宽松？';
       return prompts.family;
+    }
+    if (domain === 'health') {
+      if (strongChange && bad) return '这一年是否明显睡不好、容易疲惫或压力顶到身体上，曾经做过检查、治疗，或因磕碰扭伤影响正常生活？';
+      if (/官|杀/.test(tenGod || '') && bad) return '这一年是否长期处在紧张和赶进度的状态，睡眠、胃口、情绪或体力有一项明显变差？';
+      if (/印/.test(tenGod || '') && good) return '这一年身体和作息是否比之前稳定，原有的小毛病得到休养、检查或治疗后明显缓解？';
+      return prompts.health;
     }
     if (domain === 'change' && age < 18) return '这一年是否换过学校、班级、住处或主要生活环境，整个人的生活节奏随之改变？';
     if (domain === 'change' && strongChange) {
@@ -134,7 +210,7 @@
   }
 
   function annualDomainScores(analysis, liuNian, age) {
-    var scores = { study:0, career:0, wealth:0, relationship:0, family:0, change:1 };
+    var scores = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:1 };
     (analysis.triggers || []).forEach(function(trigger) {
       if (trigger.target === 'day' || /日柱|日支|夫妻/.test(trigger.detail || '')) scores.relationship += 4;
       if (trigger.target === 'year' || /年柱/.test(trigger.detail || '')) scores.family += 3;
@@ -143,6 +219,7 @@
       }
       if (trigger.target === 'hour' || /时柱|时支/.test(trigger.detail || '')) scores.career += 2;
       if (/天克地冲|六冲|刑|六害|六破|伏吟/.test(trigger.type || '')) scores.change += 2;
+      if ((trigger.target === 'day' || trigger.target === 'hour') && /天克地冲|六冲|刑|自刑|六害|伏吟/.test(trigger.type || '')) scores.health += 3;
       if (/伤官见官|官逢伤官/.test(trigger.type || '')) scores.career += 6;
       if (/流年合日支/.test(trigger.type || '')) scores.relationship += 3;
     });
@@ -186,24 +263,29 @@
       {key:'parent_work_money',label:'父母工作或家庭经济变化'}, {key:'home_move',label:'搬家、住房或居住安排变化'},
       {key:'family_relation',label:'父母关系或家庭争执变化'}, {key:'elder_health',label:'长辈身体、治疗或需要照顾'}
     ],
+    health: [
+      {key:'sleep_energy',label:'睡眠、精力或长期疲惫'}, {key:'check_treatment',label:'检查、治疗或旧问题复发'},
+      {key:'injury_recovery',label:'磕碰、扭伤或恢复期'}, {key:'stress_body',label:'压力大到影响胃口、情绪或身体状态'}
+    ],
     change: [
       {key:'move_city',label:'搬家、异地或长期离开原环境'}, {key:'school_job_change',label:'学校、工作或主要圈子改变'},
       {key:'identity_plan',label:'身份、计划或生活重心改变'}, {key:'forced_restart',label:'原计划被打断后重新开始'}
     ]
   };
 
-  function mechanismKey(domain, analysis, tenGod) {
+  function mechanismKey(domain, analysis, tenGod, parentContext) {
     var triggers = (analysis.triggers || []).map(function(item){return item.type || ''}).join('|');
     if (domain === 'relationship' && /六冲|天克地冲/.test(triggers)) return 'day-palace:clash';
     if (domain === 'relationship' && /六合|半合|三合/.test(triggers)) return 'day-palace:combine';
     if (domain === 'career' && /伤官见官|官逢伤官/.test(triggers)) return 'output-controls-officer';
     if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return 'peer-wealth';
-    if (domain === 'family' && /印/.test(tenGod || '')) return 'seal-family';
+    if (domain === 'family' && parentContext) return 'parent-' + parentContext.target + ':' + (parentContext.yearHits[0] ? String(parentContext.yearHits[0].type || 'activation') : 'natal-state');
+    if (domain === 'health') return 'body-pressure:' + String(tenGod || 'annual-trigger');
     return domain + ':' + String(tenGod || 'annual-trigger').replace(/[^\u4e00-\u9fa5a-zA-Z0-9_-]/g,'').slice(0,30);
   }
 
   function manifestationKey(domain, analysis, tenGod) {
-    var direction = directionOf(null, analysis);
+    var direction = domainDirection(domain, analysis);
     if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return direction === 'good' ? 'network-income' : 'partnership-loss';
     if (domain === 'career' && /(伤官见官|官逢伤官)/.test((analysis.triggers || []).map(function(t){return t.type||''}).join('|'))) return 'authority-conflict';
     if (domain === 'relationship') return direction === 'good' ? 'relationship-progress' : (direction === 'bad' ? 'relationship-instability' : 'relationship-change');
@@ -211,27 +293,56 @@
     if (domain === 'study') return direction === 'good' ? 'study-progress' : (direction === 'bad' ? 'study-pressure' : 'study-change');
     if (domain === 'career') return direction === 'good' ? 'career-progress' : (direction === 'bad' ? 'career-pressure' : 'career-change');
     if (domain === 'wealth') return direction === 'good' ? 'income-growth' : (direction === 'bad' ? 'money-outflow' : 'money-change');
+    if (domain === 'health') return direction === 'good' ? 'health-recovery' : (direction === 'bad' ? 'health-pressure' : 'health-change');
     return 'environment-change';
   }
 
-  function conciseLabel(domain, analysis, tenGod) {
-    var labels = {study:'升学考试或学习状态',career:'工作岗位或责任变化',wealth:'收入、支出或资金变化',relationship:'感情关系出现转折',family:'父母、住房或家庭变化',change:'生活环境或人生计划变化'};
-    if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return directionOf(null, analysis)==='good'?'朋友团队带来赚钱机会':'合伙、人情或竞争带来损失';
+  function conciseLabel(domain, analysis, tenGod, parentContext) {
+    var labels = {study:'升学考试或学习状态',career:'工作岗位或责任变化',wealth:'收入、支出或资金变化',relationship:'感情关系出现转折',family:'父母、住房或家庭变化',health:'身体、睡眠或压力变化',change:'生活环境或人生计划变化'};
+    if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return domainDirection(domain, analysis)==='good'?'朋友团队带来赚钱机会':'合伙、人情或竞争带来损失';
+    if (domain === 'family' && parentContext) return parentContext.target === 'father' ? '父亲的工作、钱或身体状态变化' : (parentContext.target === 'mother' ? '母亲的生活、身体或家庭角色变化' : '父母关系或家庭根基发生变化');
     if (domain === 'career' && /(伤官见官|官逢伤官)/.test((analysis.triggers || []).map(function(t){return t.type||''}).join('|'))) return '与领导、制度或审核发生冲突';
     return labels[domain] || labels.change;
   }
 
-  function competingOption(domain, analysis, age, tenGod) {
+  function optionEvidence(domain, analysis, parentContext) {
+    var evidence = domainTriggers(domain, analysis).slice(0,2).map(function(t){ return t.detail || t.type; }).filter(Boolean);
+    if (domain === 'family' && parentContext) {
+      var quadrantText = {'palace-good-star-good':'父母宫稳、父母星也有力','palace-good-star-weak':'父母宫尚稳，但被引动的父母星偏弱','palace-damaged-star-good':'父母宫有损，但被引动的父母星仍有力量','palace-damaged-star-weak':'父母宫和被引动的父母星同时承压'};
+      if (parentContext.target === 'father' && parentContext.star) evidence.push('原局偏财父星为' + parentContext.star.state + '，属于' + parentContext.star.roleLabel + '；' + quadrantText[parentContext.quadrant] + '。');
+      else if (parentContext.target === 'mother' && parentContext.star) evidence.push('原局正印母星为' + parentContext.star.state + '，属于' + parentContext.star.roleLabel + '；' + quadrantText[parentContext.quadrant] + '。');
+      else evidence.push('原局' + quadrantText[parentContext.quadrant] + '，本年又直接引动年柱。');
+    }
+    return evidence.slice(0,3);
+  }
+
+  function competingOption(domain, analysis, age, tenGod, parentContext) {
     return {
       key: domain + ':' + manifestationKey(domain, analysis, tenGod),
-      label: conciseLabel(domain, analysis, tenGod),
-      detail: predictedPrompt(domain, analysis, age, tenGod).replace(/^这一年是否/, '').replace(/[？?]$/, ''),
+      label: conciseLabel(domain, analysis, tenGod, parentContext),
+      detail: predictedPrompt(domain, analysis, age, tenGod, parentContext).replace(/^这一年是否/, '').replace(/[？?]$/, ''),
       domain: domain,
       manifestation: manifestationKey(domain, analysis, tenGod),
-      mechanism_key: mechanismKey(domain, analysis, tenGod),
+      mechanism_key: mechanismKey(domain, analysis, tenGod, parentContext),
+      evidence: optionEvidence(domain, analysis, parentContext),
       followup_prompt: '如果是这一类，具体更接近哪件事？',
-      followup_options: followupSets[domain] || followupSets.change
+      followup_options: domain === 'family' && parentContext ? parentContext.consequences : (followupSets[domain] || followupSets.change)
     };
+  }
+
+  function dedupeOptionDomains(rankedDomains, scores, parentContext) {
+    var chosen = [];
+    rankedDomains.forEach(function(name) {
+      if (chosen.length >= 3) return;
+      if (parentContext && parentContext.activationScore >= 2 && chosen.indexOf('family') >= 0 && (name === 'change' || name === 'wealth')) return;
+      if (chosen.indexOf(name) < 0) chosen.push(name);
+    });
+    ['family','relationship','career','study','health','wealth','change'].some(function(name) {
+      if (chosen.length >= 3) return true;
+      if (chosen.indexOf(name) < 0 && scores[name] >= 0) chosen.push(name);
+      return chosen.length >= 3;
+    });
+    return chosen.slice(0,3);
   }
 
   function generateCandidates(data) {
@@ -243,6 +354,8 @@
       var nowYear = new Date().getFullYear();
       var firstYear = Math.max(birthYear ? birthYear + 6 : nowYear - 14, nowYear - 14);
       var yongJi = data.yongJi || (BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
+      var parentAnalysis = null;
+      try { parentAnalysis = BaZiCalculator.analyzeParents(_bazi, data.birthInfo && data.birthInfo.gender); } catch (e) {}
       for (var year = firstYear; year < nowYear; year++) {
         var dy = _daYunData.list.filter(function(item) { return year >= Number(item.startYear) && year <= Number(item.endYear); })[0];
         if (!dy) continue;
@@ -254,16 +367,13 @@
         var age = birthYear ? year - birthYear : 20;
         var tenGod = '';
         try { tenGod = BaZiCalculator.getShiShen(_bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
+        var parentContext = parentYearContext(parentAnalysis, analysis, tenGod, dy, liuNian, age);
         var scores = annualDomainScores(analysis, liuNian, age);
+        if (parentContext) scores.family += Math.min(parentContext.activationScore, 4);
         var rankedDomains = Object.keys(scores).filter(function(name){return scores[name] >= 0}).sort(function(a,b){return scores[b]-scores[a]});
         var domain = rankedDomains[0] || annualDomain(analysis, liuNian, age);
-        var optionDomains = rankedDomains.slice(0,3);
-        ['change','family','wealth','relationship','career','study'].some(function(name){
-          if (optionDomains.length >= 3) return true;
-          if (optionDomains.indexOf(name) < 0 && scores[name] >= 0) optionDomains.push(name);
-          return optionDomains.length >= 3;
-        });
-        var options = optionDomains.map(function(name){return competingOption(name, analysis, age, tenGod)});
+        var optionDomains = dedupeOptionDomains(rankedDomains, scores, parentContext);
+        var options = optionDomains.map(function(name){return competingOption(name, analysis, age, tenGod, name === 'family' ? parentContext : null)});
         var gz = (liuNian.gan || '') + (liuNian.zhi || '');
         var dyGz = (dy.gan || '') + (dy.zhi || '');
         var evidence = (analysis.triggers || []).slice().sort(function(a,b) {
@@ -320,7 +430,7 @@
       writeLocalEvents(key, localEvents); renderEvents(key, localEvents, originalToggle); return;
     }
     openHtml('<div class="calibration-loading">正在从过去十四年的岁运中筛选变化最明显的年份…</div>');
-    request('POST', key, { action:'initialize', chart_key:key, chart_signature:signature(data), candidates:candidates })
+    request('POST', key, { action:'initialize', chart_key:key, chart_signature:signature(data), candidate_version:CANDIDATE_VERSION, candidates:candidates })
       .then(function(result) { renderEvents(key, result.events || [], originalToggle); })
       .catch(function(error) { openHtml('<div class="calibration-error">' + (error.message || '校准暂时不可用') + '<button type="button" id="calibrationContinue">先进入 AI</button></div>'); document.getElementById('calibrationContinue').onclick=function(){close();originalToggle()}; });
   }
@@ -336,12 +446,12 @@
       if (options.length) {
         html += '<div class="calibration-options">';
         options.forEach(function(option, optionIndex) {
-          html += '<button type="button" data-option="'+escapeAttr(option.key)+'" class="calibration-option '+(event.selected_option===option.key&&answer==='yes'?'is-selected':'')+'"><b>'+(optionIndex+1)+'</b><span><strong>'+escapeHtml(option.label)+'</strong><small>'+escapeHtml(option.detail)+'</small></span></button>';
+          html += '<button type="button" data-option="'+escapeAttr(option.key)+'" class="calibration-option '+(event.selected_option===option.key&&answer==='yes'?'is-selected':'')+'"><b>'+(optionIndex+1)+'</b><span><strong>'+escapeHtml(option.label)+'</strong></span></button>';
         });
         html += '</div><div class="calibration-answers calibration-answers--negative"><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">都不符合</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div>';
         options.forEach(function(option) {
           var visible = answer==='yes' && event.selected_option===option.key;
-          html += '<div class="calibration-followup calibration-followup--structured '+(visible?'is-visible':'')+'" data-followup-for="'+escapeAttr(option.key)+'"><p>'+escapeHtml(option.followup_prompt||'具体更接近哪件事？')+'</p><div class="calibration-detail-options">';
+          html += '<div class="calibration-followup calibration-followup--structured '+(visible?'is-visible':'')+'" data-followup-for="'+escapeAttr(option.key)+'"><div class="calibration-locked-judgment"><strong>系统原判断</strong><p>'+escapeHtml(option.detail)+'</p>'+(option.evidence&&option.evidence.length?'<small>依据：'+escapeHtml(option.evidence.join('；'))+'</small>':'')+'</div><p>'+escapeHtml(option.followup_prompt||'具体更接近哪件事？')+'</p><div class="calibration-detail-options">';
           (option.followup_options||[]).forEach(function(detail) {
             html += '<button type="button" data-detail="'+escapeAttr(detail.key)+'" class="'+(event.selected_detail===detail.key?'is-selected':'')+'">'+escapeHtml(detail.label)+'</button>';
           });
@@ -437,6 +547,13 @@
       return;
     }
     request('GET', key).then(function(result) {
+      if (result.ready && result.calibration && result.calibration.candidate_version !== CANDIDATE_VERSION) {
+        var candidates = generateCandidates(data);
+        return request('POST', key, { action:'initialize', chart_key:key, chart_signature:signature(data), candidate_version:CANDIDATE_VERSION, candidates:candidates }).then(function(upgraded) {
+          if ((upgraded.events||[]).some(function(event){return !event.answer})) renderEvents(key,upgraded.events||[],originalToggle);
+          else { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} originalToggle(); }
+        });
+      }
       if (result.ready && (result.events||[]).some(function(event){return !event.answer})) renderEvents(key,result.events||[],originalToggle);
       else if (result.ready) { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} originalToggle(); }
       else showConsent(key, originalToggle);
@@ -477,6 +594,10 @@
   root.ZhishiCalibration.open = function() {
     var data=chartData(), key=chartKey(data); if (!data || !key) return;
     request('GET', key).then(function(result) {
+      if (result.ready && result.calibration && result.calibration.candidate_version !== CANDIDATE_VERSION) {
+        var candidates=generateCandidates(data);
+        return request('POST',key,{action:'initialize',chart_key:key,chart_signature:signature(data),candidate_version:CANDIDATE_VERSION,candidates:candidates}).then(function(upgraded){renderEvents(key,upgraded.events||[],null)});
+      }
       if (result.ready) renderEvents(key, result.events || [], null); else showConsent(key, function(){});
     }).catch(function(){});
   };

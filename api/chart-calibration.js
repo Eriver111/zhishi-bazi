@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
     if (!chartKey) return send(res, 400, { error: '缺少命盘标识' });
 
     if (body.action === 'initialize') {
-      var initialized = await initializeChartCalibration(user.uid, chartKey, body.chart_signature, body.candidates);
+      var initialized = await initializeChartCalibration(user.uid, chartKey, body.chart_signature, body.candidates, body.candidate_version);
       if (!initialized) return send(res, 503, { error: '校准存储尚未就绪，请先完成数据库迁移' });
       return send(res, 200, { ready: true, calibration: initialized.calibration, events: initialized.events || [] });
     }

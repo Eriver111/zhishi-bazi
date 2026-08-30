@@ -115,3 +115,15 @@ test('积分汇总区分已使用、剩余和累计发放', async () => withAdmi
     assert.equal(res.body.summary.credits_issued, 15);
   } finally { loaded.restore(); }
 }));
+
+test('新版后台展示过三关校对质量且保持只读', () => {
+  const html = fs.readFileSync(path.join(root, 'admin-v2.html'), 'utf8');
+  const endpoint = fs.readFileSync(path.join(root, 'api', 'admin', 'dashboard.js'), 'utf8');
+  assert.match(html, /过三关校对质量/);
+  assert.match(html, /总体确认率/);
+  assert.match(endpoint, /chart_calibration_events/);
+  assert.match(endpoint, /buildCalibrationQuality/);
+  assert.match(endpoint, /样本不足，只观察/);
+  assert.match(endpoint, /命中偏低，建议人工复核/);
+  assert.doesNotMatch(endpoint, /chart_calibration_events'\)\.update/);
+});

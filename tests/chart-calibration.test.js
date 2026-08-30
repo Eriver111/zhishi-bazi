@@ -31,7 +31,7 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=7/);
+  assert.match(result, /chart-calibration\.js\?v=9/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -45,14 +45,39 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /六冲\|天克地冲/);
   assert.match(client, /刑\|自刑\|六害\|六破/);
   assert.doesNotMatch(client, /投资失利、被人分走钱/);
-  assert.match(client, /var scores = \{ study:0, career:0, wealth:0, relationship:0, family:0, change:1 \}/);
+  assert.match(client, /var scores = \{ study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:1 \}/);
+  assert.match(client, /analyzeParents\(_bazi/);
+  assert.match(client, /parents-v2-palace-star|parentYearContext/);
+  assert.match(client, /palace-good-star-good/);
+  assert.match(client, /palace-damaged-star-weak/);
+  assert.match(client, /fatherDirect/);
+  assert.match(client, /motherDirect/);
+  assert.match(client, /study_impact/);
+  assert.match(client, /domainDirection/);
+  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v3'/);
+  assert.match(client, /dedupeOptionDomains/);
+  assert.match(client, /系统原判断/);
+  assert.match(client, /sleep_energy/);
   assert.match(client, /annualDomainScores/);
-  assert.match(client, /optionDomains\.slice|rankedDomains\.slice/);
+  assert.match(client, /dedupeOptionDomains\(rankedDomains, scores, parentContext\)/);
   assert.match(client, /followupSets/);
   assert.match(client, /data-selected-option/);
   assert.match(client, /很符合/);
   assert.match(client, /大致符合/);
   assert.match(client, /slice\(0, 5\)/);
+});
+
+test('candidate v3 upgrade preserves answered events and replaces only unanswered questions', () => {
+  const storage = read('lib/supabase.js');
+  const endpoint = read('api/chart-calibration.js');
+  assert.match(storage, /candidateVersion = safeCalibrationKey/);
+  assert.match(storage, /filter\(function\(event\)\{ return !!event\.answer; \}\)/);
+  assert.match(storage, /filter\(function\(event\)\{ return !event\.answer; \}\)/);
+  assert.match(storage, /availableSlots = Math\.max\(0, 5 - answered\.length\)/);
+  assert.match(storage, /answeredYears\.has/);
+  assert.match(storage, /\.is\('answer', null\)/);
+  assert.match(storage, /candidate_version:candidateVersion/);
+  assert.match(endpoint, /body\.candidate_version/);
 });
 
 test('confirmed calibration is added to AI context without changing frozen facts', () => {
@@ -106,4 +131,14 @@ test('personal manifestation model weights exact matches above partial matches',
   assert.equal(profile.patterns[0].count, 2);
   assert.deepEqual(profile.patterns[0].years, [2022, 2024]);
   assert.equal(profile.denied.career, 1);
+  assert.equal(profile.deniedPatterns[0].mechanismKey, 'career:general');
+  assert.equal(profile.version, 'bazi-cal-v3');
+});
+
+test('option evidence survives server normalization', () => {
+  const normalized = calibrationModel.normalizeCalibrationOptions([{
+    key:'family:parent-change', label:'父母状态变化', detail:'父母一方有明显变化', domain:'family',
+    manifestation:'family-change', mechanism_key:'parent-palace:clash', evidence:['流年冲年柱', '父母宫受引动']
+  }]);
+  assert.deepEqual(normalized[0].evidence, ['流年冲年柱', '父母宫受引动']);
 });

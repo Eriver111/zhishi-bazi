@@ -40,6 +40,7 @@ module.exports = async function handler(req, res) {
       safe('AI消息总量', () => db.from('chat_history').select('*', { count: 'exact', head: true }), warnings),
       safe('AI消息趋势', () => db.from('chat_history').select('created_at,role,mode').gte('created_at', since.toISOString()).limit(10000), warnings),
       safe('AI会话', () => db.from('ai_conversations').select('id,user_id,mode,title,created_at,updated_at').order('updated_at', { ascending: false }).limit(40), warnings),
+      safe('命盘校对质量', () => db.from('chart_calibration_events').select('event_year,domain,mechanism_key,options,selected_option,answer,match_level,actual_year,answered_at').gte('answered_at', since.toISOString()).limit(10000), warnings),
       safe('深度报告汇总', () => db.from('report_orders').select('amount,status,created_at,paid_at').limit(10000), warnings),
       safe('深度报告订单', () => db.from('report_orders').select('order_id,user_id,report_type,label,amount,status,created_at,paid_at').order('created_at', { ascending: false }).limit(50), warnings),
       safe('访问统计', () => db.from('page_views').select('date,path,count').gte('date', chinaDay(since)).order('date', { ascending: true }).limit(10000), warnings),
@@ -47,7 +48,7 @@ module.exports = async function handler(req, res) {
     ]);
 
     const [usersTotal, usersToday, signupRows, recentUsers, creditRows, recentCredits,
-      activeMembers, subscriptions, chatsTotal, chatRows, conversations, reportSummary,
+      activeMembers, subscriptions, chatsTotal, chatRows, conversations, calibrationEvents, reportSummary,
       reportOrders, pageViews, feedback] = results;
 
     const credits = creditRows.data || [];
@@ -84,6 +85,7 @@ module.exports = async function handler(req, res) {
       trends: buildTrends(range, since, signupRows.data || [], chats, pvRows, reports),
       traffic: buildTraffic(pvRows),
       ai_modes: countBy(chats.filter(row => row.role === 'user'), row => row.mode || '未标记'),
+      calibration_quality: buildCalibrationQuality(calibrationEvents.data || []),
       recent_users: (recentUsers.data || []).map(safeUser),
       credit_history: (recentCredits.data || []).map(row => ({
         id: row.id,
@@ -225,4 +227,27 @@ function buildTraffic(rows) {
   rows.forEach(row => { const path = row.path || '/'; grouped[path] = (grouped[path] || 0) + finite(row.count); });
   return Object.keys(grouped).map(path => ({ path, count: grouped[path] }))
     .sort((a, b) => b.count - a.count).slice(0, 30);
+}
+
+function buildCalibrationQuality(rows) {
+  const answered = rows.filter(row => row.answer === 'yes' || row.answer === 'no');
+  const confirmed = answered.filter(row => row.answer === 'yes');
+  const exact = confirmed.filter(row => row.match_level === 'exact').length;
+  const partial = confirmed.filter(row => row.match_level === 'partial').length;
+  const shifted = confirmed.filter(row => Number.isInteger(Number(row.actual_year)) && Number(row.actual_year) !== Number(row.event_year)).length;
+  const mechanisms = countBy(answered, row => {
+    const options = Array.isArray(row.options) ? row.options : [];
+    const picked = options.find(option => option && option.key === row.selected_option);
+    return (picked && picked.mechanism_key) || row.mechanism_key || (row.domain + ':general');
+  }).slice(0, 12);
+  const domains = countBy(answered, row => row.domain || 'change').map(item => {
+    const domainRows = answered.filter(row => (row.domain || 'change') === item.name);
+    const hits = domainRows.filter(row => row.answer === 'yes').length;
+    const hitRate = item.count ? Math.round(hits * 100 / item.count) : 0;
+    const status = item.count < 30 ? '样本不足，只观察' : (item.count < 100 ? '已有趋势，继续积累' : (hitRate < 25 ? '命中偏低，建议人工复核' : '样本可用于人工调权'));
+    return { name:item.name, count:item.count, hits, hit_rate:hitRate, status };
+  });
+  return { answered:answered.length, confirmed:confirmed.length, denied:answered.length-confirmed.length,
+    exact, partial, shifted_years:shifted, hit_rate:answered.length ? Math.round(confirmed.length * 100 / answered.length) : 0,
+    mechanisms, domains };
 }
