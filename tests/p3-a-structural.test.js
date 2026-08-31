@@ -95,8 +95,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '181b4f46c3bf3db19ee6abf5ae0317741e87d5121441193326dfa440ce87d122',
-    'js/bazi.js sha256 与伤官配印承载修正版的仓库标准 LF blob 一致'
+    '74b3b44da1d0635a1494779bad23ab82eedded34f17eae2decf7debd5b5d8776',
+    'js/bazi.js sha256 与旺衰内部审计追踪版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
@@ -119,6 +119,16 @@ test('A层：53 盘五行层仅含已批准的复合格状态修正', function (
     assert.equal(d.yj.jiShen.join('、'), r[8], c.id + ' 忌神');
     assert.equal(d.pat.name + '·' + d.pat.status, approvedPatternStatus(c.id, r[9]), c.id + ' 格局');
     assert.equal(d.cong.isCong ? d.cong.name : '否', r[10], c.id + ' 从格');
+  });
+});
+
+test('A层：53 盘内部旺衰追踪均能闭合且与喜用忌一致', function () {
+  chartList.forEach(function(c) {
+    const audit = calculator.auditDayMasterStrength(dataOf(c).b);
+    assert.equal(audit.result.score, dataOf(c).dm.score, c.id + ' 审计分数');
+    assert.equal(audit.result.level, dataOf(c).dm.level, c.id + ' 审计档位');
+    assert.equal(50 + audit.scoreTrace.reduce(function(sum, stage) { return sum + stage.delta; }, 0), audit.result.rawScore, c.id + ' 分差闭合');
+    assert.equal(audit.warnings.filter(function(item) { return item.severity === 'error'; }).length, 0, c.id + ' 存在内部契约错误');
   });
 });
 

@@ -2183,7 +2183,7 @@ function getRenYuanEvidence(bazi) {
   };
 }
 
-function calcDayMasterStrength(bazi) {
+function calcDayMasterStrength(bazi, options) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
   var WXL = ['木','火','土','金','水'];
@@ -2200,6 +2200,17 @@ function calcDayMasterStrength(bazi) {
   });
 
   var score = 50; // 基准分
+  // 单盘内部审计只跟踪主引擎真实分差，不重新计算旺衰。
+  // 默认路径不附带审计字段，避免污染 AI/报告对外事实契约。
+  var _auditEnabled = !!(options && options.audit === true);
+  var _auditStages = [];
+  var _auditLastScore = score;
+  function _auditMark(id, label, meta) {
+    if (!_auditEnabled) return;
+    var delta = score - _auditLastScore;
+    _auditStages.push({ id:id, label:label, before:_auditLastScore, delta:delta, after:score, meta:meta || null });
+    _auditLastScore = score;
+  }
   // v2: 记录失令命中类型，供 ②½ 得令×得地联动使用
   var _deadOrder = false, _restOrder = false, _prisonOrder = false;
 
@@ -2262,6 +2273,8 @@ function calcDayMasterStrength(bazi) {
     sameAsBenQi: _siLingWx === mwx  // 司令与本气是否一致
   };
 
+  _auditMark('month-command', '得令·月令', { monthBranch:bazi.month.zhi, effectiveElement:mwx, huiOverride:HUI_MONTH_OVERRIDE });
+
   // ---------- ② 得地：日支是否通根 ----------
   var dayZhiWx = DI_ZHI_WU_XING[bazi.day.zhi];
   if (dayZhiWx === dgWx) {       // 日支同五行（自坐强根）
@@ -2278,6 +2291,8 @@ function calcDayMasterStrength(bazi) {
   else if (WOKE[dgWx] === dayZhiWx)   score -= 6;  // 日主克日支（我克为财，耗力）
   else if (WOSHENG[dgWx] === dayZhiWx) score -= 7;  // 日主生日支（我生为泄，泄气）
 
+  _auditMark('day-seat', '得地·日支', { dayBranch:bazi.day.zhi, element:dayZhiWx, stage:getChangSheng(dg)[bazi.day.zhi].stage });
+
   // ---------- ②½ 得令×得地联动 (v2) ----------
   // 虽失令，但日支自坐强根(禄/刃)且另有比劫/印根辅助时，失令惩罚收缩
   var dayStageA = getChangSheng(dg)[bazi.day.zhi].stage;
@@ -2293,6 +2308,8 @@ function calcDayMasterStrength(bazi) {
     else if (_prisonOrder) score += 3;  // 囚令 −10→−7
   }
 
+  _auditMark('season-root-link', '得令×得地联动', { strongDayRoot:strongDayRoot, auxiliaryRoots:auxRoots });
+
   // ---------- ③ 得势：各柱天干比劫/印星 vs 克泄耗 ----------
   // 不含日干自身：基准50已代表日主，再自加比劫+6属重复计分
   ['year','month','hour'].forEach(function(pos) {
@@ -2306,6 +2323,8 @@ function calcDayMasterStrength(bazi) {
     else if (WOSHENG[dgWx] === gwx) score -= 3;  // 食伤（泄）
     else if (WOKE[dgWx] === gwx)   score -= 5;  // 财星（耗）
   });
+
+  _auditMark('visible-stems', '得势·天干', null);
 
   // ---------- ④ 地支藏干本气辅助（仅取本气，即藏干第一项，权重约为天干一半） ----------
   // 中气、余气不参与旺衰计算，避免过度累加
@@ -2323,6 +2342,8 @@ function calcDayMasterStrength(bazi) {
     else if (WOSHENG[dgWx] === gwx) score -= 1;  // 本气食伤
     else if (WOKE[dgWx] === gwx)   score -= 2;  // 本气财星
   });
+
+  _auditMark('branch-main-qi', '地支本气', null);
 
   // ---------- ④½ 多重强根成势修正 ----------
   // 旧主评分只给年/月/时支本气同类各 +3，哪怕同为日主禄、旺也与普通余根等价；
@@ -2424,6 +2445,8 @@ function calcDayMasterStrength(bazi) {
     _rootClusterPendingAdj = _rootClusterAdj;
   }
 
+  _auditMark('root-cluster-gate', '多重强根门控', { roots:_externalStrongRoots.slice(), pendingAdjustment:_rootClusterPendingAdj });
+
   // ---------- ⑤ 五行过耗修正（日主克月令时，月令五行过旺则日主被反耗） ----------
   // 统计月令五行在盘面中的出现次数（天干+地支）
   var mwxCount = 0, totalKeXieHao = 0;
@@ -2442,9 +2465,13 @@ function calcDayMasterStrength(bazi) {
     else if (WOSHENG[dgWx] === mwx) score -= (mwxCount - 1) * 2; // 休令：日主生月令泄气过重
   }
 
+  _auditMark('over-consumption', '五行过耗', { monthElementCount:mwxCount, pressureCount:totalKeXieHao });
+
   // ---------- ⑤½ 土多金埋修正（未戌燥土月） ----------
   // 土重埋金（母旺灭子）：金日主生未/戌月且盘面土≥3（干+支），厚土埋金，金气不舒
   if (dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0 && mwxCount >= 3) score -= 8;
+
+  _auditMark('dry-earth-buries-metal', '土多金埋', null);
 
   // ---------- ⑥ 调候（滴天髓：寒暖燥湿） ----------
   var mZhi = bazi.month.zhi;
@@ -2507,6 +2534,8 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  _auditMark('climate', '调候·寒暖燥湿', { season:isSummer ? '夏' : (isWinter ? '冬' : (isSpring ? '春' : '秋')) });
+
   // ---------- ⑦ 天干合化修正 ----------
   // 五合：甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火
   var GAN_HE = {'甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊'};
@@ -2530,6 +2559,8 @@ function calcDayMasterStrength(bazi) {
     }
   });
 
+  _auditMark('stem-transform', '天干合化', null);
+
   // ---------- ⑦½ 天干贴身合绊 (v2) ----------
   // 贴身合（月日/日时）合而不化时，被合克泄耗十神有效力量 ×0.6（返还 40%）
   var _hePartners = ['month','hour'].filter(function(pos) {
@@ -2546,6 +2577,8 @@ function calcDayMasterStrength(bazi) {
     else if (WOKE[dgWx] === gwx)  score += Math.round(5 * _perMult); // 财 −5
     else if (WOSHENG[dgWx] === gwx) score += Math.round(3 * _perMult); // 食伤 −3
   });
+
+  _auditMark('stem-binding', '天干贴身合绊', { partners:_hePartners.slice() });
 
   // ---------- ⑧ 地支合冲刑害修正 ----------
   var adjZhi = [['year','month'],['month','day'],['day','hour']]; // 相邻柱地支
@@ -2782,6 +2815,8 @@ function calcDayMasterStrength(bazi) {
   }
   score += dayBranchAdj;
 
+  _auditMark('branch-interactions', '地支合冲刑害会', null);
+
   // ---------- ⑧½ 杀印相生结构修正 ----------
   // 官杀当令克身（死令），但天干有印星贴身通关，日主有长生/禄位根
   // 子平法："杀印相生，化杀为权"——杀不攻身反生印，印再生身，是贵格结构
@@ -2863,6 +2898,8 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  _auditMark('sha-seal-mediation', '杀印相生制化', null);
+
   // ---------- ⑧⅝ 伤官配印承载修正 ----------
   // 伤官当令时，若只把“泄身”与“印生身”拆开计分，会出现格局层已判“伤官配印成格”，
   // 旺衰层却仍判身弱的自相矛盾。本修正只认严格成立的承载链：
@@ -2904,6 +2941,8 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  _auditMark('injury-seal-load', '伤官配印承载', null);
+
   // ---------- ⑧¾ 宫位远近修正 ----------
   // 子平法重"提纲"（月柱）+ "归息"（时柱）
   // 月柱紧贴日元，为一生纲领；时柱为归宿，管晚年
@@ -2923,13 +2962,16 @@ function calcDayMasterStrength(bazi) {
   if (KEWO[dgWx] === _yGanWx)         _posAdj += 1;  // 年官杀远，不如月柱紧迫
   if (WOKE[dgWx] === _yGanWx)         _posAdj += 1;  // 年财星远，不如月柱耗身
   score += _posAdj;
+  _auditMark('position-weight', '宫位远近', { adjustment:_posAdj });
 
   // 多重强根是对旧评分漏计禄旺根的补偿，不是无条件奖励。
   // 用完整原局基准分作最终门控，防止流程中段偏低、后续已经中和偏强的盘被二次拔高。
   if (_rootClusterPendingAdj > 0 && score < 50) score += _rootClusterPendingAdj;
+  _auditMark('root-cluster-final', '多重强根最终门控', { candidate:_rootClusterPendingAdj });
 
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
+  var _auditRawScore = score;
   if (score < 1) score = 1;
   if (score > 100) score = 100;
   var level, label;
@@ -2948,7 +2990,90 @@ function calcDayMasterStrength(bazi) {
   } else {
     detail = '综合评定身' + level + '（' + score + '分）。命局中克泄耗力量偏重，日主需印比扶助。';
   }
-  return { level: level, label: label, score: score, detail: detail };
+  var result = { level: level, label: label, score: score, detail: detail };
+  if (_auditEnabled) {
+    result.audit = {
+      baseScore: 50,
+      rawScore: _auditRawScore,
+      clampedScore: score,
+      stages: _auditStages,
+      sumMatches: 50 + _auditStages.reduce(function(_sum, _stage) { return _sum + _stage.delta; }, 0) === _auditRawScore
+    };
+  }
+  return result;
+}
+
+/**
+ * 旺衰内部审计层。只读取主引擎本次运行记录的真实分差，
+ * 根气与透干列表仅作解释和漏计扫描，不反向改写旺衰结果。
+ */
+function auditDayMasterStrength(bazi) {
+  var traced = calcDayMasterStrength(bazi, { audit:true });
+  var dayGan = bazi.day.gan;
+  var dayWx = WU_XING[dayGan];
+  var positions = ['year','month','day','hour'];
+  var positionNames = { year:'年柱', month:'月柱', day:'日柱', hour:'时柱' };
+  var allZhi = positions.map(function(pos) { return bazi[pos].zhi; });
+  var clashMap = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+  var harmMap = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
+  var punishPairs = { '子卯':1,'卯子':1,'寅巳':1,'巳寅':1,'寅申':1,'申寅':1,'巳申':1,'申巳':1,'丑戌':1,'戌丑':1,'丑未':1,'未丑':1,'戌未':1,'未戌':1 };
+
+  var stems = positions.map(function(pos) {
+    var gan = bazi[pos].gan;
+    return { position:pos, positionName:positionNames[pos], stem:gan, element:WU_XING[gan], tenGod:pos === 'day' ? '日主' : getShiShen(dayGan, gan) };
+  });
+  var roots = [];
+  positions.forEach(function(pos) {
+    var zhi = bazi[pos].zhi;
+    getCangGan(zhi).forEach(function(gan, index) {
+      if (WU_XING[gan] !== dayWx) return;
+      var damage = [];
+      if (allZhi.indexOf(clashMap[zhi]) >= 0) damage.push('六冲');
+      if (allZhi.indexOf(harmMap[zhi]) >= 0) damage.push('六害');
+      if (allZhi.some(function(other) { return !!punishPairs[zhi + other]; })) damage.push('相刑');
+      var stageInfo = getChangSheng(dayGan)[zhi];
+      var stage = stageInfo ? stageInfo.stage : '';
+      var rootType = stage === '临官' ? '禄根' : (stage === '帝旺' ? '帝旺根' : (index === 0 ? '本气根' : (index === 1 ? '中气根' : '余气根')));
+      roots.push({
+        position:pos, positionName:positionNames[pos], branch:zhi, hiddenStem:gan,
+        depth:index === 0 ? '本气' : (index === 1 ? '中气' : '余气'),
+        exactDayStem:gan === dayGan, stage:stage, rootType:rootType,
+        damage:Array.from(new Set(damage)), status:damage.length ? '受损根' : '完整根'
+      });
+    });
+  });
+
+  var stageById = {};
+  traced.audit.stages.forEach(function(stage) { stageById[stage.id] = stage; });
+  function stageDelta(ids) {
+    return ids.reduce(function(sum, id) { return sum + (stageById[id] ? stageById[id].delta : 0); }, 0);
+  }
+  var threeFactors = {
+    order:{ name:'得令', delta:stageDelta(['month-command']), state:stageDelta(['month-command']) > 0 ? '得令' : (stageDelta(['month-command']) < 0 ? '失令' : '中性') },
+    ground:{ name:'得地', delta:stageDelta(['day-seat','season-root-link','branch-main-qi','root-cluster-final']), rootCount:roots.length, intactRootCount:roots.filter(function(root) { return root.status === '完整根'; }).length },
+    force:{ name:'得势', delta:stageDelta(['visible-stems']), supportiveStems:stems.filter(function(item) { return item.tenGod === '比肩' || item.tenGod === '劫财' || item.tenGod === '正印' || item.tenGod === '偏印'; }).map(function(item) { return item.positionName + item.stem + item.tenGod; }) },
+    mediation:{ name:'制化', delta:stageDelta(['climate','stem-transform','stem-binding','branch-interactions','sha-seal-mediation','injury-seal-load','position-weight']) }
+  };
+
+  var pattern = getPattern(bazi);
+  var yongJi = getYongJi(bazi);
+  var warnings = [];
+  if (!traced.audit.sumMatches) warnings.push({ code:'TRACE_SUM_MISMATCH', severity:'error', message:'阶段分差合计与主引擎原始分不一致' });
+  if (yongJi.dayMasterScore !== traced.score || yongJi.dayMasterLevel !== traced.level) warnings.push({ code:'YONGJI_STRENGTH_MISMATCH', severity:'error', message:'喜用忌读取的旺衰与主引擎不一致' });
+  if (pattern.status === '成格' && pattern.name.indexOf('伤官配印') >= 0 && (traced.level === '偏弱' || traced.level === '极弱')) warnings.push({ code:'INJURY_SEAL_LOAD_CONFLICT', severity:'warning', message:'伤官配印已成格但日主仍弱，需复核印根、禄根与财破印' });
+  if (roots.some(function(root) { return root.rootType === '禄根' && root.exactDayStem && root.status === '完整根'; }) && threeFactors.ground.delta <= 0 && stageDelta(['injury-seal-load']) <= 0) warnings.push({ code:'INTACT_LU_ROOT_WITHOUT_GROUND_SUPPORT', severity:'warning', message:'原局有未受损的日主禄根，但得地或结构承载阶段都未体现正向作用' });
+
+  return {
+    version:'strength-audit-v1', internalOnly:true,
+    pillars:positions.map(function(pos) { return bazi[pos].gan + bazi[pos].zhi; }),
+    dayMaster:{ stem:dayGan, element:dayWx },
+    result:{ score:traced.score, level:traced.level, rawScore:traced.audit.rawScore },
+    threeFactors:threeFactors, stems:stems, roots:roots, scoreTrace:traced.audit.stages,
+    pattern:{ name:pattern.name, status:pattern.status },
+    yongJi:{ score:yongJi.dayMasterScore, level:yongJi.dayMasterLevel, yongShen:yongJi.yongShen, xiShen:yongJi.xiShen, jiShen:yongJi.jiShen },
+    warnings:warnings,
+    status:warnings.some(function(item) { return item.severity === 'error'; }) ? 'error' : (warnings.length ? 'review' : 'ok')
+  };
 }
 
 // ==================== 父母关系分析（强化版） ====================
@@ -6887,6 +7012,7 @@ window.BaZiCalculator = {
     calculateSpouseAge: calculateSpouseAge,
     analyzeParents: analyzeParents,
     calcDayMasterStrength: calcDayMasterStrength,
+    auditDayMasterStrength: auditDayMasterStrength,
     getPattern: getPattern,
     adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,

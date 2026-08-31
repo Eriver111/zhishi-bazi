@@ -121,7 +121,15 @@ function captureEngine(roundDir, options = {}) {
   const cases = json(path.join(roundDir, 'cases.json')).cases;
   const results = cases.map(item => {
     const chart = chartFrom(calculator, item);
-    return { id:item.id, pillars:item.pillars, strength:calculator.calcDayMasterStrength(chart), cong:calculator.getCongGe(chart), yongJi:calculator.getYongJi(chart), pattern:calculator.getPattern(chart) };
+    return {
+      id:item.id,
+      pillars:item.pillars,
+      strength:calculator.calcDayMasterStrength(chart),
+      strengthAudit:typeof calculator.auditDayMasterStrength === 'function' ? calculator.auditDayMasterStrength(chart) : null,
+      cong:calculator.getCongGe(chart),
+      yongJi:calculator.getYongJi(chart),
+      pattern:calculator.getPattern(chart)
+    };
   });
   writeJson(path.join(roundDir, 'engine-results.json'), { capturedAt:new Date().toISOString(), results });
   freeze.engineCapturedAt = new Date().toISOString();
