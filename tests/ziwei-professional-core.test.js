@@ -148,10 +148,10 @@ test('Ziwei exposes public and lunar input without a direct-pillar mode', () => 
   assert.ok(html.indexOf('js/lunar.js') < html.indexOf('js/ziwei-render.js'));
 });
 
-test('Ziwei corrections keep true solar time on and Zi-hour rollover off by default', () => {
+test('Ziwei corrections keep true solar time and Zi-hour rollover on by default', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'ziwei.html'), 'utf8');
   const ziHourInput = html.match(/<input[^>]+id=["']zwZishiHuanri["'][^>]*>/)?.[0] || '';
-  assert.doesNotMatch(ziHourInput, /\bchecked\b/);
+  assert.match(ziHourInput, /\bchecked\b/);
   assert.match(html, /<input[^>]+id=["']zwSolarEnabled["'][^>]+checked/);
   const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');
   assert.match(render, /LunarCalendar\.lunarToSolar/);

@@ -15,7 +15,15 @@ test('bazi input retains every calculation control and script', () => {
   assert.ok(html.indexOf('js/county-longitudes.js') < html.indexOf('js/bazi.js'));
   assert.match(html, /name=["']gender["']/);
   const ziHourInput = html.match(/<input[^>]+id=["']zishiHuanri["'][^>]*>/)?.[0] || '';
-  assert.doesNotMatch(ziHourInput, /\bchecked\b/, 'Zi-hour rollover must default off');
+  assert.match(ziHourInput, /\bchecked\b/, 'Zi-hour rollover must default on');
+});
+
+test('Hepan gives both people the same default Zi-hour rollover rule as personal charts', () => {
+  const html = read('hepan.html');
+  for (const id of ['zishiHuanri-p1', 'zishiHuanri-p2']) {
+    const input = html.match(new RegExp(`<input[^>]+id=["']${id}["'][^>]*>`))?.[0] || '';
+    assert.match(input, /\bchecked\b/, `${id} must default on`);
+  }
 });
 
 test('face and palm retain their file inputs and submit handlers', () => {

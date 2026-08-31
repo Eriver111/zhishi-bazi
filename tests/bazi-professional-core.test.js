@@ -157,7 +157,7 @@ test('shared birth normalization separates true-solar civil-date changes from Zi
     year: 2024, month: 1, day: 15, hour: 0, clock: 23, minute: 0,
     gender: 'male', trueSolarTime: false, ziHourNextDay: true,
   });
-  // 早子时（00:00-01:00）不换日（2026-08-10 约定：仅晚子时换日）
+  // 早子时的公历日期已经进入次日，不再叠加第二次偏移。
   const earlyZi = calculator.normalizeBirthInput({
     year: 2024, month: 1, day: 15, hour: 0, clock: 0, minute: 0,
     gender: 'male', trueSolarTime: false, ziHourNextDay: true,
@@ -179,6 +179,18 @@ test('Zi-hour rollover affects only branch index zero when enabled', () => {
     });
     assert.equal(normalized.dayPillarOffset, hour === 0 ? 1 : 0, `branch index ${hour}`);
   }
+});
+
+test('late Zi and the following early Zi share one metaphysical day when rollover is enabled', () => {
+  const { calculator } = loadCalculatorWithInternals();
+  const common = { hour: 0, minute: 30, gender: 'male', trueSolarTime: false, ziHourNextDay: true };
+  const lateZi = calculator.calculateFromBirthInput({ ...common, year: 2024, month: 1, day: 15, clock: 23 });
+  const earlyZi = calculator.calculateFromBirthInput({ ...common, year: 2024, month: 1, day: 16, clock: 0 });
+  const splitLateZi = calculator.calculateFromBirthInput({ ...common, year: 2024, month: 1, day: 15, clock: 23, ziHourNextDay: false });
+  const pillar = chart => chart.day.gan + chart.day.zhi + ' ' + chart.hour.gan + chart.hour.zhi;
+
+  assert.equal(pillar(lateZi.bazi), pillar(earlyZi.bazi));
+  assert.notEqual(pillar(splitLateZi.bazi), pillar(earlyZi.bazi));
 });
 
 test('heavenly-stem combination distinguishes combination from successful transformation', () => {

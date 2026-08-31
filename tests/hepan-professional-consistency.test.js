@@ -56,7 +56,7 @@ test('Zi-hour day change affects only day/hour pillars at the shared boundary', 
   const nextDay = calculator.calculateFromBirthInput({ ...base, clock: 23, ziHourNextDay: true });
 
   assert.deepEqual(pillars(sameDay.bazi), ['癸卯', '乙丑', '戊寅', '壬子']);
-  // 早子时（00:00-01:00）不换日（2026-08-10 约定：仅晚子时 23:00-24:00 换日）
+  // 早子时的公历日期已经跨日，因此不再叠加第二次日柱偏移。
   assert.deepEqual(pillars(earlyZi.bazi), ['癸卯', '乙丑', '戊寅', '壬子']);
   // 晚子时（23:00-24:00）换日：仅日柱/时柱滚动
   assert.deepEqual(pillars(nextDay.bazi), ['癸卯', '乙丑', '己卯', '甲子']);
