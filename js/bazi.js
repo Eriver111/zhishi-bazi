@@ -3083,9 +3083,22 @@ function auditDayMasterStrength(bazi) {
   if (pattern.status === '成格' && pattern.name.indexOf('伤官配印') >= 0 && (traced.level === '偏弱' || traced.level === '极弱')) warnings.push({ code:'INJURY_SEAL_LOAD_CONFLICT', severity:'warning', message:'伤官配印已成格但日主仍弱，需复核印根、禄根与财破印' });
   // 本气与日主同五行的禄根已在“地支本气”正常加分；戊巳、己午则必须由独立基线补分。
   if (roots.some(function(root) { return root.rootType === '禄根' && root.exactDayStem && root.status === '完整根' && DI_ZHI_WU_XING[root.branch] !== dayWx; }) && stageDelta(['hidden-earth-lu']) <= 0) warnings.push({ code:'HIDDEN_EARTH_LU_WITHOUT_SUPPORT', severity:'warning', message:'原局有未受损的戊巳或己午禄根，但藏禄基线未被计入' });
+  // 只标记、不擅自改判：28—29.75 分若同时存在强根与另一条独立生扶证据，
+  // 可能是一分即跨入偏弱并改变格局成破的临界盘，应进入案例复核队列。
+  var intactStrongRoots = roots.filter(function(root) {
+    return root.status === '完整根' && (root.depth === '本气' || root.rootType === '禄根' || root.rootType === '帝旺根');
+  });
+  var supportiveStemCount = stems.filter(function(item) {
+    return item.position !== 'day' && (item.tenGod === '比肩' || item.tenGod === '劫财' || item.tenGod === '正印' || item.tenGod === '偏印');
+  }).length;
+  var boundaryHasIndependentSupport = intactStrongRoots.length >= 2 || (intactStrongRoots.length >= 1 && supportiveStemCount >= 1);
+  if (traced.level === '极弱' && traced.score >= 28 && boundaryHasIndependentSupport) warnings.push({
+    code:'EXTREME_WEAK_BOUNDARY_SUPPORT', severity:'warning',
+    message:'极弱临界盘同时见完整强根与独立生扶，需复核根气受制、调候与格局承载，避免29/30分造成机械破格'
+  });
 
   return {
-    version:'strength-audit-v1', internalOnly:true,
+    version:'strength-audit-v2', internalOnly:true,
     pillars:positions.map(function(pos) { return bazi[pos].gan + bazi[pos].zhi; }),
     dayMaster:{ stem:dayGan, element:dayWx },
     result:{ score:traced.score, level:traced.level, rawScore:traced.audit.rawScore },
