@@ -2863,6 +2863,47 @@ function calcDayMasterStrength(bazi) {
     }
   }
 
+  // ---------- ⑧⅝ 伤官配印承载修正 ----------
+  // 伤官当令时，若只把“泄身”与“印生身”拆开计分，会出现格局层已判“伤官配印成格”，
+  // 旺衰层却仍判身弱的自相矛盾。本修正只认严格成立的承载链：
+  //   1) 月令本气必须是伤官；2) 年月时至少两印透并在地支有根；3) 无透财破印；
+  //   4) 日主有未受冲刑害的禄根；5) 另有一支本气同类托底。
+  // 特别注意：戊禄在巳、己禄在午，两者本气都是火，不能用“本气同类”条件把土日主的禄根漏掉。
+  var _outputMainGod = getShiShen(dg, (getCangGan(bazi.month.zhi)[0] || ''));
+  if (_restOrder && _outputMainGod === '伤官') {
+    var _sealWxForPeiYin = SHENGWO[dgWx];
+    var _visibleSealCount = ['year','month','hour'].filter(function(_pos) {
+      return WU_XING[bazi[_pos].gan] === _sealWxForPeiYin;
+    }).length;
+    var _sealHasRoot = ['year','month','day','hour'].some(function(_pos) {
+      return getCangGan(bazi[_pos].zhi).some(function(_g) {
+        return WU_XING[_g] === _sealWxForPeiYin;
+      });
+    });
+    var _visibleWealthBreaksSeal = ['year','month','hour'].some(function(_pos) {
+      return WU_XING[bazi[_pos].gan] === WOKE[dgWx];
+    });
+    var _PEIYIN_LU = {'甲':'寅','乙':'卯','丙':'巳','丁':'午','戊':'巳','己':'午','庚':'申','辛':'酉','壬':'亥','癸':'子'};
+    var _peiYinLuPos = null;
+    ['year','month','hour'].some(function(_pos) {
+      var _zhi = bazi[_pos].zhi;
+      if (_zhi !== _PEIYIN_LU[dg] || getCangGan(_zhi).indexOf(dg) < 0) return false;
+      var _isBroken = _allZhiForHui.indexOf(_rootClashMap[_zhi]) >= 0 ||
+        _allZhiForHui.indexOf(_rootHarmMap[_zhi]) >= 0 ||
+        _allZhiForHui.some(function(_other) { return _rootPunishPairs[_zhi + _other]; });
+      if (_isBroken) return false;
+      _peiYinLuPos = _pos;
+      return true;
+    });
+    var _separateSameElementRoot = ['year','month','day','hour'].some(function(_pos) {
+      return _pos !== _peiYinLuPos && DI_ZHI_WU_XING[bazi[_pos].zhi] === dgWx;
+    });
+    if (_visibleSealCount >= 2 && _sealHasRoot && !_visibleWealthBreaksSeal && _peiYinLuPos && _separateSameElementRoot) {
+      score += 8;  // 补足戊巳/己午被“本气同类”漏掉的单处禄根承载
+      score += 13; // 双印有根且无财破印，伤官之泄已被强介入制化
+    }
+  }
+
   // ---------- ⑧¾ 宫位远近修正 ----------
   // 子平法重"提纲"（月柱）+ "归息"（时柱）
   // 月柱紧贴日元，为一生纲领；时柱为归宿，管晚年
@@ -6148,17 +6189,24 @@ function getYongJi(bazi) {
   var isCai     = patternName.indexOf('财') >= 0;
   var isYin     = patternName.indexOf('印') >= 0 || patternName.indexOf('枭') >= 0;
   var isShiShang = patternName.indexOf('食') >= 0 || patternName.indexOf('伤') >= 0;
+  // 复合格名可同时含“伤官”和“印”，不能仅凭格名宣称某十神“月令当权”。
+  // 月令当权只读月支本气的真实十神，否则伤官配印盘会被误写成“月令印星当权”。
+  var _monthMainGodForReason = getShiShen(bazi.day.gan, (getCangGan(bazi.month.zhi)[0] || ''));
+  var _monthIsGuanSha = _monthMainGodForReason === '正官' || _monthMainGodForReason === '七杀';
+  var _monthIsCai = _monthMainGodForReason === '正财' || _monthMainGodForReason === '偏财';
+  var _monthIsYin = _monthMainGodForReason === '正印' || _monthMainGodForReason === '偏印';
+  var _monthIsShiShang = _monthMainGodForReason === '食神' || _monthMainGodForReason === '伤官';
 
-  if (isGuanSha && jiShen.indexOf(KE_WO) >= 0) {
+  if (isGuanSha && _monthIsGuanSha && jiShen.indexOf(KE_WO) >= 0) {
     reasoning += ' 月令官杀当权但为忌神——"官多变鬼"，需印星转化方为上策。';
   }
-  if (isCai && jiShen.indexOf(WO_KE) >= 0) {
+  if (isCai && _monthIsCai && jiShen.indexOf(WO_KE) >= 0) {
     reasoning += ' 月令财星当权但日主弱不担财——"富屋贫人"之象，宜先扶身再求财。';
   }
-  if (isYin && jiShen.indexOf(SHENG_WO) < 0) {
+  if (isYin && _monthIsYin && jiShen.indexOf(SHENG_WO) < 0) {
     reasoning += ' 月令印星当权为喜——印来生身，贵人运佳，宜求学深造。';
   }
-  if (isShiShang && jiShen.indexOf(WO_SHENG) >= 0) {
+  if (isShiShang && _monthIsShiShang && jiShen.indexOf(WO_SHENG) >= 0) {
     reasoning += ' 月令食伤当权且为忌神——泄气太过，需印星制食伤方能平衡。';
   }
 

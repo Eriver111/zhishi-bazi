@@ -174,3 +174,31 @@ test('刑害落到禄旺根本身时不启用高额双根补偿', () => {
     assert.equal(r.level, c.level, c.gz.join(' ') + ' 档位漂移');
   }
 });
+
+test('伤官配印严格成立时，己土午禄不得漏计为偏弱', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(
+    pillars(['丙戌', '丙申', '己卯', '庚午']),
+    'male'
+  );
+  const r = calculator.calcDayMasterStrength(chart);
+  assert.equal(r.score, 54);
+  assert.equal(r.level, '中和');
+  assert.equal(calculator.getPattern(chart).name, '伤官配印格');
+  assert.equal(calculator.getPattern(chart).status, '成格');
+  const yongJi = calculator.getYongJi(chart);
+  assert.equal(yongJi.dayMasterLevel, '中和');
+  assert.doesNotMatch(yongJi.reasoning, /月令印星当权/);
+  assert.match(yongJi.reasoning, /伤官配印/);
+});
+
+test('伤官配印承载修正须同时具备双印、印根、禄根与另一同类根', () => {
+  const complete = strength(['丙戌', '丙申', '己卯', '庚午']);
+  const noLuRoot = strength(['丙戌', '丙申', '己卯', '庚子']);
+  const oneVisibleSeal = strength(['壬戌', '丙申', '己卯', '庚午']);
+  const noSeparateEarthRoot = strength(['丙子', '丙申', '己卯', '庚午']);
+  assert.equal(complete.score, 54);
+  assert.ok(noLuRoot.score <= 40, '无午禄不应触发修正');
+  assert.ok(oneVisibleSeal.score <= 40, '只一印透不应触发修正');
+  assert.ok(noSeparateEarthRoot.score <= 40, '无另一土根不应触发修正');
+});
