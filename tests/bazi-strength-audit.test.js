@@ -39,8 +39,10 @@ test('审计层能指出己土午禄和伤官配印的真实承载分', () => {
   assert.equal(lu.rootType, '禄根');
   assert.equal(lu.exactDayStem, true);
   assert.equal(lu.status, '完整根');
+  const hiddenLu = audit.scoreTrace.find(stage => stage.id === 'hidden-earth-lu');
+  assert.equal(hiddenLu.delta, 1);
   const mediation = audit.scoreTrace.find(stage => stage.id === 'injury-seal-load');
-  assert.equal(mediation.delta, 21);
+  assert.equal(mediation.delta, 20);
   assert.equal(audit.pattern.name, '伤官配印格');
   assert.equal(audit.pattern.status, '成格');
 });
@@ -51,4 +53,12 @@ test('严格门槛不成立时，审计层明确显示承载修正为零', () =>
   const mediation = audit.scoreTrace.find(stage => stage.id === 'injury-seal-load');
   assert.equal(mediation.delta, 0);
   assert.ok(audit.result.score < 40);
+});
+
+test('戊巳己午外柱完整禄根在普通格局中也统一计入得地', () => {
+  const E = loadCalculator();
+  const audit = E.auditDayMasterStrength(chartOf(E, ['乙巳','壬辰','己亥','戊午']));
+  const hiddenLu = audit.scoreTrace.find(stage => stage.id === 'hidden-earth-lu');
+  assert.equal(hiddenLu.delta, 1);
+  assert.equal(audit.warnings.some(item => item.code === 'HIDDEN_EARTH_LU_WITHOUT_SUPPORT'), false);
 });

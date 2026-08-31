@@ -2400,6 +2400,26 @@ function calcDayMasterStrength(bazi, options) {
       _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage });
     }
   });
+
+  // 戊禄在巳、己禄在午：这两处禄根藏在火印本气之下。
+  // 常规“地支本气”已经把巳午按火印计 +2，但没有像其他日主的外柱禄根那样计足 +3，
+  // 因此对未受冲、刑、害的每一处外柱藏禄补 +1，只校准禄根基线，不把它当作额外强根。
+  var _hiddenEarthLuRoots = [];
+  var _HIDDEN_EARTH_LU = {'戊':'巳','己':'午'};
+  var _hiddenEarthLuZhi = _HIDDEN_EARTH_LU[dg];
+  if (_hiddenEarthLuZhi) {
+    ['year','month','hour'].forEach(function(pos) {
+      var zhi = bazi[pos].zhi;
+      if (zhi !== _hiddenEarthLuZhi || getCangGan(zhi).indexOf(dg) < 0) return;
+      var broken = _allZhiForHui.indexOf(_rootClashMap[zhi]) >= 0 ||
+        _allZhiForHui.indexOf(_rootHarmMap[zhi]) >= 0 ||
+        _allZhiForHui.some(function(other) { return _rootPunishPairs[zhi + other]; });
+      if (!broken) _hiddenEarthLuRoots.push({ pos:pos, zhi:zhi });
+    });
+  }
+  if (_hiddenEarthLuRoots.length) score += _hiddenEarthLuRoots.length;
+  _auditMark('hidden-earth-lu', '土日主藏禄基线', { roots:_hiddenEarthLuRoots.slice() });
+
   var _isOutOfSeason = _deadOrder || _restOrder || _prisonOrder;
   if (_isOutOfSeason && _externalStrongRoots.length >= 2) {
     // 非日支禄旺原已各计 +3；再补 +7，使其总权重接近日坐禄(+14)但仍略低。
@@ -2936,7 +2956,7 @@ function calcDayMasterStrength(bazi, options) {
       return _pos !== _peiYinLuPos && DI_ZHI_WU_XING[bazi[_pos].zhi] === dgWx;
     });
     if (_visibleSealCount >= 2 && _sealHasRoot && !_visibleWealthBreaksSeal && _peiYinLuPos && _separateSameElementRoot) {
-      score += 8;  // 补足戊巳/己午被“本气同类”漏掉的单处禄根承载
+      score += 7;  // 藏禄基线已统一补 +1；此处只补足严格伤官配印结构的额外承载
       score += 13; // 双印有根且无财破印，伤官之泄已被强介入制化
     }
   }
@@ -3050,7 +3070,7 @@ function auditDayMasterStrength(bazi) {
   }
   var threeFactors = {
     order:{ name:'得令', delta:stageDelta(['month-command']), state:stageDelta(['month-command']) > 0 ? '得令' : (stageDelta(['month-command']) < 0 ? '失令' : '中性') },
-    ground:{ name:'得地', delta:stageDelta(['day-seat','season-root-link','branch-main-qi','root-cluster-final']), rootCount:roots.length, intactRootCount:roots.filter(function(root) { return root.status === '完整根'; }).length },
+    ground:{ name:'得地', delta:stageDelta(['day-seat','season-root-link','branch-main-qi','hidden-earth-lu','root-cluster-final']), rootCount:roots.length, intactRootCount:roots.filter(function(root) { return root.status === '完整根'; }).length },
     force:{ name:'得势', delta:stageDelta(['visible-stems']), supportiveStems:stems.filter(function(item) { return item.tenGod === '比肩' || item.tenGod === '劫财' || item.tenGod === '正印' || item.tenGod === '偏印'; }).map(function(item) { return item.positionName + item.stem + item.tenGod; }) },
     mediation:{ name:'制化', delta:stageDelta(['climate','stem-transform','stem-binding','branch-interactions','sha-seal-mediation','injury-seal-load','position-weight']) }
   };
@@ -3061,7 +3081,8 @@ function auditDayMasterStrength(bazi) {
   if (!traced.audit.sumMatches) warnings.push({ code:'TRACE_SUM_MISMATCH', severity:'error', message:'阶段分差合计与主引擎原始分不一致' });
   if (yongJi.dayMasterScore !== traced.score || yongJi.dayMasterLevel !== traced.level) warnings.push({ code:'YONGJI_STRENGTH_MISMATCH', severity:'error', message:'喜用忌读取的旺衰与主引擎不一致' });
   if (pattern.status === '成格' && pattern.name.indexOf('伤官配印') >= 0 && (traced.level === '偏弱' || traced.level === '极弱')) warnings.push({ code:'INJURY_SEAL_LOAD_CONFLICT', severity:'warning', message:'伤官配印已成格但日主仍弱，需复核印根、禄根与财破印' });
-  if (roots.some(function(root) { return root.rootType === '禄根' && root.exactDayStem && root.status === '完整根'; }) && threeFactors.ground.delta <= 0 && stageDelta(['injury-seal-load']) <= 0) warnings.push({ code:'INTACT_LU_ROOT_WITHOUT_GROUND_SUPPORT', severity:'warning', message:'原局有未受损的日主禄根，但得地或结构承载阶段都未体现正向作用' });
+  // 本气与日主同五行的禄根已在“地支本气”正常加分；戊巳、己午则必须由独立基线补分。
+  if (roots.some(function(root) { return root.rootType === '禄根' && root.exactDayStem && root.status === '完整根' && DI_ZHI_WU_XING[root.branch] !== dayWx; }) && stageDelta(['hidden-earth-lu']) <= 0) warnings.push({ code:'HIDDEN_EARTH_LU_WITHOUT_SUPPORT', severity:'warning', message:'原局有未受损的戊巳或己午禄根，但藏禄基线未被计入' });
 
   return {
     version:'strength-audit-v1', internalOnly:true,
