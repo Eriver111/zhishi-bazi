@@ -38,8 +38,25 @@ test('mobile birth forms keep advanced settings available while shortening the m
   assert.equal((hepan.match(/<details class="birth-advanced">/g) || []).length, 2);
   assert.match(css, /\.mobile-submit-dock\{position:fixed/);
   assert.match(flow, /真太阳时/);
-  assert.match(paipan, /js\/input-flow\.js\?v=3/);
+  assert.match(paipan, /js\/input-flow\.js\?v=5/);
   assert.match(hepan, /js\/hepan-archive-picker\.js\?v=1/);
+});
+
+test('Hepan mobile flow presents one person at a time with persistent completion summaries', () => {
+  const html = read('hepan.html');
+  const flow = read('js/input-flow.js');
+  const css = read('css/input-flow.css');
+
+  assert.match(html, /data-person-toggle="p1"/);
+  assert.match(html, /data-person-toggle="p2"/);
+  assert.match(html, /data-person-next="p2"/);
+  assert.match(html, /data-person-next="p1"/);
+  assert.doesNotMatch(html, /id="name-p2"[\s\S]{0,180}<\/details>/);
+  assert.match(flow, /setPersonOpen\('p2',false,false\)/);
+  assert.match(flow, /refreshPersonProgress\('p1'\)/);
+  assert.match(flow, /modeP1==='lunar'/);
+  assert.match(css, /\.person-section\.is-collapsed/);
+  assert.match(css, /\.person-step-action\{display:block/);
 });
 
 test('face and palm retain their file inputs and submit handlers', () => {
