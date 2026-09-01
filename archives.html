@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/auth.css">
 <link rel="stylesheet" href="css/theme-light.css?v=3">
-<link rel="stylesheet" href="css/archive-library.css?v=4">
+<link rel="stylesheet" href="css/archive-library.css?v=5">
 <link rel="stylesheet" href="css/mobile-app-shell.css?v=6">
 </head>
 <body>
@@ -21,13 +21,15 @@
   <header class="archive-hero">
     <p>命盘管理</p>
     <h1>命盘档案库</h1>
-    <div class="archive-hero__meta"><span id="archiveCount">0 份档案</span><a href="/paipan">＋ 新建命盘</a></div>
+    <div class="archive-hero__meta"><span id="archiveCount">0 份档案</span><div class="archive-hero__actions"><a href="/paipan">＋ 新建命盘</a><a href="/hepan">＋ 新建合盘</a></div></div>
   </header>
 
   <section class="archive-tools" aria-label="筛选命盘档案">
     <label class="archive-search"><span aria-hidden="true">⌕</span><input id="archiveSearch" type="search" placeholder="搜索姓名、日期或四柱" autocomplete="off"></label>
-    <div class="archive-filters" role="group" aria-label="性别筛选">
+    <div class="archive-filters" role="group" aria-label="档案类型筛选">
       <button type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-filter="personal" aria-pressed="false">个人</button>
+      <button type="button" data-filter="hepan" aria-pressed="false">合盘</button>
       <button type="button" data-filter="male" aria-pressed="false">乾造</button>
       <button type="button" data-filter="female" aria-pressed="false">坤造</button>
     </div>
@@ -41,7 +43,7 @@
 <script src="js/county-longitudes.js"></script>
 <script src="js/bazi.js?v=20260831d"></script>
 <script src="js/auth.js?v=5"></script>
-<script src="js/archive-library.js?v=3"></script>
+<script src="js/archive-library.js?v=4"></script>
 <script src="js/mobile-app-shell.js?v=5"></script>
 </body>
 </html>

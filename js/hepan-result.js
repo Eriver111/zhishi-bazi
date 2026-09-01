@@ -793,6 +793,40 @@
   // SECTION 6: 主入口
   // =====================================================
 
+  function saveHepanArchive(person1, person2, relationType) {
+    if (typeof Auth === 'undefined') return;
+    Auth.ready(function() {
+      if (!Auth.isLoggedIn()) return;
+      var identityQuery = new URLSearchParams(window.location.search);
+      var paramStr = identityQuery.toString();
+      Auth.getData('saved_charts').then(function(existing) {
+        var charts = [];
+        try { charts = JSON.parse(existing || '[]'); } catch (e) {}
+        if (!Array.isArray(charts)) charts = [];
+        var p1Pillars = (person1.pillars || []).map(function(p) { return p.gan + p.zhi; });
+        var p2Pillars = (person2.pillars || []).map(function(p) { return p.gan + p.zhi; });
+        var entry = {
+          type: 'hepan',
+          relationType: relationType,
+          p1Name: person1.name || '甲方',
+          p2Name: person2.name || '乙方',
+          label: (person1.name || '甲方') + ' × ' + (person2.name || '乙方') + ' · ' + (RELATION_LABELS[relationType] || '合盘'),
+          params: paramStr,
+          p1Pillars: p1Pillars,
+          p2Pillars: p2Pillars,
+          saved_at: new Date().toISOString()
+        };
+        var found = charts.find(function(c) { return c && c.type === 'hepan' && c.params === paramStr; });
+        if (found) Object.assign(found, entry);
+        else charts.unshift(entry);
+        if (charts.length > 30) charts = charts.slice(0, 30);
+        return Auth.syncData('saved_charts', JSON.stringify(charts));
+      }).catch(function(err) {
+        console.warn('[hepan-archive] 保存失败:', err && err.message || err);
+      });
+    });
+  }
+
   function main() {
     var params = getParams();
 
@@ -823,14 +857,17 @@
 
     try {
       // 4. 构建人物对象
-      var person1 = HepanPersonBuilder.buildPerson('甲方', p1Params, BaZiCalculator);
-      var person2 = HepanPersonBuilder.buildPerson('乙方', p2Params, BaZiCalculator);
+      var person1Name = String(params.p1name || '').trim().slice(0, 20) || '甲方';
+      var person2Name = String(params.p2name || '').trim().slice(0, 20) || '乙方';
+      var person1 = HepanPersonBuilder.buildPerson(person1Name, p1Params, BaZiCalculator);
+      var person2 = HepanPersonBuilder.buildPerson(person2Name, p2Params, BaZiCalculator);
 
       // 5. 执行合盘分析
       var result = analyzeHePan(person1, person2, relationType);
 
       // 6. 渲染结果
       renderAll(result, relationType, person1, person2);
+      saveHepanArchive(person1, person2, relationType);
       // v3.0: init hepan paywall
       if(typeof initHePanPaywall==='function') initHePanPaywall(person1, person2, relationType);
 

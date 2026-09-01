@@ -818,6 +818,13 @@ body.has-mobile-nav{padding-bottom:60px}
     </div>
 
     <form id="p1Form" novalidate>
+      <div class="row">
+        <div class="field">
+          <label>姓名或称呼</label>
+          <input type="text" id="name-p1" maxlength="20" value="我" placeholder="用于合盘档案，例如：我">
+          <span class="minute-hint">只用于区分保存的合盘档案，可随时修改</span>
+        </div>
+      </div>
       <!-- 公历面板 -->
       <div class="mode-panel active" id="solarPanel-p1">
         <div class="row two">
@@ -941,6 +948,13 @@ body.has-mobile-nav{padding-bottom:60px}
     </div>
 
     <form id="p2Form" novalidate>
+      <div class="row">
+        <div class="field">
+          <label>姓名或称呼</label>
+          <input type="text" id="name-p2" maxlength="20" value="对方" placeholder="用于合盘档案，例如：对方">
+          <span class="minute-hint">更换合盘对象时，直接修改这里的姓名和生辰</span>
+        </div>
+      </div>
       <!-- 公历面板 -->
       <div class="mode-panel active" id="solarPanel-p2">
         <div class="row two">
@@ -1402,6 +1416,7 @@ function swapPersons() {
 
 function collectPersonData(pid) {
   var data = {};
+  data.name = document.getElementById('name-' + pid).value;
   // Solar fields
   data.sYear = document.getElementById('sYear-' + pid).value;
   data.sMonth = document.getElementById('sMonth-' + pid).value;
@@ -1427,6 +1442,7 @@ function collectPersonData(pid) {
 }
 
 function applyPersonData(pid, data) {
+  document.getElementById('name-' + pid).value = data.name || (pid === 'p1' ? '我' : '对方');
   // Solar
   document.getElementById('sYear-' + pid).value = data.sYear || '';
   document.getElementById('sMonth-' + pid).value = data.sMonth || '';
@@ -1540,6 +1556,9 @@ function handleSubmit() {
 function collectPersonFormData(pid) {
   var label = pid === 'p1' ? '甲方' : '乙方';
   var calMode = pid === 'p1' ? modeP1 : modeP2;
+  var nameEl = document.getElementById('name-' + pid);
+  var personName = String(nameEl && nameEl.value || '').trim().slice(0, 20);
+  if (!personName) personName = label;
 
   var year, month, day, hour, clock, minute;
 
@@ -1614,6 +1633,7 @@ function collectPersonFormData(pid) {
   var solar = solarEl && !solarEl.checked ? 0 : 1; // 默认开启，不勾时传0
 
   return {
+    name: personName,
     year: year, month: month, day: day, hour: hour,
     clock: clock, minute: minute, gender: gender,
     prov: prov, city: city, dist: dist, cal: calMode,
@@ -1622,6 +1642,7 @@ function collectPersonFormData(pid) {
 }
 
 function appendPersonParams(params, prefix, data) {
+  params.set(prefix + 'name', data.name);
   params.set(prefix + 'y', data.year);
   params.set(prefix + 'm', data.month);
   params.set(prefix + 'd', data.day);

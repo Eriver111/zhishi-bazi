@@ -15,6 +15,9 @@ test('archive library is separate from profile while reusing saved_charts', () =
   assert.match(page, /id="archiveSearch"/);
   assert.match(page, /data-filter="male"/);
   assert.match(page, /data-filter="female"/);
+  assert.match(page, /data-filter="personal"/);
+  assert.match(page, /data-filter="hepan"/);
+  assert.match(page, /href="\/hepan">＋ 新建合盘/);
   assert.match(script, /Auth\.getData\('saved_charts'\)/);
   assert.match(script, /Auth\.syncData\('saved_charts'/);
   assert.match(script, /p\.get\('name'\)\|\|chart\.name/);
@@ -24,9 +27,30 @@ test('archive library is separate from profile while reusing saved_charts', () =
   assert.match(script, /继续问 AI/);
   assert.match(script, /sessionStorage\.setItem\('zhishi_open_archive_ai','1'\)/);
   assert.match(script, /ask\.addEventListener\('click',openAi\)/);
-  assert.match(page, /archive-library\.js\?v=3/);
+  assert.match(page, /archive-library\.js\?v=4/);
   assert.match(profile, /进入命盘档案库/);
   assert.doesNotMatch(profile, /charts\.forEach\(function\(c, i\)/);
+});
+
+test('completed Hepan charts are saved, reopened and deleted from the shared archive', () => {
+  const form = read('hepan.html');
+  const result = read('js/hepan-result.js');
+  const archive = read('js/archive-library.js');
+  const resultPage = read('hepan-result.html');
+
+  assert.match(form, /id="name-p1"/);
+  assert.match(form, /id="name-p2"/);
+  assert.match(form, /params\.set\(prefix \+ 'name', data\.name\)/);
+  assert.match(result, /function saveHepanArchive\(person1, person2, relationType\)/);
+  assert.match(result, /type:\s*'hepan'/);
+  assert.match(result, /p1Pillars:\s*p1Pillars/);
+  assert.match(result, /p2Pillars:\s*p2Pillars/);
+  assert.match(result, /Auth\.syncData\('saved_charts'/);
+  assert.match(archive, /isHepan\(chart\)/);
+  assert.match(archive, /'\/hepan-result\?'/);
+  assert.match(archive, /确定删除这份/);
+  assert.match(resultPage, /hepan-person\.js\?v=2/);
+  assert.match(resultPage, /hepan-result\.js\?v=3/);
 });
 
 test('archive AI continuation rebuilds the chart before restoring its conversation', () => {
