@@ -89,7 +89,7 @@ body:has(#birthForm) select:focus {
 .toggle-hint { color: #766b60; font-size: 10px; line-height: 1.5; }
 
 .pillar-intro {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   color: var(--tx2);
   font-size: 13px;
   line-height: 1.75;
@@ -98,18 +98,24 @@ body:has(#birthForm) select:focus {
 .pillar-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 0;
+  overflow: hidden;
+  background: rgba(255,253,248,.56);
+  border: 1px solid rgba(122,93,55,.17);
+  border-radius: 12px;
 }
 .pillar-column {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 10px 8px;
-  background: rgba(255,253,248,.5);
-  border: 1px solid rgba(122,93,55,.18);
-  border-radius: 12px;
+  gap: 7px;
+  padding: 13px 8px 9px;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid rgba(122,93,55,.12);
+  border-radius: 0;
 }
+.pillar-column:first-child { border-left: 0; }
 .pillar-column .pillar-label {
   color: var(--zh-vermilion);
   font-size: 13px;
@@ -136,24 +142,23 @@ body:has(#birthForm) select:focus {
   min-height: 44px;
   padding: 8px 24px 8px 8px;
   color: var(--tx);
-  background-color: rgba(255,253,248,.78);
-  border-color: rgba(122,93,55,.24);
-  border-radius: 8px;
-  font-size: 20px;
-  font-weight: 700;
+  background-color: transparent;
+  border-color: transparent;
+  border-radius: 6px;
+  font-size: 22px;
+  font-weight: 500;
   text-align: center;
   text-align-last: center;
 }
 .pillar-day {
-  border-color: rgba(132,54,47,.38);
   background: rgba(132,54,47,.045);
 }
 .pillar-day .pillar-label,
 .pillar-day select { color: var(--zh-vermilion); }
-.pillar-day select { border-color: rgba(132,54,47,.3); }
+.pillar-day select { border-color: transparent; }
 .pillar-column:focus-within {
-  border-color: rgba(54,93,80,.38);
-  box-shadow: 0 8px 24px rgba(54,93,80,.06);
+  background: rgba(54,93,80,.05);
+  box-shadow: inset 0 -2px 0 rgba(54,93,80,.32);
 }
 .pillar-error {
   min-height: 2.8em;
@@ -217,20 +222,20 @@ body:has(#birthForm) select:focus {
   body:has(#birthForm) .header { margin-bottom: 16px; }
   body:has(#birthForm) .header h1 { font-size: 34px; }
   body:has(#birthForm) .card { width: 100%; padding: 20px 14px; }
-  .pillar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
-  .pillar-column { padding: 10px 6px 7px; }
+  .pillar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+  .pillar-column { padding: 11px 5px 7px; }
 }
 @media (max-width: 420px) {
   .pillar-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 5px;
-    overflow: visible;
+    gap: 0;
+    overflow: hidden;
   }
-  .pillar-intro { margin-bottom: 12px; font-size: 12px; }
-  .pillar-column { gap: 5px; padding: 8px 3px 6px; border-radius: 9px; }
+  .pillar-intro { margin-bottom: 10px; font-size: 11px; line-height: 1.55; }
+  .pillar-column { gap: 4px; padding: 9px 2px 5px; border-radius: 0; }
   .pillar-column .pillar-label { font-size: 12px; letter-spacing: 1px; }
   .pillar-control span { font-size: 8px; letter-spacing: 1px; }
-  .pillar-column select { min-height: 44px; padding-left: 3px; padding-right: 16px; font-size: 18px; }
+  .pillar-column select { min-height: 44px; padding-left: 2px; padding-right: 13px; font-size: 20px; font-weight: 500; }
   .pillar-error { min-height: 2.4em; font-size: 9px; }
   .pillar-candidates { padding: 12px; }
   .pillar-candidate-actions { grid-template-columns: 1fr; }

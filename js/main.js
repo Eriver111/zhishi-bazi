@@ -6,6 +6,9 @@ var currentMode = 'solar';
 
 // ---- 初始化 ----
 document.addEventListener('DOMContentLoaded', function() {
+  // 浏览器可能恢复旧的表单控件状态；新进入或刷新时仍应采用站点默认规则。
+  var ziHourRollover = document.getElementById('zishiHuanri');
+  if (ziHourRollover) ziHourRollover.checked = true;
   initSolarSelects();
   initLunarSelects();
   initPillarSelects();
@@ -366,7 +369,20 @@ function setPanelFields(panel, disabled) {
 function resetSubmitButton(btn) {
   if (!btn) return;
   btn.classList.remove('loading');
+  btn.disabled = false;
+  if (typeof btn.removeAttribute === 'function') btn.removeAttribute('aria-busy');
   btn.textContent = '起盘推演';
+}
+
+// 从结果页返回时浏览器可能直接恢复旧页面，DOMContentLoaded 不会再次执行。
+// 单独清除提交中的状态，避免按钮一直停在“正在分析”。
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('pageshow', function() {
+    resetSubmitButton(document.querySelector('.submit'));
+    if (window.ZhishiInputFlow && typeof window.ZhishiInputFlow.refresh === 'function') {
+      window.ZhishiInputFlow.refresh();
+    }
+  });
 }
 
 function readDirectPillars() {
@@ -506,12 +522,14 @@ function handleSubmit(e) {
   e.preventDefault();
   var btn = document.querySelector('.submit');
   btn.classList.add('loading');
+  btn.disabled = true;
+  if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-busy', 'true');
   btn.textContent = '正在分析...';
 
   var year, month, day, hour, clock, minute, gender, prov, city, dist;
 
   gender = document.querySelector('input[name="gender"]:checked');
-  if (!gender) { alert('请选择性别'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return; }
+  if (!gender) { alert('请选择性别'); resetSubmitButton(btn); return; }
   gender = gender.value;
 
   if (currentMode === 'pillars') {
@@ -525,14 +543,14 @@ function handleSubmit(e) {
   var hasAnyLocation = !!(prov || city || dist);
   var hasCompleteLocation = !!(prov && city && dist);
   if (hasAnyLocation && !hasCompleteLocation) {
-    alert('请完整选择省、市、县'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+    alert('请完整选择省、市、县'); resetSubmitButton(btn); return;
   }
   if (hasCompleteLocation) {
     try {
       if (typeof CountyLongitudeData === 'undefined') throw new Error('县级经度数据未加载');
       CountyLongitudeData.resolveLocation({ province:prov, city:city, district:dist }, { allowFallback:false });
     } catch (locationError) {
-      alert('县级经度未匹配，请重新选择出生地'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+      alert('县级经度未匹配，请重新选择出生地'); resetSubmitButton(btn); return;
     }
   }
 
@@ -543,7 +561,7 @@ function handleSubmit(e) {
     hour = parseInt(document.getElementById('sHour').value);
 
     if (!year || !month || !day || isNaN(hour)) {
-      alert('请完整填写所有信息'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+      alert('请完整填写所有信息'); resetSubmitButton(btn); return;
     }
 
     var hSel = document.getElementById('sHour');
@@ -558,13 +576,13 @@ function handleSubmit(e) {
     var isLeap = mV.startsWith('r');
     if (isLeap) lm = parseInt(mV.substring(1));
 
-    if (!ly || !mV || !ld) { alert('请完整填写农历信息'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return; }
+    if (!ly || !mV || !ld) { alert('请完整填写农历信息'); resetSubmitButton(btn); return; }
 
     try {
       var sr = LunarCalendar.lunarToSolar(ly, lm, ld, isLeap);
       year = sr.year; month = sr.month; day = sr.day;
     } catch(e) {
-      alert('农历转换失败，请重试'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+      alert('农历转换失败，请重试'); resetSubmitButton(btn); return;
     }
     hour = parseInt(document.getElementById('lHour').value);
     var lhSel = document.getElementById('lHour');
@@ -573,7 +591,7 @@ function handleSubmit(e) {
   }
 
   if (!year || !month || !day || isNaN(hour) || !gender) {
-    alert('请完整填写所有信息'); btn.classList.remove('loading'); btn.textContent='起盘推演'; return;
+    alert('请完整填写所有信息'); resetSubmitButton(btn); return;
   }
 
   var params = new URLSearchParams({ year:year, month:month, day:day, hour:hour, gender:gender });

@@ -18,7 +18,7 @@ test('home and paipan share one versioned mobile shell without touching desktop 
   assert.doesNotMatch(home, /class="mobile-home-dashboard"/);
   assert.match(home, /class="mobile-home-fortune"/);
   assert.match(home, /js\/home-fortune\.js\?v=2/);
-  assert.match(paipan, /<script src="js\/main\.js"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=5"><\/script>/);
+  assert.match(paipan, /<script src="js\/main\.js\?v=2"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=5"><\/script>/);
 });
 
 test('feature pages share the same back header and result uses a four-pillar mobile grid', () => {

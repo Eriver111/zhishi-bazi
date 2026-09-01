@@ -33,7 +33,7 @@ test('direct-pillar dependencies load in calculation order before main', () => {
     'js/pillar-input.js',
     'js/pillar-reverse-lookup.js',
     'js/region.js',
-    'js/main.js',
+    'js/main.js?v=2',
   ];
   let previous = -1;
   for (const script of scripts) {
@@ -270,12 +270,12 @@ test('candidate chooser and pillar controls keep responsive touch targets', () =
 
 test('direct-pillar markup preserves four columns and emphasizes the day pillar', () => {
   const html = read('paipan.html');
-  assert.match(html, /css\/theme-light-forms\.css\?v=3/, 'page must bust the old form stylesheet cache');
+  assert.match(html, /css\/theme-light-forms\.css\?v=4/, 'page must bust the old form stylesheet cache');
   assert.match(html, /class=["'][^"']*pillar-column[^"']*pillar-day[^"']*["']\s+data-pillar=["']day["']/);
   assert.equal((html.match(/class=["']pillar-control["']/g) || []).length, 8);
   const css = read('css/theme-light-forms.css');
   assert.match(css, /\.pillar-day[\s\S]*?var\(--zh-vermilion\)/);
-  assert.match(css, /@media\s*\(max-width:\s*420px\)[\s\S]*?\.pillar-grid[\s\S]*?overflow:\s*visible/);
+  assert.match(css, /@media\s*\(max-width:\s*420px\)[\s\S]*?\.pillar-grid[\s\S]*?overflow:\s*hidden/);
 });
 
 test('calendar-only rows stay visually absent when direct mode sets hidden', () => {
