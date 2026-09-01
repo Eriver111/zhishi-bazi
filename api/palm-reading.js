@@ -5,13 +5,14 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { normalizeVisionApiUrl, normalizeVisionModel, isOpenAICompatibleUrl, getOpenAICompatibleEndpoint } = require('../lib/vision-api.js');
 
-const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+const AI_API_URL = normalizeVisionApiUrl(process.env.VISION_API_URL);
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
-const USE_OPENAI_FORMAT = AI_API_URL.includes('compatible-mode');
+const AI_MODEL = normalizeVisionModel(process.env.VISION_MODEL);
+const USE_OPENAI_FORMAT = isOpenAICompatibleUrl(AI_API_URL);
 const FALLBACK_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
-const FALLBACK_MODEL = 'qwen-vl-max';
+const FALLBACK_MODEL = AI_MODEL;
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, deductCreditByUser, isMonthlyActiveByUserId, getUserCredits, saveUserChatHistory } = require('../lib/supabase.js');
@@ -63,7 +64,7 @@ module.exports = async function handler(req, res) {
 
     console.log('[palm-reading] fmt=' + (USE_OPENAI_FORMAT?'openai':'native') + ' model=' + AI_MODEL);
     // 调用 Vision AI
-    var actualUrl = USE_OPENAI_FORMAT ? AI_API_URL + '/chat/completions' : AI_API_URL;
+    var actualUrl = USE_OPENAI_FORMAT ? getOpenAICompatibleEndpoint(AI_API_URL) : AI_API_URL;
     console.log('[palm-reading] bodySize='+Math.round(image.length/1024)+'KB');
     var controller = new AbortController();
     var timeout = setTimeout(function(){ controller.abort(); }, 60000);

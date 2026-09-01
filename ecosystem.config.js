@@ -13,7 +13,9 @@ module.exports = {
     // 启动参数
     env: {
       NODE_ENV: 'production',
-      PORT: 3456
+      PORT: 3456,
+      VISION_API_URL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      VISION_MODEL: 'qwen3.7-plus'
     }
   }]
 };

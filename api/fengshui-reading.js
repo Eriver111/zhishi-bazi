@@ -6,13 +6,21 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const {
+  DEFAULT_NATIVE_VISION_URL,
+  normalizeVisionApiUrl,
+  normalizeVisionModel,
+  isOpenAICompatibleUrl,
+  getOpenAICompatibleEndpoint,
+  toDashScopeContent
+} = require('../lib/vision-api.js');
 
-const AI_API_URL = process.env.VISION_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+const AI_API_URL = normalizeVisionApiUrl(process.env.VISION_API_URL);
 const AI_API_KEY = process.env.VISION_API_KEY || process.env.AI_API_KEY || '';
-const AI_MODEL = process.env.VISION_MODEL || 'qwen-vl-max';
-const USE_OPENAI_FORMAT = AI_API_URL.includes('compatible-mode');
-const FALLBACK_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
-const FALLBACK_MODEL = 'qwen-vl-max';
+const AI_MODEL = normalizeVisionModel(process.env.VISION_MODEL);
+const USE_OPENAI_FORMAT = isOpenAICompatibleUrl(AI_API_URL);
+const FALLBACK_URL = DEFAULT_NATIVE_VISION_URL;
+const FALLBACK_MODEL = AI_MODEL;
 
 const { requireAuth } = require('../lib/auth.js');
 const { deductCredit, deductCreditByUser, isMonthlyActiveByUserId, getUserCredits, saveUserChatHistory } = require('../lib/supabase.js');
@@ -29,12 +37,14 @@ const FENGSHUI_SYSTEM = (function() {
 /**
  * 调用 Vision AI（单次请求，支持图片或纯文本）
  */
-async function callAI(systemPrompt, userContent, isOpenAI) {
-  var actualUrl = isOpenAI ? AI_API_URL + '/chat/completions' : AI_API_URL;
+async function callAI(systemPrompt, userContent, isOpenAI, endpoint, model) {
+  var baseUrl = normalizeVisionApiUrl(endpoint || AI_API_URL);
+  var actualUrl = isOpenAI ? getOpenAICompatibleEndpoint(baseUrl) : baseUrl;
+  var actualModel = model || AI_MODEL;
   var body;
   if (isOpenAI) {
     body = JSON.stringify({
-      model: AI_MODEL,
+      model: actualModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent }
@@ -49,7 +59,7 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
       { role: 'user', content: userContent }
     ];
     body = JSON.stringify({
-      model: AI_MODEL,
+      model: actualModel,
       input: { messages: messages },
       parameters: { max_tokens: 4000, temperature: 0.3 }
     });
@@ -94,30 +104,24 @@ async function callAI(systemPrompt, userContent, isOpenAI) {
  * 带降级的 AI 调用（MaaS 超时时自动切原生端点）
  */
 async function callAIWithFallback(systemPrompt, userContent) {
+  if (!USE_OPENAI_FORMAT) {
+    return await callAI(systemPrompt, toDashScopeContent(userContent), false, AI_API_URL, AI_MODEL);
+  }
+
   try {
-    var reading = await callAI(systemPrompt, userContent, USE_OPENAI_FORMAT);
+    var reading = await callAI(systemPrompt, userContent, true, AI_API_URL, AI_MODEL);
     if (reading && reading.length >= 20) return reading;
   } catch(e) {
-    if (USE_OPENAI_FORMAT) {
-      console.log('[fengshui] MaaS超时,降级到qwen-vl-max');
-    } else {
-      throw e;
-    }
+    console.log('[fengshui] 兼容接口失败，降级到DashScope原生视觉接口:', e.message);
   }
-  // 降级到原生端点 — 需将 OpenAI 格式转为原生格式
-  var nativeContent;
-  if (Array.isArray(userContent)) {
-    nativeContent = userContent.map(function(c){
-      if (c.image_url) return { image: c.image_url.url };
-      if (c.type === 'text' && c.text) return { text: c.text };
-      if (c.image) return c;
-      if (c.text) return c;
-      return c;
-    });
-  } else {
-    nativeContent = userContent;
-  }
-  return await callAI(systemPrompt, nativeContent, false);
+
+  return await callAI(
+    systemPrompt,
+    toDashScopeContent(userContent),
+    false,
+    FALLBACK_URL,
+    FALLBACK_MODEL
+  );
 }
 
 module.exports = async function handler(req, res) {
@@ -198,7 +202,8 @@ module.exports = async function handler(req, res) {
 
     if (images && images.length > 0) {
       // === 有照片：所有图片+方位数据一次性发给AI ===
-      console.log('[fengshui] 单轮分析，照片数=' + images.length + ' 总KB=' + Math.round(images.reduce(function(s,img){return s+(img.data||img||'').length/1024}, 0)));
+      console.log('[fengshui] model=' + AI_MODEL + ' fmt=' + (USE_OPENAI_FORMAT?'openai':'native') +
+        ' 照片数=' + images.length + ' 总KB=' + Math.round(images.reduce(function(s,img){return s+(img.data||img||'').length/1024}, 0)));
 
       var slotLabels = {
         'door': '大门', 'living': '客厅', 'kitchen': '厨房',
@@ -222,18 +227,8 @@ module.exports = async function handler(req, res) {
         '逐张照片分析形煞，然后结合方位数据给出综合判断。';
       userContent.push({ type: 'text', text: textPrompt });
 
-      // 多图时强制使用 OpenAI 兼容格式（原生端点不支持一次传多图）
-      var useOA = USE_OPENAI_FORMAT || images.length > 0;
-      reading = await callAI(FENGSHUI_SYSTEM, userContent, useOA);
-      if ((!reading || reading.length < 20) && !USE_OPENAI_FORMAT) {
-        // OpenAI 格式失败且当前是原生配置，降级到原生（单文本兜底）
-        var nativeContent = userContent.map(function(c){
-          if (c.image_url) return { image: c.image_url.url };
-          if (c.type === 'text' && c.text) return { text: c.text };
-          return c;
-        });
-        reading = await callAI(FENGSHUI_SYSTEM, nativeContent, false);
-      }
+      // 根据实际端点选择请求格式；DashScope 原生多模态接口支持同一消息内多张图片。
+      reading = await callAIWithFallback(FENGSHUI_SYSTEM, userContent);
 
     } else {
       // === 无照片：纯文本分析 ===
@@ -277,6 +272,6 @@ module.exports = async function handler(req, res) {
 
   } catch (e) {
     console.error('[fengshui] 异常:', e.message, e.stack);
-    return res.status(500).json({ error: '服务异常：' + (e.message || '未知错误') });
+    return res.status(500).json({ error: '风水分析服务暂时不可用，请稍后重试' });
   }
 };
