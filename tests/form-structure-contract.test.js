@@ -59,6 +59,22 @@ test('Hepan mobile flow presents one person at a time with persistent completion
   assert.match(css, /\.person-step-action\{display:block/);
 });
 
+test('third-generation personal input groups date, identity and location without changing field ids', () => {
+  const html = read('paipan.html');
+  const css = read('css/input-flow.css');
+
+  assert.match(html, /class="[^"]*birth-flow-panel[^"]*" id="solarPanel"/);
+  assert.match(html, /class="[^"]*birth-flow-panel[^"]*" id="lunarPanel"/);
+  assert.match(html, /class="[^"]*birth-flow-panel[^"]*" id="pillarsPanel"/);
+  assert.match(html, /class="birth-basic-panel"/);
+  assert.match(html, /class="birth-location-fields calendar-only-fields"/);
+  assert.match(html, /出生日期与时间/);
+  assert.match(html, /用于真太阳时校正/);
+  for (const id of ['province','city','district']) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(css, /#birthForm \.birth-flow-panel\.active/);
+  assert.match(html, /css\/input-flow\.css\?v=5/);
+});
+
 test('face and palm retain their file inputs and submit handlers', () => {
   for (const page of ['face.html','palm.html']) {
     const html = read(page);
