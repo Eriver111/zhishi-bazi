@@ -53,6 +53,20 @@ test('completed Hepan charts are saved, reopened and deleted from the shared arc
   assert.match(resultPage, /hepan-result\.js\?v=3/);
 });
 
+test('Hepan can reuse either person from a saved personal chart without accepting Hepan records', () => {
+  const page = read('hepan.html');
+  const picker = read('js/hepan-archive-picker.js');
+
+  assert.match(page, /data-archive-pick="p1"/);
+  assert.match(page, /data-archive-pick="p2"/);
+  assert.match(picker, /Auth\.getData\('saved_charts'\)/);
+  assert.match(picker, /chart\.type==='hepan'/);
+  assert.match(picker, /applyPersonData\(activePid,data\)/);
+  assert.match(picker, /modeP1='solar'/);
+  assert.match(picker, /zishi:p\.get\('zishi'\)!=='0'/);
+  assert.match(picker, /solar:p\.get\('solar'\)!=='0'/);
+});
+
 test('archive AI continuation rebuilds the chart before restoring its conversation', () => {
   const integration = read('js/ai-chat-integration.js');
   const result = read('result.html');

@@ -26,6 +26,22 @@ test('Hepan gives both people the same default Zi-hour rollover rule as personal
   }
 });
 
+test('mobile birth forms keep advanced settings available while shortening the main flow', () => {
+  const paipan = read('paipan.html');
+  const hepan = read('hepan.html');
+  const css = read('css/input-flow.css');
+  const flow = read('js/input-flow.js');
+
+  assert.match(paipan, /<details class="birth-advanced calendar-only-fields">/);
+  assert.match(hepan, /data-archive-pick="p1"/);
+  assert.match(hepan, /data-archive-pick="p2"/);
+  assert.equal((hepan.match(/<details class="birth-advanced">/g) || []).length, 2);
+  assert.match(css, /\.mobile-submit-dock\{position:fixed/);
+  assert.match(flow, /真太阳时/);
+  assert.match(paipan, /js\/input-flow\.js\?v=3/);
+  assert.match(hepan, /js\/hepan-archive-picker\.js\?v=1/);
+});
+
 test('face and palm retain their file inputs and submit handlers', () => {
   for (const page of ['face.html','palm.html']) {
     const html = read(page);

@@ -777,7 +777,7 @@ body.has-mobile-nav{padding-bottom:60px}
   body.has-mobile-nav{padding-bottom:60px}
   
 }
-</style><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/landing.css"><link rel="stylesheet" href="css/auth.css"><link rel="stylesheet" href="css/interactions.css"><link rel="stylesheet" href="css/ink-wash.css"><link rel="stylesheet" href="css/theme-light.css?v=3"><link rel="stylesheet" href="css/theme-light-forms.css?v=1"></head>
+</style><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/landing.css"><link rel="stylesheet" href="css/auth.css"><link rel="stylesheet" href="css/interactions.css"><link rel="stylesheet" href="css/ink-wash.css"><link rel="stylesheet" href="css/theme-light.css?v=3"><link rel="stylesheet" href="css/theme-light-forms.css?v=1"><link rel="stylesheet" href="css/mobile-app-shell.css?v=6"><link rel="stylesheet" href="css/input-flow.css?v=3"></head>
 <body>
 <div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 
@@ -820,7 +820,7 @@ body.has-mobile-nav{padding-bottom:60px}
     <form id="p1Form" novalidate>
       <div class="row">
         <div class="field">
-          <label>姓名或称呼</label>
+          <div class="archive-pick-heading"><label>姓名或称呼</label><button type="button" class="archive-pick-btn" data-archive-pick="p1">从档案选择</button></div>
           <input type="text" id="name-p1" maxlength="20" value="我" placeholder="用于合盘档案，例如：我">
           <span class="minute-hint">只用于区分保存的合盘档案，可随时修改</span>
         </div>
@@ -888,8 +888,9 @@ body.has-mobile-nav{padding-bottom:60px}
         <div class="lunar-preview" id="lunarPreview-p1"></div>
       </div>
 
-      <div class="row">
-        <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <details class="birth-advanced">
+        <summary><span>排盘设置</span><small data-settings-summary>真太阳时、子时换日已开启</small></summary>
+        <div class="field birth-advanced-body" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
             <input type="checkbox" id="zishiHuanri-p1" checked value="1" style="width:16px;height:16px">
             子时换日
@@ -900,7 +901,7 @@ body.has-mobile-nav{padding-bottom:60px}
           </label>
           <span style="font-size:10px;color:var(--tx3)">默认：23点起按次日 · 真太阳时开</span>
         </div>
-      </div>
+      </details>
 
       <div class="row">
         <div class="field">
@@ -950,11 +951,11 @@ body.has-mobile-nav{padding-bottom:60px}
     <form id="p2Form" novalidate>
       <div class="row">
         <div class="field">
-          <label>姓名或称呼</label>
+          <div class="archive-pick-heading"><label>姓名或称呼</label><button type="button" class="archive-pick-btn" data-archive-pick="p2">从档案选择</button></div>
           <input type="text" id="name-p2" maxlength="20" value="对方" placeholder="用于合盘档案，例如：对方">
           <span class="minute-hint">更换合盘对象时，直接修改这里的姓名和生辰</span>
         </div>
-      </div>
+      </details>
       <!-- 公历面板 -->
       <div class="mode-panel active" id="solarPanel-p2">
         <div class="row two">
@@ -1018,8 +1019,9 @@ body.has-mobile-nav{padding-bottom:60px}
         <div class="lunar-preview" id="lunarPreview-p2"></div>
       </div>
 
-      <div class="row">
-        <div class="field" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <details class="birth-advanced">
+        <summary><span>排盘设置</span><small data-settings-summary>真太阳时、子时换日已开启</small></summary>
+        <div class="field birth-advanced-body" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);cursor:pointer">
             <input type="checkbox" id="zishiHuanri-p2" checked value="1" style="width:16px;height:16px">
             子时换日
@@ -1030,7 +1032,7 @@ body.has-mobile-nav{padding-bottom:60px}
           </label>
           <span style="font-size:10px;color:var(--tx3)">默认：23点起按次日 · 真太阳时开</span>
         </div>
-      </div>
+      </details>
 
       <div class="row">
         <div class="field">
@@ -1062,7 +1064,10 @@ body.has-mobile-nav{padding-bottom:60px}
   </div>
 
   <!-- ====== 提交 ====== -->
-  <button class="hepan-submit" id="submitBtn" onclick="handleSubmit()">开始合盘</button>
+  <div class="mobile-submit-dock hepan-submit-dock">
+    <div class="birth-confirm-summary" data-hepan-summary>填写双方信息后即可合盘</div>
+    <button class="hepan-submit" id="submitBtn" onclick="handleSubmit()">开始合盘</button>
+  </div>
 
   <!-- ====== Footer ====== -->
   <footer class="hepan-footer">
@@ -1074,6 +1079,8 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/lunar.js"></script>
 <script src="js/region.js"></script>
 <script src="js/auth.js?v=5"></script>
+<script src="js/input-flow.js?v=3"></script>
+<script src="js/hepan-archive-picker.js?v=1"></script>
 <script>
 // ============ 页面级 JS ============
 
@@ -1438,6 +1445,8 @@ function collectPersonData(pid) {
   data.dist = document.getElementById('district-' + pid).value;
   // Calendar mode
   data.calMode = (pid === 'p1') ? modeP1 : modeP2;
+  data.zishi = document.getElementById('zishiHuanri-' + pid).checked;
+  data.solar = document.getElementById('solarEnabled-' + pid).checked;
   return data;
 }
 
@@ -1455,6 +1464,8 @@ function applyPersonData(pid, data) {
   document.getElementById('lDay-' + pid).value = data.lDay || '';
   document.getElementById('lHour-' + pid).value = data.lHour || '';
   document.getElementById('lMinute-' + pid).value = data.lMinute || '';
+  if (typeof data.zishi === 'boolean') document.getElementById('zishiHuanri-' + pid).checked = data.zishi;
+  if (typeof data.solar === 'boolean') document.getElementById('solarEnabled-' + pid).checked = data.solar;
   // Gender
   if (data.gender) {
     var radios = document.querySelectorAll('input[name="gender-' + pid + '"]');
@@ -1658,6 +1669,8 @@ function appendPersonParams(params, prefix, data) {
   if (!data.solar) params.set(prefix + 'solar', '0');
 }
 </script>
+
+<script src="js/mobile-app-shell.js?v=5"></script>
 
 
 </body>
