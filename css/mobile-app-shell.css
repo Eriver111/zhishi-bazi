@@ -1400,6 +1400,21 @@
       inset 0 0 0 1px rgba(255, 255, 255, .72) !important;
   }
 
+  /* 四柱盘保持静态，避免切换动画产生的矩形图层遮住整盘阴影。 */
+  body.mobile-page-result .section-sizhu,
+  body.mobile-page-result .section-sizhu *,
+  body.mobile-page-result .section-sizhu *::before,
+  body.mobile-page-result .section-sizhu *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-col::before,
+  body.mobile-page-result .section-sizhu .pp-col::after {
+    content: none !important;
+    display: none !important;
+  }
+
   body.mobile-page-result .section-sizhu > .section-header {
     display: none !important;
   }
@@ -1415,6 +1430,7 @@
 
   body.mobile-page-result .section-sizhu .pp-row {
     grid-template-columns: 43px repeat(6, minmax(0, 1fr));
+    background: #fff !important;
     border-bottom: 0 !important;
   }
 
