@@ -2183,6 +2183,37 @@ function getRenYuanEvidence(bazi) {
   };
 }
 
+// 金日主生未、戌月的燥土状态不能一刀切。
+// 只有“燥土当令且无润、金又无完整根”时，才按燥土不生金/土多埋金处理；
+// 若原局见水或辰丑湿土，同时申酉金根未被冲害，则燥土已得润，恢复部分印星生扶。
+function getDryEarthMetalState(bazi) {
+  var isMetal = WU_XING[bazi.day.gan] === '金';
+  var isDryEarthMonth = isMetal && ['未','戌'].indexOf(bazi.month.zhi) >= 0;
+  if (!isDryEarthMonth) {
+    return { isDryEarthMonth:false, moistened:false, hasIntactMetalRoot:false, supportRestored:false };
+  }
+
+  var positions = ['year','month','day','hour'];
+  var branches = positions.map(function(pos) { return bazi[pos].zhi; });
+  var moistened = positions.some(function(pos) {
+    return WU_XING[bazi[pos].gan] === '水' || DI_ZHI_WU_XING[bazi[pos].zhi] === '水';
+  }) || branches.some(function(zhi) { return zhi === '辰' || zhi === '丑'; });
+
+  var clash = { '申':'寅','酉':'卯' };
+  var harm = { '申':'亥','酉':'戌' };
+  var hasIntactMetalRoot = branches.some(function(zhi) {
+    if (zhi !== '申' && zhi !== '酉') return false;
+    return branches.indexOf(clash[zhi]) < 0 && branches.indexOf(harm[zhi]) < 0;
+  });
+
+  return {
+    isDryEarthMonth:true,
+    moistened:moistened,
+    hasIntactMetalRoot:hasIntactMetalRoot,
+    supportRestored:moistened && hasIntactMetalRoot
+  };
+}
+
 function calcDayMasterStrength(bazi, options) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -2200,6 +2231,7 @@ function calcDayMasterStrength(bazi, options) {
   });
 
   var score = 50; // 基准分
+  var _dryEarthMetalState = getDryEarthMetalState(bazi);
   // 单盘内部审计只跟踪主引擎真实分差，不重新计算旺衰。
   // 默认路径不附带审计字段，避免污染 AI/报告对外事实契约。
   var _auditEnabled = !!(options && options.audit === true);
@@ -2239,8 +2271,10 @@ function calcDayMasterStrength(bazi, options) {
     score += (dgWx === '土' && _tuSeason[bazi.month.zhi] !== undefined) ? _tuSeason[bazi.month.zhi] : 30;
   }
   else if (SHENGWO[dgWx] === mwx) {
-    // 燥土不生金：金日主生未/戌月，火炎土燥，土印不得令（金被埋脆）
-    if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 20;
+    // 未戌燥土不能机械按零分：原局见水/湿土润燥且金有完整根时，燥土恢复部分生金之力。
+    if (!_dryEarthMetalState.isDryEarthMonth) score += 20;
+    // 得润且有完整金根时按八成印令计分：仍弱于丑辰湿土，但不能再把月令印星近似清零。
+    else if (_dryEarthMetalState.supportRestored) score += 16;
   }
   else if (WOSHENG[dgWx] === mwx) { score -= 15; _restOrder = true; }
   else if (WOKE[dgWx] === mwx)   { score -= 10; _prisonOrder = true; }
@@ -2284,8 +2318,8 @@ function calcDayMasterStrength(bazi, options) {
     else score += 12;                               // 其他同气（墓库/冠带/衰等）不变
   }
   else if (SHENGWO[dgWx] === dayZhiWx) {
-    // 燥土不生金：金日主生未/戌月，日支燥土印不记得地
-    if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 8;
+    if (!_dryEarthMetalState.isDryEarthMonth) score += 8;
+    else if (_dryEarthMetalState.supportRestored) score += 6;
   }
   else if (KEWO[dgWx] === dayZhiWx)   score -= 10; // 日支克日主（官杀攻身）
   else if (WOKE[dgWx] === dayZhiWx)   score -= 6;  // 日主克日支（我克为财，耗力）
@@ -2316,8 +2350,8 @@ function calcDayMasterStrength(bazi, options) {
     var gwx = WU_XING[bazi[pos].gan];
     if (gwx === dgWx)            score += 6;  // 比肩劫财
     else if (SHENGWO[dgWx] === gwx) {
-      // 燥土不生金：金日主生未/戌月，天干土印不记得势
-      if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 4;
+      if (!_dryEarthMetalState.isDryEarthMonth) score += 4;
+      else if (_dryEarthMetalState.supportRestored) score += 2;
     }
     else if (KEWO[dgWx] === gwx)   score -= 4;  // 官杀
     else if (WOSHENG[dgWx] === gwx) score -= 3;  // 食伤（泄）
@@ -2335,8 +2369,8 @@ function calcDayMasterStrength(bazi, options) {
     var gwx = WU_XING[g];
     if (gwx === dgWx)            score += 3;  // 本气比肩（通根）
     else if (SHENGWO[dgWx] === gwx) {
-      // 燥土不生金：金日主生未/戌月，藏干土印不记
-      if (!(dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0)) score += 2;
+      if (!_dryEarthMetalState.isDryEarthMonth) score += 2;
+      else if (_dryEarthMetalState.supportRestored) score += 1;
     }
     else if (KEWO[dgWx] === gwx)   score -= 2;  // 本气官杀
     else if (WOSHENG[dgWx] === gwx) score -= 1;  // 本气食伤
@@ -2488,8 +2522,8 @@ function calcDayMasterStrength(bazi, options) {
   _auditMark('over-consumption', '五行过耗', { monthElementCount:mwxCount, pressureCount:totalKeXieHao });
 
   // ---------- ⑤½ 土多金埋修正（未戌燥土月） ----------
-  // 土重埋金（母旺灭子）：金日主生未/戌月且盘面土≥3（干+支），厚土埋金，金气不舒
-  if (dgWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0 && mwxCount >= 3) score -= 8;
+  // 土重埋金只用于真正燥闭之局；已有水/湿土润燥且金根完整时，不再重复扣“埋金”。
+  if (_dryEarthMetalState.isDryEarthMonth && !_dryEarthMetalState.supportRestored && mwxCount >= 3) score -= 8;
 
   _auditMark('dry-earth-buries-metal', '土多金埋', null);
 
@@ -4878,8 +4912,10 @@ function finalizePatternStatus(bazi, pattern) {
   var pendingReasons = [];
   var chong = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   var monthZhi = bazi.month.zhi;
-  // 燥土不生金：金日主生未/戌月，土印虚浮无力（不化杀、不配印）
-  var dryEarthYin = WU_XING[bazi.day.gan] === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0;
+  // 燥土不生金只适用于未得润、又缺完整金根的命局；见水/湿土且申酉根完整时，
+  // 印星恢复部分生扶与化杀能力，不能继续按“印星全无效”处理。
+  var dryEarthMetalState = getDryEarthMetalState(bazi);
+  var dryEarthYin = dryEarthMetalState.isDryEarthMonth && !dryEarthMetalState.supportRestored;
   ['year','day','hour'].forEach(function(pos) {
     if (chong[monthZhi] === bazi[pos].zhi) reasons.push('月令受' + pos.replace('year','年柱').replace('day','日柱').replace('hour','时柱') + '冲');
   });
@@ -6089,7 +6125,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     });
   }
 
-  // —— L4 调候（现状 11 条规则转写为加分；同元素多规则命中取最大，防重复计分）——
+  // —— L4 调候（现状规则转写为加减分；同向多规则命中取最强，防重复计分）——
   // 门控纪律（调候非开关）：加成五行落在印比侧（生扶日主）→ 仅身弱时加；落在克泄耗侧（官杀食伤财）→ 仅身强时加。
   // 避免把扶抑对侧的五行硬抬成喜神（冬火全喜翻转类 bug）。身弱=偏弱/极弱，身强=偏强/极强，中和不加。
   var L4 = zeroMap();
@@ -6157,6 +6193,20 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0 && dmQiang) {
     addL4('火', 6, '冬金寒冻，火暖局');
     tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
+  }
+  // 金生未月即使因水/湿土与完整申酉根而恢复承载，季令仍属火土燥烈。
+  // “得润可生金”只修正旺衰，不能反过来把增燥的火判为喜；水继续承担润燥调候。
+  var restoredDryEarthMetal = getDryEarthMetalState(bazi);
+  if (dmWx === '金' && mz === '未' && restoredDryEarthMetal.supportRestored) {
+    if (L4['水'] < 8) {
+      L4['水'] = 8;
+      l4Details.push({ wx:'水', val:8, note:'未月燥土虽得润，仍以水续润调候' });
+    }
+    if (L4['火'] > -12) {
+      L4['火'] = -12;
+      l4Details.push({ wx:'火', val:-12, note:'未月火土燥烈，火再来增燥' });
+    }
+    tiaoHouNote = '金生未月，原局见水或湿土且金根完整，燥土已恢复部分生金之力；但季令仍燥，水宜续润，火再来则增燥。';
   }
 
   // —— S_base / S_need ——
@@ -6310,12 +6360,14 @@ function getYongJi(bazi) {
   }
 
   // ---- v5.7 P1 穷通宝鉴金日主未/戌月特例短路（保留 v4.2 前置规则，F9）----
-  // 金日主生未/戌燥土月：燥土不生金、土多埋金，印星虚浮无效——
+  // 金日主生未/戌燥土月，且原局无水/湿土润燥或缺完整申酉根时：
+  // 燥土不生金、土多埋金，印星虚浮无效——
   // 按《穷通宝鉴》取水为用（制杀+润局+使燥土转生金），弃土用金水（"先用壬水，次取庚金佐之"）
   var pattern = getPattern(bazi);
   var tiaoHouNote = '';
   var cs = null;
-  var qiongTong = dmWx === '金' && ['未','戌'].indexOf(bazi.month.zhi) >= 0 && (dmLevel === '极弱' || dmLevel === '偏弱');
+  var qiongTongDryEarth = getDryEarthMetalState(bazi);
+  var qiongTong = qiongTongDryEarth.isDryEarthMonth && !qiongTongDryEarth.supportRestored && (dmLevel === '极弱' || dmLevel === '偏弱');
   if (qiongTong) {
     xiShen  = ['水', '金'];
     yongShen = ['水'];
