@@ -160,26 +160,46 @@
     var container = document.querySelector('.result-container');
     if (!container || document.querySelector('.mobile-result-tabs')) return;
 
+    var panelGroups = {
+      basic: ['.result-header', '#timingLimitNotice', '#downloadBanner', '#sizhuSection', '#dayunSection', '#liunianSection'],
+      professional: ['#proSection'],
+      reading: ['#characterSection', '#parentsSection', '#thisYearSection', '#marriageSection', '#wealthSection', '#studySection', '#fortuneSection']
+    };
+
+    Object.keys(panelGroups).forEach(function (key) {
+      panelGroups[key].forEach(function (selector) {
+        var panel = document.querySelector(selector);
+        if (panel) panel.setAttribute('data-result-panel', key);
+      });
+    });
+
+    function classifyDeferredPanels() {
+      var report = document.getElementById('unifiedReport');
+      if (report) report.setAttribute('data-result-panel', 'reading');
+    }
+    classifyDeferredPanels();
+    new MutationObserver(classifyDeferredPanels).observe(container, { childList: true, subtree: true });
+
     var tabs = document.createElement('nav');
     tabs.className = 'mobile-result-tabs';
     tabs.setAttribute('aria-label', '命盘内容');
+    tabs.setAttribute('role', 'tablist');
     var items = [
-      { key: 'info', label: '基本信息', target: '.result-header' },
-      { key: 'basic', label: '基本排盘', target: '#sizhuSection' },
-      { key: 'professional', label: '专业细盘', target: '#sizhuSection' },
-      { key: 'notes', label: '断事笔记', target: '#proSection' }
+      { key: 'basic', label: '基础排盘' },
+      { key: 'professional', label: '专业解读' },
+      { key: 'reading', label: '白话详参' }
     ];
 
     function activate(item, button) {
-      document.body.classList.remove('mobile-result-view-info', 'mobile-result-view-basic', 'mobile-result-view-professional', 'mobile-result-view-notes');
+      document.body.classList.remove('mobile-result-view-basic', 'mobile-result-view-professional', 'mobile-result-view-reading');
       document.body.classList.add('mobile-result-view-' + item.key);
       tabs.querySelectorAll('button').forEach(function (tab) {
         var active = tab === button;
         tab.classList.toggle('is-active', active);
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        tab.setAttribute('tabindex', active ? '0' : '-1');
       });
-      var target = document.querySelector(item.target);
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     items.forEach(function (item) {
@@ -187,13 +207,14 @@
       button.type = 'button';
       button.textContent = item.label;
       button.setAttribute('role', 'tab');
-      button.setAttribute('aria-selected', item.key === 'professional' ? 'true' : 'false');
-      if (item.key === 'professional') button.className = 'is-active';
+      button.setAttribute('aria-selected', item.key === 'basic' ? 'true' : 'false');
+      button.setAttribute('tabindex', item.key === 'basic' ? '0' : '-1');
+      if (item.key === 'basic') button.className = 'is-active';
       button.addEventListener('click', function () { activate(item, button); });
       tabs.appendChild(button);
     });
 
-    document.body.classList.add('mobile-result-view-professional');
+    document.body.classList.add('mobile-result-view-basic');
     document.body.insertBefore(tabs, container);
   }
 

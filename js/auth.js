@@ -496,12 +496,12 @@ var Auth = (function () {
   if (!document.querySelector('link[href*="mobile-app-shell.css"]')) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = '/css/mobile-app-shell.css?v=19';
+    style.href = '/css/mobile-app-shell.css?v=21';
     document.head.appendChild(style);
   }
   if (!window.__ZHISHI_MOBILE_APP_SHELL__ && !document.querySelector('script[src*="mobile-app-shell.js"]')) {
     var script = document.createElement('script');
-    script.src = '/js/mobile-app-shell.js?v=6';
+    script.src = '/js/mobile-app-shell.js?v=7';
     (document.body || document.head).appendChild(script);
   }
 })();

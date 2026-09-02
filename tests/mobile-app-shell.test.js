@@ -11,14 +11,14 @@ test('home and paipan share one versioned mobile shell without touching desktop 
   const paipan = read('paipan.html');
 
   for (const source of [home, paipan]) {
-    assert.match(source, /css\/mobile-app-shell\.css\?v=7/);
-    assert.match(source, /js\/mobile-app-shell\.js\?v=6/);
+    assert.match(source, /css\/mobile-app-shell\.css\?v=8/);
+    assert.match(source, /js\/mobile-app-shell\.js\?v=7/);
   }
 
   assert.doesNotMatch(home, /class="mobile-home-dashboard"/);
   assert.match(home, /class="mobile-home-fortune"/);
   assert.match(home, /js\/home-fortune\.js\?v=2/);
-  assert.match(paipan, /<script src="js\/main\.js\?v=2"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=6"><\/script>/);
+  assert.match(paipan, /<script src="js\/main\.js\?v=2"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=7"><\/script>/);
 });
 
 test('feature pages share the same back header and result uses a four-pillar mobile grid', () => {
@@ -30,12 +30,12 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /window\.history\.back\(\)/);
   assert.match(auth, /'\/result', '\/ziwei', '\/hepan', '\/hepan-result', '\/fortune'/);
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
-  assert.match(auth, /mobile-app-shell\.css\?v=19/);
-  assert.match(auth, /mobile-app-shell\.js\?v=6/);
-  assert.match(read('result.html'), /js\/auth\.js\?v=17/);
+  assert.match(auth, /mobile-app-shell\.css\?v=21/);
+  assert.match(auth, /mobile-app-shell\.js\?v=7/);
+  assert.match(read('result.html'), /js\/auth\.js\?v=18/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
-  assert.match(css, /body\.mobile-page-result \.pp-shensha-row[\s\S]*display:\s*grid !important/);
+  assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);
   assert.match(css, /body\.mobile-page-result \.section-dayun,[\s\S]*border-radius:\s*0 !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.tian-gan,[\s\S]*font-family:\s*"PingFang SC"/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.tian-gan,[\s\S]*font-size:\s*27px !important/);
@@ -44,11 +44,14 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /syncResultSectionOrder/);
   assert.match(js, /container\.insertBefore\(sizhu, dayun\)/);
   assert.match(js, /function createResultModeTabs\(\)/);
-  for (const label of ['基本信息', '基本排盘', '专业细盘', '断事笔记']) {
+  for (const label of ['基础排盘', '专业解读', '白话详参']) {
     assert.match(js, new RegExp(label));
   }
-  assert.match(css, /\.mobile-result-tabs[\s\S]*grid-template-columns:\s*repeat\(4/);
-  assert.match(css, /\.mobile-result-view-basic \.pp-aux-row/);
+  assert.match(css, /\.mobile-result-tabs[\s\S]*grid-template-columns:\s*repeat\(3/);
+  assert.match(css, /\.section-sizhu \.pp-aux-row,[\s\S]*\.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);
+  assert.match(js, /panelGroups[\s\S]*professional:[\s\S]*reading:/);
+  assert.match(js, /getElementById\('unifiedReport'\)[\s\S]*data-result-panel', 'reading'/);
+  assert.match(js, /document\.body\.classList\.add\('mobile-result-view-basic'\)/);
   const result = read('result.html');
   for (const row of ['pp-xingyun-row', 'pp-zizuo-row', 'pp-kongwang-row', 'pp-nayin-row']) {
     assert.match(result, new RegExp(row));

@@ -1294,6 +1294,318 @@
     font-size: 10px;
   }
 
+  /* 结果页改为三块整页切换：基础排盘、专业解读、白话详参。 */
+  body.mobile-page-result .mobile-result-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    height: 48px;
+    background: #050505;
+    border-bottom: 0;
+  }
+
+  body.mobile-page-result .mobile-result-tabs button {
+    color: #f2f2f2;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  body.mobile-page-result .mobile-result-tabs button.is-active {
+    color: #c7a66d;
+  }
+
+  body.mobile-page-result .mobile-result-tabs button.is-active::after {
+    right: 29%;
+    left: 29%;
+    height: 3px;
+    background: #c7a66d;
+  }
+
+  body.mobile-page-result.mobile-result-view-basic [data-result-panel]:not([data-result-panel="basic"]),
+  body.mobile-page-result.mobile-result-view-professional [data-result-panel]:not([data-result-panel="professional"]),
+  body.mobile-page-result.mobile-result-view-reading [data-result-panel]:not([data-result-panel="reading"]) {
+    display: none !important;
+  }
+
+  body.mobile-page-result .result-container {
+    padding: 0 0 calc(82px + env(safe-area-inset-bottom));
+    background: #fff;
+  }
+
+  body.mobile-page-result .result-header {
+    margin: 0 !important;
+    padding: 15px 16px 13px !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-bottom: 1px solid #ececec !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.mobile-page-result .result-header .result-title,
+  body.mobile-page-result .result-header .back-link {
+    display: none !important;
+  }
+
+  body.mobile-page-result .result-header .birth-info,
+  body.mobile-page-result .result-header .nayin-info {
+    color: #555 !important;
+    font-size: 12px !important;
+    line-height: 1.8;
+    text-align: left !important;
+  }
+
+  body.mobile-page-result .result-header .share-btn {
+    min-height: 32px;
+    margin-top: 9px !important;
+    padding: 5px 10px !important;
+    color: #4f4a44 !important;
+    background: #fff !important;
+    border: 1px solid #dedede !important;
+    border-radius: 16px !important;
+    font-size: 11px !important;
+    box-shadow: none !important;
+  }
+
+  /* 基础盘是一张连续表，不再拆成三张卡片。 */
+  body.mobile-page-result .section-sizhu,
+  body.mobile-page-result .section-dayun,
+  body.mobile-page-result .section-liunian {
+    width: 100%;
+    margin: 0 !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-bottom: 1px solid #dcdcdc !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.mobile-page-result .section-sizhu > .section-header {
+    display: none !important;
+  }
+
+  body.mobile-page-result .section-sizhu .paipan-table {
+    overflow: visible;
+    width: 100%;
+    margin: 0 !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-row {
+    grid-template-columns: 43px repeat(6, minmax(0, 1fr));
+    border-bottom: 1px solid #ececec !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-label,
+  body.mobile-page-result .section-sizhu .pp-col {
+    min-height: 42px;
+    padding: 7px 1px !important;
+    background: #fff !important;
+    border-right: 1px solid #efefef !important;
+    border-radius: 0 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-label {
+    color: #777 !important;
+    background: #fafafa !important;
+    font-size: 11px !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-header .pp-col {
+    min-height: 43px;
+    color: #3b3b3b !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-day,
+  body.mobile-page-result .section-sizhu .pp-dayun-col,
+  body.mobile-page-result .section-sizhu .pp-liunian-col,
+  body.mobile-page-result .section-sizhu .pp-dayun-col.active-dayun,
+  body.mobile-page-result .section-sizhu .pp-liunian-col.active-liunian {
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-dayun-col,
+  body.mobile-page-result .section-sizhu .pp-liunian-col {
+    color: #333 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .tian-gan,
+  body.mobile-page-result .section-sizhu .di-zhi {
+    font-size: 25px !important;
+    font-weight: 500 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-cang,
+  body.mobile-page-result .section-sizhu .pp-fuxing {
+    min-height: 66px;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-aux-row,
+  body.mobile-page-result .section-sizhu .pp-shensha-row {
+    display: none !important;
+  }
+
+  body.mobile-page-result .section-dayun,
+  body.mobile-page-result .section-liunian {
+    display: grid;
+    grid-template-columns: 43px minmax(0, 1fr);
+  }
+
+  body.mobile-page-result .section-dayun > .section-header,
+  body.mobile-page-result .section-liunian > .section-header {
+    display: flex !important;
+    min-height: 126px;
+    padding: 0 !important;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa !important;
+    border: 0 !important;
+    border-right: 1px solid #e5e5e5 !important;
+  }
+
+  body.mobile-page-result .section-dayun > .section-header h2,
+  body.mobile-page-result .section-liunian > .section-header h2 {
+    margin: 0 !important;
+    color: #333 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.15;
+    letter-spacing: 3px !important;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+
+  body.mobile-page-result .section-dayun > .section-header .section-sub,
+  body.mobile-page-result .section-liunian > .section-header .section-sub {
+    display: none !important;
+  }
+
+  body.mobile-page-result .dayun-scroll-wrapper,
+  body.mobile-page-result .liunian-scroll-wrapper {
+    min-width: 0;
+    overflow-x: auto !important;
+    background: #fff !important;
+    scrollbar-width: none;
+  }
+
+  body.mobile-page-result .dayun-scroll-wrapper::-webkit-scrollbar,
+  body.mobile-page-result .liunian-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.mobile-page-result .dayun-table,
+  body.mobile-page-result .liunian-table {
+    min-width: max-content;
+    background: #fff !important;
+  }
+
+  body.mobile-page-result .dayun-col,
+  body.mobile-page-result .liunian-col {
+    min-height: 126px;
+    padding: 8px 3px !important;
+    background: #fff !important;
+    border-right: 1px solid #ededed !important;
+  }
+
+  body.mobile-page-result .dayun-col.current,
+  body.mobile-page-result .dayun-col.active,
+  body.mobile-page-result .liunian-col.current-year,
+  body.mobile-page-result .liunian-col.active-ln {
+    background: #f7f7f7 !important;
+  }
+
+  /* 两类解读都作为整页内容呈现，不再像一组悬浮卡片。 */
+  body.mobile-page-result.mobile-result-view-professional #proSection,
+  body.mobile-page-result.mobile-result-view-reading .section-drawer {
+    width: 100%;
+    margin: 0 !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e4e4e4 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.mobile-page-result.mobile-result-view-professional #proSection > .drawer-toggle,
+  body.mobile-page-result.mobile-result-view-reading .section-drawer > .drawer-toggle {
+    min-height: 50px;
+    padding: 14px 16px !important;
+    background: #fff !important;
+    border-bottom: 1px solid #ededed !important;
+    pointer-events: none;
+  }
+
+  body.mobile-page-result.mobile-result-view-professional #proSection .drawer-arrow,
+  body.mobile-page-result.mobile-result-view-reading .section-drawer .drawer-arrow {
+    display: none !important;
+  }
+
+  body.mobile-page-result.mobile-result-view-professional #proSection .drawer-body,
+  body.mobile-page-result.mobile-result-view-reading .section-drawer .drawer-body {
+    display: block !important;
+    overflow: visible !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    background: #fff !important;
+  }
+
+  body.mobile-page-result.mobile-result-view-professional #proSection .pro-sub {
+    margin: 0 !important;
+    padding: 17px 15px !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-bottom: 1px solid #ededed !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.mobile-page-result.mobile-result-view-reading :is(
+    .character-content,
+    .parents-content,
+    .thisyear-content,
+    .marriage-content,
+    .wealth-content,
+    .study-content,
+    .fortune-content
+  ) {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  body.mobile-page-result.mobile-result-view-reading :is(
+    .character-content,
+    .parents-content,
+    .thisyear-content,
+    .marriage-content,
+    .wealth-content,
+    .study-content,
+    .fortune-content
+  ) > div {
+    margin: 0 !important;
+    padding: 15px 16px !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-bottom: 1px solid #ededed !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.mobile-page-result.mobile-result-view-reading :is(
+    .character-content,
+    .parents-content,
+    .thisyear-content,
+    .marriage-content,
+    .wealth-content,
+    .study-content,
+    .fortune-content
+  ) > div > div:first-child {
+    background: #fafafa !important;
+    border-radius: 0 !important;
+  }
+
   body.mobile-page-paipan .footer {
     margin-top: 24px;
   }

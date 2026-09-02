@@ -8,7 +8,7 @@ var STATIC_ASSETS = [
   '/css/interactions.css', '/css/poster.css',
   '/js/bazi.js?v=20260831d', '/js/mo-xing-he.js?v=1781962250',
   '/js/ai-chat-integration.js?v=20260830a', '/js/chart-calibration.js?v=9', '/js/result.js?v=20',
-  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=10',
+  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=11',
   '/js/hepan-paywall.js?v=2',
   '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',
   '/js/report-pdf.js?v=3'

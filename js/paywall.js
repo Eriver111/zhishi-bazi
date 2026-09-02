@@ -164,6 +164,7 @@ function renderPaywall(skipLayout,prepareOnly){
   });
 
   wrap=document.createElement('div');wrap.id='unifiedReport';
+  wrap.setAttribute('data-result-panel','reading');
   wrap.className='report-locked';
   wrap.style.cssText='position:relative;min-height:520px;padding-bottom:20px';
   first.parentNode.insertBefore(wrap,first);
