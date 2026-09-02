@@ -515,6 +515,9 @@ function handleDirectSubmit(gender, btn) {
   });
   renderPillarCandidates(matches, normalized.pillars, gender);
   resetSubmitButton(btn);
+  if (window.ZhishiBirthSheet && typeof window.ZhishiBirthSheet.open === 'function') {
+    window.ZhishiBirthSheet.open('time', btn);
+  }
 }
 
 // ---- 提交 ----

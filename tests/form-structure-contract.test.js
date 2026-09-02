@@ -42,7 +42,7 @@ test('mobile birth forms keep advanced settings available while shortening the m
   assert.equal((hepan.match(/<details class="birth-advanced">/g) || []).length, 2);
   assert.match(css, /\.mobile-submit-dock\{position:fixed/);
   assert.match(flow, /真太阳时/);
-  assert.match(paipan, /js\/input-flow\.js\?v=6/);
+  assert.match(paipan, /js\/input-flow\.js\?v=7/);
   assert.match(hepan, /js\/hepan-archive-picker\.js\?v=1/);
 });
 
@@ -76,7 +76,7 @@ test('third-generation personal input groups date, identity and location without
   assert.match(html, /用于真太阳时校正/);
   for (const id of ['province','city','district']) assert.match(html, new RegExp(`id="${id}"`));
   assert.match(css, /#birthForm \.birth-flow-panel\.active/);
-  assert.match(html, /css\/input-flow\.css\?v=6/);
+  assert.match(html, /css\/input-flow\.css\?v=7/);
 });
 
 test('face and palm retain their file inputs and submit handlers', () => {

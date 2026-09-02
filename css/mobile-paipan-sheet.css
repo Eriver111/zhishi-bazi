@@ -1,0 +1,68 @@
+@media (max-width:720px){
+  body.mobile-page-paipan{background:#f6f6f5!important}
+  body.mobile-page-paipan .app{padding:10px 14px 82px!important}
+  body.mobile-page-paipan .header{display:none!important}
+  body.mobile-page-paipan .mobile-paipan-card{padding:18px 16px!important;border-radius:22px!important;box-shadow:0 8px 28px rgba(57,48,36,.06)!important}
+  .mobile-paipan-summary .archive-name-row{margin:0!important;padding:0 0 14px;border-bottom:1px solid rgba(80,70,56,.1)}
+  .mobile-paipan-summary .archive-name-row .field{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:16px}
+  .mobile-paipan-summary .archive-name-row label{margin:0!important;color:#2e2b27!important;font-size:16px!important;letter-spacing:1px!important}
+  .mobile-paipan-summary .archive-name-input{min-height:42px!important;padding:4px 0!important;border:0!important;background:transparent!important;text-align:right!important;font-size:16px!important;box-shadow:none!important}
+  .mobile-paipan-summary .archive-name-hint{display:none!important}
+  .mobile-paipan-choice-line{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid rgba(80,70,56,.1)}
+  .mobile-paipan-choice-line .radio-group{flex:0 0 38%;gap:0;padding:3px;background:#f5f4f1;border:1px solid rgba(80,70,56,.1);border-radius:999px}
+  .mobile-paipan-choice-line .radio{min-height:36px!important;padding:5px!important;border:0!important;border-radius:999px!important;background:transparent!important;box-shadow:none!important;color:#8c857b!important}
+  .mobile-paipan-choice-line .radio:has(input:checked){background:#b8924d!important;color:#fff!important}
+  .mobile-paipan-mode-tabs{flex:1;margin:0!important;padding:3px!important;gap:0!important;background:#f5f4f1!important;border:1px solid rgba(80,70,56,.1);border-radius:999px!important}
+  .mobile-paipan-mode-tabs .mode-tab{min-height:36px!important;padding:5px 3px!important;border-radius:999px!important;letter-spacing:1px!important;color:#8c857b!important}
+  .mobile-paipan-mode-tabs .mode-tab.active{background:#b8924d!important;color:#fff!important;box-shadow:none!important}
+  .mobile-paipan-mode-tabs .mode-related-link{display:none!important}
+  .mobile-birth-summary-card{display:block}
+  .mobile-birth-summary-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:62px;padding:12px 0;border:0;border-bottom:1px solid rgba(80,70,56,.1);background:transparent;color:#302d28;font-family:inherit;text-align:left}
+  .mobile-birth-summary-row[hidden]{display:none!important}
+  .mobile-birth-summary-row span{font-size:16px;font-weight:600;letter-spacing:1px}
+  .mobile-birth-summary-row b{min-width:0;overflow:hidden;color:#aaa39a;font-size:14px;font-weight:400;text-align:right;white-space:nowrap;text-overflow:ellipsis}
+  .mobile-birth-summary-row i{color:#b2aca4;font-size:26px;font-style:normal;font-weight:300}
+  .mobile-paipan-summary>.birth-flow-panel,.mobile-paipan-summary>.birth-basic-panel,.mobile-paipan-summary>.birth-advanced{display:none!important}
+  body.mobile-page-paipan .mobile-submit-dock{position:static!important;padding:20px 0 2px!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+  body.mobile-page-paipan .mobile-submit-dock .birth-confirm-summary{display:none!important}
+  body.mobile-page-paipan .mobile-submit-dock .submit{min-height:58px!important;border-radius:999px!important;background:#080808!important;color:#d6ba7a!important;box-shadow:none!important;font-size:17px!important;letter-spacing:6px!important}
+  body.mobile-birth-sheet-open{overflow:hidden!important}
+  .mobile-birth-sheet-overlay{position:fixed;inset:0;z-index:1900;background:rgba(0,0,0,.56);opacity:0;transition:opacity .22s ease}
+  .mobile-birth-sheet-overlay.is-open{opacity:1}
+  .mobile-birth-sheet{position:fixed;left:0;right:0;bottom:0;z-index:1901;max-height:min(82vh,760px);padding:22px 18px calc(24px + env(safe-area-inset-bottom));overflow:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.14);transform:translateY(105%);transition:transform .24s cubic-bezier(.2,.75,.25,1)}
+  .mobile-birth-sheet.is-open{transform:translateY(0)}
+  .mobile-birth-sheet-head{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:1px solid #efeee9}
+  .mobile-birth-sheet-tabs{display:flex;flex:1;padding:4px;background:#f5f5f3;border-radius:999px}
+  .mobile-birth-sheet-tabs button{flex:1;min-height:42px;border:0;border-radius:999px;background:transparent;color:#c0bbb3;font-family:inherit;font-size:15px}
+  .mobile-birth-sheet-tabs button.active{background:#fff;color:#2d2924;font-weight:700;box-shadow:0 2px 9px rgba(50,42,32,.08)}
+  .mobile-birth-sheet-confirm{flex:0 0 94px;min-height:48px;border:0;border-radius:999px;background:#050505;color:#d8bd80;font-family:inherit;font-size:17px;font-weight:600;letter-spacing:2px}
+  .mobile-birth-sheet-title{padding:18px 2px 0;color:#332f2a;font-size:16px;font-weight:700;text-align:center}
+  .mobile-birth-sheet-slot{padding-top:18px}
+  .mobile-birth-sheet .birth-flow-title{display:none!important}
+  .mobile-birth-sheet .mode-panel{display:block!important;animation:none!important}
+  .mobile-birth-sheet #solarPanel .row,.mobile-birth-sheet #lunarPanel .row{gap:10px!important;margin-bottom:12px!important}
+  .mobile-birth-sheet #solarPanel .field>label,.mobile-birth-sheet #lunarPanel .field>label{color:#4d4841!important;font-size:12px!important;letter-spacing:1px!important;text-align:center!important}
+  .mobile-birth-sheet #solarPanel select,.mobile-birth-sheet #lunarPanel select,.mobile-birth-sheet #lunarPanel input{min-height:52px!important;padding-left:7px!important;padding-right:20px!important;border-color:#ece9e2!important;background-color:#f8f7f4!important;font-size:15px!important;text-align:center!important;text-align-last:center!important}
+  .mobile-birth-sheet .pillar-intro{margin:0 5px 18px!important;color:#918a80!important;font-size:12px!important;text-align:left!important}
+  .mobile-birth-sheet #pillarsPanel .pillar-grid{overflow:visible!important;border:0!important;background:transparent!important;border-radius:0!important}
+  .mobile-birth-sheet #pillarsPanel .pillar-column{gap:14px!important;padding:0 4px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+  .mobile-birth-sheet #pillarsPanel .pillar-label{margin-bottom:4px;color:#33302b!important;font-size:15px!important;letter-spacing:1px!important}
+  .mobile-birth-sheet #pillarsPanel .pillar-control span{display:none!important}
+  .mobile-birth-sheet #pillarsPanel select{width:68px!important;height:68px!important;min-height:68px!important;padding:0 18px 0 3px!important;border:1px solid transparent!important;border-radius:50%!important;background-color:#f6f5f2!important;background-position:right 9px center!important;color:#746b5e!important;font-size:25px!important;font-weight:700!important;box-shadow:none!important}
+  .mobile-birth-sheet #pillarsPanel select[data-five-element="wood"]{color:#27a34a!important;background-color:#f3faf4!important}
+  .mobile-birth-sheet #pillarsPanel select[data-five-element="fire"]{color:#cf1e1e!important;background-color:#fff5f5!important}
+  .mobile-birth-sheet #pillarsPanel select[data-five-element="earth"]{color:#80673b!important;background-color:#f8f6f1!important}
+  .mobile-birth-sheet #pillarsPanel select[data-five-element="metal"]{color:#c68b12!important;background-color:#fff9ec!important}
+  .mobile-birth-sheet #pillarsPanel select[data-five-element="water"]{color:#2f71d6!important;background-color:#f3f7ff!important}
+  .mobile-birth-sheet #pillarsPanel .pillar-error{min-height:20px!important}
+  .mobile-birth-sheet .pillar-candidates{margin:8px 0 0!important;border:0!important;background:transparent!important;padding:0!important}
+  .mobile-birth-sheet .pillar-candidate{border:0!important;border-radius:14px!important;background:#f7f7f5!important;text-align:left!important}
+  .mobile-birth-sheet .birth-location-fields{margin:0!important;padding:0!important;border:0!important}
+  .mobile-birth-sheet .birth-location-title{display:none!important}
+  .mobile-birth-sheet .birth-location-fields .row{display:grid!important;gap:12px!important}
+  .mobile-birth-sheet .birth-location-fields select{min-height:50px!important;border-color:#ebe8e1!important;background-color:#f8f7f4!important}
+  .mobile-birth-sheet .birth-advanced{display:block!important;margin:0!important;border:0!important;background:transparent!important}
+  .mobile-birth-sheet .birth-advanced summary{display:none!important}
+  .mobile-birth-sheet .birth-advanced-body{display:grid!important;gap:12px!important;padding:0!important}
+  .mobile-birth-sheet .toggle-option{min-height:50px!important;justify-content:flex-start!important;background:#f8f7f4!important}
+}

@@ -54,7 +54,7 @@
   document.addEventListener('DOMContentLoaded',function(){
     var paipan=!!document.getElementById('birthForm');
     var root=document.getElementById('birthForm')||document.querySelector('.hepan-wrap');if(!root)return;
-    if(window.matchMedia&&window.matchMedia('(max-width:720px)').matches){
+    if(!paipan&&window.matchMedia&&window.matchMedia('(max-width:720px)').matches){
       setTimeout(function(){
         var dock=document.querySelector('.mobile-submit-dock');
         if(dock&&dock.parentNode!==document.body)document.body.insertBefore(dock,document.querySelector('.mobile-app-nav'));
