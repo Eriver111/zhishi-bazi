@@ -30,6 +30,18 @@ test('bazi result retains the complete ordered long-report structure', () => {
   assert.match(html, /js\/ai-chat-integration\.js/);
 });
 
+test('mobile timing strips show both stem and branch-main ten gods with unambiguous short names', () => {
+  const source = read('js/result.js');
+  assert.match(source, /'偏财':'才'/);
+  assert.match(source, /'正财':'财'/);
+  assert.match(source, /'偏印':'枭'/);
+  assert.match(source, /'正印':'印'/);
+  assert.match(source, /function getBranchMainShiShen\(dayGan, zhi\)/);
+  assert.match(source, /renderTimingGanZhi\('dayun', dayGan, dy\.gan, dy\.zhi\)/);
+  assert.match(source, /renderTimingGanZhi\('liunian', dayGan, ln\.gan, ln\.zhi\)/);
+  assert.equal((source.match(/\$\{gan\}\$\{wx\}<\/span>/g) || []).length, 3);
+});
+
 test('bazi result loads direct-pillar parsing before result initialization', () => {
   const html = read('result.html');
   const pillarInput = html.indexOf('js/pillar-input.js');

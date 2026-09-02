@@ -18,6 +18,30 @@ const WX_COLORS = {
     '火':'#F44336','土':'#CD853F'
 };
 
+const SHI_SHEN_SHORT = {
+    '比肩':'比', '劫财':'劫', '食神':'食', '伤官':'伤',
+    '偏财':'才', '正财':'财', '七杀':'杀', '正官':'官',
+    '偏印':'枭', '正印':'印', '日主':'日'
+};
+
+function shortShiShen(name) {
+    return SHI_SHEN_SHORT[name] || name || '';
+}
+
+function getBranchMainShiShen(dayGan, zhi) {
+    const mainGan = window.BaZiCalculator.getCangGan(zhi)[0];
+    return mainGan ? window.BaZiCalculator.getShiShen(dayGan, mainGan) : '';
+}
+
+function renderTimingGanZhi(kind, dayGan, gan, zhi) {
+    const ganGod = window.BaZiCalculator.getShiShen(dayGan, gan);
+    const zhiGod = getBranchMainShiShen(dayGan, zhi);
+    return `<div class="${kind}-gz">
+        <div class="timing-gz-line"><span class="timing-gz-char" style="color:${WX_COLORS[window.BaZiCalculator.WU_XING[gan]]}">${gan}</span><span class="timing-god ${kind}-ss" title="${ganGod}">${shortShiShen(ganGod)}</span></div>
+        <div class="timing-gz-line"><span class="timing-gz-char" style="color:${WX_COLORS[window.BaZiCalculator.DI_ZHI_WU_XING[zhi]]}">${zhi}</span><span class="timing-god ${kind}-ss" title="${zhiGod}">${shortShiShen(zhiGod)}</span></div>
+    </div>`;
+}
+
 function getUrlParams() {
     const p = new URLSearchParams(window.location.search);
     var mode = p.get('mode') || '';
@@ -716,15 +740,12 @@ function renderDaYun(daYunData, dayGan, currentYear) {
         const isCurrent = currentYear >= dy.startYear && currentYear <= dy.endYear;
         const isPast = currentYear > dy.endYear;
         const cls = isCurrent ? 'current' : (isPast ? 'past' : '');
-        const ss = window.BaZiCalculator.getShiShen(dayGan, dy.gan);
-
         html += `
         <div class="dayun-col ${cls}" data-index="${i}"
              onclick="showLiuNian(${i})">
             <div class="dayun-start-year">${dy.startYear}</div>
             <div class="dayun-age">${dy.displayAge}岁</div>
-            <div class="dayun-gz"><span style="color:${WX_COLORS[window.BaZiCalculator.WU_XING[dy.gan]]}">${dy.gan}</span><span style="color:${WX_COLORS[window.BaZiCalculator.DI_ZHI_WU_XING[dy.zhi]]}">${dy.zhi}</span></div>
-            <div class="dayun-ss">${ss}</div>
+            ${renderTimingGanZhi('dayun', dayGan, dy.gan, dy.zhi)}
         </div>`;
     });
     table.innerHTML = html;
@@ -779,8 +800,7 @@ function renderLiuNian(daYunItem, dayGan, currentYear) {
         <div class="liunian-col ${cls}" data-index="${i}"
              onclick="selectLiuNian(${i})">
             <div class="liunian-year-label">${ln.year}年</div>
-            <div class="liunian-gz"><span style="color:${WX_COLORS[window.BaZiCalculator.WU_XING[ln.gan]]}">${ln.gan}</span><span style="color:${WX_COLORS[window.BaZiCalculator.DI_ZHI_WU_XING[ln.zhi]]}">${ln.zhi}</span></div>
-            <div class="liunian-ss">${ln.shiShen}</div>
+            ${renderTimingGanZhi('liunian', dayGan, ln.gan, ln.zhi)}
         </div>`;
     });
     table.innerHTML = html;
@@ -840,7 +860,7 @@ function renderSiZhu(bazi, dayGan) {
         const cangEl = document.getElementById(`cang-${pos}`);
         const cangItems = pillar.cangGan.map(gan => {
             const wx = window.BaZiCalculator.WU_XING[gan];
-            return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
+            return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}${wx}</span>`;
         });
         cangEl.innerHTML = cangItems.join('');
 
@@ -951,7 +971,7 @@ function updateDayunColumn(daYunIndex) {
     const cangEl = document.getElementById('cang-dayun');
     const cangItems = cangGan.map(gan => {
         const wx = window.BaZiCalculator.WU_XING[gan];
-        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
+        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}${wx}</span>`;
     });
     cangEl.innerHTML = cangItems.join('');
 
@@ -1001,7 +1021,7 @@ function updateLiuNianColumn(daYunItem, liuNianIndex) {
     const cangEl = document.getElementById('cang-liunian');
     const cangItems = cangGan.map(gan => {
         const wx = window.BaZiCalculator.WU_XING[gan];
-        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
+        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}${wx}</span>`;
     });
     cangEl.innerHTML = cangItems.join('');
 
