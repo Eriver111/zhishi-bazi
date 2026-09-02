@@ -266,7 +266,7 @@ test('result page loads local PDF dependencies in order and exposes one accessib
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
     '/js/report-pdf.js?v=3',
-    'js/result.js?v=19',
+    'js/result.js?v=20',
   ];
   const indexes = scripts.map((src) => html.indexOf(`src="${src}`));
 

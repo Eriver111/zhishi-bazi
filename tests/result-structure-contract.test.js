@@ -25,7 +25,7 @@ test('bazi result retains the complete ordered long-report structure', () => {
   assert.match(html, /class="dayun-scroll-wrapper"/);
   assert.match(html, /class="liunian-scroll-wrapper"/);
   assert.match(html, /class="pp-col pp-liunian-col"/);
-  assert.match(html, /class="pp-row pp-shensha-row" hidden style="display:none!important"/);
+  assert.match(html, /class="pp-row pp-shensha-row"/);
   assert.match(html, /class="pp-col pp-dayun-col"/);
   assert.match(html, /js\/ai-chat-integration\.js/);
 });

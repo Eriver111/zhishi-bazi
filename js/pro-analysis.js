@@ -16,7 +16,6 @@
     var bazi=_bazi;
     var facts=null;
     try{facts=typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getProfessionalReportFacts?BaZiCalculator.getProfessionalReportFacts(bazi,typeof _params!=='undefined'&&_params?_params.gender:null):null}catch(e){facts=null}
-    hideShensha();
     try{var sec=document.getElementById('proSection');if(sec)sec.classList.add('drawer-open');var arrow=document.querySelector('#proSection .drawer-arrow');if(arrow)arrow.style.transform='rotate(90deg)'}catch(e){}
     var body=document.querySelector('#proSection .drawer-body');
     if(!body)return;
@@ -55,11 +54,6 @@
   function renderSummary(facts){
     var c=document.getElementById('reportSummary');if(!c)return;
     c.innerHTML='<p style="color:var(--tx);font-size:12px;line-height:1.75;margin:0">'+(facts&&facts.summary?facts.summary:'专业数据暂不可用')+'</p>';
-  }
-
-  function hideShensha(){
-    var rows=document.querySelectorAll('.pp-shensha-row,.pp-row');for(var i=0;i<rows.length;i++){var r=rows[i];if(r.textContent.indexOf('神煞')>=0&&r.querySelector('.pp-label'))r.style.display='none'}
-    var tags=document.querySelectorAll('.pp-shensha');for(var j=0;j<tags.length;j++)tags[j].style.display='none';
   }
 
   // ============ 四柱生克图（天干+地支分开） ============

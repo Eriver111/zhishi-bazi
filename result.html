@@ -2491,7 +2491,7 @@
             <div class="paipan-table">
                 <!-- 表头：流年/大运/四柱名称 -->
                 <div class="pp-row pp-header">
-                    <div class="pp-label"></div>
+                    <div class="pp-label">日期</div>
                     <div class="pp-col pp-liunian-col">流年</div>
                     <div class="pp-col pp-dayun-col">大运</div>
                     <div class="pp-col">年柱</div>
@@ -2502,7 +2502,7 @@
 
                 <!-- 十神（天干） -->
                 <div class="pp-row pp-ss-row">
-                    <div class="pp-label">十神</div>
+                    <div class="pp-label">主星</div>
                     <div class="pp-col pp-liunian-col" id="ss-liunian-gan"></div>
                     <div class="pp-col pp-dayun-col" id="ss-dayun-gan"></div>
                     <div class="pp-col" id="ss-year-gan"></div>
@@ -2555,8 +2555,46 @@
                     <div class="pp-col pp-fuxing" id="ss-hour-zhi"></div>
                 </div>
 
+                <!-- 专业细盘辅助信息 -->
+                <div class="pp-row pp-aux-row pp-xingyun-row">
+                    <div class="pp-label">星运</div>
+                    <div class="pp-col pp-liunian-col" id="xingyun-liunian"></div>
+                    <div class="pp-col pp-dayun-col" id="xingyun-dayun"></div>
+                    <div class="pp-col" id="xingyun-year"></div>
+                    <div class="pp-col" id="xingyun-month"></div>
+                    <div class="pp-col pp-day" id="xingyun-day"></div>
+                    <div class="pp-col" id="xingyun-hour"></div>
+                </div>
+                <div class="pp-row pp-aux-row pp-zizuo-row">
+                    <div class="pp-label">自坐</div>
+                    <div class="pp-col pp-liunian-col" id="zizuo-liunian"></div>
+                    <div class="pp-col pp-dayun-col" id="zizuo-dayun"></div>
+                    <div class="pp-col" id="zizuo-year"></div>
+                    <div class="pp-col" id="zizuo-month"></div>
+                    <div class="pp-col pp-day" id="zizuo-day"></div>
+                    <div class="pp-col" id="zizuo-hour"></div>
+                </div>
+                <div class="pp-row pp-aux-row pp-kongwang-row">
+                    <div class="pp-label">空亡</div>
+                    <div class="pp-col pp-liunian-col" id="kongwang-liunian"></div>
+                    <div class="pp-col pp-dayun-col" id="kongwang-dayun"></div>
+                    <div class="pp-col" id="kongwang-year"></div>
+                    <div class="pp-col" id="kongwang-month"></div>
+                    <div class="pp-col pp-day" id="kongwang-day"></div>
+                    <div class="pp-col" id="kongwang-hour"></div>
+                </div>
+                <div class="pp-row pp-aux-row pp-nayin-row">
+                    <div class="pp-label">纳音</div>
+                    <div class="pp-col pp-liunian-col" id="nayin-liunian"></div>
+                    <div class="pp-col pp-dayun-col" id="nayin-dayun"></div>
+                    <div class="pp-col" id="nayin-year"></div>
+                    <div class="pp-col" id="nayin-month"></div>
+                    <div class="pp-col pp-day" id="nayin-day"></div>
+                    <div class="pp-col" id="nayin-hour"></div>
+                </div>
+
                 <!-- 神煞 -->
-                <div class="pp-row pp-shensha-row" hidden style="display:none!important" aria-hidden="true">
+                <div class="pp-row pp-shensha-row">
                     <div class="pp-label">神煞</div>
                     <div class="pp-col pp-shensha pp-liunian-col" id="shensha-liunian"></div>
                     <div class="pp-col pp-shensha pp-dayun-col" id="shensha-dayun"></div>
@@ -2887,9 +2925,9 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=3"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=19"></script>
-    <script src="js/pro-analysis.js?v=6"></script>
-<script src="js/auth.js?v=16"></script>
+    <script src="js/result.js?v=20"></script>
+    <script src="js/pro-analysis.js?v=7"></script>
+<script src="js/auth.js?v=17"></script>
     <script src="js/payment.js?v=2"></script>
     <script src="js/paywall.js?v=10"></script>
 <script src="js/chat-persistence.js?v=2"></script>

@@ -10,7 +10,7 @@
   var isResult = path === '/result';
 
   var pageTitles = {
-    '/paipan': '八字排盘', '/result': '八字命盘', '/ziwei': '紫微斗数',
+    '/paipan': '八字排盘', '/result': '知时八字', '/ziwei': '紫微斗数',
     '/hepan': '合盘缘分', '/hepan-result': '合盘结果', '/fortune': '今日运势', '/liuyao': '六爻占卜',
     '/meihua': '梅花易数', '/face': 'AI 观面', '/palm': 'AI 观手',
     '/fengshui': '八宅堪舆', '/archives': '命盘档案', '/profile': '个人中心',
@@ -155,6 +155,48 @@
     document.body.appendChild(nav);
   }
 
+  function createResultModeTabs() {
+    if (!isResult) return;
+    var container = document.querySelector('.result-container');
+    if (!container || document.querySelector('.mobile-result-tabs')) return;
+
+    var tabs = document.createElement('nav');
+    tabs.className = 'mobile-result-tabs';
+    tabs.setAttribute('aria-label', '命盘内容');
+    var items = [
+      { key: 'info', label: '基本信息', target: '.result-header' },
+      { key: 'basic', label: '基本排盘', target: '#sizhuSection' },
+      { key: 'professional', label: '专业细盘', target: '#sizhuSection' },
+      { key: 'notes', label: '断事笔记', target: '#proSection' }
+    ];
+
+    function activate(item, button) {
+      document.body.classList.remove('mobile-result-view-info', 'mobile-result-view-basic', 'mobile-result-view-professional', 'mobile-result-view-notes');
+      document.body.classList.add('mobile-result-view-' + item.key);
+      tabs.querySelectorAll('button').forEach(function (tab) {
+        var active = tab === button;
+        tab.classList.toggle('is-active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      var target = document.querySelector(item.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    items.forEach(function (item) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = item.label;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', item.key === 'professional' ? 'true' : 'false');
+      if (item.key === 'professional') button.className = 'is-active';
+      button.addEventListener('click', function () { activate(item, button); });
+      tabs.appendChild(button);
+    });
+
+    document.body.classList.add('mobile-result-view-professional');
+    document.body.insertBefore(tabs, container);
+  }
+
   function syncResultSectionOrder(media) {
     if (!isResult) return;
     var container = document.querySelector('.result-container');
@@ -181,5 +223,6 @@
 
   createDrawer();
   createHeader();
+  createResultModeTabs();
   createBottomNav();
 })();

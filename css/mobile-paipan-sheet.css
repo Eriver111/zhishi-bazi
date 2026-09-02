@@ -83,6 +83,15 @@
   .mobile-pillar-choice-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
   .mobile-pillar-choice-grid button{aspect-ratio:1;border:1px solid transparent;border-radius:12px;background:#f7f7f6;color:#2d2924;font-family:inherit;font-size:23px;font-weight:700}
   .mobile-pillar-choice-grid button.selected{border-color:currentColor;box-shadow:0 0 0 2px #fff inset}
+  .mobile-pillar-picker.has-candidates .mobile-pillar-preview{padding-bottom:18px;border-bottom:1px solid #eeeae4}
+  .mobile-pillar-picker .pillar-candidates{display:grid!important;gap:12px;margin:18px 0 0!important;padding:0!important;border:0!important;background:transparent!important}
+  .mobile-pillar-picker .pillar-candidates-title{margin:0 0 3px;color:#2d2924;font-size:18px;font-weight:700;text-align:center;letter-spacing:2px}
+  .mobile-pillar-picker .pillar-candidate{width:100%;min-height:58px;padding:12px 14px;border:1px solid #e9e4da!important;border-radius:14px!important;background:#f8f7f4!important;color:#34302b!important;font-family:inherit;font-size:15px!important;font-weight:600;text-align:center!important}
+  .mobile-pillar-picker .pillar-midpoint-notice,.mobile-pillar-picker .pillar-no-match{margin:0;color:#9b9388;font-size:12px;line-height:1.7;text-align:center}
+  .mobile-pillar-picker .pillar-candidate-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mobile-pillar-picker .pillar-action{min-height:48px;border-radius:999px;font-family:inherit;font-size:14px}
+  .mobile-pillar-picker .pillar-action-secondary{border:1px solid #e3ded4;background:#fff;color:#4b4640}
+  .mobile-pillar-picker .pillar-action-primary{border:0;background:#050505;color:#d8bd80}
 
   .mobile-birth-sheet .birth-location-fields{margin:0!important;padding:0!important;border:0!important}
   .mobile-birth-sheet .birth-location-title{display:none!important}

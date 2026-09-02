@@ -257,10 +257,8 @@ function render(data) {
     // 四柱主盘（固定四柱）
     renderSiZhu(bazi, dayGan);
 
-    _nativeShenSha = data.shenSha;
-
-
-
+    _nativeShenSha = Array.isArray(data.shenSha) ? data.shenSha : [];
+    renderShenSha();
 
     // 滴天髓日主解析
     renderRiZhuJieXi(bazi.day.gan);
@@ -849,7 +847,67 @@ function renderSiZhu(bazi, dayGan) {
         fuXingEl.innerHTML = pillar.cangGan
             .map(gan => `<span class="fuxing-entry">${window.BaZiCalculator.getShiShen(dayGan, gan)}</span>`)
             .join('');
+
+        renderProfessionalAuxColumn(pos, pillar, dayGan);
     });
+}
+
+function getPillarIndexes(pillar) {
+    return {
+        gan: pillar.ganIndex !== undefined
+            ? pillar.ganIndex
+            : window.BaZiCalculator.TIAN_GAN.indexOf(pillar.gan),
+        zhi: pillar.zhiIndex !== undefined
+            ? pillar.zhiIndex
+            : window.BaZiCalculator.DI_ZHI.indexOf(pillar.zhi)
+    };
+}
+
+// 每柱旬空：按该柱所在六十甲子旬计算，不把四柱误套成同一组空亡。
+function getPillarKongWang(pillar) {
+    const idx = getPillarIndexes(pillar);
+    let cycle = -1;
+    for (let i = 0; i < 60; i++) {
+        if (i % 10 === idx.gan && i % 12 === idx.zhi) { cycle = i; break; }
+    }
+    if (cycle < 0) return '—';
+    const xunStart = Math.floor(cycle / 10) * 10;
+    const zhi = window.BaZiCalculator.DI_ZHI;
+    return zhi[(xunStart + 10) % 12] + zhi[(xunStart + 11) % 12];
+}
+
+function getPillarNaYin(pillar) {
+    if (pillar.nayin) return pillar.nayin;
+    const idx = getPillarIndexes(pillar);
+    let cycle = -1;
+    for (let i = 0; i < 60; i++) {
+        if (i % 10 === idx.gan && i % 12 === idx.zhi) { cycle = i; break; }
+    }
+    if (cycle < 0) return '—';
+    const names = [
+        '海中金','炉中火','大林木','路旁土','剑锋金','山头火','涧下水','城头土','白蜡金','杨柳木',
+        '泉中水','屋上土','霹雳火','松柏木','长流水','沙中金','山下火','平地木','壁上土','金箔金',
+        '覆灯火','天河水','大驿土','钗钏金','桑柘木','大溪水','沙中土','天上火','石榴木','大海水'
+    ];
+    return names[Math.floor(cycle / 2)] || '—';
+}
+
+function getChangShengStage(gan, zhi) {
+    const map = window.BaZiCalculator.getChangSheng(gan);
+    return map && map[zhi] ? map[zhi].stage : '—';
+}
+
+function setProfessionalAuxValue(kind, pos, value) {
+    const el = document.getElementById(`${kind}-${pos}`);
+    if (el) el.textContent = value || '—';
+}
+
+function renderProfessionalAuxColumn(pos, pillar, dayGan) {
+    if (!pillar) return;
+    setProfessionalAuxValue('xingyun', pos, getChangShengStage(dayGan, pillar.zhi));
+    setProfessionalAuxValue('zizuo', pos, getChangShengStage(pillar.gan, pillar.zhi));
+    setProfessionalAuxValue('kongwang', pos, getPillarKongWang(pillar));
+    setProfessionalAuxValue('nayin', pos, getPillarNaYin(pillar));
 }
 
 // ==================== 表格大运列更新 ====================
@@ -895,6 +953,8 @@ function updateDayunColumn(daYunIndex) {
         return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}</span>`;
     });
     cangEl.innerHTML = cangItems.join('');
+
+    renderProfessionalAuxColumn('dayun', dy, _dayGan);
 
     // 神煞 - 计算大运柱的神煞
     updateColumnShenSha('dayun', dy);
@@ -944,6 +1004,8 @@ function updateLiuNianColumn(daYunItem, liuNianIndex) {
     });
     cangEl.innerHTML = cangItems.join('');
 
+    renderProfessionalAuxColumn('liunian', ln, _dayGan);
+
     // 神煞 - 计算流年柱的神煞
     updateColumnShenSha('liunian', ln);
 }
@@ -961,6 +1023,9 @@ function clearLiuNianColumn() {
     document.getElementById('ss-liunian-zhi').innerHTML = '<span style="color:var(--text-dim)">—</span>';
     document.getElementById('cang-liunian').innerHTML = '<span style="color:var(--text-dim)">—</span>';
     document.getElementById('shensha-liunian').innerHTML = '<span style="color:var(--text-dim)">—</span>';
+    ['xingyun', 'zizuo', 'kongwang', 'nayin'].forEach(kind => {
+        setProfessionalAuxValue(kind, 'liunian', '—');
+    });
 
     // 清空流年神煞并刷新
     refreshShenShaDetail();

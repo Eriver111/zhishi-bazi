@@ -8,8 +8,8 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('mobile paipan loads the dedicated bottom-sheet interaction after the base flow', () => {
   const html = read('paipan.html');
-  assert.match(html, /css\/mobile-paipan-sheet\.css\?v=4/);
-  assert.match(html, /js\/input-flow\.js\?v=7[\s\S]*js\/mobile-paipan-sheet\.js\?v=4/);
+  assert.match(html, /css\/mobile-paipan-sheet\.css\?v=6/);
+  assert.match(html, /js\/input-flow\.js\?v=7[\s\S]*js\/mobile-paipan-sheet\.js\?v=6/);
 });
 
 test('mobile paipan summarizes the main form and moves editors into an accessible sheet', () => {
@@ -52,6 +52,20 @@ test('calendar and pillar drawers synchronize dedicated mobile controls with the
   assert.match(source, /function buildPillarPicker\(activeId\)/);
   assert.match(source, /var stems=\['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'\]/);
   assert.match(source, /target\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
+  assert.match(source, /rail\._userScrolling/);
+  assert.match(source, /function refreshDependentDay\(target\)/);
+  assert.doesNotMatch(source, /maybeRebuildCalendar/);
+});
+
+test('completed pillars automatically replace the choice grid with matching birth-time candidates', () => {
+  const source = read('js/mobile-paipan-sheet.js');
+  const css = read('css/mobile-paipan-sheet.css');
+  assert.match(source, /function allPillarFieldsComplete\(\)/);
+  assert.match(source, /function requestPillarCandidates\(\)/);
+  assert.match(source, /form\.requestSubmit\(\)/);
+  assert.match(source, /wrap\.classList\.toggle\('has-candidates',hasCandidates\)/);
+  assert.match(source, /wrap\.appendChild\(candidates\)/);
+  assert.match(css, /\.mobile-pillar-picker\.has-candidates/);
 });
 
 test('direct-pillar matching reopens the sheet so candidate dates remain visible', () => {

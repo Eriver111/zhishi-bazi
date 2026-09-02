@@ -11,7 +11,7 @@
   var archiveRow=form.querySelector('.archive-name-row');
   var locationFields=form.querySelector('.birth-location-fields');
   var advanced=form.querySelector('.birth-advanced');
-  var opener=null,mounted=null,wheelTimers={},pickerSyncing=false;
+  var opener=null,mounted=null,wheelTimers={},autoMatching=false;
   var pillarPairs=[['pYearGan','pYearZhi','年柱'],['pMonthGan','pMonthZhi','月柱'],['pDayGan','pDayZhi','日柱'],['pHourGan','pHourZhi','时柱']];
   var stems=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
   var branches=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -26,6 +26,10 @@
   if(radioGroup)radioGroup.querySelectorAll('.radio span').forEach(function(span){
     span.textContent=span.closest('.radio').querySelector('input').value==='male'?'男':'女';
   });
+  if(radioGroup&&!radioGroup.querySelector('input:checked')){
+    var defaultMale=radioGroup.querySelector('input[value="male"]');
+    if(defaultMale)defaultMale.checked=true;
+  }
 
   var choiceLine=document.createElement('div');
   choiceLine.className='mobile-paipan-choice-line';
@@ -89,36 +93,55 @@
   }
   function selectOptions(target){
     if(!target)return[];
-    return Array.prototype.map.call(target.options||[],function(option){return{value:option.value,label:option.textContent.trim()};}).filter(function(option){return option.value!=='';});
+    return Array.prototype.map.call(target.options||[],function(option,index){return{value:option.value,label:option.textContent.trim(),sourceIndex:index};}).filter(function(option){return option.value!=='';});
   }
-  function maybeRebuildCalendar(target){
+  function refreshDependentDay(target){
     if(!target||!/^(s|l)(Year|Month)$/.test(target.id))return;
-    setTimeout(function(){if(!sheet.hidden&&sheet.dataset.kind==='time'&&activeMode()!=='pillars')buildCalendarPicker(activeMode());},0);
+    var dayId=target.id.charAt(0)==='s'?'sDay':'lDay';
+    defaultValue(dayId,1);
+    var oldColumn=slot.querySelector('.mobile-wheel-column[data-target-id="'+dayId+'"]');
+    if(oldColumn)oldColumn.replaceWith(buildWheel(document.getElementById(dayId),'日'));
   }
-  function highlightWheel(rail,value,scroll){
+  function highlightWheel(rail,optionIndex,scroll){
     var selected=null;
     rail.querySelectorAll('.mobile-wheel-option').forEach(function(button){
-      var on=button.dataset.value===value;button.classList.toggle('selected',on);button.setAttribute('aria-selected',on?'true':'false');if(on)selected=button;
+      var on=Number(button.dataset.optionIndex)===Number(optionIndex);button.classList.toggle('selected',on);button.setAttribute('aria-selected',on?'true':'false');if(on)selected=button;
     });
-    if(scroll&&selected){pickerSyncing=true;rail.scrollTo({top:selected.offsetTop-48,behavior:'smooth'});setTimeout(function(){pickerSyncing=false;},260);}
+    if(scroll&&selected){
+      rail._programmatic=true;rail.scrollTop=selected.offsetTop-48;
+      requestAnimationFrame(function(){rail._programmatic=false;});
+    }
   }
   function buildWheel(target,label,customOptions){
-    var column=document.createElement('div');column.className='mobile-wheel-column';
+    var column=document.createElement('div');column.className='mobile-wheel-column';column.dataset.targetId=target&&target.id||'';
     var title=document.createElement('div');title.className='mobile-wheel-label';title.textContent=label;
     var rail=document.createElement('div');rail.className='mobile-wheel-rail';rail.setAttribute('role','listbox');rail.setAttribute('aria-label',label);
     var options=customOptions||selectOptions(target);
-    options.forEach(function(option){
-      var button=document.createElement('button');button.type='button';button.className='mobile-wheel-option';button.dataset.value=String(option.value);button.textContent=option.label;button.setAttribute('role','option');
-      button.addEventListener('click',function(){dispatchValue(target,button.dataset.value);highlightWheel(rail,button.dataset.value,true);refresh();maybeRebuildCalendar(target);});rail.appendChild(button);
+    options.forEach(function(option,index){
+      var button=document.createElement('button');button.type='button';button.className='mobile-wheel-option';button.dataset.value=String(option.value);button.dataset.optionIndex=String(index);button.textContent=option.label;button.setAttribute('role','option');
+      button.addEventListener('click',function(){
+        if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
+        if(target){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
+        highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
+      });rail.appendChild(button);
     });
+    ['pointerdown','touchstart','wheel'].forEach(function(type){rail.addEventListener(type,function(){rail._userScrolling=true;},{passive:true});});
     rail.addEventListener('scroll',function(){
-      if(pickerSyncing)return;clearTimeout(wheelTimers[label]);wheelTimers[label]=setTimeout(function(){
+      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);wheelTimers[target&&target.id||label]=setTimeout(function(){
         var index=Math.max(0,Math.min(options.length-1,Math.round(rail.scrollTop/48)));var option=options[index];
-        if(option){dispatchValue(target,option.value);highlightWheel(rail,String(option.value),false);refresh();maybeRebuildCalendar(target);}
+        rail._userScrolling=false;
+        if(option){
+          if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
+          if(target){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
+          highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
+        }
       },90);
     },{passive:true});
     column.appendChild(title);column.appendChild(rail);
-    requestAnimationFrame(function(){highlightWheel(rail,String(target&&target.value||options[0]&&options[0].value||''),true);});
+    requestAnimationFrame(function(){
+      var selectedIndex=options.findIndex(function(option){return option.sourceIndex!==undefined?target&&option.sourceIndex===target.selectedIndex:String(option.value)===String(target&&target.value||'');});
+      highlightWheel(rail,selectedIndex>=0?selectedIndex:0,true);
+    });
     return column;
   }
   function minuteOptions(){var result=[];for(var i=0;i<60;i++)result.push({value:String(i),label:String(i).padStart(2,'0')});return result;}
@@ -149,26 +172,39 @@
     slot.appendChild(wrap);
   }
   function updatePillarColors(){document.querySelectorAll('#pillarsPanel select').forEach(function(select){select.setAttribute('data-five-element',elements[select.value]||'');});}
+  function allPillarFieldsComplete(){return pillarPairs.every(function(pair){return document.getElementById(pair[0]).value&&document.getElementById(pair[1]).value;});}
+  function requestPillarCandidates(){
+    if(autoMatching||!allPillarFieldsComplete())return;
+    autoMatching=true;
+    setTimeout(function(){
+      if(typeof form.requestSubmit==='function')form.requestSubmit();
+      else form.querySelector('.submit').click();
+      setTimeout(function(){autoMatching=false;},250);
+    },80);
+  }
   function buildPillarPicker(activeId){
     restoreMounted();slot.innerHTML='';
-    var wrap=document.createElement('div');wrap.className='mobile-pillar-picker';var preview=document.createElement('div');preview.className='mobile-pillar-preview';
+    var candidates=document.getElementById('pillarCandidates');var hasCandidates=!!(candidates&&!candidates.hidden);
+    var wrap=document.createElement('div');wrap.className='mobile-pillar-picker';wrap.classList.toggle('has-candidates',hasCandidates);var preview=document.createElement('div');preview.className='mobile-pillar-preview';
     pillarPairs.forEach(function(pair){
       var column=document.createElement('div');column.className='mobile-pillar-preview-column';var label=document.createElement('strong');label.textContent=pair[2];column.appendChild(label);
       pair.slice(0,2).forEach(function(id){
         var source=document.getElementById(id);var button=document.createElement('button');button.type='button';button.className='mobile-pillar-orb';button.dataset.target=id;button.dataset.fiveElement=elements[source.value]||'';button.textContent=source.value||'—';button.classList.toggle('active',id===activeId);button.addEventListener('click',function(){buildPillarPicker(id);});column.appendChild(button);
       });preview.appendChild(column);
     });wrap.appendChild(preview);
-    var tools=document.createElement('div');tools.className='mobile-pillar-tools';tools.innerHTML='<span>查找范围：</span><button type="button" class="mobile-pillar-range">1801~2099年&nbsp; ⇄</button><button type="button" class="mobile-pillar-clear">⌫ 清除</button>';
-    tools.querySelector('.mobile-pillar-clear').addEventListener('click',function(){pillarPairs.forEach(function(pair){dispatchValue(document.getElementById(pair[0]),'');dispatchValue(document.getElementById(pair[1]),'');});buildPillarPicker('pYearGan');refresh();});wrap.appendChild(tools);
-    var targetId=activeId||'pYearGan';var isStem=/Gan$/.test(targetId);var choices=document.createElement('div');choices.className='mobile-pillar-choice-grid '+(isStem?'stems':'branches');
-    (isStem?stems:branches).forEach(function(value){
-      var button=document.createElement('button');button.type='button';button.textContent=value;button.dataset.fiveElement=elements[value]||'';button.classList.toggle('selected',document.getElementById(targetId).value===value);
-      button.addEventListener('click',function(){
-        dispatchValue(document.getElementById(targetId),value);var flat=[];pillarPairs.forEach(function(pair){flat=flat.concat(pair.slice(0,2));});var next=flat[Math.min(flat.length-1,flat.indexOf(targetId)+1)];buildPillarPicker(next);refresh();
-      });choices.appendChild(button);
-    });wrap.appendChild(choices);slot.appendChild(wrap);
-    var candidates=document.getElementById('pillarCandidates');
-    if(candidates&&!candidates.hidden){
+    if(!hasCandidates){
+      var tools=document.createElement('div');tools.className='mobile-pillar-tools';tools.innerHTML='<span>查找范围：</span><button type="button" class="mobile-pillar-range">1801~2099年&nbsp; ⇄</button><button type="button" class="mobile-pillar-clear">⌫ 清除</button>';
+      tools.querySelector('.mobile-pillar-clear').addEventListener('click',function(){pillarPairs.forEach(function(pair){dispatchValue(document.getElementById(pair[0]),'');dispatchValue(document.getElementById(pair[1]),'');});buildPillarPicker('pYearGan');refresh();});wrap.appendChild(tools);
+      var targetId=activeId||'pYearGan';var isStem=/Gan$/.test(targetId);var choices=document.createElement('div');choices.className='mobile-pillar-choice-grid '+(isStem?'stems':'branches');
+      (isStem?stems:branches).forEach(function(value){
+        var button=document.createElement('button');button.type='button';button.textContent=value;button.dataset.fiveElement=elements[value]||'';button.classList.toggle('selected',document.getElementById(targetId).value===value);
+        button.addEventListener('click',function(){
+          dispatchValue(document.getElementById(targetId),value);var flat=[];pillarPairs.forEach(function(pair){flat=flat.concat(pair.slice(0,2));});var next=flat[Math.min(flat.length-1,flat.indexOf(targetId)+1)];buildPillarPicker(next);refresh();requestPillarCandidates();
+        });choices.appendChild(button);
+      });wrap.appendChild(choices);
+    }
+    slot.appendChild(wrap);
+    if(hasCandidates){
       var marker=document.createComment('mobile-birth-sheet-anchor');candidates.parentNode.insertBefore(marker,candidates);wrap.appendChild(candidates);mounted={node:candidates,marker:marker};
     }
     updatePillarColors();
@@ -205,5 +241,6 @@
     if(activeMode()!=='solar')return;var now=new Date();dispatchValue(document.getElementById('sYear'),now.getFullYear());dispatchValue(document.getElementById('sMonth'),now.getMonth()+1);dispatchValue(document.getElementById('sDay'),now.getDate());dispatchValue(document.getElementById('sHour'),now.getHours());dispatchValue(document.getElementById('sMinute'),now.getMinutes());buildCalendarPicker('solar');refresh();
   });
   sheet.querySelector('.mobile-birth-sheet-confirm').addEventListener('click',close);overlay.addEventListener('click',close);document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!sheet.hidden)close();});document.addEventListener('change',refresh);document.addEventListener('input',refresh);
+  slot.addEventListener('click',function(event){if(event.target.closest('.pillar-action-secondary'))setTimeout(function(){buildPillarPicker('pYearGan');},0);});
   window.ZhishiBirthSheet={open:open,close:close,refresh:refresh};setTimeout(refresh,80);
 })();
