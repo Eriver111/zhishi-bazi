@@ -1396,7 +1396,8 @@
     border: 1px solid #d6d2ca !important;
     border-radius: 3px !important;
     box-shadow:
-      0 3px 12px rgba(45, 38, 31, .09),
+      0 1px 3px rgba(45, 38, 31, .16),
+      0 6px 18px rgba(45, 38, 31, .20),
       inset 0 0 0 1px rgba(255, 255, 255, .72) !important;
   }
 

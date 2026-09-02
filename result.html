@@ -2789,28 +2789,10 @@
     <script src="js/deep-report.js?v=23"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
- * 知时 — 动态效果库 v2.0
- * 排盘逐柱浮现 + 五行环形图
+ * 知时 — 五行环形图
  */
 (function() {
   'use strict';
-
-  // ===== 排盘逐柱浮现 =====
-  // 在 result.html 的 bazi 表格渲染后调用
-  window.revealPillars = function(selector, delay) {
-    delay = delay || 250;
-    var cols = document.querySelectorAll(selector || '.pp-col');
-    if (!cols.length) return;
-    cols.forEach(function(col, i) {
-      col.style.opacity = '0';
-      col.style.transform = 'translateY(20px)';
-      col.style.transition = 'all 0.6s cubic-bezier(0.22, 0.61, 0.36, 1)';
-      setTimeout(function() {
-        col.style.opacity = '1';
-        col.style.transform = 'translateY(0)';
-      }, i * delay);
-    });
-  };
 
   // ===== 五行环形图 =====
   // 在 result.html 的五行分析区域调用
@@ -2942,7 +2924,7 @@
     <script src="js/deep-report-anchor.js?v=2"></script>
     <script src="js/result.js?v=23"></script>
     <script src="js/pro-analysis.js?v=7"></script>
-    <script src="js/auth.js?v=25"></script>
+    <script src="js/auth.js?v=26"></script>
     <script src="js/payment.js?v=2"></script>
     <script src="js/paywall.js?v=11"></script>
 <script src="js/chat-persistence.js?v=2"></script>
@@ -2967,7 +2949,7 @@
         }
     }
     </script>
-<script>setTimeout(function(){if(window.revealPillars)revealPillars()},800);if(window._wuxingData&&window.drawWuxingRing){var c=document.getElementById("wuxingCanvas");if(!c){c=document.createElement("canvas");c.id="wuxingCanvas";c.style.cssText="display:block;margin:20px auto";var s=document.querySelector(".section-wuxing");if(s)s.appendChild(c)}drawWuxingRing("wuxingCanvas",window._wuxingData)}</script>
+<script>if(window._wuxingData&&window.drawWuxingRing){var c=document.getElementById("wuxingCanvas");if(!c){c=document.createElement("canvas");c.id="wuxingCanvas";c.style.cssText="display:block;margin:20px auto";var s=document.querySelector(".section-wuxing");if(s)s.appendChild(c)}drawWuxingRing("wuxingCanvas",window._wuxingData)}</script>
 
 </body>
 </html><!-- deploy: nav_1781955491 -->
