@@ -1393,7 +1393,12 @@
 
   body.mobile-page-result .section-sizhu .pp-row {
     grid-template-columns: 43px repeat(6, minmax(0, 1fr));
-    border-bottom: 1px solid #ececec !important;
+    border-bottom: 0 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-zhi-row,
+  body.mobile-page-result .section-sizhu .pp-fuxing-row {
+    border-bottom: 1px solid #e7e7e7 !important;
   }
 
   body.mobile-page-result .section-sizhu .pp-label,
@@ -1560,11 +1565,11 @@
   }
 
   body.mobile-page-result .dayun-col {
-    flex-basis: 66px;
+    flex-basis: 40px;
   }
 
   body.mobile-page-result .liunian-col {
-    flex-basis: 60px;
+    flex-basis: 40px;
   }
 
   body.mobile-page-result .dayun-start-year,

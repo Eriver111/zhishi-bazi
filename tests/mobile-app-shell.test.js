@@ -11,7 +11,7 @@ test('home and paipan share one versioned mobile shell without touching desktop 
   const paipan = read('paipan.html');
 
   for (const source of [home, paipan]) {
-    assert.match(source, /css\/mobile-app-shell\.css\?v=11/);
+    assert.match(source, /css\/mobile-app-shell\.css\?v=12/);
     assert.match(source, /js\/mobile-app-shell\.js\?v=7/);
   }
 
@@ -30,9 +30,9 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /window\.history\.back\(\)/);
   assert.match(auth, /'\/result', '\/ziwei', '\/hepan', '\/hepan-result', '\/fortune'/);
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
-  assert.match(auth, /mobile-app-shell\.css\?v=24/);
+  assert.match(auth, /mobile-app-shell\.css\?v=25/);
   assert.match(auth, /mobile-app-shell\.js\?v=7/);
-  assert.match(read('result.html'), /js\/auth\.js\?v=21/);
+  assert.match(read('result.html'), /js\/auth\.js\?v=22/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);
@@ -40,6 +40,10 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-dayun-col\s*\{[^}]*border-right:\s*1px solid #d7d7d7 !important/);
   assert.match(css, /body\.mobile-page-result \.timing-gz-line\s*\{[^}]*min-height:\s*22px/);
   assert.match(css, /body\.mobile-page-result \.timing-god\s*\{[^}]*font-size:\s*10px !important/);
+  assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-row\s*\{[^}]*border-bottom:\s*0 !important/);
+  assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-zhi-row,[\s\S]*?\.pp-fuxing-row\s*\{[^}]*border-bottom:\s*1px solid #e7e7e7 !important/);
+  assert.match(css, /body\.mobile-page-result \.dayun-col\s*\{[^}]*flex-basis:\s*40px/);
+  assert.match(css, /body\.mobile-page-result \.liunian-col\s*\{[^}]*flex-basis:\s*40px/);
   assert.match(css, /body\.mobile-page-result \.section-dayun > \.section-header,[\s\S]*?\.dayun-col\s*\{[^}]*min-height:\s*104px/);
   assert.match(css, /body\.mobile-page-result \.section-liunian > \.section-header,[\s\S]*?\.liunian-col\s*\{[^}]*min-height:\s*94px/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.tian-gan,[\s\S]*font-family:\s*"PingFang SC"/);
