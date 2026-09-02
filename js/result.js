@@ -14,8 +14,8 @@ const SHI_CHEN_TIMES = [
 const POS_NAMES = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
 
 const WX_COLORS = {
-    '金':'#FFD700','木':'#4CAF50','水':'#2196F3',
-    '火':'#F44336','土':'#CD853F'
+    '金':'#B86A00','木':'#16823B','水':'#1769B0',
+    '火':'#D12D24','土':'#70511D'
 };
 
 const SHI_SHEN_SHORT = {

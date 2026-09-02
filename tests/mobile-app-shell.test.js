@@ -11,7 +11,7 @@ test('home and paipan share one versioned mobile shell without touching desktop 
   const paipan = read('paipan.html');
 
   for (const source of [home, paipan]) {
-    assert.match(source, /css\/mobile-app-shell\.css\?v=12/);
+    assert.match(source, /css\/mobile-app-shell\.css\?v=13/);
     assert.match(source, /js\/mobile-app-shell\.js\?v=7/);
   }
 
@@ -30,9 +30,9 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /window\.history\.back\(\)/);
   assert.match(auth, /'\/result', '\/ziwei', '\/hepan', '\/hepan-result', '\/fortune'/);
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
-  assert.match(auth, /mobile-app-shell\.css\?v=25/);
+  assert.match(auth, /mobile-app-shell\.css\?v=26/);
   assert.match(auth, /mobile-app-shell\.js\?v=7/);
-  assert.match(read('result.html'), /js\/auth\.js\?v=22/);
+  assert.match(read('result.html'), /js\/auth\.js\?v=23/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);
@@ -48,6 +48,9 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(css, /body\.mobile-page-result \.section-liunian > \.section-header,[\s\S]*?\.liunian-col\s*\{[^}]*min-height:\s*94px/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.tian-gan,[\s\S]*font-family:\s*"PingFang SC"/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.tian-gan,[\s\S]*font-size:\s*27px !important/);
+  for (const color of ['#B86A00', '#16823B', '#1769B0', '#D12D24', '#70511D']) {
+    assert.match(css, new RegExp(color));
+  }
   assert.match(read('result.html'), /class="pp-row pp-fuxing-row"[\s\S]*<div class="pp-label">副星<\/div>/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-fuxing[\s\S]*min-height:\s*68px/);
   assert.match(js, /syncResultSectionOrder/);

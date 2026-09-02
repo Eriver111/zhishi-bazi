@@ -496,7 +496,7 @@ var Auth = (function () {
   if (!document.querySelector('link[href*="mobile-app-shell.css"]')) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = '/css/mobile-app-shell.css?v=25';
+    style.href = '/css/mobile-app-shell.css?v=26';
     document.head.appendChild(style);
   }
   if (!window.__ZHISHI_MOBILE_APP_SHELL__ && !document.querySelector('script[src*="mobile-app-shell.js"]')) {

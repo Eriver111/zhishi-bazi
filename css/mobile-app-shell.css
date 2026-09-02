@@ -906,12 +906,22 @@
     font-weight: 700;
   }
 
-  /* 恢复五行辨色，并使用比原始红黄蓝更沉稳的东方色。 */
-  body.mobile-page-result .section-sizhu [style*="rgb(255, 215, 0)"] { color: #857143 !important; }
-  body.mobile-page-result .section-sizhu [style*="rgb(76, 175, 80)"] { color: #398355 !important; }
-  body.mobile-page-result .section-sizhu [style*="rgb(33, 150, 243)"] { color: #356b8d !important; }
-  body.mobile-page-result .section-sizhu [style*="rgb(244, 67, 54)"] { color: #b54237 !important; }
-  body.mobile-page-result .section-sizhu [style*="rgb(205, 133, 63)"] { color: #976933 !important; }
+  /* 五行颜色必须压过浅色主题的黑色通配，手机白底上仍能一眼分辨。 */
+  body.mobile-page-result .section-sizhu [style*="rgb(184, 106, 0)"],
+  body.mobile-page-result .section-sizhu [style*="#B86A00"],
+  body.mobile-page-result .section-sizhu [style*="#b86a00"] { color: #B86A00 !important; }
+  body.mobile-page-result .section-sizhu [style*="rgb(22, 130, 59)"],
+  body.mobile-page-result .section-sizhu [style*="#16823B"],
+  body.mobile-page-result .section-sizhu [style*="#16823b"] { color: #16823B !important; }
+  body.mobile-page-result .section-sizhu [style*="rgb(23, 105, 176)"],
+  body.mobile-page-result .section-sizhu [style*="#1769B0"],
+  body.mobile-page-result .section-sizhu [style*="#1769b0"] { color: #1769B0 !important; }
+  body.mobile-page-result .section-sizhu [style*="rgb(209, 45, 36)"],
+  body.mobile-page-result .section-sizhu [style*="#D12D24"],
+  body.mobile-page-result .section-sizhu [style*="#d12d24"] { color: #D12D24 !important; }
+  body.mobile-page-result .section-sizhu [style*="rgb(112, 81, 29)"],
+  body.mobile-page-result .section-sizhu [style*="#70511D"],
+  body.mobile-page-result .section-sizhu [style*="#70511d"] { color: #70511D !important; }
 
   body.mobile-page-result .pp-aux-row .pp-col {
     min-height: 42px;
