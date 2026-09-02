@@ -1517,6 +1517,105 @@
     background: #f7f7f7 !important;
   }
 
+  /* 专业细盘采用连续谱面，不再让每个字看起来都装在独立方格里。 */
+  body.mobile-page-result .section-sizhu .pp-label,
+  body.mobile-page-result .section-sizhu .pp-col {
+    border-right: 0 !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-label {
+    border-right: 1px solid #ececec !important;
+  }
+
+  body.mobile-page-result .section-sizhu .pp-dayun-col,
+  body.mobile-page-result .section-sizhu .pp-liunian-col {
+    box-shadow: inset -1px 0 #f1f1f1 !important;
+  }
+
+  body.mobile-page-result .section-dayun > .section-header,
+  body.mobile-page-result .section-liunian > .section-header,
+  body.mobile-page-result .dayun-col,
+  body.mobile-page-result .liunian-col {
+    min-height: 150px;
+  }
+
+  body.mobile-page-result .dayun-col,
+  body.mobile-page-result .liunian-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    margin: 0 !important;
+    padding: 8px 0 9px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: inset -1px 0 #f0f0f0 !important;
+  }
+
+  body.mobile-page-result .dayun-col {
+    flex-basis: 66px;
+  }
+
+  body.mobile-page-result .liunian-col {
+    flex-basis: 60px;
+  }
+
+  body.mobile-page-result .dayun-start-year,
+  body.mobile-page-result .dayun-age,
+  body.mobile-page-result .liunian-year-label {
+    min-height: 17px;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #6f6a65 !important;
+    border: 0 !important;
+    font-size: 10px !important;
+    font-weight: 400 !important;
+    line-height: 17px;
+  }
+
+  body.mobile-page-result .dayun-gz,
+  body.mobile-page-result .liunian-gz {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    min-height: 52px;
+    margin: 1px 0 0 !important;
+    padding: 3px 0 !important;
+    border: 0 !important;
+    font-size: 20px !important;
+    font-weight: 500 !important;
+    line-height: 1.08 !important;
+    letter-spacing: 0 !important;
+  }
+
+  body.mobile-page-result .liunian-gz {
+    font-size: 18px !important;
+  }
+
+  body.mobile-page-result .dayun-gz span,
+  body.mobile-page-result .liunian-gz span {
+    display: block;
+  }
+
+  body.mobile-page-result .dayun-ss,
+  body.mobile-page-result .liunian-ss {
+    min-height: 17px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    font-size: 10px !important;
+    line-height: 17px;
+  }
+
+  body.mobile-page-result .dayun-col.current,
+  body.mobile-page-result .dayun-col.active,
+  body.mobile-page-result .liunian-col.current-year,
+  body.mobile-page-result .liunian-col.active-ln {
+    background: #f4f4f4 !important;
+    box-shadow: inset -1px 0 #e9e9e9 !important;
+  }
+
   /* 两类解读都作为整页内容呈现，不再像一组悬浮卡片。 */
   body.mobile-page-result.mobile-result-view-professional #proSection,
   body.mobile-page-result.mobile-result-view-reading .section-drawer {

@@ -108,9 +108,14 @@
       var on=Number(button.dataset.optionIndex)===Number(optionIndex);button.classList.toggle('selected',on);button.setAttribute('aria-selected',on?'true':'false');if(on)selected=button;
     });
     if(scroll&&selected){
-      rail._programmatic=true;rail.scrollTop=selected.offsetTop-48;
+      rail._programmatic=true;rail.scrollTop=(selected.offsetTop-rail.offsetTop)-((rail.clientHeight-selected.offsetHeight)/2);
       requestAnimationFrame(function(){rail._programmatic=false;});
     }
+  }
+  function closestWheelIndex(rail){
+    var railRect=rail.getBoundingClientRect();var center=railRect.top+(railRect.height/2);var buttons=rail.querySelectorAll('.mobile-wheel-option');var closest=0;var distance=Infinity;
+    buttons.forEach(function(button,index){var rect=button.getBoundingClientRect();var itemCenter=rect.top+(rect.height/2);var next=Math.abs(itemCenter-center);if(next<distance){distance=next;closest=index;}});
+    return closest;
   }
   function buildWheel(target,label,customOptions){
     var column=document.createElement('div');column.className='mobile-wheel-column';column.dataset.targetId=target&&target.id||'';
@@ -125,18 +130,21 @@
         highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
       });rail.appendChild(button);
     });
+    function commitWheel(){
+      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);
+      var index=Math.max(0,Math.min(options.length-1,closestWheelIndex(rail)));var option=options[index];rail._userScrolling=false;
+      if(option){
+        if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
+        if(target){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
+        highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
+      }
+    }
+    function scheduleWheelCommit(){
+      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);wheelTimers[target&&target.id||label]=setTimeout(commitWheel,180);
+    }
     ['pointerdown','touchstart','wheel'].forEach(function(type){rail.addEventListener(type,function(){rail._userScrolling=true;},{passive:true});});
-    rail.addEventListener('scroll',function(){
-      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);wheelTimers[target&&target.id||label]=setTimeout(function(){
-        var index=Math.max(0,Math.min(options.length-1,Math.round(rail.scrollTop/48)));var option=options[index];
-        rail._userScrolling=false;
-        if(option){
-          if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
-          if(target){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
-          highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
-        }
-      },90);
-    },{passive:true});
+    rail.addEventListener('scroll',scheduleWheelCommit,{passive:true});
+    if('onscrollend' in rail)rail.addEventListener('scrollend',commitWheel,{passive:true});
     column.appendChild(title);column.appendChild(rail);
     requestAnimationFrame(function(){
       var selectedIndex=options.findIndex(function(option){return option.sourceIndex!==undefined?target&&option.sourceIndex===target.selectedIndex:String(option.value)===String(target&&target.value||'');});

@@ -721,6 +721,7 @@ function renderDaYun(daYunData, dayGan, currentYear) {
         html += `
         <div class="dayun-col ${cls}" data-index="${i}"
              onclick="showLiuNian(${i})">
+            <div class="dayun-start-year">${dy.startYear}</div>
             <div class="dayun-age">${dy.displayAge}岁</div>
             <div class="dayun-gz"><span style="color:${WX_COLORS[window.BaZiCalculator.WU_XING[dy.gan]]}">${dy.gan}</span><span style="color:${WX_COLORS[window.BaZiCalculator.DI_ZHI_WU_XING[dy.zhi]]}">${dy.zhi}</span></div>
             <div class="dayun-ss">${ss}</div>
