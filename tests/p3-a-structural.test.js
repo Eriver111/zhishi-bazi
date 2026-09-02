@@ -7,6 +7,7 @@
 //       H12 甲申丁丑壬辰己酉 28.5→30.5 正官格成格（C丁壬合绊+2，距线+0.5，最高优先级）
 //     处理：全部接受、照单重冻、A/B/C 本轮不回调；留待下一阶段「格局承载连续化/置信度」与「50 线迟滞」。
 //     本轮原则（用户裁定）：允许有命理上可解释的边界翻转；不为了保持旧标签而反向污染上游评分。
+//   2026-09-02 食伤泄身取用重冻：6 个重复锚点改为印星优先、比劫慎用；P15-16 不再把劫财根当用神节点，风险 59→58。
 //   A 层：引擎字节冻结 + 53 盘五行层对 P2 冻结锚点核验（仅允许已审计批准的显式差异）
 //   B 层：正式实现与 A1/A2-final 冻结产物逐项一致（relationEvents→_p3_a1_relation_events.csv；
 //         structuralRisks→_p3_a2_risks.csv 17 列；shaAB→_p3_a2_sha_ab.csv 15 列）
@@ -39,7 +40,7 @@ function parseCSV(name) {
 }
 // 冻结产物（只读，不写回）
 const shaRows = parseCSV('_p3_a2_sha_ab.csv').slice(1);        // 53 盘 × 15 列：set,id,gz,shaGans,K1,K2,e1,e2,e3,e4,evCount,zhihua,zhihuaDesc,diff,shaHeDesc
-const riskRows = parseCSV('_p3_a2_risks.csv').slice(1);        // 59 行 × 17 列：set,id,gz,score,level,yong,xi,ji,pattern,riskType,severity,parties,why,mitigations,triggerHint,evidence,partyEvidence
+const riskRows = parseCSV('_p3_a2_risks.csv').slice(1);        // 58 行 × 17 列：set,id,gz,score,level,yong,xi,ji,pattern,riskType,severity,parties,why,mitigations,triggerHint,evidence,partyEvidence
 const evRows = parseCSV('_p3_a1_relation_events.csv').slice(1); // 271 行 × 12 列：set,id,gz,type,pillars,elements,distance,involvesMonth,involvesDay,source,target,evidence
 const replayRows = parseCSV('_p2_4a_replay.csv').slice(1);     // 53 盘：set,id,alias,gz,sC,lC,yC,xiC,jiC,pC,congC,...
 
@@ -54,7 +55,7 @@ function approvedPatternStatus(id, value) {
 
 const chartList = shaRows.map(function (r) { return { set: r[0], id: r[1], gz: r[2] }; });
 assert.equal(chartList.length, 53, 'sha_ab 冻结产物必须恰 53 盘');
-assert.equal(riskRows.length, 59, 'risks 冻结产物必须恰 59 风险行');
+assert.equal(riskRows.length, 58, 'risks 冻结产物必须恰 58 风险行');
 assert.equal(evRows.length, 271, 'events 冻结产物必须恰 271 事件行');
 
 function buildFromPillars(c) {
@@ -95,7 +96,7 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '25f616bd1e6f7842f7779070ffbad650c18a188fafe6b598fc77e24a9a240b3c',
+    '4ab6a0e4f73ce32bad301475818b8305f75add1518a9d07a2407d1d141b90904',
     'js/bazi.js sha256 与旺衰内部审计追踪版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
@@ -355,7 +356,7 @@ test('九：全 53 盘 triggerHint 禁确定性语言、severity 仅两档、par
       assert.ok(r.partyEvidence, c.id + ' ' + r.type + ' partyEvidence 非空');
     });
   });
-  assert.equal(riskTotal, 59, '全 53 盘风险总数 === 冻结 59');
+  assert.equal(riskTotal, 58, '全 53 盘风险总数 === 冻结 58');
 });
 
 test('九：官杀混杂双透口径（冻结样本逐条核对）', function () {

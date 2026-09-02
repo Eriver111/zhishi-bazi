@@ -5737,6 +5737,20 @@ function finalizeYongJiResult(bazi, base, context) {
       + '调候辅助：' + context.tiaoHouNote;
   }
 
+  var weaknessCause = context.candidateScores && context.candidateScores.weaknessCause;
+  if (weaknessCause && weaknessCause.type === '食伤泄身') {
+    primaryReason = '核心用神为' + weaknessCause.sealElement + '：食伤泄身型身弱，'
+      + weaknessCause.outputElement + '食伤为主要泄身来源，取' + weaknessCause.sealElement
+      + '印星制食伤并生身；' + weaknessCause.peerElement + '比劫会继续生旺食伤，故降为慎用。'
+      + (context.tiaoHouNote ? '调候辅助：' + context.tiaoHouNote : '');
+    if (elementReasons[weaknessCause.sealElement]) {
+      elementReasons[weaknessCause.sealElement].reasons.unshift('印星同时完成制食伤与生身，是本局第一取用');
+    }
+    if (elementReasons[weaknessCause.peerElement]) {
+      elementReasons[weaknessCause.peerElement].reasons.unshift('比劫虽能帮身，但会继续生旺过强食伤，反加重泄身');
+    }
+  }
+
   // 生克链调整注入 elementReasons
   if (context.chain && context.chain.adjustments && context.chain.adjustments.length > 0) {
     context.chain.adjustments.forEach(function(adj) {
@@ -5748,6 +5762,14 @@ function finalizeYongJiResult(bazi, base, context) {
   }
 
   var evidence = [{ category:'旺衰', title:'日主' + context.dmStr.level, detail:context.dmStr.detail }];
+  if (weaknessCause) {
+    evidence.push({
+      category:'取用病因',
+      title:'食伤泄身型身弱',
+      detail:weaknessCause.conclusion + ' 压力对比：食伤' + weaknessCause.outputPressure.toFixed(1)
+        + '，财星' + weaknessCause.wealthPressure.toFixed(1) + '，官杀' + weaknessCause.officerPressure.toFixed(1) + '。'
+    });
+  }
   if (context.tiaoHouNote) evidence.push({ category:'调候', title:'寒暖燥湿', detail:context.tiaoHouNote });
   evidence.push({
     category:'格局', title:pattern.name + '·' + pattern.status,
@@ -5821,6 +5843,7 @@ function finalizeYongJiResult(bazi, base, context) {
   if (context.candidateScores) {
     result.candidateScores = context.candidateScores.candidates;
     result.tiebreak = context.candidateScores.tiebreak;
+    if (context.candidateScores.weaknessCause) result.weaknessCause = context.candidateScores.weaknessCause;
   }
   // P5-C07：最终分类层透传（仅扶抑路径挂载；从格/穷通短路盘不挂——其喜忌语义冻结，不参与强弱档）
   if (base.elementClassification) {
@@ -5956,6 +5979,18 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     countMap[zWx] += 1;
   });
   var chengShi = function(wx) { return countMap[wx] >= 3; };
+  // 身弱必须继续追问“为何而弱”。食伤得月令或在表层成势，且其压力不低于财、官杀时，
+  // 归为食伤泄身型；此时比劫虽可直接帮身，却会继续生旺食伤，不能与印星并列取喜。
+  var pressureOf = function(wx) {
+    return countMap[wx] + (DI_ZHI_WU_XING[mz] === wx ? 1.5 : 0);
+  };
+  var outputPressure = pressureOf(WO_SHENG);
+  var wealthPressure = pressureOf(WO_KE);
+  var officerPressure = pressureOf(KE_WO);
+  var outputDrainDominant = d < 0
+    && (chengShi(WO_SHENG) || DI_ZHI_WU_XING[mz] === WO_SHENG)
+    && outputPressure >= 2.5
+    && outputPressure >= Math.max(wealthPressure, officerPressure);
 
   // —— L1 方向基准：生扶组 -50d，克泄耗组 +50d（F4）——
   var L1 = zeroMap();
@@ -5974,6 +6009,10 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     if (chengShi(KE_WO))    { addL2(SHENG_WO, 12, '官杀成势，印星化杀生身'); addL2(TONG, 4, '官杀成势，比劫帮身抗杀'); }
     if (chengShi(WO_KE))    { addL2(TONG, 10, '财多成势，比劫帮身分财'); addL2(SHENG_WO, 6, '财多成势，印星生身'); }
     if (chengShi(WO_SHENG)) { addL2(SHENG_WO, 12, '食伤成势，印星制食伤生身'); }
+    if (outputDrainDominant) {
+      if (!chengShi(WO_SHENG)) addL2(SHENG_WO, 12, '食伤得令泄身，印星制食伤并生身');
+      addL2(TONG, -40, '食伤泄身为主要病因，比劫会继续生食伤，降为慎用');
+    }
   } else if (d > 0) {
     if (chengShi(TONG))     { addL2(KE_WO, 10, '比劫成势，官杀制比劫'); addL2(WO_SHENG, 4, '比劫成势，食伤泄秀'); }
     if (chengShi(SHENG_WO)) { addL2(WO_KE, 10, '印星成势，财星制印调结构'); addL2(WO_SHENG, 6, '印星成势，食伤泄秀'); }
@@ -6197,6 +6236,16 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     l3Details: l3Details,
     l4Details: l4Details,
     tiaoHouNote: tiaoHouNote,
+    weaknessCause: outputDrainDominant ? {
+      type: '食伤泄身',
+      outputElement: WO_SHENG,
+      sealElement: SHENG_WO,
+      peerElement: TONG,
+      outputPressure: outputPressure,
+      wealthPressure: wealthPressure,
+      officerPressure: officerPressure,
+      conclusion: '食伤为主要泄身来源，取印制食伤兼生身；比劫会续生食伤，降为慎用。'
+    } : null,
     yongWx: yongWx,
     candidates: candidates,
     tiebreak: tiebreak
