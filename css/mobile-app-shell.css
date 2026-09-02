@@ -1388,6 +1388,18 @@
     box-shadow: none !important;
   }
 
+  /* 只给整张四柱盘加边界和层次，不把每个字重新切成小方格。 */
+  body.mobile-page-result .section-sizhu {
+    width: calc(100% - 12px);
+    margin: 6px auto 8px !important;
+    overflow: hidden;
+    border: 1px solid #d6d2ca !important;
+    border-radius: 3px !important;
+    box-shadow:
+      0 3px 12px rgba(45, 38, 31, .09),
+      inset 0 0 0 1px rgba(255, 255, 255, .72) !important;
+  }
+
   body.mobile-page-result .section-sizhu > .section-header {
     display: none !important;
   }
@@ -1398,7 +1410,7 @@
     margin: 0 !important;
     background: #fff !important;
     border: 0 !important;
-    border-radius: 0 !important;
+    border-radius: 2px !important;
   }
 
   body.mobile-page-result .section-sizhu .pp-row {

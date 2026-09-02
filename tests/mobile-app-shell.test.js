@@ -30,9 +30,9 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /window\.history\.back\(\)/);
   assert.match(auth, /'\/result', '\/ziwei', '\/hepan', '\/hepan-result', '\/fortune'/);
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
-  assert.match(auth, /mobile-app-shell\.css\?v=26/);
+  assert.match(auth, /mobile-app-shell\.css\?v=27/);
   assert.match(auth, /mobile-app-shell\.js\?v=7/);
-  assert.match(read('result.html'), /js\/auth\.js\?v=23/);
+  assert.match(read('result.html'), /js\/auth\.js\?v=24/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);
@@ -41,6 +41,7 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(css, /body\.mobile-page-result \.timing-gz-line\s*\{[^}]*min-height:\s*22px/);
   assert.match(css, /body\.mobile-page-result \.timing-god\s*\{[^}]*font-size:\s*10px !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-row\s*\{[^}]*border-bottom:\s*0 !important/);
+  assert.match(css, /body\.mobile-page-result \.section-sizhu\s*\{[^}]*border:\s*1px solid #d6d2ca !important;[^}]*box-shadow:/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-zhi-row,[\s\S]*?\.pp-fuxing-row\s*\{[^}]*border-bottom:\s*1px solid #e7e7e7 !important/);
   assert.match(css, /body\.mobile-page-result \.dayun-col\s*\{[^}]*flex-basis:\s*40px/);
   assert.match(css, /body\.mobile-page-result \.liunian-col\s*\{[^}]*flex-basis:\s*40px/);
