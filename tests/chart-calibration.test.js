@@ -86,7 +86,8 @@ test('confirmed calibration is added to AI context without changing frozen facts
   assert.match(endpoint, /getChartCalibrationSummary/);
   assert.match(endpoint, /不得据此改写四柱、旺衰、格局、喜用忌/);
   assert.match(endpoint, /降低被用户明确否认的表现/);
-  assert.match(integration, /ChatPersistence\.decorate\(body, 'bazi'/);
+  assert.match(integration, /ChatPersistence\.decorate\(body, chatType/);
+  assert.match(integration, /detectPageType\(\) === 'result' \? 'bazi'/);
   assert.match(integration, /requestHeaders\.Authorization/);
 });
 

@@ -37,6 +37,27 @@ test('chat identity is stable for one chart and separated by mode or pillars', (
   assert.notEqual(window.ChatPersistence.chartIdentity('bazi', first), window.ChatPersistence.chartIdentity('hepan', first));
 });
 
+test('hepan identity includes both people, their order and relationship type', () => {
+  const source = fs.readFileSync(path.join(root, 'js', 'chat-persistence.js'), 'utf8');
+  const window = {};
+  vm.runInNewContext(source, { window, fetch: async () => { throw new Error('not used'); }, setTimeout });
+  const person = (name, gender, pillars) => ({
+    name, gender,
+    fourPillars: Object.fromEntries(['year', 'month', 'day', 'hour'].map((pos, i) => [pos, { gan: pillars[i][0], zhi: pillars[i][1] }]))
+  });
+  const p1 = person('甲', 'male', ['甲子', '乙丑', '丙寅', '丁卯']);
+  const p2 = person('乙', 'female', ['庚午', '辛未', '壬申', '癸酉']);
+  const base = { type: 'hepan', relationType: '情侣', person1: p1, person2: p2 };
+  const sameWithAnalysis = { ...base, analysis: { score: 99 }, score: { total: 88 } };
+  const changedSecond = { ...base, person2: person('乙', 'female', ['庚午', '辛未', '壬申', '甲戌']) };
+  const swapped = { ...base, person1: p2, person2: p1 };
+
+  assert.equal(window.ChatPersistence.chartIdentity('hepan', base), window.ChatPersistence.chartIdentity('hepan', sameWithAnalysis));
+  assert.notEqual(window.ChatPersistence.chartIdentity('hepan', base), window.ChatPersistence.chartIdentity('hepan', changedSecond));
+  assert.notEqual(window.ChatPersistence.chartIdentity('hepan', base), window.ChatPersistence.chartIdentity('hepan', swapped));
+  assert.notEqual(window.ChatPersistence.chartIdentity('hepan', base), window.ChatPersistence.chartIdentity('hepan', { ...base, relationType: '朋友' }));
+});
+
 test('history endpoint requires login and returns the chart-scoped conversation', async () => {
   const endpointPath = require.resolve(path.join(root, 'api', 'chat-history.js'));
   const authPath = require.resolve(path.join(root, 'lib', 'auth.js'));
@@ -72,7 +93,7 @@ test('history endpoint requires login and returns the chart-scoped conversation'
 test('chat pages load shared persistence and database migration keeps payment schema untouched', () => {
   for (const file of ['ai-chat.html', 'zw-ai-chat.html']) {
     const html = fs.readFileSync(path.join(root, file), 'utf8');
-    assert.match(html, /chat-persistence\.js\?v=1/);
+    assert.match(html, /chat-persistence\.js\?v=[12]/);
     assert.match(html, /ChatPersistence\.decorate/);
     assert.match(html, /登录保存/);
   }

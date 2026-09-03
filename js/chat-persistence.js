@@ -21,7 +21,14 @@
   function chartIdentity(mode, chartData) {
     chartData = chartData || {};
     var identity = { mode: mode };
-    if (chartData.fourPillars) {
+    if (mode === 'hepan' || chartData.type === 'hepan') {
+      // 合盘必须把甲乙双方都纳入身份。旧实现只记录 type=hepan，导致所有
+      // 合盘共用同一条历史会话，上一对双方的回答会被带进下一对合盘。
+      identity.type = 'hepan';
+      identity.relationType = chartData.relationType || '';
+      identity.person1 = personIdentity(chartData.person1);
+      identity.person2 = personIdentity(chartData.person2);
+    } else if (chartData.fourPillars) {
       identity.gender = chartData.birthInfo && chartData.birthInfo.gender;
       identity.pillars = ['year', 'month', 'day', 'hour'].map(function(pos) {
         var p = chartData.fourPillars[pos] || {};
@@ -35,6 +42,19 @@
       });
     }
     return mode + ':' + hash(stable(identity));
+  }
+
+  function personIdentity(person) {
+    person = person || {};
+    var birth = person.birthInfo || {};
+    return {
+      name: String(person.name || birth.name || ''),
+      gender: person.gender || birth.gender || '',
+      pillars: ['year', 'month', 'day', 'hour'].map(function(pos) {
+        var p = (person.fourPillars && person.fourPillars[pos]) || {};
+        return String(p.gan || '') + String(p.zhi || '');
+      })
+    };
   }
 
   function authReady() {

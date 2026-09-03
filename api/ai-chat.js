@@ -321,7 +321,12 @@ module.exports = async function handler(req, res) {
     // ---- 登录用户：free_mode 使用 user_id 追踪 ----
     var authUser = requireAuth(req);
     var userId = authUser ? authUser.uid : null;
-    var conversationMode = chat_type || (mode === 'ziwei' ? 'ziwei' : mode === 'liuren' ? 'liuren' : 'bazi');
+    // 会话类型以本轮命盘事实为准，不能仅信任页面遗留的 chat_type。
+    // 尤其合盘若降级成 bazi，会与单人命盘或其他合盘共用历史。
+    var chartMode = chartData && chartData.type === 'hepan' ? 'hepan'
+      : chartData && chartData.type === 'ziwei' ? 'ziwei'
+      : chartData && chartData.type === 'liuren' ? 'liuren' : '';
+    var conversationMode = chartMode || chat_type || (mode === 'ziwei' ? 'ziwei' : mode === 'liuren' ? 'liuren' : 'bazi');
     var conversation = null;
     var conversationMeta = {};
     var effectiveHistory = Array.isArray(history) ? history : [];
@@ -333,6 +338,11 @@ module.exports = async function handler(req, res) {
     if (userId && typeof getOrCreateChatConversation === 'function') {
       if (conversation_id && typeof getChatConversation === 'function') {
         conversation = await getChatConversation(userId, conversation_id);
+        // 浏览器可能还留着上一张命盘的会话编号，类型和命盘键必须同时吻合。
+        if (conversation && (conversation.mode !== conversationMode || (chart_key && conversation.chart_key !== chart_key))) {
+          conversation = null;
+          effectiveHistory = [];
+        }
       }
       if (!conversation) {
         conversation = await getOrCreateChatConversation(userId, conversationMode, chart_key, String(question).slice(0, 24));
@@ -343,7 +353,9 @@ module.exports = async function handler(req, res) {
         var storedHistory = typeof getConversationMessages === 'function'
           ? await getConversationMessages(userId, conversation.id, 12)
           : [];
-        if (storedHistory.length) effectiveHistory = storedHistory;
+        // 登录状态只采用数据库中这条“当前命盘会话”的历史。即便新会话为空，
+        // 也不能退回浏览器随请求带来的旧合盘消息。
+        effectiveHistory = storedHistory;
       }
     }
 
@@ -515,7 +527,7 @@ module.exports = async function handler(req, res) {
       const context = buildChartContext(chartData);
       messages.push({
         role: 'system',
-        content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${context}`
+        content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下是本次合盘双方的冻结排盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${context}`
       });
     } else if (bazi && bazi.year) {
       const baziContext = buildBasicBaziContext(bazi);
@@ -651,8 +663,11 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (chartData) {
     messages.push({
       role: 'system',
-      content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${buildChartContext(chartData)}`
+      content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下是本次合盘双方的冻结排盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${buildChartContext(chartData)}`
     });
+    if (chartData.type === 'hepan') {
+      messages.push({ role: 'system', content: '【合盘身份锁】P1/甲方与P2/乙方是两个独立命盘，角色顺序不可交换。回答前先在内部核对双方姓名、性别、四柱和日主；谈单方性质时必须明确写“甲方”或“乙方”，谈跨盘作用时必须写清作用方向。不得把一方的十神、旺衰、喜用忌、原局关系或出生信息套给另一方；用户使用“他/她”而指向不明时，应先说明按哪一方理解。历史回答若与本轮身份锁冲突，一律丢弃历史并以本轮数据为准。' });
+    }
   } else if (bazi && bazi.year) {
     messages.push({
       role: 'system',
@@ -853,6 +868,15 @@ function runReplyValidation(chartData, reply) {
       var p = chartData.fourPillars[pos];
       if (p && p.zhi) present.push(p.zhi);
     });
+  } else if (chartData.type === 'hepan') {
+    // 合盘关系可由任一方或跨盘地支组成，校验时纳入双方，但十神映射仍须
+    // 各自按日主解释，不能合并成一张表。
+    [chartData.person1, chartData.person2].forEach(function(person) {
+      ['year', 'month', 'day', 'hour'].forEach(function(pos) {
+        var p = person && person.fourPillars && person.fourPillars[pos];
+        if (p && p.zhi) present.push(p.zhi);
+      });
+    });
   }
   if (chartData.currentDaYun && chartData.currentDaYun.zhi) present.push(chartData.currentDaYun.zhi);
   if (chartData.currentLiuNian && chartData.currentLiuNian.zhi) present.push(chartData.currentLiuNian.zhi);
@@ -985,15 +1009,25 @@ function buildChartContext(chartData) {
 
   // 合盘模式
   if (chartData.type === 'hepan') {
-    ctx += `=== 合盘分析 ===\n`;
+    const p1 = chartData.person1 || {};
+    const p2 = chartData.person2 || {};
+    const pillarSignature = function(person) {
+      return ['year', 'month', 'day', 'hour'].map(function(pos) {
+        const p = person.fourPillars && person.fourPillars[pos];
+        return p ? String(p.gan || '?') + String(p.zhi || '?') : '??';
+      }).join(' ');
+    };
+    ctx += `=== 合盘分析（双命盘隔离） ===\n`;
     ctx += `关系类型：${chartData.relationType || '未知'}\n`;
     if (chartData.score) {
       ctx += `契合度评分：${chartData.score.total || '?'} 分 (${chartData.score.label || ''})\n`;
     }
-    ctx += `\n--- 甲方命盘 ---\n`;
-    ctx += buildSingleChart(chartData.person1);
-    ctx += `\n--- 乙方命盘 ---\n`;
-    ctx += buildSingleChart(chartData.person2);
+    ctx += `甲方身份锁：P1｜${p1.name || '甲方'}｜${p1.gender === 'male' ? '男' : p1.gender === 'female' ? '女' : '性别未知'}｜四柱 ${pillarSignature(p1)}\n`;
+    ctx += `乙方身份锁：P2｜${p2.name || '乙方'}｜${p2.gender === 'male' ? '男' : p2.gender === 'female' ? '女' : '性别未知'}｜四柱 ${pillarSignature(p2)}\n`;
+    ctx += `\n--- [P1/甲方，只属于甲方] ---\n`;
+    ctx += buildSingleChart(p1);
+    ctx += `\n--- [P2/乙方，只属于乙方] ---\n`;
+    ctx += buildSingleChart(p2);
     if (chartData.analysis) {
       ctx += `\n--- 合盘分析摘要 ---\n`;
       ctx += JSON.stringify(chartData.analysis, null, 2);
@@ -1008,6 +1042,10 @@ function buildChartContext(chartData) {
 function buildSingleChart(data) {
   if (!data) return '(无数据)';
   let ctx = '';
+
+  if (data.name || data.roleLabel || data.personId) {
+    ctx += `人物：${data.personId || ''}${data.roleLabel ? '/' + data.roleLabel : ''}${data.name ? '，姓名：' + data.name : ''}\n`;
+  }
 
   // 基本信息
   if (data.birthInfo) {
@@ -1573,3 +1611,6 @@ function generateMockReply(question, chartData, bazi, mode) {
   r += '你可以问的问题包括：\n• 八字五行分析与喜用神判断\n• 大运流年走势预测\n• 婚姻感情与配偶特征\n• 事业财运与职业方向\n• 健康隐患与养生建议\n• 起名改名与五行补益\n\n※ 命理分析仅供参考，命运掌握在自己手中';
   return r;
 }
+
+// 仅供本地回归测试读取纯函数，不改变 API handler 行为。
+module.exports._test = { buildChartContext, runReplyValidation };

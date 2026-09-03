@@ -25,9 +25,11 @@
 
   // 检测页面类型（顶层，所有事件处理器都能访问）
   function detectPageType(){
+    // 合盘页也会加载部分个人排盘全局量，必须先识别 _hepanData，
+    // 否则会把合盘误当成单人 result，只传其中一人的命盘。
+    try{if(typeof window._hepanData!=='undefined'&&window._hepanData!==null)return'hepan'}catch(e){}
     try{if(typeof _bazi!=='undefined'&&_bazi!==null)return'result'}catch(e){}
     try{if(typeof _params!=='undefined'&&_params!==null)return'result'}catch(e){}
-    try{if(typeof window._hepanData!=='undefined'&&window._hepanData!==null)return'hepan'}catch(e){}
     try{if(document.querySelector('.shapan-grid'))return'liuren'}catch(e){}
     try{if(document.title.indexOf('紫微')>=0)return'ziwei'}catch(e){}
     try{if(document.title.indexOf('六壬')>=0)return'liuren'}catch(e){}
@@ -275,8 +277,9 @@
     if (window.ZhishiCalibration && typeof window.ZhishiCalibration.summary === 'function') {
       body.calibration_summary = window.ZhishiCalibration.summary(chartData);
     }
-    if (window.ChatPersistence && chartData && detectPageType() === 'result') {
-      window.ChatPersistence.decorate(body, 'bazi', chartData, '');
+    if (window.ChatPersistence && chartData) {
+      var chatType = chartData.type === 'hepan' ? 'hepan' : detectPageType() === 'result' ? 'bazi' : detectPageType();
+      window.ChatPersistence.decorate(body, chatType, chartData, '');
     }
 
     // 免费模式
@@ -807,15 +810,27 @@
 
   function buildHePanContext() {
     var hd = window._hepanData; if (!hd) return null;
-    return { type: 'hepan', relationType: hd.relationType || '情侣', score: hd.result ? hd.result.score : null, person1: extractPerson(hd.p1), person2: extractPerson(hd.p2) };
+    return { type: 'hepan', relationType: hd.relationType || '情侣', score: hd.result ? hd.result.score : null, analysis: hd.result || null, person1: extractPerson(hd.p1, 'P1', '甲方'), person2: extractPerson(hd.p2, 'P2', '乙方') };
   }
 
-  function extractPerson(p) {
-    if (!p) return null; var d = {};
-    if (p.pillars) { d.fourPillars = {}; ['year','month','day','hour'].forEach(function(l,i) { if (p.pillars[i]) d.fourPillars[l] = { gan: p.pillars[i].gan, zhi: p.pillars[i].zhi, nayin: p.pillars[i].nayin || '' }; }); }
+  function extractPerson(p, personId, roleLabel) {
+    if (!p) return null; var d = { personId: personId, roleLabel: roleLabel, name: p.name || roleLabel, gender: p.gender || '' };
+    d.birthInfo = { name: d.name, gender: d.gender };
+    if (p._normalizedBirth) {
+      d.birthInfo.year = p._normalizedBirth.year;
+      d.birthInfo.month = p._normalizedBirth.month;
+      d.birthInfo.day = p._normalizedBirth.day;
+      d.birthInfo.clock = p._normalizedBirth.clock;
+    }
+    if (p.pillars) { d.fourPillars = {}; ['year','month','day','hour'].forEach(function(l,i) { if (p.pillars[i]) d.fourPillars[l] = { gan: p.pillars[i].gan, zhi: p.pillars[i].zhi, nayin: p.pillars[i].nayin || '', cangGan: (p.pillars[i].cangGan || []).map(function(g){ return { gan:g }; }) }; }); }
     if (p.dayGan) d.dayMaster = { gan: p.dayGan, wuXing: p.dmWuxing || '' };
     if (p.wuxing) d.wuXingCount = p.wuxing;
     if (p.shenSha) d.shenSha = p.shenSha.map(function(s) { return { name: s.name || s }; });
+    if (p._professionalFacts) {
+      d.dayMasterStrength = p._professionalFacts.strength || null;
+      d.yongJi = p._professionalFacts.yongJi || null;
+      d.pattern = p._professionalFacts.pattern || null;
+    }
     return d;
   }
 
