@@ -108,7 +108,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 
 ## 关键：如何使用预计算数据（降低幻觉）
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
-- **pattern**（格局）：候选格局名、status（成格/破格）和 breakReasons（破格原因）是一个整体。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。
+- **pattern**（格局）：name（格局名）、status（成格/破格）、source（取格依据）和 breakReasons（破格原因）是一个不可拆分的冻结裁决。必须逐字采用 pattern.name，禁止按模型自带知识、月令本气或其他流派重新取格。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。若用户追问流派差异，只能把其他名称标成“其他流派可能称为……”，不得替换本站主格。
 - **pattern.mechanism**（格局机制）：财生官/财生杀等十神关系事实标注，仅用于解释格名由来（如"月干七杀+月支财星→财生杀格"）。**这是解释字段，不是裁决字段**：不得因 mechanism 与格名文字不同就推断"格局判定错误"，不得据此改动 pattern/status/strength/用神喜忌。
 - **yongJi**（喜用忌神）：只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用，所以同一五行可以同时出现在 yongShen 与 xiShen，但 jiShen 必须与二者互斥。三组五行及 method、primaryReason、evidence、elementReasons 已由系统算好，**严格按此回答**，禁止另设闲神、仇神等类别，也禁止自行推断或替换。
 - **yongJi.evidence 候选对比**（五行候选评分对比）：仅解释"为什么取这个用神、未取哪个候选"，是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
@@ -132,7 +132,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - 大运/流年排算是算法强项，你不需要也不能替代它。如果 chartData 中没有大运数据，明确告知用户"请先通过排盘获取大运信息"，不要凭空编造。
 
 ## 事实锁（2026-08-14 冻结清单，违反即幻觉）
-1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止用近义词换级**——「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
+1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.name（格局名）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止改名或用近义词换级**——「正财格」不得改判成「正印格」，组合机制「食伤生财」不得替代主格名；「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
 2. **结构关系事实源的边界**：relationEvents 是冻结关系类型（五合、天干克、冲、害、刑、六合、三合/半合、三会/半会）的优先事实源；chainAnalysis.evidenceEdges 在不改写这些共有关系的前提下，补充完整生克方向、全部藏干、自刑和标注为流派规则的六破。两者对共有关系冲突时以 relationEvents 为准；仅 chainAnalysis 提供的扩展关系必须连同证据等级和流派标记使用，不得伪装成所有流派一致的定论。
 3. **关系成员校验（写关系前必核）**：① 天干五合只有五对——甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火，其余干支组合不得写成"X合Y"；② 三合局只有四组固定成员：申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金；三会方只有四组固定成员：亥子丑会水、寅卯辰会木、巳午未会火、申酉戌会金。三支齐方可称完整三合/三会，两支只能称半合/半会或具备相应趋势；不在上述八组内的任意三支组合（如寅巳午）不是任何三合或三会，禁止自创组合；③ 五行相生顺序：木生火→火生土→土生金→金生水→水生木；相克顺序：木克土→土克水→水克火→火克金→金克木——写"A生B/A克B"前先核对方向。
 4. **十神逐柱对照**：每柱干支与藏干的十神映射已在排盘数据中给出，引用十神时**必须对照排盘映射**，不得凭记忆重推（如把印星写成食神、把七杀写成正官）。当映射与你的直觉不符时，以映射为准。
@@ -555,7 +555,7 @@ module.exports = async function handler(req, res) {
         lock1+='，候选格局=「'+chartData.pattern.name+'」，状态=「'+(chartData.pattern.status||'未确认')+'」';
         if(chartData.pattern.breakReasons&&chartData.pattern.breakReasons.length)lock1+='，原因=「'+chartData.pattern.breakReasons.join('；')+'」';
       }
-      lock1+='。以上字段来自本次排盘，不另行重算；破格不得写成已成格；旺衰档位、格局状态、risk severity 均为冻结标签，禁止近义词换级。';messages.push({role:'system',content:lock1});
+      lock1+='。以上字段来自本次排盘，不另行重算；pattern.name 是本站唯一主格名，不得按月令本气、模型知识或其他流派改判，组合机制不得替代主格；破格不得写成已成格；旺衰档位、格局名、格局状态、risk severity 均为冻结标签，禁止改名或近义词换级。';messages.push({role:'system',content:lock1});
     }
 
     // 插入当前问题
@@ -706,7 +706,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
       lock2+=(lock2.length>10?'，':'')+'候选格局=「'+chartData.pattern.name+'」，状态=「'+(chartData.pattern.status||'未确认')+'」';
       if(chartData.pattern.breakReasons&&chartData.pattern.breakReasons.length)lock2+='，原因=「'+chartData.pattern.breakReasons.join('；')+'」';
     }
-    if (lock2.length>10) {lock2+='。以上字段不另行重算；破格不得写成已成格；旺衰档位、格局状态、risk severity 均为冻结标签，禁止近义词换级。';messages.push({role:'system',content:lock2});}
+    if (lock2.length>10) {lock2+='。以上字段不另行重算；pattern.name 是本站唯一主格名，不得按月令本气、模型知识或其他流派改判，组合机制不得替代主格；破格不得写成已成格；旺衰档位、格局名、格局状态、risk severity 均为冻结标签，禁止改名或近义词换级。';messages.push({role:'system',content:lock2});}
   }
 
   messages.push({ role: 'user', content: question });
@@ -820,6 +820,21 @@ function runReplyValidation(chartData, reply) {
           warnings.push('E4-档位漂移：系统档位=「' + ds.level + '」，回复出现「' + mm[0] + '」——' + reply.slice(Math.max(0, i - 15), i + 15).replace(/\n/g, ' '));
         }
       });
+    }
+  }
+
+  // ---------- ①b 冻结格局名漂移（E3） ----------
+  // 只检查“命局为/主格为/定为/属于/以XX格论”等明确裁决句，允许在“其他流派可能称为”中解释口径差异。
+  var pt = chartData.pattern;
+  if (pt && pt.name) {
+    var cleanReply = reply.replace(/(?:其他|不同|某些|有的)流派[^。；\n]{0,36}(?:称|取|定|看)[^。；\n]*/g, '');
+    var patternClaimRe = /(?:命局(?:的)?(?:主)?格局(?:为|是|定为|属于)|命局(?:为|是|属于)|主格(?:为|是)|定为|判为|以)([^，。；：\n]{1,14}?格)(?:来论|论|为主|[，。；：\n]|$)/g;
+    var pcm;
+    while ((pcm = patternClaimRe.exec(cleanReply)) !== null) {
+      var claimedPattern = pcm[1].replace(/[“”「」'"\s]/g, '');
+      if (claimedPattern !== pt.name && claimedPattern.indexOf(pt.name) < 0) {
+        warnings.push('E3-格局名漂移：系统主格=「' + pt.name + '」，回复明确改判为「' + claimedPattern + '」；pattern.name 是冻结结论，其他流派只能作为差异说明');
+      }
     }
   }
 
@@ -1133,6 +1148,9 @@ function buildSingleChart(data) {
     if (pt.type) ctx += `（${pt.type}类）`;
     if (pt.monthWx) ctx += ` 月令五行：${pt.monthWx}`;
     if (pt.status) ctx += `\n格局状态：${pt.status}`;
+    if (pt.source) ctx += `\n取格依据：${pt.source}`;
+    if (pt.matchMode) ctx += `\n取格方式：${pt.matchMode}`;
+    ctx += `\n格局口径锁：以上 pattern.name 为本站唯一主格名，不得按月令本气、模型自带知识或其他流派重新取格；食伤生财、官印相生等组合只可作为结构机制，不得替代主格。`;
     // P5-B(B4) 格局机制（十神关系事实标注，仅解释格名由来，不改格局/旺衰/喜用忌）
     if (pt.mechanism) ctx += `\n格局机制：${pt.mechanism}`;
     if (pt.breakReasons && pt.breakReasons.length) ctx += `\n破格原因：${pt.breakReasons.join('；')}`;
