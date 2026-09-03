@@ -2332,6 +2332,35 @@ function calcDayMasterStrength(bazi, options) {
 
   _auditMark('day-seat', '得地·日支', { dayBranch:bazi.day.zhi, element:dayZhiWx, stage:getChangSheng(dg)[bazi.day.zhi].stage });
 
+  // 日支不能只按本气一刀切。若日主已经得令、另有两处本气根托底，且透印在地支有根，
+  // 日支官杀中又同时藏印与日主本气，形成“杀→印→身”的贴身通关链。
+  // 此时官杀仍有压力，但不能继续按纯官杀日支足额扣分。
+  var _mainRootCountForFrame = ['year','month','day','hour'].filter(function(pos) {
+    var _cg = getCangGan(bazi[pos].zhi);
+    return _cg.length > 0 && WU_XING[_cg[0]] === dgWx;
+  }).length;
+  var _visibleSealForFrame = ['year','month','hour'].some(function(pos) {
+    return WU_XING[bazi[pos].gan] === SHENGWO[dgWx];
+  });
+  var _rootedSealForFrame = ['year','month','day','hour'].some(function(pos) {
+    return getCangGan(bazi[pos].zhi).some(function(g) { return WU_XING[g] === SHENGWO[dgWx]; });
+  });
+  var _dayHidden = getCangGan(bazi.day.zhi);
+  var _dayHasSelfRoot = _dayHidden.some(function(g) { return WU_XING[g] === dgWx; });
+  var _dayHasSealBridge = _dayHidden.some(function(g) { return WU_XING[g] === SHENGWO[dgWx]; });
+  var _stableRootedSealFrame = _monthSupportCredit > 0 && _mainRootCountForFrame >= 2 && _visibleSealForFrame && _rootedSealForFrame;
+  var _dayMixedSupportAdj = 0;
+  if (_stableRootedSealFrame && KEWO[dgWx] === dayZhiWx && _dayHasSelfRoot && _dayHasSealBridge) {
+    _dayMixedSupportAdj = 5;
+    score += _dayMixedSupportAdj;
+  }
+  _auditMark('day-seat-hidden-support', '日支藏根·印杀通关', {
+    stableFrame:_stableRootedSealFrame,
+    hasSelfRoot:_dayHasSelfRoot,
+    hasSealBridge:_dayHasSealBridge,
+    adjustment:_dayMixedSupportAdj
+  });
+
   // ---------- ②½ 得令×得地联动 (v2) ----------
   // 虽失令，但日支自坐强根(禄/刃)且另有比劫/印根辅助时，失令惩罚收缩
   var dayStageA = getChangSheng(dg)[bazi.day.zhi].stage;
@@ -2364,6 +2393,32 @@ function calcDayMasterStrength(bazi, options) {
   });
 
   _auditMark('visible-stems', '得势·天干', null);
+
+  // 透干有根度：在“得令 + 双本气根 + 透印有根”的稳定承载框架中，
+  // 无根的克泄耗天干只能视为浮透，保留其作用但按约六成计力，返还被多扣的部分。
+  // 有根财官食伤仍按原权重足额作用，避免把真实旺财旺杀盘误抬成身强。
+  var _unrootedStemRefund = 0;
+  var _unrootedStems = [];
+  if (_stableRootedSealFrame) {
+    ['year','month','hour'].forEach(function(pos) {
+      var _gan = bazi[pos].gan;
+      var _wx = WU_XING[_gan];
+      var _basePenalty = 0;
+      if (KEWO[dgWx] === _wx) _basePenalty = 4;
+      else if (WOSHENG[dgWx] === _wx) _basePenalty = 3;
+      else if (WOKE[dgWx] === _wx) _basePenalty = 5;
+      if (!_basePenalty) return;
+      var _hasRoot = ['year','month','day','hour'].some(function(rootPos) {
+        return getCangGan(bazi[rootPos].zhi).some(function(g) { return WU_XING[g] === _wx; });
+      });
+      if (_hasRoot) return;
+      var _refund = Math.round(_basePenalty * 0.4);
+      _unrootedStemRefund += _refund;
+      _unrootedStems.push({ pos:pos, gan:_gan, element:_wx, refund:_refund });
+    });
+    score += _unrootedStemRefund;
+  }
+  _auditMark('visible-stem-rooting', '透干有根度', { stems:_unrootedStems, refund:_unrootedStemRefund });
 
   // ---------- ④ 地支藏干本气辅助（仅取本气，即藏干第一项，权重约为天干一半） ----------
   // 中气、余气不参与旺衰计算，避免过度累加
@@ -2664,23 +2719,15 @@ function calcDayMasterStrength(bazi, options) {
     var z1 = bazi[pair[0]].zhi, z2 = bazi[pair[1]].zhi;
     var w1 = DI_ZHI_WU_XING[z1], w2 = DI_ZHI_WU_XING[z2];
 
-    // 六冲：相邻地支冲 → 根气动摇，减分
-    if (chongMap[z1] === z2) {
-      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 3;  // 日支被冲，根气受损
-      else score -= 1;  // 其他柱冲，动荡
-    }
-
-    // 六害：暗中不利
-    if (haiMap[z1] === z2) {
-      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 2;  // 日支被害
-      else score -= 1;
-    }
-
-    // 刑：不和
-    if (xingMap[z1 + z2]) {
-      if (z1 === bazi.day.zhi || z2 === bazi.day.zhi) score -= 2;
-      else score -= 1;
-    }
+    // 同一对涉及日支的地支可能同时被表记为刑、害（如寅巳）。当原局已有“得令、双根、
+    // 透印有根”的稳定承载框架时，它们描述的是同一坐支受扰状态，不应层层重复削根；
+    // 此时刑害只取最重项。失令或无稳定根架的盘仍保留复合压力，六冲也始终独立计入。
+    var _involvesDayRelation = (z1 === bazi.day.zhi || z2 === bazi.day.zhi);
+    var _chongPenalty = chongMap[z1] === z2 ? (_involvesDayRelation ? 3 : 1) : 0;
+    var _haiPenalty = haiMap[z1] === z2 ? (_involvesDayRelation ? 2 : 1) : 0;
+    var _xingPenalty = xingMap[z1 + z2] ? (_involvesDayRelation ? 2 : 1) : 0;
+    var _softRelationPenalty = (_involvesDayRelation && _stableRootedSealFrame) ? Math.max(_haiPenalty, _xingPenalty) : (_haiPenalty + _xingPenalty);
+    score -= (_chongPenalty + _softRelationPenalty);
 
     // 地支合化：相邻地支合化出新五行
     var heKey = z1 + z2;

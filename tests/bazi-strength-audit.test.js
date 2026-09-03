@@ -91,3 +91,25 @@ test('低分无强根的真极弱盘不触发临界误报，仍严格判为不�
   assert.ok(pattern.breakReasons.includes('日主极弱，难以承载格局用神'));
   assert.equal(audit.warnings.some(item => item.code === 'EXTREME_WEAK_BOUNDARY_SUPPORT'), false);
 });
+
+test('得令双根透印盘不因浮财与寅巳刑害重复扣分误判中和', () => {
+  const E = loadCalculator();
+  const chart = chartOf(E, ['癸未','壬戌','戊寅','丁巳']);
+  const strength = E.calcDayMasterStrength(chart, { audit:true });
+
+  assert.equal(strength.score, 60);
+  assert.equal(strength.level, '偏强');
+  assert.equal(strength.audit.stages.find(stage => stage.id === 'day-seat-hidden-support').delta, 5);
+  assert.equal(strength.audit.stages.find(stage => stage.id === 'visible-stem-rooting').delta, 4);
+  // 未戌刑 -1；寅巳同时见刑、害，但同一对只取最重 -2，不再累计为 -4。
+  assert.equal(strength.audit.stages.find(stage => stage.id === 'branch-interactions').delta, -3);
+});
+
+test('没有透印有根承载时，不启用浮透折减与日支印杀通关补偿', () => {
+  const E = loadCalculator();
+  const chart = chartOf(E, ['癸未','壬戌','戊寅','甲子']);
+  const strength = E.calcDayMasterStrength(chart, { audit:true });
+
+  assert.equal(strength.audit.stages.find(stage => stage.id === 'day-seat-hidden-support').delta, 0);
+  assert.equal(strength.audit.stages.find(stage => stage.id === 'visible-stem-rooting').delta, 0);
+});
