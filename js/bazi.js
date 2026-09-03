@@ -2261,6 +2261,9 @@ function calcDayMasterStrength(bazi, options) {
     }
   });
   var mwx = HUI_MONTH_OVERRIDE || DI_ZHI_WU_XING[bazi.month.zhi];
+  // 记录月令实际计入的生扶信用，供后续月日六冲按同一份分值回收，
+  // 避免旺衰层把受冲月令算满分、根气层却判为受损的跨模块矛盾。
+  var _monthSupportCredit = 0;
   // 湿土调候：丑辰湿土蓄水养金，克水力远弱于未戌燥土
   // 壬癸水见丑辰不算真死令
   var wetEarthAdj = (dgWx === '水' && (bazi.month.zhi === '丑' || bazi.month.zhi === '辰')) ? 12 : 0;
@@ -2268,13 +2271,15 @@ function calcDayMasterStrength(bazi, options) {
     // 土日主生土月按季节旺相休囚死折算：未月土旺+30、戌月土休+12、丑月土囚-8、辰月土死-5
     // 木火金水日主不受影响（其本气月即其旺季，辰戌丑未之外月支本气非土）
     var _tuSeason = { '未':30, '戌':12, '丑':-8, '辰':-5 };
-    score += (dgWx === '土' && _tuSeason[bazi.month.zhi] !== undefined) ? _tuSeason[bazi.month.zhi] : 30;
+    var _monthSameCredit = (dgWx === '土' && _tuSeason[bazi.month.zhi] !== undefined) ? _tuSeason[bazi.month.zhi] : 30;
+    score += _monthSameCredit;
+    if (_monthSameCredit > 0) _monthSupportCredit = _monthSameCredit;
   }
   else if (SHENGWO[dgWx] === mwx) {
     // 未戌燥土不能机械按零分：原局见水/湿土润燥且金有完整根时，燥土恢复部分生金之力。
-    if (!_dryEarthMetalState.isDryEarthMonth) score += 20;
+    if (!_dryEarthMetalState.isDryEarthMonth) { score += 20; _monthSupportCredit = 20; }
     // 得润且有完整金根时按八成印令计分：仍弱于丑辰湿土，但不能再把月令印星近似清零。
-    else if (_dryEarthMetalState.supportRestored) score += 16;
+    else if (_dryEarthMetalState.supportRestored) { score += 16; _monthSupportCredit = 16; }
   }
   else if (WOSHENG[dgWx] === mwx) { score -= 15; _restOrder = true; }
   else if (WOKE[dgWx] === mwx)   { score -= 10; _prisonOrder = true; }
@@ -2689,6 +2694,28 @@ function calcDayMasterStrength(bazi, options) {
     }
   });
 
+  // 月令为日主的旺/相生扶，却被日支正面六冲时，必须折损①阶段已经计入的月令信用。
+  // 若原局另有独立的透干印比或年/时支本气印比，月令不是唯一支点，按两成回收；
+  // 若没有独立支撑，按四成回收。原有“日支被冲 -3”仍保留，表示双方直接冲动。
+  var _monthSupportClashPenalty = 0;
+  var _monthClashIndependentSupports = 0;
+  var _monthDaySupportClash = _monthSupportCredit > 0 && chongMap[bazi.month.zhi] === bazi.day.zhi;
+  if (_monthDaySupportClash) {
+    var _independentSupportCount = 0;
+    ['year','month','hour'].forEach(function(pos) {
+      var _gWxSupport = WU_XING[bazi[pos].gan];
+      if (_gWxSupport === dgWx || SHENGWO[dgWx] === _gWxSupport) _independentSupportCount++;
+    });
+    ['year','hour'].forEach(function(pos) {
+      var _zWxSupport = DI_ZHI_WU_XING[bazi[pos].zhi];
+      if (_zWxSupport === dgWx || SHENGWO[dgWx] === _zWxSupport) _independentSupportCount++;
+    });
+    var _monthClashRatio = _independentSupportCount > 0 ? 0.2 : 0.4;
+    _monthClashIndependentSupports = _independentSupportCount;
+    _monthSupportClashPenalty = Math.round(_monthSupportCredit * _monthClashRatio);
+    score -= _monthSupportClashPenalty;
+  }
+
   // 三合局检测（需三字俱全）
   SAN_HE.forEach(function(tri) {
     var wx = tri[3];
@@ -2869,7 +2896,12 @@ function calcDayMasterStrength(bazi, options) {
   }
   score += dayBranchAdj;
 
-  _auditMark('branch-interactions', '地支合冲刑害会', null);
+  _auditMark('branch-interactions', '地支合冲刑害会', {
+    monthDaySupportClash:_monthDaySupportClash,
+    monthSupportCredit:_monthSupportCredit,
+    independentSupports:_monthClashIndependentSupports,
+    monthSupportClashPenalty:_monthSupportClashPenalty
+  });
 
   // ---------- ⑧½ 杀印相生结构修正 ----------
   // 官杀当令克身（死令），但天干有印星贴身通关，日主有长生/禄位根
