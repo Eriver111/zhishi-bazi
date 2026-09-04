@@ -39,7 +39,8 @@ test('护栏：只有完整申根、但原局无水和湿土，仍按未润燥�
   const strength = calculator.calcDayMasterStrength(chart);
   const yongJi = calculator.getYongJi(calculator.buildFromPillars(chart, 'male'));
 
-  assert.equal(strength.score, 36);
+  // 午未条件不足时只论合绊，不再把“合土生金”和“半会火克金”各算一遍。
+  assert.equal(strength.score, 37);
   assert.equal(strength.level, '偏弱');
   assert.deepEqual(Array.from(yongJi.yongShen), ['水']);
   assert.match(yongJi.reasoning, /燥土不生金/);
@@ -50,7 +51,7 @@ test('护栏：只有壬水润燥、但申酉根缺失，不能凭印星反判�
   const chart = pillars('甲寅 甲戌 辛未 壬午');
   const strength = calculator.calcDayMasterStrength(chart);
 
-  assert.equal(strength.score, 28);
+  assert.equal(strength.score, 29);
   assert.equal(strength.level, '极弱');
 });
 

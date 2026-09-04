@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260903b/, `${page} must load the auditable strength core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260904a/, `${page} must load the auditable strength core bundle`);
   }
 });
 
@@ -88,6 +88,22 @@ test('调候辅助不能覆盖最终核心用神的首要理由', () => {
     assert.match(result.reasoning, new RegExp(coreReason));
     assert.ok(result.reasoning.indexOf(coreReason) < result.reasoning.indexOf('调候辅助：'));
   }
+});
+
+test('调候五行独立标注，结构为忌时不得表述成纯忌神', () => {
+  const calculator = loadCalculator();
+  const result = calculator.getYongJi(calculator.buildFromPillars(
+    pillars(['甲申', '辛未', '丙辰', '甲午']),
+    'male'
+  ));
+
+  assert.deepEqual(Array.from(result.tiaoHouYongShen), ['水']);
+  assert.ok(result.jiShen.includes('水'));
+  assert.deepEqual(Array.from(result.dualRoleElements), ['水']);
+  assert.equal(result.elementReasons['水'].tiaoHouRole, '调候用神');
+  assert.equal(result.elementReasons['水'].dualRole, true);
+  assert.match(result.elementReasons['水'].reasons.join('；'), /不能作纯忌论/);
+  assert.match(result.tiaoHouReason, /水调候润局/);
 });
 
 test('候选对比先展示核心结构分并把调候分明确标为参考', () => {

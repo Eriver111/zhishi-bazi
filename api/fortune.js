@@ -195,7 +195,9 @@ module.exports = async function handler(req, res) {
           '四柱：' + dailyFacts.pillars,
           '日主：' + dayGan + '，旺衰：' + dailyFacts.strength.level + '（' + dailyFacts.strength.score + '分）',
           '格局：' + dailyFacts.pattern.name + '·' + dailyFacts.pattern.status,
-          '用神：' + dailyFacts.yongJi.yongShen.join('、') + '；喜神：' + dailyFacts.yongJi.xiShen.join('、') + '；忌神：' + dailyFacts.yongJi.jiShen.join('、'),
+          '用神：' + dailyFacts.yongJi.yongShen.join('、') + '；喜神：' + dailyFacts.yongJi.xiShen.join('、')
+            + (dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length ? '；调候用神：' + dailyFacts.yongJi.tiaoHouYongShen.join('、') + '（宜有度）' : '')
+            + '；' + (dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length ? '结构忌神' : '忌神') + '：' + dailyFacts.yongJi.jiShen.join('、'),
           '岁运日环境：' + dailyFacts.context.map(function(row){return row.label + row.pillar + '（干' + row.ganRole + '、支' + row.zhiRole + '）';}).join('；'),
           '今日结论：' + dailyFacts.tendency + '；重点领域：' + (dailyFacts.focus.join('、') || '日常安排'),
           '明确引动：' + (dailyFacts.events.length ? dailyFacts.events.map(function(event){return event.detail;}).join('；') : '无强烈刑冲合害')

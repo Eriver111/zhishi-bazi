@@ -24,6 +24,39 @@ const DI_ZHI_WU_XING = {
     '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水'
 };
 
+// 午未同时属于六合关系，又位于巳午未南方火会中，不能把“合土”和“半会火”
+// 当作两笔相反分数重复结算。这里先裁定唯一作用方向，供旺衰、根气和审计共用。
+function resolveWuWeiInteraction(bazi) {
+    var positions = ['year','month','day','hour'];
+    var branches = positions.map(function(pos) { return bazi[pos].zhi; });
+    if (branches.indexOf('午') < 0 || branches.indexOf('未') < 0) return null;
+    if (branches.indexOf('巳') >= 0) {
+        return { mode:'full-fire', element:'火', label:'巳午未三会火', reason:'巳午未三支齐全，按南方火会统一结算' };
+    }
+
+    var month = bazi.month.zhi;
+    var fireSupport = 0;
+    var earthSupport = 0;
+    positions.forEach(function(pos) {
+        var stemWx = WU_XING[bazi[pos].gan];
+        var branchWx = DI_ZHI_WU_XING[bazi[pos].zhi];
+        if (stemWx === '火' || stemWx === '木') fireSupport += pos === 'month' ? 2 : 1;
+        if (branchWx === '火' || branchWx === '木') fireSupport += pos === 'month' ? 2 : 1;
+        if (stemWx === '土') earthSupport += pos === 'month' ? 2 : 1;
+        if (branchWx === '土') earthSupport += pos === 'month' ? 2 : 1;
+    });
+
+    // 午、巳月火得令，或全局木火明显压倒土势，才允许午未按南方连气增火。
+    if (month === '午' || month === '巳' || (fireSupport >= 6 && fireSupport >= earthSupport + 3)) {
+        return { mode:'fire-tendency', element:'火', label:'午未火势', reason:'火得令或全局木火成势，午未只作南方连气，不另算合土' };
+    }
+    // 未月只在另有土根或土透、土势确实成立时趋土；仍是趋化而非把午根抹掉。
+    if (month === '未' && earthSupport >= 3) {
+        return { mode:'earth-tendency', element:'土', label:'午未趋土', reason:'未月土当令且土势有承接，午未向土，但仅作轻度趋化' };
+    }
+    return { mode:'binding', element:'', label:'午未合绊', reason:'既无火势成局，也无未月土势承接，只论合绊，不改变五行方向' };
+}
+
 // 十神
 const SHI_SHEN = {
     '比肩': ['甲甲', '乙乙', '丙丙', '丁丁', '戊戊', '己己', '庚庚', '辛辛', '壬壬', '癸癸'],
@@ -2280,6 +2313,7 @@ function buildBaziEvidenceSettlement(bazi) {
   for (var ci=0; ci<positions.length; ci++) {
     for (var cj=ci+1; cj<positions.length; cj++) {
       var cp1=positions[ci], cp2=positions[cj], cwx=combine[bazi[cp1].zhi + bazi[cp2].zhi];
+      if ((bazi[cp1].zhi === '午' && bazi[cp2].zhi === '未') || (bazi[cp1].zhi === '未' && bazi[cp2].zhi === '午')) continue;
       if (cwx) applyDiversion('branch-combine:' + cp1 + '-' + cp2, [cp1,cp2], cwx, 0.75, '六合');
     }
   }
@@ -2293,9 +2327,18 @@ function buildBaziEvidenceSettlement(bazi) {
       applyDiversion('branch-group:' + group.full + ':' + group.members.join(''), memberPositions, group.element, 0.5, group.full);
     } else {
       var validHalf = count === 2 && (group.requireMiddle ? present[1] : ((present[0] && present[1]) || (present[1] && present[2])));
+      var isWuWeiFireHalf = group.full === '三会' && group.element === '火' && distinct['午'] && distinct['未'];
+      if (isWuWeiFireHalf && resolveWuWeiInteraction(bazi).mode !== 'fire-tendency') validHalf = false;
       if (validHalf) applyDiversion('branch-group:' + group.half + ':' + memberPositions.join('-'), memberPositions, group.element, 0.75, group.half);
     }
   });
+  var wuWeiSettlement = resolveWuWeiInteraction(bazi);
+  if (wuWeiSettlement && wuWeiSettlement.mode === 'earth-tendency') {
+    var wuWeiPositions = positions.filter(function(pos) { return bazi[pos].zhi === '午' || bazi[pos].zhi === '未'; });
+    applyDiversion('branch-wuwei:' + wuWeiPositions.join('-'), wuWeiPositions, '土', 0.85, '午未趋土');
+  } else if (wuWeiSettlement && wuWeiSettlement.mode === 'binding') {
+    groupSettlements.push({ id:'branch-wuwei:binding', relation:'午未合绊', positions:positions.filter(function(pos) { return bazi[pos].zhi === '午' || bazi[pos].zhi === '未'; }), formedElement:'', coefficient:1, affectedRootIds:[] });
+  }
   var groupPriority = { '三会':5, '三合':4, '六合':3, '半会':2, '半合':1 };
   var dominantDiversionByPosition = {};
   positions.forEach(function(pos) {
@@ -2889,6 +2932,7 @@ function calcDayMasterStrength(bazi, options) {
   // 三合局
   var SAN_HE = [['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
   var allZhiArr = [bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi];
+  var _wuWeiResolution = resolveWuWeiInteraction(bazi);
   var _branchDisturbanceSettlements = [];
 
   adjZhi.forEach(function(pair) {
@@ -2926,7 +2970,8 @@ function calcDayMasterStrength(bazi, options) {
 
     // 地支合化：相邻地支合化出新五行
     var heKey = z1 + z2;
-    if (zhiHeScore[heKey] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[heKey]) {
+    var isWuWeiPair = (z1 === '午' && z2 === '未') || (z1 === '未' && z2 === '午');
+    if (!isWuWeiPair && zhiHeScore[heKey] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[heKey]) {
       var heWx = zhiHeScore[heKey];
       if (heWx === dgWx) score += 2;           // 合化为日主 → 强根
       else if (SHENGWO[dgWx] === heWx) score += 1; // 合化为印 → 助力
@@ -2989,7 +3034,8 @@ function calcDayMasterStrength(bazi, options) {
       if (Math.abs(a-b) === 1) continue; // 相邻柱地支合已在§⑧处理，这里只补跨柱
       var za = bazi[allPositions[a]].zhi, zb = bazi[allPositions[b]].zhi;
       var heKey2 = za + zb;
-      if (zhiHeScore[heKey2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[heKey2]) {
+      var isWuWeiPair2 = (za === '午' && zb === '未') || (za === '未' && zb === '午');
+      if (!isWuWeiPair2 && zhiHeScore[heKey2] && DI_ZHI_WU_XING[bazi.month.zhi] === zhiHeScore[heKey2]) {
         var heWx2 = zhiHeScore[heKey2];
         // 用位置判断涉月令（年月同支时年≠月，不能用值相等判）
         var involvesMonth = (allPositions[a]==='month' || allPositions[b]==='month');
@@ -3017,6 +3063,16 @@ function calcDayMasterStrength(bazi, options) {
     }
   }
 
+  // 午未竞争关系只结算一个方向：
+  // - 趋火交由下方“半会火”原有分值承接，不能在这里再加一遍；
+  // - 趋土在这里作一次轻度修正；
+  // - 合绊不改五行；完整巳午未仍交由“三会火”规则处理。
+  if (_wuWeiResolution && _wuWeiResolution.mode === 'earth-tendency') {
+    var wuWeiWx = _wuWeiResolution.element;
+    if (wuWeiWx === dgWx || SHENGWO[dgWx] === wuWeiWx) score += 1;
+    else if (KEWO[dgWx] === wuWeiWx || WOSHENG[dgWx] === wuWeiWx || WOKE[dgWx] === wuWeiWx) score -= 1;
+  }
+
   // 三会局检测（寅卯辰/巳午未/申酉戌/亥子丑 — 比三合局更强）
   var HUI_JU = [
     { zhi: ['寅','卯','辰'], wx: '木' },
@@ -3037,6 +3093,7 @@ function calcDayMasterStrength(bazi, options) {
       else if (WOSHENG[dgWx] === hj.wx) score -= 6;
       else if (WOKE[dgWx] === hj.wx) score -= 4;
     } else if (fullCount === 2 && ((has[0] && has[1]) || (has[1] && has[2]))) {
+      if (hj.wx === '火' && has[1] && has[2] && _wuWeiResolution && _wuWeiResolution.mode !== 'fire-tendency') return;
       // 半会 — 力量约等于半合但略强
       var involvesDayHui = hj.zhi.indexOf(bazi.day.zhi) >= 0;
       var involvesMonthHui = hj.zhi.indexOf(bazi.month.zhi) >= 0;
@@ -3143,7 +3200,8 @@ function calcDayMasterStrength(bazi, options) {
     monthSupportCredit:_monthSupportCredit,
     independentSupports:_monthClashIndependentSupports,
     monthSupportClashPenalty:_monthSupportClashPenalty,
-    settlements:_branchDisturbanceSettlements
+    settlements:_branchDisturbanceSettlements,
+    wuWeiResolution:_wuWeiResolution
   });
 
   // ---------- ⑧½ 杀印相生结构修正 ----------
@@ -3409,6 +3467,7 @@ function buildBaziEventLedger(bazi, scoreStages) {
   var clash = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   var harm = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
   var combine = { '子丑':'土','丑子':'土','寅亥':'木','亥寅':'木','卯戌':'火','戌卯':'火','辰酉':'金','酉辰':'金','巳申':'水','申巳':'水','午未':'土','未午':'土' };
+  var wuWeiResolution = resolveWuWeiInteraction(bazi);
   var punish = { '子卯':1,'卯子':1,'寅巳':1,'巳寅':1,'寅申':1,'申寅':1,'巳申':1,'申巳':1,'丑戌':1,'戌丑':1,'丑未':1,'未丑':1,'戌未':1,'未戌':1 };
   var stemCombine = { '甲己':'土','己甲':'土','乙庚':'金','庚乙':'金','丙辛':'水','辛丙':'水','丁壬':'木','壬丁':'木','戊癸':'火','癸戊':'火' };
   for (var i=0; i<positions.length; i++) {
@@ -3422,7 +3481,7 @@ function buildBaziEventLedger(bazi, scoreStages) {
       if (z1 === z2 && ['辰','午','酉','亥'].indexOf(z1) >= 0) {
         addEvent('branch-relation', pair[0], pair[1], '自刑', z1 + z2, { relation:'自刑', branches:[z1,z2], adjacent:adjacent });
       }
-      if (combine[z1 + z2]) addEvent('branch-relation', pair[0], pair[1], '六合', combine[z1 + z2], { relation:'六合', branches:[z1,z2], resultElement:combine[z1 + z2], adjacent:adjacent });
+      if (combine[z1 + z2]) addEvent('branch-relation', pair[0], pair[1], '六合', combine[z1 + z2], { relation:'六合', branches:[z1,z2], resultElement:combine[z1 + z2], adjacent:adjacent, resolution:((z1==='午'&&z2==='未')||(z1==='未'&&z2==='午'))?wuWeiResolution:null });
       var g1 = bazi[p1].gan, g2 = bazi[p2].gan;
       if (stemCombine[g1 + g2]) addEvent('stem-relation', pair[0], pair[1], '五合', stemCombine[g1 + g2], { relation:'五合', stems:[g1,g2], resultElement:stemCombine[g1 + g2] });
     }
@@ -3447,6 +3506,7 @@ function buildBaziEventLedger(bazi, scoreStages) {
     var qualifiesHalf = group.relation === '三合'
       ? distinctCount === 2 && present[1]
       : distinctCount === 2 && ((present[0] && present[1]) || (present[1] && present[2]));
+    if (group.relation === '三会' && group.element === '火' && present[1] && present[2] && wuWeiResolution && wuWeiResolution.mode !== 'fire-tendency') qualifiesHalf = false;
     if (qualifiesHalf) {
       var presentBranches = group.branches.filter(function(branch, index) { return present[index]; });
       addEvent('branch-group', matched.join('+'), null, group.relation === '三合' ? '半合' : '半会', group.element, {
@@ -6292,6 +6352,13 @@ function normalizeYongJiLists(xiShen, yongShen, jiShen) {
 
 function finalizeYongJiResult(bazi, base, context) {
   var lists = normalizeYongJiLists(base.xiShen, base.yongShen, base.jiShen);
+  var tiaoHouYongShen = Array.from(new Set(
+    ((context.candidateScores && context.candidateScores.tiaoHouYongShen) || [])
+      .filter(function(wx) { return ['木','火','土','金','水'].indexOf(wx) >= 0; })
+  ));
+  var dualRoleElements = tiaoHouYongShen.filter(function(wx) {
+    return lists.jiShen.indexOf(wx) >= 0;
+  });
   var pattern = context.pattern || getPattern(bazi);
   var method = context.cong && context.cong.isCong ? '从格顺势'
     : pattern.status === '条件待定' ? '格局条件待定'
@@ -6342,6 +6409,19 @@ function finalizeYongJiResult(bazi, base, context) {
         ? (relationFor(wx) + '，用于辅助用神并维持命局流通')
         : (relationFor(wx) + '，会加重当前失衡或破坏已有制化');
     elementReasons[wx] = { role: role, reasons: [mechanism, presenceFor(wx)] };
+  });
+  tiaoHouYongShen.forEach(function(wx) {
+    if (!elementReasons[wx]) {
+      elementReasons[wx] = { role:'调候用神', reasons:[presenceFor(wx)] };
+    }
+    elementReasons[wx].tiaoHouRole = '调候用神';
+    elementReasons[wx].tiaoHouReason = context.tiaoHouNote || '用于调节命局寒暖燥湿。';
+    elementReasons[wx].dualRole = lists.jiShen.indexOf(wx) >= 0;
+    if (elementReasons[wx].dualRole) {
+      elementReasons[wx].reasons.unshift(wx + '在扶抑结构上不宜增多，但在寒暖燥湿上承担调候作用，宜有度使用，不能作纯忌论');
+    } else {
+      elementReasons[wx].reasons.unshift(wx + '同时承担寒暖燥湿的调候作用');
+    }
   });
 
   if (method === '扶抑为主·调候辅助' && lists.yongShen.length) {
@@ -6433,6 +6513,9 @@ function finalizeYongJiResult(bazi, base, context) {
     xiShen: lists.xiShen,
     yongShen: lists.yongShen,
     jiShen: lists.jiShen,
+    tiaoHouYongShen: tiaoHouYongShen,
+    tiaoHouReason: context.tiaoHouNote || '',
+    dualRoleElements: dualRoleElements,
     reasoning: base.reasoning,
     congGe: base.congGe,
     method: method,
@@ -6700,7 +6783,12 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   // 避免把扶抑对侧的五行硬抬成喜神（冬火全喜翻转类 bug）。身弱=偏弱/极弱，身强=偏强/极强，中和不加。
   var L4 = zeroMap();
   var tiaoHouNote = '';
+  var tiaoHouYongShen = [];
+  var addTiaoHouYongShen = function(wx) {
+    if (tiaoHouYongShen.indexOf(wx) < 0) tiaoHouYongShen.push(wx);
+  };
   var addL4 = function(wx, val, note) {
+    if (val > 0) addTiaoHouYongShen(wx);
     if (val > L4[wx]) { L4[wx] = val; l4Details.push({ wx: wx, val: val, note: note }); }
   };
   var hasWxGlobal = function(wx) {
@@ -6758,6 +6846,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   if ((dmWx === '火' || dmWx === '土') && mz === '未') {
     // 火日主本无加分（水官杀不抬升），说明无条件保留；土日主水财仅在身强时加（克泄耗侧对齐）。
     if (dmWx !== '火' && dmQiang) addL4('水', 6, '未月火土燥烈，水润局');
+    addTiaoHouYongShen('水');
     tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
   }
   if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0 && dmQiang) {
@@ -6857,6 +6946,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     l3Details: l3Details,
     l4Details: l4Details,
     tiaoHouNote: tiaoHouNote,
+    tiaoHouYongShen: tiaoHouYongShen,
     weaknessCause: outputDrainDominant ? {
       type: '食伤泄身',
       outputElement: WO_SHENG,

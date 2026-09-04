@@ -110,7 +110,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
 - **pattern**（格局）：name（格局名）、status（成格/破格）、source（取格依据）和 breakReasons（破格原因）是一个不可拆分的冻结裁决。必须逐字采用 pattern.name，禁止按模型自带知识、月令本气或其他流派重新取格。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。若用户追问流派差异，只能把其他名称标成“其他流派可能称为……”，不得替换本站主格。
 - **pattern.mechanism**（格局机制）：财生官/财生杀等十神关系事实标注，仅用于解释格名由来（如"月干七杀+月支财星→财生杀格"）。**这是解释字段，不是裁决字段**：不得因 mechanism 与格名文字不同就推断"格局判定错误"，不得据此改动 pattern/status/strength/用神喜忌。
-- **yongJi**（喜用忌神）：只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用，所以同一五行可以同时出现在 yongShen 与 xiShen，但 jiShen 必须与二者互斥。三组五行及 method、primaryReason、evidence、elementReasons 已由系统算好，**严格按此回答**，禁止另设闲神、仇神等类别，也禁止自行推断或替换。
+- **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用，所以同一五行可以同时出现在 yongShen 与 xiShen，但 jiShen 必须与二者互斥。另有 **tiaoHouYongShen（调候用神）**，它是寒暖燥湿轴的独立标注，不等于结构喜神。若某五行同时在 jiShen 与 tiaoHouYongShen 中，必须解释为“扶抑结构上不宜增多，但调候上有条件地需要，宜适量，不作纯忌论”，禁止把它说成绝对忌神或无条件越多越好。所有字段均须严格引用，禁止自行推断或替换。
 - **yongJi.evidence 候选对比**（五行候选评分对比）：仅解释"为什么取这个用神、未取哪个候选"，是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
 - **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
@@ -1169,7 +1169,9 @@ function buildSingleChart(data) {
     ctx += `\n喜用忌神分析：\n`;
     ctx += `  用神：${(yj.yongShen || []).join('、') || '—'}\n`;
     ctx += `  喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
-    ctx += `  忌神：${(yj.jiShen || []).join('、') || '—'}\n`;
+    if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) ctx += `  调候用神：${yj.tiaoHouYongShen.join('、')}（寒暖燥湿轴，宜有度）\n`;
+    ctx += `  ${yj.tiaoHouYongShen && yj.tiaoHouYongShen.length ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}\n`;
+    if (yj.dualRoleElements && yj.dualRoleElements.length) ctx += `  双重角色：${yj.dualRoleElements.join('、')}在扶抑结构上不宜增多，但兼具调候作用，不作纯忌论。\n`;
     ctx += `  取用方法：${yj.method || '—'}\n`;
     ctx += `  核心依据：${yj.primaryReason || yj.reasoning || ''}\n`;
     if (yj.evidence && yj.evidence.length) {
@@ -1537,7 +1539,10 @@ function generateMockReply(question, chartData, bazi, mode) {
       r += `系统判定采用**${yj.method || '综合取用'}**：${yj.primaryReason || yj.reasoning || ''}\n\n`;
       r += `- 用神：${(yj.yongShen || []).join('、') || '—'}\n`;
       r += `- 喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
-      r += `- 忌神：${(yj.jiShen || []).join('、') || '—'}\n\n`;
+      if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) r += `- 调候用神：${yj.tiaoHouYongShen.join('、')}（用于寒暖燥湿，宜有度）\n`;
+      r += `- ${yj.tiaoHouYongShen && yj.tiaoHouYongShen.length ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}\n`;
+      if (yj.dualRoleElements && yj.dualRoleElements.length) r += `- 双重角色说明：${yj.dualRoleElements.join('、')}在扶抑结构上不宜增多，但兼具调候作用，不作纯忌论。\n`;
+      r += '\n';
       if (yj.elementReasons) {
         Object.entries(yj.elementReasons).forEach(([wx, item]) => {
           r += `${item.role}·${wx}：${(item.reasons || []).join('；')}\n`;
@@ -1568,7 +1573,10 @@ function generateMockReply(question, chartData, bazi, mode) {
       if (weak.length) {
         r += `五行分布中未直接出现：${weak.map(([k]) => k).join('、')}。缺失不等于喜用，不能据此直接建议“缺什么补什么”。\n`;
         if (chartData.yongJi) {
-          r += `系统喜神：${(chartData.yongJi.xiShen || []).join('、') || '—'}；用神：${(chartData.yongJi.yongShen || []).join('、') || '—'}；忌神：${(chartData.yongJi.jiShen || []).join('、') || '—'}。\n`;
+          const yj = chartData.yongJi;
+          r += `系统喜神：${(yj.xiShen || []).join('、') || '—'}；用神：${(yj.yongShen || []).join('、') || '—'}`;
+          if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) r += `；调候用神：${yj.tiaoHouYongShen.join('、')}（宜有度）`;
+          r += `；${yj.tiaoHouYongShen && yj.tiaoHouYongShen.length ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}。\n`;
         }
       }
       if (strong.length) r += `五行过旺：${strong.map(([k]) => k).join('、')}，需注意平衡调和。\n`;
