@@ -2714,19 +2714,34 @@ function calcDayMasterStrength(bazi, options) {
   // 三合局
   var SAN_HE = [['寅','午','戌','火'],['亥','卯','未','木'],['申','子','辰','水'],['巳','酉','丑','金']];
   var allZhiArr = [bazi.year.zhi,bazi.month.zhi,bazi.day.zhi,bazi.hour.zhi];
+  var _branchDisturbanceSettlements = [];
 
   adjZhi.forEach(function(pair) {
     var z1 = bazi[pair[0]].zhi, z2 = bazi[pair[1]].zhi;
     var w1 = DI_ZHI_WU_XING[z1], w2 = DI_ZHI_WU_XING[z2];
 
-    // 同一对涉及日支的地支可能同时被表记为刑、害（如寅巳）。当原局已有“得令、双根、
-    // 透印有根”的稳定承载框架时，它们描述的是同一坐支受扰状态，不应层层重复削根；
-    // 此时刑害只取最重项。失令或无稳定根架的盘仍保留复合压力，六冲也始终独立计入。
+    // 同一对涉及日支的地支可能同时被表记为刑、害（如寅巳）。刑、害事实都保留，
+    // 但对旺衰而言描述的是同一次坐支受扰，不再因两个名称重复削弱日主；只取最重项。
+    // 非日支关系尚需先识别具体受损根气，第二阶段本小步不抢跑合并；六冲始终独立计入。
     var _involvesDayRelation = (z1 === bazi.day.zhi || z2 === bazi.day.zhi);
     var _chongPenalty = chongMap[z1] === z2 ? (_involvesDayRelation ? 3 : 1) : 0;
     var _haiPenalty = haiMap[z1] === z2 ? (_involvesDayRelation ? 2 : 1) : 0;
     var _xingPenalty = xingMap[z1 + z2] ? (_involvesDayRelation ? 2 : 1) : 0;
-    var _softRelationPenalty = (_involvesDayRelation && _stableRootedSealFrame) ? Math.max(_haiPenalty, _xingPenalty) : (_haiPenalty + _xingPenalty);
+    var _mergeSoftRelations = _involvesDayRelation && _haiPenalty > 0 && _xingPenalty > 0;
+    var _softRelationPenalty = _mergeSoftRelations ? Math.max(_haiPenalty, _xingPenalty) : (_haiPenalty + _xingPenalty);
+    var _primarySoftRelation = _xingPenalty >= _haiPenalty && _xingPenalty > 0 ? '相刑' : (_haiPenalty > 0 ? '六害' : '');
+    var _suppressedSoftRelations = [];
+    if (_mergeSoftRelations) _suppressedSoftRelations.push(_primarySoftRelation === '相刑' ? '六害' : '相刑');
+    if (_chongPenalty || _haiPenalty || _xingPenalty) {
+      _branchDisturbanceSettlements.push({
+        id:'branch-disturbance:' + pair[0] + '-' + pair[1], source:pair[0], target:pair[1],
+        branches:[z1,z2], involvesDay:_involvesDayRelation,
+        raw:{ clash:_chongPenalty, harm:_haiPenalty, punishment:_xingPenalty },
+        applied:{ clash:_chongPenalty, soft:_softRelationPenalty, total:_chongPenalty + _softRelationPenalty },
+        primarySoftRelation:_primarySoftRelation,
+        suppressedSoftRelations:_suppressedSoftRelations
+      });
+    }
     score -= (_chongPenalty + _softRelationPenalty);
 
     // 地支合化：相邻地支合化出新五行
@@ -2947,7 +2962,8 @@ function calcDayMasterStrength(bazi, options) {
     monthDaySupportClash:_monthDaySupportClash,
     monthSupportCredit:_monthSupportCredit,
     independentSupports:_monthClashIndependentSupports,
-    monthSupportClashPenalty:_monthSupportClashPenalty
+    monthSupportClashPenalty:_monthSupportClashPenalty,
+    settlements:_branchDisturbanceSettlements
   });
 
   // ---------- ⑧½ 杀印相生结构修正 ----------
@@ -3328,6 +3344,42 @@ function buildBaziEventLedger(bazi, scoreStages) {
     });
   }
 
+  // 将主引擎已经完成的邻柱受扰结算回写到事实事件。刑、害仍是两条独立事实，
+  // 但若二者共同指向日支，只让主关系承担当次扣分，另一条标为合并而非消失。
+  var disturbanceSettlements = interactionStage && interactionStage.meta && interactionStage.meta.settlements
+    ? interactionStage.meta.settlements : [];
+  disturbanceSettlements.forEach(function(settlement) {
+    var relationPenalty = {
+      '六冲':settlement.raw.clash,
+      '六害':settlement.raw.harm,
+      '相刑':settlement.raw.punishment
+    };
+    events.filter(function(event) {
+      return event.type === 'branch-relation' && event.source === settlement.source && event.target === settlement.target &&
+        Object.prototype.hasOwnProperty.call(relationPenalty, event.data.relation);
+    }).forEach(function(event) {
+      var penalty = relationPenalty[event.data.relation] || 0;
+      event.data.settlementId = settlement.id;
+      event.baseValue = -penalty;
+      event.finalValue = -penalty;
+      if (settlement.suppressedSoftRelations.indexOf(event.data.relation) >= 0) {
+        event.effectiveCoefficient = 0;
+        event.finalValue = 0;
+        event.state = 'merged';
+        event.adjustments.push({
+          type:'duplicate-merge', reason:'与同一对地支的' + settlement.primarySoftRelation + '描述同一次日支受扰',
+          delta:penalty, settlementId:settlement.id, mergedInto:settlement.primarySoftRelation
+        });
+      } else if (event.data.relation === settlement.primarySoftRelation && settlement.suppressedSoftRelations.length) {
+        event.finalValue = -settlement.applied.soft;
+        event.adjustments.push({
+          type:'settlement-owner', reason:'同对刑害合并后由最重关系统一结算',
+          delta:0, settlementId:settlement.id
+        });
+      }
+    });
+  });
+
   // 根气受冲、刑、害只改变状态，不在账本中自行给分；后续阶段会把各处折损
   // 统一迁移到 effectiveCoefficient，避免此处提前制造第二套算法。
   events.filter(function(e) { return e.type === 'root'; }).forEach(function(root) {
@@ -3361,11 +3413,16 @@ function buildBaziEventLedger(bazi, scoreStages) {
       .map(function(adj) { return adj.delta > 0 ? 'increase' : 'decrease'; });
     return directions.indexOf('increase') >= 0 && directions.indexOf('decrease') >= 0;
   }).map(function(event) { return event.id; });
+  var resolvedDuplicateSettlements = events.filter(function(event) { return event.state === 'merged'; }).map(function(event) {
+    var merge = event.adjustments.filter(function(adj) { return adj.type === 'duplicate-merge'; })[0];
+    return { eventId:event.id, settlementId:merge ? merge.settlementId : '', mergedInto:merge ? merge.mergedInto : '' };
+  });
   return {
     version:'bazi-event-ledger-v1', internalOnly:true, mode:'observe-only', chartKey:chartKey,
     events:events, consumers:consumers,
     audit:{
       duplicateScoreConsumers:duplicateScoreConsumers,
+      resolvedDuplicateSettlements:resolvedDuplicateSettlements,
       contradictoryAdjustments:contradictoryAdjustments,
       unconsumedEventIds:unconsumedEventIds,
       eventCount:events.length, consumerCount:consumers.length

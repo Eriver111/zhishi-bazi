@@ -120,3 +120,43 @@ test('月令先给分后受冲折损记录为同一信用的状态追回', () =>
   assert.equal(recovery.delta, -8);
   assert.equal(recovery.sourceStage, 'branch-interactions');
 });
+
+test('日支与同一支同时构成刑害时只结算一次受扰状态', () => {
+  const E = loadCalculator();
+  const chart = chartOf(E, ['辛亥', '庚寅', '己巳', '庚午']);
+  const audit = E.auditDayMasterStrength(chart);
+  const stage = Array.from(audit.scoreTrace).find(item => item.id === 'branch-interactions');
+  const settlement = Array.from(stage.meta.settlements).find(item =>
+    item.source === 'month' && item.target === 'day'
+  );
+
+  assert.equal(audit.result.score, 25);
+  assert.deepEqual({ hai:settlement.raw.harm, xing:settlement.raw.punishment }, { hai:2, xing:2 });
+  assert.equal(settlement.applied.soft, 2);
+  assert.equal(settlement.primarySoftRelation, '相刑');
+  assert.deepEqual(Array.from(settlement.suppressedSoftRelations), ['六害']);
+
+  const relationEvents = Array.from(audit.eventLedger.events).filter(event =>
+    event.type === 'branch-relation' && event.source === 'month' && event.target === 'day'
+  );
+  const punishment = relationEvents.find(event => event.data.relation === '相刑');
+  const harm = relationEvents.find(event => event.data.relation === '六害');
+  assert.equal(punishment.finalValue, -2);
+  assert.equal(harm.finalValue, 0);
+  assert.equal(harm.state, 'merged');
+  assert.equal(harm.adjustments[0].type, 'duplicate-merge');
+  assert.ok(Array.from(audit.eventLedger.audit.resolvedDuplicateSettlements).some(item => item.eventId === harm.id));
+});
+
+test('非日支刑害暂不抢跑合并，留待根气目标结算阶段处理', () => {
+  const E = loadCalculator();
+  const audit = E.auditDayMasterStrength(chartOf(E, ['庚寅', '辛巳', '乙亥', '己卯']));
+  assert.equal(audit.result.score, 39);
+  const stage = Array.from(audit.scoreTrace).find(item => item.id === 'branch-interactions');
+  const settlement = Array.from(stage.meta.settlements).find(item =>
+    item.source === 'year' && item.target === 'month'
+  );
+  assert.equal(settlement.raw.harm + settlement.raw.punishment, 2);
+  assert.equal(settlement.applied.soft, 2);
+  assert.deepEqual(Array.from(settlement.suppressedSoftRelations), []);
+});
