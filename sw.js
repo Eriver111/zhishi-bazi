@@ -1,13 +1,13 @@
-// 知时 Service Worker v31 — 代码资源网络优先，避免更新后首屏仍展示旧功能。
-var CACHE_NAME = 'zhishi-v31';
+// 知时 Service Worker v32 — 代码资源网络优先，避免更新后首屏仍展示旧功能。
+var CACHE_NAME = 'zhishi-v32';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
   '/css/style.css', '/css/landing.css', '/css/auth.css',
   '/css/theme-light.css?v=3', '/css/theme-light-results.css?v=3',
   '/css/interactions.css', '/css/poster.css',
-  '/js/bazi.js?v=20260904a', '/js/mo-xing-he.js?v=1781962250',
-  '/js/ai-chat-integration.js?v=20260830a', '/js/chart-calibration.js?v=9', '/js/result.js?v=24',
+  '/js/bazi.js?v=20260904b', '/js/mo-xing-he.js?v=1781962250',
+  '/js/ai-chat-integration.js?v=20260830a', '/js/chart-calibration.js?v=9', '/js/result.js?v=25',
   '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=11',
   '/js/hepan-paywall.js?v=2',
   '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',

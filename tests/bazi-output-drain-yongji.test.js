@@ -33,10 +33,13 @@ test('食伤旺导致身弱时取印制食伤生身，不再机械补比劫', ()
     assert.ok(result.xiShen.includes(item.seal), item.gz.join(' '));
     assert.ok(!result.xiShen.includes(item.peer), item.gz.join(' '));
     assert.ok(result.jiShen.includes(item.peer), item.gz.join(' '));
+    assert.deepEqual(Array.from(result.conditionalAuxiliaryElements), [item.peer], item.gz.join(' '));
+    assert.match(result.conditionalAuxiliaryReason, /并非纯忌.*印星.*少量配合/, item.gz.join(' '));
+    assert.equal(result.elementReasons[item.peer].conditionalRole, '条件辅助', item.gz.join(' '));
     assert.equal(result.weaknessCause.type, '食伤泄身', item.gz.join(' '));
     assert.ok(result.evidence.some(row => row.category === '取用病因'), item.gz.join(' '));
     assert.match(result.primaryReason, /印星制食伤并生身/, item.gz.join(' '));
-    assert.match(result.primaryReason, /比劫会继续生旺食伤/, item.gz.join(' '));
+    assert.match(result.primaryReason, /比劫并非纯忌.*印星制泄后少量搭配/, item.gz.join(' '));
   }
 });
 

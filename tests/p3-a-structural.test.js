@@ -101,8 +101,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    'fb6bb46429a84467c8a6a25b5b69e0ee9a7b0eaf1884e60b5efb5255d5716d1d',
-    'js/bazi.js sha256 与事件账本统一力量结算版的仓库标准 LF blob 一致'
+    'e343840a2b873bd881e125a3a594fea746cff775a645c9ccfefd31cb0c3dabd9',
+    'js/bazi.js sha256 与食伤泄身条件辅助版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');

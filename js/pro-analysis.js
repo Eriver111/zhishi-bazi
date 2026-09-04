@@ -260,13 +260,15 @@ function renderPattern(bazi,facts){
       var h='<div style="font-size:10px;color:var(--tx2);line-height:1.6;margin-bottom:9px"><b style="color:var(--gold-l)">取用方法：</b>'+(yj.method||'扶抑为主')+'<br>'+(yj.primaryReason||yj.reasoning||'')+'</div>';
       var groups=[['用神',yj.yongShen],['喜神',yj.xiShen]];
       if(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)groups.push(['调候用神',yj.tiaoHouYongShen]);
-      groups.push([yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length?'结构忌神':'忌神',yj.jiShen]);
+      if(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)groups.push(['条件辅助',yj.conditionalAuxiliaryElements]);
+      groups.push([(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)||(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)?'结构忌神':'忌神',yj.jiShen]);
       groups.forEach(function(group){
         h+='<div style="margin-bottom:8px"><span style="font-size:12px;color:var(--tx3)">'+group[0]+'</span><br>';
         if(group[1]&&group[1].length){group[1].forEach(function(w){h+='<span style="display:inline-block;padding:3px 12px;margin:2px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;background:'+(wxColors[w]||'#888')+'">'+w+'</span>'})}else h+='<span style="color:var(--tx3)">—</span>';
         h+='</div>';
       });
       if(yj.dualRoleElements&&yj.dualRoleElements.length)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px">'+yj.dualRoleElements.join('、')+'在扶抑结构上不宜增多，但兼具调候作用，宜适量，不作纯忌论。</div>';
+      if(yj.conditionalAuxiliaryReason)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px">'+yj.conditionalAuxiliaryReason+'</div>';
       Object.keys(yj.elementReasons||{}).forEach(function(w){var item=yj.elementReasons[w];var role=item.dualRole?item.role+'/调候用神':item.role;h+='<div style="font-size:10px;color:var(--tx2);line-height:1.55;margin-top:5px"><b style="color:'+(wxColors[w]||'var(--gold-l)')+'">'+role+'·'+w+'</b>：'+(item.reasons||[]).join('；')+'</div>'});
       c.innerHTML=h;
     }catch(e){c.innerHTML='<p>喜用忌神数据暂不可用</p>'}

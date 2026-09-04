@@ -6432,16 +6432,24 @@ function finalizeYongJiResult(bazi, base, context) {
   }
 
   var weaknessCause = context.candidateScores && context.candidateScores.weaknessCause;
+  var conditionalAuxiliaryElements = [];
+  var conditionalAuxiliaryReason = '';
   if (weaknessCause && weaknessCause.type === '食伤泄身') {
+    conditionalAuxiliaryElements = [weaknessCause.peerElement];
+    conditionalAuxiliaryReason = weaknessCause.peerElement + '比劫并非纯忌，但必须以'
+      + weaknessCause.sealElement + '印星先制住过旺食伤为前提，再少量配合帮身；不可脱离印星单独增补。';
     primaryReason = '核心用神为' + weaknessCause.sealElement + '：食伤泄身型身弱，'
       + weaknessCause.outputElement + '食伤为主要泄身来源，取' + weaknessCause.sealElement
-      + '印星制食伤并生身；' + weaknessCause.peerElement + '比劫会继续生旺食伤，故降为慎用。'
+      + '印星制食伤并生身；' + weaknessCause.peerElement
+      + '比劫并非纯忌，但单用会继续生旺食伤，须在印星制泄后少量搭配。'
       + (context.tiaoHouNote ? '调候辅助：' + context.tiaoHouNote : '');
     if (elementReasons[weaknessCause.sealElement]) {
       elementReasons[weaknessCause.sealElement].reasons.unshift('印星同时完成制食伤与生身，是本局第一取用');
     }
     if (elementReasons[weaknessCause.peerElement]) {
-      elementReasons[weaknessCause.peerElement].reasons.unshift('比劫虽能帮身，但会继续生旺过强食伤，反加重泄身');
+      elementReasons[weaknessCause.peerElement].conditionalRole = '条件辅助';
+      elementReasons[weaknessCause.peerElement].conditionalReason = conditionalAuxiliaryReason;
+      elementReasons[weaknessCause.peerElement].reasons.unshift('比劫可在印星先行制泄后少量帮身，不能脱离印星单独增补，故不作纯忌论');
     }
   }
 
@@ -6516,6 +6524,8 @@ function finalizeYongJiResult(bazi, base, context) {
     tiaoHouYongShen: tiaoHouYongShen,
     tiaoHouReason: context.tiaoHouNote || '',
     dualRoleElements: dualRoleElements,
+    conditionalAuxiliaryElements: conditionalAuxiliaryElements,
+    conditionalAuxiliaryReason: conditionalAuxiliaryReason,
     reasoning: base.reasoning,
     congGe: base.congGe,
     method: method,
@@ -6955,7 +6965,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       outputPressure: outputPressure,
       wealthPressure: wealthPressure,
       officerPressure: officerPressure,
-      conclusion: '食伤为主要泄身来源，取印制食伤兼生身；比劫会续生食伤，降为慎用。'
+      conclusion: '食伤为主要泄身来源，取印制食伤兼生身；比劫并非纯忌，须在印星制泄后少量搭配，不宜单用。'
     } : null,
     yongWx: yongWx,
     candidates: candidates,
