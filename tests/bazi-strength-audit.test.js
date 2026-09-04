@@ -63,7 +63,7 @@ test('戊巳己午外柱完整禄根在普通格局中也统一计入得地', ()
   assert.equal(audit.warnings.some(item => item.code === 'HIDDEN_EARTH_LU_WITHOUT_SUPPORT'), false);
 });
 
-test('28到29分的极弱盘若强根与生扶并见，内部审计标记临界漂移而不擅自改判', () => {
+test('三会牵走的根不再被旧审计层误报为完整强根', () => {
   const E = loadCalculator();
   const chart = chartOf(E, ['辛亥','癸丑','己亥','丙子']);
   const strength = E.calcDayMasterStrength(chart);
@@ -74,6 +74,20 @@ test('28到29分的极弱盘若强根与生扶并见，内部审计标记临界�
   assert.equal(strength.level, '极弱');
   assert.equal(pattern.status, '破格');
   assert.ok(pattern.breakReasons.includes('日主极弱，难以承载格局用神'));
+  assert.equal(audit.status, 'ok');
+  assert.equal(audit.warnings.some(item => item.code === 'EXTREME_WEAK_BOUNDARY_SUPPORT'), false);
+  const root = audit.roots.find(item => item.branch === '丑' && item.hiddenStem === '己');
+  assert.equal(root.effectiveCoefficient, 0.5);
+  assert.equal(root.status, '受损根');
+});
+
+test('28到29分的极弱盘确有完整强根与生扶时仍进入临界复核', () => {
+  const E = loadCalculator();
+  const chart = chartOf(E, ['庚辰','乙卯','戊寅','己丑']);
+  const audit = E.auditDayMasterStrength(chart);
+
+  assert.equal(audit.result.score, 28);
+  assert.equal(audit.result.level, '极弱');
   assert.equal(audit.status, 'review');
   assert.ok(audit.warnings.some(item => item.code === 'EXTREME_WEAK_BOUNDARY_SUPPORT'));
 });

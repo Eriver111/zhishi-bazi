@@ -109,11 +109,15 @@ test('偏印克食神按任务和喜忌拆成制食与夺食', () => {
   assert.match(damage.source, /制杀、生财任务|食神为喜用/);
 });
 
-test('枭神制食力量超过两倍时转为制食太过', () => {
-  const pattern = resolved(['戊寅', '庚午', '庚戌', '壬子']);
-  assert.equal(pattern.name, '枭神制食太过格');
-  assert.equal(pattern.status, '破格');
-  assert.ok(pattern.breakReasons.includes('枭神制食太过'));
+test('枭神制食的过度判定读取结算后根气', () => {
+  const diverted = resolved(['戊寅', '庚午', '庚戌', '壬子']);
+  assert.equal(diverted.name, '枭神制食格');
+  assert.equal(diverted.status, '成格');
+
+  const excessive = resolved(['壬子', '丙午', '甲申', '壬辰']);
+  assert.equal(excessive.name, '枭神制食太过格');
+  assert.equal(excessive.status, '破格');
+  assert.ok(excessive.breakReasons.includes('枭神制食太过'));
 });
 
 test('专业报告和喜用忌共享同一后置格局裁决', () => {

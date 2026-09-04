@@ -18,7 +18,7 @@ function chartOf(calculator, values) {
   }, 'male');
 }
 
-test('事件账本只观察不改写旺衰、格局和喜用忌', () => {
+test('事件账本统一结算证据，且不产生额外评分副作用', () => {
   const E = loadCalculator();
   const chart = chartOf(E, ['癸未', '壬戌', '戊寅', '丁巳']);
   const before = {
@@ -33,7 +33,7 @@ test('事件账本只观察不改写旺衰、格局和喜用忌', () => {
     yongJi: E.getYongJi(chart)
   };
 
-  assert.equal(audit.eventLedger.mode, 'observe-only');
+  assert.equal(audit.eventLedger.mode, 'settled');
   assert.equal(audit.eventLedger.internalOnly, true);
   assert.deepEqual(after.strength, before.strength);
   assert.equal(after.pattern.name, before.pattern.name);
@@ -41,6 +41,9 @@ test('事件账本只观察不改写旺衰、格局和喜用忌', () => {
   assert.deepEqual(after.yongJi.yongShen, before.yongJi.yongShen);
   assert.deepEqual(after.yongJi.xiShen, before.yongJi.xiShen);
   assert.deepEqual(after.yongJi.jiShen, before.yongJi.jiShen);
+  assert.equal(audit.eventLedger.audit.scoreClosureMatches, true);
+  assert.equal(audit.eventLedger.audit.consumerDeltaTotal, audit.result.rawScore);
+  assert.equal(audit.eventLedger.audit.unresolvedDuplicateCount, 0);
 });
 
 test('事件编号稳定且同一原局事实只登记一次', () => {
@@ -148,15 +151,57 @@ test('日支与同一支同时构成刑害时只结算一次受扰状态', () =>
   assert.ok(Array.from(audit.eventLedger.audit.resolvedDuplicateSettlements).some(item => item.eventId === harm.id));
 });
 
-test('非日支刑害暂不抢跑合并，留待根气目标结算阶段处理', () => {
+test('非日支刑害击中实际日主根时也只结算一次', () => {
   const E = loadCalculator();
   const audit = E.auditDayMasterStrength(chartOf(E, ['庚寅', '辛巳', '乙亥', '己卯']));
-  assert.equal(audit.result.score, 39);
+  assert.equal(audit.result.score, 40);
+  assert.equal(audit.result.level, '中和');
   const stage = Array.from(audit.scoreTrace).find(item => item.id === 'branch-interactions');
   const settlement = Array.from(stage.meta.settlements).find(item =>
     item.source === 'year' && item.target === 'month'
   );
   assert.equal(settlement.raw.harm + settlement.raw.punishment, 2);
-  assert.equal(settlement.applied.soft, 2);
-  assert.deepEqual(Array.from(settlement.suppressedSoftRelations), []);
+  assert.equal(settlement.applied.soft, 1);
+  assert.deepEqual(Array.from(settlement.suppressedSoftRelations), ['六害']);
+  const evidence = Array.from(audit.eventLedger.evidenceSettlement.relationSettlements)
+    .find(item => item.id === 'branch-disturbance:year-month');
+  assert.ok(evidence.affectedDayRootIds.length > 0);
+  assert.deepEqual(Array.from(evidence.mergedRelations), ['六害']);
+});
+
+test('非日支刑害未击中日主根时不机械合并', () => {
+  const E = loadCalculator();
+  const audit = E.auditDayMasterStrength(chartOf(E, ['庚寅', '辛巳', '壬子', '辛酉']));
+  const evidence = Array.from(audit.eventLedger.evidenceSettlement.relationSettlements)
+    .find(item => item.id === 'branch-disturbance:year-month');
+  assert.deepEqual(Array.from(evidence.affectedDayRootIds), []);
+  assert.deepEqual(Array.from(evidence.mergedRelations), []);
+});
+
+test('重叠合会只有一个主结算组，同一根的折损不连乘', () => {
+  const E = loadCalculator();
+  const ledger = E.auditDayMasterStrength(chartOf(E, ['甲寅', '庚午', '丙戌', '癸亥'])).eventLedger;
+  const groups = Array.from(ledger.evidenceSettlement.groupSettlements);
+  const fullMeeting = groups.find(group => group.relation === '三合' && group.formedElement === '火');
+  const combine = groups.find(group => group.relation === '六合' && group.positions.includes('year'));
+  assert.equal(fullMeeting.state, 'active');
+  assert.ok(fullMeeting.activePositions.includes('year'));
+  assert.ok(combine.referencePositions.includes('year'));
+  const yearRoots = Array.from(ledger.evidenceSettlement.roots).filter(root => root.position === 'year');
+  yearRoots.forEach(root => {
+    assert.equal(root.effectivePower, Number((root.basePower * root.effectiveCoefficient).toFixed(3)));
+    assert.ok(root.effectiveCoefficient >= 0.5, '合会折损不得连乘');
+  });
+});
+
+test('透干有根度只汇总统一根事件的结算后力量', () => {
+  const E = loadCalculator();
+  const settlement = E.buildEvidenceSettlement(chartOf(E, ['庚寅', '辛巳', '乙亥', '己卯']));
+  Array.from(settlement.visibleStems).forEach(stem => {
+    assert.equal(new Set(Array.from(stem.rootIds)).size, stem.rootIds.length);
+    const rootPower = Array.from(settlement.roots)
+      .filter(root => stem.rootIds.includes(root.id))
+      .reduce((sum, root) => sum + root.effectivePower, 0);
+    assert.equal(stem.effectivePower, Number((stem.basePower + rootPower).toFixed(3)));
+  });
 });

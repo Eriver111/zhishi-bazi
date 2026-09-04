@@ -86,6 +86,7 @@
    */
   function buildFactGraph(bazi) {
     var dg = bazi.day.gan;
+    var settlement = BaZiCalculator.buildEvidenceSettlement ? BaZiCalculator.buildEvidenceSettlement(bazi) : null;
     var nodes = [];
     var energyNodes = [];
     POSITIONS.forEach(function(pos, posIndex) {
@@ -98,19 +99,26 @@
       };
       var hidden = window.getCangGan(pillar.zhi);
       var mainGan = hidden[0];
+      var settledRoots = settlement ? settlement.rootAt(pos) : [];
+      var mainSettledRoot = settledRoots.filter(function(root) { return root.depth === '本气'; })[0];
       var zhiNode = {
         id:pos + '.zhi', pillar:pos, position:posIndex, layer:'zhi', char:pillar.zhi,
         wx:window.DI_ZHI_WU_XING[pillar.zhi], shiShen:BaZiCalculator.getShiShen(dg, mainGan),
-        family:roleFamily(BaZiCalculator.getShiShen(dg, mainGan)), visibility:'branch', depth:'地支本气', weight:1.1
+        family:roleFamily(BaZiCalculator.getShiShen(dg, mainGan)), visibility:'branch', depth:'地支本气', weight:1.1,
+        effectiveCoefficient:mainSettledRoot ? mainSettledRoot.effectiveCoefficient : 1
       };
       nodes.push(ganNode, zhiNode); energyNodes.push(ganNode, zhiNode);
       hidden.forEach(function(gan, hiddenIndex) {
         var ss = BaZiCalculator.getShiShen(dg, gan);
+        var depth = hiddenIndex === 0 ? '本气' : (hiddenIndex === 1 ? '中气' : '余气');
+        var settledRoot = settledRoots.filter(function(root) { return root.gan === gan && root.depth === depth; })[0];
         var hNode = {
           id:pos + '.hidden.' + hiddenIndex, pillar:pos, position:posIndex, layer:'hidden', char:gan,
           branch:pillar.zhi, wx:window.WU_XING[gan], shiShen:ss, family:roleFamily(ss),
-          visibility:'hidden', depth:hiddenIndex === 0 ? '本气' : (hiddenIndex === 1 ? '中气' : '余气'),
-          weight:hiddenIndex === 0 ? 0.75 : (hiddenIndex === 1 ? 0.5 : 0.3)
+          visibility:'hidden', depth:depth,
+          weight:hiddenIndex === 0 ? 0.75 : (hiddenIndex === 1 ? 0.5 : 0.3),
+          effectiveCoefficient:settledRoot ? settledRoot.effectiveCoefficient : 1,
+          settlementRootId:settledRoot ? settledRoot.id : null
         };
         nodes.push(hNode); energyNodes.push(hNode);
       });
@@ -124,7 +132,10 @@
       if (!rel) return;
       var from = rel.fromFirst ? a : b, to = rel.fromFirst ? b : a;
       var distance = Math.abs(a.position - b.position);
-      var visibilityFactor = Math.min(a.weight, b.weight);
+      var visibilityFactor = Math.min(
+        a.weight * (a.effectiveCoefficient === undefined ? 1 : a.effectiveCoefficient),
+        b.weight * (b.effectiveCoefficient === undefined ? 1 : b.effectiveCoefficient)
+      );
       var proximityFactor = distance === 0 ? 1.2 : (distance === 1 ? 1 : (distance === 2 ? 0.72 : 0.55));
       edges.push({
         id:'energy:' + from.id + '>' + to.id + ':' + rel.type,
@@ -140,10 +151,16 @@
 
     var branchNodes = POSITIONS.map(function(pos) { return nodes.filter(function(n) { return n.id === pos + '.zhi'; })[0]; });
     function addBranchEdge(type, a, b, extra) {
+      var relationSettlement = settlement ? settlement.relationSettlements.filter(function(item) {
+        return (item.source === a.pillar && item.target === b.pillar) || (item.source === b.pillar && item.target === a.pillar);
+      })[0] : null;
+      var canonicalType = type === '刑' ? '相刑' : type;
       edges.push({
         id:'branch:' + type + ':' + a.id + '>' + b.id, type:type, from:a.id, to:b.id,
         fromNode:a, toNode:b, distance:Math.abs(a.position - b.position), adjacent:Math.abs(a.position - b.position) <= 1,
         strength:Math.abs(a.position - b.position) <= 1 ? 1 : 0.7,
+        settlementId:relationSettlement ? relationSettlement.id : null,
+        mergedInto:relationSettlement && relationSettlement.mergedRelations.indexOf(canonicalType) >= 0 ? relationSettlement.primaryRelation : null,
         formedWx:extra && extra.formedWx || null, schoolRule:Boolean(extra && extra.schoolRule),
         evidence:nodeLabel(a) + type + nodeLabel(b) + (extra && extra.formedWx ? '，候选化' + extra.formedWx : '')
       });
@@ -184,7 +201,7 @@
     addGroupRelations(SAN_HE, '三合局', '半合', true);
     addGroupRelations(SAN_HUI, '三会方', '半会', false);
 
-    return { version:'3.0', nodes:nodes, edges:edges };
+    return { version:'3.1', nodes:nodes, edges:edges, evidenceSettlementVersion:settlement ? settlement.version : null };
   }
 
   function deriveMechanisms(graph) {
@@ -388,6 +405,7 @@
     });
     if (!complete) throw new TypeError('BaZiChain requires complete year, month, day, and hour pillars');
     var dg = bazi.day.gan;
+    var evidenceSettlement = BaZiCalculator.buildEvidenceSettlement ? BaZiCalculator.buildEvidenceSettlement(bazi) : null;
     var dgWx = window.WU_XING[dg];
     var di = WXL.indexOf(dgWx);
 
@@ -450,7 +468,9 @@
       var hasRoot = false;
       positions.forEach(function(pos) {
         if (bazi[pos].zhi === CHANG_SHENG[dg] || bazi[pos].zhi === LIN_GUAN[dg]) {
-          hasRoot = true;
+          hasRoot = !evidenceSettlement || evidenceSettlement.rootAt(pos).some(function(root) {
+            return root.effectivePower > 0;
+          });
         }
       });
       hints.push({

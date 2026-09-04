@@ -11,6 +11,7 @@
 //   2026-09-03 得令双根透印承载修正：加入日支藏根通关、浮透有根度与稳定根架内刑害去重；53 盘锚点零漂移。
 //   2026-09-03 命理事件账本观察层：为原局证据建立稳定编号与消费轨迹；只审计不结算，53 盘锚点零漂移。
 //   2026-09-04 事件账本结算第一步：同一邻支对刑害日支只取最重项；A4/P15-03 各 +2，档位、喜用忌与格局不变。
+//   2026-09-04 事件账本结算完成：根气、透干、合会、格局承载、喜用质量与生克链统一读取结算层；53 盘锚点通过。
 //   A 层：引擎字节冻结 + 53 盘五行层对 P2 冻结锚点核验（仅允许已审计批准的显式差异）
 //   B 层：正式实现与 A1/A2-final 冻结产物逐项一致（relationEvents→_p3_a1_relation_events.csv；
 //         structuralRisks→_p3_a2_risks.csv 17 列；shaAB→_p3_a2_sha_ab.csv 15 列）
@@ -99,8 +100,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '5b1c2ad9bd4eee5d603dcfa8e5011bdadaea8b09b6ac72ddcf1d43161d5e683d',
-    'js/bazi.js sha256 与事件账本日支刑害统一结算版的仓库标准 LF blob 一致'
+    '28145923b91ba29d5f7bfba040d96f34542352d483e3e75fe4380f08fda73707',
+    'js/bazi.js sha256 与事件账本统一力量结算版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');

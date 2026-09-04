@@ -2183,6 +2183,181 @@ function getRenYuanEvidence(bazi) {
   };
 }
 
+// 原局力量统一结算层。
+//
+// 这里不判断身强身弱，也不另行加减总分；它只回答三件事：
+// 1) 每一柱的每一层藏干原始根气是多少；
+// 2) 冲、刑、害、合会作用后还剩多少有效根气；
+// 3) 透干最终有多少可用根气承载。
+// 旺衰、格局、喜用忌质量与生克链必须读取这里的结果，禁止各自再扫描一遍四柱。
+var _baziEvidenceSettlementCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+function buildBaziEvidenceSettlement(bazi) {
+  if (_baziEvidenceSettlementCache && _baziEvidenceSettlementCache.has(bazi)) {
+    return _baziEvidenceSettlementCache.get(bazi);
+  }
+  var positions = ['year','month','day','hour'];
+  var clash = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
+  var harm = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
+  var punish = { '子卯':1,'卯子':1,'寅巳':1,'巳寅':1,'寅申':1,'申寅':1,'巳申':1,'申巳':1,'丑戌':1,'戌丑':1,'丑未':1,'未丑':1,'戌未':1,'未戌':1 };
+  var combine = { '子丑':'土','丑子':'土','寅亥':'木','亥寅':'木','卯戌':'火','戌卯':'火','辰酉':'金','酉辰':'金','巳申':'水','申巳':'水','午未':'土','未午':'土' };
+  var roots = [];
+  var rootsByPosition = {};
+  positions.forEach(function(pos) {
+    rootsByPosition[pos] = [];
+    getCangGan(bazi[pos].zhi).forEach(function(gan, index) {
+      var base = index === 0 ? 2 : (index === 1 ? 1 : 0.5);
+      var root = {
+        id:'root:' + pos + ':' + gan + ':' + index,
+        position:pos, branch:bazi[pos].zhi, gan:gan, element:WU_XING[gan],
+        depth:index === 0 ? '本气' : (index === 1 ? '中气' : '余气'),
+        basePower:base, effectiveCoefficient:1, effectivePower:base,
+        state:'intact', adjustments:[], relationSettlementIds:[]
+      };
+      roots.push(root); rootsByPosition[pos].push(root);
+    });
+  });
+
+  // 每一对地支只形成一次受扰结算。刑害并见时，如果确实击中日主根气，
+  // 两个术语保留为事实，但只按较重关系改变一次根气系数。
+  var relationSettlements = [];
+  for (var i=0; i<positions.length; i++) {
+    for (var j=i+1; j<positions.length; j++) {
+      var p1 = positions[i], p2 = positions[j];
+      var z1 = bazi[p1].zhi, z2 = bazi[p2].zhi;
+      var relations = [];
+      if (clash[z1] === z2) relations.push({ name:'六冲', coefficient:0.5 });
+      if (harm[z1] === z2) relations.push({ name:'六害', coefficient:0.8 });
+      if (punish[z1 + z2]) relations.push({ name:'相刑', coefficient:0.7 });
+      if (!relations.length) continue;
+      var affectedDayRoots = rootsByPosition[p1].concat(rootsByPosition[p2]).filter(function(root) {
+        return root.element === WU_XING[bazi.day.gan];
+      });
+      var strongest = relations.slice().sort(function(a,b) { return a.coefficient - b.coefficient; })[0];
+      var soft = relations.filter(function(item) { return item.name === '六害' || item.name === '相刑'; });
+      var mergeSoft = soft.length > 1 && affectedDayRoots.length > 0;
+      var settlement = {
+        id:'branch-disturbance:' + p1 + '-' + p2,
+        source:p1, target:p2, branches:[z1,z2], adjacent:j-i === 1,
+        relations:relations.map(function(item) { return item.name; }),
+        affectedRootIds:rootsByPosition[p1].concat(rootsByPosition[p2]).map(function(root) { return root.id; }),
+        affectedDayRootIds:affectedDayRoots.map(function(root) { return root.id; }),
+        effectiveCoefficient:strongest.coefficient,
+        primaryRelation:strongest.name,
+        mergedRelations:mergeSoft ? soft.filter(function(item) { return item.name !== strongest.name; }).map(function(item) { return item.name; }) : []
+      };
+      relationSettlements.push(settlement);
+      rootsByPosition[p1].concat(rootsByPosition[p2]).forEach(function(root) {
+        // 多个关系名称或多个模块不得乘算；同一根只保留实际最强的一次折损。
+        if (strongest.coefficient < root.effectiveCoefficient) root.effectiveCoefficient = strongest.coefficient;
+        root.relationSettlementIds.push(settlement.id);
+        root.adjustments.push({ type:'disturbance', settlementId:settlement.id, relation:strongest.name, coefficient:strongest.coefficient });
+      });
+    }
+  }
+
+  // 合会只改变被牵引根的有效系数。完整合局优先于半局，同一根仍只取最强一次，不能层层相乘。
+  var groupSettlements = [];
+  var groups = [
+    { members:['寅','午','戌'], element:'火', full:'三合', half:'半合', requireMiddle:true },
+    { members:['亥','卯','未'], element:'木', full:'三合', half:'半合', requireMiddle:true },
+    { members:['申','子','辰'], element:'水', full:'三合', half:'半合', requireMiddle:true },
+    { members:['巳','酉','丑'], element:'金', full:'三合', half:'半合', requireMiddle:true },
+    { members:['寅','卯','辰'], element:'木', full:'三会', half:'半会', requireMiddle:false },
+    { members:['巳','午','未'], element:'火', full:'三会', half:'半会', requireMiddle:false },
+    { members:['申','酉','戌'], element:'金', full:'三会', half:'半会', requireMiddle:false },
+    { members:['亥','子','丑'], element:'水', full:'三会', half:'半会', requireMiddle:false }
+  ];
+  function applyDiversion(id, memberPositions, formedElement, coefficient, relation) {
+    var affected = [];
+    memberPositions.forEach(function(pos) {
+      rootsByPosition[pos].forEach(function(root) {
+        if (root.element === formedElement) return;
+        affected.push(root.id);
+      });
+    });
+    groupSettlements.push({ id:id, relation:relation, positions:memberPositions.slice(), formedElement:formedElement, coefficient:coefficient, affectedRootIds:affected });
+  }
+  for (var ci=0; ci<positions.length; ci++) {
+    for (var cj=ci+1; cj<positions.length; cj++) {
+      var cp1=positions[ci], cp2=positions[cj], cwx=combine[bazi[cp1].zhi + bazi[cp2].zhi];
+      if (cwx) applyDiversion('branch-combine:' + cp1 + '-' + cp2, [cp1,cp2], cwx, 0.75, '六合');
+    }
+  }
+  groups.forEach(function(group) {
+    var memberPositions = positions.filter(function(pos) { return group.members.indexOf(bazi[pos].zhi) >= 0; });
+    var distinct = {};
+    memberPositions.forEach(function(pos) { distinct[bazi[pos].zhi] = true; });
+    var present = group.members.map(function(zhi) { return !!distinct[zhi]; });
+    var count = present.filter(Boolean).length;
+    if (count === 3) {
+      applyDiversion('branch-group:' + group.full + ':' + group.members.join(''), memberPositions, group.element, 0.5, group.full);
+    } else {
+      var validHalf = count === 2 && (group.requireMiddle ? present[1] : ((present[0] && present[1]) || (present[1] && present[2])));
+      if (validHalf) applyDiversion('branch-group:' + group.half + ':' + memberPositions.join('-'), memberPositions, group.element, 0.75, group.half);
+    }
+  });
+  var groupPriority = { '三会':5, '三合':4, '六合':3, '半会':2, '半合':1 };
+  var dominantDiversionByPosition = {};
+  positions.forEach(function(pos) {
+    var candidates = groupSettlements.filter(function(group) {
+      return group.positions.indexOf(pos) >= 0 && group.formedElement !== DI_ZHI_WU_XING[bazi[pos].zhi];
+    }).sort(function(a,b) {
+      if (a.coefficient !== b.coefficient) return a.coefficient - b.coefficient;
+      return (groupPriority[b.relation] || 0) - (groupPriority[a.relation] || 0);
+    });
+    dominantDiversionByPosition[pos] = candidates[0] || null;
+  });
+  groupSettlements.forEach(function(group) {
+    group.activePositions = group.positions.filter(function(pos) {
+      return dominantDiversionByPosition[pos] && dominantDiversionByPosition[pos].id === group.id;
+    });
+    group.referencePositions = group.positions.filter(function(pos) {
+      return group.activePositions.indexOf(pos) < 0;
+    });
+    group.state = group.activePositions.length ? 'active' : 'reference-only';
+  });
+  // 只有每个支位的主导合会能够改变根气；其余重叠组合保留为可追溯事实，
+  // 但不得再对同一根叠加或连乘折损。
+  positions.forEach(function(pos) {
+    var group = dominantDiversionByPosition[pos];
+    if (!group) return;
+    rootsByPosition[pos].forEach(function(root) {
+      if (root.element === group.formedElement) return;
+      if (group.coefficient < root.effectiveCoefficient) root.effectiveCoefficient = group.coefficient;
+      root.adjustments.push({
+        type:'diversion', settlementId:group.id, relation:group.relation,
+        formedElement:group.formedElement, coefficient:group.coefficient
+      });
+    });
+  });
+  roots.forEach(function(root) {
+    root.effectivePower = Number((root.basePower * root.effectiveCoefficient).toFixed(3));
+    root.state = root.effectiveCoefficient >= 1 ? 'intact' : (root.effectiveCoefficient <= 0.5 ? 'damaged' : 'affected');
+  });
+
+  var visibleStems = positions.filter(function(pos) { return pos !== 'day'; }).map(function(pos) {
+    var gan = bazi[pos].gan;
+    var links = roots.filter(function(root) { return root.gan === gan; });
+    return {
+      id:'visible-stem:' + pos + ':' + gan, position:pos, gan:gan, element:WU_XING[gan],
+      basePower:2, rootPower:Number(links.reduce(function(sum, root) { return sum + root.effectivePower; }, 0).toFixed(3)),
+      rawRootPower:Number(links.reduce(function(sum, root) { return sum + root.basePower; }, 0).toFixed(3)),
+      rootIds:links.map(function(root) { return root.id; })
+    };
+  });
+  visibleStems.forEach(function(stem) { stem.effectivePower = Number((stem.basePower + stem.rootPower).toFixed(3)); stem.rooted = stem.rootPower > 0; });
+  var result = {
+    version:'bazi-evidence-settlement-v1', chartKey:positions.map(function(pos) { return bazi[pos].gan + bazi[pos].zhi; }).join('-'),
+    roots:roots, visibleStems:visibleStems, relationSettlements:relationSettlements, groupSettlements:groupSettlements,
+    dominantDiversionByPosition:dominantDiversionByPosition,
+    rootAt:function(pos, gan) { return roots.filter(function(root) { return root.position === pos && (!gan || root.gan === gan); }); },
+    elementRootPower:function(wx) { return Number(roots.filter(function(root) { return root.element === wx; }).reduce(function(sum, root) { return sum + root.effectivePower; }, 0).toFixed(3)); },
+    stemAt:function(pos) { return visibleStems.filter(function(stem) { return stem.position === pos; })[0] || null; }
+  };
+  if (_baziEvidenceSettlementCache) _baziEvidenceSettlementCache.set(bazi, result);
+  return result;
+}
+
 // 金日主生未、戌月的燥土状态不能一刀切。
 // 只有“燥土当令且无润、金又无完整根”时，才按燥土不生金/土多埋金处理；
 // 若原局见水或辰丑湿土，同时申酉金根未被冲害，则燥土已得润，恢复部分印星生扶。
@@ -2199,11 +2374,10 @@ function getDryEarthMetalState(bazi) {
     return WU_XING[bazi[pos].gan] === '水' || DI_ZHI_WU_XING[bazi[pos].zhi] === '水';
   }) || branches.some(function(zhi) { return zhi === '辰' || zhi === '丑'; });
 
-  var clash = { '申':'寅','酉':'卯' };
-  var harm = { '申':'亥','酉':'戌' };
-  var hasIntactMetalRoot = branches.some(function(zhi) {
-    if (zhi !== '申' && zhi !== '酉') return false;
-    return branches.indexOf(clash[zhi]) < 0 && branches.indexOf(harm[zhi]) < 0;
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var hasIntactMetalRoot = settlement.roots.some(function(root) {
+    return (root.branch === '申' || root.branch === '酉') && root.element === '金' &&
+      root.depth === '本气' && root.effectiveCoefficient >= 1;
   });
 
   return {
@@ -2231,6 +2405,7 @@ function calcDayMasterStrength(bazi, options) {
   });
 
   var score = 50; // 基准分
+  var _settledEvidence = buildBaziEvidenceSettlement(bazi);
   var _dryEarthMetalState = getDryEarthMetalState(bazi);
   // 单盘内部审计只跟踪主引擎真实分差，不重新计算旺衰。
   // 默认路径不附带审计字段，避免污染 AI/报告对外事实契约。
@@ -2343,7 +2518,9 @@ function calcDayMasterStrength(bazi, options) {
     return WU_XING[bazi[pos].gan] === SHENGWO[dgWx];
   });
   var _rootedSealForFrame = ['year','month','day','hour'].some(function(pos) {
-    return getCangGan(bazi[pos].zhi).some(function(g) { return WU_XING[g] === SHENGWO[dgWx]; });
+    return _settledEvidence.rootAt(pos).some(function(root) {
+      return root.element === SHENGWO[dgWx] && root.effectivePower > 0;
+    });
   });
   var _dayHidden = getCangGan(bazi.day.zhi);
   var _dayHasSelfRoot = _dayHidden.some(function(g) { return WU_XING[g] === dgWx; });
@@ -2408,9 +2585,7 @@ function calcDayMasterStrength(bazi, options) {
       else if (WOSHENG[dgWx] === _wx) _basePenalty = 3;
       else if (WOKE[dgWx] === _wx) _basePenalty = 5;
       if (!_basePenalty) return;
-      var _hasRoot = ['year','month','day','hour'].some(function(rootPos) {
-        return getCangGan(bazi[rootPos].zhi).some(function(g) { return WU_XING[g] === _wx; });
-      });
+      var _hasRoot = _settledEvidence.elementRootPower(_wx) > 0;
       if (_hasRoot) return;
       var _refund = Math.round(_basePenalty * 0.4);
       _unrootedStemRefund += _refund;
@@ -2487,11 +2662,12 @@ function calcDayMasterStrength(bazi, options) {
     var cs = getChangSheng(dg)[zhi];
     var cang = getCangGan(zhi);
     var benQiSame = cang.length > 0 && WU_XING[cang[0]] === dgWx;
-    var rootIsClashed = _allZhiForHui.indexOf(_rootClashMap[zhi]) >= 0;
-    var rootIsHarmed = _allZhiForHui.indexOf(_rootHarmMap[zhi]) >= 0;
-    var rootIsPunished = _allZhiForHui.some(function(other) { return _rootPunishPairs[zhi + other]; });
-    if (benQiSame && !rootIsClashed && !rootIsHarmed && !rootIsPunished && !_rootIsDiverted(zhi) && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
-      _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage });
+    var _mainSettledRoot = _settledEvidence.rootAt(pos).filter(function(root) {
+      return root.depth === '本气' && root.element === dgWx;
+    })[0];
+    var _rootIntact = _mainSettledRoot && _mainSettledRoot.effectiveCoefficient >= 1;
+    if (benQiSame && _rootIntact && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
+      _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage, rootId:_mainSettledRoot.id });
     }
   });
 
@@ -2505,10 +2681,13 @@ function calcDayMasterStrength(bazi, options) {
     ['year','month','hour'].forEach(function(pos) {
       var zhi = bazi[pos].zhi;
       if (zhi !== _hiddenEarthLuZhi || getCangGan(zhi).indexOf(dg) < 0) return;
-      var broken = _allZhiForHui.indexOf(_rootClashMap[zhi]) >= 0 ||
-        _allZhiForHui.indexOf(_rootHarmMap[zhi]) >= 0 ||
-        _allZhiForHui.some(function(other) { return _rootPunishPairs[zhi + other]; });
-      if (!broken) _hiddenEarthLuRoots.push({ pos:pos, zhi:zhi });
+      var _settledLuRoot = _settledEvidence.rootAt(pos, dg)[0];
+      var _luHasOnlySupportiveDiversion = _settledLuRoot && _settledLuRoot.adjustments.every(function(adj) {
+        return adj.type === 'diversion' && (adj.formedElement === dgWx || adj.formedElement === SHENGWO[dgWx]);
+      });
+      if (_settledLuRoot && _settledLuRoot.effectiveCoefficient >= 1 || _luHasOnlySupportiveDiversion) {
+        _hiddenEarthLuRoots.push({ pos:pos, zhi:zhi, rootId:_settledLuRoot.id });
+      }
     });
   }
   if (_hiddenEarthLuRoots.length) score += _hiddenEarthLuRoots.length;
@@ -2547,11 +2726,7 @@ function calcDayMasterStrength(bazi, options) {
     var _visibleRootedSeal = false;
     ['year','month','hour'].forEach(function(pos) {
       if (WU_XING[bazi[pos].gan] !== SHENGWO[dgWx]) return;
-      _visibleRootedSeal = ['year','month','day','hour'].some(function(rootPos) {
-        return getCangGan(bazi[rootPos].zhi).some(function(g) {
-          return WU_XING[g] === SHENGWO[dgWx];
-        });
-      });
+      _visibleRootedSeal = _settledEvidence.elementRootPower(SHENGWO[dgWx]) > 0;
     });
     if (_visibleRootedSeal) _rootClusterAdj += 3;
 
@@ -2727,7 +2902,11 @@ function calcDayMasterStrength(bazi, options) {
     var _chongPenalty = chongMap[z1] === z2 ? (_involvesDayRelation ? 3 : 1) : 0;
     var _haiPenalty = haiMap[z1] === z2 ? (_involvesDayRelation ? 2 : 1) : 0;
     var _xingPenalty = xingMap[z1 + z2] ? (_involvesDayRelation ? 2 : 1) : 0;
-    var _mergeSoftRelations = _involvesDayRelation && _haiPenalty > 0 && _xingPenalty > 0;
+    var _evidencePairSettlement = _settledEvidence.relationSettlements.filter(function(item) {
+      return item.source === pair[0] && item.target === pair[1];
+    })[0];
+    var _hitsActualDayRoot = !!(_evidencePairSettlement && _evidencePairSettlement.affectedDayRootIds.length);
+    var _mergeSoftRelations = (_involvesDayRelation || _hitsActualDayRoot) && _haiPenalty > 0 && _xingPenalty > 0;
     var _softRelationPenalty = _mergeSoftRelations ? Math.max(_haiPenalty, _xingPenalty) : (_haiPenalty + _xingPenalty);
     var _primarySoftRelation = _xingPenalty >= _haiPenalty && _xingPenalty > 0 ? '相刑' : (_haiPenalty > 0 ? '六害' : '');
     var _suppressedSoftRelations = [];
@@ -2736,6 +2915,7 @@ function calcDayMasterStrength(bazi, options) {
       _branchDisturbanceSettlements.push({
         id:'branch-disturbance:' + pair[0] + '-' + pair[1], source:pair[0], target:pair[1],
         branches:[z1,z2], involvesDay:_involvesDayRelation,
+        affectedDayRootIds:_evidencePairSettlement ? _evidencePairSettlement.affectedDayRootIds.slice() : [],
         raw:{ clash:_chongPenalty, harm:_haiPenalty, punishment:_xingPenalty },
         applied:{ clash:_chongPenalty, soft:_softRelationPenalty, total:_chongPenalty + _softRelationPenalty },
         primarySoftRelation:_primarySoftRelation,
@@ -2986,7 +3166,8 @@ function calcDayMasterStrength(bazi, options) {
     var _CHANG_SHENG = {'甲':'亥','乙':'午','丙':'寅','丁':'酉','戊':'寅','己':'酉','庚':'巳','辛':'子','壬':'申','癸':'卯'};
     var _LU = {'甲':'寅','乙':'卯','丙':'巳','丁':'午','戊':'巳','己':'午','庚':'申','辛':'酉','壬':'亥','癸':'子'};
     var _hasCSL = ['year','month','day','hour'].some(function(_pos) {
-      return bazi[_pos].zhi === _CHANG_SHENG[dg] || bazi[_pos].zhi === _LU[dg];
+      if (bazi[_pos].zhi !== _CHANG_SHENG[dg] && bazi[_pos].zhi !== _LU[dg]) return false;
+      return _settledEvidence.rootAt(_pos).some(function(_root) { return _root.effectivePower > 0; });
     });
     if (_hasCSL) {
       // P2.3 四档分级：结构补偿按介入有效性分档，不再二元（旧规则：贴身印+CSL 一律 +13）
@@ -3031,13 +3212,7 @@ function calcDayMasterStrength(bazi, options) {
         score += 13; // A 档：强介入贴身印，无明显受破
       } else {
         var _yGanYin = (WU_XING[bazi.year.gan] === _yinWx);
-        var _yinRoot = false;
-        ['year','month','day','hour'].forEach(function(_p4) {
-          var _cg3 = getCangGan(bazi[_p4].zhi);
-          for (var _i3 = 0; _i3 < _cg3.length; _i3++) {
-            if (WU_XING[_cg3[_i3]] === _yinWx) _yinRoot = true;
-          }
-        });
+        var _yinRoot = _settledEvidence.elementRootPower(_yinWx) > 0;
         if (_yGanYin && (_yinRoot || _SHENG_CYCLE[mwx] === _yinWx)) {
           score += 6; // B 档：年干有效印
         } else if (_yGanYin || (_yinAdjacent && _po)) {
@@ -3074,10 +3249,11 @@ function calcDayMasterStrength(bazi, options) {
     ['year','month','hour'].some(function(_pos) {
       var _zhi = bazi[_pos].zhi;
       if (_zhi !== _PEIYIN_LU[dg] || getCangGan(_zhi).indexOf(dg) < 0) return false;
-      var _isBroken = _allZhiForHui.indexOf(_rootClashMap[_zhi]) >= 0 ||
-        _allZhiForHui.indexOf(_rootHarmMap[_zhi]) >= 0 ||
-        _allZhiForHui.some(function(_other) { return _rootPunishPairs[_zhi + _other]; });
-      if (_isBroken) return false;
+      var _settledPeiYinRoot = _settledEvidence.rootAt(_pos, dg)[0];
+      var _onlySupportiveDiversion = _settledPeiYinRoot && _settledPeiYinRoot.adjustments.every(function(_adj) {
+        return _adj.type === 'diversion' && (_adj.formedElement === dgWx || _adj.formedElement === _sealWxForPeiYin);
+      });
+      if (!_settledPeiYinRoot || (_settledPeiYinRoot.effectiveCoefficient < 1 && !_onlySupportiveDiversion)) return false;
       _peiYinLuPos = _pos;
       return true;
     });
@@ -3153,11 +3329,10 @@ function calcDayMasterStrength(bazi, options) {
 }
 
 /**
- * 原局证据事件账本 v1。
+ * 原局证据事件账本 v2。
  *
- * 第一阶段只建立稳定身份与消费轨迹，不参与任何命理裁决，也不改写分数。
- * event 是原局事实；consumer 是现有引擎对事实的引用。后续去重只能修改
- * consumer 的结算方式，不能再从四柱重新创造一份同名力量。
+ * event 是唯一原局事实，settlement 是事实的统一折损结果，consumer 是各模块
+ * 对结算后事实的引用。账本不另造旺衰分数，只校验主引擎的真实计分是否闭合。
  */
 function buildBaziEventLedger(bazi, scoreStages) {
   var positions = ['year','month','day','hour'];
@@ -3166,6 +3341,7 @@ function buildBaziEventLedger(bazi, scoreStages) {
   var eventById = {};
   var consumers = [];
   var positionRank = { year:0, month:1, day:2, hour:3 };
+  var evidenceSettlement = buildBaziEvidenceSettlement(bazi);
 
   function token(value) {
     return String(value === undefined || value === null ? '' : value).replace(/[^0-9A-Za-z\u3400-\u9fff_-]/g, '_');
@@ -3302,25 +3478,30 @@ function buildBaziEventLedger(bazi, scoreStages) {
         if (e.data.relation === '六冲' || e.data.relation === '六合') return true;
         return (e.data.relation === '六害' || e.data.relation === '相刑') && e.data.adjacent;
       });
-      if (stage && stage.meta && stage.meta.monthDaySupportClash) {
-        ids = ids.concat(idsOf(function(e) { return e.type === 'branch' && e.source === 'month'; }));
-      }
       return ids;
     },
     'sha-seal-mediation':function() { return idsOf(function(e) { return (e.data.tenGod === '正印' || e.data.tenGod === '偏印' || e.data.tenGod === '正官' || e.data.tenGod === '七杀'); }); },
     'injury-seal-load':function() { return idsOf(function(e) { return (e.data.tenGod === '伤官' || e.data.tenGod === '食神' || e.data.tenGod === '正印' || e.data.tenGod === '偏印'); }); },
     'position-weight':function() { return idsOf(function(e) { return e.type === 'visible-stem' || e.type === 'branch'; }); }
   };
+  var primaryScoreStages = {
+    'month-command':true, 'day-seat':true, 'visible-stems':true,
+    'branch-main-qi':true, 'climate':true, 'stem-transform':true,
+    'branch-interactions':true
+  };
   (scoreStages || []).forEach(function(stage) {
     var resolve = stageEventMap[stage.id];
+    var consumerMode = stage.delta === 0 ? 'reference' : (primaryScoreStages[stage.id] ? 'score' : 'adjustment');
     consumers.push({
-      module:'strength', stageId:stage.id, label:stage.label, mode:stage.delta === 0 ? 'reference' : 'score',
+      module:'strength', stageId:stage.id, label:stage.label, mode:consumerMode,
+      settlementChannel:stage.id,
       delta:stage.delta, eventIds:resolve ? resolve(stage) : [], meta:stage.meta || null
     });
   });
   // 基准 50 分代表日主自身，明确挂账后不会把日干误报成“未消费证据”。
   consumers.unshift({
     module:'strength', stageId:'base-score', label:'日主基准', mode:'score', delta:50,
+    settlementChannel:'base-score',
     eventIds:idsOf(function(e) { return e.type === 'visible-stem' && e.source === 'day'; }), meta:null
   });
 
@@ -3380,30 +3561,37 @@ function buildBaziEventLedger(bazi, scoreStages) {
     });
   });
 
-  // 根气受冲、刑、害只改变状态，不在账本中自行给分；后续阶段会把各处折损
-  // 统一迁移到 effectiveCoefficient，避免此处提前制造第二套算法。
+  // 根气状态只读取统一力量结算层。账本不再自行扫描关系或制造第二套折损算法。
   events.filter(function(e) { return e.type === 'root'; }).forEach(function(root) {
-    var related = events.filter(function(e) {
-      return e.type === 'branch-relation' && (e.source === root.source || e.target === root.source) &&
-        (e.data.relation === '六冲' || e.data.relation === '六害' || e.data.relation === '相刑');
-    });
-    if (!related.length) return;
-    root.state = 'affected';
-    related.forEach(function(relation) {
-      root.adjustments.push({ type:'state-change', reason:relation.data.relation + '影响根气', relationEventId:relation.id, delta:null });
+    var settled = evidenceSettlement.rootAt(root.source, root.data.hiddenStem).filter(function(item) {
+      return item.depth === root.data.depth;
+    })[0];
+    if (!settled) return;
+    root.baseValue = settled.basePower;
+    root.effectiveCoefficient = settled.effectiveCoefficient;
+    root.finalValue = settled.effectivePower;
+    root.state = settled.state;
+    root.data.settlementRootId = settled.id;
+    settled.adjustments.forEach(function(adjustment) {
+      root.adjustments.push(Object.assign({ type:'state-change', delta:null }, adjustment));
     });
   });
 
   var scoreConsumersByEvent = {};
   consumers.filter(function(c) { return c.mode === 'score'; }).forEach(function(c) {
     c.eventIds.forEach(function(id) {
-      if (!scoreConsumersByEvent[id]) scoreConsumersByEvent[id] = [];
-      scoreConsumersByEvent[id].push(c.stageId);
+      var key = id + '|' + c.settlementChannel;
+      if (!scoreConsumersByEvent[key]) scoreConsumersByEvent[key] = { eventId:id, settlementChannel:c.settlementChannel, stageIds:[] };
+      scoreConsumersByEvent[key].stageIds.push(c.stageId);
     });
   });
-  var duplicateScoreConsumers = Object.keys(scoreConsumersByEvent).filter(function(id) {
-    return scoreConsumersByEvent[id].length > 1;
-  }).map(function(id) { return { eventId:id, stageIds:scoreConsumersByEvent[id], status:'candidate' }; });
+  var duplicateScoreConsumers = Object.keys(scoreConsumersByEvent).map(function(key) {
+    return scoreConsumersByEvent[key];
+  }).filter(function(record) {
+    return record.stageIds.length > 1;
+  }).map(function(record) {
+    return { eventId:record.eventId, settlementChannel:record.settlementChannel, stageIds:record.stageIds, status:'candidate' };
+  });
   var consumedIds = {};
   consumers.forEach(function(c) { c.eventIds.forEach(function(id) { consumedIds[id] = true; }); });
   var unconsumedEventIds = events.filter(function(event) { return !consumedIds[event.id]; }).map(function(event) { return event.id; });
@@ -3417,14 +3605,31 @@ function buildBaziEventLedger(bazi, scoreStages) {
     var merge = event.adjustments.filter(function(adj) { return adj.type === 'duplicate-merge'; })[0];
     return { eventId:event.id, settlementId:merge ? merge.settlementId : '', mergedInto:merge ? merge.mergedInto : '' };
   });
+  var consumerDeltaTotal = Number(consumers.reduce(function(sum, consumer) {
+    return sum + (typeof consumer.delta === 'number' ? consumer.delta : 0);
+  }, 0).toFixed(6));
+  var tracedRawTotal = 50 + (scoreStages || []).reduce(function(sum, stage) {
+    return sum + (typeof stage.delta === 'number' ? stage.delta : 0);
+  }, 0);
   return {
-    version:'bazi-event-ledger-v1', internalOnly:true, mode:'observe-only', chartKey:chartKey,
+    version:'bazi-event-ledger-v2', internalOnly:true, mode:'settled', chartKey:chartKey,
     events:events, consumers:consumers,
+    evidenceSettlement:{
+      version:evidenceSettlement.version,
+      roots:evidenceSettlement.roots,
+      visibleStems:evidenceSettlement.visibleStems,
+      relationSettlements:evidenceSettlement.relationSettlements,
+      groupSettlements:evidenceSettlement.groupSettlements
+    },
     audit:{
       duplicateScoreConsumers:duplicateScoreConsumers,
       resolvedDuplicateSettlements:resolvedDuplicateSettlements,
       contradictoryAdjustments:contradictoryAdjustments,
       unconsumedEventIds:unconsumedEventIds,
+      consumerDeltaTotal:consumerDeltaTotal,
+      tracedRawTotal:tracedRawTotal,
+      scoreClosureMatches:Math.abs(consumerDeltaTotal - tracedRawTotal) < 0.000001,
+      unresolvedDuplicateCount:duplicateScoreConsumers.length,
       eventCount:events.length, consumerCount:consumers.length
     }
   };
@@ -3437,14 +3642,11 @@ function buildBaziEventLedger(bazi, scoreStages) {
 function auditDayMasterStrength(bazi) {
   var traced = calcDayMasterStrength(bazi, { audit:true });
   var eventLedger = buildBaziEventLedger(bazi, traced.audit.stages);
+  var evidenceSettlement = buildBaziEvidenceSettlement(bazi);
   var dayGan = bazi.day.gan;
   var dayWx = WU_XING[dayGan];
   var positions = ['year','month','day','hour'];
   var positionNames = { year:'年柱', month:'月柱', day:'日柱', hour:'时柱' };
-  var allZhi = positions.map(function(pos) { return bazi[pos].zhi; });
-  var clashMap = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
-  var harmMap = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
-  var punishPairs = { '子卯':1,'卯子':1,'寅巳':1,'巳寅':1,'寅申':1,'申寅':1,'巳申':1,'申巳':1,'丑戌':1,'戌丑':1,'丑未':1,'未丑':1,'戌未':1,'未戌':1 };
 
   var stems = positions.map(function(pos) {
     var gan = bazi[pos].gan;
@@ -3455,10 +3657,12 @@ function auditDayMasterStrength(bazi) {
     var zhi = bazi[pos].zhi;
     getCangGan(zhi).forEach(function(gan, index) {
       if (WU_XING[gan] !== dayWx) return;
-      var damage = [];
-      if (allZhi.indexOf(clashMap[zhi]) >= 0) damage.push('六冲');
-      if (allZhi.indexOf(harmMap[zhi]) >= 0) damage.push('六害');
-      if (allZhi.some(function(other) { return !!punishPairs[zhi + other]; })) damage.push('相刑');
+      var settled = evidenceSettlement.rootAt(pos, gan).filter(function(root) {
+        return root.depth === (index === 0 ? '本气' : (index === 1 ? '中气' : '余气'));
+      })[0];
+      var damage = settled ? settled.adjustments.filter(function(adjustment) {
+        return adjustment.type === 'disturbance';
+      }).map(function(adjustment) { return adjustment.relation; }) : [];
       var stageInfo = getChangSheng(dayGan)[zhi];
       var stage = stageInfo ? stageInfo.stage : '';
       var rootType = stage === '临官' ? '禄根' : (stage === '帝旺' ? '帝旺根' : (index === 0 ? '本气根' : (index === 1 ? '中气根' : '余气根')));
@@ -3466,7 +3670,12 @@ function auditDayMasterStrength(bazi) {
         position:pos, positionName:positionNames[pos], branch:zhi, hiddenStem:gan,
         depth:index === 0 ? '本气' : (index === 1 ? '中气' : '余气'),
         exactDayStem:gan === dayGan, stage:stage, rootType:rootType,
-        damage:Array.from(new Set(damage)), status:damage.length ? '受损根' : '完整根'
+        damage:Array.from(new Set(damage)),
+        settlementRootId:settled ? settled.id : '',
+        basePower:settled ? settled.basePower : (index === 0 ? 2 : (index === 1 ? 1 : 0.5)),
+        effectiveCoefficient:settled ? settled.effectiveCoefficient : 1,
+        effectivePower:settled ? settled.effectivePower : (index === 0 ? 2 : (index === 1 ? 1 : 0.5)),
+        status:settled && settled.effectiveCoefficient < 1 ? '受损根' : '完整根'
       });
     });
   });
@@ -3487,6 +3696,7 @@ function auditDayMasterStrength(bazi) {
   var yongJi = getYongJi(bazi);
   var warnings = [];
   if (!traced.audit.sumMatches) warnings.push({ code:'TRACE_SUM_MISMATCH', severity:'error', message:'阶段分差合计与主引擎原始分不一致' });
+  if (!eventLedger.audit.scoreClosureMatches) warnings.push({ code:'LEDGER_SCORE_CLOSURE_MISMATCH', severity:'error', message:'事件账本消费分差未与主引擎原始分闭合' });
   if (yongJi.dayMasterScore !== traced.score || yongJi.dayMasterLevel !== traced.level) warnings.push({ code:'YONGJI_STRENGTH_MISMATCH', severity:'error', message:'喜用忌读取的旺衰与主引擎不一致' });
   if (pattern.status === '成格' && pattern.name.indexOf('伤官配印') >= 0 && (traced.level === '偏弱' || traced.level === '极弱')) warnings.push({ code:'INJURY_SEAL_LOAD_CONFLICT', severity:'warning', message:'伤官配印已成格但日主仍弱，需复核印根、禄根与财破印' });
   // 本气与日主同五行的禄根已在“地支本气”正常加分；戊巳、己午则必须由独立基线补分。
@@ -5285,6 +5495,7 @@ function getTrueSolarHour(hour, province, year, month, day, minute, clock, fallb
 function finalizePatternStatus(bazi, pattern) {
     var reasons = [];
   var pendingReasons = [];
+  var evidenceSettlement = buildBaziEvidenceSettlement(bazi);
   var chong = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   var monthZhi = bazi.month.zhi;
   // 燥土不生金只适用于未得润、又缺完整金根的命局；见水/湿土且申酉根完整时，
@@ -5550,13 +5761,11 @@ function finalizePatternStatus(bazi, pattern) {
       var cGan = bazi.month.gan, cWx = WU_XING[cGan];
       var shaWx = DI_ZHI_WU_XING[bazi.month.zhi];
       var hasRootWx = function (wx) {
-        return ['year','month','day','hour'].some(function (p) {
-          return getCangGan(bazi[p].zhi).some(function (g) { return WU_XING[g] === wx; });
-        });
+        return evidenceSettlement.elementRootPower(wx) > 0;
       };
       var rootCountWx = function (wx) {
         return ['year','month','day','hour'].filter(function (p) {
-          return getCangGan(bazi[p].zhi).some(function (g) { return WU_XING[g] === wx; });
+          return evidenceSettlement.rootAt(p).some(function (root) { return root.element === wx && root.effectivePower > 0; });
         }).length;
       };
       var effLevel = 'effective', effNotes = [], effReason = '';
@@ -5572,12 +5781,10 @@ function finalizePatternStatus(bazi, pattern) {
           effLevel = 'partial'; effNotes.push('制神被合，制杀力受牵');
         }
         // 4) 制神根气全被冲
-        var anyRoot = false, allRootsChonged = true;
-        ['year','month','day','hour'].forEach(function (p) {
-          var z = bazi[p].zhi;
-          if (!getCangGan(z).some(function (g) { return WU_XING[g] === cWx; })) return;
-          anyRoot = true;
-          if (chong[z] && ['year','month','day','hour'].map(function (q) { return bazi[q].zhi; }).indexOf(chong[z]) < 0) allRootsChonged = false;
+        var cRoots = evidenceSettlement.roots.filter(function(root) { return root.element === cWx; });
+        var anyRoot = cRoots.length > 0;
+        var allRootsChonged = anyRoot && cRoots.every(function(root) {
+          return root.adjustments.some(function(adj) { return adj.type === 'disturbance' && adj.relation === '六冲'; });
         });
         if (anyRoot && allRootsChonged) { effLevel = 'partial'; effNotes.push('制神根气受冲，制杀力减'); }
         // 5) 印制伤（伤官制杀）：印明透克伤官，制杀力受牵（非硬破）
@@ -5883,6 +6090,7 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
   var GAN_HE = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' };
   var positions = ['year','month','hour'];
   var allPositions = ['year','month','day','hour'];
+  var evidenceSettlement = buildBaziEvidenceSettlement(bazi);
   var positionLabel = { year:'年干', month:'月干', hour:'时干' };
   var visible = positions.map(function(pos, index) {
     return { pos:pos, index:index, gan:bazi[pos].gan, role:getShiShen(bazi.day.gan, bazi[pos].gan) };
@@ -5891,13 +6099,8 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     return visible.filter(function(item) { return roles.indexOf(item.role) >= 0; });
   };
   var exactRootPower = function(item) {
-    var power = 2;
-    allPositions.forEach(function(pos) {
-      var hidden = getCangGan(bazi[pos].zhi);
-      var idx = hidden.indexOf(item.gan);
-      if (idx >= 0) power += idx === 0 ? 2 : 1;
-    });
-    return power;
+    var settledStem = evidenceSettlement.stemAt(item.pos);
+    return settledStem && settledStem.gan === item.gan ? settledStem.effectivePower : 2;
   };
   var rooted = function(item) { return exactRootPower(item) > 2; };
   var strongest = function(items) {
@@ -6274,23 +6477,16 @@ function evaluateYongShenQuality(bazi, yongJi) {
   var WOSHENG = { '木':'火','火':'土','土':'金','金':'水','水':'木' };
   var KEWO    = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
   var WOKE    = { '木':'土','火':'金','土':'水','金':'木','水':'火' };
+  var evidenceSettlement = buildBaziEvidenceSettlement(bazi);
 
   // 用神根气评分
   function rootScore(wx, pos) {
     var score = 0;
     var details = [];
-    var zhi = bazi[pos].zhi;
-    var cg = getCangGan(zhi);
-    // 本气根 (正根)
-    if (cg[0] && WU_XING[cg[0]] === wx) { score += 2; details.push(zhi + '本气根'); }
-    // 中气根
-    if (cg[1] && WU_XING[cg[1]] === wx) { score += 1; details.push(zhi + '中气根'); }
-    // 余气根
-    if (cg[2] && WU_XING[cg[2]] === wx) { score += 0.5; details.push(zhi + '余气根'); }
-    // 地支同五行（非藏干，但也是根）
-    if (DI_ZHI_WU_XING[zhi] === wx && !cg.some(function(c) { return WU_XING[c] === wx; })) {
-      score += 1; details.push(zhi + '支气通根');
-    }
+    evidenceSettlement.rootAt(pos).filter(function(root) { return root.element === wx; }).forEach(function(root) {
+      score += root.effectivePower;
+      details.push(root.branch + root.depth + '根' + (root.effectiveCoefficient < 1 ? '×' + root.effectiveCoefficient : ''));
+    });
     return { score: score, details: details };
   }
 
@@ -6311,21 +6507,7 @@ function evaluateYongShenQuality(bazi, yongJi) {
     ['year','month','hour'].forEach(function(pos) {
       if (WU_XING[bazi[pos].gan] === keWx) attackers.push({ pos: pos, type: '天干直克', by: bazi[pos].gan });
     });
-    // 地支根被冲
-    var CHONG = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
-    ['year','month','day','hour'].forEach(function(pos) {
-      var zhi = bazi[pos].zhi;
-      if (DI_ZHI_WU_XING[zhi] === wx) {
-        for (var key in CHONG) {
-          if (CHONG[key] === zhi) {
-            var chongZhi = key;
-            ['year','month','day','hour'].forEach(function(p2) {
-              if (bazi[p2].zhi === chongZhi) attackers.push({ pos: pos, type: '地支根被冲', by: chongZhi + '(' + p2 + ')' });
-            });
-          }
-        }
-      }
-    });
+    // 地支冲刑害已经折入统一根气系数，这里不再二次扣分。
     return attackers;
   }
 
@@ -6342,7 +6524,7 @@ function evaluateYongShenQuality(bazi, yongJi) {
     var ganPositions = ganExposed(wx);
     if (ganPositions.length > 0) { totalScore += ganPositions.length; rootDetails.push('透干' + ganPositions.join('/')); }
     var attackers = isAttacked(wx);
-    if (attackers.length > 0) { totalScore -= attackers.length; rootDetails.push('被克：' + attackers.map(function(a) { return a.by + a.type; }).join('；')); }
+    if (attackers.length > 0) { totalScore -= attackers.length; rootDetails.push('透干受克：' + attackers.map(function(a) { return a.by + a.type; }).join('；')); }
 
     var quality;
     if (totalScore >= 4) quality = '真用神——根深蒂固有力，如大树扎根，用神得力者一生层次高';
@@ -6380,16 +6562,29 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var mz = bazi.month.zhi;
   var zeroMap = function() { return { '木':0,'火':0,'土':0,'金':0,'水':0 }; };
   var l2Details = [], l3Details = [], l4Details = [];
+  var evidenceSettlement = buildBaziEvidenceSettlement(bazi);
 
   // —— 8 位置表层计数（成势判定；日干位置不计比劫）——
   var countMap = zeroMap();
+  var rawCountMap = zeroMap();
   ['year','month','day','hour'].forEach(function(pos) {
     var gWx = WU_XING[bazi[pos].gan];
     var zWx = DI_ZHI_WU_XING[bazi[pos].zhi];
-    if (pos !== 'day' || gWx !== TONG) countMap[gWx] += 1;
-    countMap[zWx] += 1;
+    if (pos !== 'day' || gWx !== TONG) { countMap[gWx] += 1; rawCountMap[gWx] += 1; }
+    rawCountMap[zWx] += 1;
+    var mainRoot = evidenceSettlement.rootAt(pos).filter(function(root) { return root.depth === '本气'; })[0];
+    countMap[zWx] += mainRoot ? mainRoot.effectiveCoefficient : 1;
   });
-  var chengShi = function(wx) { return countMap[wx] >= 3; };
+  // 被六合、三合、三会牵走的支气不消失，而是把被转换的份额统一转入化神。
+  ['year','month','day','hour'].forEach(function(pos) {
+    var group = evidenceSettlement.dominantDiversionByPosition[pos];
+    if (group) countMap[group.formedElement] += (1 - group.coefficient);
+  });
+  // “成势”是结构事实，不能因一次冲刑就整体消失；但受损过重也不能仍按完整成势。
+  // 因此以结算后 2.5 为主门槛，原始三现时至少须保留 2 份有效力量。
+  var chengShi = function(wx) {
+    return countMap[wx] >= 2.5 || (rawCountMap[wx] >= 3 && countMap[wx] >= 2);
+  };
   // 身弱必须继续追问“为何而弱”。食伤得月令或在表层成势，且其压力不低于财、官杀时，
   // 归为食伤泄身型；此时比劫虽可直接帮身，却会继续生旺食伤，不能与印星并列取喜。
   var pressureOf = function(wx) {
@@ -6654,6 +6849,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     d: d,
     g1: g1,
     counts: countMap,
+    rawCounts: rawCountMap,
     L1: L1, L2: L2, L3: L3, L4: L4,
     SBase: S_base,
     SNeed: S_need,
@@ -7524,6 +7720,7 @@ window.BaZiCalculator = {
     calcDayMasterStrength: calcDayMasterStrength,
     auditDayMasterStrength: auditDayMasterStrength,
     buildEventLedger: buildBaziEventLedger,
+    buildEvidenceSettlement: buildBaziEvidenceSettlement,
     getPattern: getPattern,
     adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,
