@@ -6432,25 +6432,43 @@ function finalizeYongJiResult(bazi, base, context) {
   }
 
   var weaknessCause = context.candidateScores && context.candidateScores.weaknessCause;
+  var strongCause = context.candidateScores && context.candidateScores.strongCause;
+  var imbalanceCause = weaknessCause || strongCause;
   var conditionalAuxiliaryElements = [];
   var conditionalAuxiliaryReason = '';
-  if (weaknessCause && weaknessCause.type === '食伤泄身') {
-    conditionalAuxiliaryElements = [weaknessCause.peerElement];
-    conditionalAuxiliaryReason = weaknessCause.peerElement + '比劫并非纯忌，但必须以'
-      + weaknessCause.sealElement + '印星先制住过旺食伤为前提，再少量配合帮身；不可脱离印星单独增补。';
-    primaryReason = '核心用神为' + weaknessCause.sealElement + '：食伤泄身型身弱，'
-      + weaknessCause.outputElement + '食伤为主要泄身来源，取' + weaknessCause.sealElement
-      + '印星制食伤并生身；' + weaknessCause.peerElement
-      + '比劫并非纯忌，但单用会继续生旺食伤，须在印星制泄后少量搭配。'
-      + (context.tiaoHouNote ? '调候辅助：' + context.tiaoHouNote : '');
-    if (elementReasons[weaknessCause.sealElement]) {
-      elementReasons[weaknessCause.sealElement].reasons.unshift('印星同时完成制食伤与生身，是本局第一取用');
+  var weaknessSupportingElements = [];
+  var strongSupportingElements = [];
+  if (imbalanceCause) {
+    conditionalAuxiliaryElements = (imbalanceCause.conditionalElements || []).filter(function(wx) {
+      return lists.yongShen.indexOf(wx) < 0;
+    });
+    conditionalAuxiliaryReason = conditionalAuxiliaryElements.length ? (imbalanceCause.conditionalReason || '') : '';
+    var supportingElements = (imbalanceCause.supportingElements || []).filter(function(wx) {
+      return lists.yongShen.indexOf(wx) < 0;
+    });
+    weaknessSupportingElements = weaknessCause ? supportingElements.slice() : [];
+    strongSupportingElements = strongCause ? supportingElements.slice() : [];
+    if (lists.yongShen[0] === imbalanceCause.primaryElement) {
+      primaryReason = '核心用神为' + imbalanceCause.primaryElement + '：' + imbalanceCause.conclusion
+        + (context.tiaoHouNote ? ' 调候辅助：' + context.tiaoHouNote : '');
+    } else {
+      primaryReason += ' 病因复核：' + imbalanceCause.conclusion
+        + (imbalanceCause.selectionOverride ? ' ' + imbalanceCause.selectionOverride : '');
     }
-    if (elementReasons[weaknessCause.peerElement]) {
-      elementReasons[weaknessCause.peerElement].conditionalRole = '条件辅助';
-      elementReasons[weaknessCause.peerElement].conditionalReason = conditionalAuxiliaryReason;
-      elementReasons[weaknessCause.peerElement].reasons.unshift('比劫可在印星先行制泄后少量帮身，不能脱离印星单独增补，故不作纯忌论');
+    if (elementReasons[imbalanceCause.primaryElement]) {
+      elementReasons[imbalanceCause.primaryElement].reasons.unshift(imbalanceCause.primaryAction);
     }
+    conditionalAuxiliaryElements.forEach(function(wx) {
+      if (!elementReasons[wx]) return;
+      elementReasons[wx].conditionalRole = '条件辅助';
+      elementReasons[wx].conditionalReason = conditionalAuxiliaryReason;
+      elementReasons[wx].reasons.unshift(conditionalAuxiliaryReason);
+    });
+    (weaknessSupportingElements.concat(strongSupportingElements)).forEach(function(wx) {
+      if (!elementReasons[wx]) return;
+      elementReasons[wx].supportingRole = '辅助喜神';
+      elementReasons[wx].reasons.unshift(imbalanceCause.supportingReason || '用于配合核心用神调节命局');
+    });
   }
 
   // 生克链调整注入 elementReasons
@@ -6464,12 +6482,13 @@ function finalizeYongJiResult(bazi, base, context) {
   }
 
   var evidence = [{ category:'旺衰', title:'日主' + context.dmStr.level, detail:context.dmStr.detail }];
-  if (weaknessCause) {
+  if (imbalanceCause) {
     evidence.push({
       category:'取用病因',
-      title:'食伤泄身型身弱',
-      detail:weaknessCause.conclusion + ' 压力对比：食伤' + weaknessCause.outputPressure.toFixed(1)
-        + '，财星' + weaknessCause.wealthPressure.toFixed(1) + '，官杀' + weaknessCause.officerPressure.toFixed(1) + '。'
+      title:imbalanceCause.title,
+      detail:imbalanceCause.conclusion + (weaknessCause
+        ? ' 压力对比：食伤' + weaknessCause.outputPressure.toFixed(1) + '，财星' + weaknessCause.wealthPressure.toFixed(1) + '，官杀' + weaknessCause.officerPressure.toFixed(1) + '。'
+        : ' 生扶对比：比劫' + strongCause.peerPressure.toFixed(1) + '，印星' + strongCause.sealPressure.toFixed(1) + '。')
     });
   }
   if (context.tiaoHouNote) evidence.push({ category:'调候', title:'寒暖燥湿', detail:context.tiaoHouNote });
@@ -6526,6 +6545,8 @@ function finalizeYongJiResult(bazi, base, context) {
     dualRoleElements: dualRoleElements,
     conditionalAuxiliaryElements: conditionalAuxiliaryElements,
     conditionalAuxiliaryReason: conditionalAuxiliaryReason,
+    weaknessSupportingElements: weaknessSupportingElements,
+    strongSupportingElements: strongSupportingElements,
     reasoning: base.reasoning,
     congGe: base.congGe,
     method: method,
@@ -6551,6 +6572,7 @@ function finalizeYongJiResult(bazi, base, context) {
     result.candidateScores = context.candidateScores.candidates;
     result.tiebreak = context.candidateScores.tiebreak;
     if (context.candidateScores.weaknessCause) result.weaknessCause = context.candidateScores.weaknessCause;
+    if (context.candidateScores.strongCause) result.strongCause = context.candidateScores.strongCause;
   }
   // P5-C07：最终分类层透传（仅扶抑路径挂载；从格/穷通短路盘不挂——其喜忌语义冻结，不参与强弱档）
   if (base.elementClassification) {
@@ -6641,6 +6663,30 @@ function evaluateYongShenQuality(bazi, yongJi) {
  *   S_need = S_base + L4 调候 → 定喜忌归属，±3 内部中性带（F8/F10）
  *   根气仅作严格并列时的 tiebreak 第四顺位与质量报告（F11）
  */
+function reconcileImbalanceCauseWithYong(cause, yongWx, overrideReason) {
+  if (!cause || !cause.primaryElement || cause.primaryElement === yongWx) return cause;
+
+  var priorPrimary = cause.primaryElement;
+  var diseaseRemedy = cause.diseaseRemedyElement || priorPrimary;
+  if (!cause.baseConclusion) cause.baseConclusion = cause.conclusion;
+  cause.diseaseRemedyElement = diseaseRemedy;
+  cause.selectedElement = yongWx;
+  cause.selectionOverride = '病因层原先优先考虑' + diseaseRemedy + '，但'
+    + (overrideReason || '格局救应、通关价值与原局可用性综合结算后，' + yongWx + '的候选总分更高')
+    + '，故最终以' + yongWx + '为核心用神，' + diseaseRemedy + '退居辅助。';
+  cause.primaryElement = yongWx;
+  cause.primaryAction = cause.selectionOverride;
+  cause.conditionalElements = (cause.conditionalElements || []).filter(function(wx) { return wx !== yongWx; });
+  if (!cause.conditionalElements.length) cause.conditionalReason = '';
+  cause.supportingElements = (cause.supportingElements || []).filter(function(wx) { return wx !== yongWx; });
+  [diseaseRemedy, priorPrimary].forEach(function(wx) {
+    if (wx && wx !== yongWx && cause.supportingElements.indexOf(wx) < 0) cause.supportingElements.push(wx);
+  });
+  cause.supportingReason = diseaseRemedy + '仍是对应病因的有效药神，但本局综合裁决后不与' + yongWx + '并列第一';
+  cause.conclusion = cause.baseConclusion + ' ' + cause.selectionOverride;
+  return cause;
+}
+
 function calcCandidateScores(bazi, dmStr, pattern) {
   var WX = ['木','火','土','金','水'];
   var score = dmStr.score;
@@ -6686,10 +6732,124 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var outputPressure = pressureOf(WO_SHENG);
   var wealthPressure = pressureOf(WO_KE);
   var officerPressure = pressureOf(KE_WO);
-  var outputDrainDominant = d < 0
+  var peerPressure = pressureOf(TONG);
+  var sealPressure = pressureOf(SHENG_WO);
+  // “中和”即使分差略偏负也不应套用身弱病因；只有旺衰层明确落入偏弱/极弱才分型。
+  var isWeakLevel = dmStr.level === '偏弱' || dmStr.level === '极弱';
+  var outputDrainDominant = isWeakLevel
     && (chengShi(WO_SHENG) || DI_ZHI_WU_XING[mz] === WO_SHENG)
     && outputPressure >= 2.5
     && outputPressure >= Math.max(wealthPressure, officerPressure);
+  var wealthDominant = isWeakLevel
+    && (chengShi(WO_KE) || DI_ZHI_WU_XING[mz] === WO_KE)
+    && wealthPressure >= 2.5
+    && wealthPressure >= Math.max(outputPressure, officerPressure);
+  var officerDominant = isWeakLevel
+    && (chengShi(KE_WO) || DI_ZHI_WU_XING[mz] === KE_WO)
+    && officerPressure >= 2.5
+    && officerPressure >= Math.max(outputPressure, wealthPressure);
+  var wealthOfficerCompound = isWeakLevel && !outputDrainDominant
+    && wealthPressure >= 2.5 && officerPressure >= 2.5
+    && Math.max(wealthPressure, officerPressure) >= outputPressure;
+
+  var weaknessCause = null;
+  if (outputDrainDominant) {
+    weaknessCause = {
+      type:'食伤泄身', title:'食伤泄身型身弱', primaryElement:SHENG_WO,
+      primaryAction:'印星同时完成制食伤与生身，是本局第一取用',
+      supportingElements:[], supportingReason:'', conditionalElements:[TONG],
+      conditionalReason:TONG + '比劫并非纯忌，但须以' + SHENG_WO + '印星先制住过旺食伤为前提，再少量配合帮身；不可脱离印星单独增补。',
+      conclusion:WO_SHENG + '食伤为主要泄身来源，取' + SHENG_WO + '印星制食伤并生身；' + TONG + '比劫并非纯忌，但单用会继续生旺食伤，只能在印星制泄后少量搭配。'
+    };
+  } else if (wealthOfficerCompound) {
+    weaknessCause = {
+      type:'财官压身', title:'财生官杀复合型身弱', primaryElement:SHENG_WO,
+      primaryAction:'印星承接官杀并转而生身，用于切断财生官杀后直接攻身的长链',
+      supportingElements:[], supportingReason:'', conditionalElements:[TONG],
+      conditionalReason:TONG + '比劫可辅助担财，但须先有' + SHENG_WO + '印星化解官杀压力；不可单独用比劫硬抗财官长链。',
+      conclusion:WO_KE + '财星与' + KE_WO + '官杀共同成压；单就病因层通常先取' + SHENG_WO + '印星化杀生身，' + TONG + '比劫在印星通关后辅助担财。'
+    };
+  } else if (wealthDominant) {
+    weaknessCause = {
+      type:'财多耗身', title:'财多耗身型身弱', primaryElement:TONG,
+      primaryAction:'比劫既能直接帮身又能分担旺财，是财多耗身的第一取用',
+      supportingElements:[], supportingReason:'', conditionalElements:[SHENG_WO],
+      conditionalReason:SHENG_WO + '印星可辅助生身，但须有根且不被旺财直接破坏；财势未受控时不可把印星机械并列为首用。',
+      conclusion:WO_KE + '财星为主要耗身来源；单就病因层通常先取' + TONG + '比劫帮身分财，' + SHENG_WO + '印星在有根、受护且不被旺财破坏时辅助。'
+    };
+  } else if (officerDominant) {
+    weaknessCause = {
+      type:'官杀克身', title:'官杀克身型身弱', primaryElement:SHENG_WO,
+      primaryAction:'印星承接官杀并转化为生身之力，是官杀克身的第一取用',
+      supportingElements:[TONG],
+      supportingReason:'比劫可辅助增强日主承载，但不能替代印星化杀的主线', conditionalElements:[], conditionalReason:'',
+      conclusion:KE_WO + '官杀为主要克身来源；单就病因层通常先取' + SHENG_WO + '印星化杀生身，' + TONG + '比劫辅助承载。食伤制杀只能在自身有根有力且不会继续泄弱日主时另行成立。'
+    };
+  } else if (isWeakLevel && countMap[TONG] < 1.5 && countMap[SHENG_WO] < 1.5) {
+    weaknessCause = {
+      type:'根气不足', title:'失令少根型身弱', primaryElement:null,
+      primaryAction:'', supportingElements:[SHENG_WO,TONG],
+      supportingReason:'印星负责生身，比劫负责落实根气；最终先后仍按原局可用性与格局救应决定', conditionalElements:[], conditionalReason:'',
+      conclusion:'三类泄耗克均未形成唯一主导压力，身弱更偏向失令、少根或生扶落空；印比皆可扶身，但应优先选择原局能落地、不会被合冲克坏的一方。'
+    };
+  } else if (isWeakLevel) {
+    weaknessCause = {
+      type:'复合耗泄克', title:'复合耗泄克型身弱', primaryElement:null,
+      primaryAction:'', supportingElements:[SHENG_WO,TONG],
+      supportingReason:'印星与比劫均属扶身候选，但必须结合主导压力、原局根气和格局救应决定先后', conditionalElements:[], conditionalReason:'',
+      conclusion:'食伤、财星、官杀均未达到单独主导门槛，属于多种压力叠加的身弱；不机械指定单一五行，按候选评分和生克链选择能先解决主要矛盾的一方。'
+    };
+  }
+
+  // 身强同样追问力量来源。比劫旺、印旺与印比并旺的制衡路径不同：
+  // 官杀可制比劫，却会反生印；财可制印，却可能被比劫争夺；食伤可泄秀，却可能被旺印压制。
+  var isStrongLevel = dmStr.level === '偏强' || dmStr.level === '极强';
+  var peerStrong = isStrongLevel
+    && (chengShi(TONG) || DI_ZHI_WU_XING[mz] === TONG)
+    && peerPressure >= 2.5;
+  var sealStrong = isStrongLevel
+    && (chengShi(SHENG_WO) || DI_ZHI_WU_XING[mz] === SHENG_WO)
+    && sealPressure >= 2.5;
+  var strongCause = null;
+  if (peerStrong && sealStrong) {
+    strongCause = {
+      type:'印比并旺', title:'印比并旺型身强', primaryElement:WO_KE,
+      primaryAction:'财星制印并耗身，是印比同旺时优先切断生扶链的取用',
+      supportingElements:[], supportingReason:'', conditionalElements:[WO_SHENG],
+      conditionalReason:WO_SHENG + '食伤虽能泄秀生财，但须先有' + WO_KE + '财星约束旺印，或自身有根不受印制；不可脱离财星单用。',
+      conclusion:'印星与比劫共同形成连续生扶，单用官杀会继续生印；病因层通常先取' + WO_KE + '财星制印耗身，再视食伤根气配合泄秀生财。'
+    };
+  } else if (peerStrong && peerPressure >= sealPressure) {
+    strongCause = {
+      type:'比劫成势', title:'比劫成势型身强', primaryElement:KE_WO,
+      primaryAction:'官杀直接约束成势比劫，是本型第一制衡候选',
+      supportingElements:[WO_SHENG], supportingReason:'食伤可辅助泄秀，并为财星提供来源', conditionalElements:[WO_KE],
+      conditionalReason:WO_KE + '财星可耗身，但比劫成势时容易争财；须有' + KE_WO + '官杀护财或' + WO_SHENG + '食伤通关后再用。',
+      conclusion:'比劫是身强的主要来源，病因层通常先取' + KE_WO + '官杀制比劫，' + WO_SHENG + '食伤辅助泄秀；' + WO_KE + '财星不可在无护无通关时孤用。'
+    };
+  } else if (sealStrong) {
+    strongCause = {
+      type:'印旺生身', title:'印旺生身型身强', primaryElement:WO_KE,
+      primaryAction:'财星直接制约旺印并耗身，是印旺生身的第一取用',
+      supportingElements:[], supportingReason:'', conditionalElements:[WO_SHENG],
+      conditionalReason:WO_SHENG + '食伤可泄身，但旺印会克制食伤；须先有' + WO_KE + '财星制印，或食伤自身有强根，才可搭配。',
+      conclusion:'印星是身强的主要来源，病因层通常先取' + WO_KE + '财星制印耗身；' + WO_SHENG + '食伤须防旺印压制，满足条件后才能承担泄秀。官杀会生印，不作机械首选。'
+    };
+  } else if (isStrongLevel && (DI_ZHI_WU_XING[mz] === TONG || countMap[TONG] >= 1.5)) {
+    strongCause = {
+      type:'得令多根', title:'得令多根型身强', primaryElement:null,
+      primaryAction:'', supportingElements:[KE_WO,WO_SHENG,WO_KE],
+      supportingReason:'官杀制身、食伤泄秀与财星耗身均可候选，最终按原局可用性、通关和格局救应决定先后', conditionalElements:[], conditionalReason:'',
+      conclusion:'身强主要来自得令与根气落实，并非单一印星或比劫表层成势；官杀、食伤、财星都可制衡，但须选择原局有根、不会引出反向生扶的一方。'
+    };
+  } else if (isStrongLevel) {
+    strongCause = {
+      type:'复合生扶', title:'复合生扶型身强', primaryElement:null,
+      primaryAction:'', supportingElements:[KE_WO,WO_SHENG,WO_KE],
+      supportingReason:'三类克泄耗均是候选，须结合格局救应、生克链与原局可用性选择核心', conditionalElements:[], conditionalReason:'',
+      conclusion:'印比均未达到单独主导门槛，属于多处生扶叠加形成的身强；不机械指定财官食伤中的任一类，按候选总分解决主要矛盾。'
+    };
+  }
 
   // —— L1 方向基准：生扶组 -50d，克泄耗组 +50d（F4）——
   var L1 = zeroMap();
@@ -6715,6 +6875,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   } else if (d > 0) {
     if (chengShi(TONG))     { addL2(KE_WO, 10, '比劫成势，官杀制比劫'); addL2(WO_SHENG, 4, '比劫成势，食伤泄秀'); }
     if (chengShi(SHENG_WO)) { addL2(WO_KE, 10, '印星成势，财星制印调结构'); addL2(WO_SHENG, 6, '印星成势，食伤泄秀'); }
+    if (peerStrong && sealStrong) addL2(KE_WO, -10, '印比并旺，官杀虽制比劫却会继续生印，取消机械制比加成');
   }
 
   // —— L3 格局修正（成格项 + 破格救应；杀印/官印方向门控 F6）——
@@ -6925,6 +7086,10 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var yongWx = pool[0];
   tiebreak.winner = yongWx;
 
+  // 病因层给出传统病药方向，但最终用神还要接受格局救应、通关与根气的总分裁决。
+  // 若两者不同，必须在结构化结果中显式协调，不能一边称甲为核心、一边把乙列作用神。
+  reconcileImbalanceCauseWithYong(weaknessCause || strongCause, yongWx);
+
   // —— 候选明细（GPT 对账用）——
   var candidates = WX.map(function(wx) {
     var role = wx === yongWx ? '用神' : (S_need[wx] > 3 ? '喜神' : (S_need[wx] < -3 ? '忌神' : '中性'));
@@ -6957,16 +7122,25 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     l4Details: l4Details,
     tiaoHouNote: tiaoHouNote,
     tiaoHouYongShen: tiaoHouYongShen,
-    weaknessCause: outputDrainDominant ? {
-      type: '食伤泄身',
+    weaknessCause: weaknessCause ? Object.assign(weaknessCause, {
       outputElement: WO_SHENG,
+      wealthElement: WO_KE,
+      officerElement: KE_WO,
       sealElement: SHENG_WO,
       peerElement: TONG,
       outputPressure: outputPressure,
       wealthPressure: wealthPressure,
-      officerPressure: officerPressure,
-      conclusion: '食伤为主要泄身来源，取印制食伤兼生身；比劫并非纯忌，须在印星制泄后少量搭配，不宜单用。'
-    } : null,
+      officerPressure: officerPressure
+    }) : null,
+    strongCause: strongCause ? Object.assign(strongCause, {
+      peerElement: TONG,
+      sealElement: SHENG_WO,
+      outputElement: WO_SHENG,
+      wealthElement: WO_KE,
+      officerElement: KE_WO,
+      peerPressure: peerPressure,
+      sealPressure: sealPressure
+    }) : null,
     yongWx: yongWx,
     candidates: candidates,
     tiebreak: tiebreak
@@ -7062,6 +7236,11 @@ function getYongJi(bazi) {
         values: '庚金生亥月且日主' + dmLevel + '，非火不暖',
         advance: ['火']
       });
+      reconcileImbalanceCauseWithYong(
+        cs.weaknessCause || cs.strongCause,
+        '火',
+        '亥月强金须先以火暖局，调候硬边界优先于一般扶抑候选'
+      );
     }
     yongShen = [cs.yongWx];
     // P5-C07（GPT 终裁）：最终分类层全覆盖——先按档位给五行全部归类，正式档（喜/忌）排序优先，

@@ -110,7 +110,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
 - **pattern**（格局）：name（格局名）、status（成格/破格）、source（取格依据）和 breakReasons（破格原因）是一个不可拆分的冻结裁决。必须逐字采用 pattern.name，禁止按模型自带知识、月令本气或其他流派重新取格。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。若用户追问流派差异，只能把其他名称标成“其他流派可能称为……”，不得替换本站主格。
 - **pattern.mechanism**（格局机制）：财生官/财生杀等十神关系事实标注，仅用于解释格名由来（如"月干七杀+月支财星→财生杀格"）。**这是解释字段，不是裁决字段**：不得因 mechanism 与格名文字不同就推断"格局判定错误"，不得据此改动 pattern/status/strength/用神喜忌。
-- **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用，所以同一五行可以同时出现在 yongShen 与 xiShen，但 jiShen 必须与二者互斥。另有 **tiaoHouYongShen（调候用神）** 和 **conditionalAuxiliaryElements（条件辅助）** 两个独立说明轴。调候用于寒暖燥湿；条件辅助表示该五行不能单用，但满足前置条件时可搭配。若食伤泄身型身弱的比劫同时落在 jiShen 与 conditionalAuxiliaryElements 中，必须说明“印星为主，先制食伤；比劫并非纯忌，可在印星制泄后少量搭配帮身，但不能单独增补”。禁止把这类比劫说成绝对忌神或与印星并列主用。所有字段均须严格引用，禁止自行推断或替换。
+- **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用，所以同一五行可以同时出现在 yongShen 与 xiShen，但 jiShen 必须与二者互斥。另有 **tiaoHouYongShen（调候用神）**、**weaknessCause（身弱病因）**、**strongCause（身强来源）**、对应的 **weaknessSupportingElements/strongSupportingElements（辅助喜神）** 和 **conditionalAuxiliaryElements（条件辅助）** 等解释轴。调候用于寒暖燥湿；身弱病因区分食伤泄身、财多耗身、官杀克身、财官压身、失令少根或复合耗泄克；身强来源区分比劫成势、印旺生身、印比并旺、得令多根或复合生扶。辅助喜神须服从第一取用，条件辅助则只有满足 conditionalAuxiliaryReason 的前置条件才可搭配。必须逐字依据相应 cause.conclusion、conditionalAuxiliaryReason 解释，禁止把所有身弱机械说成“喜印比”，也禁止把所有身强机械说成“喜财官食伤”。所有字段均须严格引用，禁止自行推断或替换。
 - **yongJi.evidence 候选对比**（五行候选评分对比）：仅解释"为什么取这个用神、未取哪个候选"，是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
 - **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
@@ -1170,7 +1170,11 @@ function buildSingleChart(data) {
     ctx += `  用神：${(yj.yongShen || []).join('、') || '—'}\n`;
     ctx += `  喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
     if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) ctx += `  调候用神：${yj.tiaoHouYongShen.join('、')}（寒暖燥湿轴，宜有度）\n`;
-    if (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) ctx += `  条件辅助：${yj.conditionalAuxiliaryElements.join('、')}（须先以印星制住食伤，再少量搭配；不可单用）\n`;
+    if (yj.weaknessCause) ctx += `  身弱病因：${yj.weaknessCause.title || yj.weaknessCause.type}；${yj.weaknessCause.conclusion || ''}\n`;
+    if (yj.strongCause) ctx += `  身强来源：${yj.strongCause.title || yj.strongCause.type}；${yj.strongCause.conclusion || ''}\n`;
+    const supportingElements = (yj.weaknessSupportingElements || []).concat(yj.strongSupportingElements || []);
+    if (supportingElements.length) ctx += `  辅助喜神：${supportingElements.join('、')}（服从强弱成因主线，不与核心用神并列）\n`;
+    if (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) ctx += `  条件辅助：${yj.conditionalAuxiliaryElements.join('、')}；${yj.conditionalAuxiliaryReason || '仅在前置条件成立时搭配，不可单用'}\n`;
     ctx += `  ${(yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) || (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}\n`;
     if (yj.dualRoleElements && yj.dualRoleElements.length) ctx += `  双重角色：${yj.dualRoleElements.join('、')}在扶抑结构上不宜增多，但兼具调候作用，不作纯忌论。\n`;
     ctx += `  取用方法：${yj.method || '—'}\n`;
@@ -1541,7 +1545,11 @@ function generateMockReply(question, chartData, bazi, mode) {
       r += `- 用神：${(yj.yongShen || []).join('、') || '—'}\n`;
       r += `- 喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
       if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) r += `- 调候用神：${yj.tiaoHouYongShen.join('、')}（用于寒暖燥湿，宜有度）\n`;
-      if (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) r += `- 条件辅助：${yj.conditionalAuxiliaryElements.join('、')}（印星先制食伤后少量搭配，不可单用）\n`;
+      if (yj.weaknessCause) r += `- 身弱病因：${yj.weaknessCause.title || yj.weaknessCause.type}；${yj.weaknessCause.conclusion || ''}\n`;
+      if (yj.strongCause) r += `- 身强来源：${yj.strongCause.title || yj.strongCause.type}；${yj.strongCause.conclusion || ''}\n`;
+      const supportingElements = (yj.weaknessSupportingElements || []).concat(yj.strongSupportingElements || []);
+      if (supportingElements.length) r += `- 辅助喜神：${supportingElements.join('、')}（服从强弱成因主线）\n`;
+      if (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) r += `- 条件辅助：${yj.conditionalAuxiliaryElements.join('、')}；${yj.conditionalAuxiliaryReason || '仅在前置条件成立时搭配，不可单用'}\n`;
       r += `- ${(yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) || (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}\n`;
       if (yj.dualRoleElements && yj.dualRoleElements.length) r += `- 双重角色说明：${yj.dualRoleElements.join('、')}在扶抑结构上不宜增多，但兼具调候作用，不作纯忌论。\n`;
       r += '\n';
@@ -1578,7 +1586,11 @@ function generateMockReply(question, chartData, bazi, mode) {
           const yj = chartData.yongJi;
           r += `系统喜神：${(yj.xiShen || []).join('、') || '—'}；用神：${(yj.yongShen || []).join('、') || '—'}`;
           if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) r += `；调候用神：${yj.tiaoHouYongShen.join('、')}（宜有度）`;
-          if (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) r += `；条件辅助：${yj.conditionalAuxiliaryElements.join('、')}（须配印，不可单用）`;
+          if (yj.weaknessCause) r += `；身弱病因：${yj.weaknessCause.title || yj.weaknessCause.type}`;
+          if (yj.strongCause) r += `；身强来源：${yj.strongCause.title || yj.strongCause.type}`;
+          const supportingElements = (yj.weaknessSupportingElements || []).concat(yj.strongSupportingElements || []);
+          if (supportingElements.length) r += `；辅助喜神：${supportingElements.join('、')}`;
+          if (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) r += `；条件辅助：${yj.conditionalAuxiliaryElements.join('、')}（${yj.conditionalAuxiliaryReason || '仅在前置条件成立时搭配，不可单用'}）`;
           r += `；${(yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) || (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}。\n`;
         }
       }

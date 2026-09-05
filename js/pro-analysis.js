@@ -268,6 +268,10 @@ function renderPattern(bazi,facts){
         h+='</div>';
       });
       if(yj.dualRoleElements&&yj.dualRoleElements.length)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px">'+yj.dualRoleElements.join('、')+'在扶抑结构上不宜增多，但兼具调候作用，宜适量，不作纯忌论。</div>';
+      if(yj.weaknessCause)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px"><b>'+(yj.weaknessCause.title||yj.weaknessCause.type)+'：</b>'+(yj.weaknessCause.conclusion||'')+'</div>';
+      if(yj.strongCause)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px"><b>'+(yj.strongCause.title||yj.strongCause.type)+'：</b>'+(yj.strongCause.conclusion||'')+'</div>';
+      var supportingElements=(yj.weaknessSupportingElements||[]).concat(yj.strongSupportingElements||[]);
+      if(supportingElements.length)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px">辅助喜神：'+supportingElements.join('、')+'，须服从上述强弱成因主线。</div>';
       if(yj.conditionalAuxiliaryReason)h+='<div style="font-size:10px;color:var(--tx3);line-height:1.6;margin:2px 0 8px">'+yj.conditionalAuxiliaryReason+'</div>';
       Object.keys(yj.elementReasons||{}).forEach(function(w){var item=yj.elementReasons[w];var role=item.dualRole?item.role+'/调候用神':item.role;h+='<div style="font-size:10px;color:var(--tx2);line-height:1.55;margin-top:5px"><b style="color:'+(wxColors[w]||'var(--gold-l)')+'">'+role+'·'+w+'</b>：'+(item.reasons||[]).join('；')+'</div>'});
       c.innerHTML=h;
