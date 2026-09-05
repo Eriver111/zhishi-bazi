@@ -115,6 +115,24 @@ test('Hepan uses the exact personal professional facts for the same chart', () =
   assert.deepEqual(person._professionalFacts, personal);
 });
 
+test('Hepan person carries the exact calculator DaYun instead of leaving it to AI', () => {
+  const { calculator } = loadCalculatorAndHepan();
+  const builder = loadPersonBuilder();
+  const params = {
+    year: 1996, month: 7, day: 19, hour: 6, clock: 12, minute: 20,
+    gender: 'female', cal: 'solar', prov: '', city: '', dist: '', trueSolarTime: false, ziHourNextDay: true,
+  };
+  const person = builder.buildPerson('甲方', params, calculator);
+  const normalized = person._normalizedBirth;
+  const expected = calculator.calculateDaYun(
+    person._bazi.month, person._bazi.year, params.gender,
+    normalized.year, normalized.month, normalized.day, normalized.hour, normalized.clock
+  );
+
+  assert.ok(person._daYunData && person._daYunData.list.length === 8);
+  assert.deepEqual(person._daYunData, expected);
+});
+
 test('Hepan person keeps ShenSha in the string format consumed by the analysis engine', () => {
   const { calculator } = loadCalculatorAndHepan();
   const builder = loadPersonBuilder();

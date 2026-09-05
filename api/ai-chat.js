@@ -115,7 +115,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
-- **daYun**（大运排盘）：用户的一生大运已由系统精确计算（顺逆、起运、每柱干支和十神）。回答任何大运相关问题时，**必须使用 chartData.daYun 中的数据**，禁止自己推算大运走向、起运岁数、大运干支。
+- **daYun**（大运排盘）：用户的一生大运已由系统精确计算（顺逆、起运、每柱干支和十神）。单盘读取 chartData.daYun；合盘必须分别读取 chartData.person1.daYun 与 chartData.person2.daYun，禁止合并、交换或自行推算大运走向、起运岁数、大运干支。
 - **pattern.establishConditions**（格局成败清单）：逐项列出该格局的成立条件及✅/❌状态。成格条件不是装饰——每一条❌都代表命局的一个结构性缺陷，必须在分析中明确指出哪些条件满足、哪些缺失，以及缺失对命局层次的影响。
 - **yongJi.chainHints**（生克链分析）：系统通过天干地支路径追踪（如财→杀→印→身的流向）发现的深层结构关系与《滴天髓》口诀匹配。这些不是泛泛之谈，而是原局具体干支的互动路径。直接引用链分析的发现，用来解释"为什么某个五行喜/忌"以及"格局搭配的优劣"。当链分析与基础旺衰取用有微妙差异时，链分析代表更精细的判断，应在分析中体现出来。**chainHints 是解释性证据，不得当作重新判定用神/喜忌或推翻格局结论的依据。**
 - **yongJi.chainAdjustments**（生克链修正）：链分析对五行喜忌的程度修正（如 downgrade_ji=忌但程度减轻，upgrade_ji=比原判更忌）。这些修正代表链分析在原局中发现的"反例"或"转圜通路"——例如财虽为忌，但财生杀→杀生印→印生身的通路让财忌中有喜。在讨论五行喜忌时必须提及这些修正。
@@ -129,7 +129,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **currentLiuNian**（当前流年）：已精确计算，结合大运分析流年运势时以此为准。若 chartData 中有当前大运和当前流年数据，直接使用，不要自行推算。
 - **relationEvents**（四柱关系事件）：系统枚举的天干五合、天干克、六冲、六害、刑、六合、三合局、半合、三会方、半会等事实层事件。对称关系（五合/六冲/六害/刑/六合）的 source/target 仅为规范排序、不赋因果语义；天干克保留真实克方方向。引用时按事件类型与柱位描述即可。
 - **structuralRisks**（条件性结构风险）：系统按冻结规则判定的风险列表（type/severity/parties/why/mitigations/triggerHint/partyEvidence；severity 仅"存在/潜在"两档）。**structuralRisks 不是喜用忌结论**：喜用忌（yongJi）是五行总体需求，structuralRisks 是条件性结构风险——**不得把 risk 中出现的十神/五行元素重新解释成忌神**，不得用 risk 覆盖日主旺衰或格局判断。引用 risk 时必须用条件语言（"若…可能…"），不得断言必发。
-- 大运/流年排算是算法强项，你不需要也不能替代它。如果 chartData 中没有大运数据，明确告知用户"请先通过排盘获取大运信息"，不要凭空编造。
+- 大运/流年排算是算法强项，你不需要也不能替代它。如果单盘 chartData.daYun 缺失，或合盘任一方的 person1.daYun/person2.daYun 缺失，明确告知用户“当前缺少完整大运排盘信息”，不要凭空编造。
 
 ## 事实锁（2026-08-14 冻结清单，违反即幻觉）
 1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.name（格局名）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止改名或用近义词换级**——「正财格」不得改判成「正印格」，组合机制「食伤生财」不得替代主格名；「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
@@ -633,6 +633,9 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     }
   } else if (mode === 'liuren') {
     timeAnchor += '本次六壬判断只以课盘记录的起课时间为准，不把八字流年、流月规则混入课盘。';
+  } else if (chartData && chartData.type === 'hepan' && chartData.person1 && chartData.person1.currentLiuNian) {
+    var hepanYear = chartData.person1.currentLiuNian;
+    timeAnchor += `当前流年为${hepanYear.gan || ''}${hepanYear.zhi || ''}年，该字段由合盘排盘端计算；双方十神必须分别按各自日主读取。`;
   } else if (chartData && chartData.currentLiuNian && chartData.currentLiuNian.gan && chartData.currentLiuNian.zhi) {
     timeAnchor += `当前流年为${chartData.currentLiuNian.gan}${chartData.currentLiuNian.zhi}年，该字段由排盘端计算。`;
   } else {
@@ -666,7 +669,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
       content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下是本次合盘双方的冻结排盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${buildChartContext(chartData)}`
     });
     if (chartData.type === 'hepan') {
-      messages.push({ role: 'system', content: '【合盘身份锁】P1/甲方与P2/乙方是两个独立命盘，角色顺序不可交换。回答前先在内部核对双方姓名、性别、四柱和日主；谈单方性质时必须明确写“甲方”或“乙方”，谈跨盘作用时必须写清作用方向。不得把一方的十神、旺衰、喜用忌、原局关系或出生信息套给另一方；用户使用“他/她”而指向不明时，应先说明按哪一方理解。历史回答若与本轮身份锁冲突，一律丢弃历史并以本轮数据为准。' });
+      messages.push({ role: 'system', content: '【合盘身份锁】P1/甲方与P2/乙方是两个独立命盘，角色顺序不可交换。回答前先在内部核对双方姓名、性别、四柱和日主；谈单方性质时必须明确写“甲方”或“乙方”，谈跨盘作用时必须写清作用方向。双方大运只允许分别逐项引用 person1.daYun 与 person2.daYun：起运年龄、顺逆、年龄段、干支均不可自行换算、补造、重排或互换；询问男方/女方时先根据本轮 gender 映射回甲乙方，并在答案中同时保留甲方/乙方标签。不得把一方的十神、旺衰、喜用忌、原局关系、出生信息或大运套给另一方；用户使用“他/她”而指向不明时，应先说明按哪一方理解。历史回答若与本轮身份锁冲突，一律丢弃历史并以本轮数据为准。' });
     }
   } else if (bazi && bazi.year) {
     messages.push({
@@ -766,6 +769,17 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
         if (hard2.length) console.log('[ai-validator-v2] ⚠ 修正后仍有 hard 错误 ' + hard2.length + ' 条——按终裁不循环，记录异常');
       }
     }
+    // 大运归属属于不可妥协的排盘事实。若一次定向修正后仍未通过，
+    // 不把错误正文交给用户，直接降级为双方已冻结的大运事实表。
+    var unresolvedHepanDaYun = validationWarnings.filter(function(w) {
+      return w.indexOf('E1-合盘大运') === 0;
+    });
+    if (unresolvedHepanDaYun.length) {
+      reply = buildHepanDaYunFactFallback(chartData);
+      validationWarnings = runReplyValidation(chartData, reply);
+      v2Applied = true;
+      console.log('[ai-validator] 合盘大运仍有冲突，已阻断原回答并返回冻结事实表');
+    }
   }
   if (metaOut) { metaOut.warnings = validationWarnings; metaOut.v2Applied = v2Applied; }
   return reply;
@@ -787,6 +801,64 @@ function runReplyValidation(chartData, reply) {
   var ZHI = '子丑寅卯辰巳午未申酉戌亥';
   var WX = '金木水火土';
   var m;
+
+  // ---------- ⓪a 合盘双方大运归属与顺序（E1） ----------
+  // 只校验带年龄段的明确大运断言，避免把流年干支、原局四柱误当成大运。
+  if (chartData.type === 'hepan') {
+    var hepanPeople = [
+      { role:'甲方', id:'P1', data:chartData.person1 || {} },
+      { role:'乙方', id:'P2', data:chartData.person2 || {} }
+    ];
+    var uniqueGenderRole = {};
+    hepanPeople.forEach(function(item) {
+      var gender = item.data.gender;
+      if (!gender) return;
+      if (uniqueGenderRole[gender]) uniqueGenderRole[gender] = null;
+      else uniqueGenderRole[gender] = item.role;
+    });
+    function roleFromLine(line) {
+      var hasP1 = /甲方|P1/.test(line);
+      var hasP2 = /乙方|P2/.test(line);
+      if (hasP1 !== hasP2) return hasP1 ? '甲方' : '乙方';
+      if (/男方/.test(line) && uniqueGenderRole.male) return uniqueGenderRole.male;
+      if (/女方/.test(line) && uniqueGenderRole.female) return uniqueGenderRole.female;
+      return '';
+    }
+    var activeRole = '';
+    String(reply).split(/\n/).forEach(function(line) {
+      var explicitRole = roleFromLine(line);
+      if (explicitRole) activeRole = explicitRole;
+      if (!activeRole) return;
+      var item = hepanPeople.filter(function(person) { return person.role === activeRole; })[0];
+      var cycles = item && item.data.daYun && item.data.daYun.cycles;
+      if (!cycles || !cycles.length) return;
+      var expectedByAge = {};
+      cycles.forEach(function(cycle) {
+        expectedByAge[String(parseInt(cycle.displayAge, 10))] = String(cycle.gan || '') + String(cycle.zhi || '');
+      });
+      var periodRe = /(\d{1,2})\s*(?:—|–|－|-|~|～|至|到)\s*(\d{1,2})\s*岁[^\n]{0,24}?([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])/g;
+      var match;
+      while ((match = periodRe.exec(line)) !== null) {
+        var expected = expectedByAge[String(Number(match[1]))];
+        if (!expected || expected !== match[3]) {
+          warnings.push('E1-合盘大运归属冲突：' + activeRole + match[1] + '-' + match[2] + '岁被写成「' + match[3] + '」，排盘应为「' + (expected || '无此年龄段') + '」');
+        }
+      }
+      var startMatch = line.match(/(\d+(?:\.\d+)?)\s*岁起运/);
+      if (startMatch) {
+        var firstDisplayAge = Number(cycles[0].displayAge);
+        var preciseStartAge = Number(item.data.daYun.startAge);
+        var claimedStartAge = Number(startMatch[1]);
+        var preciseClaim = String(startMatch[1]).indexOf('.') >= 0;
+        var validStart = preciseClaim
+          ? Math.abs(claimedStartAge - preciseStartAge) <= 0.11
+          : claimedStartAge === firstDisplayAge;
+        if (!validStart) {
+          warnings.push('E1-合盘大运起运冲突：' + activeRole + '被写成「' + startMatch[1] + '岁起运」，排盘首步年龄标签为「' + firstDisplayAge + '岁」、精确起运为「' + preciseStartAge + '岁」');
+        }
+      }
+    });
+  }
 
   // ---------- ⓪ 出生钟点与内部时辰索引混淆（E1） ----------
   var birth = chartData.birthInfo || {};
@@ -960,6 +1032,28 @@ function isHardWarning(w) {
   return w.indexOf('E4') !== 0;
 }
 
+function buildHepanDaYunFactFallback(chartData) {
+  function personBlock(role, person) {
+    person = person || {};
+    var dy = person.daYun || {};
+    var gender = person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '性别未知';
+    var cycles = Array.isArray(dy.cycles) ? dy.cycles : [];
+    var lines = cycles.map(function(cycle) {
+      var start = Number(cycle.displayAge);
+      var end = Number.isFinite(start) ? start + 9 : '';
+      return '- ' + (Number.isFinite(start) ? start + '-' + end + '岁' : String(cycle.displayAge || cycle.startYear || '')) +
+        '：' + String(cycle.gan || '') + String(cycle.zhi || '');
+    });
+    return role + '（' + (person.name || role) + '，' + gender + '）\n' +
+      '排盘方向：' + (dy.direction || '未提供') + '；精确起运：' + (dy.startAge === undefined ? '未提供' : dy.startAge + '岁') + '。\n' +
+      (lines.length ? lines.join('\n') : '当前缺少该方完整大运数据。');
+  }
+  return '刚才生成的大运归属未通过系统排盘校验，为避免把两个人或两套大运混在一起，错误正文已被拦截。以下只列系统冻结事实：\n\n' +
+    personBlock('甲方', chartData && chartData.person1) + '\n\n' +
+    personBlock('乙方', chartData && chartData.person2) +
+    '\n\n本轮不沿用未通过校验的同步结论，请以以上两套大运为准。';
+}
+
 /**
  * V2 修正指令（纯函数，供单测）：只修被指出的错误句子及其直接推论，保持其余回答不变，
  * 不得改冻结结论（旺衰档位/格局名与成破/用喜忌清单/structuralRisks 及 severity）。
@@ -1039,6 +1133,7 @@ function buildChartContext(chartData) {
     }
     ctx += `甲方身份锁：P1｜${p1.name || '甲方'}｜${p1.gender === 'male' ? '男' : p1.gender === 'female' ? '女' : '性别未知'}｜四柱 ${pillarSignature(p1)}\n`;
     ctx += `乙方身份锁：P2｜${p2.name || '乙方'}｜${p2.gender === 'male' ? '男' : p2.gender === 'female' ? '女' : '性别未知'}｜四柱 ${pillarSignature(p2)}\n`;
+    ctx += `大运读取规则：甲方只读P1/person1.daYun，乙方只读P2/person2.daYun；年龄、顺逆和干支按下列数据逐项照录，禁止自行换算或重排。\n`;
     ctx += `\n--- [P1/甲方，只属于甲方] ---\n`;
     ctx += buildSingleChart(p1);
     ctx += `\n--- [P2/乙方，只属于乙方] ---\n`;
@@ -1661,4 +1756,4 @@ function generateMockReply(question, chartData, bazi, mode) {
 }
 
 // 仅供本地回归测试读取纯函数，不改变 API handler 行为。
-module.exports._test = { buildChartContext, runReplyValidation };
+module.exports._test = { buildChartContext, runReplyValidation, buildHepanDaYunFactFallback };

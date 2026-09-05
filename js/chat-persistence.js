@@ -25,6 +25,9 @@
       // 合盘必须把甲乙双方都纳入身份。旧实现只记录 type=hepan，导致所有
       // 合盘共用同一条历史会话，上一对双方的回答会被带进下一对合盘。
       identity.type = 'hepan';
+      // v2 起合盘会话包含双方独立大运。主动换键，避免旧会话里已经生成的
+      // 错误大运继续污染修复后的回答。
+      identity.contextVersion = 'hepan-dayun-v2';
       identity.relationType = chartData.relationType || '';
       identity.person1 = personIdentity(chartData.person1);
       identity.person2 = personIdentity(chartData.person2);

@@ -70,10 +70,20 @@
     var bazi = calculated.bazi;
     var pillars = ['year', 'month', 'day', 'hour'].map(function(position) { return buildPillar(bazi[position]); });
     var facts = calculator.getProfessionalReportFacts(bazi, params.gender);
+    var normalized = calculated.normalized || params;
+    var daYun = null;
+    if (typeof calculator.calculateDaYun === 'function') {
+      daYun = calculator.calculateDaYun(
+        bazi.month, bazi.year, params.gender,
+        normalized.year, normalized.month, normalized.day, normalized.hour, normalized.clock
+      );
+    }
     return {
       _bazi: bazi,
       _normalizedBirth: calculated.normalized,
       _professionalFacts: facts,
+      // 合盘 AI 必须拿到双方各自的排盘大运，不能只凭四柱让模型自行反推。
+      _daYunData: daYun,
       name: name,
       gender: params.gender,
       dayGan: bazi.day.gan,

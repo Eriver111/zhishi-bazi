@@ -831,6 +831,43 @@
       d.yongJi = p._professionalFacts.yongJi || null;
       d.pattern = p._professionalFacts.pattern || null;
     }
+    if (p._daYunData && p._daYunData.list && p._daYunData.list.length) {
+      var dayGan = p.dayGan || (p._bazi && p._bazi.day && p._bazi.day.gan) || '';
+      var cycles = p._daYunData.list.map(function(dy) {
+        var shiShen = '';
+        try {
+          if (dayGan && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getShiShen) {
+            shiShen = BaZiCalculator.getShiShen(dayGan, dy.gan) || '';
+          }
+        } catch(e) {}
+        return {
+          gan: dy.gan, zhi: dy.zhi, shiShen: shiShen,
+          displayAge: dy.displayAge, startYear: dy.startYear, endYear: dy.endYear
+        };
+      });
+      d.daYun = {
+        direction: p._daYunData.isForward ? '顺行' : '逆行',
+        startAge: p._daYunData.qiYunAge,
+        timingInfo: p._daYunData.timingInfo || null,
+        cycles: cycles
+      };
+      var currentYear = new Date().getFullYear();
+      var currentCycle = cycles.filter(function(dy) {
+        return currentYear >= Number(dy.startYear) && currentYear <= Number(dy.endYear);
+      })[0];
+      if (currentCycle) d.currentDaYun = currentCycle;
+    }
+    if (p._professionalFacts && p._professionalFacts.fortuneInteraction) {
+      var fortune = p._professionalFacts.fortuneInteraction;
+      var yearPillar = String(fortune.yearPillar || '');
+      if (yearPillar.length >= 2) {
+        d.currentLiuNian = {
+          year: fortune.year,
+          gan: yearPillar.charAt(0), zhi: yearPillar.charAt(1),
+          shiShen: fortune.shiShen || ''
+        };
+      }
+    }
     return d;
   }
 
