@@ -5,6 +5,9 @@
 (function() {
     const canvas = document.getElementById('bgCanvas');
     if (!canvas) return;
+    // Static UI mode: avoid a permanent requestAnimationFrame loop.
+    canvas.hidden = true;
+    return;
     const ctx = canvas.getContext('2d');
 
     let W, H, centerX, centerY;

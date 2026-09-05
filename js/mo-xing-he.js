@@ -148,6 +148,8 @@ var MoXingHe = (function(){
   function init(canvasId, showTexts){
     showTexts = showTexts !== false; // 默认 true，只传 false 才关闭
     canvas=document.getElementById(canvasId);if(!canvas)return;
+    // Static UI mode: keep the API compatible without starting the render loop.
+    canvas.hidden=true;running=false;return;
     ctx=canvas.getContext('2d');resize();window.addEventListener('resize',resize);
     clouds=[];stars=[];inkStrokes=[];floatingTexts=[];
     for(var i=0;i<8;i++)clouds.push(new Cloud());

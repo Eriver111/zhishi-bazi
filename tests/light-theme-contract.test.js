@@ -59,10 +59,10 @@ test('shared light theme suppresses dynamic background canvas while the homepage
   assert.match(read('paipan.html'), /#bgCanvas\s*\{[^}]*opacity:\s*\.6/, 'paipan must retain its nested canvas styling beneath the shared suppression');
   for (const page of publicPages) {
     const hrefs = stylesheetLinks(activeMarkup(read(page))).map(({ 0: tag }) => attributeValue(tag, 'href'));
-    assert.ok(hrefs.includes('css/theme-light.css?v=3'), `${page} must load the cache-busted shared light theme`);
+    assert.ok(hrefs.includes('css/theme-light.css?v=4'), `${page} must load the cache-busted shared light theme`);
   }
   const homeLinks = stylesheetLinks(activeMarkup(read('index.html'))).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=4') > homeLinks.indexOf('css/theme-light.css?v=3'));
+  assert.ok(homeLinks.indexOf('css/theme-light-home.css?v=4') > homeLinks.indexOf('css/theme-light.css?v=4'));
   assert.match(read('css/theme-light-home.css'), /\.ink-wash-scene\s*~\s*#bgCanvas\s*\{[^}]*opacity:\s*0\s*!important/s);
 });
 
@@ -239,7 +239,7 @@ test('homepage adds three usage steps before the four trust cards and keeps two 
 test('homepage loads a dedicated responsive light stylesheet after the shared theme', () => {
   const html = activeMarkup(read('index.html'));
   const links = stylesheetLinks(html).map(({ 0: tag }) => attributeValue(tag, 'href'));
-  assert.ok(links.indexOf('css/theme-light-home.css?v=4') > links.indexOf('css/theme-light.css?v=3'));
+  assert.ok(links.indexOf('css/theme-light-home.css?v=4') > links.indexOf('css/theme-light.css?v=4'));
   const themePath = path.join(root, 'css', 'theme-light-home.css');
   assert.ok(fs.existsSync(themePath), 'css/theme-light-home.css is missing');
   const css = fs.readFileSync(themePath, 'utf8');
