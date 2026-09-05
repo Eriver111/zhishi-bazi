@@ -2425,7 +2425,7 @@
     <script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_ID"></script>
 <style>@keyframes dlPulse{0%,100%{box-shadow:0 0 20px rgba(201,168,76,.2)}50%{box-shadow:0 0 50px rgba(201,168,76,.6),0 0 80px rgba(201,168,76,.2)}}</style>
 <link rel="stylesheet" href="css/theme-light.css?v=3">
-<link rel="stylesheet" href="css/theme-light-results.css?v=4">
+<link rel="stylesheet" href="css/theme-light-results.css?v=5">
 </head>
 <body>
 <div class="top-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(22,20,17,.94);border-bottom:1px solid rgba(180,160,140,.06);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(26,24,20,.97);border:1px solid rgba(180,160,140,.1);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
@@ -2434,6 +2434,43 @@
         <canvas id="bgCanvas"></canvas>
         <div class="bg-overlay"></div>
     </div>
+
+    <aside class="desktop-workbench desktop-workbench--left" aria-label="命盘工作台">
+        <div class="desktop-workbench__brand">
+            <span>命盘工作台</span>
+            <strong id="desktopCurrentChart">当前命盘</strong>
+        </div>
+        <div class="desktop-workbench__actions">
+            <a href="/paipan">＋ 新建命盘</a>
+            <a href="/hepan">合盘分析</a>
+        </div>
+        <div class="desktop-workbench__section-head">
+            <span>最近档案</span>
+            <a href="/archives">全部</a>
+        </div>
+        <div id="desktopRecentCharts" class="desktop-recent-charts" aria-live="polite">
+            <p class="desktop-workbench__muted">登录后可在这里快速切换命盘</p>
+        </div>
+    </aside>
+
+    <aside class="desktop-workbench desktop-workbench--right" aria-label="报告辅助工具">
+        <div class="desktop-workbench__section-head"><span>报告目录</span></div>
+        <nav class="desktop-workbench__outline">
+            <a href="#dayunSection"><i>01</i><span>大运流年</span></a>
+            <a href="#sizhuSection"><i>02</i><span>四柱盘面</span></a>
+            <a href="#proSection"><i>03</i><span>专业解读</span></a>
+            <a href="#characterSection"><i>04</i><span>白话详参</span></a>
+        </nav>
+        <button id="desktopAiEntry" class="desktop-ai-entry" type="button">
+            <span>知时 AI</span>
+            <strong>结合本盘继续提问</strong>
+            <small>旺衰、格局、流年均携带命盘依据</small>
+        </button>
+        <div class="desktop-workbench__utility">
+            <button type="button" onclick="shareResult()">复制报告链接</button>
+            <a href="/paipan">重新排盘</a>
+        </div>
+    </aside>
 
     <div class="result-container" style="position:relative;z-index:1">
         <!-- 顶部信息栏 -->
@@ -2935,6 +2972,7 @@
 <script src="js/chat-persistence.js?v=2"></script>
 <script src="js/ai-chat-integration.js?v=20260830a"></script>
 <script src="js/chart-calibration.js?v=9"></script>
+<script src="js/desktop-result-workspace.js?v=1"></script>
     <script>
         MoXingHe.start('mxhCanvas', false);
     function shareResult() {

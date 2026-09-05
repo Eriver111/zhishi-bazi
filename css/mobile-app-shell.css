@@ -35,7 +35,7 @@
 }
 
 @media (max-width: 700px) {
-  :root {
+:root {
     --mobile-paper: rgba(255, 252, 245, .91);
     --mobile-paper-solid: #fbf6eb;
     --mobile-ink: #392c23;
@@ -1792,6 +1792,9 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* The result switcher is mobile-only; keep it out of the desktop document flow. */
+.mobile-result-tabs { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
