@@ -168,7 +168,7 @@ test('homepage exposes the available nine uniform tools and no standalone AI con
 
 test('homepage navigation uses five practical categories and retains every tool route', () => {
   const html = activeMarkup(read('index.html'));
-  const nav = html.match(/<div\b[^>]*\bid\s*=\s*(["'])zhishi-nav\1[^>]*>([\s\S]*?)<\/div>\s*<div\b[^>]*\bid\s*=\s*(["'])eyeOverlay\3/i);
+  const nav = html.match(/<div\b[^>]*\bid\s*=\s*(["'])zhishi-nav\1[^>]*>([\s\S]*?)<canvas\b[^>]*\bid\s*=\s*(["'])mxhCanvas\3/i);
   assert.ok(nav, 'homepage is missing #zhishi-nav');
   const links = [...nav[2].matchAll(/<a\b[^>]*>[\s\S]*?<\/a\s*>/gi)];
   const categoryLinks = links

@@ -15,8 +15,8 @@ test('light UI has keyboard focus, mobile touch, and intentional table scrolling
   assert.match(allCss, /liunian-scroll-wrapper[\s\S]*overflow-x:\s*auto/);
 });
 
-test('decorative reduced-motion rules do not remove the intro contract', () => {
+test('decorative reduced-motion rules coexist with immediate homepage rendering', () => {
   assert.match(allCss, /prefers-reduced-motion/);
   const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(home, /setTimeout\([\s\S]{0,300}?1800\)/);
+  assert.doesNotMatch(home, /setTimeout\([\s\S]{0,300}?1800\)/);
 });

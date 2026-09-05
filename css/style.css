@@ -423,12 +423,6 @@ body::before{
   .tagline{font-size:12px;letter-spacing:5px}
 }
 
-/* === Page Loader — 随机卦象 === */
-.page-loader{position:fixed;inset:0;z-index:9999;background:var(--ink,#0e0c0a);
-  display:flex;align-items:center;justify-content:center;flex-direction:column;
-  transition:opacity .5s ease,visibility .5s ease}
-.page-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
-
 /* === 卦象 reveal — 大尺寸金线 + 梅花同款动画 === */
 .hexa-reveal{display:flex;flex-direction:column-reverse;align-items:center;gap:14px}
 /* 阳爻：整条金线 */
@@ -458,12 +452,6 @@ body::before{
   font-size:12px;color:rgba(180,165,140,.5);letter-spacing:3px;
   opacity:0;animation:hexaReveal .5s ease-out forwards;
 }
-
-/* 页面内容初始隐藏 */
-body.loading .landing-wrap,body.loading .app,body.loading .result-container{opacity:0}
-body.loaded .landing-wrap,body.loaded .app,body.loaded .result-container{
-  animation:pageReveal .6s ease-out forwards}
-@keyframes pageReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 .loader-eye{width:100px;height:60px;position:relative}
 .loader-eye-svg{width:100%;height:100%}

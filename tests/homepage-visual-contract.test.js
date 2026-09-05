@@ -7,8 +7,9 @@ const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const inkCss = fs.readFileSync(path.join(root, 'css', 'ink-wash.css'), 'utf8');
 
-test('homepage keeps the agreed intro duration', () => {
-  assert.match(html, /setTimeout\([\s\S]{0,300}?1800\)/);
+test('homepage no longer delays first paint with an intro sequence', () => {
+  assert.doesNotMatch(html, /id=["']eyeOverlay["']/);
+  assert.doesNotMatch(html, /setTimeout\([\s\S]{0,300}?1800\)/);
 });
 
 test('homepage uses v3 mobile artwork while preserving the v2 desktop artwork', () => {

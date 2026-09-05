@@ -579,7 +579,6 @@ body::before{
   .trust-grid{grid-template-columns:1fr}
 }
 </style>
-<style>@keyframes eyeRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}</style>
 <link rel="stylesheet" href="css/theme-light.css?v=4">
 <link rel="stylesheet" href="css/theme-light-home.css?v=4">
 <link rel="stylesheet" href="css/mobile-app-shell.css?v=13">
@@ -623,19 +622,6 @@ body::before{
     <span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span>
   </div>
 </div>
-<div id="eyeOverlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#181612 0%,#0e0c0a 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s,visibility .6s">
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(201,168,76,.08);animation:eyeRing 3s ease-out infinite"></div>
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;border:1px solid rgba(201,168,76,.05);animation:eyeRing 3s ease-out .5s infinite"></div>
-<div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0" id="eyeParticles"></div><svg viewBox="0 0 100 60" style="width:120px;height:72px;position:relative;z-index:1">
-<defs><filter id="eyeGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<path d="M10,30 Q50,0 90,30 Q50,60 10,30Z" fill="none" stroke="#c9a84c" stroke-width="2" stroke-dasharray="150" stroke-dashoffset="150" filter="url(#eyeGlow)"><animate attributeName="stroke-dashoffset" from="150" to="0" dur="1.2s" fill="freeze"/></path>
-<circle cx="50" cy="30" r="4" fill="#e8cf70" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1s" fill="freeze"/><animate attributeName="r" from="3" to="7" dur="0.4s" begin="1s" fill="freeze"/></circle>
-<circle cx="50" cy="30" r="10" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0"><animate attributeName="opacity" from="0.6" to="0" dur="0.8s" begin="1.3s" fill="freeze"/><animate attributeName="r" from="8" to="25" dur="0.8s" begin="1.3s" fill="freeze"/></circle>
-</svg>
-<div style="color:#e8cf70;margin-top:16px;font-size:13px;letter-spacing:4px;position:relative;z-index:1">知 时 命 理</div>
-<div style="color:rgba(180,160,140,.35);margin-top:8px;font-size:11px;letter-spacing:6px;position:relative;z-index:1">盲 派 · 天 眼 观 命</div>
-</div>
-
 <canvas id="mxhCanvas"></canvas>
 <canvas id="bgCanvas"></canvas>
 
@@ -840,33 +826,12 @@ body::before{
 })();
 </script>
 
-<script>
-(function(){
-  var c=['正官','七杀','正印','偏印','比肩','劫财','食神','伤官','正财','偏财','天乙','文昌','桃花','驿马','华盖','羊刃','魁罡','太极','学堂','天德','月德','将星','禄神'];
-  var box=document.getElementById('eyeParticles');
-  if(!box)return;
-  for(var i=0;i<40;i++){
-    var s=document.createElement('span');
-    s.textContent=c[Math.floor(Math.random()*c.length)];
-    var x=20+Math.random()*60,y=20+Math.random()*60;
-    var dx=(50-x)*(.5+Math.random()*.5),dy=(50-y)*(.5+Math.random()*.5);
-    s.style.cssText='position:absolute;font-size:'+(10+Math.random()*16)+'px;color:rgba(201,168,76,'+(.2+Math.random()*.5)+');left:'+x+'%;top:'+y+'%;animation:suckIn '+(2+Math.random()*2.5)+'s ease-in '+(Math.random()*2)+'s both;letter-spacing:2px;font-weight:bold';
-    s.setAttribute('data-dx',dx);s.setAttribute('data-dy',dy);
-    box.appendChild(s);
-  }
-  var st=document.createElement('style');
-  st.textContent='@keyframes suckIn{0%{opacity:0;transform:translate(0,0) scale(.5)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px)) scale(0)}}';
-  document.head.appendChild(st);
-})();
-</script>
 <script src="js/mo-xing-he.js"></script>
 <script src="js/bg-animation.js"></script>
 <script src="js/effects.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/home-fortune.js?v=2"></script>
 <script>
-MoXingHe.start('mxhCanvas');
-
 // 古籍书名滚动
 (function(){
   var books=[
@@ -1422,9 +1387,6 @@ var MoXingHe = (function(){
 </script>
 
 
-<script>setTimeout(function(){var o=document.getElementById("eyeOverlay");if(o){o.style.opacity="0";o.style.visibility="hidden";setTimeout(function(){o.remove()},400)}},1500)</script>
-
-
 <script>
 (function(){
   var m=location.search.match(/ref=([^&]+)/);
@@ -1435,25 +1397,6 @@ var MoXingHe = (function(){
 var G=['111111乾为天|元亨利贞','000000坤为地|厚德载物','010001水雷屯|刚柔始交','100010山水蒙|童蒙求我','010111水天需|险在前也','111010天水讼|讼不可成','000010地水师|师出以律','010000水地比|亲附辅弼','110111风天小畜|以懿文德','111011天泽履|履虎尾也','000111地天泰|天地交泰','111000天地否|大往小来','111101天火同人|类族辨物','101111火天大有|顺天休命','000100地山谦|裒多益寡','001000雷地豫|作乐崇德','011001泽雷随|随时之义','100110山风蛊|振民育德','000011地泽临|教思无穷','110000风地观|观民设教','101001火雷噬嗑|明罚敕法','100101山火贲|明庶政也','000001山地剥|上厚下安','100000地雷复|闭关休息','111001天雷无妄|天命不佑','100111山天大畜|多识前言','100001山雷颐|节饮食也','011110泽风大过|独立不惧','010010坎为水|常德行也','101101离为火|明照四方','011100泽山咸|感而遂通','001110雷风恒|立不易方','111100天山遁|远小人也','001111雷天大壮|非礼弗履','101000火地晋|自昭明德','000101地火明夷|用晦而明','110101风火家人|言有物也','101011火泽睽|以同而异','010100水山蹇|反身修德','001010雷水解|赦过宥罪','110001山泽损|惩忿窒欲','100011风雷益|迁善改过','011111泽天夬|施禄及下','111110天风姤|施命诰四方','011000泽地萃|除戎器也','000110地风升|积小高大','011010泽水困|致命遂志','010110水风井|劳民劝相','101110泽火革|治历明时','011101火风鼎|正位凝命','001001震为雷|恐惧修省','100100艮为山|思不出位','110100风山渐|居贤德善','001011雷泽归妹|永终知敝','001101雷火丰|折狱致刑','101100火山旅|明慎用刑','110110巽为风|申命行事','011011兑为泽|朋友讲习','110010风水涣|享于帝也','010011水泽节|制数度也','110011风泽中孚|议狱缓死','001100雷山小过|行过恭也','010101水火既济|思患预防','101010火水未济|慎辨物居'];
 // The old hexagram loader UI was removed; keep this block inert to avoid
 // dereferencing loader nodes that no longer exist on the homepage.
-})();
-</script>
-
-<script>
-document.body.classList.add('loading');
-(function showPage(){
-  if(document.readyState==='complete'||document.readyState==='interactive'){
-    setTimeout(function(){
-      document.body.classList.remove('loading');
-      document.body.classList.add('loaded');
-    },1800);
-  }else{
-    document.addEventListener('DOMContentLoaded',function(){
-      setTimeout(function(){
-        document.body.classList.remove('loading');
-        document.body.classList.add('loaded');
-      },1800);
-    });
-  }
 })();
 </script>
 

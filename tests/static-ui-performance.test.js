@@ -29,3 +29,10 @@ test('decorative canvas engines remain API-compatible without starting render lo
   assert.match(ink, /canvas\.hidden\s*=\s*true;\s*running\s*=\s*false;\s*return;/);
   assert.match(ink, /return\s*\{\s*start:\s*init,\s*stop:\s*stop\s*\}/);
 });
+
+test('homepage renders immediately without a timed startup overlay', () => {
+  const html = read('index.html');
+  assert.doesNotMatch(html, /id=["']eyeOverlay["']/);
+  assert.doesNotMatch(html, /classList\.add\(["']loading["']\)/);
+  assert.doesNotMatch(html, /^\s*MoXingHe\.start\(/m);
+});

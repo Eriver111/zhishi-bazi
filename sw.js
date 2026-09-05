@@ -1,5 +1,5 @@
-// 知时 Service Worker v35 — 全站静态渲染与性能优先模式。
-var CACHE_NAME = 'zhishi-v35';
+// 知时 Service Worker v36 — 首页直接显示，彻底移除开屏等待层。
+var CACHE_NAME = 'zhishi-v36';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
