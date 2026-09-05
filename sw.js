@@ -1,10 +1,10 @@
-// 知时 Service Worker v32 — 代码资源网络优先，避免更新后首屏仍展示旧功能。
-var CACHE_NAME = 'zhishi-v32';
+// 知时 Service Worker v33 — 桌面工作台布局与报告目录。
+var CACHE_NAME = 'zhishi-v33';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
   '/css/style.css', '/css/landing.css', '/css/auth.css',
-  '/css/theme-light.css?v=3', '/css/theme-light-results.css?v=3',
+  '/css/theme-light.css?v=3', '/css/theme-light-forms.css?v=5', '/css/theme-light-results.css?v=4',
   '/css/interactions.css', '/css/poster.css',
   '/js/bazi.js?v=20260904b', '/js/mo-xing-he.js?v=1781962250',
   '/js/ai-chat-integration.js?v=20260830a', '/js/chart-calibration.js?v=9', '/js/result.js?v=25',

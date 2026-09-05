@@ -97,8 +97,12 @@ test('result skin is additive and cannot convert or hide the existing layout', (
 
   assert.match(css, /overflow-x\s*:\s*auto/);
   assert.match(css, /-webkit-overflow-scrolling\s*:\s*touch/);
-  assert.doesNotMatch(css, /\bdisplay\s*:/i, 'result skin must not replace the existing display model');
-  assert.doesNotMatch(css, /\b(?:grid-template|grid-area|order)\s*:/i, 'result skin must not reorder result modules');
+  const withoutDesktopNavigation = css
+    .replace(/\.desktop-report-nav\s*\{[^}]*\}/g, '')
+    .replace(/\.desktop-report-nav\s+a\s*\{[^}]*\}/g, '')
+    .replace(/\.desktop-report-nav\s+a:hover,[\s\S]*?\{[^}]*\}/g, '');
+  assert.doesNotMatch(withoutDesktopNavigation, /\bdisplay\s*:/i, 'result skin must not replace the existing report display model');
+  assert.doesNotMatch(withoutDesktopNavigation, /\b(?:grid-template|grid-area|order)\s*:/i, 'result skin must not reorder result modules');
   assert.doesNotMatch(css, /\b(?:visibility\s*:\s*hidden|content-visibility\s*:\s*hidden)/i, 'result skin must not hide result modules');
 });
 

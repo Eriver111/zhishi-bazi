@@ -318,3 +318,103 @@ body:has(#lrOutput) #lrOutput [style*="color:#d4b860"] {
 @media (max-width: 768px) {
   .ai-fab { width: 46px !important; height: 46px !important; right: 12px !important; bottom: 74px !important; }
 }
+
+/* Desktop report workspace. Mobile keeps its independent app-like layout. */
+.desktop-report-nav { display: none; }
+@media (min-width: 1024px) {
+  body:has(.result-container) {
+    background:
+      radial-gradient(circle at 14% 10%, rgba(164,123,66,.07), transparent 28%),
+      radial-gradient(circle at 88% 38%, rgba(54,93,80,.055), transparent 30%),
+      #f0e6d1 !important;
+  }
+  body:has(.result-container) #mxhCanvas { opacity: 0 !important; }
+  body:has(.result-container) .top-nav {
+    min-height: 58px;
+    padding-inline: max(28px, calc((100vw - 1280px) / 2)) !important;
+    box-shadow: 0 8px 28px rgba(67,46,24,.045);
+  }
+  .result-container {
+    width: min(1280px, calc(100% - 56px));
+    max-width: 1280px;
+    padding: 28px 0 72px;
+  }
+  .result-header {
+    min-height: 190px;
+    margin-bottom: 18px;
+    padding: 27px 34px 25px;
+    border: 1px solid rgba(72,52,31,.13) !important;
+    border-radius: 18px !important;
+    background:
+      linear-gradient(100deg, rgba(255,253,248,.96), rgba(251,246,235,.88)),
+      repeating-linear-gradient(90deg, rgba(72,52,31,.016) 0 1px, transparent 1px 14px) !important;
+    box-shadow: 0 18px 50px rgba(67,46,24,.08) !important;
+  }
+  .result-title { margin-bottom: 16px; font-size: 38px; }
+  .birth-info { font-size: 15px; }
+  .desktop-report-nav {
+    position: sticky;
+    top: 68px;
+    z-index: 80;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    width: min(720px, calc(100% - 48px));
+    margin: -1px auto 22px;
+    padding: 5px;
+    background: rgba(249,244,233,.94);
+    border: 1px solid rgba(72,52,31,.14);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(67,46,24,.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .desktop-report-nav a {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    color: var(--tx2);
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 3px;
+    transition: color .2s ease, background .2s ease;
+  }
+  .desktop-report-nav a:hover,
+  .desktop-report-nav a:focus-visible {
+    color: var(--zh-vermilion);
+    background: rgba(132,54,47,.065);
+  }
+  #dayunSection,
+  #proSection,
+  #characterSection { scroll-margin-top: 132px; }
+  .section-dayun,
+  .section-liunian,
+  .section-sizhu,
+  .section-drawer {
+    margin-bottom: 18px;
+    border-color: rgba(72,52,31,.13) !important;
+    box-shadow: 0 14px 38px rgba(67,46,24,.065) !important;
+  }
+  .section-dayun .section-header,
+  .section-liunian .section-header,
+  .section-sizhu .section-header,
+  .section-drawer > .section-header {
+    min-height: 62px;
+    padding-inline: 22px;
+  }
+  .section-dayun .section-header h2,
+  .section-liunian .section-header h2,
+  .section-sizhu .section-header h2,
+  .section-drawer .drawer-toggle h2 {
+    font-size: 18px;
+    letter-spacing: 4px;
+  }
+  .dayun-table,
+  .liunian-table { min-width: 0; }
+  .dayun-col,
+  .liunian-col { min-height: 148px; }
+  .paipan-table { border-width: 0 !important; }
+  .pp-label { width: 76px; flex: 0 0 76px; }
+  .section-drawer .drawer-body { padding: 26px 30px 30px; }
+}
