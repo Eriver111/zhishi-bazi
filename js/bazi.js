@@ -6433,6 +6433,20 @@ function finalizeYongJiResult(bazi, base, context) {
 
   var weaknessCause = context.candidateScores && context.candidateScores.weaknessCause;
   var strongCause = context.candidateScores && context.candidateScores.strongCause;
+  var establishedFunctionalPatterns = {
+    '印星化杀通关':['杀印相生格','官印相生格','印星化杀格','财官印相生格'],
+    '印星制伤护格':['伤官配印格']
+  };
+  var functionalTasks = ((context.candidateScores && context.candidateScores.functionalTasks) || []).filter(function(item) {
+    var requiredPatterns = establishedFunctionalPatterns[item.type];
+    return !requiredPatterns || (pattern.status === '成格' && requiredPatterns.indexOf(pattern.name) >= 0);
+  }).map(function(item) { return Object.assign({}, item); });
+  var functionalTaskElements = Array.from(new Set(functionalTasks.map(function(item) {
+    return item.element;
+  }).filter(function(wx) { return ['木','火','土','金','水'].indexOf(wx) >= 0; })));
+  var functionalDualRoleElements = functionalTaskElements.filter(function(wx) {
+    return lists.jiShen.indexOf(wx) >= 0;
+  });
   var imbalanceCause = weaknessCause || strongCause;
   var conditionalAuxiliaryElements = [];
   var conditionalAuxiliaryReason = '';
@@ -6471,6 +6485,18 @@ function finalizeYongJiResult(bazi, base, context) {
     });
   }
 
+  functionalTasks.forEach(function(task) {
+    var wx = task.element;
+    if (!elementReasons[wx]) {
+      elementReasons[wx] = { role:'功能用神', reasons:[presenceFor(wx)] };
+    }
+    elementReasons[wx].functionalRole = '功能用神';
+    if (!elementReasons[wx].functionalTasks) elementReasons[wx].functionalTasks = [];
+    elementReasons[wx].functionalTasks.push(Object.assign({}, task));
+    elementReasons[wx].functionalDualRole = lists.jiShen.indexOf(wx) >= 0;
+    elementReasons[wx].reasons.unshift(task.conclusion);
+  });
+
   // 生克链调整注入 elementReasons
   if (context.chain && context.chain.adjustments && context.chain.adjustments.length > 0) {
     context.chain.adjustments.forEach(function(adj) {
@@ -6492,6 +6518,13 @@ function finalizeYongJiResult(bazi, base, context) {
     });
   }
   if (context.tiaoHouNote) evidence.push({ category:'调候', title:'寒暖燥湿', detail:context.tiaoHouNote });
+  functionalTasks.forEach(function(task) {
+    evidence.push({
+      category:'功能任务',
+      title:task.title,
+      detail:task.conclusion + ' 成立条件：' + task.condition
+    });
+  });
   evidence.push({
     category:'格局', title:pattern.name + '·' + pattern.status,
     detail:pattern.status === '破格' ? pattern.breakReasons.join('；')
@@ -6543,6 +6576,9 @@ function finalizeYongJiResult(bazi, base, context) {
     tiaoHouYongShen: tiaoHouYongShen,
     tiaoHouReason: context.tiaoHouNote || '',
     dualRoleElements: dualRoleElements,
+    functionalTasks: functionalTasks,
+    functionalTaskElements: functionalTaskElements,
+    functionalDualRoleElements: functionalDualRoleElements,
     conditionalAuxiliaryElements: conditionalAuxiliaryElements,
     conditionalAuxiliaryReason: conditionalAuxiliaryReason,
     weaknessSupportingElements: weaknessSupportingElements,
@@ -6851,6 +6887,34 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     };
   }
 
+  // 身强不等于“印星在任何层面都无用”。这里单列原局任务，不直接改写扶抑喜忌：
+  // 印若正在化杀、制伤护格，属于“原局有功、增量慎用”；只有任务持续存在时才可使用。
+  var functionalTasks = [];
+  var addFunctionalTask = function(wx, type, title, task, condition, conclusion) {
+    if (functionalTasks.some(function(item) { return item.element === wx && item.type === type; })) return;
+    functionalTasks.push({
+      element:wx, type:type, title:title, task:task,
+      condition:condition, conclusion:conclusion
+    });
+  };
+  if (isStrongLevel && pattern.status === '成格') {
+    if (['杀印相生格','官印相生格','印星化杀格','财官印相生格'].indexOf(pattern.name) >= 0) {
+      addFunctionalTask(
+        SHENG_WO, '印星化杀通关', '印星承担化杀通关任务',
+        '承接官杀之气并维持官杀—印—身的通关链',
+        '仅在官杀压力与通关链仍然存在时成立；官杀转轻或印已过旺后，不宜继续增印',
+        SHENG_WO + '印星在原局承担化杀通关任务，不能按纯忌理解；但日主已经身强，它代表原局有功，不等于新增印运无条件有利。'
+      );
+    }
+    if (pattern.name === '伤官配印格') {
+      addFunctionalTask(
+        SHENG_WO, '印星制伤护格', '印星承担制伤护格任务',
+        '制约过旺伤官，保护格局秩序与官星通路',
+        '仅在伤官压力仍重、印有根且不过量时成立；伤官受制后再增印会转为生身太过',
+        SHENG_WO + '印星在原局承担制伤护格任务，不能按纯忌理解；任务完成后仍须回到身强不宜再生的扶抑边界。'
+      );
+    }
+  }
   // —— L1 方向基准：生扶组 -50d，克泄耗组 +50d（F4）——
   var L1 = zeroMap();
   WX.forEach(function(wx) {
@@ -6975,6 +7039,11 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       ? '原局有火暖局，寒谷回春，调候已得。'
       : '冬土生于丑月，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
   }
+  if (dmWx === '土' && mz === '丑' && dmQiang) {
+    // 强土仍可能寒湿冻结：火印只登记调候任务，不给扶抑候选加分，避免把“原局需暖”误成“继续生身”。
+    addTiaoHouYongShen('火');
+    tiaoHouNote = '丑月寒湿冻土，火印承担暖局调候；但日主已强，火在扶抑上不宜增多，只可有度使用，不作纯忌。';
+  }
   if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0 && dmRuo) {
     addL4('火', 8, '冬火微弱，火暖局扶身');
     addL4('木', 6, '冬火微弱，木生火暖局');
@@ -7050,9 +7119,12 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   // —— 根气质量（F7：不参与主评分，仅并列 tiebreak 与质量报告）——
   var rootQ = evaluateYongShenQuality(bazi, { yongShen: WX.slice(), xiShen: [] });
   if (dmWx === '土' && mz === '丑' && hasWxGlobal('火')) {
-    tiaoHouNote = rootQ['火'] && rootQ['火'].score >= 3
+    var fireRootNote = rootQ['火'] && rootQ['火'].score >= 3
       ? '原局火有根，暖局条件已有基础。'
       : '原局虽见火，但根气有限，暖局作用仍需结合根气与受制情况。';
+    tiaoHouNote = dmQiang
+      ? fireRootNote + '火印承担暖局调候，但日主已强，扶抑上不宜增多，只可有度使用，不作纯忌。'
+      : fireRootNote;
   }
 
   // —— 用神 = argmax S_base；严格并列时按 F11 链决胜 ——
@@ -7141,6 +7213,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       peerPressure: peerPressure,
       sealPressure: sealPressure
     }) : null,
+    functionalTasks: functionalTasks,
     yongWx: yongWx,
     candidates: candidates,
     tiebreak: tiebreak

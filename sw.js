@@ -1,13 +1,13 @@
-// 知时 Service Worker v37 — 身弱病因分型与取用解释同步更新。
-var CACHE_NAME = 'zhishi-v37';
+// 知时 Service Worker v38 — 身强印星功能任务与调候边界同步更新。
+var CACHE_NAME = 'zhishi-v38';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
   '/css/style.css', '/css/landing.css', '/css/auth.css',
   '/css/theme-light.css?v=4', '/css/theme-light-forms.css?v=5', '/css/theme-light-results.css?v=5',
   '/css/interactions.css', '/css/poster.css',
-  '/js/bazi.js?v=20260905a', '/js/mo-xing-he.js?v=1781962250',
-  '/js/ai-chat-integration.js?v=20260830a', '/js/chart-calibration.js?v=9', '/js/result.js?v=26', '/js/desktop-result-workspace.js?v=1',
+  '/js/bazi.js?v=20260905b', '/js/mo-xing-he.js?v=1781962250',
+  '/js/ai-chat-integration.js?v=20260830a', '/js/chart-calibration.js?v=9', '/js/result.js?v=27', '/js/desktop-result-workspace.js?v=1',
   '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=11',
   '/js/hepan-paywall.js?v=2',
   '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',

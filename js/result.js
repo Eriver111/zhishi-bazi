@@ -2739,11 +2739,12 @@ function renderYongJi(bazi,facts){
   var groups=[['用神',yj.yongShen],['喜神',yj.xiShen]];
   if(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)groups.push(['调候用神',yj.tiaoHouYongShen]);
   if(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)groups.push(['条件辅助',yj.conditionalAuxiliaryElements]);
-  groups.push([(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)||(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)?'结构忌神':'忌神',yj.jiShen]);
+  groups.push([(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)||(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)||(yj.functionalDualRoleElements&&yj.functionalDualRoleElements.length)?'结构忌神':'忌神',yj.jiShen]);
   groups.forEach(function(group){h+='<div style="margin-bottom:8px"><span style="font-size:12px;color:var(--tx3)">'+group[0]+'</span><br>'+(group[1]&&group[1].length?group[1].map(tag).join(' '):'<span style="color:var(--tx3)">—</span>')+'</div>'});
   if(yj.dualRoleElements&&yj.dualRoleElements.length)h+='<p style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:2px">'+yj.dualRoleElements.join('、')+'在扶抑结构上不宜增多，但兼具调候作用，宜适量，不作纯忌论。</p>';
   if(yj.weaknessCause)h+='<p style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:2px"><b>'+(yj.weaknessCause.title||yj.weaknessCause.type)+'：</b>'+(yj.weaknessCause.conclusion||'')+'</p>';
   if(yj.strongCause)h+='<p style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:2px"><b>'+(yj.strongCause.title||yj.strongCause.type)+'：</b>'+(yj.strongCause.conclusion||'')+'</p>';
+  if(yj.functionalTasks&&yj.functionalTasks.length)yj.functionalTasks.forEach(function(task){h+='<p style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:2px"><b>功能用神·'+task.element+'：</b>'+task.conclusion+'<br>成立条件：'+task.condition+'</p>'});
   var supportingElements=(yj.weaknessSupportingElements||[]).concat(yj.strongSupportingElements||[]);
   if(supportingElements.length)h+='<p style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:2px">辅助喜神：'+supportingElements.join('、')+'，须服从上述强弱成因主线。</p>';
   if(yj.conditionalAuxiliaryReason)h+='<p style="font-size:10px;color:var(--tx3);line-height:1.6;margin-top:2px">'+yj.conditionalAuxiliaryReason+'</p>';

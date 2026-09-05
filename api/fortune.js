@@ -199,9 +199,10 @@ module.exports = async function handler(req, res) {
             + (dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length ? '；调候用神：' + dailyFacts.yongJi.tiaoHouYongShen.join('、') + '（宜有度）' : '')
             + (dailyFacts.yongJi.weaknessCause ? '；身弱病因：' + (dailyFacts.yongJi.weaknessCause.title || dailyFacts.yongJi.weaknessCause.type) : '')
             + (dailyFacts.yongJi.strongCause ? '；身强来源：' + (dailyFacts.yongJi.strongCause.title || dailyFacts.yongJi.strongCause.type) : '')
+            + (dailyFacts.yongJi.functionalTasks && dailyFacts.yongJi.functionalTasks.length ? '；功能用神：' + dailyFacts.yongJi.functionalTasks.map(function(task){return task.title + '（' + task.element + '，' + task.condition + '）';}).join('；') : '')
             + (((dailyFacts.yongJi.weaknessSupportingElements || []).concat(dailyFacts.yongJi.strongSupportingElements || []).length) ? '；辅助喜神：' + (dailyFacts.yongJi.weaknessSupportingElements || []).concat(dailyFacts.yongJi.strongSupportingElements || []).join('、') : '')
             + (dailyFacts.yongJi.conditionalAuxiliaryElements && dailyFacts.yongJi.conditionalAuxiliaryElements.length ? '；条件辅助：' + dailyFacts.yongJi.conditionalAuxiliaryElements.join('、') + '（' + (dailyFacts.yongJi.conditionalAuxiliaryReason || '仅在前置条件成立时搭配，不可单用') + '）' : '')
-            + '；' + ((dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length) || (dailyFacts.yongJi.conditionalAuxiliaryElements && dailyFacts.yongJi.conditionalAuxiliaryElements.length) ? '结构忌神' : '忌神') + '：' + dailyFacts.yongJi.jiShen.join('、'),
+            + '；' + ((dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length) || (dailyFacts.yongJi.conditionalAuxiliaryElements && dailyFacts.yongJi.conditionalAuxiliaryElements.length) || (dailyFacts.yongJi.functionalDualRoleElements && dailyFacts.yongJi.functionalDualRoleElements.length) ? '结构忌神' : '忌神') + '：' + dailyFacts.yongJi.jiShen.join('、'),
           '岁运日环境：' + dailyFacts.context.map(function(row){return row.label + row.pillar + '（干' + row.ganRole + '、支' + row.zhiRole + '）';}).join('；'),
           '今日结论：' + dailyFacts.tendency + '；重点领域：' + (dailyFacts.focus.join('、') || '日常安排'),
           '明确引动：' + (dailyFacts.events.length ? dailyFacts.events.map(function(event){return event.detail;}).join('；') : '无强烈刑冲合害')

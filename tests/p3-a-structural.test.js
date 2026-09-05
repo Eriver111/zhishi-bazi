@@ -13,6 +13,7 @@
 //   2026-09-04 事件账本结算第一步：同一邻支对刑害日支只取最重项；A4/P15-03 各 +2，档位、喜用忌与格局不变。
 //   2026-09-04 事件账本结算完成：根气、透干、合会、格局承载、喜用质量与生克链统一读取结算层；53 盘锚点通过。
 //   2026-09-04 午未互斥结算：火旺取半会火、未月土势取趋土、条件不足只合绊、巳午未齐全取三会火；H18 -4→-1，31→34。
+//   2026-09-05 身强印星任务层：化杀、制伤护格及寒土调候仅标“原局有功/条件有用”，不改写核心喜忌与 53 盘锚点。
 //   A 层：引擎字节冻结 + 53 盘五行层对 P2 冻结锚点核验（仅允许已审计批准的显式差异）
 //   B 层：正式实现与 A1/A2-final 冻结产物逐项一致（relationEvents→_p3_a1_relation_events.csv；
 //         structuralRisks→_p3_a2_risks.csv 17 列；shaAB→_p3_a2_sha_ab.csv 15 列）
@@ -101,8 +102,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '79b08dbd60c3d015417eb78eb078fadb09c7e2746501ebab0b31f8e73f18f0e3',
-    'js/bazi.js sha256 与强弱成因分型版的仓库标准 LF blob 一致'
+    'f1c494aa52038b25a46236da4e18e31adde99c51dab1d8f6ef3aa8d62b579d6a',
+    'js/bazi.js sha256 与身强印星功能任务版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
