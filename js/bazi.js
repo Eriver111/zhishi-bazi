@@ -2502,6 +2502,88 @@ function getThickEarthMetalState(bazi) {
   };
 }
 
+// 木日主遇旺水不能把全部印星机械折算成生扶。
+// 只有“水真正成势 + 木无完整寅卯本气根 + 火土均不足以制化”时，才判水多木漂；
+// 一处水多、冬月见水或有完整木根的正常印旺盘均不得触发。
+// 本状态把分散在月令、坐支、透干、本气与宫位中的普通印星信用合并回收一次，
+// 再计一份水势过量造成的失载，避免以多个口诀补丁重复扣分。
+function getWaterloggedWoodState(bazi) {
+  var positions = ['year','month','day','hour'];
+  var isWood = WU_XING[bazi.day.gan] === '木';
+  var empty = {
+    applies:false, isWood:isWood, waterMonth:false, waterGroup:'', waterSurfaceCount:0,
+    waterRootPower:0, woodRootPower:0, intactWoodMainRoots:[], fireRootPower:0,
+    earthRootPower:0, effectiveFire:false, effectiveDryEarth:false,
+    ordinarySealCredits:0, overloadPenalty:0, adjustment:0, severity:'', primaryRemedy:'', secondaryRemedy:''
+  };
+  if (!isWood) return empty;
+
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var branches = positions.map(function(pos) { return bazi[pos].zhi; });
+  var waterMonth = ['亥','子','丑'].indexOf(bazi.month.zhi) >= 0;
+  var hasAll = function(list) { return list.every(function(zhi) { return branches.indexOf(zhi) >= 0; }); };
+  var waterGroup = hasAll(['亥','子','丑']) ? '亥子丑三会水'
+    : (hasAll(['申','子','辰']) ? '申子辰三合水' : '');
+  var waterStemCount = 0, waterBranchCount = 0;
+  var fireStemCount = 0, fireBranchCount = 0;
+  var earthStemCount = 0, dryEarthBranchCount = 0;
+  positions.forEach(function(pos) {
+    var ganWx = WU_XING[bazi[pos].gan];
+    var zhiWx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    if (pos !== 'day' && ganWx === '水') waterStemCount++;
+    if (zhiWx === '水') waterBranchCount++;
+    if (pos !== 'day' && ganWx === '火') fireStemCount++;
+    if (zhiWx === '火') fireBranchCount++;
+    if (pos !== 'day' && ganWx === '土') earthStemCount++;
+    if (bazi[pos].zhi === '未' || bazi[pos].zhi === '戌') dryEarthBranchCount++;
+  });
+  var waterSurfaceCount = waterStemCount + waterBranchCount;
+  var waterRootPower = settlement.elementRootPower('水');
+  var woodRootPower = settlement.elementRootPower('木');
+  var fireRootPower = settlement.elementRootPower('火');
+  var earthRootPower = settlement.elementRootPower('土');
+  var intactWoodMainRoots = settlement.roots.filter(function(root) {
+    return (root.branch === '寅' || root.branch === '卯') && root.element === '木' &&
+      root.depth === '本气' && root.effectiveCoefficient >= 0.75;
+  }).map(function(root) { return root.position + root.branch; });
+
+  // 火必须透而有根，或两处以上火气落实，才足以暖局化湿；孤立虚火不算已经制化。
+  var effectiveFire = (fireStemCount > 0 && fireRootPower >= 1) ||
+    (fireBranchCount >= 2 && fireRootPower >= 2);
+  // 制水只认燥土（戌未）或透土有根；辰丑本身蓄湿，不能拿来证明水势已经受控。
+  var effectiveDryEarth = (dryEarthBranchCount >= 2 && earthRootPower >= 2) ||
+    (earthStemCount > 0 && dryEarthBranchCount > 0 && earthRootPower >= 2);
+  var waterDominant = (waterMonth && waterSurfaceCount >= 4 && waterRootPower >= 3.5) ||
+    (!!waterGroup && waterSurfaceCount >= 3 && waterRootPower >= 3.5);
+  var rootCannotCarry = intactWoodMainRoots.length === 0 && woodRootPower < 2.5;
+  var applies = waterDominant && rootCannotCarry && !effectiveFire && !effectiveDryEarth;
+
+  // 回收主评分中同一旺水印势已经取得的常规生扶信用。
+  var ordinarySealCredits = 0;
+  if (waterMonth || waterGroup) ordinarySealCredits += 20;
+  if (DI_ZHI_WU_XING[bazi.day.zhi] === '水') ordinarySealCredits += 8;
+  ordinarySealCredits += waterStemCount * 4 + waterBranchCount * 2;
+  if (WU_XING[bazi.month.gan] === '水') ordinarySealCredits += 2;
+  if (WU_XING[bazi.hour.gan] === '水') ordinarySealCredits += 1;
+  var overloadPenalty = Math.min(10, 4 + Math.max(0, waterSurfaceCount - 4) * 2 + (waterGroup ? 2 : 0));
+  var adjustment = applies ? -(ordinarySealCredits + overloadPenalty) : 0;
+  var severity = applies && (waterSurfaceCount >= 6 || waterRootPower >= 6 || waterGroup) ? '重' : (applies ? '中' : '');
+  // 水势重而火尚无根时，先用燥土筑堤；已有微弱但未成效的火根时，可先暖局泄印。
+  var hasUsableFireSeed = (fireStemCount + fireBranchCount) > 0 && fireRootPower >= 0.5;
+
+  return {
+    applies:applies, isWood:true, waterMonth:waterMonth, waterGroup:waterGroup,
+    waterSurfaceCount:waterSurfaceCount, waterStemCount:waterStemCount, waterBranchCount:waterBranchCount,
+    waterRootPower:waterRootPower, woodRootPower:woodRootPower,
+    intactWoodMainRoots:intactWoodMainRoots, fireRootPower:fireRootPower, earthRootPower:earthRootPower,
+    effectiveFire:effectiveFire, effectiveDryEarth:effectiveDryEarth,
+    ordinarySealCredits:ordinarySealCredits, overloadPenalty:overloadPenalty,
+    adjustment:adjustment, severity:severity,
+    primaryRemedy:hasUsableFireSeed ? '火' : '土',
+    secondaryRemedy:hasUsableFireSeed ? '土' : '火'
+  };
+}
+
 function calcDayMasterStrength(bazi, options) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -2522,6 +2604,7 @@ function calcDayMasterStrength(bazi, options) {
   var _settledEvidence = buildBaziEvidenceSettlement(bazi);
   var _dryEarthMetalState = getDryEarthMetalState(bazi);
   var _thickEarthMetalState = getThickEarthMetalState(bazi);
+  var _waterloggedWoodState = getWaterloggedWoodState(bazi);
   // 单盘内部审计只跟踪主引擎真实分差，不重新计算旺衰。
   // 默认路径不附带审计字段，避免污染 AI/报告对外事实契约。
   var _auditEnabled = !!(options && options.audit === true);
@@ -3431,6 +3514,12 @@ function calcDayMasterStrength(bazi, options) {
   if (_rootClusterPendingAdj > 0 && score < 50) score += _rootClusterPendingAdj;
   _auditMark('root-cluster-final', '多重强根最终门控', { candidate:_rootClusterPendingAdj });
 
+  // ---------- ⑧⅞ 水多木漂合并结算 ----------
+  // 放在全部常规生扶与制化之后，统一回收已经发放给旺水印星的信用；
+  // 本阶段只结算这一份结构事实，生克链和喜用层只读取结论，不再重复改旺衰分。
+  if (_waterloggedWoodState.applies) score += _waterloggedWoodState.adjustment;
+  _auditMark('waterlogged-wood', '水多木漂·印星反害', _waterloggedWoodState);
+
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
   var _auditRawScore = score;
@@ -3451,6 +3540,8 @@ function calcDayMasterStrength(bazi, options) {
     detail = '综合评定中和（' + score + '分）。命局五行相对均衡，日主不偏不倚。';
   } else if (_thickEarthMetalState.applies) {
     detail = '综合评定身' + level + '（' + score + '分）。湿库厚土成势，印星由生扶转为埋金，不能再按普通得令身强论；需先疏土、淘土，再看金根能否承载。';
+  } else if (_waterloggedWoodState.applies) {
+    detail = '综合评定身' + level + '（' + score + '分）。旺水成势而木无完整寅卯本气根，印星由滋木转为水多木漂，不能再按普通印旺生身论；需先暖局泄印或以燥土制水，再看木根能否落实。';
   } else {
     detail = '综合评定身' + level + '（' + score + '分）。命局中克泄耗力量偏重，日主需印比扶助。';
   }
@@ -3623,7 +3714,10 @@ function buildBaziEventLedger(bazi, scoreStages) {
     },
     'sha-seal-mediation':function() { return idsOf(function(e) { return (e.data.tenGod === '正印' || e.data.tenGod === '偏印' || e.data.tenGod === '正官' || e.data.tenGod === '七杀'); }); },
     'injury-seal-load':function() { return idsOf(function(e) { return (e.data.tenGod === '伤官' || e.data.tenGod === '食神' || e.data.tenGod === '正印' || e.data.tenGod === '偏印'); }); },
-    'position-weight':function() { return idsOf(function(e) { return e.type === 'visible-stem' || e.type === 'branch'; }); }
+    'position-weight':function() { return idsOf(function(e) { return e.type === 'visible-stem' || e.type === 'branch'; }); },
+    'waterlogged-wood':function() { return idsOf(function(e) {
+      return e.data.element === '水' || e.data.element === '木' || e.data.resultElement === '水';
+    }); }
   };
   var primaryScoreStages = {
     'month-command':true, 'day-seat':true, 'visible-stems':true,
@@ -3830,7 +3924,7 @@ function auditDayMasterStrength(bazi) {
     order:{ name:'得令', delta:stageDelta(['month-command']), state:stageDelta(['month-command']) > 0 ? '得令' : (stageDelta(['month-command']) < 0 ? '失令' : '中性') },
     ground:{ name:'得地', delta:stageDelta(['day-seat','season-root-link','branch-main-qi','hidden-earth-lu','root-cluster-final']), rootCount:roots.length, intactRootCount:roots.filter(function(root) { return root.status === '完整根'; }).length },
     force:{ name:'得势', delta:stageDelta(['visible-stems']), supportiveStems:stems.filter(function(item) { return item.tenGod === '比肩' || item.tenGod === '劫财' || item.tenGod === '正印' || item.tenGod === '偏印'; }).map(function(item) { return item.positionName + item.stem + item.tenGod; }) },
-    mediation:{ name:'制化', delta:stageDelta(['climate','stem-transform','stem-binding','branch-interactions','sha-seal-mediation','injury-seal-load','position-weight']) }
+    mediation:{ name:'制化', delta:stageDelta(['climate','stem-transform','stem-binding','branch-interactions','sha-seal-mediation','injury-seal-load','position-weight','waterlogged-wood']) }
   };
 
   var pattern = getPattern(bazi);
@@ -6567,6 +6661,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   var isEstablishedInjurySeal = pattern.name === '伤官配印格' && pattern.status === '成格';
   var imbalanceCauseForLedger = (context.candidateScores && (context.candidateScores.weaknessCause || context.candidateScores.strongCause)) || null;
   var isThickEarthBurial = imbalanceCauseForLedger && imbalanceCauseForLedger.type === '厚土埋金';
+  var isWaterloggedWood = imbalanceCauseForLedger && imbalanceCauseForLedger.type === '水多木漂';
   var settlement = buildBaziEvidenceSettlement(bazi);
   var candidateMap = {};
   (((context.candidateScores || {}).candidates) || []).forEach(function(candidate) {
@@ -6655,6 +6750,23 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
         uniquePush(risks, '本局印土已过厚，由生金转为埋金，再增土会加重壅塞');
       } else if (wx === roleElements.officer) {
         uniquePush(risks, '火会继续生土，使厚土埋金进一步加重');
+      }
+    }
+
+    if (isWaterloggedWood) {
+      if (wx === roleElements.seal) {
+        uniquePush(risks, '本局印水已经过量，由滋木转为水多木漂，再增水会继续破坏木的承载');
+      } else if (wx === roleElements.output) {
+        uniquePush(functions, '暖局、化湿并疏导过旺印水，是本局重要修复力量');
+        uniquePush(conditions, '火须有根或先得燥土护持；无根虚火投入旺水容易被熄灭');
+      } else if (wx === roleElements.wealth) {
+        uniquePush(functions, '以燥土筑堤制水，帮助漂浮木气重新立足');
+        uniquePush(conditions, '优先认戌未燥土或透而有根之土；辰丑湿土不可冒充有效制水，土过量也会耗木');
+      } else if (wx === roleElements.peer) {
+        uniquePush(conditions, '须形成寅卯完整根，或先由火土控制旺水后再使用');
+        uniquePush(risks, '新增无根浮木仍难承水，不能只因身弱便机械补比劫');
+      } else if (wx === roleElements.officer) {
+        uniquePush(risks, '金既克木又生水，会延长金生水、水漂木的失衡链');
       }
     }
 
@@ -7251,6 +7363,8 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var isWeakLevel = dmStr.level === '偏弱' || dmStr.level === '极弱';
   var thickEarthMetalState = getThickEarthMetalState(bazi);
   var thickEarthBurialDominant = isWeakLevel && thickEarthMetalState.applies;
+  var waterloggedWoodState = getWaterloggedWoodState(bazi);
+  var waterloggedWoodDominant = isWeakLevel && waterloggedWoodState.applies;
   // 两类压力非常接近时不能因零点几的浮动强行贴成单一病因。至少领先0.5，
   // 才称“主导”；否则落入复合耗泄克，再由候选评分决定具体病药。
   var dominanceMargin = 0.5;
@@ -7272,7 +7386,25 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     && Math.max(wealthPressure, officerPressure) >= outputPressure;
 
   var weaknessCause = null;
-  if (thickEarthBurialDominant) {
+  if (waterloggedWoodDominant) {
+    weaknessCause = {
+      type:'水多木漂', title:'水多木漂·印星反害型身弱', primaryElement:waterloggedWoodState.primaryRemedy,
+      primaryAction:waterloggedWoodState.primaryRemedy === '土'
+        ? '燥土先制约成势旺水、帮助木气立足，是本局第一病药'
+        : '有根之火先暖局泄印、化解寒湿，使木气能够舒展，是本局第一病药',
+      supportingElements:[waterloggedWoodState.secondaryRemedy],
+      supportingReason:waterloggedWoodState.secondaryRemedy === '火'
+        ? '火可暖局并泄木生发之气，但水势过重时须先有燥土护火，不能投下无根虚火'
+        : '燥土可辅助筑堤制水，但土过量也会耗木，须与火配合且不可再成厚土',
+      conditionalElements:[TONG],
+      conditionalReason:TONG + '比劫只有形成寅卯完整根、或在火土已经控制旺水后才能帮助日主立根；无根浮木继续加入，仍会随水漂荡，不能当作普通喜神直接增补。',
+      conclusion:SHENG_WO + '印水已经超过木所能承载的范围，由生身资源转成水多木漂之病。'
+        + (waterloggedWoodState.primaryRemedy === '土'
+          ? '先取燥土制水筑堤，以火暖局为辅；'
+          : '先取有根之火暖局泄印，以燥土制水为辅；')
+        + TONG + '木须取得完整根气后才可条件使用，' + SHENG_WO + '水不可再补，' + KE_WO + '金再来克木生水亦不利。'
+    };
+  } else if (thickEarthBurialDominant) {
     weaknessCause = {
       type:'厚土埋金', title:'厚土埋金型身弱', primaryElement:WO_KE,
       primaryAction:WO_KE + '财星先疏松成势厚土，使埋藏的金气重新获得承载空间，是本局第一取用',
@@ -7423,7 +7555,15 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     if (val * g1 !== 0) l2Details.push({ wx: wx, val: val * g1, note: note });
   };
   if (d < 0) {
-    if (thickEarthBurialDominant) {
+    if (waterloggedWoodDominant) {
+      var waterlogPrimary = waterloggedWoodState.primaryRemedy;
+      var waterlogSecondary = waterloggedWoodState.secondaryRemedy;
+      addL2(waterlogPrimary, 120, waterlogPrimary === '土' ? '水多木漂，燥土制水筑堤为第一病药' : '水多木漂，有根之火暖局泄印为第一病药');
+      addL2(waterlogSecondary, 75, waterlogSecondary === '火' ? '火暖局化湿，但须防旺水熄火' : '燥土辅助制水，但须防财多再耗木');
+      addL2(SHENG_WO, -140, '印水已经由滋木转为水多木漂，再补水会加重失载');
+      addL2(TONG, -65, '无根浮木不能承载旺水，须待寅卯立根或火土制水后条件使用');
+      addL2(KE_WO, -55, '官杀金既克木又生水，会延长金生水、水漂木的致病链');
+    } else if (thickEarthBurialDominant) {
       // 这是“生扶转病”的结构例外：不能让普通身弱 L1 把致病印土继续抬成用神。
       // 数值仍乘连续门控 g1，旺衰越接近中和，结构修正越温和；落入明确偏弱后才足以改写方向。
       addL2(WO_KE, 110, '厚土埋金，财星木疏土开壅，为第一病药');
@@ -7536,6 +7676,12 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   };
   var dmRuo = dmStr.level.indexOf('弱') >= 0;
   var dmQiang = dmStr.level.indexOf('强') >= 0;
+  if (waterloggedWoodDominant) {
+    // 火在这里是明确的寒湿调候任务，即使日主因水漂落在身弱侧，也不能被普通“身弱忌泄”门控抹掉。
+    // 核心病药分已经在 L2 结算，L4 只登记兼任来源，不再重复加分。
+    addTiaoHouYongShen('火');
+    tiaoHouNote = '旺水寒湿而木失其载，火承担暖局、化湿与疏导印水的调候任务；但火须有根或先得燥土护持，不能把无根虚火当成已经完成制化。';
+  }
   if (dmWx === '土' && mz === '丑' && dmRuo) {
     addL4('火', 8, '冬土冻土，火暖局');
     tiaoHouNote = hasWxGlobal('火')
@@ -7804,6 +7950,10 @@ function getYongJi(bazi) {
     // 连续旺衰权重 d 取代 50 分二元 if/else：需求定用神、根气定质量
     cs = calcCandidateScores(bazi, dmStr, pattern);
     tiaoHouNote = cs.tiaoHouNote;
+    if (cs.weaknessCause && cs.weaknessCause.type === '水多木漂') {
+      primaryUseTypeHint = '病药用神';
+      if (cs.yongWx === '火') primaryUseSecondaryHints.push('兼调候');
+    }
 
     // 调候说明不覆盖扶抑喜忌；仅核准的核心用神硬边界可以接管候选赢家。
     // 偏强/强旺庚金生亥月：冬金非火不暖，火优先成为核心调候用神。
@@ -8616,6 +8766,7 @@ window.BaZiCalculator = {
     auditDayMasterStrength: auditDayMasterStrength,
     buildEventLedger: buildBaziEventLedger,
     buildEvidenceSettlement: buildBaziEvidenceSettlement,
+    getWaterloggedWoodState: getWaterloggedWoodState,
     getPattern: getPattern,
     adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,

@@ -903,13 +903,6 @@
           adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》乙木"怀丁抱丙"：冬木需火暖局，火泄身反为吉' });
         }
       }
-      // 虚湿之地，骑马亦忧：亥子丑月水多，即使午火也难救
-      if (monthZhi === '亥' || monthZhi === '子' || monthZhi === '丑') {
-        var waterHeavy = positions.reduce(function(s, p) {
-          return s + (window.WU_XING[bazi[p].gan] === '水' ? 1 : 0) + (window.DI_ZHI_WU_XING[bazi[p].zhi] === '水' ? 1 : 0);
-        }, 0);
-        if (waterHeavy >= 3) diTianSuiHints.push('「虚湿之地，骑马亦忧」——水多木漂，虽有午火亦难救，宜燥土制水');
-      }
       // 藤萝系甲：乙见甲，可春可秋
       var hasJia = [bazi.year.gan, bazi.month.gan, bazi.hour.gan].indexOf('甲') >= 0;
       if (hasJia) diTianSuiHints.push('「藤萝系甲」——乙见甲木如藤附大树，春不畏金秋不畏土');
@@ -919,6 +912,17 @@
         if (!hasWxAnywhere(bazi, '火')) {
           adjustments.push({ wx: '火', action: 'downgrade_ji', reason: '《滴天髓》乙木"跨凤乘猴"需火制金护木' });
         }
+      }
+    }
+
+    // 水多木漂同时适用于甲、乙木，但不能仅凭“冬月见三处水”下结论；
+    // 统一读取主引擎的根气、成势与火土制化结算。
+    if (dg === '甲' || dg === '乙') {
+      var waterloggedState = window.BaZiCalculator && window.BaZiCalculator.getWaterloggedWoodState
+        ? window.BaZiCalculator.getWaterloggedWoodState(bazi) : null;
+      if (waterloggedState && waterloggedState.applies) {
+        diTianSuiHints.push('「虚湿之地，骑马亦忧」——旺水成势而木无完整寅卯根，印星反成水多木漂；宜先'
+          + (waterloggedState.primaryRemedy === '土' ? '以燥土制水筑堤' : '以有根之火暖局泄印') + '，再议扶木');
       }
     }
 
