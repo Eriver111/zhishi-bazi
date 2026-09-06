@@ -131,6 +131,69 @@ test('same annual branch alone is branch repetition rather than full-pillar FuYi
   assert.equal(result.triggers.some(item => item.type === '地支重复'), true);
 });
 
+test('an already-present annual branch cannot falsely complete a trine', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('戊', '辰', '乙', '丑', '辛', '巳', '甲', '午');
+  const result = context.BaZiChain.analyzeLiuNian(
+    base,
+    { gan: '戊', zhi: '辰' },
+    { gan: '辛', zhi: '丑' },
+    { xiShen: ['水'], yongShen: ['木'], jiShen: ['土', '火'] },
+  );
+
+  assert.equal(result.triggers.some(item => item.type === '三合局' || item.type === '半合'), false);
+  assert.ok(result.triggers.some(item => item.type === '地支重复' && item.target === 'month'));
+  assert.equal(result.triggers.some(item => item.type === '伏吟'), false);
+});
+
+test('annual YiMa combined with day-branch punishment and harm emits one cautious compound warning', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('戊', '辰', '乙', '丑', '辛', '巳', '甲', '午');
+  const result = context.BaZiChain.analyzeLiuNian(
+    base,
+    { gan: '戊', zhi: '辰' },
+    { gan: '壬', zhi: '寅' },
+    { xiShen: ['水'], yongShen: ['木'], jiShen: ['土', '火'] },
+  );
+
+  assert.ok(result.triggers.some(item => item.type === '驿马'));
+  const compound = result.triggers.filter(item => item.type === '驿马逢日支受扰');
+  assert.equal(compound.length, 1);
+  assert.match(compound[0].detail, /驾驶|交通安全/);
+  assert.match(compound[0].detail, /不等于必然发生事故/);
+  assert.ok(result.triggers.some(item => item.type === '六害' && item.target === 'day'));
+  assert.ok(result.triggers.some(item => item.type === '刑' && item.target === 'day'));
+  assert.equal(
+    result.triggers.filter(item => (item.type === '六害' || item.type === '刑') && item.target === 'day' && /合并结算/.test(item.detail)).length,
+    1,
+  );
+});
+
+test('thick-earth metal chart keeps one natal ledger across the 2018, 2021, and 2022 checks', () => {
+  const context = loadBrowserRuntime();
+  const base = context.BaZiCalculator.buildFromPillars(
+    chart('戊', '辰', '乙', '丑', '辛', '巳', '甲', '午'),
+    'male',
+  );
+  const yongJi = context.BaZiCalculator.getYongJi(base);
+  const daYun = { gan: '戊', zhi: '辰' };
+  const year2018 = context.BaZiChain.analyzeLiuNian(base, daYun, { gan: '戊', zhi: '戌' }, yongJi);
+  const year2021 = context.BaZiChain.analyzeLiuNian(base, daYun, { gan: '辛', zhi: '丑' }, yongJi);
+  const year2022 = context.BaZiChain.analyzeLiuNian(base, daYun, { gan: '壬', zhi: '寅' }, yongJi);
+
+  assert.equal(yongJi.weaknessCause.type, '厚土埋金');
+  assert.ok(year2018.triggers.some(item => item.type === '六冲' && item.target === 'year'));
+  assert.ok(year2018.triggers.some(item => item.type === '六冲' && item.target === 'dayun' && item.source === '岁运'));
+  assert.ok(year2018.triggers.some(item => item.target === 'dayun' && /跨层放大.*不重复完整结算/.test(item.detail)));
+  assert.ok(year2018.triggers.some(item => item.type === '刑' && item.target === 'month'));
+  assert.ok(year2018.triggers.some(item => item.type === '半合' && item.formedWx === '火'));
+  assert.equal(year2021.triggers.some(item => item.type === '三合局' || item.type === '半合'), false);
+  assert.ok(year2021.triggers.some(item => item.type === '地支重复' && item.target === 'month'));
+  assert.ok(year2021.triggers.some(item => item.type === '六破' && item.target === 'dayun' && item.source === '岁运'));
+  assert.ok(year2022.triggers.some(item => item.type === '驿马逢日支受扰'));
+  assert.equal(year2022.verdict, '偏凶');
+});
+
 test('a DaYun trine completed into a Ji element does not improve the verdict', () => {
   const context = loadBrowserRuntime();
   const base = chart('甲', '寅', '丙', '午', '庚', '子', '戊', '辰');
@@ -209,7 +272,7 @@ test('core analysis degrades safely but reports chain failures for diagnosis', (
 test('all chain entry pages request the repaired script version', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.match(html, /js\/bazi-chain\.js\?v=5/, page);
+    assert.match(html, /js\/bazi-chain\.js\?v=6/, page);
   }
 });
 

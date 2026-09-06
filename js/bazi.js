@@ -2431,6 +2431,77 @@ function getDryEarthMetalState(bazi) {
   };
 }
 
+// 金日主不能把所有印土都机械折算成持续生扶。
+// 辰丑虽属湿土，少量时可以蓄水养金；但湿库成群、土透而又有火继续生土时，
+// 若金无申酉本气根、水也没有透出疏淘，印星会由“生金”转成“土厚埋金”。
+// 本状态只负责识别一份合并后的结构事实，避免月令、藏干、火生土分别重复扣分。
+function getThickEarthMetalState(bazi) {
+  var isMetal = WU_XING[bazi.day.gan] === '金';
+  var positions = ['year','month','day','hour'];
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  if (!isMetal) {
+    return {
+      applies:false, isMetal:false, isWetStorageMonth:false, earthSurfaceCount:0,
+      earthRootPower:0, fireSurfaceCount:0, hasIntactMetalRoot:false,
+      hasVisibleWater:false, hasEffectiveWood:false, adjustment:0
+    };
+  }
+
+  var earthSurfaceCount = 0;
+  var fireSurfaceCount = 0;
+  var visibleWaterCount = 0;
+  var visibleWoodCount = 0;
+  positions.forEach(function(pos) {
+    var ganWx = WU_XING[bazi[pos].gan];
+    var zhiWx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    if (pos !== 'day' && ganWx === '土') earthSurfaceCount++;
+    if (zhiWx === '土') earthSurfaceCount++;
+    if (pos !== 'day' && ganWx === '火') fireSurfaceCount++;
+    if (zhiWx === '火') fireSurfaceCount++;
+    if (pos !== 'day' && ganWx === '水') visibleWaterCount++;
+    if (pos !== 'day' && ganWx === '木') visibleWoodCount++;
+  });
+
+  var earthRootPower = settlement.elementRootPower('土');
+  var woodRootPower = settlement.elementRootPower('木');
+  var hasIntactMetalRoot = settlement.roots.some(function(root) {
+    return (root.branch === '申' || root.branch === '酉') && root.element === '金' &&
+      root.depth === '本气' && root.effectiveCoefficient >= 1;
+  });
+  var isWetStorageMonth = ['辰','丑'].indexOf(bazi.month.zhi) >= 0;
+  var denseEarth = earthSurfaceCount >= 3 && earthRootPower >= 4;
+  var hasVisibleWater = visibleWaterCount > 0;
+  var hasEffectiveWood = visibleWoodCount > 0 && woodRootPower >= 1;
+  var applies = isWetStorageMonth && denseEarth && !hasIntactMetalRoot;
+  var adjustment = 0;
+
+  if (applies) {
+    // 一次性合并结算：回收“厚土仍按普通印星持续生金”的过量信用，
+    // 再根据火是否继续生土、水能否疏淘以及木能否真正疏土作有限修正。
+    adjustment = -12;
+    adjustment -= Math.max(0, earthSurfaceCount - 2) * 3;
+    if (fireSurfaceCount >= 2) adjustment -= 3;
+    if (hasVisibleWater) adjustment += 5;
+    // 木见根且没有旺火把木气转去生土时，才承认其疏土效果。
+    if (hasEffectiveWood && fireSurfaceCount < 2) adjustment += 3;
+    // 单阶段最多扣 20 分，防止与官杀、调候等独立事实互相放大。
+    if (adjustment < -20) adjustment = -20;
+  }
+
+  return {
+    applies:applies,
+    isMetal:true,
+    isWetStorageMonth:isWetStorageMonth,
+    earthSurfaceCount:earthSurfaceCount,
+    earthRootPower:earthRootPower,
+    fireSurfaceCount:fireSurfaceCount,
+    hasIntactMetalRoot:hasIntactMetalRoot,
+    hasVisibleWater:hasVisibleWater,
+    hasEffectiveWood:hasEffectiveWood,
+    adjustment:adjustment
+  };
+}
+
 function calcDayMasterStrength(bazi, options) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -2450,6 +2521,7 @@ function calcDayMasterStrength(bazi, options) {
   var score = 50; // 基准分
   var _settledEvidence = buildBaziEvidenceSettlement(bazi);
   var _dryEarthMetalState = getDryEarthMetalState(bazi);
+  var _thickEarthMetalState = getThickEarthMetalState(bazi);
   // 单盘内部审计只跟踪主引擎真实分差，不重新计算旺衰。
   // 默认路径不附带审计字段，避免污染 AI/报告对外事实契约。
   var _auditEnabled = !!(options && options.audit === true);
@@ -2804,6 +2876,13 @@ function calcDayMasterStrength(bazi, options) {
   if (_dryEarthMetalState.isDryEarthMonth && !_dryEarthMetalState.supportRestored && mwxCount >= 3) score -= 8;
 
   _auditMark('dry-earth-buries-metal', '土多金埋', null);
+
+  // ---------- ⑤⅝ 湿库厚土埋金修正（辰丑月） ----------
+  // 湿土可生金不等于湿土越多越好；仅在“湿库当令 + 土成势 + 金无完整本气根”时触发。
+  // 所有相关证据合并为一个阶段，只结算一次，杜绝印土与火土链条重复扣分。
+  if (_thickEarthMetalState.applies) score += _thickEarthMetalState.adjustment;
+
+  _auditMark('thick-earth-buries-metal', '湿库厚土埋金', _thickEarthMetalState);
 
   // ---------- ⑥ 调候（滴天髓：寒暖燥湿） ----------
   var mZhi = bazi.month.zhi;
@@ -3370,6 +3449,8 @@ function calcDayMasterStrength(bazi, options) {
     detail = '综合评定身' + level + '（' + score + '分）。命局中帮扶力量较强，日主底气充足。';
   } else if (level === '中和') {
     detail = '综合评定中和（' + score + '分）。命局五行相对均衡，日主不偏不倚。';
+  } else if (_thickEarthMetalState.applies) {
+    detail = '综合评定身' + level + '（' + score + '分）。湿库厚土成势，印星由生扶转为埋金，不能再按普通得令身强论；需先疏土、淘土，再看金根能否承载。';
   } else {
     detail = '综合评定身' + level + '（' + score + '分）。命局中克泄耗力量偏重，日主需印比扶助。';
   }
@@ -6076,7 +6157,7 @@ function getPattern(bazi) {
 
   // 若未匹配到符合条件的透干，不降级匹配同五行，直接取本气十神
   // 但建禄/羊刃月令时跳过同五行逻辑，避免劫财/比肩覆盖正确的十二长生判定
-  if (!matchedSS && !isLinGuanOrDiWang) {
+  if (!matchedSS && !isLinGuanOrDiWang && !isZaQiMonth) {
     for (var gi = 0; gi < allGan.length; gi++) {
       if (WU_XING[allGan[gi]] === benQiWx && allGan[gi] !== benQi) {
         matchedSS = getShiShen(dayGan, benQi);
@@ -6171,7 +6252,10 @@ function getPattern(bazi) {
     }));
   }
 
-  var p = PATTERNS[ss];
+  // 辰戌丑未为杂气月，必须由月支所藏的“同一个天干”真实透出后才能据此立格。
+  // 本气、中气、余气都未透时，只能说月令格局未显；不能拿同五行异干替代，
+  // 也不能再以本气十神直接命名为某个正格。
+  var p = (isZaQiMonth && !matchedSS) ? null : PATTERNS[ss];
 
   // 建禄与羊刃为月令特别格，不以藏干透出为成格前提。
   // P4-A(A1)：帝旺（羊刃）月支本气为比劫（如甲刃在卯、卯本气乙劫财）时，比劫无 PATTERNS 定义，
@@ -6189,7 +6273,11 @@ function getPattern(bazi) {
 
   // 未匹配到标准格局时，用五行关系兜底
   if (!p) {
-    if (dmWx === mWx) p = {
+    if (isZaQiMonth && !matchedSS) p = {
+      name: '杂格',
+      desc: '辰戌丑未杂气月须按本气、中气、余气依次查其本星透干；本月令藏干均未透，格局暂不强立。'
+    };
+    else if (dmWx === mWx) p = {
       name: '杂格',
       desc: '月令比劫当权，但不在日主临官或帝旺位，不作建禄、羊刃论；需结合财官食伤透藏综合判断。'
     };
@@ -6203,7 +6291,9 @@ function getPattern(bazi) {
   // 帝旺+比劫透走十二长生特判的盘，来源与类型按"月令特别格"口径（与 !matchedSS 特判盘一致）
   // P4-A-EVID-01：matchedGan 只有精确匹配时才是月支藏干；同五行兜底时它是外透干，
   // 不得写成「月支所藏」——藏干与外透同五行干必须分开描述（否则出现"寅藏乙"这种伪造藏干的证据句）。
-  var source = specialGrid
+  var source = (isZaQiMonth && !matchedSS)
+    ? ('月支' + mZhi + '藏' + cangGan.join('、') + '，均未在年、月、时干精确透出，按杂气月规则暂不立格')
+    : specialGrid
     ? '月支' + mZhi + '（' + ss + '）'
     : matchedSS
       ? (cangGan.indexOf(matchedGan) >= 0
@@ -6214,7 +6304,9 @@ function getPattern(bazi) {
   // 月令本气取格但格神未透，只表示格局层次与显达程度受限，不等同于破格。
   // 描述必须同步说明“当令但未透”，避免页面一边写未透、一边仍显示“月令透食”等伪证据。
   var patternDesc = p.desc;
-  var patternType = specialGrid ? '月令特别格' : (matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格'));
+  var patternType = (isZaQiMonth && !matchedSS)
+    ? '杂气月待取格'
+    : (specialGrid ? '月令特别格' : (matchedSS ? '透干取格' : ((p.name === '建禄格' || p.name === '羊刃格') ? '月令特别格' : '月令取格')));
   var MONTH_ROLE_LABEL = { 正官: '官星', 七杀: '七杀', 正财: '财星', 偏财: '偏财', 正印: '印星', 偏印: '枭神', 食神: '食神', 伤官: '伤官' };
   if (matchMode === 'same-element') {
     patternDesc = patternDesc.replace(/^月令透[^，]+，/, '月令' + (MONTH_ROLE_LABEL[ss] || ss) + '当令但本星未透干，');
@@ -6473,6 +6565,8 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   relationNames[roleElements.seal] = '印星';
   var pattern = context.pattern || {};
   var isEstablishedInjurySeal = pattern.name === '伤官配印格' && pattern.status === '成格';
+  var imbalanceCauseForLedger = (context.candidateScores && (context.candidateScores.weaknessCause || context.candidateScores.strongCause)) || null;
+  var isThickEarthBurial = imbalanceCauseForLedger && imbalanceCauseForLedger.type === '厚土埋金';
   var settlement = buildBaziEvidenceSettlement(bazi);
   var candidateMap = {};
   (((context.candidateScores || {}).candidates) || []).forEach(function(candidate) {
@@ -6545,6 +6639,25 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       uniquePush(risks, '过量或无制化时会形成克身压力');
     }
 
+    // 厚土埋金时，印土已经从一般“生身资源”转成当前结构的病源。
+    // 账本必须展示每个五行在本局的实际任务，避免前端只看到抽象十神后误解为“身弱继续补印比”。
+    if (isThickEarthBurial) {
+      if (wx === roleElements.wealth) {
+        uniquePush(functions, '疏松厚土、打开金气被埋的空间，是本局首要修复力量');
+        uniquePush(conditions, '木须有根或得水滋养，不能只凭一处虚浮透干承担全部疏土任务');
+      } else if (wx === roleElements.output) {
+        uniquePush(functions, '润土、淘金，并辅助木气疏土');
+        uniquePush(conditions, '寒湿月令下宜有度，须看是否真正流向木而非徒增寒湿');
+      } else if (wx === roleElements.peer) {
+        uniquePush(conditions, '须先疏松厚土或取得完整金根后再辅助，不能在土壅时直接增补');
+        uniquePush(risks, '厚土未疏时新增金仍可能被埋，并会克制正在疏土的木');
+      } else if (wx === roleElements.seal) {
+        uniquePush(risks, '本局印土已过厚，由生金转为埋金，再增土会加重壅塞');
+      } else if (wx === roleElements.officer) {
+        uniquePush(risks, '火会继续生土，使厚土埋金进一步加重');
+      }
+    }
+
     // 格局任务只写原局真实作用，不直接回写旺衰分与传统喜忌数组。
     if (isEstablishedInjurySeal && present) {
       if (wx === roleElements.seal) {
@@ -6595,6 +6708,12 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
         : fortuneRole === '忌神'
           ? '它容易放大原局主要失衡，岁运到来通常弊大于利。'
           : '单看五行不足以定向，须由具体干支关系决定。';
+    if (classification === '条件喜神') {
+      fortuneDirection = '逢' + wx + '运须先核对条件，满足时才偏顺';
+      fortuneReason = conditions.length
+        ? conditions.join('；')
+        : '它只能在原局指定条件成立时发挥有利作用，不能按普通喜神直接判断。';
+    }
     if (isEstablishedInjurySeal) {
       if (wx === roleElements.seal) {
         if (fortuneRole === '用神') {
@@ -7130,6 +7249,8 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var sealPressure = pressureOf(SHENG_WO);
   // “中和”即使分差略偏负也不应套用身弱病因；只有旺衰层明确落入偏弱/极弱才分型。
   var isWeakLevel = dmStr.level === '偏弱' || dmStr.level === '极弱';
+  var thickEarthMetalState = getThickEarthMetalState(bazi);
+  var thickEarthBurialDominant = isWeakLevel && thickEarthMetalState.applies;
   // 两类压力非常接近时不能因零点几的浮动强行贴成单一病因。至少领先0.5，
   // 才称“主导”；否则落入复合耗泄克，再由候选评分决定具体病药。
   var dominanceMargin = 0.5;
@@ -7151,7 +7272,16 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     && Math.max(wealthPressure, officerPressure) >= outputPressure;
 
   var weaknessCause = null;
-  if (outputDrainDominant) {
+  if (thickEarthBurialDominant) {
+    weaknessCause = {
+      type:'厚土埋金', title:'厚土埋金型身弱', primaryElement:WO_KE,
+      primaryAction:WO_KE + '财星先疏松成势厚土，使埋藏的金气重新获得承载空间，是本局第一取用',
+      supportingElements:[WO_SHENG], supportingReason:WO_SHENG + '水可润土、淘金并辅助木疏土，但寒湿月令下须有度，不可把水量本身当成唯一目标',
+      conditionalElements:[TONG],
+      conditionalReason:TONG + '比劫只能在厚土已经被' + WO_KE + '木疏开、或新来金根能够完整落地时辅助；土未松时再加金仍有被埋，并会反克疏土之木，不能当作普通喜神直接增补。',
+      conclusion:'本局' + SHENG_WO + '印已经由生身资源转为埋金，病不在“缺印”，而在厚土壅塞。先取' + WO_KE + '财星疏土为用，以' + WO_SHENG + '食伤润土淘金为辅；' + TONG + '比劫须待土松或得完整强根后条件使用，' + KE_WO + '官杀再生土、' + SHENG_WO + '印再加厚均会加重原局问题。'
+    };
+  } else if (outputDrainDominant) {
     weaknessCause = {
       type:'食伤泄身', title:'食伤泄身型身弱', primaryElement:SHENG_WO,
       primaryAction:'印星同时完成制食伤与生身，是本局第一取用',
@@ -7293,6 +7423,15 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     if (val * g1 !== 0) l2Details.push({ wx: wx, val: val * g1, note: note });
   };
   if (d < 0) {
+    if (thickEarthBurialDominant) {
+      // 这是“生扶转病”的结构例外：不能让普通身弱 L1 把致病印土继续抬成用神。
+      // 数值仍乘连续门控 g1，旺衰越接近中和，结构修正越温和；落入明确偏弱后才足以改写方向。
+      addL2(WO_KE, 110, '厚土埋金，财星木疏土开壅，为第一病药');
+      addL2(WO_SHENG, 75, '厚土埋金，食伤水润土淘金并辅助木气');
+      addL2(SHENG_WO, -120, '印土已经成病，再补土会继续埋金');
+      addL2(TONG, -65, '厚土未疏前再加金仍可能被埋，并会克制疏土之木，降为条件辅助');
+      addL2(KE_WO, -20, '官杀火会继续生土，使厚土埋金加重');
+    }
     if (chengShi(KE_WO))    { addL2(SHENG_WO, 12, '官杀成势，印星化杀生身'); addL2(TONG, 4, '官杀成势，比劫帮身抗杀'); }
     if (chengShi(WO_KE))    { addL2(TONG, 10, '财多成势，比劫帮身分财'); addL2(SHENG_WO, 6, '财多成势，印星生身'); }
     if (chengShi(WO_SHENG)) { addL2(SHENG_WO, 12, '食伤成势，印星制食伤生身'); }

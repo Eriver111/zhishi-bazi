@@ -1575,22 +1575,69 @@
       if (lnZhi === targetZhi && SELF_XING[lnZhi]) relationTypes.push('自刑');
       if (ZHI_HE[pair]) relationTypes.push('六合');
       if (ZHI_PO[pair]) relationTypes.push('六破');
+      var hasSoftCompound = relationTypes.indexOf('六害') >= 0 && relationTypes.indexOf('刑') >= 0;
+      var softCompoundScored = false;
       relationTypes.forEach(function(type) {
         var direction = interactionDirection(lnZhiWx, targetWx, type);
         // 日/月冲已在高优先级条目说明，保留完整事实但避免重复累计危险分。
         var duplicateHighPriority = type === '六冲' && (pos === 'day' || pos === 'month');
+        var duplicateSoftCompound = hasSoftCompound && (type === '六害' || type === '刑') && softCompoundScored;
         triggers.push({
           type:type, severity:type === '六冲' ? 'high' : (type === '六合' ? 'medium' : 'medium'),
           detail:'流年' + lnZhi + type + originalPosNames[pos] + targetZhi + '；流年支为' + direction.movingRole
-            + '，目标支为' + direction.targetRole + '。' + direction.note + '。',
+            + '，目标支为' + direction.targetRole + '。' + direction.note
+            + (duplicateSoftCompound ? '；该刑害与同一对地支的另一关系合并结算，不重复扣分' : '') + '。',
           isGood:direction.isGood, source:'流年', target:pos,
           movingRole:direction.movingRole, targetRole:direction.targetRole
         });
-        if (!duplicateHighPriority) {
+        if (!duplicateHighPriority && !duplicateSoftCompound) {
           if (direction.isGood === true) opportunityScore += 1;
-          else if (direction.isGood === false && type !== '六合') dangerScore += type === '六冲' ? 2 : 1;
+          else if (direction.isGood === false && type !== '六合') {
+            // 同一对地支同时成立刑、害时保留两个事实，但只结算一次；
+            // 日支是本人/关系与行动落点，复合扰动按 2 分结算，其他柱按 1 分。
+            dangerScore += hasSoftCompound && (type === '六害' || type === '刑')
+              ? (pos === 'day' ? 2 : 1)
+              : (type === '六冲' ? 2 : 1);
+          }
+          if (hasSoftCompound && (type === '六害' || type === '刑')) softCompoundScored = true;
         }
       });
+    });
+
+    // === 6c. 流年地支与大运地支的完整关系事实 ===
+    // 原局和大运是两个不同层次，流年同时击中同一地支时应记录“跨层放大”；
+    // 但同一关系不在两个层次各扣满分，只追加一级，避免重复扣分。
+    var dyBranchWx = window.DI_ZHI_WU_XING[dyZhi];
+    var annualDaYunPair = lnZhi + dyZhi;
+    var annualDaYunRelations = [];
+    if (CHONG[lnZhi] === dyZhi) annualDaYunRelations.push('六冲');
+    if (HAI[lnZhi] === dyZhi) annualDaYunRelations.push('六害');
+    if (XING_PAIRS[annualDaYunPair]) annualDaYunRelations.push('刑');
+    if (lnZhi === dyZhi && SELF_XING[lnZhi]) annualDaYunRelations.push('自刑');
+    if (ZHI_HE[annualDaYunPair]) annualDaYunRelations.push('六合');
+    if (ZHI_PO[annualDaYunPair]) annualDaYunRelations.push('六破');
+    var daYunSoftCompound = annualDaYunRelations.indexOf('六害') >= 0 && annualDaYunRelations.indexOf('刑') >= 0;
+    var daYunSoftScored = false;
+    annualDaYunRelations.forEach(function(type) {
+      var direction = interactionDirection(lnZhiWx, dyBranchWx, type);
+      var sameBranchInNatal = originalPositions.some(function(pos) { return bazi[pos].zhi === dyZhi; });
+      var duplicateCompoundClash = type === '六冲' && stemControlsEither(lnGanWx, dyGanWx);
+      var duplicateSoft = daYunSoftCompound && (type === '六害' || type === '刑') && daYunSoftScored;
+      triggers.push({
+        type:type, severity:type === '六冲' ? 'high' : 'medium',
+        detail:'流年' + lnZhi + type + '大运' + dyZhi + '；流年支为' + direction.movingRole
+          + '，大运支为' + direction.targetRole + '。' + direction.note
+          + (sameBranchInNatal ? '；该支同时见于原局，属于岁、运、局跨层放大，仅追加一级影响，不重复完整结算' : '')
+          + (duplicateCompoundClash ? '；天克地冲已在高优先级条目结算，此处只保留地支事实' : '')
+          + (duplicateSoft ? '；该刑害与同一对地支的另一关系合并结算，不重复扣分' : '') + '。',
+        isGood:direction.isGood, source:'岁运', target:'dayun',
+        movingRole:direction.movingRole, targetRole:direction.targetRole
+      });
+      if (!duplicateCompoundClash && !duplicateSoft && type !== '六合') {
+        if (direction.isGood === true) opportunityScore += sameBranchInNatal ? 0.5 : 1;
+        else if (direction.isGood === false) dangerScore += sameBranchInNatal ? 1 : (type === '六冲' ? 2 : 1);
+        if (daYunSoftCompound && (type === '六害' || type === '刑')) daYunSoftScored = true;
+      }
     });
 
     function addAnnualGroup(groups, fullType, halfType, requireMiddle) {
@@ -1598,8 +1645,13 @@
       groups.forEach(function(group) {
         if (group.slice(0,3).indexOf(lnZhi) < 0) return;
         var members = group.slice(0,3), foundBefore = members.filter(function(z){ return before.indexOf(z) >= 0; });
-        var formed = foundBefore.length >= 2;
-        var half = !formed && foundBefore.length === 1;
+        // 流年只有带来“原先缺失的新成员”才能补成合会。若该支原局/大运已经存在，
+        // 再逢同支只是重复加深，不能把已有的两支误报为三合/三会齐全。
+        var annualAddsMissingMember = before.indexOf(lnZhi) < 0;
+        if (!annualAddsMissingMember) return;
+        var foundAfter = members.filter(function(z){ return before.indexOf(z) >= 0 || z === lnZhi; });
+        var formed = foundBefore.length === 2 && foundAfter.length === 3;
+        var half = !formed && foundBefore.length === 1 && foundAfter.length === 2;
         if (half && requireMiddle) half = members.indexOf(lnZhi) === 1 || foundBefore.indexOf(members[1]) >= 0;
         if (half && !requireMiddle) half = Math.abs(members.indexOf(lnZhi) - members.indexOf(foundBefore[0])) === 1;
         if (!formed && !half) return;
@@ -1613,16 +1665,56 @@
         });
         if (formed && isGood === true) opportunityScore += 2;
         if (formed && isGood === false) dangerScore += 2;
+        // 半合/半会仍不是完整成局；但若明确牵向原局忌神，可作为低一级风险计一次。
+        if (half && formedRole === '忌神') dangerScore += 1;
       });
     }
     addAnnualGroup(SAN_HE, '三合局', '半合', true);
     addAnnualGroup(SAN_HUI, '三会方', '半会', false);
 
     // === 7. 伏吟 / 地支重复 ===
-    if (lnGan === dg && lnZhi === dz) {
-      triggers.push({ type: '伏吟', severity: 'medium', detail: '流年' + lnGan + lnZhi + '与日柱完全相同，属于日柱伏吟，既有议题容易重复或加深。', isGood: false });
-    } else if (lnZhi === dz) {
-      triggers.push({ type: '地支重复', severity: 'low', detail: '流年地支与日支同为' + lnZhi + '，属于地支重复，并非整柱伏吟。', isGood: null });
+    // 四柱逐柱核对：整柱相同才叫伏吟；只同一支仅记录重复，不冒充整柱伏吟。
+    originalPositions.forEach(function(pos) {
+      var pillar = bazi[pos];
+      if (lnGan === pillar.gan && lnZhi === pillar.zhi) {
+        triggers.push({
+          type:'伏吟', severity:'medium', target:pos, isGood:null,
+          detail:'流年' + lnGan + lnZhi + '与' + originalPosNames[pos] + pillar.gan + pillar.zhi + '完全相同，属于' + originalPosNames[pos] + '伏吟，既有议题容易重复或加深；伏吟本身表示放大，不单独断吉凶。'
+        });
+      } else if (lnZhi === pillar.zhi) {
+        triggers.push({
+          type:'地支重复', severity:'low', target:pos, isGood:null,
+          detail:'流年地支与' + originalPosNames[pos] + '同为' + lnZhi + '，属于地支重复，并非整柱伏吟；表示该位置的既有议题加深。'
+        });
+      }
+    });
+
+    // === 7b. 驿马与行动风险复合触发 ===
+    // 以年支、日支分别取驿马。驿马只代表移动变化，不单独论吉凶；
+    // 只有同时刑、害或冲动日支时，才提高出行/驾驶场景的风险提示。
+    var YI_MA = {
+      '申':'寅','子':'寅','辰':'寅',
+      '寅':'申','午':'申','戌':'申',
+      '巳':'亥','酉':'亥','丑':'亥',
+      '亥':'巳','卯':'巳','未':'巳'
+    };
+    var yiMaSources = [];
+    if (YI_MA[bazi.year.zhi] === lnZhi) yiMaSources.push('年支');
+    if (YI_MA[bazi.day.zhi] === lnZhi) yiMaSources.push('日支');
+    if (yiMaSources.length) {
+      triggers.push({
+        type:'驿马', severity:'medium', source:'流年', isGood:null,
+        detail:'流年' + lnZhi + '触发' + yiMaSources.join('、') + '所取驿马，移动、出行、换环境或节奏加快的议题更明显；驿马本身不直接断吉凶。'
+      });
+      var yiMaDayPair = lnZhi + dz;
+      var yiMaDisturbsDay = CHONG[lnZhi] === dz || HAI[lnZhi] === dz || !!XING_PAIRS[yiMaDayPair];
+      if (yiMaDisturbsDay) {
+        triggers.push({
+          type:'驿马逢日支受扰', severity:'high', source:'流年', target:'day', isGood:false,
+          detail:'流年驿马同时冲、刑或害到日支，移动与个人行动落点叠加受扰；出行、驾驶、运动或快速变化场景的风险会上升，宜主动降低速度并留意交通安全，但不等于必然发生事故。'
+        });
+        dangerScore += 3;
+      }
     }
 
     // === 8. 综合判词 ===

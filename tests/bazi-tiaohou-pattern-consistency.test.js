@@ -295,7 +295,8 @@ test('建禄财星藏支未透时披露真实位置而不写成无财官', () =>
 test('七杀格把透干伤官计入制杀证据但不改变极弱盘破格状态', () => {
   const calculator = loadCalculator();
   const chart = calculator.buildFromPillars(
-    pillars(['甲寅', '丁丑', '癸丑', '戊午']),
+    // 丑为杂气月，七杀本星己土须真实透干；丁财另置时干以保留财党杀条件。
+    pillars(['甲寅', '己丑', '癸丑', '丁巳']),
     'female'
   );
   const pattern = calculator.getPattern(chart);
