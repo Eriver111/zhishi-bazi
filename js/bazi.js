@@ -6473,7 +6473,9 @@ function finalizeYongJiResult(bazi, base, context) {
       elementReasons[imbalanceCause.primaryElement].reasons.unshift(imbalanceCause.primaryAction);
     }
     conditionalAuxiliaryElements.forEach(function(wx) {
-      if (!elementReasons[wx]) return;
+      if (!elementReasons[wx]) {
+        elementReasons[wx] = { role:'条件喜神', reasons:[presenceFor(wx)] };
+      }
       elementReasons[wx].conditionalRole = '条件辅助';
       elementReasons[wx].conditionalReason = conditionalAuxiliaryReason;
       elementReasons[wx].reasons.unshift(conditionalAuxiliaryReason);
@@ -6772,18 +6774,22 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var sealPressure = pressureOf(SHENG_WO);
   // “中和”即使分差略偏负也不应套用身弱病因；只有旺衰层明确落入偏弱/极弱才分型。
   var isWeakLevel = dmStr.level === '偏弱' || dmStr.level === '极弱';
+  // 两类压力非常接近时不能因零点几的浮动强行贴成单一病因。至少领先0.5，
+  // 才称“主导”；否则落入复合耗泄克，再由候选评分决定具体病药。
+  var dominanceMargin = 0.5;
+  var clearlyDominates = function(value, others) {
+    var runnerUp = Math.max.apply(Math, others);
+    return value >= 2.5 && value >= runnerUp && value - runnerUp >= dominanceMargin;
+  };
   var outputDrainDominant = isWeakLevel
     && (chengShi(WO_SHENG) || DI_ZHI_WU_XING[mz] === WO_SHENG)
-    && outputPressure >= 2.5
-    && outputPressure >= Math.max(wealthPressure, officerPressure);
+    && clearlyDominates(outputPressure, [wealthPressure, officerPressure]);
   var wealthDominant = isWeakLevel
     && (chengShi(WO_KE) || DI_ZHI_WU_XING[mz] === WO_KE)
-    && wealthPressure >= 2.5
-    && wealthPressure >= Math.max(outputPressure, officerPressure);
+    && clearlyDominates(wealthPressure, [outputPressure, officerPressure]);
   var officerDominant = isWeakLevel
     && (chengShi(KE_WO) || DI_ZHI_WU_XING[mz] === KE_WO)
-    && officerPressure >= 2.5
-    && officerPressure >= Math.max(outputPressure, wealthPressure);
+    && clearlyDominates(officerPressure, [outputPressure, wealthPressure]);
   var wealthOfficerCompound = isWeakLevel && !outputDrainDominant
     && wealthPressure >= 2.5 && officerPressure >= 2.5
     && Math.max(wealthPressure, officerPressure) >= outputPressure;
@@ -6821,7 +6827,9 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       supportingReason:'比劫可辅助增强日主承载，但不能替代印星化杀的主线', conditionalElements:[], conditionalReason:'',
       conclusion:KE_WO + '官杀为主要克身来源；单就病因层通常先取' + SHENG_WO + '印星化杀生身，' + TONG + '比劫辅助承载。食伤制杀只能在自身有根有力且不会继续泄弱日主时另行成立。'
     };
-  } else if (isWeakLevel && countMap[TONG] < 1.5 && countMap[SHENG_WO] < 1.5) {
+  } else if (isWeakLevel
+    && [outputPressure, wealthPressure, officerPressure].filter(function(value) { return value >= 2.5; }).length < 2
+    && countMap[TONG] < 1.5 && countMap[SHENG_WO] < 1.5) {
     weaknessCause = {
       type:'根气不足', title:'失令少根型身弱', primaryElement:null,
       primaryAction:'', supportingElements:[SHENG_WO,TONG],
@@ -7225,7 +7233,8 @@ function calcCandidateScores(bazi, dmStr, pattern) {
 // sn=0 走二级 deterministic：L1>0 弱喜 / L1<0 弱忌 / L1=0 按扶抑组兜底（见 c07ZeroTier）。
 // 仅作用于最终分类出口，不修改 candidateScores / S_need / 用神赢家。
 // ⚠️ 消费方契约（GPT P5-C07 终裁）：xiShen/jiShen 是「五行方向集合」（含弱档成员），强弱语义在
-// elementClassification（用神/喜神/弱喜/忌神/弱忌）。不得默认 xi 成员全是强喜、ji 成员全是强忌——
+// elementClassification（用神/喜神/弱喜/忌神/弱忌；病因层另可将其提升为条件喜神）。
+// 不得默认 xi 成员全是强喜、ji 成员全是强忌——
 // 需要强弱语义时查 elementClassification，不要反过来。
 function c07ElementTier(wx, sn, l1v, dmWx, isYong) {
   if (isYong) return '用神';
@@ -7322,6 +7331,9 @@ function getYongJi(bazi) {
     WX.forEach(function(wx) {
       elementClassification[wx] = c07ElementTier(wx, cs.SNeed[wx], cs.L1[wx], dmWx, wx === cs.yongWx);
     });
+    // 条件辅助若原先落在忌档，不能继续留在忌神列表与“可搭配使用”的说明互相打架，
+    // 故提升为独立分类；原本已属喜档者保留原级别，再由条件辅助字段说明使用边界。
+    var conditionalClassificationElements = ((cs.weaknessCause || cs.strongCause || {}).conditionalElements || []);
     if (forceWinterMetalFireYong) {
       cs.candidates.forEach(function(candidate) {
         if (candidate.wx === '火') candidate.role = '用神';
@@ -7330,6 +7342,17 @@ function getYongJi(bazi) {
         }
       });
     }
+    conditionalClassificationElements.forEach(function(wx) {
+      var promotedFromAdverse = elementClassification[wx] === '忌神' || elementClassification[wx] === '弱忌';
+      if (promotedFromAdverse) {
+        elementClassification[wx] = '条件喜神';
+      }
+      cs.candidates.forEach(function(candidate) {
+        if (promotedFromAdverse && candidate.wx === wx && candidate.role !== '用神') {
+          candidate.role = '条件喜神';
+        }
+      });
+    });
     xiShen = WX.filter(function(wx) { return elementClassification[wx] === '喜神'; })
       .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; })
       .concat(WX.filter(function(wx) { return elementClassification[wx] === '弱喜'; })
@@ -7345,6 +7368,9 @@ function getYongJi(bazi) {
       + (yongReasons.length > 0 ? '：' + yongReasons.join('；') : '。')
       + ' 喜：' + [cs.yongWx].concat(xiShen).join('、')
       + '。忌：' + (jiShen.length > 0 ? jiShen.join('、') : '无') + '。';
+    if (conditionalClassificationElements.length) {
+      reasoning += ' 条件辅助：' + conditionalClassificationElements.join('、') + '不可单独作为普通喜神增补，须按病因说明搭配使用。';
+    }
     if (tiaoHouNote) reasoning += ' 调候辅助：' + tiaoHouNote;
   }
 

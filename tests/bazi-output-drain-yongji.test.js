@@ -32,15 +32,33 @@ test('食伤旺导致身弱时取印制食伤生身，不再机械补比劫', ()
     assert.deepEqual(Array.from(result.yongShen), [item.seal], item.gz.join(' '));
     assert.ok(result.xiShen.includes(item.seal), item.gz.join(' '));
     assert.ok(!result.xiShen.includes(item.peer), item.gz.join(' '));
-    assert.ok(result.jiShen.includes(item.peer), item.gz.join(' '));
+    assert.ok(!result.jiShen.includes(item.peer), item.gz.join(' '));
+    assert.equal(result.elementClassification[item.peer], '条件喜神', item.gz.join(' '));
+    assert.equal(result.candidateScores.find(candidate => candidate.wx === item.peer).role, '条件喜神', item.gz.join(' '));
     assert.deepEqual(Array.from(result.conditionalAuxiliaryElements), [item.peer], item.gz.join(' '));
     assert.match(result.conditionalAuxiliaryReason, /并非纯忌.*印星.*少量配合/, item.gz.join(' '));
+    assert.match(result.reasoning, new RegExp('条件辅助：' + item.peer), item.gz.join(' '));
     assert.equal(result.elementReasons[item.peer].conditionalRole, '条件辅助', item.gz.join(' '));
     assert.equal(result.weaknessCause.type, '食伤泄身', item.gz.join(' '));
     assert.ok(result.evidence.some(row => row.category === '取用病因'), item.gz.join(' '));
     assert.match(result.primaryReason, /印星制食伤并生身/, item.gz.join(' '));
     assert.match(result.primaryReason, /比劫并非纯忌.*印星制泄后少量搭配/, item.gz.join(' '));
   }
+});
+
+test('食伤与官杀压力接近时按复合型处理，火不再被写成纯忌', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['癸未', '壬戌', '丁卯', '庚子']), 'male');
+  const audited = calculator.calcDayMasterStrength(chart, { audit:true });
+  const result = calculator.getYongJi(chart);
+
+  assert.equal(audited.score, 26);
+  assert.equal(result.weaknessCause.type, '复合耗泄克');
+  assert.ok(Math.abs(result.weaknessCause.outputPressure - result.weaknessCause.officerPressure) < 0.5);
+  assert.deepEqual(Array.from(result.yongShen), ['木']);
+  assert.ok(result.xiShen.includes('火'));
+  assert.ok(!result.jiShen.includes('火'));
+  assert.equal(result.elementClassification['火'], '喜神');
 });
 
 test('财官并重与官杀主导的身弱分别按病因取用', () => {
