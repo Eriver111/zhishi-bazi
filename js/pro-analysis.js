@@ -250,12 +250,36 @@ function renderPattern(bazi,facts){
       '<p style="color:var(--tx);font-size:11px;line-height:1.5;margin:8px 0">'+p.desc+'</p>';
   }
 
+  function renderElementRoleLedger(yj){
+    var ledger=yj&&yj.elementRoleLedger;if(!ledger||!ledger.entries||!ledger.entries.length)return'';
+    var colors={木:'#4f9857',火:'#c8543d',土:'#a77b2b',金:'#9a7a31',水:'#397eaf'};
+    var esc=function(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]})};
+    var h='<div data-element-role-ledger="v2" data-fortune-guidance="v1" style="border:1px solid var(--bd);border-radius:9px;overflow:hidden"><div style="padding:9px 11px;border-left:3px solid var(--gold);background:rgba(201,168,76,.08)"><b style="font-size:11px;color:var(--tx)">喜用忌与行运方向</b><div style="font-size:9px;line-height:1.55;color:var(--tx3);margin-top:2px">先由原局定方向，具体大运再按干支关系复核。</div></div>';
+    ['用神','喜神','忌神'].forEach(function(role,index){
+      var items=ledger.entries.filter(function(item){return item.fortuneRole===role});
+      h+='<div style="padding:9px 10px;'+(index?'border-top:1px solid var(--bd);':'')+'"><div style="display:flex;align-items:flex-start;gap:8px"><b style="width:32px;flex:none;font-size:10px;color:'+(role==='忌神'?'#b7695d':'var(--gold-l)')+'">'+role+'</b><div style="flex:1">';
+      if(!items.length)h+='<span style="font-size:10px;color:var(--tx3)">—</span>';
+      items.forEach(function(item){h+='<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;'+(items.indexOf(item)?'margin-top:5px':'')+'"><span style="font-size:16px;font-weight:900;color:'+(colors[item.element]||'var(--gold-l)')+'">'+esc(item.element)+'</span>'+(item.useGodType?'<span style="font-size:8px;font-weight:700;color:var(--gold-l);padding:1px 5px;border:1px solid rgba(201,168,76,.28);border-radius:8px">'+esc(item.useGodType)+'</span>':'')+'<span style="font-size:9px;color:var(--tx2)">'+esc(item.fortuneDirection)+'</span><span style="margin-left:auto;font-size:8px;color:var(--tx3)">'+esc(item.fortuneLevel)+'</span></div>'});
+      h+='</div></div></div>';
+    });
+    h+='<details style="border-top:1px solid var(--bd);background:rgba(201,168,76,.025)"><summary style="padding:8px 10px;font-size:9px;color:var(--tx3);cursor:pointer">查看原局依据与具体条件</summary><div style="border-top:1px solid var(--bd)">';
+    ledger.entries.forEach(function(item,index){
+      var functionText=(item.functions||[]).slice(0,2).join('；')||'暂未形成明确作用链';
+      var riskText=(item.risks||[]).slice(0,1).join('；');
+      var conditionText=(item.conditions||[]).slice(0,1).join('；');
+      h+='<div style="padding:9px 10px;'+(index?'border-top:1px solid var(--bd);':'')+'"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:16px;font-weight:900;color:'+(colors[item.element]||'var(--gold-l)')+'">'+esc(item.element)+'</span><b style="font-size:9px;color:var(--tx)">'+esc(item.relation)+'</b>'+(item.useGodType?'<b style="font-size:8px;color:var(--gold-l)">'+esc(item.useGodType)+'</b>':'')+'<span style="font-size:8px;color:var(--tx3)">'+esc(item.currentState)+' · '+esc(item.natalRole)+'</span></div><div style="font-size:9px;line-height:1.55;color:var(--tx2);margin-top:4px"><b>原局作用：</b>'+esc(functionText)+'</div>'+(riskText?'<div style="font-size:9px;line-height:1.55;color:#b77a70;margin-top:2px"><b>注意：</b>'+esc(riskText)+'</div>':'')+'<div style="font-size:9px;line-height:1.55;color:var(--tx2);margin-top:3px"><b style="color:var(--gold-l)">行运复核：</b>'+esc(item.fortuneReason)+(conditionText?' '+esc(conditionText):'')+'</div></div>';
+    });
+    h+='</div></details><div style="padding:7px 10px;border-top:1px solid var(--bd);font-size:8px;line-height:1.5;color:var(--tx3)">'+esc(ledger.principle)+'</div></div>';
+    return h;
+  }
+
   // ============ 喜用忌神 ============
   function renderXiyong(bazi,facts){
     var c=document.getElementById('xiyongAnalysis');if(!c)return;
     try{
       var yj=facts&&facts.yongJi?facts.yongJi:(typeof BaZiCalculator!=='undefined'&&BaZiCalculator.getYongJi?BaZiCalculator.getYongJi(bazi):null);
       if(!yj||!yj.yongShen){c.innerHTML='<p>喜用忌神数据暂不可用</p>';return}
+      if(yj.elementRoleLedger&&yj.elementRoleLedger.entries&&yj.elementRoleLedger.entries.length){c.innerHTML=renderElementRoleLedger(yj);return}
       var wxColors={木:'#6db86d',火:'#e07050',土:'#c9a84c',金:'#b99a54',水:'#5b9fd4'};
       var h='<div style="font-size:10px;color:var(--tx2);line-height:1.6;margin-bottom:9px"><b style="color:var(--gold-l)">取用方法：</b>'+(yj.method||'扶抑为主')+'<br>'+(yj.primaryReason||yj.reasoning||'')+'</div>';
       var groups=[['用神',yj.yongShen],['喜神',yj.xiShen]];
@@ -291,10 +315,14 @@ function renderPattern(bazi,facts){
     var f=facts&&facts.fortuneInteraction?facts.fortuneInteraction:null;
     if(!f){c.innerHTML='<p style="font-size:11px;color:var(--tx3);margin:0">岁运联动数据暂不可用</p>';return}
     var roleColor={用神:'#8f6d24',喜神:'#4d7c62',忌神:'#a45b4f',中性:'#777'};
-    var h='<div style="font-size:11px;color:var(--tx);line-height:1.7"><b>'+f.year+'年 '+f.yearPillar+'流年</b> · '+(f.shiShen||'十神待定')+' <span style="display:inline-block;margin-left:4px;padding:1px 8px;border-radius:10px;color:#fff;background:'+(roleColor[f.triggeredRole]||'#777')+'">'+f.triggeredRole+'</span></div>';
-    h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0">'+f.triggeredReason+'</p>';
-    if(f.currentDaYun){h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0"><b style="color:var(--gold-l)">当前大运：</b>'+f.currentDaYun.gan+f.currentDaYun.zhi+'，运干'+f.currentDaYun.ganRole+'、运支'+f.currentDaYun.zhiRole+'。'+f.currentDaYun.triggeredReason+'</p>'}
+    var verdictColor={大吉:'#3f7b59',偏吉:'#5f8b70',中性:'#777',偏凶:'#a45b4f',大凶:'#91453d',待复核:'#777'};
+    var verdictPrefix=f.currentDaYun?'复核':'基础';
+    var h='<div style="font-size:11px;color:var(--tx);line-height:1.7"><b>'+f.year+'年 '+f.yearPillar+'流年</b> · '+(f.shiShen||'十神待定')+' <span style="display:inline-block;margin-left:4px;padding:1px 8px;border-radius:10px;color:#fff;background:'+(verdictColor[f.verificationVerdict]||'#777')+'">'+verdictPrefix+' '+(f.verificationVerdict||'待复核')+'</span></div>';
+    h+='<div style="font-size:10px;color:var(--tx2);line-height:1.65;margin:6px 0 0"><b style="color:var(--gold-l)">原局基础方向：</b>天干'+(f.triggeredElement||'—')+'为<span style="color:'+(roleColor[f.triggeredRole]||'#777')+'">'+(f.triggeredRole||'中性')+'</span> · '+(f.triggeredLevel||'中性双向')+'；地支'+(f.branchTriggeredElement||'—')+'为<span style="color:'+(roleColor[f.branchTriggeredRole]||'#777')+'">'+(f.branchTriggeredRole||'中性')+'</span> · '+(f.branchTriggeredLevel||'中性双向')+'。</div>';
+    h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:5px 0 0"><b>本年验证：</b>'+(f.verificationSummary||f.triggeredReason)+'</p>';
+    if(f.currentDaYun){h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0"><b style="color:var(--gold-l)">当前大运：</b>'+f.currentDaYun.gan+f.currentDaYun.zhi+'，运干'+f.currentDaYun.ganRole+'、运支'+f.currentDaYun.zhiRole+(f.currentDaYun.verdict?'，复核为<b>'+f.currentDaYun.verdict+'</b>':'')+'。'+(f.currentDaYun.summary||f.currentDaYun.triggeredReason)+'</p>'}
     else if(f.dyInfo){h+='<p style="font-size:10px;color:var(--tx2);line-height:1.6;margin:6px 0 0">'+f.dyInfo+'</p>'}
+    h+='<p style="font-size:9px;color:var(--tx3);line-height:1.55;margin:5px 0 0">'+(f.verificationBasis||'十神只说明事项类型，不直接决定吉凶。')+'</p>';
     c.innerHTML=h;
   }
 

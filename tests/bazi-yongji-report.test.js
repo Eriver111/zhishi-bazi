@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260906a/, `${page} must load the auditable strength core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260906f/, `${page} must load the auditable strength core bundle`);
   }
 });
 
@@ -39,6 +39,9 @@ test('只保留一个核心用神，且用神属于喜神、忌神不与喜用�
     assert.equal(new Set(result.xiShen).size, result.xiShen.length);
     assert.equal(new Set(result.yongShen).size, result.yongShen.length);
     assert.equal(new Set(result.jiShen).size, result.jiShen.length);
+    assert.equal(result.yongShenSource.element, result.yongShen[0]);
+    assert.ok(['扶抑用神', '格局用神', '格局救应用神', '调候用神', '顺势用神'].includes(result.yongShenSource.primaryType));
+    assert.match(result.yongShenSource.label, /用神/);
   });
 });
 
@@ -190,5 +193,8 @@ test('专业报告包含岁运与喜用忌的联动结论', () => {
   assert.ok(facts.fortuneInteraction);
   assert.match(facts.fortuneInteraction.yearPillar, /^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
   assert.ok(['用神', '喜神', '忌神', '中性'].includes(facts.fortuneInteraction.triggeredRole));
+  assert.ok(['用神', '喜神', '忌神', '中性'].includes(facts.fortuneInteraction.branchTriggeredRole));
+  assert.ok(['大吉', '偏吉', '中性', '偏凶', '大凶', '待复核'].includes(facts.fortuneInteraction.verificationVerdict));
+  assert.match(facts.fortuneInteraction.verificationBasis, /原局喜用忌方向/);
   assert.ok(facts.fortuneInteraction.triggeredReason.length >= 8);
 });

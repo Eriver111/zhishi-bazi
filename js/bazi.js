@@ -4851,18 +4851,36 @@ function analyzeWealth(bazi, gender, yongJi) {
 
 // ==================== 大运流年运势分析 ====================
 function classifyFortuneElement(wx, yongJi, sourceLabel) {
-    var role = '中性';
-    if (yongJi && (yongJi.yongShen || []).indexOf(wx) >= 0) role = '用神';
-    else if (yongJi && (yongJi.xiShen || []).indexOf(wx) >= 0) role = '喜神';
-    else if (yongJi && (yongJi.jiShen || []).indexOf(wx) >= 0) role = '忌神';
+    var ledgerEntry = yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries
+        ? yongJi.elementRoleLedger.entries.filter(function(item) { return item.element === wx; })[0]
+        : null;
+    var role = ledgerEntry && ledgerEntry.fortuneRole ? ledgerEntry.fortuneRole : '中性';
+    if (role === '中性' && yongJi && (yongJi.yongShen || []).indexOf(wx) >= 0) role = '用神';
+    else if (role === '中性' && yongJi && (yongJi.xiShen || []).indexOf(wx) >= 0) role = '喜神';
+    else if (role === '中性' && yongJi && (yongJi.jiShen || []).indexOf(wx) >= 0) role = '忌神';
+    var level = ledgerEntry && ledgerEntry.fortuneLevel ? ledgerEntry.fortuneLevel
+        : role === '用神' ? '核心有利'
+        : role === '喜神' ? '总体有利'
+        : role === '忌神' ? '总体不利' : '中性双向';
+    var scoreMap = { '核心有利':3, '总体有利':2, '条件有利':1, '中性双向':0, '总体不利':-2 };
+    var score = Object.prototype.hasOwnProperty.call(scoreMap, level) ? scoreMap[level] : 0;
     var reasons = yongJi && yongJi.elementReasons && yongJi.elementReasons[wx]
         ? (yongJi.elementReasons[wx].reasons || []) : [];
     var prefix = (sourceLabel || '岁运五行') + wx;
     var detail = role === '中性'
         ? prefix + '不在当前喜用忌三类核心范围内，需结合刑冲合害观察实际作用。'
-        : prefix + '落在命局' + role + '范围。';
-    if (reasons.length) detail += reasons[0];
-    return { element:wx, role:role, reason:detail };
+        : prefix + '落在命局' + role + '范围，基础方向为“' + level + '”。';
+    if (ledgerEntry && ledgerEntry.fortuneReason) detail += ledgerEntry.fortuneReason;
+    else if (reasons.length) detail += reasons[0];
+    return {
+        element:wx,
+        role:role,
+        level:level,
+        score:score,
+        isFavorable:score > 0,
+        direction:ledgerEntry && ledgerEntry.fortuneDirection ? ledgerEntry.fortuneDirection : '',
+        reason:detail
+    };
 }
 
 function analyzeFortune(bazi, gender, yongJi) {
@@ -4918,7 +4936,7 @@ function analyzeFortune(bazi, gender, yongJi) {
     const wangLevel = (yongJi && yongJi.dayMasterLevel) ? yongJi.dayMasterLevel : '偏强';
     const isStrong = (wangLevel === '极强' || wangLevel === '偏强');
 
-    // 身强喜克泄耗（财/官杀/食伤）为好运；身弱喜生扶（印/比劫）为好运
+    // 兼容旧数据时才退回旺衰通则；正常情况以原局喜用忌及五行行运验证为准。
     const favorableSet = yongJi && yongJi.xiShen && yongJi.xiShen.length
         ? new Set(yongJi.xiShen)
         : (isStrong
@@ -4931,8 +4949,11 @@ function analyzeFortune(bazi, gender, yongJi) {
 
     const yearResults = years.map(yr => {
         const yrWX = yr.ganWX;
-        const isFavorable = favorableSet.has(yrWX);
         const trigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yr.gan);
+        const branchTrigger = classifyFortuneElement(yr.zhiWX, yongJi, '流年地支' + yr.zhi);
+        let isFavorable = yongJi && yongJi.elementRoleLedger
+            ? (trigger.score * 0.45 + branchTrigger.score * 0.55) > 0
+            : favorableSet.has(yrWX);
         const ss = yr.shiShen;
 
         // 冲克检测
@@ -4965,6 +4986,20 @@ function analyzeFortune(bazi, gender, yongJi) {
             }
         });
 
+        // 若完整岁运引擎可用，以“原局方向 + 本年实际干支互动”的复核结果为准。
+        // 十神只负责说明可能发生在哪类事情上，不再直接决定这一年吉凶。
+        var annualVerification = null;
+        try {
+            if (currentDY && typeof window !== 'undefined' && window.BaZiChain && window.BaZiChain.analyzeLiuNian) {
+                annualVerification = window.BaZiChain.analyzeLiuNian(
+                    bazi,
+                    { gan:currentDY.gan, zhi:currentDY.zhi },
+                    { gan:yr.gan, zhi:yr.zhi },
+                    yongJi
+                );
+            }
+        } catch (e) {}
+
         // 流年天干十神解读
         const ssNotes = {
             '正官': '事业上责任加重，压力与机遇并存——利于求职、晋升、考试。也是适合结婚的好年份。需注意职场竞争，保持低调谦逊。',
@@ -4982,13 +5017,25 @@ function analyzeFortune(bazi, gender, yongJi) {
         let ssNote = ssNotes[ss] || '运势总体平稳，日常工作生活按部就班即可，没有大起大落。';
 
         let overallLabel, overallColor;
-        if (isFavorable && riskLevel <= 0) {
+        var verificationScore = annualVerification && typeof annualVerification.verifiedScore === 'number'
+            ? annualVerification.verifiedScore
+            : trigger.score * 0.45 + branchTrigger.score * 0.55 - Math.max(0, riskLevel) * 0.55;
+        var verifiedFavorable = annualVerification
+            ? (annualVerification.verdict === '大吉' || annualVerification.verdict === '偏吉')
+            : (yongJi && yongJi.elementRoleLedger ? verificationScore > 0 : isFavorable);
+        if (annualVerification && annualVerification.verdict === '偏凶') {
+            overallLabel = '偏紧';
+            overallColor = '#E57373';
+        } else if (annualVerification && annualVerification.verdict === '中性') {
+            overallLabel = '平稳';
+            overallColor = '#a29bfe';
+        } else if (verifiedFavorable && riskLevel <= 0) {
             overallLabel = '利好';
             overallColor = '#81C784';
         } else if (riskLevel >= 3) {
             overallLabel = '注意';
             overallColor = '#F44336';
-        } else if (isFavorable) {
+        } else if (verifiedFavorable) {
             overallLabel = '较好';
             overallColor = '#feca57';
         } else {
@@ -5026,7 +5073,7 @@ function analyzeFortune(bazi, gender, yongJi) {
         }
 
         // 凶煞补充
-        if (!isFavorable && riskLevel >= 2) {
+        if (!verifiedFavorable && riskLevel >= 2) {
             cautions.push('这一年整体运势偏紧，遇事多给自己留余地为好。出行注意安全，证件票据妥善保管。');
         }
 
@@ -5037,7 +5084,16 @@ function analyzeFortune(bazi, gender, yongJi) {
             shiShen: ss,
             triggeredElement: trigger.element,
             triggeredRole: trigger.role,
+            triggeredLevel: trigger.level,
             triggeredReason: trigger.reason,
+            branchTriggeredElement: branchTrigger.element,
+            branchTriggeredRole: branchTrigger.role,
+            branchTriggeredLevel: branchTrigger.level,
+            fortuneVerificationScore: Math.round(verificationScore * 100) / 100,
+            verificationVerdict: annualVerification ? annualVerification.verdict : (verifiedFavorable ? '偏吉' : '中性'),
+            verificationSummary: annualVerification ? annualVerification.summary : '',
+            verificationBasis: annualVerification ? annualVerification.verificationBasis : '原局喜用忌方向 + 流年干支与原局关系',
+            verifiedFavorable: verifiedFavorable,
             isFavorable: isFavorable,
             riskText: riskText,
             oppText: oppText,
@@ -5065,6 +5121,19 @@ function analyzeFortune(bazi, gender, yongJi) {
             ganRole: ganTrigger.role, zhiRole: zhiTrigger.role,
             triggeredReason: ganTrigger.reason + zhiTrigger.reason
         };
+        try {
+            if (typeof window !== 'undefined' && window.BaZiChain && window.BaZiChain.analyzeFortune) {
+                var currentDyVerification = window.BaZiChain.analyzeFortune(bazi, [currentDY], yongJi).periods[0];
+                if (currentDyVerification) {
+                    currentDaYun.verdict = currentDyVerification.verdict;
+                    currentDaYun.natalDirectionScore = currentDyVerification.natalDirectionScore;
+                    currentDaYun.interactionAdjustment = currentDyVerification.interactionAdjustment;
+                    currentDaYun.verifiedScore = currentDyVerification.verifiedScore;
+                    currentDaYun.verificationBasis = currentDyVerification.verificationBasis;
+                    currentDaYun.summary = currentDyVerification.summary;
+                }
+            }
+        } catch (e) {}
     }
 
     return { years: yearResults, dayGan: DAY, dyInfo: dyInfo, currentDaYun: currentDaYun };
@@ -5096,8 +5165,11 @@ function analyzeThisYear(bazi, gender, yongJi) {
             : [helpWX, sameWX]);
 
     var yrWX = WU_XING[yp.gan];
-    var isFavorable = favorableSet.indexOf(yrWX) >= 0;
     var yearTrigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yp.gan);
+    var yearBranchTrigger = classifyFortuneElement(DI_ZHI_WU_XING[yp.zhi], yongJi, '流年地支' + yp.zhi);
+    var isFavorable = yongJi && yongJi.elementRoleLedger
+        ? (yearTrigger.score * 0.45 + yearBranchTrigger.score * 0.55) > 0
+        : favorableSet.indexOf(yrWX) >= 0;
 
     // 冲合检测
     var CHONG_MAP = { '子午':true,'午子':true,'丑未':true,'未丑':true,'寅申':true,'申寅':true,'卯酉':true,'酉卯':true,'辰戌':true,'戌辰':true,'巳亥':true,'亥巳':true };
@@ -5169,31 +5241,45 @@ function analyzeThisYear(bazi, gender, yongJi) {
     if (ss === '伤官' || ss === '偏印') healthExtra.push('用脑过度容易头晕、注意力不集中，每隔一小时站起来走走能缓解很多。');
     if (chongPillars.length > 0) healthExtra.push('冲太岁的一年身体容易出现小意外——开车慢一点，运动前热身要充分，别太拼。');
 
-    // 机会
+    // 机会方向必须等岁运局三方复核完成后再写，不能先按十神名称套吉凶。
     var opportunities = [];
-    if (isFavorable || ss === '正财' || ss === '正官' || ss === '正印' || ss === '食神') {
-        opportunities.push('事业上今年是稳步前进的一年——该争取的要争取，别太谦虚。上半年适合定计划，下半年适合执行。');
-    }
-    if (ss === '偏财' || ss === '伤官' || ss === '食神') {
-        opportunities.push('今年适合拓展副业或者学一门新技能——你的创造力在这一年会被激活，学到的东西未来能变现。');
-    }
-    if (hePillars.length > 0) {
-        opportunities.push('今年你的人缘运不错，容易遇到贵人——多出去走动、参加行业交流，你需要的帮助会从这些人里出现。');
-    }
-    if (ss === '七杀' || ss === '劫财') {
-        opportunities.push('虽然今年压力不小，但危机也是转机——很多人在这种年份反而被逼出了潜力。创业者、自由职业者尤其有机会弯道超车。');
-    }
-    if (isFavorable) {
-        opportunities.push('今年整体是利好年，流年五行跟你比较合——做什么比别人顺手一些。趁势而为，别浪费好运气。');
-    } else {
-        opportunities.push('今年运势偏紧，适合修炼内功——把基础打牢、把手里已有的资源用好，别急着扩张。积蓄力量比盲目冲刺更重要。');
-    }
-    if (opportunities.length === 0) opportunities.push('今年稳扎稳打就是最好的策略。日常工作生活按节奏来，别给自己太大压力。');
 
     var thisYearDaYunInfo = '';
     var thisYearDaYun = null;
     if (bazi.birthDate && bazi.birthDate.year) {
         try { var fortuneData = analyzeFortune(bazi, gender, yongJi); thisYearDaYunInfo = fortuneData.dyInfo || ''; thisYearDaYun = fortuneData.currentDaYun || null; } catch(e) {}
+    }
+
+    var annualVerification = null;
+    try {
+        if (thisYearDaYun && typeof window !== 'undefined' && window.BaZiChain && window.BaZiChain.analyzeLiuNian) {
+            annualVerification = window.BaZiChain.analyzeLiuNian(
+                bazi,
+                { gan:thisYearDaYun.gan, zhi:thisYearDaYun.zhi },
+                { gan:yp.gan, zhi:yp.zhi },
+                yongJi
+            );
+        }
+    } catch(e) {}
+    var verifiedFavorable = annualVerification
+        ? (annualVerification.verdict === '大吉' || annualVerification.verdict === '偏吉')
+        : isFavorable;
+    isFavorable = verifiedFavorable;
+
+    if (verifiedFavorable) {
+        opportunities.push('经原局喜用方向与本年实际干支关系复核，今年有利力量占上风。适合把握已有资源稳步推进，但仍要处理被冲、刑、合住的具体环节。');
+        if (ss === '偏财' || ss === '伤官' || ss === '食神') {
+            opportunities.push('本年十神把机会主题引向副业、表达、技能或成果转化；这是事项方向，能否兑现仍以岁运复核结果和现实条件为准。');
+        } else {
+            opportunities.push('事业上可以主动争取，但先从确定性高、资源已经具备的事项开始。');
+        }
+    } else if (annualVerification && annualVerification.verdict === '中性') {
+        opportunities.push('本年基础方向与具体干支互动互有抵消，适合边做边验证，不宜只因某个十神听起来吉利就盲目扩张。');
+    } else {
+        opportunities.push('经原局喜用方向与本年实际干支关系复核，今年阻力偏多。适合先处理结构冲突、守住已有成果，再寻找局部可借力的环节。');
+    }
+    if (hePillars.length > 0) {
+        opportunities.push('合象说明人际、合作或关系议题更容易被引动；它不天然等于贵人或顺利，是否形成助力仍看所合五行与全局喜忌。');
     }
 
     return {
@@ -5203,6 +5289,14 @@ function analyzeThisYear(bazi, gender, yongJi) {
         triggeredElement: yearTrigger.element,
         triggeredRole: yearTrigger.role,
         triggeredReason: yearTrigger.reason,
+        triggeredLevel: yearTrigger.level,
+        branchTriggeredElement: yearBranchTrigger.element,
+        branchTriggeredRole: yearBranchTrigger.role,
+        branchTriggeredLevel: yearBranchTrigger.level,
+        verificationVerdict: annualVerification ? annualVerification.verdict : '待复核',
+        verificationScore: annualVerification ? annualVerification.verifiedScore : Math.round((yearTrigger.score * 0.45 + yearBranchTrigger.score * 0.55) * 100) / 100,
+        verificationSummary: annualVerification ? annualVerification.summary : '未定位当前大运，仅显示原局给出的流年基础方向。',
+        verificationBasis: annualVerification ? annualVerification.verificationBasis : '原局喜用忌方向；当前大运未定位，暂未完成岁运局三方复核；十神只说明事项类型，不直接决定吉凶',
         isFavorable: isFavorable,
         story: story,
         chongWarnings: chongWarnings,
@@ -6350,6 +6444,221 @@ function normalizeYongJiLists(xiShen, yongShen, jiShen) {
   return { xiShen: xi, yongShen: yong, jiShen: ji };
 }
 
+/**
+ * 原局五行角色账本 v2
+ *
+ * 喜用忌是从原局得出的行运基础方向，不能由十神名称机械替代。本账本同时记录
+ * “原局正在做什么”和“该五行进入岁运时通常向好还是向坏”；具体干支再做二次复核。
+ * 旧 yongShen/xiShen/jiShen 字段继续保留，供既有报告、大运和存量数据兼容。
+ */
+function buildElementRoleLedger(bazi, lists, elementClassification, context) {
+  var WX = ['木','火','土','金','水'];
+  var positions = ['year','month','day','hour'];
+  var positionNames = { year:'年柱', month:'月柱', day:'日柱', hour:'时柱' };
+  var depthNames = ['本气','中气','余气'];
+  var dayWx = WU_XING[bazi.day.gan];
+  var dayIndex = WX.indexOf(dayWx);
+  var roleElements = {
+    peer:dayWx,
+    output:WX[(dayIndex + 1) % 5],
+    wealth:WX[(dayIndex + 2) % 5],
+    officer:WX[(dayIndex + 3) % 5],
+    seal:WX[(dayIndex + 4) % 5]
+  };
+  var relationNames = {};
+  relationNames[roleElements.peer] = '比劫';
+  relationNames[roleElements.output] = '食伤';
+  relationNames[roleElements.wealth] = '财星';
+  relationNames[roleElements.officer] = '官杀';
+  relationNames[roleElements.seal] = '印星';
+  var pattern = context.pattern || {};
+  var isEstablishedInjurySeal = pattern.name === '伤官配印格' && pattern.status === '成格';
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var candidateMap = {};
+  (((context.candidateScores || {}).candidates) || []).forEach(function(candidate) {
+    candidateMap[candidate.wx] = candidate;
+  });
+  var functionalTaskMap = {};
+  (((context.candidateScores || {}).functionalTasks) || []).forEach(function(task) {
+    if (!functionalTaskMap[task.element]) functionalTaskMap[task.element] = [];
+    functionalTaskMap[task.element].push(task);
+  });
+  var uniquePush = function(list, value) {
+    if (value && list.indexOf(value) < 0) list.push(value);
+  };
+  var facts = {};
+  WX.forEach(function(wx) {
+    var visible = [], hidden = [], mainQi = [];
+    positions.forEach(function(pos) {
+      var pillar = bazi[pos];
+      if (WU_XING[pillar.gan] === wx) {
+        visible.push(positionNames[pos] + pillar.gan + '（' + getShiShen(bazi.day.gan, pillar.gan) + '）');
+      }
+      getCangGan(pillar.zhi).forEach(function(gan, index) {
+        if (WU_XING[gan] !== wx) return;
+        hidden.push(positionNames[pos] + pillar.zhi + '藏' + gan + '（' + depthNames[index] + '·' + getShiShen(bazi.day.gan, gan) + '）');
+        if (index === 0) mainQi.push(positionNames[pos] + pillar.zhi);
+      });
+    });
+    var rootPower = settlement.elementRootPower(wx);
+    var monthCommand = DI_ZHI_WU_XING[bazi.month.zhi] === wx;
+    var state = '原局未现';
+    if (monthCommand && visible.length) state = '当令透出';
+    else if (monthCommand) state = '月令当权';
+    else if (visible.length >= 2 || rootPower >= 4) state = '原局有力';
+    else if (visible.length && rootPower > 0) state = '透而有根';
+    else if (visible.length) state = '透而少根';
+    else if (hidden.length) state = '藏支有根';
+    facts[wx] = {
+      visible:visible,
+      hidden:hidden,
+      mainQi:mainQi,
+      present:visible.length > 0 || hidden.length > 0,
+      rootPower:Math.round(rootPower * 100) / 100,
+      monthCommand:monthCommand,
+      state:state
+    };
+  });
+
+  var entries = WX.map(function(wx) {
+    var relation = relationNames[wx];
+    var classification = (elementClassification && elementClassification[wx]) ||
+      (lists.yongShen.indexOf(wx) >= 0 ? '用神' : (lists.xiShen.indexOf(wx) >= 0 ? '喜神' : '忌神'));
+    var functions = [], risks = [], conditions = [];
+    var present = facts[wx].present;
+    if (!present) {
+      uniquePush(functions, '原局未见此五行，尚未形成直接作用');
+    } else if (relation === '比劫') {
+      uniquePush(functions, '扶助日主、落实承载根基');
+      uniquePush(risks, '增多时会助身，并继续生旺食伤');
+    } else if (relation === '印星') {
+      uniquePush(functions, '生扶日主，并制约食伤');
+      uniquePush(risks, '过量时会使生扶偏重，也可能压住食伤表达');
+    } else if (relation === '食伤') {
+      uniquePush(functions, '泄秀并把日主之气引向财星');
+      uniquePush(risks, '过量时持续泄身，并可能冲击官星秩序');
+    } else if (relation === '财星') {
+      uniquePush(functions, '承接食伤成果，并制约印星');
+      uniquePush(risks, '过量时耗身；依赖印星的结构还会出现财破印');
+    } else if (relation === '官杀') {
+      uniquePush(functions, '约束日主，并可转而生印形成通关');
+      uniquePush(risks, '过量或无制化时会形成克身压力');
+    }
+
+    // 格局任务只写原局真实作用，不直接回写旺衰分与传统喜忌数组。
+    if (isEstablishedInjurySeal && present) {
+      if (wx === roleElements.seal) {
+        uniquePush(functions, '伤官配印成格：印星正在制伤护身、维持格局');
+        uniquePush(conditions, '伤官压力仍在且印不过量时，这项作用才持续成立');
+      } else if (wx === roleElements.output) {
+        uniquePush(functions, '伤官当令，是才华输出与格局成立的原始动力');
+        uniquePush(conditions, '原局伤官已旺，岁运再来须看印星能否继续制衡');
+      } else if (wx === roleElements.wealth) {
+        uniquePush(risks, '财星会克制配印所依赖的印星，可能由平衡转为财破印');
+        uniquePush(conditions, '只有印明显过重且财印能够分隔有情时，财才可用于调停');
+      } else if (wx === roleElements.officer) {
+        uniquePush(functions, '官杀可生印，使“官杀—印—身”通路继续流转');
+        uniquePush(conditions, '须保持印能制伤，避免官星直接暴露在伤官之下');
+      } else if (wx === roleElements.peer) {
+        uniquePush(functions, '为伤官配印提供日主承载');
+        uniquePush(conditions, '只能补承载，过量会转而生旺伤官');
+      }
+    }
+    (functionalTaskMap[wx] || []).forEach(function(task) {
+      uniquePush(functions, task.conclusion);
+      uniquePush(conditions, task.condition);
+    });
+
+    var favorable = classification === '用神' || classification === '喜神' || classification === '弱喜' || classification === '条件喜神';
+    var adverse = classification === '忌神' || classification === '弱忌';
+    var hasPatternRisk = isEstablishedInjurySeal && wx === roleElements.wealth;
+    var hasPatternFunction = isEstablishedInjurySeal && [roleElements.seal, roleElements.output, roleElements.officer, roleElements.peer].indexOf(wx) >= 0;
+    var natalRole = !present ? '原局未现'
+      : (favorable && (adverse || hasPatternRisk) ? '功过并见'
+        : (adverse && hasPatternFunction ? '功过并见' : (favorable || hasPatternFunction ? '原局有功' : '原局为病')));
+
+    var fortuneRole = classification === '用神' ? '用神'
+      : (classification === '喜神' || classification === '弱喜' || classification === '条件喜神') ? '喜神'
+      : classification === '中性' ? '中性' : '忌神';
+    var fortuneLevel = fortuneRole === '用神' ? '核心有利'
+      : classification === '喜神' ? '总体有利'
+      : (classification === '弱喜' || classification === '条件喜神') ? '条件有利'
+      : fortuneRole === '忌神' ? '总体不利' : '中性双向';
+    var fortuneDirection = fortuneRole === '用神' ? '逢' + wx + '运总体偏顺'
+      : fortuneRole === '喜神' ? '逢' + wx + '运通常有利'
+      : fortuneRole === '忌神' ? '逢' + wx + '运通常阻力增加'
+      : '逢' + wx + '运吉凶双向';
+    var fortuneReason = fortuneRole === '用神'
+      ? '它是解决原局核心问题的第一取用，岁运到来通常能改善命局。'
+      : fortuneRole === '喜神'
+        ? '它能协助用神或改善原局失衡，岁运到来通常利大于弊。'
+        : fortuneRole === '忌神'
+          ? '它容易放大原局主要失衡，岁运到来通常弊大于利。'
+          : '单看五行不足以定向，须由具体干支关系决定。';
+    if (isEstablishedInjurySeal) {
+      if (wx === roleElements.seal) {
+        if (fortuneRole === '用神') {
+          fortuneLevel = '核心有利';
+          fortuneDirection = '逢' + wx + '运总体偏顺';
+          fortuneReason = '印星是本局第一用神，负责制伤护身；原局已经得力表示用神质量高，不等于行运遇见它就转凶。';
+        }
+      } else if (wx === roleElements.output) {
+        if (fortuneRole === '喜神' && facts[wx].monthCommand) fortuneLevel = '条件有利';
+        fortuneDirection = fortuneRole === '喜神' ? '逢' + wx + '运有发挥机会，但须印星承载' : fortuneDirection;
+        fortuneReason = '食伤是格局动力，但原局已经当令；具体金运须复核印星能否承载，不能只凭“伤官”二字定吉凶。';
+      } else if (wx === roleElements.wealth) {
+        if (fortuneRole === '喜神') fortuneLevel = '条件有利';
+        fortuneDirection = fortuneRole === '喜神' ? '逢' + wx + '运有财机，但须防财破印' : fortuneDirection;
+        fortuneReason = '财能承接食伤，也能克制配印所依赖的印星；只有具体岁运没有形成财破印时，利处才能兑现。';
+      } else if (wx === roleElements.officer) {
+        if (fortuneRole === '喜神') fortuneLevel = '条件有利';
+        fortuneDirection = fortuneRole === '喜神' ? '逢' + wx + '运有利立规与进阶，但须防伤官见官' : fortuneDirection;
+        fortuneReason = '官杀可生印通关，也可能直接受到伤官冲击；须看具体干支是否把通路接通。';
+      } else if (wx === roleElements.peer) {
+        if (fortuneRole === '喜神') fortuneLevel = '条件有利';
+        fortuneReason = fortuneRole === '忌神'
+          ? '比劫虽能托身，却会继续生旺食伤；本局原局裁决为忌，具体岁运通常阻力增加。'
+          : '比劫能托身，也会生食伤；须看具体岁运是否真正补足承载。';
+      }
+    }
+
+    // 旧字段保留给存量页面，但语义统一为“行运验证”，不再表达“原局已有所以不要再来”。
+    var incrementRole = fortuneLevel;
+    var incrementReason = fortuneReason;
+
+    var candidate = candidateMap[wx] || {};
+    return {
+      element:wx,
+      relation:relation,
+      classification:classification,
+      currentState:facts[wx].state,
+      present:present,
+      monthCommand:facts[wx].monthCommand,
+      rootPower:facts[wx].rootPower,
+      visible:facts[wx].visible,
+      hidden:facts[wx].hidden,
+      natalRole:natalRole,
+      functions:functions,
+      risks:risks,
+      conditions:conditions,
+      useGodType:fortuneRole === '用神' && context.yongShenSource ? context.yongShenSource.label : '',
+      fortuneRole:fortuneRole,
+      fortuneLevel:fortuneLevel,
+      fortuneDirection:fortuneDirection,
+      fortuneReason:fortuneReason,
+      incrementRole:incrementRole,
+      incrementReason:incrementReason,
+      candidateScore:typeof candidate.SNeed === 'number' ? candidate.SNeed : null
+    };
+  });
+  return {
+    version:'element-role-ledger-v2',
+    principle:'先由原局确定用神、喜神、忌神及行运基础方向，再用具体大运干支、刑冲合害和生克链复核是否真正变顺；十神名称不能直接代替吉凶裁决。',
+    patternContext:pattern.name ? pattern.name + '·' + pattern.status : '',
+    entries:entries
+  };
+}
+
 function finalizeYongJiResult(bazi, base, context) {
   var lists = normalizeYongJiLists(base.xiShen, base.yongShen, base.jiShen);
   var tiaoHouYongShen = Array.from(new Set(
@@ -6499,6 +6808,51 @@ function finalizeYongJiResult(bazi, base, context) {
     elementReasons[wx].reasons.unshift(task.conclusion);
   });
 
+  // 用神不仅要给出五行，还必须交代取用来源。主标签只说明“为何被选为第一用神”，
+  // 调候、格局或通关若只是兼任作用，则列为兼用，避免把辅助任务冒充核心裁决。
+  var primaryYongElement = lists.yongShen[0] || '';
+  var primaryCandidate = context.candidateScores && context.candidateScores.candidates
+    ? context.candidateScores.candidates.filter(function(candidate) { return candidate.wx === primaryYongElement; })[0]
+    : null;
+  var primaryUseType = context.primaryUseTypeHint || '';
+  if (!primaryUseType) {
+    if (context.cong && context.cong.isCong) primaryUseType = '顺势用神';
+    else if (primaryCandidate && primaryCandidate.L3 > 0 && pattern.status === '破格') primaryUseType = '格局救应用神';
+    else if (primaryCandidate && primaryCandidate.L3 > 0 && pattern.status === '成格') primaryUseType = '格局用神';
+    else primaryUseType = '扶抑用神';
+  }
+  var secondaryUseTypes = (context.primaryUseSecondaryHints || []).slice();
+  var addSecondaryUseType = function(label) {
+    if (label && secondaryUseTypes.indexOf(label) < 0) secondaryUseTypes.push(label);
+  };
+  if (tiaoHouYongShen.indexOf(primaryYongElement) >= 0 && primaryUseType !== '调候用神') {
+    addSecondaryUseType('兼调候');
+  }
+  if (primaryCandidate && primaryCandidate.L3 > 0 && primaryUseType.indexOf('格局') < 0) {
+    addSecondaryUseType(pattern.status === '破格' ? '兼格局救应' : '兼格局');
+  }
+  functionalTasks.filter(function(task) { return task.element === primaryYongElement; }).forEach(function(task) {
+    if ((task.type || '').indexOf('通关') >= 0 || (task.conclusion || '').indexOf('通关') >= 0) addSecondaryUseType('兼通关');
+  });
+  var yongShenSource = {
+    element:primaryYongElement,
+    primaryType:primaryUseType,
+    secondaryTypes:secondaryUseTypes,
+    label:primaryUseType + (secondaryUseTypes.length ? '·' + secondaryUseTypes.join('·') : ''),
+    pattern:pattern.name ? pattern.name + '·' + pattern.status : '',
+    basis:primaryReason
+  };
+  if (primaryYongElement && elementReasons[primaryYongElement]) {
+    elementReasons[primaryYongElement].useGodType = yongShenSource.label;
+  }
+
+  var elementRoleLedger = buildElementRoleLedger(
+    bazi,
+    lists,
+    base.elementClassification || {},
+    Object.assign({}, context, { yongShenSource:yongShenSource })
+  );
+
   // 生克链调整注入 elementReasons
   if (context.chain && context.chain.adjustments && context.chain.adjustments.length > 0) {
     context.chain.adjustments.forEach(function(adj) {
@@ -6588,9 +6942,11 @@ function finalizeYongJiResult(bazi, base, context) {
     reasoning: base.reasoning,
     congGe: base.congGe,
     method: method,
+    yongShenSource: yongShenSource,
     primaryReason: primaryReason,
     evidence: evidence,
     elementReasons: elementReasons,
+    elementRoleLedger: elementRoleLedger,
     chainHints: chainHintsOut,
     chainAdjustments: chainAdjustmentsOut,
     yongShenQuality: evaluateYongShenQuality(bazi, {
@@ -7283,7 +7639,7 @@ function getYongJi(bazi) {
       dayMasterLevel: dmLevel, dayMasterScore: dmStr.score,
       xiShen: xiShen, yongShen: yongShen, jiShen: jiShen,
       reasoning: reasoning, congGe: cong
-    }, { dmStr:dmStr, cong:cong, tiaoHouNote:'', pattern:getPattern(bazi) });
+    }, { dmStr:dmStr, cong:cong, tiaoHouNote:'', pattern:getPattern(bazi), primaryUseTypeHint:'顺势用神' });
   }
 
   // ---- v5.7 P1 穷通宝鉴金日主未/戌月特例短路（保留 v4.2 前置规则，F9）----
@@ -7293,6 +7649,8 @@ function getYongJi(bazi) {
   var pattern = getPattern(bazi);
   var tiaoHouNote = '';
   var cs = null;
+  var primaryUseTypeHint = '';
+  var primaryUseSecondaryHints = [];
   var qiongTongDryEarth = getDryEarthMetalState(bazi);
   var qiongTong = qiongTongDryEarth.isDryEarthMonth && !qiongTongDryEarth.supportRestored && (dmLevel === '极弱' || dmLevel === '偏弱');
   if (qiongTong) {
@@ -7300,6 +7658,8 @@ function getYongJi(bazi) {
     yongShen = ['水'];
     jiShen  = ['火', '木', '土'];
     reasoning = '辛金生未戌燥土月，火炎土燥、土多埋金，燥土不生金，印星虚浮无效。《穷通宝鉴》：六月辛金"先用壬水，次取庚金佐之"。故取水为用：水制七杀（伤官制杀）、润燥土（燥土得润方能生金）、调候降温，一水三用；喜金比劫帮身，忌火木土（杀旺、财党杀、燥土埋金）。';
+    primaryUseTypeHint = '调候用神';
+    primaryUseSecondaryHints = ['兼格局救应'];
   } else {
     // ---- v5.7 P1 候选五行评分（GPT 裁决修订版：F4/F5/F6/F7/F8/F10/F11）----
     // 连续旺衰权重 d 取代 50 分二元 if/else：需求定用神、根气定质量
@@ -7323,6 +7683,7 @@ function getYongJi(bazi) {
         '火',
         '亥月强金须先以火暖局，调候硬边界优先于一般扶抑候选'
       );
+      primaryUseTypeHint = '调候用神';
     }
     yongShen = [cs.yongWx];
     // P5-C07（GPT 终裁）：最终分类层全覆盖——先按档位给五行全部归类，正式档（喜/忌）排序优先，
@@ -7448,7 +7809,16 @@ function getYongJi(bazi) {
     jiShen: jiShen,
     reasoning: reasoning,
     elementClassification: elementClassification
-  }, { dmStr:dmStr, cong:cong, tiaoHouNote:tiaoHouNote, pattern:pattern, chain:chainContext, candidateScores: cs });
+  }, {
+    dmStr:dmStr,
+    cong:cong,
+    tiaoHouNote:tiaoHouNote,
+    pattern:pattern,
+    chain:chainContext,
+    candidateScores:cs,
+    primaryUseTypeHint:primaryUseTypeHint,
+    primaryUseSecondaryHints:primaryUseSecondaryHints
+  });
 }
 
 /**
@@ -8068,7 +8438,15 @@ function getProfessionalReportFacts(bazi, gender) {
       shiShen: thisYear.shiShen,
       triggeredElement: thisYear.triggeredElement,
       triggeredRole: thisYear.triggeredRole,
+      triggeredLevel: thisYear.triggeredLevel,
       triggeredReason: thisYear.triggeredReason,
+      branchTriggeredElement: thisYear.branchTriggeredElement,
+      branchTriggeredRole: thisYear.branchTriggeredRole,
+      branchTriggeredLevel: thisYear.branchTriggeredLevel,
+      verificationVerdict: thisYear.verificationVerdict,
+      verificationScore: thisYear.verificationScore,
+      verificationSummary: thisYear.verificationSummary,
+      verificationBasis: thisYear.verificationBasis,
       currentDaYun: thisYear.currentDaYun || null,
       dyInfo: thisYear.dyInfo || ''
     }

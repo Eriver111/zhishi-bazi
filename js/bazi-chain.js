@@ -281,10 +281,33 @@
   }
 
   function roleForWx(yongJi, wx) {
+    var entries = yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries;
+    if (entries && entries.length) {
+      var ledgerEntry = entries.filter(function(item) { return item.element === wx; })[0];
+      if (ledgerEntry && ledgerEntry.fortuneRole) return ledgerEntry.fortuneRole;
+    }
     if (yongJi && yongJi.yongShen && yongJi.yongShen.indexOf(wx) >= 0) return '用神';
     if (yongJi && yongJi.xiShen && yongJi.xiShen.indexOf(wx) >= 0) return '喜神';
     if (yongJi && yongJi.jiShen && yongJi.jiShen.indexOf(wx) >= 0) return '忌神';
     return '中性';
+  }
+
+  function fortuneDirectionForWx(yongJi, wx) {
+    var role = roleForWx(yongJi, wx);
+    var level = role === '用神' ? '核心有利'
+      : role === '喜神' ? '总体有利'
+      : role === '忌神' ? '总体不利' : '中性双向';
+    var entries = yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries;
+    if (entries && entries.length) {
+      var ledgerEntry = entries.filter(function(item) { return item.element === wx; })[0];
+      if (ledgerEntry && ledgerEntry.fortuneLevel) level = ledgerEntry.fortuneLevel;
+    }
+    var scoreMap = { '核心有利':3, '总体有利':2, '条件有利':1, '中性双向':0, '总体不利':-2 };
+    return {
+      role:role,
+      level:level,
+      score:Object.prototype.hasOwnProperty.call(scoreMap, level) ? scoreMap[level] : 0
+    };
   }
 
   function buildImagery(bazi, mechanisms, paths, yongJi) {
@@ -1148,13 +1171,33 @@
     var xiSet = (yongJi && yongJi.xiShen) ? yongJi.xiShen.slice() : [];
     var jiSet = (yongJi && yongJi.jiShen) ? yongJi.jiShen.slice() : [];
     var yongSet = (yongJi && yongJi.yongShen) ? yongJi.yongShen.slice() : [];
+    var ledgerMap = {};
+    if (yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries) {
+      yongJi.elementRoleLedger.entries.forEach(function(item) { ledgerMap[item.element] = item; });
+    }
 
     // 判断某五行在当前喜用忌分类中的角色
     function wxRole(wx) {
+      if (ledgerMap[wx] && ledgerMap[wx].fortuneRole) return ledgerMap[wx].fortuneRole;
       if (yongSet.indexOf(wx) >= 0) return '用神';
       if (xiSet.indexOf(wx) >= 0) return '喜神';
       if (jiSet.indexOf(wx) >= 0) return '忌神';
       return '中性';
+    }
+
+    // 从原局裁决取得行运基础分。十神只解释发生什么，不再直接决定吉凶。
+    function wxFortune(wx) {
+      var item = ledgerMap[wx] || {};
+      var role = wxRole(wx);
+      var level = item.fortuneLevel || (role === '用神' ? '核心有利'
+        : role === '喜神' ? '总体有利' : role === '忌神' ? '总体不利' : '中性双向');
+      var scoreMap = { '核心有利':3, '总体有利':2, '条件有利':1, '中性双向':0, '总体不利':-2 };
+      return {
+        role:role,
+        level:level,
+        score:Object.prototype.hasOwnProperty.call(scoreMap, level) ? scoreMap[level] : 0,
+        direction:item.fortuneDirection || ''
+      };
     }
 
     // 某五行与日主的关系名
@@ -1175,8 +1218,9 @@
     daYunList.forEach(function(dy, idx) {
       var ganWx = window.WU_XING[dy.gan];
       var zhiWx = window.DI_ZHI_WU_XING[dy.zhi];
-      var ganRole = wxRole(ganWx);
-      var zhiRole = wxRole(zhiWx);
+      var ganFortune = wxFortune(ganWx), zhiFortune = wxFortune(zhiWx);
+      var ganRole = ganFortune.role;
+      var zhiRole = zhiFortune.role;
 
       // 大运与日主关系
       var ganRel = simpleRel(ganWx, dgWx);
@@ -1312,32 +1356,23 @@
         return true;
       });
 
-      // 评估大运喜忌
-      var verdict;
-      var ganXi = ganRole === '用神' || ganRole === '喜神';
-      var zhiXi = zhiRole === '用神' || zhiRole === '喜神';
-      var ganJi = ganRole === '忌神';
-      var zhiJi = zhiRole === '忌神';
-
-      if (ganXi && zhiXi) verdict = '喜运';
-      else if (ganJi && zhiJi) verdict = '忌运';
-      else if (ganXi || zhiXi) verdict = '偏喜';
-      else if (ganJi || zhiJi) verdict = '偏忌';
-      else verdict = '中性';
-
+      // 评估大运喜忌：先取原局行运方向，再由本步实际互动升降级。
       var goodInteractions = interactions.filter(function(item) { return item.isGood === true; }).length;
       var badInteractions = interactions.filter(function(item) { return item.isGood === false; }).length;
-      if (verdict === '中性' && goodInteractions > badInteractions) verdict = '偏喜';
-      else if (verdict === '中性' && badInteractions > goodInteractions) verdict = '偏忌';
-      else if (verdict === '喜运' && badInteractions >= goodInteractions + 2) verdict = '偏喜';
-      else if (verdict === '忌运' && goodInteractions >= badInteractions + 2) verdict = '偏忌';
+      var baseScore = ganFortune.score * 0.45 + zhiFortune.score * 0.55;
+      var interactionScore = goodInteractions - badInteractions;
+      var verifiedScore = baseScore + interactionScore * 0.65;
+      var verdict = verifiedScore >= 2.25 ? '喜运'
+        : verifiedScore >= 0.65 ? '偏喜'
+        : verifiedScore <= -2.25 ? '忌运'
+        : verifiedScore <= -0.65 ? '偏忌' : '中性';
 
       // 三合只是结构变化证据，且尚有成化条件；不可脱离所化五行喜忌直接改判运势。
 
       // 生成运程摘要
       var summary = '大运' + dy.gan + dy.zhi + '（' + (dy.displayAge || dy.startYear) + '-' + (dy.endYear || '') + '），';
-      summary += '天干' + ganWx + relName(ganWx) + '（' + ganRole + '），';
-      summary += '地支' + zhiWx + '（' + zhiRole + '）。';
+      summary += '天干' + ganWx + relName(ganWx) + '（' + ganRole + '·' + ganFortune.level + '），';
+      summary += '地支' + zhiWx + '（' + zhiRole + '·' + zhiFortune.level + '）。';
       if (verdict === '喜运') summary += '干支均有利，整体更容易得到资源与推进机会。';
       else if (verdict === '偏喜') summary += '有利力量占上风，但具体关系引动中仍夹有需要处理的变化。';
       else if (verdict === '忌运') summary += '干支均为忌神，现实阻力和需要承担的成本更容易增加。';
@@ -1349,6 +1384,12 @@
         gan: dy.gan, zhi: dy.zhi,
         ganWx: ganWx, zhiWx: zhiWx,
         ganRole: ganRole, zhiRole: zhiRole,
+        ganFortuneLevel:ganFortune.level,
+        zhiFortuneLevel:zhiFortune.level,
+        natalDirectionScore:Math.round(baseScore * 100) / 100,
+        interactionAdjustment:Math.round(interactionScore * 65) / 100,
+        verifiedScore:Math.round(verifiedScore * 100) / 100,
+        verificationBasis:'原局喜用忌方向 + 本步干支与原局的实际互动；十神名称仅作事项解释',
         age: dy.displayAge || dy.startYear,
         startYear: dy.startYear, endYear: dy.endYear,
         interactions: interactions,
@@ -1585,13 +1626,31 @@
     }
 
     // === 8. 综合判词 ===
-    var stemRole = roleForWx(yongJi, lnGanWx);
-    var branchRole = roleForWx(yongJi, lnZhiWx);
+    var stemDirection = fortuneDirectionForWx(yongJi, lnGanWx);
+    var branchDirection = fortuneDirectionForWx(yongJi, lnZhiWx);
+    var stemRole = stemDirection.role;
+    var branchRole = branchDirection.role;
     var lnIsXi = isFavorableRole(stemRole) || isFavorableRole(branchRole);
     var lnIsJi = stemRole === '忌神' || branchRole === '忌神';
+    var natalDirectionScore = stemDirection.score * 0.45 + branchDirection.score * 0.55;
+    var interactionAdjustment = opportunityScore * 0.55 - dangerScore * 0.55;
+    var verifiedScore = natalDirectionScore + interactionAdjustment;
+    var hasDirectionLedger = !!(yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries && yongJi.elementRoleLedger.entries.length);
 
     var verdict, summary;
-    if (dangerScore >= 5) {
+    if (hasDirectionLedger && verifiedScore >= 2.25) {
+      verdict = '大吉';
+      summary = '原局喜用方向与本年实际干支关系相互配合，有利条件较集中；仍需结合现实资源与时机稳步推进。';
+    } else if (hasDirectionLedger && verifiedScore >= 0.65) {
+      verdict = '偏吉';
+      summary = '本年经原局方向和具体干支关系复核后，有利力量占上风，但仍有条件与变化需要处理。';
+    } else if (hasDirectionLedger && verifiedScore <= -0.65) {
+      verdict = '偏凶';
+      summary = '本年经原局方向和具体干支关系复核后，阻力偏多；这不是由十神名称直接得出，而是干支互动对基础方向的降级。';
+    } else if (hasDirectionLedger) {
+      verdict = '中性';
+      summary = '本年原局基础方向与具体干支互动互有抵消，宜按实际事件推进，不宜只凭十神名称断吉凶。';
+    } else if (dangerScore >= 5) {
       verdict = '大凶';
       summary = '本年有' + triggers.filter(function(t){return t.isGood === false}).length + '项高强度结构触发，波动概率较高。重要决定宜留有余地，并结合现实信息审慎判断。';
     } else if (dangerScore >= 2) {
@@ -1623,6 +1682,12 @@
       opportunityScore: opportunityScore,
       stemRole: stemRole,
       branchRole: branchRole,
+      stemFortuneLevel:stemDirection.level,
+      branchFortuneLevel:branchDirection.level,
+      natalDirectionScore:Math.round(natalDirectionScore * 100) / 100,
+      interactionAdjustment:Math.round(interactionAdjustment * 100) / 100,
+      verifiedScore:Math.round(verifiedScore * 100) / 100,
+      verificationBasis:'原局喜用忌方向 + 流年、大运、原局三方的实际干支互动；十神名称仅作事项解释',
       verdict: verdict,
       summary: summary
     };

@@ -209,8 +209,52 @@ test('core analysis degrades safely but reports chain failures for diagnosis', (
 test('all chain entry pages request the repaired script version', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.match(html, /js\/bazi-chain\.js\?v=3/, page);
+    assert.match(html, /js\/bazi-chain\.js\?v=5/, page);
   }
+});
+
+test('DaYun verdict starts from natal yongji direction and then applies actual interactions', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '戌', '丙', '申', '己', '卯', '庚', '午');
+  const yongJi = context.BaZiCalculator.getYongJi(
+    context.BaZiCalculator.buildFromPillars(base, 'male'),
+  );
+  const result = context.BaZiChain.analyzeFortune(
+    base,
+    [{ gan: '丁', zhi: '巳', displayAge: '21岁', startYear: 2020, endYear: 2029 }],
+    yongJi,
+  );
+  const period = result.periods[0];
+
+  assert.equal(period.ganRole, '用神');
+  assert.equal(period.zhiRole, '用神');
+  assert.equal(period.natalDirectionScore, 3);
+  assert.equal(period.verdict, '偏喜');
+  assert.ok(period.verifiedScore < period.natalDirectionScore, '具体刑破应使本步火运从基础喜运降级');
+  assert.match(period.verificationBasis, /原局喜用忌方向/);
+  assert.match(period.verificationBasis, /十神名称仅作事项解释/);
+});
+
+test('annual verdict keeps the natal direction separate from the verified result', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '戌', '丙', '申', '己', '卯', '庚', '午');
+  const yongJi = context.BaZiCalculator.getYongJi(
+    context.BaZiCalculator.buildFromPillars(base, 'male'),
+  );
+  const result = context.BaZiChain.analyzeLiuNian(
+    base,
+    { gan: '丙', zhi: '午' },
+    { gan: '丁', zhi: '巳' },
+    yongJi,
+  );
+
+  assert.equal(result.stemRole, '用神');
+  assert.equal(result.branchRole, '用神');
+  assert.equal(result.stemFortuneLevel, '核心有利');
+  assert.equal(typeof result.natalDirectionScore, 'number');
+  assert.equal(typeof result.verifiedScore, 'number');
+  assert.match(result.verificationBasis, /三方的实际干支互动/);
+  assert.match(result.verificationBasis, /十神名称仅作事项解释/);
 });
 
 test('a ZhengGuan month command is never mislabeled as QiSha or ShiShen-ZhiSha', () => {
