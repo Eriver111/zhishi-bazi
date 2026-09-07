@@ -360,6 +360,160 @@
     }));
   }
 
+  var FORTUNE_DOMAIN_META = {
+    family:{ label:'家庭与长辈', favorable:'家庭、长辈或师长资源更容易成为现实助力', adverse:'家庭责任、长辈事务或依赖关系更容易增加成本', conditional:'家庭与长辈主题会被引动，但能否形成庇护仍需看具体制化' },
+    study:{ label:'学习与资质', favorable:'学习、考试、证照和方法积累更容易得到推进', adverse:'学习准备、资格审核或认知负担更容易形成阻力', conditional:'学习与资质主题更活跃，但结果仍取决于实际投入和结构配合' },
+    career:{ label:'事业与职责', favorable:'工作平台、职位责任或项目推进更容易获得有利条件', adverse:'职场规则、项目压力或工作变动的成本更容易增加', conditional:'事业与职责会被引动，但不宜只凭十神名称判断升降' },
+    wealth:{ label:'收入与资源', favorable:'收入兑现、客户资源或资金安排更容易出现推进机会', adverse:'支出、资金占用或资源分配压力更容易增加', conditional:'资金和资源事项会增多，但不等于收入必然增加' },
+    relationship:{ label:'感情与合作', favorable:'感情沟通、合作关系或共同安排更容易向有利方向推进', adverse:'感情、合作或相处边界更容易出现摩擦与调整', conditional:'感情与合作关系会被引动，但好坏仍需看夫妻宫及具体互动' },
+    health:{ label:'身心与承载', favorable:'精力调配、恢复节奏和压力承载更容易得到改善', adverse:'劳累、情绪压力或身体承载方面更需要主动管理', conditional:'身心状态会受到牵动，但不能据此直接断定疾病或事故' }
+  };
+  var FORTUNE_FAMILY_DOMAINS = {
+    '印':[{domain:'study',weight:2},{domain:'family',weight:1.5},{domain:'career',weight:0.7}],
+    '财':[{domain:'wealth',weight:2},{domain:'career',weight:1}],
+    '官杀':[{domain:'career',weight:2},{domain:'study',weight:0.7},{domain:'health',weight:0.8}],
+    '食伤':[{domain:'career',weight:1.2},{domain:'wealth',weight:1.1},{domain:'study',weight:0.5}],
+    '比劫':[{domain:'career',weight:1},{domain:'wealth',weight:1},{domain:'relationship',weight:0.8}]
+  };
+
+  function getFortuneLifeStage(dy, index) {
+    var parsed = parseInt(String(dy && dy.displayAge !== undefined ? dy.displayAge : ''), 10);
+    var startAge = isFinite(parsed) ? parsed : (1 + index * 10);
+    var endAge = startAge + 9;
+    if (startAge < 16) return { key:'early', label:'早年', startAge:startAge, endAge:endAge, focus:['family','study'] };
+    if (startAge < 26) return { key:'youth', label:'青年起步期', startAge:startAge, endAge:endAge, focus:['study','career','relationship'] };
+    if (startAge < 46) return { key:'middle', label:'中年发展期', startAge:startAge, endAge:endAge, focus:['career','wealth','relationship','family'] };
+    if (startAge < 61) return { key:'mature', label:'成熟积累期', startAge:startAge, endAge:endAge, focus:['career','wealth','family','health'] };
+    return { key:'late', label:'晚年生活期', startAge:startAge, endAge:endAge, focus:['family','health','wealth'] };
+  }
+
+  function familyForElement(dayMasterWx, wx) {
+    var rel = simpleRel(dayMasterWx, wx);
+    if (rel === 'tong') return '比劫';
+    if (rel === 'sheng') return '食伤';
+    if (rel === 'ke') return '财';
+    if (rel === 'beiKe') return '官杀';
+    if (rel === 'beiSheng') return '印';
+    return '';
+  }
+
+  function inferFortuneInteractionDomains(item, dayMasterWx) {
+    var domains = [];
+    function add(domain) { if (domain && domains.indexOf(domain) < 0) domains.push(domain); }
+    if (item.target === 'year') add('family');
+    if (item.target === 'month') { add('career'); add('family'); }
+    if (item.target === 'day') {
+      add('relationship'); add('family');
+      if (item.isGood === false && /六冲|六害|刑|自刑/.test(item.type || '')) add('health');
+    }
+    if (item.target === 'hour') { add('family'); add('career'); }
+    if (item.formedWx) {
+      (FORTUNE_FAMILY_DOMAINS[familyForElement(dayMasterWx, item.formedWx)] || []).forEach(function(row) { add(row.domain); });
+    }
+    return domains;
+  }
+
+  function buildDaYunEventLedger(bazi, dy, index, verdict, verifiedScore, interactions) {
+    var dayMasterWx = window.WU_XING[bazi.day.gan];
+    var stage = getFortuneLifeStage(dy, index);
+    var ganShiShen = BaZiCalculator.getShiShen(bazi.day.gan, dy.gan);
+    var hidden = window.getCangGan(dy.zhi) || [];
+    var zhiMainGan = hidden[0] || '';
+    var zhiShiShen = zhiMainGan ? BaZiCalculator.getShiShen(bazi.day.gan, zhiMainGan) : '';
+    var ganFamily = roleFamily(ganShiShen), zhiFamily = roleFamily(zhiShiShen);
+    var directionMap = { '喜运':2, '偏喜':1, '中性':0, '偏忌':-1, '忌运':-2 };
+    var globalDirection = Object.prototype.hasOwnProperty.call(directionMap, verdict) ? directionMap[verdict] : 0;
+    var buckets = {};
+
+    function bucket(domain) {
+      if (!buckets[domain]) buckets[domain] = { domain:domain, activation:0, directionPoints:0, directionWeight:0, directDirectional:0, evidence:[], sources:[] };
+      return buckets[domain];
+    }
+    function addEvidence(row, text, source) {
+      if (text && row.evidence.indexOf(text) < 0 && row.evidence.length < 5) row.evidence.push(text);
+      if (source && row.sources.indexOf(source) < 0) row.sources.push(source);
+    }
+    function addFamilyThemes(family, shiShen, sourceLabel) {
+      (FORTUNE_FAMILY_DOMAINS[family] || []).forEach(function(theme) {
+        var row = bucket(theme.domain);
+        row.activation += theme.weight;
+        row.directionPoints += theme.weight * globalDirection;
+        row.directionWeight += theme.weight;
+        addEvidence(row, sourceLabel + '为' + shiShen + '，只确定“' + FORTUNE_DOMAIN_META[theme.domain].label + '”事项被引动', sourceLabel);
+      });
+    }
+    addFamilyThemes(ganFamily, ganShiShen, '大运天干' + dy.gan);
+    addFamilyThemes(zhiFamily, zhiShiShen, '大运地支' + dy.zhi + '本气' + zhiMainGan);
+
+    (interactions || []).forEach(function(item) {
+      var domains = item.domains && item.domains.length ? item.domains : inferFortuneInteractionDomains(item, dayMasterWx);
+      item.domains = domains;
+      domains.forEach(function(domain) {
+        var row = bucket(domain);
+        row.activation += 2.2;
+        if (item.isGood === true) { row.directionPoints += 4.4; row.directionWeight += 2.2; row.directDirectional++; }
+        else if (item.isGood === false) { row.directionPoints -= 4.4; row.directionWeight += 2.2; row.directDirectional++; }
+        addEvidence(row, item.text, '大运与原局互动');
+      });
+    });
+
+    var records = Object.keys(buckets).map(function(domain) {
+      var row = buckets[domain], meta = FORTUNE_DOMAIN_META[domain];
+      // 中性冲合只提高“该领域会被引动”的置信度，不稀释已有的喜忌方向。
+      var normalized = row.directionWeight ? row.directionPoints / row.directionWeight : 0;
+      var direction = normalized >= 0.55 ? '偏有利' : (normalized <= -0.55 ? '偏不利' : '条件性');
+      var conclusion = direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional);
+      // 人生阶段只负责排序现实重心，不参与吉凶方向计算。
+      // 权重需要足够明显，避免早年账本被与月/时柱的普通互动挤成“事业优先”。
+      var stageBoost = stage.focus.indexOf(domain) >= 0 ? 3.5 : 0;
+      var confidence = row.directDirectional > 0 ? '高' : (row.sources.length >= 2 && direction !== '条件性' ? '中高' : '中');
+      return {
+        id:'dayun:' + (dy.startYear || stage.startAge) + ':' + dy.gan + dy.zhi + ':' + domain,
+        domain:domain, label:meta.label, stagePriority:stage.focus.indexOf(domain) >= 0,
+        activationScore:Number(row.activation.toFixed(2)),
+        directionScore:Number(normalized.toFixed(2)),
+        direction:direction, confidence:confidence,
+        conclusion:conclusion,
+        evidence:row.evidence,
+        decisionBasis:'本步大运总体验证方向 + 本领域十神事项 + 与原局对应柱位的实际互动；十神名称不单独决定吉凶',
+        _rank:row.activation + stageBoost + (row.directDirectional ? 2 : 0)
+      };
+    }).sort(function(a,b) { return b._rank - a._rank || a.domain.localeCompare(b.domain); });
+    // “重点领域”先按人生阶段列出已被实际引动的现实主题，再补充本步最强的其他主题。
+    // 这只改变展示顺序，不改变任何领域的吉凶或置信度。
+    var primaryRecords = [];
+    stage.focus.forEach(function(domain) {
+      var found = records.find(function(row) { return row.domain === domain; });
+      if (found && primaryRecords.indexOf(found) < 0) primaryRecords.push(found);
+    });
+    records.forEach(function(row) {
+      if (primaryRecords.indexOf(row) < 0) primaryRecords.push(row);
+    });
+    records.forEach(function(row) { delete row._rank; });
+
+    var families = [ganFamily, zhiFamily];
+    var conditions = ['阶段只决定现实重心，不决定吉凶；同一十神落在不同原局与不同大运互动中，结果可以相反。'];
+    if (families.indexOf('印') >= 0) conditions.push('印只代表家人、师长、学习与资质资源；仅当本步验证偏有利且没有印旺为害、财破印等反向结构时，才可进一步解释为庇护。');
+    if (families.indexOf('财') >= 0) conditions.push('财只代表资金、客户和资源兑现；须原局能够承财且本步验证偏有利，才可解释为事业收入改善，不能见财便断发财。');
+    if (families.indexOf('官杀') >= 0) conditions.push('官杀只代表职位、规则和责任；有利时可对应晋升与承担，不利时更可能表现为压力、约束或审核成本。');
+    if (families.indexOf('食伤') >= 0) conditions.push('食伤只代表表达、技能和成果输出；能否转成收入或事业成果，仍须财星通路和本步验证共同成立。');
+    if (families.indexOf('比劫') >= 0) conditions.push('比劫只代表自主、同辈、合作与竞争；有利时可借团队扩张，不利时须防资源分配和资金损耗。');
+
+    return {
+      id:'dayun:' + (dy.startYear || stage.startAge) + ':' + dy.gan + dy.zhi,
+      version:'1.1', frozen:false, inference:true, userCorrectable:true,
+      stage:stage,
+      pillars:{ gan:dy.gan, zhi:dy.zhi, ganShiShen:ganShiShen, zhiMainGan:zhiMainGan, zhiShiShen:zhiShiShen },
+      verification:{ verdict:verdict, score:Number(verifiedScore.toFixed(2)) },
+      primaryDomains:primaryRecords.slice(0, 3).map(function(row) { return row.domain; }),
+      domainRecords:records,
+      opportunities:records.filter(function(row) { return row.direction === '偏有利'; }).map(function(row) { return row.conclusion; }),
+      risks:records.filter(function(row) { return row.direction === '偏不利'; }).map(function(row) { return row.conclusion; }),
+      conditions:conditions,
+      constraint:'事件账本只记录本步运更可能被引动的领域、方向与条件，不承诺具体事件必然发生；用户确认的真实经历优先并可校正该推断。'
+    };
+  }
+
   // 判断两个五行之间的生克关系
   function wxRelation(fromWx, toWx) {
     if (fromWx === toWx) return { type: 'tong', name: '比和' };
@@ -1238,7 +1392,7 @@
         var monthClashGood = monthTargetRole === '忌神' && (zhiRole === '用神' || zhiRole === '喜神');
         var monthClashDirection = monthClashGood ? true
           : ((monthTargetRole === '用神' || monthTargetRole === '喜神') ? false : null);
-        interactions.push({ type: '六冲', role:zhiRole, targetRole:monthTargetRole, isGood:monthClashDirection,
+        interactions.push({ type: '六冲', target:'month', role:zhiRole, targetRole:monthTargetRole, isGood:monthClashDirection,
           text:'大运' + dy.zhi + '冲提纲（月支' + bazi.month.zhi + '）；大运支为' + zhiRole + '，月支为' + monthTargetRole
             + '。' + (monthClashGood ? '有利力量冲动原局忌神，可能先经历环境变化，再出现改善。' : '工作、家庭或生活基础更容易发生明显变化。') });
       }
@@ -1248,7 +1402,7 @@
         var dayClashGood = dayTargetRole === '忌神' && (zhiRole === '用神' || zhiRole === '喜神');
         var dayClashDirection = dayClashGood ? true
           : ((dayTargetRole === '用神' || dayTargetRole === '喜神') ? false : null);
-        interactions.push({ type: '六冲', role:zhiRole, targetRole:dayTargetRole, isGood:dayClashDirection,
+        interactions.push({ type: '六冲', target:'day', role:zhiRole, targetRole:dayTargetRole, isGood:dayClashDirection,
           text:'大运' + dy.zhi + '冲日支' + bazi.day.zhi + '（夫妻宫/自身根基）；大运支为' + zhiRole + '，日支为' + dayTargetRole
             + '。' + (dayClashGood ? '原来不利的相处或生活结构可能被打破，但过程仍会先有明显变化。' : '关系、居所或个人状态更容易出现明显变化。') });
       }
@@ -1266,7 +1420,7 @@
             ? true
             : (heRole === '忌神' ? false : null);
           interactions.push({
-            type: 'structure',
+            type: 'structure', target:'structure',
             formedWx: heWx,
             role: heRole,
             isGood: heIsGood,
@@ -1282,7 +1436,7 @@
         if (GAN_HE_PAIR[dy.gan] === natalGan) {
           var formedWx = GAN_HE_WX[dy.gan + natalGan];
           interactions.push({
-            type:'天干五合', formedWx:formedWx, role:wxRole(formedWx), isGood:null,
+            type:'天干五合', target:pos, formedWx:formedWx, role:wxRole(formedWx), isGood:null,
             text:'大运' + dy.gan + '合' + POS_NAMES[pos] + natalGan + '，候选化' + formedWx
               + '；合只表示牵引，须看月令、透根和受制后再定是否成化。'
           });
@@ -1292,7 +1446,7 @@
           var ganController = ganDirection.fromFirst ? dy.gan : natalGan;
           var ganControlled = ganDirection.fromFirst ? natalGan : dy.gan;
           interactions.push({
-            type:'天干克', role:ganDirection.fromFirst ? ganRole : wxRole(natalGanWx), isGood:null,
+            type:'天干克', target:pos, role:ganDirection.fromFirst ? ganRole : wxRole(natalGanWx), isGood:null,
             text:(ganDirection.fromFirst ? '大运' : POS_NAMES[pos]) + ganController + '克'
               + (ganDirection.fromFirst ? POS_NAMES[pos] : '大运') + ganControlled + '，表示对应事务发生直接制约。'
           });
@@ -1321,7 +1475,7 @@
             isGood = false; note = '容易带来摩擦、反复或结构变化';
           }
           interactions.push({
-            type:type, role:zhiRole, targetRole:natalRole, isGood:isGood,
+            type:type, target:pos, role:zhiRole, targetRole:natalRole, isGood:isGood,
             text:'大运' + dy.zhi + type + POS_NAMES[pos] + natalZhi + '；大运支为' + zhiRole
               + '，目标支为' + natalRole + '，' + note + '。'
           });
@@ -1341,7 +1495,7 @@
           var type = full ? fullType : halfType, formedWx = group[3], formedRole = wxRole(formedWx);
           var shownMembers = full ? members : members.filter(function(z) { return z === dy.zhi || beforeFound.indexOf(z) >= 0; });
           interactions.push({
-            type:type, formedWx:formedWx, role:formedRole,
+            type:type, target:'structure', formedWx:formedWx, role:formedRole,
             isGood:full ? (formedRole === '用神' || formedRole === '喜神' ? true : (formedRole === '忌神' ? false : null)) : null,
             text:'大运' + dy.zhi + (full ? '补成' : '形成') + shownMembers.join('') + type + formedWx + '势，所成五行为' + formedRole
               + '；' + (full ? '是否成化仍须结合月令、透干与受制。' : '只作局部牵引，不按完整成局。')
@@ -1359,6 +1513,9 @@
         interactionSeen[key] = true;
         return true;
       });
+      interactions.forEach(function(item) {
+        item.domains = inferFortuneInteractionDomains(item, dgWx);
+      });
 
       // 评估大运喜忌：先取原局行运方向，再由本步实际互动升降级。
       var goodInteractions = interactions.filter(function(item) { return item.isGood === true; }).length;
@@ -1374,7 +1531,10 @@
       // 三合只是结构变化证据，且尚有成化条件；不可脱离所化五行喜忌直接改判运势。
 
       // 生成运程摘要
-      var summary = '大运' + dy.gan + dy.zhi + '（' + (dy.displayAge || dy.startYear) + '-' + (dy.endYear || '') + '），';
+      var summaryStage = getFortuneLifeStage(dy, idx);
+      var summaryAgeRange = summaryStage.startAge + '-' + summaryStage.endAge + '岁';
+      var summaryYearRange = dy.startYear && dy.endYear ? '，' + dy.startYear + '-' + dy.endYear + '年' : '';
+      var summary = '大运' + dy.gan + dy.zhi + '（' + summaryAgeRange + summaryYearRange + '），';
       summary += '天干' + ganWx + relName(ganWx) + '（' + ganRole + '·' + ganFortune.level + '），';
       summary += '地支' + zhiWx + '（' + zhiRole + '·' + zhiFortune.level + '）。';
       if (verdict === '喜运') summary += '干支均有利，整体更容易得到资源与推进机会。';
@@ -1384,7 +1544,12 @@
       else summary += '干支本身较中性，实际表现主要看与原局发生的具体关系。';
       if (interactions.length) summary += '本步大运共引动' + interactions.length + '条原局关系，其中明确有利' + goodInteractions + '条、明确不利' + badInteractions + '条，其余为条件性变化。';
 
+      var eventLedger = buildDaYunEventLedger(bazi, dy, idx, verdict, verifiedScore, interactions);
       periods.push({
+        analysisType:'structural_forecast',
+        userCorrectable:true,
+        realityPriority:'user_confirmed_experience',
+        inferenceBoundary:'大运干支及其与原局的关系属于结构证据；领域落点和现实结果只是方向推断，不是已发生事实。',
         gan: dy.gan, zhi: dy.zhi,
         ganWx: ganWx, zhiWx: zhiWx,
         ganRole: ganRole, zhiRole: zhiRole,
@@ -1397,6 +1562,7 @@
         age: dy.displayAge || dy.startYear,
         startYear: dy.startYear, endYear: dy.endYear,
         interactions: interactions,
+        eventLedger:eventLedger,
         verdict: verdict,
         summary: summary
       });
@@ -1406,12 +1572,19 @@
     var allVer = periods.map(function(p) { return p.verdict; });
     var xiCount = allVer.filter(function(v) { return v === '喜运' || v === '偏喜'; }).length;
     var jiCount = allVer.filter(function(v) { return v === '忌运' || v === '偏忌'; }).length;
-    var summaryText = '一生' + periods.length + '步大运中，喜运' + xiCount + '步，忌运' + jiCount + '步。';
-    if (xiCount >= jiCount + 2) summaryText += '整体运程偏吉，中晚年可期。';
-    else if (jiCount >= xiCount + 2) summaryText += '运途多有波折，宜守不宜攻。';
-    else summaryText += '吉凶参半，运势随大运切换而起伏。';
+    var summaryText = '按原局方向与岁运关系计算，' + periods.length + '步大运中，结构偏有利' + xiCount + '步，结构偏不利' + jiCount + '步。';
+    if (xiCount >= jiCount + 2) summaryText += '整体方向偏有利，但具体领域能否兑现仍取决于现实条件。';
+    else if (jiCount >= xiCount + 2) summaryText += '整体阻力信号偏多，宜结合真实经历辨认主要落点。';
+    else summaryText += '有利与阻力方向交替，具体表现以每步互动和实际经历为准。';
 
-    return { periods: periods, summary: summaryText };
+    return {
+      version:'6.1', periods: periods, summary: summaryText,
+      analysisType:'structural_forecast', userCorrectable:true,
+      realityPriority:'user_confirmed_experience',
+      inferenceBoundary:'大运顺序和干支关系是结构证据；喜忌方向、领域落点与现实结果属于可校正推断。',
+      eventLedgerVersion:'1.1', eventLedgerMode:'correctable-domain-inference',
+      eventLedgerConstraint:'先按原局喜用与本步互动定方向，再用十神和人生阶段定位事项；禁止见印断庇护、见财断发财；用户确认的真实经历优先。'
+    };
   }
 
   /**
@@ -1748,7 +1921,7 @@
       summary = '本年原局基础方向与具体干支互动互有抵消，宜按实际事件推进，不宜只凭十神名称断吉凶。';
     } else if (dangerScore >= 5) {
       verdict = '大凶';
-      summary = '本年有' + triggers.filter(function(t){return t.isGood === false}).length + '项高强度结构触发，波动概率较高。重要决定宜留有余地，并结合现实信息审慎判断。';
+      summary = '本年有' + triggers.filter(function(t){return t.isGood === false}).length + '项高强度结构触发，规则上更偏向波动。重要决定宜留有余地，并结合现实信息审慎判断。';
     } else if (dangerScore >= 2) {
       verdict = '偏凶';
       var criticalTriggers = triggers.filter(function(t){return t.type==='天克地冲'||t.type==='伤官见官'||t.type==='三刑俱全'});
@@ -1758,7 +1931,7 @@
       summary = '流年喜用力量较集中，有利条件相对增多；仍需结合实际资源与时机稳步推进。';
     } else if (opportunityScore >= 1) {
       verdict = '偏吉';
-      summary = '流年总体平稳向吉，小事可成。';
+      summary = '流年结构总体平稳向吉，现实结果仍取决于资源、选择与具体事项。';
     } else if (lnIsXi) {
       verdict = '偏吉';
       summary = '流年干支中有喜用力量（天干' + stemRole + '、地支' + branchRole + '），有利条件相对增加。';
@@ -1767,10 +1940,14 @@
       summary = '流年干支中见忌神力量（天干' + stemRole + '、地支' + branchRole + '），相关事情更容易增加阻力。';
     } else {
       verdict = '中性';
-      summary = '流年平稳，无大吉大凶之兆。';
+      summary = '流年结构信号相对平稳，暂不据此承诺具体事件结果。';
     }
 
     return {
+      analysisType:'structural_forecast',
+      userCorrectable:true,
+      realityPriority:'user_confirmed_experience',
+      inferenceBoundary:'流年干支与关系类型属于结构事实；事件领域与现实结果只是可校正推断，不是已发生事实。',
       liuNianGan: lnGan, liuNianZhi: lnZhi,
       daYunGan: dyGan, daYunZhi: dyZhi,
       triggers: triggers,

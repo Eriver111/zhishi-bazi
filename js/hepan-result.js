@@ -208,6 +208,7 @@
       return;
     }
     var html = '';
+    html += '<div class="hp-inference-boundary" style="margin:0 0 18px;padding:12px 14px;border:1px solid rgba(201,168,76,.18);border-radius:10px;color:var(--tx2);font-size:12px;line-height:1.7;background:rgba(201,168,76,.05)">合盘中的干支关系是结构证据；指数、性格、相处方式和未来事项是候选解读，不代表现实已经如此。若与你们的真实经历不一致，以真实经历为准。</div>';
     html += renderXiyong(result.xiyong, p1, p2, secIdx++);
     html += renderWuxingComplement(result.wuxingComplement, p1, p2, secIdx++);
     html += renderDailyRelation(result.dailyRelation, p1, p2, secIdx++);
@@ -259,7 +260,7 @@
         '<span class="hp-score-num" style="font-size:38px;font-weight:900;color:' + numColor + '">' + score + '</span>' +
       '</div>' +
       '<div class="hp-score-label" style="font-size:20px;color:' + numColor + ';letter-spacing:4px;font-weight:600;margin-bottom:4px">' + label + '</div>' +
-      '<div class="hp-score-subtitle">' + relLabel + ' · 合盘分析</div>';
+      '<div class="hp-score-subtitle">' + relLabel + ' · 规则结构指数（非现实相处评分）</div>';
   }
 
   // =====================================================
@@ -350,7 +351,7 @@
         renderWuxingBars(p2) +
       '</div>' +
       '<div class="hp-wuxing-desc">' + escapeHtml(wcData.detail || '') + '</div>' +
-      '<div class="hp-wuxing-score">互补度评分：' + (wcData.complementScore || 0) + ' 分</div>', idx, true);
+      '<div class="hp-wuxing-score">五行互补规则指数：' + (wcData.complementScore || 0) + ' 分</div>', idx, true);
   }
 
   function renderWuxingBars(person) {
@@ -386,11 +387,11 @@
 
   function renderDailyRelation(drData, p1, p2, idx) {
     if (!drData) {
-      return drawer('日柱契合度', '<p>数据暂不可用</p>', idx, false);
+      return drawer('日柱结构关系', '<p>数据暂不可用</p>', idx, false);
     }
 
-    return drawer('日柱契合度',
-      '<div class="hp-daily-score">契合评分：' + (drData.score || 0) + ' / 60</div>' +
+    return drawer('日柱结构关系',
+      '<div class="hp-daily-score">关系规则指数：' + (drData.score || 0) + ' / 60（非现实质量评分）</div>' +
       '<div class="hp-daily-desc">' + escapeHtml(drData.ganDesc || '') + '</div>' +
       '<div class="hp-daily-desc">' + escapeHtml(drData.zhiDesc || '') + '</div>', idx, true);
   }

@@ -689,10 +689,10 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   assert.equal(openedCache, 'zhishi-v46');
   assert.ok(cachedAssets.includes('/js/payment.js'));
   assert.ok(cachedAssets.includes('/js/paywall.js?v=11'));
-  assert.ok(cachedAssets.includes('/js/bazi.js?v=20260906g'));
-  assert.ok(cachedAssets.includes('/js/bazi-chain.js?v=6'));
-  assert.ok(cachedAssets.includes('/js/result.js?v=31'));
-  assert.ok(cachedAssets.includes('/js/ai-chat-integration.js?v=20260905c'));
+  assert.ok(cachedAssets.includes('/js/bazi.js?v=20260907b'));
+  assert.ok(cachedAssets.includes('/js/bazi-chain.js?v=8'));
+  assert.ok(cachedAssets.includes('/js/result.js?v=32'));
+  assert.ok(cachedAssets.includes('/js/ai-chat-integration.js?v=20260907c'));
   assert.ok(cachedAssets.includes('/js/chat-persistence.js?v=3'));
   assert.ok(cachedAssets.includes('/js/hepan-person.js?v=3'));
   assert.ok(cachedAssets.includes('/js/hepan-paywall.js?v=2'));

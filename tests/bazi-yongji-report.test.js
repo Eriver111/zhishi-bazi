@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260906g/, `${page} must load the auditable strength core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260907b/, `${page} must load the auditable strength core bundle`);
   }
 });
 
@@ -180,6 +180,16 @@ test('流年明确说明触发的是用神、喜神还是忌神', () => {
   assert.equal(thisYear.triggeredRole, '用神');
   assert.match(thisYear.triggeredReason, /流年天干丙火/);
   assert.match(thisYear.triggeredReason, /用神/);
+  assert.equal(thisYear.analysisType, 'structural_forecast');
+  assert.equal(thisYear.userCorrectable, true);
+  assert.equal(thisYear.realityPriority, 'user_confirmed_experience');
+  assert.match(thisYear.inferenceBoundary, /不是已发生事实/);
+  assert.match(thisYear.story.good, /不能据此断定某件事已经发生或一定会发生/);
+  assert.doesNotMatch(JSON.stringify(thisYear.story), /成功率|工资有上涨|贵人运很旺|适合谈婚论嫁/);
+
+  const resultSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'result.js'), 'utf8');
+  assert.match(resultSource, /下列事业、感情、家庭及健康内容只是候选方向，不代表已经发生/);
+  assert.match(resultSource, /生活方式提醒（非医学判断）/);
 });
 
 test('专业报告包含岁运与喜用忌的联动结论', () => {

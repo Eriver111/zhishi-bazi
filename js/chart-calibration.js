@@ -49,8 +49,12 @@
   }
 
   function parentYearContext(parentAnalysis, analysis, tenGod, dy, liuNian, age) {
-    if (!parentAnalysis || !parentAnalysis.facts) return null;
-    var facts = parentAnalysis.facts, yearHits = domainTriggers('family', analysis);
+    if (!parentAnalysis || !(parentAnalysis.evidence || parentAnalysis.facts)) return null;
+    // evidence 是现行结构证据；facts 仅兼容旧档案。亲疏与家庭支持等级在
+    // inferences 中，不能再被当成用户已经确认的现实事实。
+    var facts = parentAnalysis.evidence || parentAnalysis.facts;
+    var inferences = parentAnalysis.inferences || {};
+    var yearHits = domainTriggers('family', analysis);
     var dyTenGod = '', branchGods = [];
     try { dyTenGod = BaZiCalculator.getShiShen(_bazi.day.gan, dy.gan) || ''; } catch (e) {}
     try { branchGods = (BaZiCalculator.getCangGan(liuNian.zhi) || []).map(function(g){ return BaZiCalculator.getShiShen(_bazi.day.gan, g); }); } catch (e) {}
@@ -81,7 +85,7 @@
         : [{key:'parent_relation',label:'父母争执、冷淡或相处方式改变'},{key:'home_move',label:'搬家、住房或共同生活安排改变'},{key:'family_money',label:'家庭经济和生活条件随之变化'}]);
     if (age <= 23) consequences.push({key:'study_impact',label:'家庭变化进一步影响转学、升学或学习状态'});
     else consequences.push({key:'work_impact',label:'家庭变化进一步影响你的工作、城市或生活计划'});
-    return { target:target, star:star, palace:facts.palace, family:facts.family, yearHits:yearHits,
+    return { target:target, star:star, palace:facts.palace, family:inferences.family || facts.family || null, yearHits:yearHits,
       relevantHits:relevantHits, direction:direction, quadrant:quadrant, consequences:consequences,
       activationScore:yearHits.length + (fatherDirect || motherDirect ? 2 : 0), dyTenGod:dyTenGod, annualTenGod:tenGod };
   }

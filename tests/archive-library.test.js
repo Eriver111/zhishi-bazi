@@ -50,7 +50,7 @@ test('completed Hepan charts are saved, reopened and deleted from the shared arc
   assert.match(archive, /'\/hepan-result\?'/);
   assert.match(archive, /确定删除这份/);
   assert.match(resultPage, /hepan-person\.js\?v=3/);
-  assert.match(resultPage, /hepan-result\.js\?v=3/);
+  assert.match(resultPage, /hepan-result\.js\?v=4/);
 });
 
 test('Hepan can reuse either person from a saved personal chart without accepting Hepan records', () => {
@@ -76,7 +76,7 @@ test('archive AI continuation rebuilds the chart before restoring its conversati
   assert.match(integration, /function openStandaloneChat\(\)/);
   assert.match(integration, /buildChartData\(\)/);
   assert.match(integration, /localStorage\.setItem\('ai_chart_data'/);
-  assert.match(result, /ai-chat-integration\.js\?v=20260905c/);
+  assert.match(result, /ai-chat-integration\.js\?v=20260907c/);
 });
 
 test('mobile drawer exposes the archive library without replacing personal center', () => {

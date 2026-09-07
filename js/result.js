@@ -1340,6 +1340,7 @@ function renderMarriage(bazi, gender) {
     const meetMap = { '自由恋爱':'应该是在工作或社交中自然而然认识的','媒人介绍':'很可能是通过朋友或家人介绍认识的','巧合相遇':'缘分来得比较巧妙，可能是在旅途中偶遇' };
 
     el.innerHTML = ''
+        + '<div class="inference-boundary-note" style="margin:0 0 14px;padding:10px 12px;border-left:2px solid rgba(201,168,76,.45);color:var(--text-secondary);font-size:12px;line-height:1.75">以下内容是根据夫妻宫结构生成的取象参考，不代表已经发生的婚姻事实。你的真实恋爱与婚姻经历优先，可在 AI 中补充后重新解读。</div>'
         + '<div class="mp-couple">'
         +   '<span class="mp-day-gz">' + bazi.day.gan + bazi.day.zhi + '</span>'
         +   '<span class="mp-day-label">（你的日柱·夫妻宫）</span>'
@@ -1369,6 +1370,7 @@ function renderParents(bazi, gender) {
     if (!el) return;
 
     el.innerHTML = `
+        <div class="inference-boundary-note" style="margin:0 0 14px;padding:10px 12px;border-left:2px solid rgba(201,168,76,.45);color:var(--text-secondary);font-size:12px;line-height:1.75">以下内容是宫星同参形成的候选解释，不是现实关系的既成事实。若与你的实际经历不同，以真实经历为准，并可交给 AI 重新权衡。</div>
         <div class="pr-card pr-family">
             <div class="pr-card-body">
                 <div class="pr-card-title">原生家庭 <span class="pr-method-tag">年柱为宫</span></div>
@@ -1570,7 +1572,7 @@ function renderThisYear(bazi, gender) {
     var chongHtml = '';
     if (ty.chongWarnings && ty.chongWarnings.length > 0) {
         chongHtml = '<div style="font-size:13px;color:#E57373;line-height:2;padding:14px 16px;background:rgba(244,67,54,.04);border:1px solid rgba(244,67,54,.12);border-radius:3px;margin-bottom:12px">'
-            + '<div style="font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:6px">需要注意</div>'
+            + '<div style="font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:6px">冲动结构候选</div>'
             + ty.chongWarnings.map(function(w) { return '<p style="margin:0 0 6px">-- ' + w + '</p>'; }).join('')
             + '</div>';
     }
@@ -1578,7 +1580,7 @@ function renderThisYear(bazi, gender) {
     var heHtml = '';
     if (ty.heGoods && ty.heGoods.length > 0) {
         heHtml = '<div style="font-size:13px;color:#81C784;line-height:2;padding:14px 16px;background:rgba(76,175,80,.04);border:1px solid rgba(76,175,80,.12);border-radius:3px;margin-bottom:12px">'
-            + '<div style="font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:6px">好兆头</div>'
+            + '<div style="font-size:12px;font-weight:700;letter-spacing:2px;margin-bottom:6px">合象结构候选</div>'
             + ty.heGoods.map(function(g) { return '<p style="margin:0 0 6px">-- ' + g + '</p>'; }).join('')
             + '</div>';
     }
@@ -1602,6 +1604,8 @@ function renderThisYear(bazi, gender) {
         +   '</div>'
         + '</div>'
 
+        + '<div style="margin:0 0 14px;padding:10px 12px;border-left:2px solid rgba(201,168,76,.45);color:var(--text-secondary);font-size:12px;line-height:1.75">流年干支与冲合刑害是结构证据；下列事业、感情、家庭及健康内容只是候选方向，不代表已经发生。你的真实经历优先，可交给 AI 结合全盘重新解释。</div>'
+
         // 概括
         + '<div style="font-size:14px;color:var(--text-primary);line-height:2.2;padding:16px 18px;background:rgba(20,25,40,.5);border:1px solid rgba(212,175,55,.08);border-radius:3px;margin-bottom:14px">'
         +   '<p style="margin:0">' + ty.story.good + '</p>'
@@ -1609,7 +1613,7 @@ function renderThisYear(bazi, gender) {
 
         // 规避
         + '<div style="font-size:13px;color:var(--text-primary);line-height:2.2;padding:14px 16px;background:rgba(244,67,54,.03);border:1px solid rgba(244,67,54,.08);border-radius:3px;margin-bottom:12px">'
-        +   '<p style="margin:0"><span style="color:#E57373;font-weight:700;letter-spacing:2px">需要回避的</span></p>'
+        +   '<p style="margin:0"><span style="color:#E57373;font-weight:700;letter-spacing:2px">复核条件</span></p>'
         +   '<p style="margin:0">' + ty.story.bad + '</p>'
         + '</div>'
 
@@ -1619,7 +1623,7 @@ function renderThisYear(bazi, gender) {
 
         // 健康
         + '<div style="font-size:13px;color:var(--text-primary);line-height:2.2;padding:14px 16px;background:rgba(255,193,7,.03);border:1px solid rgba(255,193,7,.1);border-radius:3px;margin-bottom:12px">'
-        +   '<p style="margin:0 0 6px"><span style="color:#feca57;font-weight:700;letter-spacing:2px">身体状况</span></p>'
+        +   '<p style="margin:0 0 6px"><span style="color:#feca57;font-weight:700;letter-spacing:2px">生活方式提醒（非医学判断）</span></p>'
         +   '<p style="margin:0">' + ty.healthSummary + '</p>'
         +   (ty.healthExtra && ty.healthExtra.length > 0 ? '<p style="margin:8px 0 0;color:var(--text-secondary)">' + ty.healthExtra.join(' ') + '</p>' : '')
         + '</div>'

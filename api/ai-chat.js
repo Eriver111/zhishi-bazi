@@ -39,7 +39,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **格局论命**：正官格、七杀格、财格、印格、食伤格、建禄格、羊刃格等——格局高低决定人生层次。《耕寸集》云："八字用神，专求月令。以日干配月令地支，而生克不同，格局分焉。"
 - **用神喜忌**：本系统先以月令与透干确定候选格局及成破，再结合日主旺衰的扶抑法、调候与从格规则输出喜用忌。《滴天髓》："何知其人吉，用神有气而已矣。"
 - **旺衰判断**：得令（月令）、得地（地支根气）、得势（天干帮扶）——三得法综合定日主旺衰。《穷通宝鉴》按月令分日论五行调候。
-- **刑冲合害**：地支六合、三合、三会、六冲、六害、三刑——关系网决定命局动荡。《渊海子平》详述各类合冲之应事。
+- **刑冲合害**：地支六合、三合、三会、六冲、六害、三刑只说明关系被牵动及变动方式，具体吉凶必须结合喜忌、制化、柱位与岁运验证。《渊海子平》详述各类合冲之应事。
 - **大运流年**：阳男阴女顺行，阴男阳女逆行。起运岁数以节气差除以三。大运重地支，流年重天干。岁运并临、天克地冲为重要节点。
 
 ### 二、盲派命理（象法·做功体系）
@@ -65,7 +65,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **天干为表**：天干透出者为人所知、公开之事、显性性格
 - **地支为里**：地支伏藏者为暗中之事、隐私、隐性性格、身体内部
 - **刑主动**：相刑主动荡、官非、伤病——寅巳申无恩之刑（恩将仇报）、丑戌未恃势之刑（仗势欺人）、子卯无礼之刑（礼数缺失）
-- **冲主散**：相冲主变动、分离、冲突——子午冲（水火战）、卯酉冲（金木战）、寅申冲（金木战主车祸奔波）
+- **冲主散**：相冲可提示变动、分离或冲突——子午冲（水火交战）、卯酉冲（金木交战）、寅申冲（金木交战并增强迁移奔波信号）。任何冲都不能单独等同车祸、疾病、离婚或其他具体事件。
 - **合主绊**：相合主牵绊、合作、迟滞——合多者人缘好但易受拖累
 - **害主暗**：相害主暗中不利、小人暗算、貌合神离
 
@@ -82,7 +82,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **大运喜忌联动**：原局喜用忌是静态剖面，大运介入后元素角色动态变化——原忌可能因运化凶为吉（如忌金→走水运→金生水→水生身），原喜可能在忌运中无用武之地。
 - 婚姻感情：男命看财星及日支，女命看官杀及日支。配偶宫逢冲多感情波折。
 - 事业财运：官杀主事业地位，财星主财富。食伤生财者技艺致富，官印相生者仕途稳进。
-- 健康分析：五行偏枯对应五脏六腑。木弱肝胆易病，火衰心血不足，土虚脾胃不调。
+- 健康分析：五行偏枯只能作为传统取象线索，不能据此诊断疾病或声称某器官必然出问题。应使用“可能需要留意”的条件表达，并建议以医学检查为准。
 - 流年运势：结合大运看流年。岁运并临，吉凶加倍；天克地冲，多有变动。
 
 ## 回答准则
@@ -105,6 +105,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 3. **若没有 chartData**（用户只提供了出生信息但未排盘），你必须明确告知："请先通过排盘功能获取完整的八字分析数据，这样我才能给你精准解读。当前只能做初步参考。"
 4. **禁止跨体系混用术语**——绝对禁止在八字分析中使用六爻/梅花的术语（如：世爻、应爻、动爻、用神（六爻）、卦象、六亲（卦）、装卦、飞伏）。八字自有八字的十神体系和术语，用八字原生的概念（正官、七杀、正印、比肩、食神、财星、官星、印星、十神、日主、月令、大运、流年）回答。
 5. **出生时间字段锁定**——涉及出生钟点时，只能逐字引用 chartData.birthInfo.timeText 与 timeBasis；hourIndex 是 0—11 的内部时辰索引，绝不是 24 小时制钟点，禁止把 hourIndex=4 说成“凌晨4时”。若只有时柱而没有 timeText，只能说“辰时/巳时”等地支时辰，不得猜具体几点。
+6. **禁止伪造概率**——排盘数据没有提供真实统计样本，禁止自行写“七八成、三成以下、成功率70%、概率很高”等数值概率或比例。只能沿用冻结字段给出的定性方向与置信度档位，并明确它是规则证据强弱，不是现实事件发生率。
 
 ## 关键：如何使用预计算数据（降低幻觉）
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
@@ -119,19 +120,24 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
 - **daYun**（大运排盘）：用户的一生大运已由系统精确计算（顺逆、起运、每柱干支和十神）。单盘读取 chartData.daYun；合盘必须分别读取 chartData.person1.daYun 与 chartData.person2.daYun，禁止合并、交换或自行推算大运走向、起运岁数、大运干支。
 - **pattern.establishConditions**（格局成败清单）：逐项列出该格局的成立条件及✅/❌状态。成格条件不是装饰——每一条❌都代表命局的一个结构性缺陷，必须在分析中明确指出哪些条件满足、哪些缺失，以及缺失对命局层次的影响。
+- 若 pattern.establishConditions 缺失或为空，只能引用 pattern.name/status/source/breakReasons 已给出的内容，不得自行补造“若干条条件全部满足”、虚构条件清单或假装系统已经逐项审核。
 - **yongJi.chainHints**（生克链分析）：系统通过天干地支路径追踪（如财→杀→印→身的流向）发现的深层结构关系与《滴天髓》口诀匹配。这些不是泛泛之谈，而是原局具体干支的互动路径。直接引用链分析的发现，用来解释"为什么某个五行喜/忌"以及"格局搭配的优劣"。当链分析与基础旺衰取用有微妙差异时，链分析代表更精细的判断，应在分析中体现出来。**chainHints 是解释性证据，不得当作重新判定用神/喜忌或推翻格局结论的依据。**
 - **yongJi.chainAdjustments**（生克链修正）：链分析对五行喜忌的程度修正（如 downgrade_ji=忌但程度减轻，upgrade_ji=比原判更忌）。这些修正代表链分析在原局中发现的"反例"或"转圜通路"——例如财虽为忌，但财生杀→杀生印→印生身的通路让财忌中有喜。在讨论五行喜忌时必须提及这些修正。
 - **chainAnalysis**（完整生克事实图与取象候选）：mechanisms/paths 是程序从真实干支、全部藏干、十神、柱位距离中提取的生克制化路径；evidenceEdges 是事实证据；imageryCandidates 是带依据、柱位语境、喜忌方向和置信度的候选取象。它的目的不是锁死你的措辞：你可以综合多条候选、结合用户问题形成更细致的新表述，但不得改写其中的干支关系、十神、方向、强弱层级与喜用忌。低置信度藏干或隔柱证据只能作补充，不得压过透干、月令、日支和高置信度证据。
-- **palaceAnalysis**（宫位远近）：不同柱位（提纲/归息/祖业）对日主的作用力不同。月柱为提纲力量最强，时柱为归息管晚年，年柱为祖业距日主最远。分析十神力量时需考虑宫位——同一十神在月柱比在年柱作用更强。
-- **fortuneAnalysis**（大运联动）：系统对每步大运的喜用忌动态评估。原局的喜用忌是静态的，但大运介入后元素角色会变化（如原局忌金，但走水运时金生水→水生木，金反成水源）。分析运势时必须结合 fortuneAnalysis 的每步大运判词（喜运/忌运/偏喜/偏忌）和互动标注（冲提纲/补三合等），不能脱离大运语境谈流年。
+- **palaceAnalysis**（宫位远近）：不同柱位（提纲/归息/祖业）对日主的作用距离不同。柱位、干支和十神分布属于结构证据；由此延伸的家庭、事业、晚年与子女表现只是候选取象，不是用户现实经历。分析时可参考距离与显藏，但不得把“某十神位于某柱”直接写成已经发生的生活事实；用户实际经历优先。
+- **parentAnalysis**（父母宫星同参）：这是父母主题的结构证据与候选解释，不是现实经历的冻结事实。familyText、fatherText、motherText、parentsRelationshipText、childRelationshipText 和 summaryText 都只能作为命理倾向参考；父母宫说明家庭结构，父母星说明父母本人，星的喜忌、远近或某个十神名称均不能单独推出亲疏、沟通频率、支持程度、健康或寿元。回答父母问题应引用其中的结构依据，但用户明确陈述的真实经历优先；若二者不一致，必须承认“此前只是命理推断”，以用户经历为准重新权衡其他机制，不得辩称用户经历只是表面现象。
+- **fortuneAnalysis**（大运联动）：系统对每步大运的喜用忌动态评估。原局的喜用忌是静态的，但大运介入后元素角色会变化（如原局忌金，但走水运时金生水→水生木，金反成水源）。分析运势时必须结合 fortuneAnalysis 的每步大运方向（喜运/忌运/偏喜/偏忌）和互动标注（冲提纲/补三合等），不能脱离大运语境谈流年；但这些档位只表示规则结构方向，不是用户那十年现实结果的冻结事实。用户实际经历可校正“有利/不利具体兑现在哪里”，不得为了维护档位而否认现实。
+- **fortuneAnalysis.periods[].eventLedger**（大运事件账本）：这是每步大运基于结构关系生成的领域推断，不是已经发生的事实。stage 只说明该年龄段通常关注的现实重心；domainRecords 分别给出家庭、学习、事业、财富、感情、身心等领域的 direction、confidence、evidence、conclusion 和 decisionBasis。回答“早年印运是否得家人庇护”“中年财运是否事业变好”时应优先读取对应领域记录与 conditions，但必须使用倾向性语言；用户给出的已发生事件高于账本推断，并可用于解释哪些机制实际兑现、哪些没有兑现。禁止从十神名称直接推出事件，禁止把一项领域的方向借给另一领域。
 - **yongJi.yongShenQuality**（用神真假评估）：系统评估每个用神/喜神的根气强弱（真用神/偏真/弱/假）。用神真假直接影响命局层次——真用神有力则一生层次高，假用神虚浮则需大运补根方显其用。在分析五行喜忌时必须结合用神真假，不可把假用神当作真用来论。
-- **dayBranchAnalysis**（日支夫妻宫专项）：日支是配偶宫+日主根基的双重所在。系统已分析日支十神类型、日主根气深浅、冲合刑害状态、三合三会角色、配偶宫稳定度。分析婚姻感情时必须引用此数据；分析日主旺衰时注意日支根气分。
-- **liuNianAnalysis**（流年三方互动）：系统分析当前流年干支+大运干支+原局四柱的三方关系——包括岁运并临、天克地冲、伤官见官、流年合日主、三刑补齐等关键触发。每个触发标注吉凶（✅吉/⚠凶）和严重度（critical/high/medium/low），以及综合判词（大吉/偏吉/中性/偏凶/大凶）。分析今年运势时必须以此为准，不可脱离具体触发泛泛而谈。
+- **dayBranchAnalysis**（日支夫妻宫专项）：日支、十神映射、根气、冲合刑害及三合三会成员属于结构事实；“配偶性格、婚姻稳定度、聚散或矛盾程度”属于可校正推断。分析婚姻时应引用结构证据，但不得把 stability、ssDesc、summary 当作用户现实婚姻的既成事实。用户明确提供的恋爱、结婚、离婚、分居等经历优先，冲突时保留日支结构并重写解释。
+- **合盘 analysis**（双盘关系候选）：双方各自四柱、日主、旺衰、喜用忌、大运顺序及跨盘干支关系属于结构证据；契合评分只是规则启发式指数，不是现实相处质量、成功率或事件概率。ganDesc、zhiDesc、coreMode、yearlyAdvice、dosAndDonts、互补描述等均是可校正候选，不得当作双方已经发生的经历。用户明确陈述的实际关系、相处方式与事件优先，冲突时保留结构关系、撤回未兑现推断并重新解释。
+- **liuNianAnalysis**（流年三方互动）：流年干支、大运干支、原局关系以及岁运并临、天克地冲、三刑成员等属于结构事实；trigger 的现实事项、dangerScore/opportunityScore 和综合判词属于规则方向推断，不是事件已经发生或现实概率。分析今年运势时应以具体结构触发为依据并使用条件语言；用户已发生的实际情况优先，可用来校正触发最终落在哪个领域，但不能倒改流年干支与结构关系。
 - **currentDaYun**（当前所处大运）：已精确计算，直接引用其干支和十神
 - **currentLiuNian**（当前流年）：已精确计算，结合大运分析流年运势时以此为准。若 chartData 中有当前大运和当前流年数据，直接使用，不要自行推算。
 - **relationEvents**（四柱关系事件）：系统枚举的天干五合、天干克、六冲、六害、刑、六合、三合局、半合、三会方、半会等事实层事件。对称关系（五合/六冲/六害/刑/六合）的 source/target 仅为规范排序、不赋因果语义；天干克保留真实克方方向。引用时按事件类型与柱位描述即可。
 - **structuralRisks**（条件性结构风险）：系统按冻结规则判定的风险列表（type/severity/parties/why/mitigations/triggerHint/partyEvidence；severity 仅"存在/潜在"两档）。**structuralRisks 不是喜用忌结论**：喜用忌（yongJi）是五行总体需求，structuralRisks 是条件性结构风险——**不得把 risk 中出现的十神/五行元素重新解释成忌神**，不得用 risk 覆盖日主旺衰或格局判断。引用 risk 时必须用条件语言（"若…可能…"），不得断言必发。
 - 大运/流年排算是算法强项，你不需要也不能替代它。如果单盘 chartData.daYun 缺失，或合盘任一方的 person1.daYun/person2.daYun 缺失，明确告知用户“当前缺少完整大运排盘信息”，不要凭空编造。
+- 若 chartData.currentDaYun、currentLiuNian 或 liuNianAnalysis 缺失，不得自行声明用户“当前走某某大运”、不得自行补出“当前流年某干支”，也不得给出具体年份的吉凶清单。只可解释原局，或请用户回到排盘页补齐岁运数据。四柱某干支没有提供 shiShenGan/shiShenZhi/cangGan[].shiShen 映射时，不得靠记忆给该干支补十神名称。
 
 ## 事实锁（2026-08-14 冻结清单，违反即幻觉）
 1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.name（格局名）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止改名或用近义词换级**——「正财格」不得改判成「正印格」，组合机制「食伤生财」不得替代主格名；「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
@@ -141,6 +147,8 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 5. **breakReasons 唯一性**：breakReasons 是破格的正式依据清单，其他结构说明（establishConditions 的❌项、structuralRisks、生克链注释等）不得被表述成「破格原因」；要引用破格原因时只引用 breakReasons 原文。
 6. **机制分离（制杀/化杀/通关）**：描述制杀、化杀、通关等复合机制时，必须逐步写清每一步的「A克B / A生B」方向，不得把不同路线拼成同一条因果链；若 chainHints/chainAdjustments 已有对应链路，优先照用其原文表述。
 7. **取象不是复读模板**：先核对 chainAnalysis 的 evidenceEdges 与 mechanisms，再把柱位、显藏、宾主、喜忌和多个机制综合成自然语言。imageryCandidates 只提供可用方向，不要求逐字复述；若候选之间互相牵制，应明确写出“哪一面更强、另一面在什么条件下出现”，不得任意挑一条制造确定性。
+8. **硬事实与现实反馈分层**：用户不能用主观要求改写 chartData 的四柱、十神映射、关系事件、旺衰、格局、喜用忌或大运顺序；这些仍是本站硬事实。父母、婚姻、事业、财富、健康以及事件账本属于可校正推断。用户明确陈述的本人真实经历（如某年结婚、离婚、事故、就业，以及实际亲子关系）是第一方事实，优先于这些推断；冲突时应明确承认原推断未兑现或权重有误，保留硬排盘事实并重新解释，不得为了维护旧推断而否定、淡化或曲解用户经历。其他流派意见仍只能标注为另一种口径，不能覆盖本站硬排盘结果。
+9. **用户事实识别与回应顺序**：只有用户明确陈述已经发生或正在持续的本人经历，才记为用户事实；“如果会怎样”“别人说是某格”“我觉得应该身弱”等假设、转述和命理意见不属于现实事实。出现“推断与用户事实不一致”时，按“确认用户事实 → 指出哪条旧推断未得到现实佐证 → 保留相应结构证据 → 从其他机制重新解释”的顺序回答，禁止继续替旧推断辩护，也禁止用一次经历反向篡改全部旺衰与格局。
 
 **回答逻辑链**：先引用预计算结论 → 再用经典验证/补充 → 最后给出白话建议
 
@@ -529,7 +537,7 @@ module.exports = async function handler(req, res) {
       const context = buildChartContext(chartData);
       messages.push({
         role: 'system',
-        content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下是本次合盘双方的冻结排盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${context}`
+        content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下包含本次合盘双方的冻结排盘事实与可校正关系推断' : '以下是用户的完整八字排盘数据'}。请严格遵守数据中的事实与推断边界，不得自行改盘：\n\n${context}`
       });
     } else if (bazi && bazi.year) {
       const baziContext = buildBasicBaziContext(bazi);
@@ -668,7 +676,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (chartData) {
     messages.push({
       role: 'system',
-      content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下是本次合盘双方的冻结排盘事实' : '以下是用户的完整八字排盘数据'}。请严格基于这些数据回答，不得自行改盘：\n\n${buildChartContext(chartData)}`
+      content: `${mode === 'ziwei' ? '以下是用户的紫微斗数排盘事实' : mode === 'liuren' ? '以下是用户的大六壬课盘事实' : chartData.type === 'hepan' ? '以下包含本次合盘双方的冻结排盘事实与可校正关系推断' : '以下是用户的完整八字排盘数据'}。请严格遵守数据中的事实与推断边界，不得自行改盘：\n\n${buildChartContext(chartData)}`
     });
     if (chartData.type === 'hepan') {
       messages.push({ role: 'system', content: '【合盘身份锁】P1/甲方与P2/乙方是两个独立命盘，角色顺序不可交换。回答前先在内部核对双方姓名、性别、四柱和日主；谈单方性质时必须明确写“甲方”或“乙方”，谈跨盘作用时必须写清作用方向。双方大运只允许分别逐项引用 person1.daYun 与 person2.daYun：起运年龄、顺逆、年龄段、干支均不可自行换算、补造、重排或互换；询问男方/女方时先根据本轮 gender 映射回甲乙方，并在答案中同时保留甲方/乙方标签。不得把一方的十神、旺衰、喜用忌、原局关系、出生信息或大运套给另一方；用户使用“他/她”而指向不明时，应先说明按哪一方理解。历史回答若与本轮身份锁冲突，一律丢弃历史并以本轮数据为准。' });
@@ -683,7 +691,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (memorySummary) {
     messages.push({
       role: 'system',
-      content: '以下是同一用户、同一命盘以往对话形成的长期记忆摘要。它只用于理解用户已经谈过的重点和表达偏好；若与本次 chartData 冲突，必须以本次排盘事实为准，不得用记忆改盘：\n' + memorySummary
+      content: '以下是同一用户、同一命盘以往对话形成的长期记忆摘要。摘要中的用户亲自陈述经历属于现实反馈：它不能改写本次 chartData 的四柱、十神、关系类型、旺衰、格局、喜用忌和大运顺序等硬排盘事实；但若它与 parentAnalysis、dayBranchAnalysis、palaceAnalysis、fortuneAnalysis、liuNianAnalysis、eventLedger 或合盘描述等可校正推断冲突，必须以用户经历为准，明确撤回未兑现推断并重新解释，不得笼统地用“chartData优先”否定用户经历。回答偏好只影响表达方式：\n' + memorySummary
     });
   }
 
@@ -748,7 +756,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
 
   // V1 回复校验 + V2 定向自修正（GPT终裁 2026-08-14）
   // 两级拆分：hard（确定性事实错误——E1 五合/三合三会/生克/十神映射、E2 relationEvents 否定冲突）
-  // 可触发 V2 一次；soft（E4 档位关键词扫描，误报率高）只记录 warning，永不为 V2 触发器。
+  // 可触发 V2 一次；soft（E4 档位关键词、E5 伪概率扫描）只记录 warning，永不为 V2 触发器。
   var validationWarnings = [];
   var v2Applied = false;
   if (mode !== 'ziwei' && mode !== 'liuren') {
@@ -771,16 +779,16 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
         if (hard2.length) console.log('[ai-validator-v2] ⚠ 修正后仍有 hard 错误 ' + hard2.length + ' 条——按终裁不循环，记录异常');
       }
     }
-    // 大运归属属于不可妥协的排盘事实。若一次定向修正后仍未通过，
-    // 不把错误正文交给用户，直接降级为双方已冻结的大运事实表。
-    var unresolvedHepanDaYun = validationWarnings.filter(function(w) {
-      return w.indexOf('E1-合盘大运') === 0;
+    // 合盘身份归属属于不可妥协的排盘事实。若一次定向修正后仍未通过，
+    // 不把张冠李戴的正文交给用户，直接降级为双方已冻结的身份事实表。
+    var unresolvedHepanIdentity = validationWarnings.filter(function(w) {
+      return w.indexOf('E1-合盘') === 0;
     });
-    if (unresolvedHepanDaYun.length) {
-      reply = buildHepanDaYunFactFallback(chartData);
+    if (unresolvedHepanIdentity.length) {
+      reply = buildHepanIdentityFactFallback(chartData, unresolvedHepanIdentity);
       validationWarnings = runReplyValidation(chartData, reply);
       v2Applied = true;
-      console.log('[ai-validator] 合盘大运仍有冲突，已阻断原回答并返回冻结事实表');
+      console.log('[ai-validator] 合盘身份归属仍有冲突，已阻断原回答并返回冻结事实表');
     }
   }
   if (metaOut) { metaOut.warnings = validationWarnings; metaOut.v2Applied = v2Applied; }
@@ -804,8 +812,40 @@ function runReplyValidation(chartData, reply) {
   var WX = '金木水火土';
   var m;
 
-  // ---------- ⓪a 合盘双方大运归属与顺序（E1） ----------
-  // 只校验带年龄段的明确大运断言，避免把流年干支、原局四柱误当成大运。
+  // ---------- ⓪ 伪统计概率（E5，仅记录） ----------
+  // 命理规则的 confidence 是证据档位，不是经样本校准的事件发生率。
+  // 只抓同时带概率语义的数字，避免把命盘分数或普通数量误报。
+  var fakeProbabilityRe = /(?:(?:概率|可能性|几率|成功率|发生率|准确率|把握)[^。；，,\n]{0,12}(?:\d{1,3}(?:\.\d+)?%|[一二三四五六七八九十两\d](?:(?:至|到|—|-|~|～)[一二三四五六七八九十两\d])?成(?:以上|以下|左右|上下)?))|(?:(?:\d{1,3}(?:\.\d+)?%|[一二三四五六七八九十两\d](?:(?:至|到|—|-|~|～)[一二三四五六七八九十两\d])?成(?:以上|以下|左右|上下)?)[^。；，,\n]{0,12}(?:概率|可能性|几率|成功率|发生率|准确率|把握))/g;
+  while ((m = fakeProbabilityRe.exec(reply)) !== null) {
+    warnings.push('E5-伪概率：回复出现「' + m[0] + '」；命盘没有统计样本，不得把规则置信度写成现实事件发生率');
+  }
+
+  // ---------- ⓪b 缺失岁运数据却自行排运（E1） ----------
+  // 前端排运采用真太阳时、顺逆与精确起运，模型不能用记忆补一套。
+  if (chartData.type !== 'hepan' && !(chartData.daYun && chartData.daYun.cycles && chartData.daYun.cycles.length)) {
+    var inventedDaYun = String(reply).match(/(?:当前|目前|现在|现阶段)[^。；\n]{0,18}(?:走|行|处于|所处)[^。；\n]{0,12}([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])大运/);
+    if (inventedDaYun) warnings.push('E1-缺失大运却自行排运：chartData.daYun 缺失，回复却声称「' + inventedDaYun[0] + '」');
+    var inventedYearVerdict = String(reply).match(/20\d{2}年[^。；\n]{0,36}(?:最需要|偏吉|偏凶|大吉|大凶|高风险|风险突出|务必注意|最明显)/);
+    if (inventedYearVerdict) warnings.push('E1-缺失岁运却断具体年份：chartData.daYun 缺失，回复却给出「' + inventedYearVerdict[0] + '」');
+  }
+  if (chartData.type !== 'hepan' && !chartData.currentLiuNian) {
+    var inventedCurrentYear = String(reply).match(/(?:当前流年|今年)[：为是\s]*[（(]?\d{4}年?[）)]?[：为是\s]*([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])/);
+    if (inventedCurrentYear) warnings.push('E1-缺失流年却自行排年：chartData.currentLiuNian 缺失，回复却声称「' + inventedCurrentYear[0] + '」');
+  }
+
+  // ---------- ⓪c 把某五行机械等同整步好运（E1） ----------
+  // 原局角色只是基础方向，必须由具体干支、刑冲合害和事件账本复核。
+  var mechanicalLuck = String(reply).match(/(?:岁运|大运|流年)(?:逢|见|遇)[金木水火土][^。；\n]{0,18}(?:必然|一定|就会|都会|才是|真正)(?:顺遂|顺利|变顺|好运|吉利|发财|成功)/);
+  if (mechanicalLuck) warnings.push('E1-机械岁运结论：回复出现「' + mechanicalLuck[0] + '」；五行基础方向不能代替具体岁运验证');
+
+  var frozenPattern = chartData.pattern;
+  if (frozenPattern && (!Array.isArray(frozenPattern.establishConditions) || !frozenPattern.establishConditions.length)) {
+    var inventedConditions = String(reply).match(/(?:系统(?:明确)?(?:给出|标注|判定)?|共有|以下)?\s*[一二三四五六七八九十\d]+条(?:成格|成立)?条件[^。；\n]{0,12}(?:全部|均)(?:满足|成立|通过)/);
+    if (inventedConditions) warnings.push('E1-虚构格局条件：pattern.establishConditions 未提供，回复却声称「' + inventedConditions[0] + '」');
+  }
+
+  // ---------- ⓪a 合盘双方身份事实与大运归属（E1） ----------
+  // 日主、旺衰和大运必须先归属到甲乙方，再逐项核对，防止模型把两盘互换。
   if (chartData.type === 'hepan') {
     var hepanPeople = [
       { role:'甲方', id:'P1', data:chartData.person1 || {} },
@@ -826,12 +866,69 @@ function runReplyValidation(chartData, reply) {
       if (/女方/.test(line) && uniqueGenderRole.female) return uniqueGenderRole.female;
       return '';
     }
+    function getDayGan(person) {
+      return String((person.dayMaster && person.dayMaster.gan) ||
+        (person.fourPillars && person.fourPillars.day && person.fourPillars.day.gan) || '');
+    }
+    function strengthFamily(level) {
+      if (/^(?:极强|偏强|身强|身旺|偏旺)$/.test(level)) return 'strong';
+      if (/^(?:极弱|偏弱|身弱|身衰|偏衰)$/.test(level)) return 'weak';
+      if (level === '中和') return 'neutral';
+      return '';
+    }
     var activeRole = '';
     String(reply).split(/\n/).forEach(function(line) {
       var explicitRole = roleFromLine(line);
       if (explicitRole) activeRole = explicitRole;
       if (!activeRole) return;
       var item = hepanPeople.filter(function(person) { return person.role === activeRole; })[0];
+      if (!item) return;
+
+      // 只抓“日主/日元”附近的明确断言，避免把四柱、流年或十神中的天干误报为日主。
+      var claimedDayGan = '';
+      var dayGanBefore = line.match(/([甲乙丙丁戊己庚辛壬癸])(?:[金木水火土])?\s*(?:日主|日元)/);
+      var dayGanAfter = line.match(/(?:日主|日元)(?:为|是|：|:)?\s*([甲乙丙丁戊己庚辛壬癸])/);
+      if (dayGanBefore) claimedDayGan = dayGanBefore[1];
+      else if (dayGanAfter) claimedDayGan = dayGanAfter[1];
+      var expectedDayGan = getDayGan(item.data);
+      if (claimedDayGan && expectedDayGan && claimedDayGan !== expectedDayGan) {
+        warnings.push('E1-合盘日主归属冲突：' + activeRole + '被写成「' + claimedDayGan + '日主」，排盘应为「' + expectedDayGan + '日主」');
+      }
+
+      // 旺衰允许“偏强≈身强”“偏弱≈身弱”的口语归并，但强弱方向或中和不可互换。
+      var expectedStrength = String(item.data.dayMasterStrength && item.data.dayMasterStrength.level || '');
+      var claimedStrengthMatch = line.match(/(?:旺衰(?:为|是|：|:)?|命局(?:为|是|：|:)?|(?:日主|日元)[^，。；\n]{0,12}?)(极强|偏强|中和|偏弱|极弱|身强|身弱|身旺|身衰|偏旺|偏衰)/);
+      var claimedStrength = claimedStrengthMatch ? claimedStrengthMatch[1] : '';
+      if (claimedStrength && expectedStrength && strengthFamily(claimedStrength) !== strengthFamily(expectedStrength)) {
+        warnings.push('E1-合盘旺衰归属冲突：' + activeRole + '被写成「' + claimedStrength + '」，排盘冻结档位为「' + expectedStrength + '」');
+      }
+
+      // 只校验带“用神/喜神/忌神”标签的明确清单；解释某五行的条件作用不会被误判。
+      var yongJi = item.data.yongJi || {};
+      [
+        { label:'用神', field:'yongShen' },
+        { label:'喜神', field:'xiShen' },
+        { label:'忌神', field:'jiShen' }
+      ].forEach(function(rule) {
+        var expected = Array.isArray(yongJi[rule.field]) ? yongJi[rule.field].map(String) : [];
+        if (!expected.length) return;
+        var claimRe = new RegExp(rule.label + '(?:为|是|：|:)?\\s*[「“]?([金木水火土、，和及与\\s]+)');
+        var claimMatch = line.match(claimRe);
+        if (!claimMatch) return;
+        var claimed = (claimMatch[1].match(/[金木水火土]/g) || []).filter(function(wx, index, list) { return list.indexOf(wx) === index; });
+        var foreign = claimed.filter(function(wx) { return expected.indexOf(wx) < 0; });
+        if (foreign.length) {
+          warnings.push('E1-合盘喜用忌归属冲突：' + activeRole + rule.label + '被写入「' + foreign.join('、') + '」，排盘冻结清单为「' + expected.join('、') + '」');
+        }
+      });
+
+      var expectedPattern = String(item.data.pattern && item.data.pattern.name || '');
+      var claimedPatternMatch = line.match(/(?:主格|格局)(?:为|是|：|:)?\s*[「“]?([^，。；\n」”]{1,12}格)/);
+      var claimedPattern = claimedPatternMatch ? claimedPatternMatch[1].trim() : '';
+      if (claimedPattern && expectedPattern && claimedPattern !== expectedPattern) {
+        warnings.push('E1-合盘格局归属冲突：' + activeRole + '被写成「' + claimedPattern + '」，排盘冻结主格为「' + expectedPattern + '」');
+      }
+
       var cycles = item && item.data.daYun && item.data.daYun.cycles;
       if (!cycles || !cycles.length) return;
       var expectedByAge = {};
@@ -895,6 +992,19 @@ function runReplyValidation(chartData, reply) {
         }
       });
     }
+
+    // 只有明确“改判/按另一档取用”的句式才作为硬错误。普通的流派差异说明
+    // 仍由上面的 E4 软扫描记录，避免“并非身弱”一类否定句误触发重答。
+    var decisiveStrengthTerms = ds.level === '中和'
+      ? ['身强', '偏强', '极强', '身旺', '身弱', '偏弱', '极弱', '身衰']
+      : (fam === 'strong' ? ['身弱', '偏弱', '极弱', '身衰', '中和'] : ['身强', '偏强', '极强', '身旺', '中和']);
+    decisiveStrengthTerms.forEach(function(term) {
+      var escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var decisiveRe = new RegExp('(?:日主|命局|此局)[^。；\\n]{0,16}(?<!不)(?:属于|定为|判为|应为|按|以)?[“”「」]?'+ escaped +'[“”「」]?(?:来论|论|喜|之象|格)?|按[“”「」]?'+ escaped +'[“”「」]?(?:口径|视角|重排|重写|来论)|'+ escaped +'喜(?:印|比|财|官|杀|食|伤|金|木|水|火|土)');
+      if (decisiveRe.test(reply)) {
+        warnings.push('E1-冻结旺衰改判：系统档位为「' + ds.level + '」，回复却按「' + term + '」重新取用或下结论；用户意见只能作为差异说明，不能覆盖冻结事实');
+      }
+    });
   }
 
   // ---------- ①b 冻结格局名漂移（E3） ----------
@@ -1028,10 +1138,11 @@ function runReplyValidation(chartData, reply) {
 /**
  * V2 触发器分类（GPT终裁 2026-08-14）：hard = 确定性机械可验证的事实错误，可触发 V2 定向自修正一次；
  * soft = E4 档位关键词扫描（误报率高，回归 11 命中 10 误报），只记录 warning，永不为 V2 触发器。
- * 当前只有 E4 前缀为 soft，其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突）均为 hard。
+ * 当前 E4（证据覆盖不足）与 E5（未经数据支撑的概率表达）为 soft，
+ * 其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突）均为 hard。
  */
 function isHardWarning(w) {
-  return w.indexOf('E4') !== 0;
+  return w.indexOf('E4') !== 0 && w.indexOf('E5') !== 0;
 }
 
 function buildHepanDaYunFactFallback(chartData) {
@@ -1054,6 +1165,41 @@ function buildHepanDaYunFactFallback(chartData) {
     personBlock('甲方', chartData && chartData.person1) + '\n\n' +
     personBlock('乙方', chartData && chartData.person2) +
     '\n\n本轮不沿用未通过校验的同步结论，请以以上两套大运为准。';
+}
+
+function buildHepanIdentityFactFallback(chartData, warnings) {
+  function personIdentity(role, person) {
+    person = person || {};
+    var gender = person.gender === 'male' ? '男' : person.gender === 'female' ? '女' : '性别未知';
+    var dayGan = String((person.dayMaster && person.dayMaster.gan) ||
+      (person.fourPillars && person.fourPillars.day && person.fourPillars.day.gan) || '未提供');
+    var strength = String(person.dayMasterStrength && person.dayMasterStrength.level || '未提供');
+    var pattern = String(person.pattern && person.pattern.name || '未提供');
+    var yongJi = person.yongJi || {};
+    var yongJiText = ['用神', '喜神', '忌神'].map(function(label, index) {
+      var field = ['yongShen', 'xiShen', 'jiShen'][index];
+      var values = Array.isArray(yongJi[field]) ? yongJi[field] : [];
+      return label + '：' + (values.length ? values.join('、') : '未提供');
+    }).join('；');
+    var pillars = ['year','month','day','hour'].map(function(pos) {
+      var p = person.fourPillars && person.fourPillars[pos];
+      return p ? String(p.gan || '') + String(p.zhi || '') : '？';
+    }).join(' ');
+    return role + '（' + (person.name || role) + '，' + gender + '）\n' +
+      '- 四柱：' + pillars + '\n' +
+      '- 日主：' + dayGan + '\n' +
+      '- 旺衰：' + strength + '\n' +
+      '- 主格：' + pattern + '\n' +
+      '- 喜用忌：' + yongJiText;
+  }
+  var hasDaYunConflict = (warnings || []).some(function(w) { return w.indexOf('E1-合盘大运') === 0; });
+  var result = '刚才生成的合盘回答未通过双方身份归属校验。为避免继续把两个人的数据混在一起，错误正文已被拦截。以下只列系统冻结事实：\n\n' +
+    personIdentity('甲方', chartData && chartData.person1) + '\n\n' +
+    personIdentity('乙方', chartData && chartData.person2);
+  if (hasDaYunConflict) {
+    result += '\n\n' + buildHepanDaYunFactFallback(chartData).replace(/^刚才生成[^\n]*\n\n/, '');
+  }
+  return result + '\n\n本轮不沿用未通过校验的推断；需要继续解读时，请以以上身份为准重新提问。';
 }
 
 /**
@@ -1131,7 +1277,7 @@ function buildChartContext(chartData) {
     ctx += `=== 合盘分析（双命盘隔离） ===\n`;
     ctx += `关系类型：${chartData.relationType || '未知'}\n`;
     if (chartData.score) {
-      ctx += `契合度评分：${chartData.score.total || '?'} 分 (${chartData.score.label || ''})\n`;
+      ctx += `契合度规则指数（仅供排序解释，非现实质量或概率）：${chartData.score.total || '?'} 分 (${chartData.score.label || ''})\n`;
     }
     ctx += `甲方身份锁：P1｜${p1.name || '甲方'}｜${p1.gender === 'male' ? '男' : p1.gender === 'female' ? '女' : '性别未知'}｜四柱 ${pillarSignature(p1)}\n`;
     ctx += `乙方身份锁：P2｜${p2.name || '乙方'}｜${p2.gender === 'male' ? '男' : p2.gender === 'female' ? '女' : '性别未知'}｜四柱 ${pillarSignature(p2)}\n`;
@@ -1141,8 +1287,31 @@ function buildChartContext(chartData) {
     ctx += `\n--- [P2/乙方，只属于乙方] ---\n`;
     ctx += buildSingleChart(p2);
     if (chartData.analysis) {
-      ctx += `\n--- 合盘分析摘要 ---\n`;
-      ctx += JSON.stringify(chartData.analysis, null, 2);
+      const hp = chartData.analysis || {};
+      const structuralAnalysis = {
+        analysisType: 'relationship_hypothesis',
+        userCorrectable: true,
+        realityPriority: 'user_confirmed_experience',
+        inferenceBoundary: hp.inferenceBoundary || '双方冻结排盘数据与明确跨盘关系属于结构证据；评分、性格、相处模式、关系结果和年度事项属于候选推断，不是现实事实。',
+        dailyRelationEvidence: hp.dailyRelation ? {
+          ganRelation: hp.dailyRelation.ganRelation,
+          zhiRelation: hp.dailyRelation.zhiRelation
+        } : null,
+        individualStrengthEvidence: hp.dayGanStrength ? {
+          p1Strength: hp.dayGanStrength.p1Strength,
+          p2Strength: hp.dayGanStrength.p2Strength
+        } : null,
+        individualYongJiEvidence: hp.xiyong ? {
+          p1: hp.xiyong.p1,
+          p2: hp.xiyong.p2
+        } : null,
+        crossPillarEvidence: Array.isArray(hp.crossPillars) ? hp.crossPillars.map(function(item) {
+          return { type: item.type, pillar1: item.pillar1, pillar2: item.pillar2 };
+        }) : []
+      };
+      ctx += `\n--- 合盘结构证据与关系推断边界 ---\n`;
+      ctx += JSON.stringify(structuralAnalysis, null, 2);
+      ctx += `\n说明：原始契合评分、描述文案、核心模式、年度建议、宜忌和现实结果预测未作为事实传入；用户确认的真实相处经历优先。\n`;
     }
     return ctx;
   }
@@ -1378,12 +1547,46 @@ function buildSingleChart(data) {
   // v5.0: 宫位远近分析
   if (data.palaceAnalysis) {
     var pa = data.palaceAnalysis;
-    ctx += `\n宫位远近分析：\n`;
+    ctx += `\n宫位结构证据与候选取象（可被真实经历校正）：\n`;
     ctx += `  提纲(月柱)：${pa.monthDesc || '—'}\n`;
     ctx += `  归息(时柱)：${pa.hourDesc || '—'}\n`;
     ctx += `  祖业(年柱)：${pa.yearDesc || '—'}\n`;
     if (pa.scoreAdjustment !== undefined) ctx += `  宫位修正分：${pa.scoreAdjustment > 0 ? '+' : ''}${pa.scoreAdjustment}\n`;
-    ctx += `  宫位解读：${pa.summary || '无特殊宫位影响'}\n`;
+    ctx += `  宫位解读候选：${pa.summary || '暂无额外候选'}\n`;
+    ctx += `  推断边界：${pa.inferenceBoundary || '柱位和十神分布属于结构证据；现实表现不是已发生事实。'} 用户确认的实际经历优先。\n`;
+  }
+
+  // 父母宫星同参提供结构证据和候选解释；现实经历可以校正这些推断。
+  if (data.parentAnalysis) {
+    var parents = data.parentAnalysis;
+    ctx += `\n父母关系推断候选（宫星同参，可被用户真实经历校正）：\n`;
+    ctx += `  性质：规则推断，不是现实事实；可校正=${parents.userCorrectable === true ? '是' : '未标注'}\n`;
+    var parentEvidence = parents.evidence || parents.facts || {};
+    if (parentEvidence.methodVersion) ctx += `  方法版本：${parentEvidence.methodVersion}\n`;
+    var parentStars = parentEvidence.parentStars || {};
+    ['father', 'mother'].forEach(function(key) {
+      var star = parentStars[key];
+      if (!star) return;
+      var who = key === 'father' ? '父星' : '母星';
+      var positions = (star.appearances || []).map(function(item) { return item.label || item.pos || ''; }).filter(Boolean);
+      ctx += `  ${who}结构证据：${star.name || '—'}（${star.element || '—'}），出现=${positions.join('、') || '未直接出现'}`;
+      if (star.damageEvents && star.damageEvents.length) ctx += `；受作用=${star.damageEvents.map(function(item) { return (item.pair || '') + (item.type || ''); }).join('、')}`;
+      ctx += `\n`;
+    });
+    var parentPalace = parentEvidence.palace || {};
+    if (parentPalace.stem || parentPalace.branch) {
+      ctx += `  父母宫结构证据：${parentPalace.stem || ''}${parentPalace.branch || ''}，宫内五行关系=${parentPalace.intraRelation || '未标注'}`;
+      var palaceEvents = (parentPalace.damageEvents || []).concat(parentPalace.combinationEvents || []);
+      if (palaceEvents.length) ctx += `；跨柱作用=${palaceEvents.map(function(item) { return (item.pair || '') + (item.type || ''); }).join('、')}`;
+      ctx += `\n`;
+    }
+    ctx += `  家庭根基：${parents.familyText || parents.yearNote || '—'}\n`;
+    ctx += `  父亲：${parents.fatherText || '—'}\n`;
+    ctx += `  母亲：${parents.motherText || '—'}\n`;
+    ctx += `  父母之间：${parents.parentsRelationshipText || '—'}\n`;
+    ctx += `  本人与父母：${parents.childRelationshipText || '—'}\n`;
+    ctx += `  综合：${parents.summaryText || '—'}\n`;
+    ctx += `  推断边界：以上文字不是已发生事实。父母宫只说明家庭结构，父母星说明父母本人；星的喜忌、远近或单一十神不能直接判断亲疏、沟通、支持、健康或寿元。用户明确陈述的实际关系与经历优先，冲突时应承认原推断偏差并重新解释。\n`;
   }
 
 
@@ -1396,10 +1599,11 @@ function buildSingleChart(data) {
     });
   }
 
-  // v5.2: 日支专项分析
+  // v5.2: 日支结构事实与婚姻推断候选
   if (data.dayBranchAnalysis) {
     var dba = data.dayBranchAnalysis;
-    ctx += '\n日支（夫妻宫）专项分析：\n';
+    ctx += '\n日支（夫妻宫）结构证据与婚姻推断候选：\n';
+    ctx += '  性质：结构事实与解释推断分离；可校正=' + (dba.userCorrectable === true ? '是' : '未标注') + '\n';
     ctx += '  日支' + dba.branch + '（' + dba.wuXing + '），' + dba.mainShiShen + '——' + (dba.ssDesc || '') + '\n';
     ctx += '  日主根气：' + dba.rootType + '（根气分' + dba.rootScore + '）\n';
     if (dba.interactions && dba.interactions.length) {
@@ -1408,7 +1612,7 @@ function buildSingleChart(data) {
         ctx += '    - ' + ix.type + '·' + ix.with + '：' + ix.detail + '\n';
       });
     }
-    ctx += '  稳定度：' + dba.stability + '\n';
+    ctx += '  稳定度候选（可被真实经历校正）：' + dba.stability + '\n';
     if (dba.heRole) ctx += '  三合角色：' + dba.heRole + '\n';
     if (dba.huiRole) ctx += '  三会角色：' + dba.huiRole + '\n';
     if (dba.cangGan && dba.cangGan.length) {
@@ -1425,20 +1629,22 @@ function buildSingleChart(data) {
         .trim();
       if (!dbaSummary) dbaSummary = '日支关系以四柱关系事件表为准';
     }
-    ctx += '  综合：' + dbaSummary + '\n';
+    ctx += '  推断综合：' + dbaSummary + '\n';
+    ctx += '  推断边界：日支结构不等于现实婚姻事实；用户已确认的恋爱、结婚、离婚、分居等经历优先。\n';
   }
 
-  // v5.2: 流年三方互动
+  // v5.2: 流年结构触发与方向推断
   if (data.liuNianAnalysis) {
     var lna = data.liuNianAnalysis;
-    ctx += '\n流年' + lna.liuNianGan + lna.liuNianZhi + '三方互动分析：\n';
-    ctx += '  判词：' + lna.verdict + '（凶兆分' + (lna.dangerScore || 0) + '，吉兆分' + (lna.opportunityScore || 0) + '）\n';
+    ctx += '\n流年' + lna.liuNianGan + lna.liuNianZhi + '结构触发与方向推断（可被真实经历校正）：\n';
+    ctx += '  规则方向：' + lna.verdict + '（阻力权重' + (lna.dangerScore || 0) + '，助力权重' + (lna.opportunityScore || 0) + '；均非现实概率）\n';
     if (lna.triggers && lna.triggers.length) {
       lna.triggers.forEach(function(tr) {
         ctx += '  ' + (tr.isGood ? '✅' : '⚠') + ' [' + tr.severity + '] ' + tr.type + '：' + tr.detail + '\n';
       });
     }
-    ctx += '  总结：' + lna.summary + '\n';
+    ctx += '  推断总结：' + lna.summary + '\n';
+    ctx += '  边界：干支和关系类型是结构事实；现实事件及其领域不是冻结事实，用户确认的实际经历优先。\n';
   }
 
   // 大运
@@ -1458,11 +1664,17 @@ function buildSingleChart(data) {
   // v5.0: 大运喜用忌联动分析
   if (data.fortuneAnalysis) {
     var fa = data.fortuneAnalysis;
-    ctx += `\n大运喜用忌联动分析：\n`;
+    ctx += `\n大运结构方向与领域推断（可被真实经历校正）：\n`;
     ctx += `  ${fa.summary || ''}\n`;
+    ctx += `  边界：${fa.inferenceBoundary || '大运顺序和干支关系是结构证据；领域落点与现实结果不是已发生事实。'} 用户确认的真实经历优先。\n`;
     if (fa.periods && fa.periods.length) {
       fa.periods.forEach(function(p) {
-        ctx += `  ${p.gan}${p.zhi}（${p.age || p.startYear}-${p.endYear || ''}岁）：`;
+        var ledgerStage = p.eventLedger && p.eventLedger.stage;
+        var periodAge = ledgerStage
+          ? ledgerStage.startAge + '-' + ledgerStage.endAge + '岁'
+          : String(p.age || p.startYear || '年龄待定') + '起';
+        var periodYears = p.startYear && p.endYear ? '，' + p.startYear + '-' + p.endYear + '年' : '';
+        ctx += `  ${p.gan}${p.zhi}（${periodAge}${periodYears}）：`;
         ctx += `天干${p.ganWx}为${p.ganRole}，地支${p.zhiWx}为${p.zhiRole}`;
         ctx += ` → 综合判定：${p.verdict}`;
         if (p.interactions && p.interactions.length) {
@@ -1470,6 +1682,20 @@ function buildSingleChart(data) {
         }
         ctx += '\n';
         ctx += `    运程：${p.summary}\n`;
+        if (p.eventLedger) {
+          var ledger = p.eventLedger;
+          var domainLabels = {};
+          (ledger.domainRecords || []).forEach(function(record) { domainLabels[record.domain] = record.label; });
+          var primaryDomainLabels = (ledger.primaryDomains || []).map(function(domain) { return domainLabels[domain] || domain; });
+          ctx += `    领域推断账本（可由真实经历校正）：${ledger.stage ? ledger.stage.label + '（' + ledger.stage.startAge + '-' + ledger.stage.endAge + '岁）' : '阶段待定'}；重点领域=${primaryDomainLabels.join('、') || '待定'}\n`;
+          (ledger.domainRecords || []).slice(0, 4).forEach(function(record) {
+            ctx += `      ${record.label}：${record.direction}（置信度${record.confidence}）—${record.conclusion}`;
+            if (record.evidence && record.evidence.length) ctx += `；依据=${record.evidence.slice(0, 3).join('；')}`;
+            ctx += '\n';
+          });
+          if (ledger.conditions && ledger.conditions.length) ctx += `      使用条件：${ledger.conditions.join('；')}\n`;
+          ctx += `      边界：${ledger.constraint || '只说明更可能被引动的领域，不承诺具体事件必然发生。'} 用户已确认的实际事件优先于本账本方向。\n`;
+        }
       });
     }
   }
@@ -1774,4 +2000,4 @@ function generateMockReply(question, chartData, bazi, mode) {
 }
 
 // 仅供本地回归测试读取纯函数，不改变 API handler 行为。
-module.exports._test = { buildChartContext, runReplyValidation, buildHepanDaYunFactFallback };
+module.exports._test = { buildChartContext, runReplyValidation, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };

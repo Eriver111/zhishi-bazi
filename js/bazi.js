@@ -4233,6 +4233,10 @@ function analyzeParentsLegacy(bazi, gender) {
     }
 
     return {
+        analysisType: 'interpretive_hypothesis',
+        userCorrectable: true,
+        realityPriority: 'user_confirmed_experience',
+        inferenceBoundary: '父母宫星同参只提供结构证据与候选解释，用户确认的实际家庭关系和经历优先。',
         fatherText: fatherText,
         motherText: motherText,
         summaryText: summaryText,
@@ -4580,6 +4584,10 @@ function analyzeParents(bazi, gender) {
     else summaryText = '父母宫与父母星没有同时出现严重受损，家庭虽有各自的问题，但整体仍有可以依靠的部分。';
 
     return {
+        analysisType: 'interpretive_hypothesis',
+        userCorrectable: true,
+        realityPriority: 'user_confirmed_experience',
+        inferenceBoundary: '父母宫星同参只提供结构证据与候选解释，用户确认的实际家庭关系和经历优先。',
         fatherText: fatherText,
         motherText: motherText,
         familyText: familyText,
@@ -4591,10 +4599,17 @@ function analyzeParents(bazi, gender) {
         motherStar: motherStar,
         fatherPresent: father.appearances.length > 0,
         motherPresent: mother.appearances.length > 0,
-        facts: {
-            methodVersion: 'parents-v3-palace-star-relationship',
+        evidence: {
+            methodVersion: 'parents-v4-evidence-inference-split',
             strength: { level: dm.level, score: dm.score },
             parentStars: { father: father, mother: mother },
+            palace: {
+                stem: yearGan, branch: yearZhi, stemElement: yearGanWx, branchElement: yearZhiWx,
+                intraRelation: intraRelation, state: palaceState,
+                damageEvents: yearDamageEvents, combinationEvents: yearCombineEvents
+            }
+        },
+        inferences: {
             relationship: {
                 father: {
                     close: fatherClose,
@@ -4609,11 +4624,6 @@ function analyzeParents(bazi, gender) {
                     farScore: motherCloseness.farScore,
                     exposedNear: motherCloseness.exposedNear
                 }
-            },
-            palace: {
-                stem: yearGan, branch: yearZhi, stemElement: yearGanWx, branchElement: yearZhiWx,
-                intraRelation: intraRelation, state: palaceState,
-                damageEvents: yearDamageEvents, combinationEvents: yearCombineEvents
             },
             family: {
                 level: foundationLevel, officialSealHelpful: officialSealHelpful,
@@ -5306,6 +5316,7 @@ function analyzeFortune(bazi, gender, yongJi) {
                     currentDaYun.verifiedScore = currentDyVerification.verifiedScore;
                     currentDaYun.verificationBasis = currentDyVerification.verificationBasis;
                     currentDaYun.summary = currentDyVerification.summary;
+                    currentDaYun.eventLedger = currentDyVerification.eventLedger || null;
                 }
             }
         } catch (e) {}
@@ -5357,20 +5368,20 @@ function analyzeThisYear(bazi, gender, yongJi) {
         if (HE_MAP[yp.zhi + pz]) hePillars.push(pos);
     });
 
-    // 十神大白话
-    var ssStories = {
-        '正官': { good:'今年是正官年，事业上容易得到认可，适合争取升职、考证、面试。做事有章法，容易获得上级信任。感情方面也是适合谈婚论嫁的一年。', bad:'但责任也会加重，压力山大。可能有人对你期望很高，自己别把自己逼得太紧。工作中注意不要越权或跟领导对着干。', health:'思虑过度容易失眠头痛，颈椎腰椎需要注意。建议每天给自己留半小时放空的时间。' },
-        '七杀': { good:'今年七杀当值，挑战和机遇并存。创业者、自由职业者反而可能迎来突破。你的韧性会在这一年被逼出来，熬过去了就是质的飞跃。', bad:'压力是实实在在的——工作上的突发状况可能一个接一个。要注意小人暗算，重要文件合同多留个心眼。这一年不太适合做重大决定，能稳则稳。', health:'精神压力大是主要问题，容易出现焦虑、心悸。运动是很好的解压方式，哪怕每天走路半小时都比躺着强。注意肝胆和眼睛。' },
-        '正财': { good:'今年正财运不错，正职工资有上涨空间，理财计划容易落实。适合踏踏实实攒钱，别想着一口吃个胖子。感情上容易遇到合适的对象。', bad:'但如果太保守也可能错过一些好机会，该花的钱还是要花——比如提升自己的课程、重要的社交应酬，别省过头了。', health:'整体平稳，但久坐工作的人注意颈椎和腰椎。肠胃保养也要上心，规律饮食很重要。' },
-        '偏财': { good:'今年偏财运在线，容易遇到投资机会或者意外进账。社交圈扩大，人脉带来的机会比工资收入更可观。适合多出去走动、多跟人聊聊。', bad:'但花销也大得吓人——社交、人情、冲动消费控制不住的话，赚的可能还没花的多。投资理财上警惕高回报承诺，十有八九是坑。落袋为安。', health:'应酬多了以后，肝和胃是两大重灾区。少喝酒，饮食清淡一点，定期体检别拖着。' },
-        '正印': { good:'今年贵人运很旺，容易遇到愿意帮你的人——可能是长辈、上级或专业前辈。适合学习进修、考证书、做长远规划。内心比平时更平静从容。', bad:'但如果太安逸，容易失去紧迫感。别把太多希望寄托在别人身上，自己动起来才是真的。有时候想得太多做得太少也是个毛病。', health:'整体不错，但容易因为太舒服而疏于锻炼。注意体重管理，适量的有氧运动最好。' },
-        '偏印': { good:'今年脑子特别活跃，灵感多、创意足。适合搞研究、创作、学一门新技术。可能对玄学、哲学这类东西突然产生兴趣。独立项目的成功率比团队项目高。', bad:'但容易钻牛角尖，想得太多太深，有时候会把简单的问题复杂化。跟人沟通时少讲道理多讲感受，别让人觉得你太疏离。', health:'思虑过度伤脾，可能吃不下饭或者暴饮暴食两头极端。睡眠质量需要留意，别熬夜想事情。' },
-        '食神': { good:'今年整体比较轻松自在，压力小、心情好。适合发展兴趣爱好、锻炼身体、多陪家人。如果你从事创作类工作，今年的灵感会非常充沛。', bad:'唯一的风险就是太安逸了导致行动力下降。舒服是福，但别躺平——该做的事还是要做，别拖到年底才后悔。', health:'整体很好，适合把运动习惯在今年固定下来。消化系统顺畅，胃口好但注意别吃太多。' },
-        '伤官': { good:'今年你的才华会藏不住，表达欲爆棚——如果你做的是创作、演讲、教学类工作，今年是出作品的好时机。思维比平时更跳脱，更适合创新突破。', bad:'但说话容易不过脑子——不是恶意的，但确实可能得罪人而不自知。职场中注意不要跟上级正面冲突，有话好好说。不太适合裸辞，除非下一家已经谈妥。', health:'用脑过度会头疼，嗓子也要注意保护。情绪波动比平时大，建议找到适合自己的发泄渠道。' },
-        '比肩': { good:'今年社交圈子在扩大，认识的人比往年多。独立性增强，适合一个人扛的项目。在朋友堆里比较活跃，可能会有小圈子里的领导机会。', bad:'开销也会同步上升——朋友往来、聚餐聚会，钱不知不觉就出去了。借钱给别人要格外慎重，今年尤其容易收不回来。同辈之间竞争也加剧了，心态放平。', health:'体力消耗大，容易疲惫。注意别透支身体去社交，该休息就休息。骨骼关节需要留意。' },
-        '劫财': { good:'今年适合团队合作——虽然是竞争年，但找到对的合伙人反而能共赢。精力旺盛，行动力比平时强，能做不少事。', bad:'但是破财风险很高，不是丢东西就是被借走不还，或者冲动消费买一堆用不上的。职场里注意防小人，有人可能会抢你的功劳。合作签字之前仔细看清楚每个条款。', health:'精力旺盛但容易用力过猛，肌肉拉伤、扭伤这类意外比较常见。运动前做好热身。' }
+    // 十神只负责标注可能被引动的议题，不直接生成升职、结婚、破财或疾病等现实事件。
+    var ssThemes = {
+        '正官':'规则、职责、考试与正式关系', '七杀':'压力、竞争、决断与风险管理',
+        '正财':'稳定资源、预算与长期经营', '偏财':'流动资源、合作与机会筛选',
+        '正印':'学习、资质、支持系统与恢复', '偏印':'研究、独立判断与非标准路径',
+        '食神':'表达、作品、体验与持续输出', '伤官':'创新、表达边界与规则磨合',
+        '比肩':'自主性、同辈协作与资源分配', '劫财':'竞争、合作边界与风险控制'
     };
-    var story = ssStories[ss] || { good:'今年运势总体平稳，没有大风大浪。', bad:'平平淡淡就是福，别焦虑。', health:'身体无大碍，保持平时习惯就好。' };
+    var ssTheme = ssThemes[ss] || '本年事务节奏与资源配置';
+    var story = {
+        good:'流年天干映射为「' + ss + '」，规则上更容易引动' + ssTheme + '等议题。这只是事项方向，不能据此断定某件事已经发生或一定会发生。',
+        bad:'需要结合当前大运、原局冲合刑害和现实条件复核；即使结构方向有利，也不等于所有同类事项都顺利。',
+        health:'命理五行只能提供传统生活方式取象，不构成医学判断；具体身体状况以体检和专业医疗意见为准。'
+    };
 
     // 冲合影响
     var chongWarnings = [];
@@ -5390,9 +5401,9 @@ function analyzeThisYear(bazi, gender, yongJi) {
         }
         if (HE_MAP[yp.zhi + bazi[pos].zhi]) {
             if (pos === 'day') {
-                heGoods.push('今年流年跟你的夫妻宫相合，人际关系运很好——感情顺利，容易遇到聊得来的人，已有伴侣的也会更亲密。也是一个适合合作、合伙的年份。');
+                heGoods.push('流年与夫妻宫相合，关系、协作或居住安排更容易成为关注点；合只表示牵连增强，不能直接断感情顺利、遇到对象或合作成功。');
             } else if (pos === 'month') {
-                heGoods.push('今年流年跟事业宫相合，工作上容易遇到帮手和贵人，合作项目特别顺利。');
+                heGoods.push('流年与月柱相合，工作平台、合作或职责安排更容易被引动；是否形成助力仍看所合五行、当前大运和现实条件。');
             }
         }
     });
@@ -5407,14 +5418,14 @@ function analyzeThisYear(bazi, gender, yongJi) {
     };
     var hInfo = wxHealth[DAY_WX] || wxHealth['木'];
     var healthMain = isStrong ? hInfo.strong : hInfo.weak;
-    var healthSummary = '今年重点养护部位：' + hInfo.organ + '。' + healthMain;
+    var healthSummary = '传统五行取象会联想到' + hInfo.organ + '，但这不是疾病预测，也不能替代体检或医生判断。';
 
     // 额外健康提醒
     var healthExtra = [];
-    if (ss === '七杀' || ss === '正官') healthExtra.push('官杀年精神长期紧绷，容易偏头痛、失眠，建议每天做几分钟深呼吸放松。');
-    if (ss === '偏财' || ss === '劫财') healthExtra.push('应酬和奔波多，肠胃和肝脏负担加重——吃饭尽量规律，酒后多喝温水。');
-    if (ss === '伤官' || ss === '偏印') healthExtra.push('用脑过度容易头晕、注意力不集中，每隔一小时站起来走走能缓解很多。');
-    if (chongPillars.length > 0) healthExtra.push('冲太岁的一年身体容易出现小意外——开车慢一点，运动前热身要充分，别太拼。');
+    if (ss === '七杀' || ss === '正官') healthExtra.push('若现实中职责与压力确有增加，可优先安排休息和压力管理；不能仅凭官杀推断失眠或具体症状。');
+    if (ss === '偏财' || ss === '劫财') healthExtra.push('若现实中应酬与奔波确有增加，可留意作息、饮食和常规体检；不能仅凭财星或比劫推断器官问题。');
+    if (ss === '伤官' || ss === '偏印') healthExtra.push('若现实中学习、创作或用脑时间确有增加，可主动安排间歇休息；不能仅凭十神推断头晕等症状。');
+    if (chongPillars.length > 0) healthExtra.push('冲只提示变化和节奏波动，不代表事故；出行、运动仍按一般安全常识做好防护。');
 
     // 机会方向必须等岁运局三方复核完成后再写，不能先按十神名称套吉凶。
     var opportunities = [];
@@ -5458,6 +5469,10 @@ function analyzeThisYear(bazi, gender, yongJi) {
     }
 
     return {
+        analysisType: 'structural_forecast',
+        userCorrectable: true,
+        realityPriority: 'user_confirmed_experience',
+        inferenceBoundary: '流年干支、十神映射与冲合刑害属于结构证据；事业、感情、家庭和健康事项只是候选方向，不是已发生事实。',
         year: currentYear,
         gan: yp.gan, zhi: yp.zhi,
         shiShen: ss,
@@ -8636,6 +8651,10 @@ function analyzeDayBranch(bazi) {
   });
 
   return {
+    analysisType: "interpretive_hypothesis",
+    userCorrectable: true,
+    realityPriority: "user_confirmed_experience",
+    inferenceBoundary: "日支结构、十神和关系事件属于排盘证据；婚姻状态与具体经历须以用户真实反馈为准。",
     branch: dz, wuXing: dzWx,
     mainShiShen: mainSS,
     ssDesc: ssDesc[mainSS] || "",

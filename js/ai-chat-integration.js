@@ -620,6 +620,11 @@
         if (BaZiCalculator.getCangGanDepth) {
           try { data.cangGanDepth = BaZiCalculator.getCangGanDepth(_bazi); } catch(e) {}
         }
+        // 父母宫星同参的结构证据随命盘交给 AI，作为可被用户真实经历
+        // 校正的候选解释，避免退回“年柱/印星=长辈庇护”之类单点口诀。
+        if (BaZiCalculator.analyzeParents) {
+          try { data.parentAnalysis = BaZiCalculator.analyzeParents(_bazi, _params && _params.gender); } catch(e) {}
+        }
       }
       // P3-A3 结构层（新增解释层，不覆盖上述既有字段；两层不污染）
       if (typeof StructuralAnalysis !== 'undefined') {
@@ -740,35 +745,39 @@
         var _yGanWx = _bazi.year.gan ? (typeof WU_XING !== 'undefined' ? WU_XING[_bazi.year.gan] : '') : '';
 
         var monthDesc = '月柱' + _bazi.month.gan + _bazi.month.zhi + '（提纲），';
-        if (_mGanWx === _yinWx) monthDesc += '印星坐提纲，月令生身——得天时之助，贵人之地。';
-        else if (_mGanWx === _dgWx2) monthDesc += '比劫当令，自身有力——根基稳固。';
-        else if (_mGanWx === _shaWx) monthDesc += '官杀当令克身——压力重重，但若有制化反成权威。';
-        else if (_mGanWx === _caiWx) monthDesc += '财星当令耗身——求财心切，但需身强方能担财。';
-        else monthDesc += '食伤当令泄秀——才华外露，创意旺盛。';
+        if (_mGanWx === _yinWx) monthDesc += '印星坐提纲，月令生身力量较集中；是否形成实际助力仍须看喜忌、生克与承载。';
+        else if (_mGanWx === _dgWx2) monthDesc += '比劫当令，自我力量较集中；能否形成现实助力仍看全局承载。';
+        else if (_mGanWx === _shaWx) monthDesc += '官杀当令克身，规则与压力议题较集中；有无制化决定其实际表现。';
+        else if (_mGanWx === _caiWx) monthDesc += '财星当令耗身，资金与资源议题较集中；能否得财仍看承载和现实条件。';
+        else monthDesc += '食伤当令泄身，表达、技能与输出议题较集中；不能直接断才华或成果。';
 
         var hourDesc = '时柱' + _bazi.hour.gan + _bazi.hour.zhi + '（归息），';
-        if (_hGanWx === _yinWx) hourDesc += '晚岁得印星庇护——老来有靠，福泽绵长。';
-        else if (_hGanWx === _dgWx2) hourDesc += '比劫归时——晚运平稳，自力更生。';
-        else if (_hGanWx === _shaWx) hourDesc += '晚年仍有压力——需防健康，宜早作安排。';
-        else if (_hGanWx === _caiWx) hourDesc += '晚岁财星——老来财运，但须身强。';
-        else hourDesc += '晚年食伤——儿孙缘厚，晚年享乐。';
+        if (_hGanWx === _yinWx) hourDesc += '晚岁更容易引动学习、照护与支持资源，实际利弊仍看喜忌和生克。';
+        else if (_hGanWx === _dgWx2) hourDesc += '晚岁自我投入与同辈事务较活跃，是否平稳仍看岁运互动。';
+        else if (_hGanWx === _shaWx) hourDesc += '晚岁责任与约束议题较活跃，不直接等同健康或灾祸。';
+        else if (_hGanWx === _caiWx) hourDesc += '晚岁资金与资源议题较活跃，是否有利须看承财能力。';
+        else hourDesc += '晚岁表达、技能或子女事务较活跃，不直接等同享乐或儿孙缘厚。';
 
         var yearDesc = '年柱' + _bazi.year.gan + _bazi.year.zhi + '（祖业），';
-        if (_yGanWx === _yinWx) yearDesc += '祖上印星——家学渊源，长辈庇护。';
-        else if (_yGanWx === _shaWx) yearDesc += '祖上官杀——家规严苛或祖上有权威传承。';
-        else if (_yGanWx === _caiWx) yearDesc += '祖上财星——家底殷实，但自身需能守成。';
-        else yearDesc += '祖业一般，需自身奋斗。';
+        if (_yGanWx === _yinWx) yearDesc += '家学或长辈资源属于候选取象，是否形成庇护以父母宫星同参和喜忌为准。';
+        else if (_yGanWx === _shaWx) yearDesc += '规则、责任或权威氛围属于候选取象，不能只凭此断家规严苛。';
+        else if (_yGanWx === _caiWx) yearDesc += '家庭资源与现实经营属于候选取象，不能只凭此断家底殷实。';
+        else yearDesc += '祖业位的实际作用需结合藏干、父母星与年月关系判断。';
 
         var summary = '';
-        if (_mGanWx === _yinWx) summary += '提纲为印生身，得月令天时之利；';
-        if (_mGanWx === _shaWx && _hGanWx === _yinWx) summary += '提纲官杀制身但归息印星解围——先难后易之命；';
-        if (_mGanWx === _shaWx && _hGanWx !== _yinWx) summary += '提纲官杀攻身无印化解——一生压力随身；';
+        if (_mGanWx === _yinWx) summary += '提纲为印生身，月柱生扶证据较集中；';
+        if (_mGanWx === _shaWx && _hGanWx === _yinWx) summary += '提纲官杀制身、时柱印星提供候选通关路径；';
+        if (_mGanWx === _shaWx && _hGanWx !== _yinWx) summary += '提纲官杀制身，时干未见印星通关，仍须结合地支藏干与全局制化；';
 
         data.palaceAnalysis = {
+          analysisType: 'structural_hypothesis',
+          userCorrectable: true,
+          realityPriority: 'user_confirmed_experience',
+          inferenceBoundary: '柱位和十神分布属于结构证据；家庭、事业、晚年等现实表现属于候选取象。',
           monthDesc: monthDesc,
           hourDesc: hourDesc,
           yearDesc: yearDesc,
-          summary: summary || '各宫位分布均衡，无特殊宫位偏颇。'
+          summary: summary || '当前只记录柱位结构，现实主题需结合用户问题和实际经历再解释。'
         };
       } catch(e) { /* 宫位分析非关键路径 */ }
     }
@@ -867,6 +876,14 @@
           shiShen: fortune.shiShen || ''
         };
       }
+    }
+    // 合盘双方分别携带父母同参和完整大运账本。所有字段封装在各自的
+    // P1/P2 对象内，后端据此建立身份边界，不能互借或交换。
+    if (p._bazi && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.analyzeParents) {
+      try { d.parentAnalysis = BaZiCalculator.analyzeParents(p._bazi, p.gender); } catch(e) {}
+    }
+    if (p._bazi && d.daYun && d.daYun.cycles && d.yongJi && window.BaZiChain && window.BaZiChain.analyzeFortune) {
+      try { d.fortuneAnalysis = window.BaZiChain.analyzeFortune(p._bazi, d.daYun.cycles, d.yongJi); } catch(e) {}
     }
     return d;
   }

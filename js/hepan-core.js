@@ -247,8 +247,8 @@ var ZHI_REL_DESCS = {
   '六冲': '日支六冲是比较考验感情的配置，就像水火相遇，一开始激情满满，但久了容易为小事起争执。需要学会互相让步，不然矛盾会越积越多。',
   '六害': '日支相穿（六害）要注意了，这不是明显的冲突，而是日积月累的磨损，像鞋子里的沙子，走久了才知道疼。日常要多沟通，别让不满悄悄堆积。',
   '相刑': '日支相刑容易产生互不理解的情况，两个人各自坚持自己的方式，谁也不服谁。长期这样会很累，需要有一方先学会低头。',
-  '生': '日支相生是个好兆头，一方的内在能量在滋养另一方，日常相处中会感受到来自对方的支持和温暖，关系很滋养人。',
-  '被生': '日支被生说明对方的内在在支持着你，你会感到被理解和被包容，这是很重要的情感滋养。',
+  '生': '日支相生表示五行作用由一方流向另一方，现实中可能表现为支持，也可能表现为单向付出；最终如何兑现要结合双方真实相处。',
+  '被生': '日支被生表示对方一侧的五行作用流向你，可能形成支持，也可能形成依赖；不能仅凭相生直接认定现实关系好坏。',
   '比': '日支五行相同，你们在价值观和性格底色上很像，有天然的亲近感。好处是能互相理解，坏处是太像了偶尔也会针锋相对。',
   '克': '日支相克表示一方在关系中习惯主导，另一方容易感到压力。这不是不能相处，而是需要被克制的一方学会表达自己的需要。',
   '被克': '你的日支被对方克制，在关系中你容易迁就对方多一些。要注意保护自己的边界，别让迁就变成习惯。',
@@ -1096,7 +1096,7 @@ function generateDosAndDonts(p1, p2, relationType) {
     }
     dontsM.push('不要在金钱上有大额牵扯，朋友之间算清楚账才能做长久朋友');
     if(crHe>=2){
-      dosM.push('盘面合相多，一起创业或投资的成功率比别人高，可以认真考虑');
+      dosM.push('盘面合相较多，合作议题更容易被引动；是否适合共同创业或投资，仍须独立评估能力、资金、分工与现实风险');
     }
   }
 
@@ -1269,6 +1269,10 @@ function analyze(person1, person2, relationType) {
   var score = calculateOverallScore(dailyRelation, wuxingComplement, crossPillars, dayGanStrength, relationType);
 
   return {
+    analysisType: 'relationship_hypothesis',
+    userCorrectable: true,
+    realityPriority: 'user_confirmed_experience',
+    inferenceBoundary: '双方四柱、日主、旺衰、喜用忌、大运顺序及明确跨盘关系属于结构证据；契合评分、性格、相处模式、关系结果、宜忌与年度事项属于候选推断，不是现实事实。',
     dailyRelation: dailyRelation,
     wuxingComplement: wuxingComplement,
     dayGanStrength: dayGanStrength,

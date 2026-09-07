@@ -272,7 +272,7 @@ test('core analysis degrades safely but reports chain failures for diagnosis', (
 test('all chain entry pages request the repaired script version', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.match(html, /js\/bazi-chain\.js\?v=6/, page);
+    assert.match(html, /js\/bazi-chain\.js\?v=8/, page);
   }
 });
 
@@ -298,6 +298,105 @@ test('DaYun verdict starts from natal yongji direction and then applies actual i
   assert.match(period.verificationBasis, /十神名称仅作事项解释/);
 });
 
+test('early favorable seal luck records family support as conditional evidence instead of a fixed slogan', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '辰', '丁', '巳', '甲', '戌', '己', '丑');
+  const result = context.BaZiChain.analyzeFortune(
+    base,
+    [{ gan: '壬', zhi: '子', displayAge: '6', startYear: 2000, endYear: 2009 }],
+    { xiShen: ['水', '火'], yongShen: ['水'], jiShen: ['金'] },
+  );
+  const ledger = result.periods[0].eventLedger;
+  const family = ledger.domainRecords.find(item => item.domain === 'family');
+
+  assert.equal(ledger.frozen, false);
+  assert.equal(ledger.inference, true);
+  assert.equal(ledger.userCorrectable, true);
+  assert.equal(ledger.stage.label, '早年');
+  assert.equal(family.direction, '偏有利');
+  assert.match(family.conclusion, /更容易成为现实助力/);
+  assert.match(ledger.conditions.join('；'), /仅当本步验证偏有利.*才可进一步解释为庇护/);
+  assert.doesNotMatch(family.conclusion, /必得|一定|必然/);
+});
+
+test('harmful seal luck reverses the family domain and cannot be narrated as protection', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '辰', '丁', '巳', '甲', '戌', '己', '丑');
+  const result = context.BaZiChain.analyzeFortune(
+    base,
+    [{ gan: '壬', zhi: '子', displayAge: '6', startYear: 2000, endYear: 2009 }],
+    { xiShen: ['火'], yongShen: ['火'], jiShen: ['水'] },
+  );
+  const family = result.periods[0].eventLedger.domainRecords.find(item => item.domain === 'family');
+
+  assert.equal(family.direction, '偏不利');
+  assert.match(family.conclusion, /责任|依赖|成本/);
+  assert.doesNotMatch(family.conclusion, /庇护|助力/);
+});
+
+test('middle favorable wealth luck separates resource opportunity from guaranteed career success', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '子', '丁', '卯', '甲', '申', '辛', '亥');
+  const result = context.BaZiChain.analyzeFortune(
+    base,
+    [{ gan: '戊', zhi: '辰', displayAge: '36', startYear: 2030, endYear: 2039 }],
+    { xiShen: ['土'], yongShen: ['土'], jiShen: ['金'] },
+  );
+  const ledger = result.periods[0].eventLedger;
+  const wealth = ledger.domainRecords.find(item => item.domain === 'wealth');
+  const career = ledger.domainRecords.find(item => item.domain === 'career');
+
+  assert.equal(ledger.stage.label, '中年发展期');
+  assert.equal(wealth.direction, '偏有利');
+  assert.equal(career.direction, '条件性');
+  assert.match(career.evidence.join('；'), /六害月柱卯/);
+  assert.match(ledger.conditions.join('；'), /须原局能够承财.*不能见财便断发财/);
+  assert.doesNotMatch(wealth.conclusion + career.conclusion, /一定|必然|发财/);
+});
+
+test('a favorable DaYun can still carry an adverse relationship record when it clashes the day branch', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '辰', '丁', '巳', '甲', '午', '己', '丑');
+  const result = context.BaZiChain.analyzeFortune(
+    base,
+    [{ gan: '壬', zhi: '子', displayAge: '26', startYear: 2030, endYear: 2039 }],
+    { xiShen: ['水', '火'], yongShen: ['水'], jiShen: ['金'] },
+  );
+  const period = result.periods[0];
+  const relationship = period.eventLedger.domainRecords.find(item => item.domain === 'relationship');
+
+  assert.ok(['喜运', '偏喜'].includes(period.verdict));
+  assert.equal(relationship.direction, '偏不利');
+  assert.match(relationship.evidence.join('；'), /冲日支午/);
+  assert.equal(period.interactions.find(item => item.target === 'day').domains.includes('relationship'), true);
+});
+
+test('AI context serializes the correctable DaYun event ledger and its anti-template conditions', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('丙', '辰', '丁', '巳', '甲', '戌', '己', '丑');
+  const fortuneAnalysis = context.BaZiChain.analyzeFortune(
+    base,
+    [{ gan: '壬', zhi: '子', displayAge: '6', startYear: 2000, endYear: 2009 }],
+    { xiShen: ['水'], yongShen: ['水'], jiShen: ['金'] },
+  );
+  const promptContext = require('../api/ai-chat.js')._test.buildChartContext({ fortuneAnalysis });
+
+  assert.equal(fortuneAnalysis.analysisType, 'structural_forecast');
+  assert.equal(fortuneAnalysis.userCorrectable, true);
+  assert.equal(fortuneAnalysis.eventLedgerVersion, '1.1');
+  assert.equal(fortuneAnalysis.eventLedgerMode, 'correctable-domain-inference');
+  assert.equal(fortuneAnalysis.periods[0].userCorrectable, true);
+  assert.match(promptContext, /大运结构方向与领域推断（可被真实经历校正）/);
+  assert.match(promptContext, /领域落点与现实结果属于可校正推断/);
+  assert.match(promptContext, /领域推断账本（可由真实经历校正）：早年（6-15岁）/);
+  assert.match(promptContext, /家庭与长辈：偏有利/);
+  assert.match(promptContext, /仅当本步验证偏有利.*才可进一步解释为庇护/);
+  assert.match(promptContext, /只记录本步运更可能被引动的领域、方向与条件，不承诺具体事件必然发生/);
+  assert.match(promptContext, /用户已确认的实际事件优先于本账本方向/);
+  assert.match(promptContext, /壬子（6-15岁，2000-2009年）/);
+  assert.match(promptContext, /重点领域=家庭与长辈、学习与资质/);
+});
+
 test('annual verdict keeps the natal direction separate from the verified result', () => {
   const context = loadBrowserRuntime();
   const base = chart('丙', '戌', '丙', '申', '己', '卯', '庚', '午');
@@ -318,6 +417,18 @@ test('annual verdict keeps the natal direction separate from the verified result
   assert.equal(typeof result.verifiedScore, 'number');
   assert.match(result.verificationBasis, /三方的实际干支互动/);
   assert.match(result.verificationBasis, /十神名称仅作事项解释/);
+  assert.equal(result.analysisType, 'structural_forecast');
+  assert.equal(result.userCorrectable, true);
+  assert.equal(result.realityPriority, 'user_confirmed_experience');
+  assert.match(result.inferenceBoundary, /不是已发生事实/);
+
+  const promptContext = require('../api/ai-chat.js')._test.buildChartContext({
+    liuNianAnalysis: result,
+  });
+  assert.match(promptContext, /流年丁巳结构触发与方向推断（可被真实经历校正）/);
+  assert.match(promptContext, /均非现实概率/);
+  assert.match(promptContext, /用户确认的实际经历优先/);
+  assert.match(promptContext, /现实事件及其领域不是冻结事实/);
 });
 
 test('a ZhengGuan month command is never mislabeled as QiSha or ShiShen-ZhiSha', () => {
