@@ -108,8 +108,11 @@
       var on=Number(button.dataset.optionIndex)===Number(optionIndex);button.classList.toggle('selected',on);button.setAttribute('aria-selected',on?'true':'false');if(on)selected=button;
     });
     if(scroll&&selected){
-      rail._programmatic=true;rail.scrollTop=(selected.offsetTop-rail.offsetTop)-((rail.clientHeight-selected.offsetHeight)/2);
-      requestAnimationFrame(function(){rail._programmatic=false;});
+      rail._programmatic=true;
+      // 按可视中心的实际差值校准，不依赖 offsetParent，避免不同布局下偏移整整一格。
+      var railRect=rail.getBoundingClientRect();var selectedRect=selected.getBoundingClientRect();
+      rail.scrollTop+=(selectedRect.top+(selectedRect.height/2))-(railRect.top+(railRect.height/2));
+      requestAnimationFrame(function(){requestAnimationFrame(function(){rail._programmatic=false;});});
     }
   }
   function closestWheelIndex(rail){
@@ -122,22 +125,26 @@
     var title=document.createElement('div');title.className='mobile-wheel-label';title.textContent=label;
     var rail=document.createElement('div');rail.className='mobile-wheel-rail';rail.setAttribute('role','listbox');rail.setAttribute('aria-label',label);
     var options=customOptions||selectOptions(target);
+    function applyOption(option,index,scroll){
+      if(!option)return false;
+      var oldValue=target?String(target.value):'';
+      if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
+      var changed=!!target&&String(target.value)!==oldValue;
+      if(changed){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
+      highlightWheel(rail,index,scroll);refresh();if(changed)refreshDependentDay(target);
+      return changed;
+    }
     options.forEach(function(option,index){
       var button=document.createElement('button');button.type='button';button.className='mobile-wheel-option';button.dataset.value=String(option.value);button.dataset.optionIndex=String(index);button.textContent=option.label;button.setAttribute('role','option');
       button.addEventListener('click',function(){
-        if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
-        if(target){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
-        highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
+        if(rail._ignoreClickUntil&&Date.now()<rail._ignoreClickUntil)return;
+        rail._userScrolling=false;clearTimeout(wheelTimers[target&&target.id||label]);applyOption(option,index,true);
       });rail.appendChild(button);
     });
     function commitWheel(){
       if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);
       var index=Math.max(0,Math.min(options.length-1,closestWheelIndex(rail)));var option=options[index];rail._userScrolling=false;
-      if(option){
-        if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
-        if(target){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
-        highlightWheel(rail,index,true);refresh();refreshDependentDay(target);
-      }
+      if(option){rail._ignoreClickUntil=Date.now()+260;applyOption(option,index,true);}
     }
     function scheduleWheelCommit(){
       if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);wheelTimers[target&&target.id||label]=setTimeout(commitWheel,180);

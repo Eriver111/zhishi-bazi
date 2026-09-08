@@ -11,14 +11,14 @@ test('home and paipan share one versioned mobile shell without touching desktop 
   const paipan = read('paipan.html');
 
   for (const source of [home, paipan]) {
-    assert.match(source, /css\/mobile-app-shell\.css\?v=13/);
-    assert.match(source, /js\/mobile-app-shell\.js\?v=7/);
+    assert.match(source, /css\/mobile-app-shell\.css\?v=14/);
+    assert.match(source, /js\/mobile-app-shell\.js\?v=8/);
   }
 
   assert.doesNotMatch(home, /class="mobile-home-dashboard"/);
   assert.match(home, /class="mobile-home-fortune"/);
   assert.match(home, /js\/home-fortune\.js\?v=2/);
-  assert.match(paipan, /<script src="js\/main\.js\?v=2"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=7"><\/script>/);
+  assert.match(paipan, /<script src="js\/main\.js\?v=2"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=8"><\/script>/);
 });
 
 test('feature pages share the same back header and result uses a four-pillar mobile grid', () => {
@@ -30,8 +30,8 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /window\.history\.back\(\)/);
   assert.match(auth, /'\/result', '\/ziwei', '\/hepan', '\/hepan-result', '\/fortune'/);
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
-  assert.match(auth, /mobile-app-shell\.css\?v=30/);
-  assert.match(auth, /mobile-app-shell\.js\?v=7/);
+  assert.match(auth, /mobile-app-shell\.css\?v=31/);
+  assert.match(auth, /mobile-app-shell\.js\?v=8/);
   assert.match(read('result.html'), /js\/auth\.js\?v=26/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
@@ -68,6 +68,13 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /panelGroups[\s\S]*professional:[\s\S]*reading:/);
   assert.match(js, /getElementById\('unifiedReport'\)[\s\S]*data-result-panel', 'reading'/);
   assert.match(js, /document\.body\.classList\.add\('mobile-result-view-basic'\)/);
+  assert.match(js, /var scrollPositions = \{ basic: 0, professional: 0, reading: 0 \}/);
+  assert.match(js, /setAttribute\('data-result-tab', item\.key\)/);
+  assert.match(js, /addEventListener\('touchmove',[\s\S]*passive: false/);
+  assert.match(js, /Math\.abs\(dx\) >= threshold/);
+  assert.match(js, /window\.scrollTo\(\{ top: scrollPositions\[item\.key\] \|\| 0, behavior: 'auto' \}\)/);
+  assert.match(css, /body\.mobile-page-result \.result-container\s*\{[^}]*touch-action:\s*pan-y pinch-zoom/);
+  assert.match(css, /body\.mobile-page-result \.dayun-scroll-wrapper,[\s\S]*touch-action:\s*pan-x pinch-zoom/);
   const result = read('result.html');
   assert.doesNotMatch(result, /revealPillars|排盘逐柱浮现|translateY\(20px\)/);
   for (const row of ['pp-xingyun-row', 'pp-zizuo-row', 'pp-kongwang-row', 'pp-nayin-row']) {

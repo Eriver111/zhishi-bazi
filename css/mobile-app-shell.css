@@ -1338,6 +1338,7 @@
   body.mobile-page-result .result-container {
     padding: 0 0 calc(82px + env(safe-area-inset-bottom));
     background: #fff;
+    touch-action: pan-y pinch-zoom;
   }
 
   body.mobile-page-result .result-header {
@@ -1533,6 +1534,8 @@
     overflow-x: auto !important;
     background: #fff !important;
     scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+    touch-action: pan-x pinch-zoom;
   }
 
   body.mobile-page-result .dayun-scroll-wrapper::-webkit-scrollbar,

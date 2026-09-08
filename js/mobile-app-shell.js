@@ -189,8 +189,13 @@
       { key: 'professional', label: '专业解读' },
       { key: 'reading', label: '白话详参' }
     ];
+    var activeIndex = 0;
+    var scrollPositions = { basic: 0, professional: 0, reading: 0 };
 
-    function activate(item, button) {
+    function activate(item, button, restoreScroll) {
+      var previous = items[activeIndex];
+      if (previous) scrollPositions[previous.key] = window.scrollY || document.documentElement.scrollTop || 0;
+      activeIndex = items.indexOf(item);
       document.body.classList.remove('mobile-result-view-basic', 'mobile-result-view-professional', 'mobile-result-view-reading');
       document.body.classList.add('mobile-result-view-' + item.key);
       tabs.querySelectorAll('button').forEach(function (tab) {
@@ -199,7 +204,11 @@
         tab.setAttribute('aria-selected', active ? 'true' : 'false');
         tab.setAttribute('tabindex', active ? '0' : '-1');
       });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (restoreScroll !== false) {
+        requestAnimationFrame(function () {
+          window.scrollTo({ top: scrollPositions[item.key] || 0, behavior: 'auto' });
+        });
+      }
     }
 
     items.forEach(function (item) {
@@ -207,12 +216,57 @@
       button.type = 'button';
       button.textContent = item.label;
       button.setAttribute('role', 'tab');
+      button.setAttribute('data-result-tab', item.key);
       button.setAttribute('aria-selected', item.key === 'basic' ? 'true' : 'false');
       button.setAttribute('tabindex', item.key === 'basic' ? '0' : '-1');
       if (item.key === 'basic') button.className = 'is-active';
-      button.addEventListener('click', function () { activate(item, button); });
+      button.addEventListener('click', function () { activate(item, button, true); });
       tabs.appendChild(button);
     });
+
+    function hasHorizontalScroller(target) {
+      var node = target && target.nodeType === 1 ? target : target && target.parentElement;
+      while (node && node !== container) {
+        if (node.matches && node.matches('input,textarea,select,button,a,[contenteditable="true"]')) return true;
+        if (node.scrollWidth > node.clientWidth + 3) {
+          var overflow = getComputedStyle(node).overflowX;
+          if (overflow === 'auto' || overflow === 'scroll') return true;
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    var gesture = null;
+    container.addEventListener('touchstart', function (event) {
+      if (event.touches.length !== 1 || hasHorizontalScroller(event.target)) { gesture = null; return; }
+      var touch = event.touches[0];
+      // 保留浏览器左右边缘的系统返回手势。
+      if (touch.clientX < 24 || touch.clientX > window.innerWidth - 24) { gesture = null; return; }
+      gesture = { x: touch.clientX, y: touch.clientY, lastX: touch.clientX, lastY: touch.clientY, axis: '' };
+    }, { passive: true });
+    container.addEventListener('touchmove', function (event) {
+      if (!gesture || event.touches.length !== 1) return;
+      var touch = event.touches[0];
+      gesture.lastX = touch.clientX; gesture.lastY = touch.clientY;
+      var dx = gesture.lastX - gesture.x, dy = gesture.lastY - gesture.y;
+      if (!gesture.axis && (Math.abs(dx) > 9 || Math.abs(dy) > 9)) gesture.axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
+      if (gesture.axis === 'x') event.preventDefault();
+    }, { passive: false });
+    container.addEventListener('touchend', function () {
+      if (!gesture) return;
+      var dx = gesture.lastX - gesture.x;
+      var threshold = Math.max(46, Math.min(72, window.innerWidth * .14));
+      if (gesture.axis === 'x' && Math.abs(dx) >= threshold) {
+        var nextIndex = dx < 0 ? activeIndex + 1 : activeIndex - 1;
+        if (nextIndex >= 0 && nextIndex < items.length) {
+          var nextButton = tabs.querySelectorAll('button')[nextIndex];
+          activate(items[nextIndex], nextButton, true);
+        }
+      }
+      gesture = null;
+    }, { passive: true });
+    container.addEventListener('touchcancel', function () { gesture = null; }, { passive: true });
 
     document.body.classList.add('mobile-result-view-basic');
     document.body.insertBefore(tabs, container);

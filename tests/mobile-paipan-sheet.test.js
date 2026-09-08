@@ -8,8 +8,8 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('mobile paipan loads the dedicated bottom-sheet interaction after the base flow', () => {
   const html = read('paipan.html');
-  assert.match(html, /css\/mobile-paipan-sheet\.css\?v=7/);
-  assert.match(html, /js\/input-flow\.js\?v=7[\s\S]*js\/mobile-paipan-sheet\.js\?v=8/);
+  assert.match(html, /css\/mobile-paipan-sheet\.css\?v=8/);
+  assert.match(html, /js\/input-flow\.js\?v=7[\s\S]*js\/mobile-paipan-sheet\.js\?v=9/);
 });
 
 test('mobile paipan summarizes the main form and moves editors into an accessible sheet', () => {
@@ -33,7 +33,8 @@ test('the sheet uses a dimmed overlay, a sliding white drawer, wheel dates and s
   assert.match(css, /transform:translateY\(105%\)/);
   assert.match(css, /\.mobile-birth-sheet\.is-open\{transform:translateY\(0\)\}/);
   assert.match(css, /\.mobile-wheel-grid\{/);
-  assert.match(css, /scroll-snap-type:y proximity/);
+  assert.match(css, /scroll-snap-type:y mandatory/);
+  assert.match(css, /scroll-snap-stop:always/);
   assert.match(css, /-webkit-overflow-scrolling:touch/);
   assert.match(css, /\.mobile-pillar-preview\{/);
   assert.match(css, /\.mobile-pillar-choice-grid\{/);
@@ -55,10 +56,13 @@ test('calendar and pillar drawers synchronize dedicated mobile controls with the
   assert.match(source, /target\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
   assert.match(source, /rail\._userScrolling/);
   assert.match(source, /function closestWheelIndex\(rail\)/);
-  assert.match(source, /selected\.offsetTop-rail\.offsetTop/);
+  assert.match(source, /selectedRect\.top\+\(selectedRect\.height\/2\)/);
+  assert.match(source, /railRect\.top\+\(railRect\.height\/2\)/);
+  assert.match(source, /rail\.scrollTop\+=/);
   assert.match(source, /rail\.getBoundingClientRect\(\)/);
   assert.match(source, /setTimeout\(commitWheel,180\)/);
   assert.match(source, /addEventListener\('scrollend',commitWheel/);
+  assert.match(source, /rail\._ignoreClickUntil=Date\.now\(\)\+260/);
   assert.match(source, /function refreshDependentDay\(target\)/);
   assert.doesNotMatch(source, /maybeRebuildCalendar/);
 });
