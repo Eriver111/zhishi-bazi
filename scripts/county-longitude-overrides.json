@@ -15,6 +15,17 @@
       "retrievedAt": "2026-08-17T06:39:00.000Z",
       "attribution": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright"
     },
+    "河北省|石家庄市|辛集市": {
+      "longitude": 115.217451,
+      "source": "administrative-center-reviewed",
+      "sourceId": "130181",
+      "osmType": "",
+      "osmId": "130181",
+      "displayName": "辛集市（石家庄市选择路径）",
+      "query": "Aliyun DataV 130100_full.json",
+      "retrievedAt": "2026-09-10T00:00:00.000Z",
+      "attribution": "Aliyun DataV administrative-center feature; selector path reviewed for the province-administered county-level city."
+    },
     "澳门特别行政区|澳门半岛|圣安多尼堂区": {
       "longitude": 113.5489608,
       "source": "administrative-center-reviewed-alias",

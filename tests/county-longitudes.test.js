@@ -4,6 +4,8 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
+const { renderModule } = require('../scripts/build-county-longitudes');
+
 const ROOT = path.resolve(__dirname, '..');
 
 function loadRegionData() {
@@ -35,9 +37,14 @@ function flattenRegionData(regionData) {
 test('county longitude snapshot covers every selector path exactly once', () => {
   const paths = flattenRegionData(loadRegionData());
   const longitudeData = loadLongitudeData();
+  const source = fs.readFileSync(path.join(ROOT, 'js', 'county-longitudes.js'), 'utf8');
+  const recordsBlock = source.match(/"records": \{([\s\S]*?)\n  \},\n  "aliases": \{/);
+  assert.ok(recordsBlock, 'missing generated records block');
+  const generatedKeys = [...recordsBlock[1].matchAll(/^    "([^"]+)": \{$/gm)].map((match) => match[1]);
 
-  assert.equal(paths.length, 2901);
-  assert.equal(new Set(paths).size, 2901);
+  assert.equal(paths.length, 2902);
+  assert.equal(new Set(paths).size, 2902);
+  assert.equal(new Set(generatedKeys).size, generatedKeys.length, 'generated source contains duplicate record keys');
   for (const key of paths) {
     const row = longitudeData.records[key];
     assert.ok(row, `missing ${key}`);
@@ -49,6 +56,27 @@ test('county longitude snapshot covers every selector path exactly once', () => 
     assert.ok(row.sourceId.length > 0, `${key} sourceId`);
   }
   assert.deepEqual(Object.keys(longitudeData.records).sort(), paths.sort());
+});
+
+test('Shijiazhuang selector includes Xinji with an exact reviewed longitude', () => {
+  const regionData = loadRegionData();
+  const longitudeData = loadLongitudeData();
+  const key = '河北省|石家庄市|辛集市';
+
+  assert.ok(regionData['河北省']['石家庄市'].includes('辛集市'));
+  const row = longitudeData.records[key];
+  assert.equal(row.longitude, 115.217451);
+  assert.equal(row.source, 'administrative-center-reviewed');
+  assert.equal(row.sourceId, '130181');
+  const resolved = longitudeData.resolveLocation({
+    province: '河北省', city: '石家庄市', district: '辛集市'
+  }, { allowFallback: false });
+  assert.equal(resolved.longitude, 115.217451);
+  assert.equal(resolved.level, 'county');
+  assert.equal(resolved.source, 'administrative-center-reviewed');
+  assert.equal(resolved.sourceVersion, 'county-centroid-v1');
+  assert.equal(resolved.matchedKey, key);
+  assert.equal(resolved.estimated, false);
 });
 
 test('duplicate district names never create county-only or two-part lookup keys', () => {
@@ -135,4 +163,20 @@ test('legacy complete locations may fall back while new submissions can require 
     () => longitudeData.resolveLocation(legacyLocation, { allowFallback: false }),
     /县级经度未匹配/
   );
+});
+
+test('county longitude generator preserves the legacy fallback contract', () => {
+  const rendered = renderModule({
+    records: {
+      '河北省|石家庄市|辛集市': {
+        longitude: 115.217451,
+        source: 'administrative-center-reviewed',
+        sourceId: '130181'
+      }
+    },
+    aliases: {}
+  });
+
+  assert.doesNotMatch(rendered, /var complete = parts\.length/);
+  assert.match(rendered, /if \(options\.allowFallback === false\)/);
 });

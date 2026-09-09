@@ -416,7 +416,7 @@ function renderModuleTemplate(data) {
 
 function renderModule(data) {
   return renderModuleTemplate(data).replace(
-    "    var complete = parts.length === 3 && parts.every(Boolean);\\n    if (options.allowFallback === false || complete)",
+    /    var complete = parts\.length === 3 && parts\.every\(Boolean\);\n    if \(options\.allowFallback === false \|\| complete\)/,
     "    if (options.allowFallback === false)"
   );
 }

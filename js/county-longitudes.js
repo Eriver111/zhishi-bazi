@@ -3986,6 +3986,11 @@
       "source": "administrative-center",
       "sourceId": "130184"
     },
+    "河北省|石家庄市|辛集市": {
+      "longitude": 115.217451,
+      "source": "administrative-center-reviewed",
+      "sourceId": "130181"
+    },
     "河北省|石家庄市|行唐县": {
       "longitude": 114.552734,
       "source": "administrative-center",

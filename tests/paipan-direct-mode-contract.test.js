@@ -28,11 +28,11 @@ test('direct-pillar dependencies load in calculation order before main', () => {
   const html = read('paipan.html');
   const scripts = [
     'js/lunar.js',
-    'js/county-longitudes.js?v=county-centroid-v1',
+    'js/county-longitudes.js?v=county-centroid-v1-r2',
     'js/bazi.js?v=20260907b',
     'js/pillar-input.js',
     'js/pillar-reverse-lookup.js',
-    'js/region.js',
+    'js/region.js?v=20260910',
     'js/main.js?v=2',
   ];
   let previous = -1;
