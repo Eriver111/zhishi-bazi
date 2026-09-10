@@ -73,8 +73,8 @@ test('专业报告从一份事实对象渲染五个核心证据区域', () => {
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /用神/);
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /喜神/);
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /忌神/);
-  assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /data-element-role-ledger="v2"/);
-  assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /data-fortune-guidance="v1"/);
+  assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /data-element-role-ledger="v3"/);
+  assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /data-fortune-guidance="v2"/);
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /喜用忌与行运方向/);
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /扶抑用神|格局用神|格局救应用神|调候用神|顺势用神/);
   assert.match(rendered.nodes.xiyongAnalysis.innerHTML, /逢水运总体偏顺/);

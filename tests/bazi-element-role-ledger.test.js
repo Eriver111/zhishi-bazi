@@ -28,10 +28,10 @@ test('原局角色账本为五行分别记录现状、功过与行运基础方�
   const result = resultOf(calculator, ['丙戌', '丙申', '己卯', '庚午']);
   const ledger = result.elementRoleLedger;
 
-  assert.equal(ledger.version, 'element-role-ledger-v2');
+  assert.equal(ledger.version, 'element-role-ledger-v3');
   assert.equal(ledger.entries.length, 5);
   assert.match(ledger.principle, /先由原局确定用神、喜神、忌神/);
-  assert.match(ledger.principle, /十神名称不能直接代替吉凶裁决/);
+  assert.match(ledger.principle, /十神名称和同五行标签都不能直接代替吉凶裁决/);
   assert.deepEqual(Array.from(ledger.entries, item => item.element), ['木', '火', '土', '金', '水']);
 
   for (const item of ledger.entries) {
@@ -43,6 +43,7 @@ test('原局角色账本为五行分别记录现状、功过与行运基础方�
     assert.ok(item.fortuneLevel, item.element + ' 缺少行运有利程度');
     assert.ok(item.fortuneDirection, item.element + ' 缺少行运方向');
     assert.ok(item.fortuneReason, item.element + ' 缺少行运依据');
+    assert.ok(item.carrierGuidance && item.carrierGuidance.summary, item.element + ' 缺少干支载体裁决');
   }
 });
 
@@ -118,7 +119,7 @@ test('AI 上下文明确先定行运方向再由具体干支复核', () => {
 
   assert.match(context, /原局五行角色账本（先定行运方向，再由具体干支复核）/);
   assert.match(context, /用神来源：火·格局用神/);
-  assert.match(context, /火·印星：用神（格局用神），核心有利，逢火运总体偏顺/);
+  assert.match(context, /火（宜巳、午落根）·印星：用神（格局用神），核心有利，逢火运总体偏顺/);
   assert.match(context, /原局原局有力，原局有功/);
   assert.match(context, /水·财星：喜神，条件有利，逢水运有财机，但须防财破印/);
 });

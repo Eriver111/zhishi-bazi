@@ -2584,6 +2584,56 @@ function getWaterloggedWoodState(bazi) {
   };
 }
 
+// 丑月木日主若财土成片，但同时有两重透印在丑中落实、并保留一线木根，
+// 不能把“印受财制”误写成“印星不存在”，也不能与真正的水多木漂混为一谈。
+// 该状态只返还双印有根所提供的最低承载，不抹去财多、失令和木根受冲的压力。
+function getColdWetEarthWoodState(bazi) {
+  var positions = ['year','month','day','hour'];
+  var isWood = WU_XING[bazi.day.gan] === '木';
+  var isChouMonth = bazi.month.zhi === '丑';
+  var empty = {
+    applies:false, isWood:isWood, isChouMonth:isChouMonth, waterStemCount:0,
+    woodPeerStemCount:0,
+    waterRootPower:0, woodRootPower:0, earthRootPower:0, fireRootPower:0,
+    intactWoodMainRoots:[], rootedDoubleSeal:false, residualWoodRoot:false,
+    denseWetEarth:false, warmthIncomplete:false, adjustment:0
+  };
+  if (!isWood || !isChouMonth) return empty;
+
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var waterStemCount = positions.filter(function(pos) {
+    return pos !== 'day' && WU_XING[bazi[pos].gan] === '水';
+  }).length;
+  var woodPeerStemCount = positions.filter(function(pos) {
+    return pos !== 'day' && WU_XING[bazi[pos].gan] === '木';
+  }).length;
+  var waterRootPower = settlement.elementRootPower('水');
+  var woodRootPower = settlement.elementRootPower('木');
+  var earthRootPower = settlement.elementRootPower('土');
+  var fireRootPower = settlement.elementRootPower('火');
+  var intactWoodMainRoots = settlement.roots.filter(function(root) {
+    return (root.branch === '寅' || root.branch === '卯') && root.element === '木' &&
+      root.depth === '本气' && root.effectiveCoefficient > 0;
+  }).map(function(root) { return root.position + root.branch; });
+  var rootedDoubleSeal = waterStemCount >= 2 && waterRootPower >= 1.25;
+  var residualWoodRoot = woodRootPower > 0;
+  var denseWetEarth = earthRootPower >= 3.5;
+  var warmthIncomplete = fireRootPower < 1;
+  var applies = rootedDoubleSeal && woodPeerStemCount === 0 && residualWoodRoot && denseWetEarth &&
+    warmthIncomplete && intactWoodMainRoots.length === 0;
+
+  return {
+    applies:applies, isWood:true, isChouMonth:true, waterStemCount:waterStemCount,
+    woodPeerStemCount:woodPeerStemCount,
+    waterRootPower:waterRootPower, woodRootPower:woodRootPower,
+    earthRootPower:earthRootPower, fireRootPower:fireRootPower,
+    intactWoodMainRoots:intactWoodMainRoots, rootedDoubleSeal:rootedDoubleSeal,
+    residualWoodRoot:residualWoodRoot, denseWetEarth:denseWetEarth,
+    warmthIncomplete:warmthIncomplete,
+    adjustment:applies ? 12 : 0
+  };
+}
+
 function calcDayMasterStrength(bazi, options) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -2605,6 +2655,7 @@ function calcDayMasterStrength(bazi, options) {
   var _dryEarthMetalState = getDryEarthMetalState(bazi);
   var _thickEarthMetalState = getThickEarthMetalState(bazi);
   var _waterloggedWoodState = getWaterloggedWoodState(bazi);
+  var _coldWetEarthWoodState = getColdWetEarthWoodState(bazi);
   // 单盘内部审计只跟踪主引擎真实分差，不重新计算旺衰。
   // 默认路径不附带审计字段，避免污染 AI/报告对外事实契约。
   var _auditEnabled = !!(options && options.audit === true);
@@ -3520,6 +3571,18 @@ function calcDayMasterStrength(bazi, options) {
   if (_waterloggedWoodState.applies) score += _waterloggedWoodState.adjustment;
   _auditMark('waterlogged-wood', '水多木漂·印星反害', _waterloggedWoodState);
 
+  // 双印有根只补回最多 12 分的最低承载信用，并封顶于偏弱下界 30 分；
+  // 已经脱离极弱档的盘不再加分，避免把同一结构推成中和或身强。
+  var _coldWetEarthWoodApplied = _coldWetEarthWoodState.applies && !_waterloggedWoodState.applies && score < 30;
+  var _coldWetEarthWoodAdjustment = _coldWetEarthWoodApplied
+    ? Math.max(0, Math.min(_coldWetEarthWoodState.adjustment, 30 - score))
+    : 0;
+  if (_coldWetEarthWoodAdjustment) score += _coldWetEarthWoodAdjustment;
+  _auditMark('cold-wet-earth-wood-support', '寒湿厚土·双印承载', Object.assign({}, _coldWetEarthWoodState, {
+    applied:_coldWetEarthWoodApplied,
+    adjustment:_coldWetEarthWoodAdjustment
+  }));
+
   // ---------- ⑨ 分级输出 ----------
   // 分数限定在 1~100 区间
   var _auditRawScore = score;
@@ -3542,10 +3605,19 @@ function calcDayMasterStrength(bazi, options) {
     detail = '综合评定身' + level + '（' + score + '分）。湿库厚土成势，印星由生扶转为埋金，不能再按普通得令身强论；需先疏土、淘土，再看金根能否承载。';
   } else if (_waterloggedWoodState.applies) {
     detail = '综合评定身' + level + '（' + score + '分）。旺水成势而木无完整寅卯本气根，印星由滋木转为水多木漂，不能再按普通印旺生身论；需先暖局泄印或以燥土制水，再看木根能否落实。';
+  } else if (_coldWetEarthWoodApplied) {
+    detail = '综合评定身' + level + '（' + score + '分）。丑月寒湿厚土耗木，木只余藏根且受寒湿厚土牵制，故日主仍弱；但双印透干并有根，不能按无救的极弱论。取木须首重寅卯实根，火另承担适量暖局调候。';
   } else {
     detail = '综合评定身' + level + '（' + score + '分）。命局中克泄耗力量偏重，日主需印比扶助。';
   }
-  var result = { level: level, label: label, score: score, detail: detail };
+  var result = {
+    level: level, label: label, score: score, detail: detail,
+    coldWetEarthWoodSupport:{
+      applies:_coldWetEarthWoodState.applies,
+      applied:_coldWetEarthWoodApplied,
+      adjustment:_coldWetEarthWoodAdjustment
+    }
+  };
   if (_auditEnabled) {
     result.audit = {
       baseScore: 50,
@@ -3717,6 +3789,9 @@ function buildBaziEventLedger(bazi, scoreStages) {
     'position-weight':function() { return idsOf(function(e) { return e.type === 'visible-stem' || e.type === 'branch'; }); },
     'waterlogged-wood':function() { return idsOf(function(e) {
       return e.data.element === '水' || e.data.element === '木' || e.data.resultElement === '水';
+    }); },
+    'cold-wet-earth-wood-support':function() { return idsOf(function(e) {
+      return e.data.element === '水' || e.data.element === '木' || e.data.element === '土';
     }); }
   };
   var primaryScoreStages = {
@@ -5035,7 +5110,7 @@ function analyzeWealth(bazi, gender, yongJi) {
 
 
 // ==================== 大运流年运势分析 ====================
-function classifyFortuneElement(wx, yongJi, sourceLabel) {
+function classifyFortuneElement(wx, yongJi, sourceLabel, carrier) {
     var ledgerEntry = yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries
         ? yongJi.elementRoleLedger.entries.filter(function(item) { return item.element === wx; })[0]
         : null;
@@ -5048,7 +5123,8 @@ function classifyFortuneElement(wx, yongJi, sourceLabel) {
         : role === '喜神' ? '总体有利'
         : role === '忌神' ? '总体不利' : '中性双向';
     var scoreMap = { '核心有利':3, '总体有利':2, '条件有利':1, '中性双向':0, '总体不利':-2 };
-    var score = Object.prototype.hasOwnProperty.call(scoreMap, level) ? scoreMap[level] : 0;
+    var baseScore = Object.prototype.hasOwnProperty.call(scoreMap, level) ? scoreMap[level] : 0;
+    var score = baseScore;
     var reasons = yongJi && yongJi.elementReasons && yongJi.elementReasons[wx]
         ? (yongJi.elementReasons[wx].reasons || []) : [];
     var prefix = (sourceLabel || '岁运五行') + wx;
@@ -5057,11 +5133,70 @@ function classifyFortuneElement(wx, yongJi, sourceLabel) {
         : prefix + '落在命局' + role + '范围，基础方向为“' + level + '”。';
     if (ledgerEntry && ledgerEntry.fortuneReason) detail += ledgerEntry.fortuneReason;
     else if (reasons.length) detail += reasons[0];
+    var carrierGuidance = ledgerEntry && ledgerEntry.carrierGuidance ? ledgerEntry.carrierGuidance : null;
+    var carrierAdjustment = 0;
+    var carrierStatus = '未复核载体';
+    var carrierReason = '';
+    if (carrierGuidance && carrier && (carrier.type === 'stem' || carrier.type === 'branch')) {
+        var symbol = carrier.symbol || '';
+        var companionElement = carrier.companionElement || '';
+        var companionSymbol = carrier.companionSymbol || '';
+        var isFavorableRole = baseScore > 0;
+        var preferredStems = carrierGuidance.preferredStems || [];
+        var preferredBranches = carrierGuidance.preferredBranches || [];
+        if (carrier.type === 'branch') {
+            var preferredBranch = preferredBranches.indexOf(symbol) >= 0;
+            if (isFavorableRole && preferredBranch) {
+                carrierAdjustment = 0.5;
+                carrierStatus = '落地得力';
+                carrierReason = symbol + '为本五行优先地支载体，根气比同五行虚浮透干更能兑现喜用。';
+            } else if (isFavorableRole && wx === '土' && carrierGuidance.preferDryEarth && ['辰','丑'].indexOf(symbol) >= 0) {
+                carrierAdjustment = -1;
+                carrierStatus = '同类未必同效';
+                carrierReason = symbol + '属湿土，不能直接代替戌未燥土完成制水、化湿任务。';
+            } else if (isFavorableRole) {
+                carrierAdjustment = 0.25;
+                carrierStatus = '有根可用';
+                carrierReason = symbol + '以地支承载' + wx + '气，通常比无根天干更稳定，但仍须复核冲合成局。';
+            } else if (baseScore < 0) {
+                carrierAdjustment = -0.5;
+                carrierStatus = '忌神落根';
+                carrierReason = symbol + '使原局所忌之' + wx + '取得地支承载，放大失衡的可能性更高。';
+            }
+        } else {
+            var hasRootSupport = carrierGuidance.requiresMainRoot
+                ? ((carrierGuidance.natalMainRoots || []).length > 0 || preferredBranches.indexOf(companionSymbol) >= 0)
+                : ((ledgerEntry.rootPower || 0) >= 0.75 || companionElement === wx || preferredBranches.indexOf(companionSymbol) >= 0);
+            if (isFavorableRole && carrierGuidance.requiresRoot && !hasRootSupport) {
+                carrierAdjustment = -0.75;
+                carrierStatus = '透而待根';
+                carrierReason = symbol + '虽属喜用五行，但本步未见相应地支根，帮助按有限兑现，不作纯吉。';
+            } else if (isFavorableRole && carrierGuidance.requiresRoot && hasRootSupport) {
+                carrierAdjustment = 0.25;
+                carrierStatus = '透而有根';
+                carrierReason = symbol + '透干且有根气承接，较能落实原局所需作用。';
+            } else if (isFavorableRole && preferredStems.indexOf(symbol) >= 0) {
+                carrierAdjustment = 0.15;
+                carrierStatus = '透干可用';
+                carrierReason = symbol + '把' + wx + '的作用显露出来，仍须结合同柱地支和全局生克复核。';
+            } else if (baseScore < 0 && ((ledgerEntry.rootPower || 0) >= 0.75 || companionElement === wx)) {
+                carrierAdjustment = -0.25;
+                carrierStatus = '忌神透根';
+                carrierReason = symbol + '透干又有根，原局所忌之' + wx + '更容易形成实际作用。';
+            }
+        }
+        score += carrierAdjustment;
+        if (carrierReason) detail += '载体复核：' + carrierReason;
+    }
     return {
         element:wx,
         role:role,
         level:level,
+        baseScore:baseScore,
         score:score,
+        carrierAdjustment:carrierAdjustment,
+        carrierStatus:carrierStatus,
+        carrierReason:carrierReason,
         isFavorable:score > 0,
         direction:ledgerEntry && ledgerEntry.fortuneDirection ? ledgerEntry.fortuneDirection : '',
         reason:detail
@@ -5134,8 +5269,8 @@ function analyzeFortune(bazi, gender, yongJi) {
 
     const yearResults = years.map(yr => {
         const yrWX = yr.ganWX;
-        const trigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yr.gan);
-        const branchTrigger = classifyFortuneElement(yr.zhiWX, yongJi, '流年地支' + yr.zhi);
+        const trigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yr.gan, { type:'stem', symbol:yr.gan, companionElement:yr.zhiWX, companionSymbol:yr.zhi });
+        const branchTrigger = classifyFortuneElement(yr.zhiWX, yongJi, '流年地支' + yr.zhi, { type:'branch', symbol:yr.zhi, companionElement:yrWX, companionSymbol:yr.gan });
         let isFavorable = yongJi && yongJi.elementRoleLedger
             ? (trigger.score * 0.45 + branchTrigger.score * 0.55) > 0
             : favorableSet.has(yrWX);
@@ -5271,9 +5406,13 @@ function analyzeFortune(bazi, gender, yongJi) {
             triggeredRole: trigger.role,
             triggeredLevel: trigger.level,
             triggeredReason: trigger.reason,
+            triggeredCarrierStatus: trigger.carrierStatus,
+            triggeredCarrierReason: trigger.carrierReason,
             branchTriggeredElement: branchTrigger.element,
             branchTriggeredRole: branchTrigger.role,
             branchTriggeredLevel: branchTrigger.level,
+            branchTriggeredCarrierStatus: branchTrigger.carrierStatus,
+            branchTriggeredCarrierReason: branchTrigger.carrierReason,
             fortuneVerificationScore: Math.round(verificationScore * 100) / 100,
             verificationVerdict: annualVerification ? annualVerification.verdict : (verifiedFavorable ? '偏吉' : '中性'),
             verificationSummary: annualVerification ? annualVerification.summary : '',
@@ -5296,14 +5435,16 @@ function analyzeFortune(bazi, gender, yongJi) {
         const dySS = getShiShen(DAY, currentDY.gan);
         const ganWX = WU_XING[currentDY.gan];
         const zhiWX = DI_ZHI_WU_XING[currentDY.zhi];
-        const ganTrigger = classifyFortuneElement(ganWX, yongJi, '大运天干' + currentDY.gan);
-        const zhiTrigger = classifyFortuneElement(zhiWX, yongJi, '大运地支' + currentDY.zhi);
+        const ganTrigger = classifyFortuneElement(ganWX, yongJi, '大运天干' + currentDY.gan, { type:'stem', symbol:currentDY.gan, companionElement:zhiWX, companionSymbol:currentDY.zhi });
+        const zhiTrigger = classifyFortuneElement(zhiWX, yongJi, '大运地支' + currentDY.zhi, { type:'branch', symbol:currentDY.zhi, companionElement:ganWX, companionSymbol:currentDY.gan });
         dyInfo = '当前正行「' + currentDY.gan + currentDY.zhi + '」大运（' + currentDY.startYear + '-' + currentDY.endYear + '年），运干十神为「' + dySS + '」。';
         currentDaYun = {
             gan: currentDY.gan, zhi: currentDY.zhi,
             startYear: currentDY.startYear, endYear: currentDY.endYear,
             shiShen: dySS, ganWX: ganWX, zhiWX: zhiWX,
             ganRole: ganTrigger.role, zhiRole: zhiTrigger.role,
+            ganCarrierStatus: ganTrigger.carrierStatus, zhiCarrierStatus: zhiTrigger.carrierStatus,
+            ganCarrierReason: ganTrigger.carrierReason, zhiCarrierReason: zhiTrigger.carrierReason,
             triggeredReason: ganTrigger.reason + zhiTrigger.reason
         };
         try {
@@ -5351,8 +5492,9 @@ function analyzeThisYear(bazi, gender, yongJi) {
             : [helpWX, sameWX]);
 
     var yrWX = WU_XING[yp.gan];
-    var yearTrigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yp.gan);
-    var yearBranchTrigger = classifyFortuneElement(DI_ZHI_WU_XING[yp.zhi], yongJi, '流年地支' + yp.zhi);
+    var yearZhiWX = DI_ZHI_WU_XING[yp.zhi];
+    var yearTrigger = classifyFortuneElement(yrWX, yongJi, '流年天干' + yp.gan, { type:'stem', symbol:yp.gan, companionElement:yearZhiWX, companionSymbol:yp.zhi });
+    var yearBranchTrigger = classifyFortuneElement(yearZhiWX, yongJi, '流年地支' + yp.zhi, { type:'branch', symbol:yp.zhi, companionElement:yrWX, companionSymbol:yp.gan });
     var isFavorable = yongJi && yongJi.elementRoleLedger
         ? (yearTrigger.score * 0.45 + yearBranchTrigger.score * 0.55) > 0
         : favorableSet.indexOf(yrWX) >= 0;
@@ -5480,9 +5622,13 @@ function analyzeThisYear(bazi, gender, yongJi) {
         triggeredRole: yearTrigger.role,
         triggeredReason: yearTrigger.reason,
         triggeredLevel: yearTrigger.level,
+        triggeredCarrierStatus: yearTrigger.carrierStatus,
+        triggeredCarrierReason: yearTrigger.carrierReason,
         branchTriggeredElement: yearBranchTrigger.element,
         branchTriggeredRole: yearBranchTrigger.role,
         branchTriggeredLevel: yearBranchTrigger.level,
+        branchTriggeredCarrierStatus: yearBranchTrigger.carrierStatus,
+        branchTriggeredCarrierReason: yearBranchTrigger.carrierReason,
         verificationVerdict: annualVerification ? annualVerification.verdict : '待复核',
         verificationScore: annualVerification ? annualVerification.verifiedScore : Math.round((yearTrigger.score * 0.45 + yearBranchTrigger.score * 0.55) * 100) / 100,
         verificationSummary: annualVerification ? annualVerification.summary : '未定位当前大运，仅显示原局给出的流年基础方向。',
@@ -6677,6 +6823,9 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   var imbalanceCauseForLedger = (context.candidateScores && (context.candidateScores.weaknessCause || context.candidateScores.strongCause)) || null;
   var isThickEarthBurial = imbalanceCauseForLedger && imbalanceCauseForLedger.type === '厚土埋金';
   var isWaterloggedWood = imbalanceCauseForLedger && imbalanceCauseForLedger.type === '水多木漂';
+  var coldWetEarthWoodState = (context.candidateScores && context.candidateScores.coldWetEarthWoodState) || { applies:false };
+  var isColdWetEarthWood = !!coldWetEarthWoodState.applies;
+  var tiaoHouElements = (context.candidateScores && context.candidateScores.tiaoHouYongShen) || [];
   var settlement = buildBaziEvidenceSettlement(bazi);
   var candidateMap = {};
   (((context.candidateScores || {}).candidates) || []).forEach(function(candidate) {
@@ -6723,6 +6872,119 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       state:state
     };
   });
+
+  // 同一五行并不等于同一种作用。天干负责显露、地支负责承载；有些病药还要
+  // 进一步区分燥湿、是否得本气根。此层只裁决“怎样出现更有效”，不改原局旺衰分。
+  var carrierMap = {
+    '木':{ stems:['甲','乙'], branches:['寅','卯'] },
+    '火':{ stems:['丙','丁'], branches:['巳','午'] },
+    '土':{ stems:['戊','己'], branches:['辰','戌','丑','未'] },
+    '金':{ stems:['庚','辛'], branches:['申','酉'] },
+    '水':{ stems:['壬','癸'], branches:['亥','子'] }
+  };
+  var strengthLevelForCarrier = context.dmStr && context.dmStr.level ? context.dmStr.level : '';
+  var isWeakForCarrier = strengthLevelForCarrier.indexOf('弱') >= 0;
+  var isStrongForCarrier = strengthLevelForCarrier.indexOf('强') >= 0;
+  var causeTypeForCarrier = imbalanceCauseForLedger ? imbalanceCauseForLedger.type : '';
+  var buildCarrierGuidance = function(wx, relation, classification) {
+    var map = carrierMap[wx];
+    var favorable = ['用神','喜神','弱喜','条件喜神'].indexOf(classification) >= 0;
+    var adverse = classification === '忌神' || classification === '弱忌';
+    var tiaoHou = tiaoHouElements.indexOf(wx) >= 0;
+    var preferredBranches = map.branches.slice();
+    var requiresRoot = false;
+    var preferDryEarth = false;
+    var requiresMainRoot = false;
+    var stemCondition = map.stems.join('、') + '透干时须结合地支根气与生克通路复核';
+    var branchCondition = map.branches.join('、') + '为本五行主要地支载体，仍须复核冲合刑害';
+    var summary = adverse
+      ? map.stems.join('、') + '透出或' + map.branches.join('、') + '落根时，忌性通常更实'
+      : map.stems.join('、') + '可显其用，' + map.branches.join('、') + '可落实其根';
+
+    if (favorable && relation === '比劫' && isWeakForCarrier) {
+      requiresRoot = true;
+      summary = '宜' + map.branches.join('、') + '落根；' + map.stems.join('、') + '透干须有根承接';
+      stemCondition = map.stems.join('、') + '若只浮透而无本气根，帮身能力有限，并可能继续生扶原局食伤';
+      branchCondition = map.branches.join('、') + '本气根优先，能把比劫之助落实为日主承载';
+    }
+    if (favorable && relation === '印星' && isWeakForCarrier && ['食伤泄身','官杀克身','财官压身'].indexOf(causeTypeForCarrier) >= 0) {
+      requiresRoot = true;
+      var task = causeTypeForCarrier === '食伤泄身' ? '制食伤并生身' : '接通官杀—印—身的化杀通路';
+      summary = '宜' + map.stems.join('、') + '透而有根，用来' + task;
+      stemCondition = map.stems.join('、') + '须有' + map.branches.join('、') + '或同柱同气承接，避免虚印无力';
+      branchCondition = map.branches.join('、') + '能落实印根，但还要看是否被财星破坏或被冲散';
+    }
+    if (favorable && relation === '比劫' && causeTypeForCarrier === '财多耗身') {
+      requiresRoot = true;
+      summary = '宜' + map.branches.join('、') + '落根分财；' + map.stems.join('、') + '浮透不可等同有效帮身';
+      stemCondition = map.stems.join('、') + '须有根并能承财，单独透干容易只形成争财表象';
+      branchCondition = map.branches.join('、') + '本气根优先，用于增强承财与分财能力';
+    }
+    if (isStrongForCarrier && favorable && relation === '财星' && ['印旺生身','印比并旺'].indexOf(causeTypeForCarrier) >= 0) {
+      requiresRoot = true;
+      summary = '宜' + map.stems.join('、') + '透而有' + map.branches.join('、') + '承接，用来制印并承接食伤';
+      stemCondition = map.stems.join('、') + '若虚浮无根，难以承担制约旺印与落实现实资源的任务';
+      branchCondition = map.branches.join('、') + '可落实财根，但须看是否被比劫争夺或被冲散';
+    }
+    if (isStrongForCarrier && favorable && relation === '官杀' && causeTypeForCarrier === '比劫成势') {
+      summary = '宜' + map.stems.join('、') + '透出立规，配' + map.branches.join('、') + '根气制约成势比劫';
+      stemCondition = map.stems.join('、') + '透出能直接约束比劫，但须防食伤回克官杀';
+      branchCondition = map.branches.join('、') + '落根可增强约束力，仍须复核是否有印化或食伤制';
+    }
+    if (isStrongForCarrier && favorable && relation === '食伤') {
+      summary = '宜' + map.stems.join('、') + '透出泄秀，并由财星承接；有' + map.branches.join('、') + '根时作用更持续';
+      stemCondition = map.stems.join('、') + '透出重在疏泄，须看后续是否流向财星而非单独冲官';
+      branchCondition = map.branches.join('、') + '落根会增强泄秀，同时也会放大伤官见官等结构风险';
+    }
+    if (isWaterloggedWood && wx === roleElements.wealth) {
+      preferredBranches = ['戌','未'];
+      preferDryEarth = true;
+      requiresRoot = favorable;
+      summary = '优先戌、未燥土筑堤；辰、丑湿土不能等量代替';
+      stemCondition = '戊、己透干须坐燥土或得火暖，才能稳定承担制水任务';
+      branchCondition = '戌、未燥土优先；辰、丑湿土须先看火暖与全局制化，不可直接按吉论';
+    }
+    if (isWaterloggedWood && wx === roleElements.output) {
+      requiresRoot = favorable || tiaoHou;
+      summary = '宜丙、丁透而有巳、午根，暖局化湿；无根虚火帮助有限';
+      stemCondition = '丙、丁须有巳、午根或燥土护持，投入旺水而无根时容易受制';
+      branchCondition = '巳、午可落实火气，但仍须防被旺水冲克或火过度泄木';
+    }
+    if (isWaterloggedWood && wx === roleElements.peer) {
+      preferredBranches = ['寅','卯'];
+      requiresRoot = true;
+      requiresMainRoot = true;
+      summary = '须见寅、卯完整木根；甲、乙浮透不能承受旺水';
+      stemCondition = '甲、乙透干只有同时得寅、卯本气根，或旺水先受火土控制后，才可发挥帮身作用';
+      branchCondition = '寅、卯完整木根优先，余气与浮木不能等量替代';
+    }
+    if (isColdWetEarthWood && wx === roleElements.peer) {
+      preferredBranches = ['寅','卯'];
+      requiresRoot = true;
+      requiresMainRoot = true;
+      summary = '首喜寅、卯本气根；甲、乙透干必须结合是否得根';
+      stemCondition = '甲、乙只透不根仍属浮木，不能替代寅卯对弱木的真实承载';
+      branchCondition = '寅、卯本气根是第一落点，优先于单见甲乙透干';
+    }
+    if (tiaoHou && !isWaterloggedWood) {
+      requiresRoot = favorable || requiresRoot;
+      summary += '；兼调候时宜适量、透而有根，不是越多越好';
+      stemCondition += '；调候须能落地且用量有度';
+    }
+    return {
+      preferredStems:map.stems.slice(),
+      preferredBranches:preferredBranches,
+      requiresRoot:requiresRoot,
+      requiresMainRoot:requiresMainRoot,
+      preferDryEarth:preferDryEarth,
+      summary:summary,
+      stemCondition:stemCondition,
+      branchCondition:branchCondition,
+      natalRootPower:facts[wx].rootPower,
+      natalVisibleCount:facts[wx].visible.length,
+      natalMainRoots:facts[wx].mainQi.slice()
+    };
+  };
 
   var entries = WX.map(function(wx) {
     var relation = relationNames[wx];
@@ -6782,6 +7044,23 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
         uniquePush(risks, '新增无根浮木仍难承水，不能只因身弱便机械补比劫');
       } else if (wx === roleElements.officer) {
         uniquePush(risks, '金既克木又生水，会延长金生水、水漂木的失衡链');
+      }
+    }
+
+    if (isColdWetEarthWood) {
+      if (wx === roleElements.peer) {
+        uniquePush(functions, '木为扶抑与疏土的核心用神，首重寅卯本气根');
+        uniquePush(conditions, '首喜寅卯；甲乙透干须同时得寅卯根或在岁运中落实根气，浮木帮助有限');
+      } else if (wx === roleElements.output) {
+        uniquePush(functions, '火承担丑月解冻、暖局与化湿的调候任务');
+        uniquePush(conditions, '宜与寅卯木根配合并适量使用；孤火或火过旺会泄木生土');
+      } else if (wx === roleElements.seal) {
+        uniquePush(functions, '双印透干并在丑中有根，为弱木保留最低承载');
+        uniquePush(conditions, '原局印水已有，不宜脱离木根与火暖而单独再增水');
+      } else if (wx === roleElements.wealth) {
+        uniquePush(risks, '丑未财土已经成片，再增土会继续耗木并压制印水');
+      } else if (wx === roleElements.officer) {
+        uniquePush(risks, '木根未立时金先克木并助寒，通常增加承载压力');
       }
     }
 
@@ -6873,6 +7152,13 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     var incrementReason = fortuneReason;
 
     var candidate = candidateMap[wx] || {};
+    var carrierGuidance = buildCarrierGuidance(wx, relation, classification);
+    var branchPreference = '';
+    if (fortuneRole === '用神' || classification === '条件喜神') {
+      branchPreference = isColdWetEarthWood && wx === roleElements.peer
+        ? '首喜寅卯'
+        : '宜' + carrierGuidance.preferredBranches.join('、') + '落根';
+    }
     return {
       element:wx,
       relation:relation,
@@ -6887,6 +7173,9 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       functions:functions,
       risks:risks,
       conditions:conditions,
+      branchPreference:branchPreference,
+      carrierGuidance:carrierGuidance,
+      tiaoHouRole:tiaoHouElements.indexOf(wx) >= 0 ? '调候用神' : '',
       useGodType:fortuneRole === '用神' && context.yongShenSource ? context.yongShenSource.label : '',
       fortuneRole:fortuneRole,
       fortuneLevel:fortuneLevel,
@@ -6898,8 +7187,8 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     };
   });
   return {
-    version:'element-role-ledger-v2',
-    principle:'先由原局确定用神、喜神、忌神及行运基础方向，再用具体大运干支、刑冲合害和生克链复核是否真正变顺；十神名称不能直接代替吉凶裁决。',
+    version:'element-role-ledger-v3',
+    principle:'先由原局确定用神、喜神、忌神及行运基础方向，再区分天干透出、地支落根、燥湿与是否被冲合，最后用具体大运干支和生克链复核是否真正变顺；十神名称和同五行标签都不能直接代替吉凶裁决。',
     patternContext:pattern.name ? pattern.name + '·' + pattern.status : '',
     entries:entries
   };
@@ -7080,13 +7369,21 @@ function finalizeYongJiResult(bazi, base, context) {
   functionalTasks.filter(function(task) { return task.element === primaryYongElement; }).forEach(function(task) {
     if ((task.type || '').indexOf('通关') >= 0 || (task.conclusion || '').indexOf('通关') >= 0) addSecondaryUseType('兼通关');
   });
+  var primaryBranchPreference = context.candidateScores && context.candidateScores.coldWetEarthWoodState &&
+    context.candidateScores.coldWetEarthWoodState.applies && primaryYongElement === '木'
+      ? '首喜寅卯'
+      : '';
+  if (primaryBranchPreference) {
+    primaryReason += ' 具体落到岁运，首喜寅卯本气根；甲乙透干须结合是否同时得根复核。';
+  }
   var yongShenSource = {
     element:primaryYongElement,
     primaryType:primaryUseType,
     secondaryTypes:secondaryUseTypes,
     label:primaryUseType + (secondaryUseTypes.length ? '·' + secondaryUseTypes.join('·') : ''),
     pattern:pattern.name ? pattern.name + '·' + pattern.status : '',
-    basis:primaryReason
+    basis:primaryReason,
+    branchPreference:primaryBranchPreference
   };
   if (primaryYongElement && elementReasons[primaryYongElement]) {
     elementReasons[primaryYongElement].useGodType = yongShenSource.label;
@@ -7380,6 +7677,12 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var thickEarthBurialDominant = isWeakLevel && thickEarthMetalState.applies;
   var waterloggedWoodState = getWaterloggedWoodState(bazi);
   var waterloggedWoodDominant = isWeakLevel && waterloggedWoodState.applies;
+  var coldWetEarthWoodState = getColdWetEarthWoodState(bazi);
+  // 只有旺衰层实际动用了“双印最低承载”信用，后续喜用与展示才进入这条专项分支。
+  coldWetEarthWoodState = Object.assign({}, coldWetEarthWoodState, {
+    applies:!!(coldWetEarthWoodState.applies && dmStr.coldWetEarthWoodSupport && dmStr.coldWetEarthWoodSupport.applied),
+    strengthAdjustment:dmStr.coldWetEarthWoodSupport ? dmStr.coldWetEarthWoodSupport.adjustment : 0
+  });
   // 两类压力非常接近时不能因零点几的浮动强行贴成单一病因。至少领先0.5，
   // 才称“主导”；否则落入复合耗泄克，再由候选评分决定具体病药。
   var dominanceMargin = 0.5;
@@ -7721,9 +8024,13 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     addL4('水', 8, '夏火炎炎，水润局');
     tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
   }
-  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0 && dmQiang) {
-    addL4('火', 6, '冬木寒湿，火暖局');
-    tiaoHouNote = '冬木寒湿，需火暖局方能生发。《穷通宝鉴》：甲木冬生，水冷木寒，无火则木不秀。';
+  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
+    // 弱木所见之火属于调候轴，不用 L4 强行翻转扶抑喜忌；强木才把火计入普通候选加分。
+    addTiaoHouYongShen('火');
+    if (dmQiang) addL4('火', 6, '冬木寒湿，火暖局');
+    tiaoHouNote = coldWetEarthWoodState.applies
+      ? '丑月寒湿厚土，双印虽能续木，但暖局尚未充分完成；火承担解冻化湿的调候任务，宜与寅卯木根配合、适量使用，不能理解为火越多越好。'
+      : '冬木寒湿，需火暖局方能生发；但弱木所见火运仍须复核根气，不能只凭调候二字机械判吉。';
   }
   if (dmWx === '金' && ['申','酉','戌'].indexOf(mz) >= 0 && dmQiang) {
     addL4('火', 6, '秋金当令过旺，火炼金成器');
@@ -7858,6 +8165,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     l4Details: l4Details,
     tiaoHouNote: tiaoHouNote,
     tiaoHouYongShen: tiaoHouYongShen,
+    coldWetEarthWoodState: coldWetEarthWoodState,
     weaknessCause: weaknessCause ? Object.assign(weaknessCause, {
       outputElement: WO_SHENG,
       wealthElement: WO_KE,
@@ -8018,6 +8326,17 @@ function getYongJi(bazi) {
         }
       });
     });
+    // 寒湿厚土弱木：火承担必要调候，水虽能生木但原局双印已经到位；
+    // 二者都不能按普通喜神无限增补，统一落入条件喜神并交给角色账本说明边界。
+    if (cs.coldWetEarthWoodState && cs.coldWetEarthWoodState.applies) {
+      ['火', '水'].forEach(function(wx) {
+        if (elementClassification[wx] === '用神') return;
+        elementClassification[wx] = '条件喜神';
+        cs.candidates.forEach(function(candidate) {
+          if (candidate.wx === wx && candidate.role !== '用神') candidate.role = '条件喜神';
+        });
+      });
+    }
     xiShen = WX.filter(function(wx) { return elementClassification[wx] === '喜神'; })
       .sort(function(a, b) { return cs.SNeed[b] - cs.SNeed[a]; })
       .concat(WX.filter(function(wx) { return elementClassification[wx] === '弱喜'; })
@@ -8748,9 +9067,13 @@ function getProfessionalReportFacts(bazi, gender) {
       triggeredRole: thisYear.triggeredRole,
       triggeredLevel: thisYear.triggeredLevel,
       triggeredReason: thisYear.triggeredReason,
+      triggeredCarrierStatus: thisYear.triggeredCarrierStatus,
+      triggeredCarrierReason: thisYear.triggeredCarrierReason,
       branchTriggeredElement: thisYear.branchTriggeredElement,
       branchTriggeredRole: thisYear.branchTriggeredRole,
       branchTriggeredLevel: thisYear.branchTriggeredLevel,
+      branchTriggeredCarrierStatus: thisYear.branchTriggeredCarrierStatus,
+      branchTriggeredCarrierReason: thisYear.branchTriggeredCarrierReason,
       verificationVerdict: thisYear.verificationVerdict,
       verificationScore: thisYear.verificationScore,
       verificationSummary: thisYear.verificationSummary,
@@ -8786,6 +9109,7 @@ window.BaZiCalculator = {
     buildEventLedger: buildBaziEventLedger,
     buildEvidenceSettlement: buildBaziEvidenceSettlement,
     getWaterloggedWoodState: getWaterloggedWoodState,
+    getColdWetEarthWoodState: getColdWetEarthWoodState,
     getPattern: getPattern,
     adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,
@@ -8801,6 +9125,7 @@ window.BaZiCalculator = {
     analyzeCharacter: analyzeCharacter,
     analyzeWealth: analyzeWealth,
     analyzeFortune: analyzeFortune,
+    classifyFortuneElement: classifyFortuneElement,
     analyzeThisYear: analyzeThisYear,
     analyzeStudy: analyzeStudy,
     getTrueSolarHour: getTrueSolarHour,
