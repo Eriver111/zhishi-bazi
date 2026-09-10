@@ -1483,7 +1483,9 @@ function buildSingleChart(data) {
       ctx += `  原局五行角色账本（先定行运方向，再由具体干支复核）：\n`;
       ctx += `    原则：${yj.elementRoleLedger.principle || '先由原局定喜用忌，再由具体岁运复核'}\n`;
       yj.elementRoleLedger.entries.forEach(item => {
-        ctx += `    - ${item.element}${item.branchPreference ? '（' + item.branchPreference + '）' : ''}·${item.relation}：${item.fortuneRole || item.classification}${item.useGodType ? '（' + item.useGodType + '）' : ''}${item.tiaoHouRole ? '（' + item.tiaoHouRole + '）' : ''}，${item.fortuneLevel || item.incrementRole}，${item.fortuneDirection || ''}；原局${item.currentState}，${item.natalRole}；作用：${(item.functions || []).join('；') || '未形成明确作用链'}；干支落点：${item.carrierGuidance && item.carrierGuidance.summary ? item.carrierGuidance.summary : '按透干、落根与冲合复核'}；风险：${(item.risks || []).join('；') || '无明显专项风险'}；行运依据：${item.fortuneReason || item.incrementReason || ''}${item.conditions && item.conditions.length ? '；复核条件：' + item.conditions.join('；') : ''}\n`;
+        const carrier = item.carrierGuidance || {};
+        const carrierConditions = [carrier.stemCondition, carrier.branchCondition].filter(Boolean).join('；');
+        ctx += `    - ${item.element}${item.branchPreference ? '（' + item.branchPreference + '）' : ''}·${item.relation}：${item.fortuneRole || item.classification}${item.useGodType ? '（' + item.useGodType + '）' : ''}${item.tiaoHouRole ? '（' + item.tiaoHouRole + '）' : ''}，${item.fortuneLevel || item.incrementRole}，${item.fortuneDirection || ''}；原局${item.currentState}，${item.natalRole}；作用：${(item.functions || []).join('；') || '未形成明确作用链'}；干支落点：${carrier.summary || '按透干、落根与冲合复核'}${carrierConditions ? '；载体条件：' + carrierConditions : ''}；风险：${(item.risks || []).join('；') || '无明显专项风险'}；行运依据：${item.fortuneReason || item.incrementReason || ''}${item.conditions && item.conditions.length ? '；复核条件：' + item.conditions.join('；') : ''}\n`;
       });
     }
     if (data.chainAnalysis) {
@@ -1907,7 +1909,9 @@ function generateMockReply(question, chartData, bazi, mode) {
       if (yj.elementRoleLedger && yj.elementRoleLedger.entries && yj.elementRoleLedger.entries.length) {
         r += '**喜用忌与行运验证（优先看这一层）**\n\n';
         yj.elementRoleLedger.entries.forEach(item => {
-          r += `- **${item.element}${item.branchPreference ? '（' + item.branchPreference + '）' : ''}·${item.relation}**：${item.fortuneRole || item.classification}${item.useGodType ? '（' + item.useGodType + '）' : ''}${item.tiaoHouRole ? '（' + item.tiaoHouRole + '）' : ''}，${item.fortuneDirection || item.incrementRole}。原局${item.currentState}，${item.natalRole}；干支落点：${item.carrierGuidance && item.carrierGuidance.summary ? item.carrierGuidance.summary : '按透干与落根复核'}；${item.fortuneReason || item.incrementReason || ''}\n`;
+          const carrier = item.carrierGuidance || {};
+          const carrierConditions = [carrier.stemCondition, carrier.branchCondition].filter(Boolean).join('；');
+          r += `- **${item.element}${item.branchPreference ? '（' + item.branchPreference + '）' : ''}·${item.relation}**：${item.fortuneRole || item.classification}${item.useGodType ? '（' + item.useGodType + '）' : ''}${item.tiaoHouRole ? '（' + item.tiaoHouRole + '）' : ''}，${item.fortuneDirection || item.incrementRole}。原局${item.currentState}，${item.natalRole}；干支落点：${carrier.summary || '按透干与落根复核'}${carrierConditions ? '；载体条件：' + carrierConditions : ''}；${item.fortuneReason || item.incrementReason || ''}\n`;
         });
         r += '\n以上是原局给出的基础方向；具体某步大运仍须结合该步干支、刑冲合害和生克链复核，不可只看十神名称。\n\n';
       }

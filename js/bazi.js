@@ -6895,6 +6895,8 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     var requiresRoot = false;
     var preferDryEarth = false;
     var requiresMainRoot = false;
+    var rootAlreadyEstablished = facts[wx].mainQi.length > 0 && facts[wx].rootPower >= 2;
+    var stemPriority = false;
     var stemCondition = map.stems.join('、') + '透干时须结合地支根气与生克通路复核';
     var branchCondition = map.branches.join('、') + '为本五行主要地支载体，仍须复核冲合刑害';
     var summary = adverse
@@ -6971,12 +6973,27 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       summary += '；兼调候时宜适量、透而有根，不是越多越好';
       stemCondition += '；调候须能落地且用量有度';
     }
+
+    // 用神在原局已经有可靠本气根、却没有透干时，缺的通常不是“更多同类地支”，
+    // 而是把已有根气引到天干发挥。新增地支仍可能引发刑冲合会或改变燥湿，不能自动论吉。
+    if (favorable && rootAlreadyEstablished && facts[wx].visible.length === 0 && !requiresMainRoot) {
+      stemPriority = true;
+      requiresRoot = false;
+      summary = '原局已有' + facts[wx].mainQi.join('、') + '本气根，优先' + map.stems.join('、') + '透干显用；再见' + preferredBranches.join('、') + '只作条件辅助';
+      stemCondition = map.stems.join('、') + '透出可由原局' + facts[wx].mainQi.join('、') + '承接，优先把已藏之用显化；仍须复核合绊与生克';
+      branchCondition = '原局根气已足，再见' + preferredBranches.join('、') + '不按“补根”自动论吉，须逐支复核刑冲合会与寒暖燥湿';
+    }
     return {
       preferredStems:map.stems.slice(),
       preferredBranches:preferredBranches,
       requiresRoot:requiresRoot,
       requiresMainRoot:requiresMainRoot,
       preferDryEarth:preferDryEarth,
+      rootAlreadyEstablished:rootAlreadyEstablished,
+      stemPriority:stemPriority,
+      priorityCarrier:stemPriority ? '天干透出' : (requiresMainRoot ? '地支本气根' : ''),
+      additionalBranchRole:stemPriority ? '条件辅助' : '',
+      branchAutoFavorable:stemPriority ? false : null,
       summary:summary,
       stemCondition:stemCondition,
       branchCondition:branchCondition,
@@ -7155,9 +7172,19 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     var carrierGuidance = buildCarrierGuidance(wx, relation, classification);
     var branchPreference = '';
     if (fortuneRole === '用神' || classification === '条件喜神') {
-      branchPreference = isColdWetEarthWood && wx === roleElements.peer
+      branchPreference = carrierGuidance.stemPriority
+        ? '优先' + carrierGuidance.preferredStems.join('、') + '透干显用'
+        : isColdWetEarthWood && wx === roleElements.peer
         ? '首喜寅卯'
         : '宜' + carrierGuidance.preferredBranches.join('、') + '落根';
+    }
+    if (carrierGuidance.stemPriority && fortuneRole !== '忌神') {
+      fortuneDirection = '逢' + wx + '运以' + carrierGuidance.preferredStems.join('、') + '透干显用为先；地支再来须复核';
+      fortuneReason = '原局已有' + carrierGuidance.natalMainRoots.join('、') + '本气根，根气已经到位；当前关键是透干发挥，新增同类地支不能脱离刑冲合会与寒暖燥湿自动论吉。';
+      incrementRole = fortuneLevel;
+      incrementReason = fortuneReason;
+      uniquePush(functions, '原局根气已经到位，当前关键是透干显用');
+      uniquePush(conditions, '新增同类地支只作条件辅助，须逐支复核刑冲合会与寒暖燥湿，不能机械按补根论吉');
     }
     return {
       element:wx,
