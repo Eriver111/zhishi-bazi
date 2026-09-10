@@ -1405,6 +1405,13 @@ function buildSingleChart(data) {
     ctx += `\n⚠从格判定：${data.congGe.name}（${data.congGe.source}）\n`;
     ctx += `  解读：${data.congGe.desc}\n`;
     ctx += `  喜：${(data.congGe.xiOverride || []).join('、')} 忌：${(data.congGe.jiOverride || []).join('、')}\n`;
+  } else if (data.congGe && data.congGe.isCandidate) {
+    ctx += `\n⚠从格复核：${data.congGe.name}，当前未成立（${data.congGe.source}）\n`;
+    ctx += `  解读：${data.congGe.desc}\n`;
+    if (data.congGe.purityIssues && data.congGe.purityIssues.length) {
+      ctx += `  不纯证据：${data.congGe.purityIssues.join('；')}\n`;
+    }
+    ctx += `  口径锁：只能表述为“假从候选/倾向”，不得直接称从格、不得按从格反转本站喜用忌；若用户提供真实经历，只能据顺势运与扶身运反馈提出复核，不得嘴硬。\n`;
   }
 
   // v3.1: 格局

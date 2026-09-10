@@ -7407,6 +7407,13 @@ function finalizeYongJiResult(bazi, base, context) {
   }
 
   var evidence = [{ category:'旺衰', title:'日主' + context.dmStr.level, detail:context.dmStr.detail }];
+  if (context.cong && context.cong.isCandidate) {
+    evidence.push({
+      category:'从格复核',
+      title:context.cong.name + '·未成立',
+      detail:context.cong.desc + ((context.cong.purityIssues || []).length ? ' 不纯证据：' + context.cong.purityIssues.join('；') + '。' : '')
+    });
+  }
   if (imbalanceCause) {
     evidence.push({
       category:'取用病因',
@@ -7484,6 +7491,7 @@ function finalizeYongJiResult(bazi, base, context) {
     strongSupportingElements: strongSupportingElements,
     reasoning: base.reasoning,
     congGe: base.congGe,
+    followingCandidate: context.cong && context.cong.isCandidate ? context.cong : undefined,
     method: method,
     yongShenSource: yongShenSource,
     primaryReason: primaryReason,
@@ -8631,26 +8639,45 @@ function getCongGe(bazi) {
     var cgWx2 = WU_XING[dayCangGanAll[cgi]];
     if (cgWx2 === dgWx || cgWx2 === SHENGWO) { hasDayRoot = true; break; }
   }
-  // 印比帮身检测——有印星或比劫则不能从（不仅看印，比劫也是帮扶）
-  var hasGanHelp = false;
-  // 日干就是被判断的日主本身，不能把它当成额外透出的比劫帮身。
-  var allGanCong = [bazi.year.gan, bazi.month.gan, bazi.hour.gan];
-  for (var gc = 0; gc < allGanCong.length; gc++) {
-    var ganWxCong = WU_XING[allGanCong[gc]];
-    if (ganWxCong === SHENGWO || ganWxCong === dgWx) { hasGanHelp = true; break; }
-  }
+  // 印比帮身不能再按“见一个字就一票否决”处理。透干有根才是硬破从；
+  // 单个无根、坐克泄耗且处在强压力中的印比，只说明局势不纯，进入假从候选，
+  // 不能直接反转普通扶抑喜忌。日干本身不算额外帮扶。
+  var evidenceSettlementCong = buildBaziEvidenceSettlement(bazi);
+  var helpingStems = ['year','month','hour'].map(function(pos) {
+    var gan = bazi[pos].gan;
+    var wx = WU_XING[gan];
+    if (wx !== SHENGWO && wx !== dgWx) return null;
+    // 同五行异阴阳也能作为根（如己土可通戊土根），不能只按同一个天干字匹配。
+    var rootPower = evidenceSettlementCong.elementRootPower(wx);
+    var seatWx = DI_ZHI_WU_XING[bazi[pos].zhi];
+    var unsupportedSeat = seatWx === KEWO || seatWx === WOSHENG || seatWx === WOKE;
+    return {
+      position:pos,
+      gan:gan,
+      element:wx,
+      rootPower:rootPower,
+      rooted:rootPower > 0,
+      seatBranch:bazi[pos].zhi,
+      seatElement:seatWx,
+      unsupportedSeat:unsupportedSeat,
+      subduedBySeat:seatWx === KEWO
+    };
+  }).filter(Boolean);
+  var rootedGanHelp = helpingStems.filter(function(item) { return item.rooted; });
+  var floatingGanHelp = helpingStems.filter(function(item) { return !item.rooted; });
+  var hasGanHelp = helpingStems.length > 0;
+  var hasHardGanHelp = rootedGanHelp.length > 0 || floatingGanHelp.length > 1 ||
+    floatingGanHelp.some(function(item) { return !item.unsupportedSeat; });
   // 地支藏干有印/比也算帮身——但只取本气（第一藏干）
   // 中气余气深藏不透且常被本气所克，不应堵死从格（如戌藏辛金被戊土所埋）
   var hasZhiHelp = false;
-  if (!hasGanHelp) {
-    ['year','month','day','hour'].forEach(function(pos) {
-      var cgAll = getCangGan(bazi[pos].zhi);
-      if (cgAll.length > 0) {
-        var gwx = WU_XING[cgAll[0]]; // 只取本气
-        if (gwx === SHENGWO || gwx === dgWx) hasZhiHelp = true;
-      }
-    });
-  }
+  ['year','month','day','hour'].forEach(function(pos) {
+    var cgAll = getCangGan(bazi[pos].zhi);
+    if (cgAll.length > 0) {
+      var gwx = WU_XING[cgAll[0]]; // 只取本气
+      if (gwx === SHENGWO || gwx === dgWx) hasZhiHelp = true;
+    }
+  });
 
   // 从强：日主极强(≥85)且官杀/食伤/财星力量极弱，且日支不能有克泄耗（日支坐克星则破格）
   // 同时检查藏干——藏干中有克泄耗也算破格（如未戌藏丁火，辛金见之为官杀）
@@ -8720,6 +8747,55 @@ function getCongGe(bazi) {
       xiOverride: [KEWO, WOKE, WOSHENG], jiOverride: [SHENGWO, dgWx],
       source: hasResidualHelp ? '弃命从势（余气尚有微弱印比，按假从）' : '弃命从势（无有效印比救应）',
       trueFollowing: !hasResidualHelp
+    };
+  }
+
+  // 假从候选：只接受一个无根且坐克泄耗的印比虚透；有根、日坐根、地支本气印比，
+  // 或多个印比透干，仍按普通极弱论。候选不是已经成从格，因此 isCong 保持 false，
+  // 喜忌继续走扶抑/格局救应，待真实岁运反馈再作终裁。
+  var monthDisturbances = evidenceSettlementCong.relationSettlements.filter(function(item) {
+    return (item.source === 'month' || item.target === 'month') &&
+      ((typeof item.effectiveCoefficient === 'number' && item.effectiveCoefficient < 1) ||
+        (item.applied && item.applied.total > 0));
+  });
+  var canBeFalseFollowingCandidate = level === '极弱' && score <= 15 && !hasDayRoot && !hasZhiHelp &&
+    !hasHardGanHelp && floatingGanHelp.length === 1 && keXieHaoTotal >= shengFuTotal * 2;
+  if (canBeFalseFollowingCandidate) {
+    var candidateName = '假从势候选';
+    var candidateDirection = '克泄耗共同成势';
+    if (kePower >= 4 && caiPower >= 2) {
+      candidateName = '假从财杀候选';
+      candidateDirection = '财星生官杀，财杀共同成势';
+    } else if (kePower >= 5 && kePower >= caiPower && kePower >= shiPower) {
+      candidateName = '假从杀候选';
+      candidateDirection = '官杀主导全局';
+    } else if (caiPower >= 5 && caiPower >= kePower && caiPower >= shiPower) {
+      candidateName = '假从财候选';
+      candidateDirection = '财星主导全局';
+    } else if (shiPower >= 5 && shiPower >= kePower && shiPower >= caiPower) {
+      candidateName = '假从儿候选';
+      candidateDirection = '食伤主导全局';
+    }
+    var candidatePositionNames = { year:'年', month:'月', hour:'时' };
+    var purityIssues = floatingGanHelp.map(function(item) {
+      return candidatePositionNames[item.position] + '干' + item.gan + '为无根印比，坐' + item.seatBranch + '而无承载';
+    });
+    monthDisturbances.forEach(function(item) {
+      var isClash = (item.relations || []).indexOf('六冲') >= 0 || (item.raw && item.raw.clash);
+      purityIssues.push('月令受' + item.branches.join('') + (isClash ? '冲' : '扰动') + '，主势纯度下降');
+    });
+    return {
+      isCong:false,
+      isCandidate:true,
+      name:candidateName,
+      desc:'日主弱极且' + candidateDirection + '，但仍有无根印比透出或月令受扰，暂不能按真从格反转喜忌。需以木水等顺势运与火土等扶身运的真实反馈复核。',
+      source:'极弱假从候选：单一无根印比不作硬根，但原局不纯，暂按普通极弱取用',
+      trueFollowing:false,
+      normalMethodRequired:true,
+      direction:candidateDirection,
+      floatingHelpingStems:floatingGanHelp,
+      purityIssues:purityIssues,
+      verification:['木水等顺势岁运是否持续改善','火土等扶身岁运是否明显改善或反而受阻']
     };
   }
   return { isCong: false };
