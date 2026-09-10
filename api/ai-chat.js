@@ -775,30 +775,30 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (!reply || reply.length < 20) throw new Error('AI 返回内容为空或过短（未扣次数）');
 
   // V1 回复校验 + V2 定向自修正（GPT终裁 2026-08-14）
-  // 两级拆分：hard（确定性事实错误——E1 五合/三合三会/生克/十神映射、E2 relationEvents 否定冲突）
+  // 两级拆分：hard（确定性事实错误——E1 五合/三合三会/生克/十神映射、E2 relationEvents 否定冲突、E6 无证据粉饰）
   // 可触发 V2 一次；soft（E4 档位关键词、E5 伪概率扫描）只记录 warning，永不为 V2 触发器。
   var validationWarnings = [];
   var v2Applied = false;
-  if (mode !== 'ziwei' && mode !== 'liuren') {
-    validationWarnings = runReplyValidation(chartData, reply);
-    validationWarnings.forEach(function(w) { console.log('[ai-validator] ' + w); });
-    var hardWarnings = validationWarnings.filter(isHardWarning);
-    if (hardWarnings.length) {
-      console.log('[ai-validator] hard 错误 ' + hardWarnings.length + ' 条，触发 V2 定向自修正（最多一次）');
-      var corrected = await v2SelfCorrect(messages, reply, hardWarnings);
-      if (corrected) {
-        var vw2 = runReplyValidation(chartData, corrected);
-        vw2.forEach(function(w) { console.log('[ai-validator-v2] ' + w); });
-        var hard2 = vw2.filter(isHardWarning);
-        if (hard2.length < hardWarnings.length) {
-          reply = corrected;
-          validationWarnings = vw2;
-          v2Applied = true;
-          console.log('[ai-validator-v2] ✅ 已采用修正稿（hard ' + hardWarnings.length + ' → ' + hard2.length + '）');
-        }
-        if (hard2.length) console.log('[ai-validator-v2] ⚠ 修正后仍有 hard 错误 ' + hard2.length + ' 条——按终裁不循环，记录异常');
+  validationWarnings = runReplyValidation(chartData, reply);
+  validationWarnings.forEach(function(w) { console.log('[ai-validator] ' + w); });
+  var hardWarnings = validationWarnings.filter(isHardWarning);
+  if (hardWarnings.length) {
+    console.log('[ai-validator] hard 错误 ' + hardWarnings.length + ' 条，触发 V2 定向自修正（最多一次）');
+    var corrected = await v2SelfCorrect(messages, reply, hardWarnings);
+    if (corrected) {
+      var vw2 = runReplyValidation(chartData, corrected);
+      vw2.forEach(function(w) { console.log('[ai-validator-v2] ' + w); });
+      var hard2 = vw2.filter(isHardWarning);
+      if (hard2.length < hardWarnings.length) {
+        reply = corrected;
+        validationWarnings = vw2;
+        v2Applied = true;
+        console.log('[ai-validator-v2] ✅ 已采用修正稿（hard ' + hardWarnings.length + ' → ' + hard2.length + '）');
       }
+      if (hard2.length) console.log('[ai-validator-v2] ⚠ 修正后仍有 hard 错误 ' + hard2.length + ' 条——按终裁不循环，记录异常');
     }
+  }
+  if (mode !== 'ziwei' && mode !== 'liuren') {
     // 合盘身份归属属于不可妥协的排盘事实。若一次定向修正后仍未通过，
     // 不把张冠李戴的正文交给用户，直接降级为双方已冻结的身份事实表。
     var unresolvedHepanIdentity = validationWarnings.filter(function(w) {
@@ -824,7 +824,28 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
  */
 function runReplyValidation(chartData, reply) {
   var warnings = [];
-  if (!chartData || !reply) return warnings;
+  if (!reply) return warnings;
+
+  // ---------- 通用：无证据安慰与正向粉饰（E6，触发一次定向重写） ----------
+  // 这里只拦截含义明确的保证式话术，不拦截“建议保守、仍有条件”等正常风险管理表达。
+  var text = String(reply);
+  var cannedComfortRe = /别灰心|不要灰心|不用担心|不要担心|给(?:他|她|对方|自己)一点时间|一切都会好起来|(?:以后|后面|往后)会越来越顺|熬过去(?:就|便)会(?:好|顺)|这(?:其实|反而)?是(?:一次)?成长机会/g;
+  var comfortMatch;
+  while ((comfortMatch = cannedComfortRe.exec(text)) !== null) {
+    warnings.push('E6-无证据粉饰：回复出现「' + comfortMatch[0] + '」；不得用安慰模板替代命盘证据或承诺后续转好');
+  }
+  var guaranteedFixRe = /只要[^。；\n]{0,36}(?:就|便)(?:一定|肯定|自然)?(?:能|会)?(?:化解|转好|顺利|好起来|越来越好)/g;
+  var guaranteeMatch;
+  while ((guaranteeMatch = guaranteedFixRe.exec(text)) !== null) {
+    warnings.push('E6-保证式化解：回复出现「' + guaranteeMatch[0] + '」；建议不能反转结论或承诺必然化解');
+  }
+  var adverseGlossRe = /(?:虽然|尽管)[^。；\n]{0,50}(?:偏不利|不利|阻力|压力|破格|忌神|相冲|相刑)[^。；\n]{0,30}(?:但是|但|不过)[^。；\n]{0,30}(?:成长机会|反而是好事|会越来越好|会转好|自然会好)/g;
+  var glossMatch;
+  while ((glossMatch = adverseGlossRe.exec(text)) !== null) {
+    warnings.push('E6-不利结论被圆回正向：回复出现「' + glossMatch[0] + '」；须保留不利方向，积极面另凭独立证据说明');
+  }
+
+  if (!chartData) return warnings;
   if (chartData.type === 'ziwei' || chartData.type === 'liuren') return warnings;
 
   var GAN = '甲乙丙丁戊己庚辛壬癸';
@@ -1159,7 +1180,7 @@ function runReplyValidation(chartData, reply) {
  * V2 触发器分类（GPT终裁 2026-08-14）：hard = 确定性机械可验证的事实错误，可触发 V2 定向自修正一次；
  * soft = E4 档位关键词扫描（误报率高，回归 11 命中 10 误报），只记录 warning，永不为 V2 触发器。
  * 当前 E4（证据覆盖不足）与 E5（未经数据支撑的概率表达）为 soft，
- * 其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突）均为 hard。
+ * 其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突、E6 无证据粉饰）均为 hard。
  */
 function isHardWarning(w) {
   return w.indexOf('E4') !== 0 && w.indexOf('E5') !== 0;
