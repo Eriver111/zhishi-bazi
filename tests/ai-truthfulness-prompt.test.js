@@ -45,6 +45,8 @@ test('回复审计拦截无证据安慰、保证化解和把不利圆成成长�
     .some(item => item.startsWith('E6-保证式化解')));
   assert.ok(validate(chart, '虽然这一步偏不利，但是这其实是一次成长机会。')
     .some(item => item.startsWith('E6-不利结论被圆回正向')));
+  assert.ok(validate(chart, '虽然现在不顺，但这都是成长的机会，熬过去以后一定越来越顺。')
+    .some(item => item.startsWith('E6-无证据粉饰')));
 });
 
 test('回复审计允许如实的不利结论和不承诺结果的风险建议', () => {
