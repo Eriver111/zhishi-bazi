@@ -930,15 +930,8 @@ function runReplyValidation(chartData, reply, question) {
     }
     if (isClosedOutcomeQuestion(question)) {
       var directOpening = String(reply).slice(0, 180);
-      var expectedClosed = closedOutcomeVerdict(timingRecord);
-      var directPatterns = {
-        '把握较大':/把握较大|较有把握|偏向能|倾向能|考上的机会较大/,
-        '比较困难':/比较困难|难度较大|把握偏低|偏向难|不容易考上/,
-        '有机会，但不稳':/有机会[^。；\n]{0,10}(?:但|不过)[^。；\n]{0,10}(?:不稳|有波动|把握不足)|结果不稳|难下定论/,
-        '有机会，但证据不够强':/有机会[^。；\n]{0,14}(?:证据不够强|依据不足|但把握不足)|目前只能判断有机会/,
-        '目前不能确认':/目前不能确认|现在不能确认|证据不足以判断|缺少[^。；\n]{0,16}(?:数据|信息)/
-      };
-      if (!(directPatterns[expectedClosed] || /$^/).test(directOpening)) {
+      var expectedClosed = closedOutcomeVerdict(timingRecord, question);
+      if (!closedVerdictPattern(expectedClosed).test(directOpening)) {
         warnings.push('E9-封闭问题未直接裁决：第一段必须先回答“' + expectedClosed + '”，不得用术语或可能性列表回避');
       }
     }
@@ -1284,7 +1277,7 @@ function isHardWarning(w) {
 
 function detectTimingQuestionDomain(question) {
   var q = String(question || '');
-  if (/考试|升学|录取|学业|学习|考证|证书|资格/.test(q)) return 'study';
+  if (/高考|中考|考试|升学|录取|学业|学习|考证|证书|资格/.test(q)) return 'study';
   if (/结婚|离婚|恋爱|感情|婚姻|对象|夫妻|复合|分手|合作/.test(q)) return 'relationship';
   if (/父母|父亲|母亲|长辈|家庭|家里|搬家|住房/.test(q)) return 'family';
   if (/车祸|事故|健康|身体|疾病|手术|受伤|睡眠|住院/.test(q)) return 'health';
@@ -1313,14 +1306,65 @@ function detectTimingQuestionYear(question, chartData) {
 }
 
 function isClosedOutcomeQuestion(question) {
-  return /能不能|能否|可不可以|会不会|考不考得上|能考上|能录取|能通过|有没有希望|成不成|能成功/.test(String(question || ''));
+  return /能不能|能否|可不可以|会不会|是否会|会[^？?。]{0,12}吗|能[^？?。]{0,12}吗|考不考得上|能考上|能录取|能通过|有没有希望|有没有可能|成不成|能成功/.test(String(question || ''));
 }
 
-function closedOutcomeVerdict(record) {
+function detectOutcomeEvent(question) {
+  var q = String(question || '');
+  if (/高考|中考|考试|考证|录取|升学|通过/.test(q)) return { key:'考试或录取', polarity:'positive', high:'把握较大', low:'比较困难', mixed:'有机会，但不稳' };
+  if (/离婚|分手|分居|感情破裂/.test(q)) return { key:'离婚或分手', polarity:'adverse', high:'关系破裂风险较高', low:'关系破裂风险较低', mixed:'存在关系风险，但信号不集中' };
+  if (/车祸|事故|受伤|住院|手术/.test(q)) return { key:'事故、受伤或医疗事件', polarity:'adverse', high:'风险较高', low:'风险较低', mixed:'存在风险，但信号不集中' };
+  if (/破财|亏损|被骗|资金损失/.test(q)) return { key:'破财或资金损失', polarity:'adverse', high:'破财风险较高', low:'破财风险较低', mixed:'存在资金风险，但信号不集中' };
+  if (/失业|被辞|被裁|丢工作/.test(q)) return { key:'失业或岗位中断', polarity:'adverse', high:'岗位中断风险较高', low:'岗位中断风险较低', mixed:'存在岗位变动风险，但信号不集中' };
+  if (/结婚|领证|订婚|复合|确定关系/.test(q)) return { key:'关系确认或结婚', polarity:'positive', high:'推进把握较大', low:'推进比较困难', mixed:'有推进机会，但不稳定' };
+  if (/升职|晋升|上岸|找到工作|入职|转正/.test(q)) return { key:'升职、录用或转正', polarity:'positive', high:'推进把握较大', low:'推进比较困难', mixed:'有推进机会，但不稳定' };
+  if (/赚钱|盈利|发财|回款|生意成功|创业成功/.test(q)) return { key:'收入、盈利或回款', polarity:'positive', high:'兑现把握较大', low:'兑现比较困难', mixed:'存在机会，但兑现不稳定' };
+  if (/离职|跳槽|换工作|搬家|迁移|出国|换环境/.test(q)) return { key:'主动变动', polarity:'occurrence', high:'变动倾向较强', low:'变动信号较弱', mixed:'存在变动可能，但信号不集中' };
+  return { key:'所问事件', polarity:'positive', high:'把握较大', low:'比较困难', mixed:'有机会，但不稳' };
+}
+
+function closedOutcomeVerdict(record, question) {
   if (!record) return '目前不能确认';
-  if (record.direction === '偏有利') return record.hasIndependentAnnualTrigger === false ? '有机会，但证据不够强' : '把握较大';
-  if (record.direction === '偏不利') return '比较困难';
-  return '有机会，但不稳';
+  var event = detectOutcomeEvent(question);
+  if (event.polarity === 'occurrence') {
+    return record.hasIndependentAnnualTrigger && Number(record.activationScore || 0) >= 5 ? event.high : event.low;
+  }
+  var aligned = event.polarity === 'adverse' ? record.direction === '偏不利' : record.direction === '偏有利';
+  var opposed = event.polarity === 'adverse' ? record.direction === '偏有利' : record.direction === '偏不利';
+  if (aligned) return record.hasIndependentAnnualTrigger === false ? event.mixed : event.high;
+  if (opposed) return event.low;
+  return event.mixed;
+}
+
+function closedVerdictPattern(verdict) {
+  var patterns = {
+    '把握较大':/把握较大|较有把握|偏向能|倾向能|考上的机会较大/,
+    '比较困难':/比较困难|难度较大|把握偏低|偏向难|不容易考上/,
+    '推进把握较大':/推进把握较大|较容易推进|倾向能够(?:结婚|领证|升职|晋升|入职|转正)/,
+    '推进比较困难':/推进比较困难|较难推进|(?:结婚|晋升)[^。；\n]{0,10}(?:阻力|难度)较大/,
+    '兑现把握较大':/兑现把握较大|(?:盈利|回款)[^。；\n]{0,10}(?:机会较大|较有把握)/,
+    '兑现比较困难':/兑现比较困难|(?:盈利|回款)[^。；\n]{0,10}(?:阻力|难度)较大/,
+    '有机会，但不稳':/有机会[^。；\n]{0,10}(?:但|不过)[^。；\n]{0,10}(?:不稳|有波动|把握不足)|结果不稳|难下定论/,
+    '有推进机会，但不稳定':/有推进机会[^。；\n]{0,10}(?:但|不过)[^。；\n]{0,10}(?:不稳|不稳定)|推进[^。；\n]{0,10}不稳定/,
+    '存在机会，但兑现不稳定':/存在机会[^。；\n]{0,12}(?:但|不过)[^。；\n]{0,10}兑现不稳定|兑现[^。；\n]{0,10}不稳定/,
+    '关系破裂风险较高':/关系破裂风险较高|离婚风险较高|分手风险较高/,
+    '关系破裂风险较低':/关系破裂风险较低|离婚风险较低|分手风险较低/,
+    '存在关系风险，但信号不集中':/存在关系风险[^。；\n]{0,12}(?:信号不集中|证据不足)|关系风险[^。；\n]{0,12}不集中/,
+    '风险较高':/(?:事故|受伤|手术)?风险较高/,
+    '风险较低':/(?:事故|受伤|手术)?风险较低/,
+    '存在风险，但信号不集中':/存在风险[^。；\n]{0,12}(?:信号不集中|证据不足)|风险信号[^。；\n]{0,12}不集中/,
+    '破财风险较高':/破财风险较高|资金损失风险较高/,
+    '破财风险较低':/破财风险较低|资金损失风险较低/,
+    '存在资金风险，但信号不集中':/存在资金风险[^。；\n]{0,12}(?:信号不集中|证据不足)/,
+    '岗位中断风险较高':/岗位中断风险较高|失业风险较高|被裁风险较高/,
+    '岗位中断风险较低':/岗位中断风险较低|失业风险较低|被裁风险较低/,
+    '存在岗位变动风险，但信号不集中':/存在岗位变动风险[^。；\n]{0,12}(?:信号不集中|证据不足)/,
+    '变动倾向较强':/变动倾向较强|较可能(?:离职|跳槽|换工作|搬家|迁移|出国)/,
+    '变动信号较弱':/变动信号较弱|不太可能(?:离职|跳槽|换工作|搬家|迁移|出国)/,
+    '存在变动可能，但信号不集中':/存在变动可能[^。；\n]{0,12}(?:信号不集中|证据不足)/,
+    '目前不能确认':/目前不能确认|现在不能确认|证据不足以判断|缺少[^。；\n]{0,16}(?:数据|信息)/
+  };
+  return patterns[verdict] || /$^/;
 }
 
 function timingSelectionForQuestion(question, chartData) {
@@ -1362,8 +1406,9 @@ function buildTimingAdjudicationBrief(question, chartData) {
       lines.push('最可能的现实落点（按强弱取前1至2项回答，不要全部罗列）=' + exactRecord.scenarioCandidates.join('；'));
     }
     if (isClosedOutcomeQuestion(question)) {
-      lines.push('【封闭问题直接裁决】第一句话必须直接回答“' + closedOutcomeVerdict(exactRecord)
-        + '”。不得先讲术语，不得用“都有可能”“综合来看”回避。该裁决表示趋势强弱，不是保证现实结果。');
+      var eventQuestion = detectOutcomeEvent(question);
+      lines.push('【事件级直接裁决】用户问的是“' + eventQuestion.key + '”；第一句话必须直接回答“' + closedOutcomeVerdict(exactRecord, question)
+        + '”。不得先讲术语，不得用“都有可能”“综合来看”回避。注意：不利领域会提高离婚、事故、破财、失业等负面事件风险，却会降低结婚、升职、录取等正面事件把握，二者不可判反。该裁决表示趋势强弱，不是保证现实结果。');
     }
     if (exactRecord.hasIndependentAnnualTrigger === false) {
       lines.push('本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');

@@ -91,13 +91,45 @@ test('高考能否录取必须先给方向裁决并可按出生年年推定高�
   };
   assert.equal(ai.detectTimingQuestionYear('我高考那年能不能考上？', chart), 2026);
   const brief = ai.buildTimingAdjudicationBrief('我高考那年能不能考上？', chart);
-  assert.match(brief, /封闭问题直接裁决.*比较困难/);
+  assert.match(brief, /事件级直接裁决.*比较困难/);
   assert.match(brief, /最可能的现实落点.*临场发挥/);
 
   const evasive = ai.runReplyValidation(chart, '流年财破印，印星代表学习，情况需要综合分析，也存在多种可能。', '我高考那年能不能考上？');
   assert.ok(evasive.some(item => item.startsWith('E9-封闭问题未直接裁决')));
   const direct = ai.runReplyValidation(chart, '结论：比较困难。2026年学业考试方向偏不利，临场发挥与录取推进容易受阻。', '我高考那年能不能考上？');
   assert.equal(direct.some(item => item.startsWith('E9-')), false);
+});
+
+test('确定事件按事件正负极性裁决，离婚风险与结婚把握不能判反', () => {
+  const relationship = {
+    domain:'relationship', label:'婚恋合作', direction:'偏不利', confidence:'高', activationScore:9,
+    eventCandidate:'关系边界与稳定性受考验', evidence:['流年冲日支'], hasIndependentAnnualTrigger:true,
+    scenarioCandidates:['关系边界、争执或合作稳定性更容易受考验']
+  };
+  const chart = { type:'bazi', timingAdjudication:{ requestedYear:{ year:2027, adjudication:{ year:2027, age:29, primaryEvent:relationship, domainRecords:[relationship] } } } };
+
+  const divorce = ai.buildTimingAdjudicationBrief('2027年会离婚吗？', chart);
+  assert.match(divorce, /用户问的是“离婚或分手”/);
+  assert.match(divorce, /关系破裂风险较高/);
+  const marriage = ai.buildTimingAdjudicationBrief('2027年能不能结婚？', chart);
+  assert.match(marriage, /用户问的是“关系确认或结婚”/);
+  assert.match(marriage, /推进比较困难/);
+
+  const evasive = ai.runReplyValidation(chart, '2027年婚恋合作受到流年冲日支影响，需要结合双方情况综合看。', '2027年会离婚吗？');
+  assert.ok(evasive.some(item => item.startsWith('E9-封闭问题未直接裁决')));
+  const direct = ai.runReplyValidation(chart, '结论：关系破裂风险较高。2027年婚恋合作方向偏不利，流年冲日支，争执与关系边界更容易受考验。', '2027年会离婚吗？');
+  assert.equal(direct.some(item => item.startsWith('E9-')), false);
+});
+
+test('事故、破财、失业等负面事件使用风险高低而不是好运坏运套话', () => {
+  const health = {
+    domain:'health', label:'身心安全', direction:'偏不利', confidence:'高', activationScore:10,
+    eventCandidate:'行动安全与身体负担受考验', evidence:['驿马逢日支受扰'], hasIndependentAnnualTrigger:true
+  };
+  const chart = { type:'bazi', timingAdjudication:{ requestedYear:{ year:2028, adjudication:{ year:2028, age:30, primaryEvent:health, domainRecords:[health] } } } };
+  const brief = ai.buildTimingAdjudicationBrief('2028年会不会发生车祸？', chart);
+  assert.match(brief, /用户问的是“事故、受伤或医疗事件”/);
+  assert.match(brief, /第一句话必须直接回答“风险较高”/);
 });
 
 test('直接问答限制篇幅，只有完整报告请求才允许分节展开', () => {
