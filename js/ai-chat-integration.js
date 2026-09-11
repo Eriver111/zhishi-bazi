@@ -272,7 +272,7 @@
     AI.isWaiting = true;
     updateSendBtn();
 
-    var chartData = buildChartData();
+    var chartData = buildChartData(text);
     var body = { question: text, chartData: chartData, history: AI.messages.slice(-6), mode: AI.mode };
     if (window.ZhishiCalibration && typeof window.ZhishiCalibration.summary === 'function') {
       body.calibration_summary = window.ZhishiCalibration.summary(chartData);
@@ -514,7 +514,22 @@
   }
 
   // ===== 排盘上下文（保持不变） =====
-  function buildChartData() {
+  function requestedTimingYear(question) {
+    var q = String(question || '');
+    var now = new Date().getFullYear();
+    var explicitYears = q.match(/(?:18|19|20|21)\d{2}\s*年/g);
+    if (explicitYears && explicitYears.length) return Number(explicitYears[explicitYears.length - 1].match(/\d{4}/)[0]);
+    var bareYears = q.match(/(?:18|19|20|21)\d{2}/g);
+    if (bareYears && bareYears.length) return Number(bareYears[bareYears.length - 1]);
+    if (/后年/.test(q)) return now + 2;
+    if (/明年/.test(q)) return now + 1;
+    if (/前年/.test(q)) return now - 2;
+    if (/去年/.test(q)) return now - 1;
+    if (/今年|本年|当前|现在/.test(q)) return now;
+    return null;
+  }
+
+  function buildChartData(question) {
     var pt=detectPageType();
     if (pt==='result') return buildResultContext();
     if (pt==='hepan') return buildHePanContext();
@@ -855,7 +870,10 @@
               });
               _timingEntries.push({
                 daYun:{ gan:dy.gan, zhi:dy.zhi }, liuNian:{ gan:ln.gan, zhi:ln.zhi },
-                eventAdjudication:annual.eventAdjudication
+                eventAdjudication:annual.eventAdjudication,
+                overallVerdict:annual.verdict,
+                overallSummary:annual.summary,
+                verifiedScore:annual.verifiedScore
               });
             });
           });
@@ -864,9 +882,23 @@
           _timingDomains.forEach(function(domain) {
             _timingByDomain[domain] = window.BaZiChain.rankTimingCandidates(_timingEntries, domain);
           });
+          var _requestedTimingYear = requestedTimingYear(question);
+          var _requestedTimingEntry = _requestedTimingYear === null ? null : _timingEntries.filter(function(entry) {
+            return Number(entry.eventAdjudication && entry.eventAdjudication.year) === _requestedTimingYear;
+          })[0];
           data.timingAdjudication = {
             version:'1.0', analysisType:'timing_hypothesis', userCorrectable:true,
             current:data.liuNianAnalysis && data.liuNianAnalysis.eventAdjudication || null,
+            requestedYear:_requestedTimingEntry ? {
+              year:_requestedTimingYear,
+              daYun:_requestedTimingEntry.daYun,
+              liuNian:_requestedTimingEntry.liuNian,
+              adjudication:_requestedTimingEntry.eventAdjudication,
+              overallVerdict:_requestedTimingEntry.overallVerdict,
+              overallSummary:_requestedTimingEntry.overallSummary,
+              verifiedScore:_requestedTimingEntry.verifiedScore,
+              adjudication:_requestedTimingEntry.eventAdjudication
+            } : null,
             overall:window.BaZiChain.rankTimingCandidates(_timingEntries),
             byDomain:_timingByDomain,
             selectionRule:'大运定趋势，流年定应期，年龄阶段筛现实场景；先答最强主事件，再给一个次选，不罗列所有可能。',

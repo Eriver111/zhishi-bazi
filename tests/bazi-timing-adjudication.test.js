@@ -73,14 +73,14 @@ test('领域应期排序按用户所问领域取年，不被综合高分的其�
     {
       daYun:{ gan:'甲', zhi:'子' }, liuNian:{ gan:'丙', zhi:'午' },
       eventAdjudication:{ year:2028, age:28, triggerStrength:12, primaryEvent:{ domain:'career' }, domainRecords:[
-        { domain:'career', label:'事业工作', activationScore:12, direction:'偏有利', confidence:'高', eventCandidate:'岗位推进', evidence:['事业证据'] },
-        { domain:'relationship', label:'婚恋合作', activationScore:2, direction:'条件性', confidence:'中', eventCandidate:'关系被引动', evidence:[] }
+        { domain:'career', label:'事业工作', activationScore:12, direction:'偏有利', confidence:'高', eventCandidate:'岗位推进', evidence:['事业证据'], hasIndependentAnnualTrigger:true },
+        { domain:'relationship', label:'婚恋合作', activationScore:2, direction:'条件性', confidence:'中', eventCandidate:'关系被引动', evidence:[], hasIndependentAnnualTrigger:false }
       ] }
     },
     {
       daYun:{ gan:'乙', zhi:'丑' }, liuNian:{ gan:'丁', zhi:'未' },
       eventAdjudication:{ year:2030, age:30, triggerStrength:6, primaryEvent:{ domain:'relationship' }, domainRecords:[
-        { domain:'relationship', label:'婚恋合作', activationScore:10, direction:'偏有利', confidence:'中高', eventCandidate:'关系确认', evidence:['婚恋证据'] }
+        { domain:'relationship', label:'婚恋合作', activationScore:10, direction:'偏有利', confidence:'中高', eventCandidate:'关系确认', evidence:['婚恋证据'], hasIndependentAnnualTrigger:true }
       ] }
     }
   ];
@@ -137,4 +137,24 @@ test('未知出生年不会被 null 年龄误当成零岁', () => {
   );
   assert.equal(adjudication.age, null);
   assert.equal(adjudication.lifeStage.key, 'unknown');
+});
+
+test('只有大运背景和流年十神时只定主题，不冒充重点应期', () => {
+  const C = runtime();
+  const bazi = {
+    year:{ gan:'戊', zhi:'寅' }, month:{ gan:'癸', zhi:'亥' },
+    day:{ gan:'甲', zhi:'戌' }, hour:{ gan:'辛', zhi:'未' }
+  };
+  const adjudication = C.BaZiChain.buildAnnualEventAdjudication(
+    bazi, { gan:'丙', zhi:'寅' }, { year:2026, gan:'丙', zhi:'午' },
+    { stemRole:'喜神', verifiedScore:2, dangerScore:0, opportunityScore:2, triggers:[] },
+    { age:28, daYunEventLedger:{ domainRecords:[
+      { domain:'career', label:'事业与职责', activationScore:7, direction:'偏不利', conclusion:'项目与规则压力增加' }
+    ] } }
+  );
+  const career = adjudication.domainRecords.find(item => item.domain === 'career');
+  assert.equal(career.direction, '条件性');
+  assert.equal(career.hasIndependentAnnualTrigger, false);
+  assert.match(career.evidence.join('；'), /仅凭十神只能定主题/);
+  assert.equal(C.BaZiChain.rankTimingCandidates([{ eventAdjudication:adjudication }], 'career').length, 0);
 });

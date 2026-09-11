@@ -76,7 +76,7 @@ test('archive AI continuation rebuilds the chart before restoring its conversati
   assert.match(integration, /function openStandaloneChat\(\)/);
   assert.match(integration, /buildChartData\(\)/);
   assert.match(integration, /localStorage\.setItem\('ai_chart_data'/);
-  assert.match(result, /ai-chat-integration\.js\?v=20260911a/);
+  assert.match(result, /ai-chat-integration\.js\?v=20260911b/);
 });
 
 test('mobile drawer exposes the archive library without replacing personal center', () => {

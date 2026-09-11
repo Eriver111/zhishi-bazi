@@ -892,6 +892,44 @@ function runReplyValidation(chartData, reply, question) {
     }
   }
 
+  // ---------- 通用：指定年份必须服从该年、该领域的应事锚点（E8） ----------
+  // 全年综合吉凶和具体领域方向可以不同，但不能用“大吉/喜神”覆盖事业、婚恋等领域裁决。
+  var timingSelection = typeof timingSelectionForQuestion === 'function'
+    ? timingSelectionForQuestion(question, chartData) : null;
+  if (timingSelection && timingSelection.year !== null && timingSelection.record) {
+    var timingRecord = timingSelection.record;
+    var domainTerms = {
+      study:/学业|学习|考试|升学|录取|证照|资格/,
+      career:/事业|工作|职场|职位|岗位|项目|领导|规则|职责/,
+      wealth:/财富|财运|收入|资金|回款|客户|求财|赚钱/,
+      relationship:/婚恋|感情|婚姻|恋爱|夫妻|对象|合作|关系/,
+      family:/家庭|家里|父母|长辈|居住|住房/,
+      health:/健康|身体|身心|安全|受伤|事故|手术|住院|精力/,
+      change:/变动|变化|调整|迁移|异地|换环境|转折/
+    };
+    var domainRe = domainTerms[timingRecord.domain] || new RegExp(String(timingRecord.label || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    var opening = String(reply).slice(0, 700);
+    var domainSentences = opening.split(/[。；\n]/).filter(function(line) { return domainRe.test(line); });
+    if (!domainSentences.length) {
+      warnings.push('E8-缺少应期领域锚点：用户询问' + timingSelection.year + '年，回答必须先落到「' + timingRecord.label + '」而不是改答其他领域');
+    } else {
+      var domainOpening = domainSentences.slice(0, 3).join('；');
+      var saysPositive = /偏有利|有利为主|方向(?:是|为)?有利|向好|利大于弊|更容易推进/.test(domainOpening);
+      var saysNegative = /偏不利|不利为主|方向(?:是|为)?不利|受阻|压力|风险|弊大于利/.test(domainOpening);
+      var saysConditional = /条件性|双向|吉凶并见|有利[^。；]{0,18}(?:但|同时)[^。；]{0,18}(?:压力|风险|受阻)|不能单定|不宜单定/.test(domainOpening);
+      if (timingRecord.direction === '偏不利' && saysPositive && !saysNegative) {
+        warnings.push('E8-应期方向冲突：' + timingSelection.year + '年「' + timingRecord.label + '」冻结方向为偏不利，回答却明确写成偏有利');
+      } else if (timingRecord.direction === '偏有利' && saysNegative && !saysPositive) {
+        warnings.push('E8-应期方向冲突：' + timingSelection.year + '年「' + timingRecord.label + '」冻结方向为偏有利，回答却明确写成偏不利');
+      } else if (timingRecord.direction === '条件性' && (saysPositive !== saysNegative) && !saysConditional) {
+        warnings.push('E8-应期方向冲突：' + timingSelection.year + '年「' + timingRecord.label + '」为条件性，回答却单向定成' + (saysPositive ? '有利' : '不利'));
+      }
+    }
+    if (timingRecord.hasIndependentAnnualTrigger === false && !/不是强应期|不构成强应期|没有[^。；\n]{0,18}(?:独立|集中)(?:结构)?触发|只能[^。；\n]{0,18}主题|不能[^。；\n]{0,18}具体事件/.test(opening)) {
+      warnings.push('E8-把大运背景冒充流年应期：该领域没有当年独立结构触发，回答必须明确只能定主题、不能断具体事件');
+    }
+  }
+
   var GAN = '甲乙丙丁戊己庚辛壬癸';
   var ZHI = '子丑寅卯辰巳午未申酉戌亥';
   var WX = '金木水火土';
@@ -1242,25 +1280,65 @@ function detectTimingQuestionDomain(question) {
   return '';
 }
 
+function detectTimingQuestionYear(question) {
+  var q = String(question || '');
+  var now = Number(new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Shanghai', year:'numeric' }).format(new Date()));
+  var explicitYears = q.match(/(?:18|19|20|21)\d{2}\s*年/g);
+  if (explicitYears && explicitYears.length) return Number(explicitYears[explicitYears.length - 1].match(/\d{4}/)[0]);
+  var bareYears = q.match(/(?:18|19|20|21)\d{2}/g);
+  if (bareYears && bareYears.length) return Number(bareYears[bareYears.length - 1]);
+  if (/后年/.test(q)) return now + 2;
+  if (/明年/.test(q)) return now + 1;
+  if (/前年/.test(q)) return now - 2;
+  if (/去年/.test(q)) return now - 1;
+  if (/今年|本年|当前|现在/.test(q)) return now;
+  return null;
+}
+
+function timingSelectionForQuestion(question, chartData) {
+  var timing = chartData && chartData.timingAdjudication;
+  if (!timing) return null;
+  var domain = detectTimingQuestionDomain(question);
+  var year = detectTimingQuestionYear(question);
+  var bundle = null;
+  if (year !== null && timing.requestedYear && Number(timing.requestedYear.year) === year) bundle = timing.requestedYear;
+  if (!bundle && year !== null && timing.current && Number(timing.current.year) === year) bundle = { year:year, adjudication:timing.current };
+  var adjudication = bundle && (bundle.adjudication || bundle);
+  var record = adjudication && (domain
+    ? (adjudication.domainRecords || []).filter(function(item) { return item.domain === domain; })[0]
+    : adjudication.primaryEvent);
+  if (record) return { timing:timing, year:year, domain:domain, bundle:bundle, adjudication:adjudication, record:record };
+
+  var candidates = domain && timing.byDomain ? timing.byDomain[domain] : timing.overall;
+  var candidate = year === null ? null : (candidates || []).filter(function(item) { return Number(item.year) === year; })[0];
+  if (candidate) return { timing:timing, year:year, domain:domain, bundle:null, adjudication:null, record:candidate };
+  return { timing:timing, year:year, domain:domain, bundle:bundle, adjudication:adjudication || null, record:null };
+}
+
 function buildTimingAdjudicationBrief(question, chartData) {
   var timing = chartData && chartData.timingAdjudication;
   if (!timing) return '';
   var domain = detectTimingQuestionDomain(question);
   var domainLabels = { study:'学业考试', career:'事业工作', wealth:'收入资金', relationship:'婚恋合作', family:'家庭长辈', health:'身心安全', change:'环境变动' };
-  var asksCurrent = /今年|本年|当前|现在/.test(String(question || ''));
+  var exact = timingSelectionForQuestion(question, chartData);
   var lines = ['【岁运应事裁决数据】所问领域=' + (domainLabels[domain] || '综合') + '。'];
-  if (asksCurrent && timing.current) {
-    var currentRecord = domain
-      ? (timing.current.domainRecords || []).filter(function(item) { return item.domain === domain; })[0]
-      : timing.current.primaryEvent;
-    if (currentRecord && Number(currentRecord.activationScore || 0) >= 2) {
-      lines.push('当前年份：' + timing.current.year + '年，年龄' + (timing.current.age === null ? '待核' : timing.current.age + '岁')
-        + '；本领域=' + currentRecord.label + '，方向=' + currentRecord.direction + '，置信度=' + currentRecord.confidence
-        + '；最可能落点=' + currentRecord.eventCandidate + '；依据=' + (currentRecord.evidence || []).join('；'));
-    } else if (domain) lines.push('当前年份在“' + domainLabels[domain] + '”领域没有达到集中触发门槛，不得为了回答而硬编具体事件。');
+  if (exact && exact.year !== null && exact.record) {
+    var exactRecord = exact.record;
+    var exactAge = exact.adjudication && exact.adjudication.age;
+    var overallVerdict = exact.bundle && exact.bundle.overallVerdict;
+    lines.push('【本轮年份强制锚点】' + exact.year + '年，年龄' + (exactAge === null || exactAge === undefined ? '待核' : exactAge + '岁')
+      + (overallVerdict ? '；全年综合方向=' + overallVerdict : '')
+      + '；首要回答领域=' + exactRecord.label + '；该领域方向=' + exactRecord.direction + '；置信度=' + exactRecord.confidence
+      + '；候选落点=' + exactRecord.eventCandidate + '；依据=' + (exactRecord.evidence || []).join('；'));
+    if (exactRecord.hasIndependentAnnualTrigger === false) {
+      lines.push('本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');
+    }
+    lines.push('本轮回答必须以“' + exactRecord.label + '·' + exactRecord.direction + '”作为具体领域结论。若全年综合方向与该领域不同，必须并列说明“全年总体”与“具体领域”是两个层次，禁止用全年吉凶覆盖领域裁决。');
+  } else if (exact && exact.year !== null && !exact.record) {
+    lines.push('用户指定了' + exact.year + '年，但数据中没有该年或所问领域的有效裁决；必须承认无法确认，不得改用其他年份或只凭十神补断。');
   }
   var candidates = domain && timing.byDomain ? timing.byDomain[domain] : timing.overall;
-  if (candidates && candidates.length && !asksCurrent) {
+  if (candidates && candidates.length && (!exact || exact.year === null)) {
     candidates.slice(0, 3).forEach(function(row, index) {
       lines.push('候选' + (index + 1) + '：' + row.year + '年（约' + (row.age === null ? '年龄待核' : row.age + '岁') + '，'
         + row.daYunGan + row.daYunZhi + '运/' + row.liuNianGan + row.liuNianZhi + '年）'
@@ -2243,4 +2321,4 @@ function generateMockReply(question, chartData, bazi, mode) {
 }
 
 // 仅供本地回归测试读取纯函数，不改变 API handler 行为。
-module.exports._test = { buildChartContext, runReplyValidation, buildExpertAdjudicationInstruction, buildExpertReplyScorecard, buildTimingAdjudicationBrief, detectTimingQuestionDomain, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };
+module.exports._test = { buildChartContext, runReplyValidation, buildExpertAdjudicationInstruction, buildExpertReplyScorecard, buildTimingAdjudicationBrief, detectTimingQuestionDomain, detectTimingQuestionYear, timingSelectionForQuestion, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };

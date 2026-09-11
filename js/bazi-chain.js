@@ -1646,31 +1646,47 @@
       : (isFinite(year) && hasBirthYear ? year - birthYear : null);
     var stage = annualLifeStage(age);
     var scores = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:1 };
+    var annualScores = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:0 };
+    var annualTriggerCounts = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:0 };
     var evidence = { study:[], career:[], wealth:[], relationship:[], family:[], health:[], change:[] };
     var directional = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:0 };
+    var polarity = {
+      study:{ positive:false, negative:false }, career:{ positive:false, negative:false }, wealth:{ positive:false, negative:false },
+      relationship:{ positive:false, negative:false }, family:{ positive:false, negative:false }, health:{ positive:false, negative:false }, change:{ positive:false, negative:false }
+    };
     var annualShiShen = '';
     try { annualShiShen = BaZiCalculator.getShiShen(bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
 
     (analysis.triggers || []).forEach(function(trigger) {
       triggerAnnualDomains(trigger, age).forEach(function(hit) {
         scores[hit.domain] += hit.weight;
-        if (trigger.isGood === true) directional[hit.domain] += hit.weight;
-        else if (trigger.isGood === false) directional[hit.domain] -= hit.weight;
+        annualScores[hit.domain] += hit.weight;
+        annualTriggerCounts[hit.domain] += 1;
+        if (trigger.isGood === true) { directional[hit.domain] += hit.weight; polarity[hit.domain].positive = true; }
+        else if (trigger.isGood === false) { directional[hit.domain] -= hit.weight; polarity[hit.domain].negative = true; }
         if (evidence[hit.domain].length < 4 && trigger.detail && evidence[hit.domain].indexOf(trigger.detail) < 0) evidence[hit.domain].push(trigger.detail);
       });
     });
 
-    if (/财/.test(annualShiShen)) scores.wealth += 4;
-    if (/官|杀/.test(annualShiShen)) scores.career += 4;
+    function addAnnualTheme(domain, weight, theme) {
+      scores[domain] += weight;
+      annualScores[domain] += weight;
+      var role = String(analysis.stemRole || '');
+      if (role === '用神' || role === '喜神') { directional[domain] += weight; polarity[domain].positive = true; }
+      else if (role === '忌神') { directional[domain] -= weight; polarity[domain].negative = true; }
+      if (evidence[domain].length < 4) evidence[domain].push('流年天干' + liuNian.gan + '为' + annualShiShen + '，主要引动' + theme + '；仅凭十神只能定主题，不能单独断定事件发生。');
+    }
+    if (/财/.test(annualShiShen)) addAnnualTheme('wealth', 4, '收入、资源与资金安排');
+    if (/官|杀/.test(annualShiShen)) addAnnualTheme('career', 4, '职位、规则与责任');
     if (/印/.test(annualShiShen)) {
-      if (age === null) { scores.study += 2; scores.family += 2; }
-      else scores[age <= 24 ? 'study' : 'family'] += 4;
+      if (age === null) { addAnnualTheme('study', 2, '学习资质'); addAnnualTheme('family', 2, '家庭支持'); }
+      else addAnnualTheme(age <= 24 ? 'study' : 'family', 4, age <= 24 ? '学习、考试与资质' : '家庭、长辈与支持系统');
     }
     if (/食神|伤官/.test(annualShiShen)) {
-      if (age === null) { scores.study += 1; scores.career += 1; }
-      else scores[age <= 23 ? 'study' : 'career'] += 2;
+      if (age === null) { addAnnualTheme('study', 1, '学习与表达'); addAnnualTheme('career', 1, '技能与成果输出'); }
+      else addAnnualTheme(age <= 23 ? 'study' : 'career', 2, age <= 23 ? '学习、表达与考试发挥' : '技能、表达与成果输出');
     }
-    if (/比肩|劫财/.test(annualShiShen)) { scores.wealth += 2; scores.relationship += 1; }
+    if (/比肩|劫财/.test(annualShiShen)) { addAnnualTheme('wealth', 2, '竞争、分配与资金占用'); addAnnualTheme('relationship', 1, '同辈、合作与边界'); }
 
     // 大运先定十年趋势：只把同一领域的大运账本带入，不能借用别的领域方向。
     var daYunLedger = options.daYunEventLedger || (options.daYunPeriod && options.daYunPeriod.eventLedger) || null;
@@ -1678,8 +1694,8 @@
       daYunLedger.domainRecords.forEach(function(record) {
         if (!Object.prototype.hasOwnProperty.call(scores, record.domain)) return;
         scores[record.domain] += Math.min(Number(record.activationScore || 0) * 0.35, 2.5);
-        if (record.direction === '偏有利') directional[record.domain] += 2;
-        else if (record.direction === '偏不利') directional[record.domain] -= 2;
+        if (record.direction === '偏有利') { directional[record.domain] += 2; polarity[record.domain].positive = true; }
+        else if (record.direction === '偏不利') { directional[record.domain] -= 2; polarity[record.domain].negative = true; }
         if (record.conclusion && evidence[record.domain].length < 4) {
           evidence[record.domain].push('本步大运在“' + record.label + '”领域为' + record.direction + '：' + record.conclusion);
         }
@@ -1695,12 +1711,17 @@
     var globalDirection = Number(analysis.verifiedScore || 0);
     var ranked = Object.keys(scores).filter(function(domain) { return scores[domain] >= 0; }).map(function(domain) {
       var d = directional[domain];
-      var direction = d > 0.5 ? '偏有利' : (d < -0.5 ? '偏不利' : (globalDirection >= 0.65 ? '偏有利' : (globalDirection <= -0.65 ? '偏不利' : '条件性')));
+      var opposed = polarity[domain].positive && polarity[domain].negative;
+      var direction = opposed && Math.abs(d) <= 2 ? '条件性'
+        : (d > 0.5 ? '偏有利' : (d < -0.5 ? '偏不利' : (globalDirection >= 0.65 ? '偏有利' : (globalDirection <= -0.65 ? '偏不利' : '条件性'))));
       var meta = ANNUAL_DOMAIN_META[domain];
       var activation = Number(scores[domain].toFixed(2));
       var confidence = activation >= 9 && evidence[domain].length >= 2 ? '高' : (activation >= 5 ? '中高' : '中');
       return {
         domain:domain, label:meta.label, activationScore:activation, direction:direction, confidence:confidence,
+        annualActivationScore:Number(annualScores[domain].toFixed(2)),
+        annualStructuralTriggerCount:annualTriggerCounts[domain],
+        hasIndependentAnnualTrigger:annualTriggerCounts[domain] > 0,
         eventCandidate:direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional),
         evidence:evidence[domain].slice(0, 3),
         lifeStageMatched:stage.focus.indexOf(domain) >= 0,
@@ -1727,11 +1748,15 @@
         : adjudication.primaryEvent;
       if (!record) return null;
       if (requestedDomain && Number(record.activationScore || 0) < 2) return null;
+      // 大运背景或流年十神只能定主题；没有当年刑冲合害等独立结构触发，不进入重点应期榜。
+      if (!record.hasIndependentAnnualTrigger) return null;
       return {
         year:adjudication.year, age:adjudication.age,
         daYunGan:entry.daYunGan || entry.daYun && entry.daYun.gan || '', daYunZhi:entry.daYunZhi || entry.daYun && entry.daYun.zhi || '',
         liuNianGan:entry.liuNianGan || entry.liuNian && entry.liuNian.gan || '', liuNianZhi:entry.liuNianZhi || entry.liuNian && entry.liuNian.zhi || '',
         domain:record.domain, label:record.label, direction:record.direction, confidence:record.confidence,
+        annualActivationScore:record.annualActivationScore,
+        hasIndependentAnnualTrigger:record.hasIndependentAnnualTrigger,
         eventCandidate:record.eventCandidate, evidence:record.evidence,
         score:Number(record.activationScore || 0) + Number(adjudication.triggerStrength || 0) * 0.45,
         constraint:adjudication.constraint
