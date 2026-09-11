@@ -1235,6 +1235,7 @@ function isHardWarning(w) {
  */
 function buildExpertAdjudicationInstruction(question, chartData, mode) {
   var q = String(question || '');
+  var asksFullReport = /完整|全面|详细|展开|报告|逐项|所有方面/.test(q);
   var tasks = [];
   if (/身强|身弱|旺衰|强弱|从不从|是否从|从格/.test(q)) tasks.push('旺衰与从格');
   if (/格局|成格|破格|制杀|见官|夺食|制食|正官格|七杀格|正印格|偏印格|枭神格|正财格|偏财格|食神格|伤官格|建禄格|羊刃格/.test(q)) tasks.push('格局成败');
@@ -1255,6 +1256,9 @@ function buildExpertAdjudicationInstruction(question, chartData, mode) {
     '本轮任务：' + tasks.join('、') + '。' + (missing.length ? '当前缺少：' + missing.join('、') + '。' : '本轮关键冻结字段已提供。') + '\n' +
     '请在内部先完成“主结论—最强支持证据—最强反证—为何仍取主结论—什么条件会改变判断”的核对；不要展示冗长思维过程，只向用户给出可核对的依据。\n' +
     '回答规范：①第一段直接回答问题，并逐字引用相关冻结档位、主格或喜用忌；②随后列2至4条本盘具体证据，必须落到实际干支、宫位、星曜、课传、原局角色或岁运交互，禁止只背口诀；③主动交代最强反证或另一种合理解释，并说明它为什么不足以推翻主结论；④把排盘硬事实、可校正取象和用户现实反馈分开；⑤证据不足时明确说“目前不能确认”，并只提出最能区分两种判断的1至3个校对问题；⑥建议只能用于风险管理，不得伪装成命盘结论。\n' +
+    (asksFullReport
+      ? '篇幅规范：用户明确要求完整或详细解读，可以分节展开，但每一节仍须围绕本轮问题，不复述无关字段。\n'
+      : '篇幅规范：这是直接问答，不写成完整命理报告。优先控制在350至900个汉字；先用1至3句下结论，再给2至4条关键证据和1条反证，用户追问后再展开。不要复述整份排盘、所有大运或无关章节。\n') +
     '岁运专项：必须先写原局基础方向，再核对该步大运或流年的具体干支、生克、刑冲合害和事件账本；不得把“见某五行”直接等同“一定变顺”。\n' +
     '质疑专项：用户亲历事件可纠正取象权重；用户的命理意见只是待验证假设。不要因用户坚持而改盘，也不要在被指出错误后继续猜第二套答案。';
 }
@@ -1319,6 +1323,8 @@ function buildExpertReplyScorecard(question, chartData, reply, knownWarnings) {
   return {
     total: total,
     grade: grade,
+    characterCount: text.length,
+    verbosityRisk: !/完整|全面|详细|展开|报告|逐项|所有方面/.test(q) && text.length > 1800,
     dimensions: dimensions,
     evidenceHits: evidenceHits,
     hardWarningCount: hardWarnings.length,

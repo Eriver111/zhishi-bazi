@@ -25,6 +25,18 @@ test('裁决层在岁运字段不足时要求承认不能确认并提出区分�
   assert.match(instruction, /1至3个校对问题/);
 });
 
+test('直接问答限制篇幅，只有完整报告请求才允许分节展开', () => {
+  const direct = ai.buildExpertAdjudicationInstruction('这个八字到底身强还是身弱？', {
+    dayMasterStrength: { level: '偏弱', score: 38 }
+  }, 'pro');
+  assert.match(direct, /直接问答，不写成完整命理报告/);
+  assert.match(direct, /350至900个汉字/);
+
+  const report = ai.buildExpertAdjudicationInstruction('请给我一份完整详细报告', {}, 'pro');
+  assert.match(report, /可以分节展开/);
+  assert.doesNotMatch(report, /350至900个汉字/);
+});
+
 test('直接问旺衰却绕开冻结档位会触发必答锚点修正', () => {
   const chart = { type: 'bazi', dayMasterStrength: { level: '偏弱', score: 38 } };
   const missing = ai.runReplyValidation(chart, '这个命局需要结合整体情况综合考虑。', '到底身强还是身弱？');
@@ -66,6 +78,18 @@ test('师傅质量量表奖励具体盘面证据、反证与预测边界', () =>
   assert.equal(strong.grade, 'A');
   assert.equal(strong.hardWarningCount, 0);
   assert.ok(strong.evidenceHits.length >= 2);
+  assert.equal(strong.verbosityRisk, false);
+});
+
+test('质量量表标记直接问题写成超长报告的风险', () => {
+  const chart = { type: 'bazi', dayMasterStrength: { level: '偏弱', score: 38 } };
+  const verbose = ai.buildExpertReplyScorecard(
+    '到底身强还是身弱？',
+    chart,
+    '结论是偏弱。反证存在，但不足以推翻。' + '盘面说明。'.repeat(400)
+  );
+  assert.equal(verbose.verbosityRisk, true);
+  assert.ok(verbose.characterCount > 1800);
 });
 
 test('师傅质量量表识别绕结论、无盘面证据和无边界预测', () => {
