@@ -630,7 +630,11 @@ module.exports = async function handler(req, res) {
       conversation_id: conversation ? conversation.id : null
     };
     // QA 回归专用：透出 V1 validator warnings + V2 触发标记（生产用户请求不带 qa_debug，行为不变）
-    if (qa_debug) { resp.validation_warnings = aiMeta.warnings || []; resp.v2_applied = !!aiMeta.v2Applied; }
+    if (qa_debug) {
+      resp.validation_warnings = aiMeta.warnings || [];
+      resp.v2_applied = !!aiMeta.v2Applied;
+      resp.expert_scorecard = aiMeta.expertScorecard || null;
+    }
     return res.status(200).json(resp);
 
   } catch (e) {
@@ -715,6 +719,13 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     });
   }
 
+  if (chartData) {
+    messages.push({
+      role: 'system',
+      content: buildExpertAdjudicationInstruction(question, chartData, mode)
+    });
+  }
+
   if (calibrationSummary) {
     messages.push({
       role: 'system',
@@ -779,14 +790,14 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   // 可触发 V2 一次；soft（E4 档位关键词、E5 伪概率扫描）只记录 warning，永不为 V2 触发器。
   var validationWarnings = [];
   var v2Applied = false;
-  validationWarnings = runReplyValidation(chartData, reply);
+  validationWarnings = runReplyValidation(chartData, reply, question);
   validationWarnings.forEach(function(w) { console.log('[ai-validator] ' + w); });
   var hardWarnings = validationWarnings.filter(isHardWarning);
   if (hardWarnings.length) {
     console.log('[ai-validator] hard 错误 ' + hardWarnings.length + ' 条，触发 V2 定向自修正（最多一次）');
     var corrected = await v2SelfCorrect(messages, reply, hardWarnings);
     if (corrected) {
-      var vw2 = runReplyValidation(chartData, corrected);
+      var vw2 = runReplyValidation(chartData, corrected, question);
       vw2.forEach(function(w) { console.log('[ai-validator-v2] ' + w); });
       var hard2 = vw2.filter(isHardWarning);
       if (hard2.length < hardWarnings.length) {
@@ -806,12 +817,19 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     });
     if (unresolvedHepanIdentity.length) {
       reply = buildHepanIdentityFactFallback(chartData, unresolvedHepanIdentity);
-      validationWarnings = runReplyValidation(chartData, reply);
+      validationWarnings = runReplyValidation(chartData, reply, question);
       v2Applied = true;
       console.log('[ai-validator] 合盘身份归属仍有冲突，已阻断原回答并返回冻结事实表');
     }
   }
-  if (metaOut) { metaOut.warnings = validationWarnings; metaOut.v2Applied = v2Applied; }
+  var expertScorecard = buildExpertReplyScorecard(question, chartData, reply, validationWarnings);
+  console.log('[ai-expert-score] total=' + expertScorecard.total + ' grade=' + expertScorecard.grade +
+    ' hard=' + expertScorecard.hardWarningCount + ' at=' + new Date().toISOString());
+  if (metaOut) {
+    metaOut.warnings = validationWarnings;
+    metaOut.v2Applied = v2Applied;
+    metaOut.expertScorecard = expertScorecard;
+  }
   return reply;
 }
 
@@ -822,7 +840,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
  * 命中只返回 warning 字符串数组；callAI 负责 console.log 与响应透出（qa_debug 时）。
  * 本函数为纯函数，不依赖外部状态。
  */
-function runReplyValidation(chartData, reply) {
+function runReplyValidation(chartData, reply, question) {
   var warnings = [];
   if (!reply) return warnings;
 
@@ -847,6 +865,31 @@ function runReplyValidation(chartData, reply) {
 
   if (!chartData) return warnings;
   if (chartData.type === 'ziwei' || chartData.type === 'liuren') return warnings;
+
+  // ---------- 通用：直接问诊必须回答冻结锚点（E7，触发一次定向补答） ----------
+  // 老师傅式回答可以讨论反证和流派差异，但不能绕开用户直接问的核心结论。
+  // 合盘必须先判明所指人物，故不在这里用单盘字段做缺失扫描。
+  if (chartData.type !== 'hepan') {
+    var asked = String(question || '');
+    var answer = String(reply);
+    var frozenStrengthLevel = String(chartData.dayMasterStrength && chartData.dayMasterStrength.level || '');
+    if (frozenStrengthLevel && /身强|身弱|旺衰|强弱|从不从|是否从|从格/.test(asked) && answer.indexOf(frozenStrengthLevel) < 0) {
+      warnings.push('E7-缺少旺衰锚点：用户直接询问旺衰，回答必须明确引用冻结结论「' + frozenStrengthLevel + '」');
+    }
+    var frozenPatternName = String(chartData.pattern && chartData.pattern.name || '');
+    if (frozenPatternName && /(?:什么|哪种|是否|是不是|判断|属于|算不算).{0,8}格|格局(?:是什么|如何|怎么|对不对)|成格|破格/.test(asked) && answer.indexOf(frozenPatternName) < 0) {
+      warnings.push('E7-缺少格局锚点：用户直接询问格局，回答必须明确引用冻结主格「' + frozenPatternName + '」');
+    }
+    var frozenYongJi = chartData.yongJi || {};
+    if (/(?:喜用忌|用神、?喜神、?忌神)(?:是什么|如何|怎么|判断|排列)|哪些.{0,6}(?:喜神|用神|忌神)/.test(asked)) {
+      [['用神','yongShen'], ['喜神','xiShen'], ['忌神','jiShen']].forEach(function(pair) {
+        var values = Array.isArray(frozenYongJi[pair[1]]) ? frozenYongJi[pair[1]].map(String).filter(Boolean) : [];
+        if (values.length && !values.some(function(value) { return answer.indexOf(value) >= 0; })) {
+          warnings.push('E7-缺少喜用忌锚点：用户直接询问喜用忌，回答未引用冻结' + pair[0] + '「' + values.join('、') + '」');
+        }
+      });
+    }
+  }
 
   var GAN = '甲乙丙丁戊己庚辛壬癸';
   var ZHI = '子丑寅卯辰巳午未申酉戌亥';
@@ -1180,10 +1223,107 @@ function runReplyValidation(chartData, reply) {
  * V2 触发器分类（GPT终裁 2026-08-14）：hard = 确定性机械可验证的事实错误，可触发 V2 定向自修正一次；
  * soft = E4 档位关键词扫描（误报率高，回归 11 命中 10 误报），只记录 warning，永不为 V2 触发器。
  * 当前 E4（证据覆盖不足）与 E5（未经数据支撑的概率表达）为 soft，
- * 其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突、E6 无证据粉饰）均为 hard。
+ * 其余（E1 五合/三合三会缺员/生克方向/十神映射、E2 否定冲突、E6 无证据粉饰、E7 必答锚点缺失）均为 hard。
  */
 function isHardWarning(w) {
   return w.indexOf('E4') !== 0 && w.indexOf('E5') !== 0;
+}
+
+/**
+ * 老师傅式裁决层：不增加一次模型调用，而是把本轮问题转成可验收的裁决任务。
+ * 模型可以保留内部推演，但对用户只展示结论、可核对证据与边界，避免口诀堆砌。
+ */
+function buildExpertAdjudicationInstruction(question, chartData, mode) {
+  var q = String(question || '');
+  var tasks = [];
+  if (/身强|身弱|旺衰|强弱|从不从|是否从|从格/.test(q)) tasks.push('旺衰与从格');
+  if (/格局|成格|破格|制杀|见官|夺食|制食|正官格|七杀格|正印格|偏印格|枭神格|正财格|偏财格|食神格|伤官格|建禄格|羊刃格/.test(q)) tasks.push('格局成败');
+  if (/喜用|用神|喜神|忌神|调候|补[金木水火土]|行[金木水火土]运/.test(q)) tasks.push('喜用忌与调候');
+  if (/大运|流年|流月|哪年|年份|应期|早年|中年|晚年|结婚|离婚|车祸/.test(q)) tasks.push('岁运应事');
+  if ((chartData && chartData.type === 'hepan') || /合盘|甲方|乙方|男方|女方|两人|两个人|我们俩|我俩/.test(q)) tasks.push('合盘身份与互动');
+  if (/我实际|我本人|真实经历|发生过|没有发生|没发生|不对|错了|我觉得|别人说|有人说|为什么/.test(q)) tasks.push('质疑或现实反馈');
+  if (!tasks.length) tasks.push(mode === 'ziwei' ? '紫微专题解读' : mode === 'liuren' ? '六壬所问之事' : '综合命理解读');
+
+  var missing = [];
+  if (tasks.indexOf('旺衰与从格') >= 0 && !(chartData && chartData.dayMasterStrength)) missing.push('旺衰冻结字段');
+  if (tasks.indexOf('格局成败') >= 0 && !(chartData && chartData.pattern)) missing.push('格局冻结字段');
+  if (tasks.indexOf('喜用忌与调候') >= 0 && !(chartData && chartData.yongJi)) missing.push('喜用忌冻结字段');
+  if (tasks.indexOf('岁运应事') >= 0 && !(chartData && ((chartData.daYun && chartData.daYun.cycles && chartData.daYun.cycles.length) || chartData.currentDaYun || chartData.currentLiuNian))) missing.push('对应岁运字段');
+  if (tasks.indexOf('合盘身份与互动') >= 0 && !(chartData && chartData.person1 && chartData.person2)) missing.push('合盘双方完整字段');
+
+  return '【老师傅式裁决协议】\n' +
+    '本轮任务：' + tasks.join('、') + '。' + (missing.length ? '当前缺少：' + missing.join('、') + '。' : '本轮关键冻结字段已提供。') + '\n' +
+    '请在内部先完成“主结论—最强支持证据—最强反证—为何仍取主结论—什么条件会改变判断”的核对；不要展示冗长思维过程，只向用户给出可核对的依据。\n' +
+    '回答规范：①第一段直接回答问题，并逐字引用相关冻结档位、主格或喜用忌；②随后列2至4条本盘具体证据，必须落到实际干支、宫位、星曜、课传、原局角色或岁运交互，禁止只背口诀；③主动交代最强反证或另一种合理解释，并说明它为什么不足以推翻主结论；④把排盘硬事实、可校正取象和用户现实反馈分开；⑤证据不足时明确说“目前不能确认”，并只提出最能区分两种判断的1至3个校对问题；⑥建议只能用于风险管理，不得伪装成命盘结论。\n' +
+    '岁运专项：必须先写原局基础方向，再核对该步大运或流年的具体干支、生克、刑冲合害和事件账本；不得把“见某五行”直接等同“一定变顺”。\n' +
+    '质疑专项：用户亲历事件可纠正取象权重；用户的命理意见只是待验证假设。不要因用户坚持而改盘，也不要在被指出错误后继续猜第二套答案。';
+}
+
+/**
+ * QA 质量量表：衡量回答是否具备“结论明确、证据落盘、正视反证、预测有边界”的师傅式特征。
+ * 只用于观测和回归，不把语言风格分数当成命理正确率，也不因低分额外扣费或阻断回答。
+ */
+function buildExpertReplyScorecard(question, chartData, reply, knownWarnings) {
+  var q = String(question || '');
+  var text = String(reply || '');
+  var warnings = Array.isArray(knownWarnings) ? knownWarnings : runReplyValidation(chartData, text, q);
+  var hardWarnings = warnings.filter(isHardWarning);
+  var anchorWarnings = warnings.filter(function(w) { return w.indexOf('E7-') === 0; });
+  var dimensions = {
+    factualSafety: hardWarnings.length ? 0 : 40,
+    directAnswer: anchorWarnings.length ? 0 : 20,
+    chartEvidence: 0,
+    counterEvidence: 10,
+    predictionBoundary: 10
+  };
+
+  var evidenceHits = [];
+  function addEvidence(label) {
+    if (evidenceHits.indexOf(label) < 0) evidenceHits.push(label);
+  }
+  var pillars = chartData && chartData.fourPillars || {};
+  ['year','month','day','hour'].forEach(function(pos) {
+    var p = pillars[pos] || {};
+    var pair = String(p.gan || '') + String(p.zhi || '');
+    if (pair.length === 2 && text.indexOf(pair) >= 0) addEvidence(pos + '-pillar');
+  });
+  var dayGan = String(chartData && chartData.dayMaster && chartData.dayMaster.gan || (pillars.day && pillars.day.gan) || '');
+  if (dayGan && (new RegExp('(?:日主|日元)[^。；，,\\n]{0,6}' + dayGan + '|' + dayGan + '[^。；，,\\n]{0,6}(?:日主|日元)')).test(text)) addEvidence('day-master');
+  var monthZhi = String(pillars.month && pillars.month.zhi || '');
+  if (monthZhi && (new RegExp('(?:月令|月支)[^。；，,\\n]{0,6}' + monthZhi + '|' + monthZhi + '[^。；，,\\n]{0,3}(?:月令|月支|月)')).test(text)) addEvidence('month-command');
+  var evidencePhraseRe = /(?:年柱|月柱|日柱|时柱|日坐|透干|藏干|得令|失令|通根|有根|无根|被冲|相冲|相合|相刑|相害)[^。；，,\n]{0,12}[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]|[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥][^。；，,\n]{0,12}(?:得令|失令|通根|有根|无根|被冲|相冲|相合|相刑|相害)/g;
+  var evidencePhraseMatches = text.match(evidencePhraseRe) || [];
+  evidencePhraseMatches.slice(0, 4).forEach(function(_, index) { addEvidence('structure-' + index); });
+  dimensions.chartEvidence = evidenceHits.length >= 2 ? 20 : evidenceHits.length === 1 ? 10 : 0;
+
+  var needsCounterEvidence = /为什么|判断|到底|是不是|是否|从不从|喜用忌|格局|旺衰|强弱/.test(q);
+  if (needsCounterEvidence && !/(?:反证|另一种|另一方面|需要排除|不足以|不能据此|然而|虽[^。；\n]{0,30}但)/.test(text)) {
+    dimensions.counterEvidence = 0;
+  }
+
+  var predictsReality = /会不会|能不能|何时|哪年|以后|未来|大运|流年|流月|应期|婚姻|事业|财运|健康|车祸|离婚|结婚/.test(q);
+  if (predictsReality && !/(?:倾向|可能|容易|风险|需结合|需要结合|不能确认|不等于|并非必然|无法保证|仅供参考|具体还要)/.test(text)) {
+    dimensions.predictionBoundary = 0;
+  }
+
+  if (chartData && chartData.type === 'hepan') {
+    var p1Name = String(chartData.person1 && chartData.person1.name || '');
+    var p2Name = String(chartData.person2 && chartData.person2.name || '');
+    var hasP1 = text.indexOf('甲方') >= 0 || (p1Name && text.indexOf(p1Name) >= 0);
+    var hasP2 = text.indexOf('乙方') >= 0 || (p2Name && text.indexOf(p2Name) >= 0);
+    if (!(hasP1 && hasP2)) dimensions.factualSafety = Math.min(dimensions.factualSafety, 20);
+  }
+
+  var total = Object.keys(dimensions).reduce(function(sum, key) { return sum + dimensions[key]; }, 0);
+  var grade = hardWarnings.length ? 'BLOCKED' : total >= 90 ? 'A' : total >= 75 ? 'B' : total >= 60 ? 'C' : 'D';
+  return {
+    total: total,
+    grade: grade,
+    dimensions: dimensions,
+    evidenceHits: evidenceHits,
+    hardWarningCount: hardWarnings.length,
+    warningCount: warnings.length
+  };
 }
 
 function buildHepanDaYunFactFallback(chartData) {
@@ -1248,9 +1388,9 @@ function buildHepanIdentityFactFallback(chartData, warnings) {
  * 不得改冻结结论（旺衰档位/格局名与成破/用喜忌清单/structuralRisks 及 severity）。
  */
 function buildV2Instruction(hardWarnings) {
-  return '检测到你的上一份回答存在确定性结构事实错误，请逐条核实：\n' +
+  return '检测到你的上一份回答存在确定性结构事实错误或遗漏了用户直接询问的冻结结论，请逐条核实：\n' +
     hardWarnings.map(function(w) { return '- ' + w; }).join('\n') +
-    '\n\n要求：只修正涉及上述错误的句子及其直接推论，保持其余回答逐字不变；' +
+    '\n\n要求：只修正涉及上述错误的句子及其直接推论，或补上警告指出的必答锚点，保持其余回答逐字不变；' +
     '不得修改系统冻结的日主旺衰档位、格局名与成格/破格状态、用神/喜神/忌神清单、structuralRisks 及其 severity；' +
     '不要新增其他分析，直接输出完整修正稿。';
 }
@@ -2052,4 +2192,4 @@ function generateMockReply(question, chartData, bazi, mode) {
 }
 
 // 仅供本地回归测试读取纯函数，不改变 API handler 行为。
-module.exports._test = { buildChartContext, runReplyValidation, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };
+module.exports._test = { buildChartContext, runReplyValidation, buildExpertAdjudicationInstruction, buildExpertReplyScorecard, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };

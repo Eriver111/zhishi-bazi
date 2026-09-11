@@ -11,9 +11,9 @@ const root = path.join(__dirname, '..');
 const apiSource = fs.readFileSync(path.join(root, 'api', 'ai-chat.js'), 'utf8');
 
 // 提取 runReplyValidation（纯函数，与 e1-boundary.test.js 同法）
-const m = apiSource.match(/function runReplyValidation\(chartData, reply\) \{([\s\S]*?)\r?\n\}\r?\n\r?\n\/\*\*/);
+const m = apiSource.match(/function runReplyValidation\(chartData, reply, question\) \{([\s\S]*?)\r?\n\}\r?\n\r?\n\/\*\*/);
 assert.ok(m, 'runReplyValidation 提取失败——api/ai-chat.js 结构变化，需人工复核');
-const runReplyValidation = new Function('chartData', 'reply', m[1].replace(/^  /gm, ''));
+const runReplyValidation = new Function('chartData', 'reply', 'question', m[1].replace(/^  /gm, ''));
 
 function wuheWarns(text) {
   return runReplyValidation({ type: 'bazi' }, text)
