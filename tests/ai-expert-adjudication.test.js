@@ -78,6 +78,28 @@ test('回复校验阻断用全年偏吉覆盖具体领域裁决', () => {
   assert.equal(right.some(item => item.startsWith('E8-')), false);
 });
 
+test('高考能否录取必须先给方向裁决并可按出生年年推定高考年份', () => {
+  const record = {
+    domain:'study', label:'学业考试', direction:'偏不利', confidence:'高',
+    eventCandidate:'考试、录取或学习进度更容易受阻', evidence:['财破印被引动'],
+    hasIndependentAnnualTrigger:true,
+    scenarioCandidates:['复习节奏、临场发挥或成绩稳定性更容易受阻', '志愿、审核或录取推进需要预留备选']
+  };
+  const chart = {
+    type:'bazi', birthInfo:{ year:2008 }, daYun:{ cycles:[{ gan:'甲', zhi:'子' }] },
+    timingAdjudication:{ requestedYear:{ year:2026, overallVerdict:'偏凶', adjudication:{ year:2026, age:18, primaryEvent:record, domainRecords:[record] } }, byDomain:{ study:[] }, overall:[] }
+  };
+  assert.equal(ai.detectTimingQuestionYear('我高考那年能不能考上？', chart), 2026);
+  const brief = ai.buildTimingAdjudicationBrief('我高考那年能不能考上？', chart);
+  assert.match(brief, /封闭问题直接裁决.*比较困难/);
+  assert.match(brief, /最可能的现实落点.*临场发挥/);
+
+  const evasive = ai.runReplyValidation(chart, '流年财破印，印星代表学习，情况需要综合分析，也存在多种可能。', '我高考那年能不能考上？');
+  assert.ok(evasive.some(item => item.startsWith('E9-封闭问题未直接裁决')));
+  const direct = ai.runReplyValidation(chart, '结论：比较困难。2026年学业考试方向偏不利，临场发挥与录取推进容易受阻。', '我高考那年能不能考上？');
+  assert.equal(direct.some(item => item.startsWith('E9-')), false);
+});
+
 test('直接问答限制篇幅，只有完整报告请求才允许分节展开', () => {
   const direct = ai.buildExpertAdjudicationInstruction('这个八字到底身强还是身弱？', {
     dayMasterStrength: { level: '偏弱', score: 38 }

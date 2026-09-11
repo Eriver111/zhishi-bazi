@@ -65,6 +65,12 @@
     return '';
   }
 
+  function elementRoleFamily(dayGan, element) {
+    var representative = { '木':'甲', '火':'丙', '土':'戊', '金':'庚', '水':'壬' }[element];
+    if (!representative) return '';
+    try { return roleFamily(BaZiCalculator.getShiShen(dayGan, representative)); } catch (e) { return ''; }
+  }
+
   function relationDirection(wxA, wxB) {
     var rel = simpleRel(wxA, wxB);
     if (rel === 'sheng') return { type:'生', fromFirst:true };
@@ -1613,7 +1619,7 @@
     return { key:'late', label:'晚年生活阶段', focus:['health','family','wealth'] };
   }
 
-  function triggerAnnualDomains(trigger, age) {
+  function triggerAnnualDomains(trigger, age, bazi) {
     var domains = [], detail = String(trigger && trigger.detail || ''), type = String(trigger && trigger.type || '');
     var ageKnown = age !== null && age !== undefined && age !== '' && isFinite(Number(age));
     function add(domain, weight) {
@@ -1633,7 +1639,68 @@
     if (/伤官见官|官逢伤官/.test(type)) add('career', 6);
     if (/流年合日支/.test(type)) add('relationship', 3);
     if (/驿马逢日支受扰/.test(type)) { add('health', 5); add('change', 3); }
+    // 三合、三会等补局既是当年的独立结构触发，也必须按“所成五行在本命中的功能”
+    // 落到现实领域。旧逻辑只记录了结构事实，没有 target，导致明明补成三合却被误报为无触发。
+    if (/三合局|三会方|半合|半会/.test(type) && trigger.formedWx) {
+      var family = trigger.functionalFamily || elementRoleFamily(bazi && bazi.day && bazi.day.gan, trigger.formedWx);
+      var fullWeight = /三合局|三会方/.test(type) ? 4 : 2;
+      if (family === '食伤') {
+        add(ageKnown && Number(age) <= 23 ? 'study' : 'career', fullWeight);
+        add('wealth', fullWeight * 0.5);
+      } else if (family === '财') {
+        add('wealth', fullWeight);
+        add('career', fullWeight * 0.5);
+      } else if (family === '官杀') {
+        add('career', fullWeight);
+        if (ageKnown && Number(age) <= 23) add('study', fullWeight * 0.75);
+      } else if (family === '印') {
+        add(ageKnown && Number(age) <= 24 ? 'study' : 'family', fullWeight);
+        add('career', fullWeight * 0.5);
+      } else if (family === '比劫') {
+        add('wealth', fullWeight * 0.75);
+        add('relationship', fullWeight * 0.5);
+      }
+      (trigger.targetPositions || []).forEach(function(pos) {
+        if (pos === 'year') add('family', 1.5);
+        if (pos === 'month') add(ageKnown && Number(age) <= 23 ? 'study' : 'career', 1.5);
+        if (pos === 'day') add('relationship', 1.5);
+        if (pos === 'hour') add('career', 1.5);
+      });
+      add('change', /三合局|三会方/.test(type) ? 2 : 1);
+    }
     return domains;
+  }
+
+  function annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger) {
+    var positive = direction === '偏有利', negative = direction === '偏不利';
+    var map = {
+      study: positive
+        ? ['复习吸收与临场发挥更容易稳定', '成绩排名、考试通过或录取推进更有利']
+        : negative ? ['复习节奏、临场发挥或成绩稳定性更容易受阻', '志愿、审核或录取推进需要预留备选']
+          : ['考试发挥和录取推进有机会，但稳定性不足', '结果更依赖准备质量、目标难度与临场状态'],
+      career: positive
+        ? ['项目交付、成果展示或岗位推进更容易落实', '专业能力、方案表达或客户认可更容易兑现']
+        : negative ? ['项目交付、岗位考核或上下级协调压力增大', '成果兑现、流程审核或工作稳定性更容易受阻']
+          : ['项目与成果输出会明显增加，但机会和压力并存', '岗位推进能否兑现取决于交付质量与平台规则'],
+      wealth: positive ? ['收入兑现、客户回款或资源落地更容易推进']
+        : negative ? ['资金占用、回款延迟或支出压力更值得留意'] : ['收入机会与资金压力可能同时增加'],
+      relationship: positive ? ['关系确认、沟通修复或合作推进更有利']
+        : negative ? ['关系边界、争执或合作稳定性更容易受考验'] : ['关系与合作会被明显牵动，但结果尚不单一'],
+      family: positive ? ['家庭支持、长辈协助或居住安排更容易落实']
+        : negative ? ['家庭责任、长辈事务或居住安排更容易形成压力'] : ['家庭与长辈事务会增多，利弊取决于现实条件'],
+      health: positive ? ['身心状态具备恢复和调整空间']
+        : negative ? ['精力、身体负担或行动安全需要优先管理'] : ['身心状态波动增大，需要结合现实症状核对'],
+      change: positive ? ['换环境、出行或调整计划更容易带来改善']
+        : negative ? ['变动成本和计划反复更值得防范'] : ['环境或节奏变化明显，结果取决于准备程度']
+    };
+    var list = (map[domain] || []).slice();
+    if (domain === 'career' && /食神|伤官/.test(annualShiShen)) {
+      list.unshift(positive ? '作品、内容、方案、技能展示或业务推广更容易见到成果'
+        : negative ? '表达、方案、交付或业绩兑现更容易出现偏差'
+          : '作品、方案、表达、项目交付或业务推广是最可能被引动的方面');
+    }
+    if (!hasStructuralTrigger) list.push('目前只能锁定上述主题，不能据此断言某一件具体事情必然发生');
+    return list.slice(0, 3);
   }
 
   function buildAnnualEventAdjudication(bazi, daYun, liuNian, analysis, options) {
@@ -1658,7 +1725,7 @@
     try { annualShiShen = BaZiCalculator.getShiShen(bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
 
     (analysis.triggers || []).forEach(function(trigger) {
-      triggerAnnualDomains(trigger, age).forEach(function(hit) {
+      triggerAnnualDomains(trigger, age, bazi).forEach(function(hit) {
         scores[hit.domain] += hit.weight;
         annualScores[hit.domain] += hit.weight;
         annualTriggerCounts[hit.domain] += 1;
@@ -1717,12 +1784,14 @@
       var meta = ANNUAL_DOMAIN_META[domain];
       var activation = Number(scores[domain].toFixed(2));
       var confidence = activation >= 9 && evidence[domain].length >= 2 ? '高' : (activation >= 5 ? '中高' : '中');
+      var hasStructuralTrigger = annualTriggerCounts[domain] > 0;
       return {
         domain:domain, label:meta.label, activationScore:activation, direction:direction, confidence:confidence,
         annualActivationScore:Number(annualScores[domain].toFixed(2)),
         annualStructuralTriggerCount:annualTriggerCounts[domain],
-        hasIndependentAnnualTrigger:annualTriggerCounts[domain] > 0,
+        hasIndependentAnnualTrigger:hasStructuralTrigger,
         eventCandidate:direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional),
+        scenarioCandidates:annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger),
         evidence:evidence[domain].slice(0, 3),
         lifeStageMatched:stage.focus.indexOf(domain) >= 0,
         decisionBasis:'流年触发位置 + 岁运局关系方向 + 当年十神事项 + 实际年龄阶段'
@@ -2011,6 +2080,8 @@
         var shownMembers = formed ? members : members.filter(function(z) { return z === lnZhi || foundBefore.indexOf(z) >= 0; });
         triggers.push({
           type:type, severity:formed ? 'high' : 'medium', formedWx:formedWx, formedRole:formedRole, isGood:isGood,
+          functionalFamily:elementRoleFamily(dg, formedWx),
+          targetPositions:originalPositions.filter(function(pos) { return shownMembers.indexOf(bazi[pos].zhi) >= 0; }),
           detail:'流年' + lnZhi + (formed ? '补成' : '形成') + shownMembers.join('') + type + formedWx + '势，所成五行为' + formedRole
             + '；' + (formed ? '仍须检查月令、透干与受制后再确认成化程度。' : '仅为局部牵引，不按完整成局论。')
         });

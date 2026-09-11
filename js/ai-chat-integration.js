@@ -514,7 +514,7 @@
   }
 
   // ===== 排盘上下文（保持不变） =====
-  function requestedTimingYear(question) {
+  function requestedTimingYear(question, birthYear) {
     var q = String(question || '');
     var now = new Date().getFullYear();
     var explicitYears = q.match(/(?:18|19|20|21)\d{2}\s*年/g);
@@ -526,19 +526,24 @@
     if (/前年/.test(q)) return now - 2;
     if (/去年/.test(q)) return now - 1;
     if (/今年|本年|当前|现在/.test(q)) return now;
+    var by = Number(birthYear);
+    // 未写公历年份时，用常规入学年龄提供一个“待现实校对”的年份锚点，
+    // 避免“高考那年”完全丢失对应流年。具体留级、复读或早晚入学由用户反馈修正。
+    if (isFinite(by) && by > 0 && /高考|大学录取/.test(q)) return by + 18;
+    if (isFinite(by) && by > 0 && /中考|高中录取/.test(q)) return by + 15;
     return null;
   }
 
   function buildChartData(question) {
     var pt=detectPageType();
-    if (pt==='result') return buildResultContext();
+    if (pt==='result') return buildResultContext(question);
     if (pt==='hepan') return buildHePanContext();
     if (pt==='ziwei'){try{var d=localStorage.getItem('ai_ziwei_data');return d?JSON.parse(d):null}catch(e){return null}}
     if (pt==='liuren'){try{var d=localStorage.getItem('ai_liuren_data');return d?JSON.parse(d):null}catch(e){return null}}
     return null;
   }
 
-  function buildResultContext() {
+  function buildResultContext(question) {
     var data = {};
     if (typeof _params !== 'undefined' && _params) {
       if (typeof buildAIBirthInfo === 'function') {
@@ -882,7 +887,7 @@
           _timingDomains.forEach(function(domain) {
             _timingByDomain[domain] = window.BaZiChain.rankTimingCandidates(_timingEntries, domain);
           });
-          var _requestedTimingYear = requestedTimingYear(question);
+          var _requestedTimingYear = requestedTimingYear(question, _timingBirthYear);
           var _requestedTimingEntry = _requestedTimingYear === null ? null : _timingEntries.filter(function(entry) {
             return Number(entry.eventAdjudication && entry.eventAdjudication.year) === _requestedTimingYear;
           })[0];

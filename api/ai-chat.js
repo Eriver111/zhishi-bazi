@@ -928,6 +928,20 @@ function runReplyValidation(chartData, reply, question) {
     if (timingRecord.hasIndependentAnnualTrigger === false && !/不是强应期|不构成强应期|没有[^。；\n]{0,18}(?:独立|集中)(?:结构)?触发|只能[^。；\n]{0,18}主题|不能[^。；\n]{0,18}具体事件/.test(opening)) {
       warnings.push('E8-把大运背景冒充流年应期：该领域没有当年独立结构触发，回答必须明确只能定主题、不能断具体事件');
     }
+    if (isClosedOutcomeQuestion(question)) {
+      var directOpening = String(reply).slice(0, 180);
+      var expectedClosed = closedOutcomeVerdict(timingRecord);
+      var directPatterns = {
+        '把握较大':/把握较大|较有把握|偏向能|倾向能|考上的机会较大/,
+        '比较困难':/比较困难|难度较大|把握偏低|偏向难|不容易考上/,
+        '有机会，但不稳':/有机会[^。；\n]{0,10}(?:但|不过)[^。；\n]{0,10}(?:不稳|有波动|把握不足)|结果不稳|难下定论/,
+        '有机会，但证据不够强':/有机会[^。；\n]{0,14}(?:证据不够强|依据不足|但把握不足)|目前只能判断有机会/,
+        '目前不能确认':/目前不能确认|现在不能确认|证据不足以判断|缺少[^。；\n]{0,16}(?:数据|信息)/
+      };
+      if (!(directPatterns[expectedClosed] || /$^/).test(directOpening)) {
+        warnings.push('E9-封闭问题未直接裁决：第一段必须先回答“' + expectedClosed + '”，不得用术语或可能性列表回避');
+      }
+    }
   }
 
   var GAN = '甲乙丙丁戊己庚辛壬癸';
@@ -1280,7 +1294,7 @@ function detectTimingQuestionDomain(question) {
   return '';
 }
 
-function detectTimingQuestionYear(question) {
+function detectTimingQuestionYear(question, chartData) {
   var q = String(question || '');
   var now = Number(new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Shanghai', year:'numeric' }).format(new Date()));
   var explicitYears = q.match(/(?:18|19|20|21)\d{2}\s*年/g);
@@ -1292,14 +1306,28 @@ function detectTimingQuestionYear(question) {
   if (/前年/.test(q)) return now - 2;
   if (/去年/.test(q)) return now - 1;
   if (/今年|本年|当前|现在/.test(q)) return now;
+  var birthYear = Number(chartData && chartData.birthInfo && chartData.birthInfo.year);
+  if (isFinite(birthYear) && birthYear > 0 && /高考|大学录取/.test(q)) return birthYear + 18;
+  if (isFinite(birthYear) && birthYear > 0 && /中考|高中录取/.test(q)) return birthYear + 15;
   return null;
+}
+
+function isClosedOutcomeQuestion(question) {
+  return /能不能|能否|可不可以|会不会|考不考得上|能考上|能录取|能通过|有没有希望|成不成|能成功/.test(String(question || ''));
+}
+
+function closedOutcomeVerdict(record) {
+  if (!record) return '目前不能确认';
+  if (record.direction === '偏有利') return record.hasIndependentAnnualTrigger === false ? '有机会，但证据不够强' : '把握较大';
+  if (record.direction === '偏不利') return '比较困难';
+  return '有机会，但不稳';
 }
 
 function timingSelectionForQuestion(question, chartData) {
   var timing = chartData && chartData.timingAdjudication;
   if (!timing) return null;
   var domain = detectTimingQuestionDomain(question);
-  var year = detectTimingQuestionYear(question);
+  var year = detectTimingQuestionYear(question, chartData);
   var bundle = null;
   if (year !== null && timing.requestedYear && Number(timing.requestedYear.year) === year) bundle = timing.requestedYear;
   if (!bundle && year !== null && timing.current && Number(timing.current.year) === year) bundle = { year:year, adjudication:timing.current };
@@ -1330,12 +1358,20 @@ function buildTimingAdjudicationBrief(question, chartData) {
       + (overallVerdict ? '；全年综合方向=' + overallVerdict : '')
       + '；首要回答领域=' + exactRecord.label + '；该领域方向=' + exactRecord.direction + '；置信度=' + exactRecord.confidence
       + '；候选落点=' + exactRecord.eventCandidate + '；依据=' + (exactRecord.evidence || []).join('；'));
+    if (exactRecord.scenarioCandidates && exactRecord.scenarioCandidates.length) {
+      lines.push('最可能的现实落点（按强弱取前1至2项回答，不要全部罗列）=' + exactRecord.scenarioCandidates.join('；'));
+    }
+    if (isClosedOutcomeQuestion(question)) {
+      lines.push('【封闭问题直接裁决】第一句话必须直接回答“' + closedOutcomeVerdict(exactRecord)
+        + '”。不得先讲术语，不得用“都有可能”“综合来看”回避。该裁决表示趋势强弱，不是保证现实结果。');
+    }
     if (exactRecord.hasIndependentAnnualTrigger === false) {
       lines.push('本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');
     }
     lines.push('本轮回答必须以“' + exactRecord.label + '·' + exactRecord.direction + '”作为具体领域结论。若全年综合方向与该领域不同，必须并列说明“全年总体”与“具体领域”是两个层次，禁止用全年吉凶覆盖领域裁决。');
   } else if (exact && exact.year !== null && !exact.record) {
     lines.push('用户指定了' + exact.year + '年，但数据中没有该年或所问领域的有效裁决；必须承认无法确认，不得改用其他年份或只凭十神补断。');
+    if (isClosedOutcomeQuestion(question)) lines.push('【封闭问题直接裁决】第一句话回答“目前不能确认”，然后只说明缺少哪项关键数据。');
   }
   var candidates = domain && timing.byDomain ? timing.byDomain[domain] : timing.overall;
   if (candidates && candidates.length && (!exact || exact.year === null)) {
@@ -1346,7 +1382,7 @@ function buildTimingAdjudicationBrief(question, chartData) {
         + '；依据=' + (row.evidence || []).join('；'));
     });
   }
-  lines.push('使用要求：这是按原局方向、大运趋势、流年触发和实际年龄筛出的主次候选。回答时先选最强的一年或当前年的最强落点，再给一个次选；不能把所有可能都罗列一遍，也不能把候选写成已发生事实。用户真实经历不符时，立即校正落点，不得嘴硬。');
+  lines.push('使用要求：这是按原局方向、大运趋势、流年触发和实际年龄筛出的主次候选。未指定年份时先选最强的一年，必要时再给一个次选；回答时先给“能/难/不稳/不能确认”的直接裁决，再说最可能发生在哪个现实方面，最后最多给3条依据；不能把所有可能都罗列一遍，也不能把候选写成已发生事实。用户真实经历不符时，立即校正落点，不得嘴硬。');
   return lines.join('\n');
 }
 

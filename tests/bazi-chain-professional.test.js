@@ -272,7 +272,7 @@ test('core analysis degrades safely but reports chain failures for diagnosis', (
 test('all chain entry pages request the repaired script version', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.match(html, /js\/bazi-chain\.js\?v=10/, page);
+    assert.match(html, /js\/bazi-chain\.js\?v=11/, page);
   }
 });
 

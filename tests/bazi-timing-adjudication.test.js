@@ -158,3 +158,28 @@ test('只有大运背景和流年十神时只定主题，不冒充重点应期',
   assert.match(career.evidence.join('；'), /仅凭十神只能定主题/);
   assert.equal(C.BaZiChain.rankTimingCandidates([{ eventAdjudication:adjudication }], 'career').length, 0);
 });
+
+test('流年补齐寅午戌三合火局会按食伤功能落到事业成果而非误报无触发', () => {
+  const C = runtime();
+  const bazi = {
+    year:{ gan:'戊', zhi:'寅' }, month:{ gan:'癸', zhi:'亥' },
+    day:{ gan:'甲', zhi:'戌' }, hour:{ gan:'辛', zhi:'未' }
+  };
+  const yongJi = C.BaZiCalculator.getYongJi(bazi);
+  const result = C.BaZiChain.analyzeLiuNian(
+    bazi,
+    { gan:'丙', zhi:'寅', startYear:2023, displayAge:'25' },
+    { year:2026, gan:'丙', zhi:'午' },
+    yongJi,
+    { age:28 }
+  );
+  const trine = result.triggers.find(item => item.type === '三合局' && item.formedWx === '火');
+  const career = result.eventAdjudication.domainRecords.find(item => item.domain === 'career');
+  assert.ok(trine);
+  assert.deepEqual(Array.from(trine.targetPositions), ['year', 'day']);
+  assert.equal(trine.functionalFamily, '食伤');
+  assert.equal(career.hasIndependentAnnualTrigger, true);
+  assert.ok(career.annualStructuralTriggerCount > 0);
+  assert.match(career.scenarioCandidates.join('；'), /作品|方案|项目交付|业务推广/);
+  assert.ok(C.BaZiChain.rankTimingCandidates([{ eventAdjudication:result.eventAdjudication }], 'career').length > 0);
+});
