@@ -31,7 +31,7 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=10/);
+  assert.match(result, /chart-calibration\.js\?v=11/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -59,6 +59,10 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /系统原判断/);
   assert.match(client, /sleep_energy/);
   assert.match(client, /annualDomainScores/);
+  assert.match(client, /analysis\.eventAdjudication/);
+  assert.match(client, /daYunPeriod/);
+  assert.match(client, /不能假定成 20 岁/);
+  assert.doesNotMatch(client, /year - birthYear : 20/);
   assert.match(client, /dedupeOptionDomains\(rankedDomains, scores, parentContext\)/);
   assert.match(client, /followupSets/);
   assert.match(client, /data-selected-option/);

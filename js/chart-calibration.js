@@ -215,6 +215,13 @@
 
   function annualDomainScores(analysis, liuNian, age) {
     var scores = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:1 };
+    if (analysis && analysis.eventAdjudication && analysis.eventAdjudication.domainRecords) {
+      Object.keys(scores).forEach(function(domain) { scores[domain] = -1; });
+      analysis.eventAdjudication.domainRecords.forEach(function(record) {
+        scores[record.domain] = Number(record.activationScore || 0);
+      });
+      return scores;
+    }
     (analysis.triggers || []).forEach(function(trigger) {
       if (trigger.target === 'day' || /日柱|日支|夫妻/.test(trigger.detail || '')) scores.relationship += 4;
       if (trigger.target === 'year' || /年柱/.test(trigger.detail || '')) scores.family += 3;
@@ -355,8 +362,10 @@
       if (typeof _bazi === 'undefined' || !_bazi || typeof _daYunData === 'undefined' || !_daYunData || !_daYunData.list) return out;
       var birthYear = Number(new URLSearchParams(location.search).get('year'));
       if (!birthYear && data.birthInfo) birthYear = Number(data.birthInfo.year || String(data.birthInfo.standardTime || '').slice(0,4));
+      // 没有真实出生年就无法把岁运落到真实年龄，宁可不出校对题，也不能假定成 20 岁。
+      if (!isFinite(birthYear) || birthYear <= 0) return out;
       var nowYear = new Date().getFullYear();
-      var firstYear = Math.max(birthYear ? birthYear + 6 : nowYear - 14, nowYear - 14);
+      var firstYear = Math.max(birthYear + 6, nowYear - 14);
       var yongJi = data.yongJi || (BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
       var parentAnalysis = null;
       try { parentAnalysis = BaZiCalculator.analyzeParents(_bazi, data.birthInfo && data.birthInfo.gender); } catch (e) {}
@@ -365,10 +374,16 @@
         if (!dy) continue;
         var liuNian = (BaZiCalculator.calculateLiuNian(dy, _bazi.day.gan) || []).filter(function(item) { return Number(item.year) === year; })[0];
         if (!liuNian) continue;
-        var analysis = root.BaZiChain.analyzeLiuNian(_bazi, dy, liuNian, yongJi);
+        var age = year - birthYear;
+        var fortunePeriod = data.fortuneAnalysis && data.fortuneAnalysis.periods
+          ? data.fortuneAnalysis.periods.filter(function(period) {
+              return period.gan === dy.gan && period.zhi === dy.zhi
+                && (!period.startYear || Number(period.startYear) === Number(dy.startYear));
+            })[0]
+          : null;
+        var analysis = root.BaZiChain.analyzeLiuNian(_bazi, dy, liuNian, yongJi, { age:age, birthYear:birthYear || null, daYunPeriod:fortunePeriod });
         var high = (analysis.triggers || []).filter(function(t) { return t.severity === 'high'; }).length;
         var score = Number(analysis.dangerScore || 0) + Number(analysis.opportunityScore || 0) + high * 2 + Math.min((analysis.triggers || []).length, 4);
-        var age = birthYear ? year - birthYear : 20;
         var tenGod = '';
         try { tenGod = BaZiCalculator.getShiShen(_bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
         var parentContext = parentYearContext(parentAnalysis, analysis, tenGod, dy, liuNian, age);

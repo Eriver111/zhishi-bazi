@@ -809,9 +809,71 @@
       try {
         if (window.BaZiChain && window.BaZiChain.analyzeLiuNian) {
           var _yj2 = data.yongJi || (typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
-          data.liuNianAnalysis = window.BaZiChain.analyzeLiuNian(_bazi, data.currentDaYun, data.currentLiuNian, _yj2);
+          var _birthYearForTiming = Number(data.birthInfo && data.birthInfo.year);
+          var _hasBirthYearForTiming = isFinite(_birthYearForTiming) && _birthYearForTiming > 0;
+          var _currentAgeForTiming = _hasBirthYearForTiming ? Number(data.currentLiuNian.year) - _birthYearForTiming : null;
+          var _currentFortunePeriod = data.fortuneAnalysis && data.fortuneAnalysis.periods
+            ? data.fortuneAnalysis.periods.filter(function(period) {
+                return period.gan === data.currentDaYun.gan && period.zhi === data.currentDaYun.zhi
+                  && (!period.startYear || Number(period.startYear) === Number(data.currentDaYun.startYear));
+              })[0]
+            : null;
+          data.liuNianAnalysis = window.BaZiChain.analyzeLiuNian(_bazi, data.currentDaYun, data.currentLiuNian, _yj2, {
+            birthYear:_hasBirthYearForTiming ? _birthYearForTiming : null,
+            age:_currentAgeForTiming,
+            daYunPeriod:_currentFortunePeriod
+          });
         }
       } catch(e) { /* 流年互动分析非关键路径 */ }
+    }
+
+    // v6.2: 岁运应事裁决层。扫描全量岁运，但只把各现实领域最强的少量候选交给 AI，
+    // 防止模型从几十个年份里任意挑故事，也避免年龄不符的事件（如少年阶段直接断升职发财）。
+    if (typeof _bazi !== 'undefined' && _bazi && typeof _daYunData !== 'undefined' && _daYunData && _daYunData.list) {
+      try {
+        if (window.BaZiChain && window.BaZiChain.analyzeLiuNian && window.BaZiChain.rankTimingCandidates
+            && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.calculateLiuNian) {
+          var _timingYj = data.yongJi || (BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
+          var _timingBirthYear = Number(data.birthInfo && data.birthInfo.year);
+          var _hasTimingBirthYear = isFinite(_timingBirthYear) && _timingBirthYear > 0;
+          var _timingEntries = [];
+          _daYunData.list.forEach(function(dy) {
+            var dyStartAge = parseInt(String(dy.displayAge || ''), 10);
+            var fortunePeriod = data.fortuneAnalysis && data.fortuneAnalysis.periods
+              ? data.fortuneAnalysis.periods.filter(function(period) {
+                  return period.gan === dy.gan && period.zhi === dy.zhi
+                    && (!period.startYear || Number(period.startYear) === Number(dy.startYear));
+                })[0]
+              : null;
+            (BaZiCalculator.calculateLiuNian(dy, _bazi.day.gan) || []).forEach(function(ln) {
+              var inferredAge = _hasTimingBirthYear ? Number(ln.year) - _timingBirthYear
+                : (isFinite(dyStartAge) ? dyStartAge + Number(ln.year) - Number(dy.startYear) : null);
+              var annual = window.BaZiChain.analyzeLiuNian(_bazi, dy, ln, _timingYj, {
+                birthYear:_hasTimingBirthYear ? _timingBirthYear : null,
+                age:inferredAge,
+                daYunPeriod:fortunePeriod
+              });
+              _timingEntries.push({
+                daYun:{ gan:dy.gan, zhi:dy.zhi }, liuNian:{ gan:ln.gan, zhi:ln.zhi },
+                eventAdjudication:annual.eventAdjudication
+              });
+            });
+          });
+          var _timingDomains = ['study','career','wealth','relationship','family','health','change'];
+          var _timingByDomain = {};
+          _timingDomains.forEach(function(domain) {
+            _timingByDomain[domain] = window.BaZiChain.rankTimingCandidates(_timingEntries, domain);
+          });
+          data.timingAdjudication = {
+            version:'1.0', analysisType:'timing_hypothesis', userCorrectable:true,
+            current:data.liuNianAnalysis && data.liuNianAnalysis.eventAdjudication || null,
+            overall:window.BaZiChain.rankTimingCandidates(_timingEntries),
+            byDomain:_timingByDomain,
+            selectionRule:'大运定趋势，流年定应期，年龄阶段筛现实场景；先答最强主事件，再给一个次选，不罗列所有可能。',
+            constraint:'候选年份与事件不是既成事实；用户真实经历优先，反馈不符时应校正落点，不得维护旧推断。'
+          };
+        }
+      } catch(e) { /* 应事裁决增强层不阻断基础命盘 */ }
     }
 
     return data;

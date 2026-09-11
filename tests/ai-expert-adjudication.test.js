@@ -25,6 +25,25 @@ test('裁决层在岁运字段不足时要求承认不能确认并提出区分�
   assert.match(instruction, /1至3个校对问题/);
 });
 
+test('岁运问答只注入所问领域的应期候选并强调主次裁决', () => {
+  const chart = {
+    daYun: { cycles: [{ gan:'甲', zhi:'子' }] },
+    timingAdjudication: {
+      byDomain: {
+        study: [{ year:2028, age:18, daYunGan:'甲', daYunZhi:'子', liuNianGan:'戊', liuNianZhi:'申', label:'学业考试', direction:'偏不利', confidence:'高', eventCandidate:'考试或录取更容易受阻', evidence:['财破印被引动'] }],
+        relationship: [{ year:2030, age:20, daYunGan:'甲', daYunZhi:'子', liuNianGan:'庚', liuNianZhi:'戌', label:'婚恋合作', direction:'偏有利', confidence:'中', eventCandidate:'关系推进', evidence:['日支被合'] }]
+      },
+      overall: []
+    }
+  };
+  const instruction = ai.buildExpertAdjudicationInstruction('哪一年考试最难？', chart, 'pro');
+  assert.match(instruction, /所问领域=学业考试/);
+  assert.match(instruction, /2028年/);
+  assert.match(instruction, /财破印被引动/);
+  assert.doesNotMatch(instruction, /2030年/);
+  assert.match(instruction, /先选最强的一年.*再给一个次选/);
+});
+
 test('直接问答限制篇幅，只有完整报告请求才允许分节展开', () => {
   const direct = ai.buildExpertAdjudicationInstruction('这个八字到底身强还是身弱？', {
     dayMasterStrength: { level: '偏弱', score: 38 }

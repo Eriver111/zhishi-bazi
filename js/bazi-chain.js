@@ -1591,7 +1591,156 @@
    * v5.2 流年→大运→原局三方互动
    * 子平法核心：岁运局三者关系决定一年的真实吉凶
    */
-  function analyzeLiuNianImpact(bazi, daYun, liuNian, yongJi) {
+  var ANNUAL_DOMAIN_META = {
+    study:{ label:'学业考试', favorable:'考试、录取、证照或学习进度更容易推进', adverse:'考试、审核、证照或学习进度更容易受阻', conditional:'学习与资质事项更容易被引动' },
+    career:{ label:'事业工作', favorable:'岗位、项目、责任或平台更容易向前推进', adverse:'岗位、项目、制度或上下级关系更容易形成压力', conditional:'工作与职责事项更容易被引动' },
+    wealth:{ label:'收入资金', favorable:'收入、回款、客户或资源兑现更容易推进', adverse:'支出、周转、分配或资金占用压力更容易增加', conditional:'资金与资源事项更容易被引动' },
+    relationship:{ label:'婚恋合作', favorable:'关系确认、沟通修复或共同安排更容易推进', adverse:'关系摩擦、距离、分合或合作边界更容易调整', conditional:'感情与合作事项更容易被引动' },
+    family:{ label:'家庭长辈', favorable:'家庭安排、长辈支持或居住事项更容易获得助力', adverse:'家庭责任、长辈事务或居住安排更容易增加压力', conditional:'家庭、长辈与居住事项更容易被引动' },
+    health:{ label:'身心安全', favorable:'精力、恢复节奏或压力管理更容易改善', adverse:'劳累、情绪、身体承载或行动安全更需要管理', conditional:'身心与行动安全事项更容易被引动' },
+    change:{ label:'环境变动', favorable:'换环境、改计划或重新启动更容易形成正向转机', adverse:'既有安排更容易被打断，被迫调整或反复', conditional:'环境、计划或生活重心更容易变化' }
+  };
+
+  function annualLifeStage(age) {
+    if (age === null || age === undefined || age === '') return { key:'unknown', label:'年龄阶段待核', focus:[] };
+    var n = Number(age);
+    if (!isFinite(n) || n < 0) return { key:'unknown', label:'年龄阶段待核', focus:[] };
+    if (n < 16) return { key:'child', label:'少年成长阶段', focus:['family','study'] };
+    if (n < 24) return { key:'education', label:'升学与起步阶段', focus:['study','family','relationship'] };
+    if (n < 31) return { key:'launch', label:'事业婚恋起步阶段', focus:['career','relationship','wealth'] };
+    if (n < 46) return { key:'development', label:'事业家庭发展阶段', focus:['career','wealth','relationship','family'] };
+    if (n < 61) return { key:'mature', label:'事业家庭承责阶段', focus:['career','wealth','family','health'] };
+    return { key:'late', label:'晚年生活阶段', focus:['health','family','wealth'] };
+  }
+
+  function triggerAnnualDomains(trigger, age) {
+    var domains = [], detail = String(trigger && trigger.detail || ''), type = String(trigger && trigger.type || '');
+    var ageKnown = age !== null && age !== undefined && age !== '' && isFinite(Number(age));
+    function add(domain, weight) {
+      var found = domains.filter(function(item) { return item.domain === domain; })[0];
+      if (found) found.weight += weight;
+      else domains.push({ domain:domain, weight:weight });
+    }
+    if (trigger.target === 'day' || /日柱|日支|夫妻/.test(detail)) { add('relationship', 4); add('health', 1.5); }
+    if (trigger.target === 'year' || /年柱/.test(detail)) add('family', 3);
+    if (trigger.target === 'month' || /月柱|月支|提纲/.test(detail)) {
+      if (!ageKnown) { add('study', 1.5); add('career', 1.5); }
+      else add(Number(age) <= 23 ? 'study' : 'career', 3);
+    }
+    if (trigger.target === 'hour' || /时柱|时支/.test(detail)) { add('career', 2); add('family', 1); }
+    if (/天克地冲|六冲|刑|六害|六破|伏吟|驿马/.test(type)) add('change', 2);
+    if ((trigger.target === 'day' || trigger.target === 'hour') && /天克地冲|六冲|刑|自刑|六害|伏吟|驿马/.test(type)) add('health', 2);
+    if (/伤官见官|官逢伤官/.test(type)) add('career', 6);
+    if (/流年合日支/.test(type)) add('relationship', 3);
+    if (/驿马逢日支受扰/.test(type)) { add('health', 5); add('change', 3); }
+    return domains;
+  }
+
+  function buildAnnualEventAdjudication(bazi, daYun, liuNian, analysis, options) {
+    options = options || {};
+    var year = Number(liuNian && liuNian.year);
+    var birthYear = Number(options.birthYear);
+    var hasExplicitAge = options.age !== null && options.age !== undefined && options.age !== '' && isFinite(Number(options.age));
+    var hasBirthYear = isFinite(birthYear) && birthYear > 0;
+    var age = hasExplicitAge ? Number(options.age)
+      : (isFinite(year) && hasBirthYear ? year - birthYear : null);
+    var stage = annualLifeStage(age);
+    var scores = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:1 };
+    var evidence = { study:[], career:[], wealth:[], relationship:[], family:[], health:[], change:[] };
+    var directional = { study:0, career:0, wealth:0, relationship:0, family:0, health:0, change:0 };
+    var annualShiShen = '';
+    try { annualShiShen = BaZiCalculator.getShiShen(bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
+
+    (analysis.triggers || []).forEach(function(trigger) {
+      triggerAnnualDomains(trigger, age).forEach(function(hit) {
+        scores[hit.domain] += hit.weight;
+        if (trigger.isGood === true) directional[hit.domain] += hit.weight;
+        else if (trigger.isGood === false) directional[hit.domain] -= hit.weight;
+        if (evidence[hit.domain].length < 4 && trigger.detail && evidence[hit.domain].indexOf(trigger.detail) < 0) evidence[hit.domain].push(trigger.detail);
+      });
+    });
+
+    if (/财/.test(annualShiShen)) scores.wealth += 4;
+    if (/官|杀/.test(annualShiShen)) scores.career += 4;
+    if (/印/.test(annualShiShen)) {
+      if (age === null) { scores.study += 2; scores.family += 2; }
+      else scores[age <= 24 ? 'study' : 'family'] += 4;
+    }
+    if (/食神|伤官/.test(annualShiShen)) {
+      if (age === null) { scores.study += 1; scores.career += 1; }
+      else scores[age <= 23 ? 'study' : 'career'] += 2;
+    }
+    if (/比肩|劫财/.test(annualShiShen)) { scores.wealth += 2; scores.relationship += 1; }
+
+    // 大运先定十年趋势：只把同一领域的大运账本带入，不能借用别的领域方向。
+    var daYunLedger = options.daYunEventLedger || (options.daYunPeriod && options.daYunPeriod.eventLedger) || null;
+    if (daYunLedger && daYunLedger.domainRecords) {
+      daYunLedger.domainRecords.forEach(function(record) {
+        if (!Object.prototype.hasOwnProperty.call(scores, record.domain)) return;
+        scores[record.domain] += Math.min(Number(record.activationScore || 0) * 0.35, 2.5);
+        if (record.direction === '偏有利') directional[record.domain] += 2;
+        else if (record.direction === '偏不利') directional[record.domain] -= 2;
+        if (record.conclusion && evidence[record.domain].length < 4) {
+          evidence[record.domain].push('本步大运在“' + record.label + '”领域为' + record.direction + '：' + record.conclusion);
+        }
+      });
+    }
+
+    // 年龄只限定“此时最可能应在哪类现实事项”，不参与吉凶计算。
+    if (age !== null && age < 18) { scores.study += Math.max(scores.career, 0); scores.career = -1; }
+    if (age !== null && age < 16) { scores.family += Math.max(scores.wealth, 0); scores.wealth = -1; }
+    if (age !== null && age < 14) { scores.family += Math.max(scores.relationship, 0); scores.relationship = -1; }
+    stage.focus.forEach(function(domain) { if (scores[domain] >= 0) scores[domain] += 1.5; });
+
+    var globalDirection = Number(analysis.verifiedScore || 0);
+    var ranked = Object.keys(scores).filter(function(domain) { return scores[domain] >= 0; }).map(function(domain) {
+      var d = directional[domain];
+      var direction = d > 0.5 ? '偏有利' : (d < -0.5 ? '偏不利' : (globalDirection >= 0.65 ? '偏有利' : (globalDirection <= -0.65 ? '偏不利' : '条件性')));
+      var meta = ANNUAL_DOMAIN_META[domain];
+      var activation = Number(scores[domain].toFixed(2));
+      var confidence = activation >= 9 && evidence[domain].length >= 2 ? '高' : (activation >= 5 ? '中高' : '中');
+      return {
+        domain:domain, label:meta.label, activationScore:activation, direction:direction, confidence:confidence,
+        eventCandidate:direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional),
+        evidence:evidence[domain].slice(0, 3),
+        lifeStageMatched:stage.focus.indexOf(domain) >= 0,
+        decisionBasis:'流年触发位置 + 岁运局关系方向 + 当年十神事项 + 实际年龄阶段'
+      };
+    }).sort(function(a,b) { return b.activationScore - a.activationScore || b.evidence.length - a.evidence.length || a.domain.localeCompare(b.domain); });
+
+    return {
+      version:'1.0', analysisType:'timing_hypothesis', frozen:false, userCorrectable:true,
+      year:isFinite(year) ? year : null, age:age, lifeStage:stage, annualShiShen:annualShiShen,
+      primaryEvent:ranked[0] || null, secondaryEvent:ranked[1] || null, domainRecords:ranked,
+      triggerStrength:Number((Number(analysis.dangerScore || 0) + Number(analysis.opportunityScore || 0) + Math.min((analysis.triggers || []).length, 5)).toFixed(2)),
+      selectionRule:'先由大运定十年趋势，再由流年与岁运局触发定应期；年龄阶段只筛现实场景，十神名称不单独决定事件。',
+      constraint:'主次事件均为最可能兑现的候选，不是既成事实；用户提供真实经历后必须以经历校正，禁止为维护推断而嘴硬。'
+    };
+  }
+
+  function rankTimingCandidates(entries, requestedDomain) {
+    var rows = (entries || []).map(function(entry) {
+      var adjudication = entry.eventAdjudication || entry.adjudication || null;
+      if (!adjudication) return null;
+      var record = requestedDomain
+        ? (adjudication.domainRecords || []).filter(function(item) { return item.domain === requestedDomain; })[0]
+        : adjudication.primaryEvent;
+      if (!record) return null;
+      if (requestedDomain && Number(record.activationScore || 0) < 2) return null;
+      return {
+        year:adjudication.year, age:adjudication.age,
+        daYunGan:entry.daYunGan || entry.daYun && entry.daYun.gan || '', daYunZhi:entry.daYunZhi || entry.daYun && entry.daYun.zhi || '',
+        liuNianGan:entry.liuNianGan || entry.liuNian && entry.liuNian.gan || '', liuNianZhi:entry.liuNianZhi || entry.liuNian && entry.liuNian.zhi || '',
+        domain:record.domain, label:record.label, direction:record.direction, confidence:record.confidence,
+        eventCandidate:record.eventCandidate, evidence:record.evidence,
+        score:Number(record.activationScore || 0) + Number(adjudication.triggerStrength || 0) * 0.45,
+        constraint:adjudication.constraint
+      };
+    }).filter(Boolean).sort(function(a,b) { return b.score - a.score || Number(a.year || 0) - Number(b.year || 0); });
+    return rows.slice(0, 3).map(function(row) { row.score = Number(row.score.toFixed(2)); return row; });
+  }
+
+  function analyzeLiuNianImpact(bazi, daYun, liuNian, yongJi, options) {
     if (!daYun || !liuNian) return { triggers: [], verdict: "neutral", summary: "大运或流年数据缺失" };
 
     var dg = bazi.day.gan;
@@ -1943,7 +2092,7 @@
       summary = '流年结构信号相对平稳，暂不据此承诺具体事件结果。';
     }
 
-    return {
+    var result = {
       analysisType:'structural_forecast',
       userCorrectable:true,
       realityPriority:'user_confirmed_experience',
@@ -1964,6 +2113,8 @@
       verdict: verdict,
       summary: summary
     };
+    result.eventAdjudication = buildAnnualEventAdjudication(bazi, daYun, liuNian, result, options || {});
+    return result;
   }
 
 
@@ -1975,6 +2126,8 @@
     interpret: interpretChains,
     analyzeFortune: analyzeFortuneImpact,
     analyzeLiuNian: analyzeLiuNianImpact,
+    buildAnnualEventAdjudication: buildAnnualEventAdjudication,
+    rankTimingCandidates: rankTimingCandidates,
     CHANG_SHENG: CHANG_SHENG,
     LIN_GUAN: LIN_GUAN,
     CHONG: CHONG,

@@ -132,6 +132,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **dayBranchAnalysis**（日支夫妻宫专项）：日支、十神映射、根气、冲合刑害及三合三会成员属于结构事实；“配偶性格、婚姻稳定度、聚散或矛盾程度”属于可校正推断。分析婚姻时应引用结构证据，但不得把 stability、ssDesc、summary 当作用户现实婚姻的既成事实。用户明确提供的恋爱、结婚、离婚、分居等经历优先，冲突时保留日支结构并重写解释。
 - **合盘 analysis**（双盘关系候选）：双方各自四柱、日主、旺衰、喜用忌、大运顺序及跨盘干支关系属于结构证据；契合评分只是规则启发式指数，不是现实相处质量、成功率或事件概率。ganDesc、zhiDesc、coreMode、yearlyAdvice、dosAndDonts、互补描述等均是可校正候选，不得当作双方已经发生的经历。用户明确陈述的实际关系、相处方式与事件优先，冲突时保留结构关系、撤回未兑现推断并重新解释。
 - **liuNianAnalysis**（流年三方互动）：流年干支、大运干支、原局关系以及岁运并临、天克地冲、三刑成员等属于结构事实；trigger 的现实事项、dangerScore/opportunityScore 和综合判词属于规则方向推断，不是事件已经发生或现实概率。分析今年运势时应以具体结构触发为依据并使用条件语言；用户已发生的实际情况优先，可用来校正触发最终落在哪个领域，但不能倒改流年干支与结构关系。
+- **timingAdjudication**（岁运应事裁决）：这是程序把原局方向、大运趋势、流年触发和实际年龄合并后的候选排序。current 给出当前年的主次落点，byDomain 给出学业、事业、财富、婚恋、家庭、身心、变动各自最值得核对的年份。它解决“什么年龄更可能应什么事、哪一年信号最集中”，但仍不是现实事实。回答应期问题时先读取用户所问领域，优先回答排名第一的年份和主事件，再给一个次选；禁止把七个领域全列一遍，也禁止把候选说成必然发生。
 - **currentDaYun**（当前所处大运）：已精确计算，直接引用其干支和十神
 - **currentLiuNian**（当前流年）：已精确计算，结合大运分析流年运势时以此为准。若 chartData 中有当前大运和当前流年数据，直接使用，不要自行推算。
 - **relationEvents**（四柱关系事件）：系统枚举的天干五合、天干克、六冲、六害、刑、六合、三合局、半合、三会方、半会等事实层事件。对称关系（五合/六冲/六害/刑/六合）的 source/target 仅为规范排序、不赋因果语义；天干克保留真实克方方向。引用时按事件类型与柱位描述即可。
@@ -1229,6 +1230,48 @@ function isHardWarning(w) {
   return w.indexOf('E4') !== 0 && w.indexOf('E5') !== 0;
 }
 
+function detectTimingQuestionDomain(question) {
+  var q = String(question || '');
+  if (/考试|升学|录取|学业|学习|考证|证书|资格/.test(q)) return 'study';
+  if (/结婚|离婚|恋爱|感情|婚姻|对象|夫妻|复合|分手|合作/.test(q)) return 'relationship';
+  if (/父母|父亲|母亲|长辈|家庭|家里|搬家|住房/.test(q)) return 'family';
+  if (/车祸|事故|健康|身体|疾病|手术|受伤|睡眠|住院/.test(q)) return 'health';
+  if (/财运|收入|赚钱|破财|回款|投资|资金|生意/.test(q)) return 'wealth';
+  if (/事业|工作|职位|升职|离职|岗位|领导|项目|创业/.test(q)) return 'career';
+  if (/变化|变动|转折|异地|迁移|换环境|哪年|应期/.test(q)) return 'change';
+  return '';
+}
+
+function buildTimingAdjudicationBrief(question, chartData) {
+  var timing = chartData && chartData.timingAdjudication;
+  if (!timing) return '';
+  var domain = detectTimingQuestionDomain(question);
+  var domainLabels = { study:'学业考试', career:'事业工作', wealth:'收入资金', relationship:'婚恋合作', family:'家庭长辈', health:'身心安全', change:'环境变动' };
+  var asksCurrent = /今年|本年|当前|现在/.test(String(question || ''));
+  var lines = ['【岁运应事裁决数据】所问领域=' + (domainLabels[domain] || '综合') + '。'];
+  if (asksCurrent && timing.current) {
+    var currentRecord = domain
+      ? (timing.current.domainRecords || []).filter(function(item) { return item.domain === domain; })[0]
+      : timing.current.primaryEvent;
+    if (currentRecord && Number(currentRecord.activationScore || 0) >= 2) {
+      lines.push('当前年份：' + timing.current.year + '年，年龄' + (timing.current.age === null ? '待核' : timing.current.age + '岁')
+        + '；本领域=' + currentRecord.label + '，方向=' + currentRecord.direction + '，置信度=' + currentRecord.confidence
+        + '；最可能落点=' + currentRecord.eventCandidate + '；依据=' + (currentRecord.evidence || []).join('；'));
+    } else if (domain) lines.push('当前年份在“' + domainLabels[domain] + '”领域没有达到集中触发门槛，不得为了回答而硬编具体事件。');
+  }
+  var candidates = domain && timing.byDomain ? timing.byDomain[domain] : timing.overall;
+  if (candidates && candidates.length && !asksCurrent) {
+    candidates.slice(0, 3).forEach(function(row, index) {
+      lines.push('候选' + (index + 1) + '：' + row.year + '年（约' + (row.age === null ? '年龄待核' : row.age + '岁') + '，'
+        + row.daYunGan + row.daYunZhi + '运/' + row.liuNianGan + row.liuNianZhi + '年）'
+        + row.label + '，' + row.direction + '，置信度' + row.confidence + '；最可能落点=' + row.eventCandidate
+        + '；依据=' + (row.evidence || []).join('；'));
+    });
+  }
+  lines.push('使用要求：这是按原局方向、大运趋势、流年触发和实际年龄筛出的主次候选。回答时先选最强的一年或当前年的最强落点，再给一个次选；不能把所有可能都罗列一遍，也不能把候选写成已发生事实。用户真实经历不符时，立即校正落点，不得嘴硬。');
+  return lines.join('\n');
+}
+
 /**
  * 老师傅式裁决层：不增加一次模型调用，而是把本轮问题转成可验收的裁决任务。
  * 模型可以保留内部推演，但对用户只展示结论、可核对证据与边界，避免口诀堆砌。
@@ -1240,7 +1283,7 @@ function buildExpertAdjudicationInstruction(question, chartData, mode) {
   if (/身强|身弱|旺衰|强弱|从不从|是否从|从格/.test(q)) tasks.push('旺衰与从格');
   if (/格局|成格|破格|制杀|见官|夺食|制食|正官格|七杀格|正印格|偏印格|枭神格|正财格|偏财格|食神格|伤官格|建禄格|羊刃格/.test(q)) tasks.push('格局成败');
   if (/喜用|用神|喜神|忌神|调候|补[金木水火土]|行[金木水火土]运/.test(q)) tasks.push('喜用忌与调候');
-  if (/大运|流年|流月|哪年|年份|应期|早年|中年|晚年|结婚|离婚|车祸/.test(q)) tasks.push('岁运应事');
+  if (/大运|流年|流月|今年|明年|后年|去年|前年|当前|什么时候|哪一?年|年份|应期|早年|中年|晚年|结婚|离婚|车祸/.test(q)) tasks.push('岁运应事');
   if ((chartData && chartData.type === 'hepan') || /合盘|甲方|乙方|男方|女方|两人|两个人|我们俩|我俩/.test(q)) tasks.push('合盘身份与互动');
   if (/我实际|我本人|真实经历|发生过|没有发生|没发生|不对|错了|我觉得|别人说|有人说|为什么/.test(q)) tasks.push('质疑或现实反馈');
   if (!tasks.length) tasks.push(mode === 'ziwei' ? '紫微专题解读' : mode === 'liuren' ? '六壬所问之事' : '综合命理解读');
@@ -1252,6 +1295,7 @@ function buildExpertAdjudicationInstruction(question, chartData, mode) {
   if (tasks.indexOf('岁运应事') >= 0 && !(chartData && ((chartData.daYun && chartData.daYun.cycles && chartData.daYun.cycles.length) || chartData.currentDaYun || chartData.currentLiuNian))) missing.push('对应岁运字段');
   if (tasks.indexOf('合盘身份与互动') >= 0 && !(chartData && chartData.person1 && chartData.person2)) missing.push('合盘双方完整字段');
 
+  var timingBrief = tasks.indexOf('岁运应事') >= 0 ? buildTimingAdjudicationBrief(question, chartData) : '';
   return '【老师傅式裁决协议】\n' +
     '本轮任务：' + tasks.join('、') + '。' + (missing.length ? '当前缺少：' + missing.join('、') + '。' : '本轮关键冻结字段已提供。') + '\n' +
     '请在内部先完成“主结论—最强支持证据—最强反证—为何仍取主结论—什么条件会改变判断”的核对；不要展示冗长思维过程，只向用户给出可核对的依据。\n' +
@@ -1259,7 +1303,8 @@ function buildExpertAdjudicationInstruction(question, chartData, mode) {
     (asksFullReport
       ? '篇幅规范：用户明确要求完整或详细解读，可以分节展开，但每一节仍须围绕本轮问题，不复述无关字段。\n'
       : '篇幅规范：这是直接问答，不写成完整命理报告。优先控制在350至900个汉字；先用1至3句下结论，再给2至4条关键证据和1条反证，用户追问后再展开。不要复述整份排盘、所有大运或无关章节。\n') +
-    '岁运专项：必须先写原局基础方向，再核对该步大运或流年的具体干支、生克、刑冲合害和事件账本；不得把“见某五行”直接等同“一定变顺”。\n' +
+    '岁运专项：必须先写原局基础方向，再核对该步大运或流年的具体干支、生克、刑冲合害和事件账本；大运负责定十年趋势，流年负责定应期，年龄阶段负责筛掉不合现实的事项；不得把“见某五行”直接等同“一定变顺”。\n' +
+    (timingBrief ? timingBrief + '\n' : '') +
     '质疑专项：用户亲历事件可纠正取象权重；用户的命理意见只是待验证假设。不要因用户坚持而改盘，也不要在被指出错误后继续猜第二套答案。';
 }
 
@@ -2198,4 +2243,4 @@ function generateMockReply(question, chartData, bazi, mode) {
 }
 
 // 仅供本地回归测试读取纯函数，不改变 API handler 行为。
-module.exports._test = { buildChartContext, runReplyValidation, buildExpertAdjudicationInstruction, buildExpertReplyScorecard, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };
+module.exports._test = { buildChartContext, runReplyValidation, buildExpertAdjudicationInstruction, buildExpertReplyScorecard, buildTimingAdjudicationBrief, detectTimingQuestionDomain, buildHepanDaYunFactFallback, buildHepanIdentityFactFallback };
