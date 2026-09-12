@@ -111,7 +111,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 当 chartData 中包含以下预计算字段时，你**必须直接引用**这些结论，不自行重新推算：
 - **pattern**（格局）：name（格局名）、status（成格/破格）、source（取格依据）和 breakReasons（破格原因）是一个不可拆分的冻结裁决。必须逐字采用 pattern.name，禁止按模型自带知识、月令本气或其他流派重新取格。成格时可说"命局为XX格"；破格时必须说"候选XX格，但条件不足，系统标记为破格"，并说明主要原因，不得把破格表述成已成格。若用户追问流派差异，只能把其他名称标成“其他流派可能称为……”，不得替换本站主格。
 - **pattern.mechanism**（格局机制）：财生官/财生杀等十神关系事实标注，仅用于解释格名由来（如"月干七杀+月支财星→财生杀格"）。**这是解释字段，不是裁决字段**：不得因 mechanism 与格名文字不同就推断"格局判定错误"，不得据此改动 pattern/status/strength/用神喜忌。
-- **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用。必须读取 **yongShenSource**，明确它是扶抑用神、格局用神、格局救应用神、调候用神还是顺势用神；secondaryTypes 只表示兼调候、兼格局或兼通关，不得把兼任作用冒充第一取用来源。yongShen/xiShen/jiShen 是兼容旧功能的摘要字段，不是每个五行现实作用的全部结论。另有 **tiaoHouYongShen（调候用神）**、**weaknessCause（身弱病因）**、**strongCause（身强来源）**、对应的 **weaknessSupportingElements/strongSupportingElements（辅助喜神）**、**conditionalAuxiliaryElements（条件辅助）** 和 **functionalTasks（功能用神任务）** 等解释轴。调候用于寒暖燥湿；身弱病因区分食伤泄身、财多耗身、官杀克身、财官压身、失令少根或复合耗泄克；身强来源区分比劫成势、印旺生身、印比并旺、得令多根或复合生扶。辅助喜神须服从第一取用，条件辅助则只有满足 conditionalAuxiliaryReason 的前置条件才可搭配。functionalTasks 只记录某五行在原局承担化杀、制伤护格等任务，必须同时引用 conclusion 与 condition；它不能自行改写 elementRoleLedger 已冻结的 fortuneRole，也不能单凭“原局有功”推断某步岁运吉凶。禁止把所有身弱机械说成“喜印比”，也禁止把所有身强机械说成“喜财官食伤”。
+- **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用。必须读取 **yongShenSource**，明确它是扶抑用神、格局用神、格局救应用神、调候用神还是顺势用神；secondaryTypes 只表示兼调候、兼格局或兼通关，不得把兼任作用冒充第一取用来源。yongShen/xiShen/jiShen 是兼容旧功能的摘要字段，不是每个五行现实作用的全部结论。另有 **climateState（寒暖燥湿终裁）**、**tiaoHouYongShen（调候用神）**、**weaknessCause（身弱病因）**、**strongCause（身强来源）**、对应的 **weaknessSupportingElements/strongSupportingElements（辅助喜神）**、**conditionalAuxiliaryElements（条件辅助）** 和 **functionalTasks（功能用神任务）** 等解释轴。亥子丑或巳午未只构成季节候选，必须服从 climateState.needsWarmth/needsCooling；二者均为 false 时，禁止仅凭月份再说金寒水冷、火炎土燥或要求继续补火补水。调候用于寒暖燥湿；身弱病因区分食伤泄身、财多耗身、正官压身、七杀攻身、官杀混杂压身、财官压身、失令少根或复合耗泄克。正官压身默认取印化官、比劫辅助任官，食伤只能在正官确已过量成病且不破可用官格时称“食伤节官”，禁止称“食神制杀”；七杀攻身中，只有 weaknessCause.foodGodControlsKill=true 才可说食神制杀成立，并且直接制杀的优先级高于比劫抗杀，但日主极弱或食神无力时必须以印化杀为先；官杀混杂时食神最多处理七杀一侧，不能宣称已化解全部官杀。身强来源区分比劫成势、印旺生身、印比并旺、得令多根或复合生扶。辅助喜神须服从第一取用，条件辅助则只有满足 conditionalAuxiliaryReason 的前置条件才可搭配。functionalTasks 只记录某五行在原局承担化杀、制伤护格等任务，必须同时引用 conclusion 与 condition；它不能自行改写 elementRoleLedger 已冻结的 fortuneRole，也不能单凭“原局有功”推断某步岁运吉凶。禁止把所有身弱机械说成“喜印比”，也禁止把所有身强机械说成“喜财官食伤”。
 - **yongJi.elementRoleLedger**（原局五行角色账本）：这是解释每个五行时的优先事实源。fortuneRole/fortuneLevel/fortuneDirection 是从原局裁决出的行运基础方向；currentState、natalRole、functions、risks 说明该五行在原局正在做什么。carrierGuidance 是干支载体裁决：必须区分天干透出、地支本气根、浮透、燥湿及同柱承接，不能把同属一个五行的甲乙与寅卯、戊己与辰戌丑未视为完全等效。用神必须解释为“该五行进入岁运时通常更有利”，不能因为原局已经有力就反说成不宜再遇；但分析某一步具体大运时，还必须结合该步干支、刑冲合害、成局与生克链复核，可以把基础方向升降级。禁止只凭正官、正印等十神名称判吉，也禁止把所有同五行大运写成完全相同。
 - **professionalFacts.fortuneInteraction / 岁运验证字段**：verificationVerdict、verificationScore、verificationSummary 是在原局喜用方向之上，结合具体大运、流年和原局互动得到的本步结果；回答“这步运是否顺”时优先引用这些字段。triggeredRole/triggeredLevel 只是原局基础方向，shiShen 只说明事项落点，均不得越过 verificationVerdict 单独下吉凶结论。
 - **yongJi.evidence 候选对比**（五行候选评分对比）：仅解释"为什么取这个用神、未取哪个候选"，是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
@@ -1834,6 +1834,10 @@ function buildSingleChart(data) {
     ctx += `  用神：${(yj.yongShen || []).join('、') || '—'}\n`;
     ctx += `  喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
     if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) ctx += `  调候用神：${yj.tiaoHouYongShen.join('、')}（寒暖燥湿轴，宜有度）\n`;
+    if (yj.climateState) {
+      const climate = yj.climateState;
+      ctx += `  调候终裁：${climate.condition || '寒暖无明显偏枯'}；${climate.seasonalGate || '无冬夏强制候选'}；火势=${climate.warmthStatus || '未评估'}，水势=${climate.moistureStatus || '未评估'}；需暖=${climate.needsWarmth ? '是' : '否'}，需润=${climate.needsCooling ? '是' : '否'}。月令只开候选，禁止脱离此终裁机械补火补水。\n`;
+    }
     if (yj.weaknessCause) ctx += `  身弱病因：${yj.weaknessCause.title || yj.weaknessCause.type}；${yj.weaknessCause.conclusion || ''}\n`;
     if (yj.strongCause) ctx += `  身强来源：${yj.strongCause.title || yj.strongCause.type}；${yj.strongCause.conclusion || ''}\n`;
     if (yj.functionalTasks && yj.functionalTasks.length) yj.functionalTasks.forEach(task => {
@@ -2280,6 +2284,10 @@ function generateMockReply(question, chartData, bazi, mode) {
       r += `- 用神：${(yj.yongShen || []).join('、') || '—'}\n`;
       r += `- 喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
       if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) r += `- 调候用神：${yj.tiaoHouYongShen.join('、')}（用于寒暖燥湿，宜有度）\n`;
+      if (yj.climateState) {
+        const climate = yj.climateState;
+        r += `- 调候终裁：${climate.condition || '寒暖无明显偏枯'}；火势${climate.warmthStatus || '未评估'}，水势${climate.moistureStatus || '未评估'}；需暖${climate.needsWarmth ? '是' : '否'}，需润${climate.needsCooling ? '是' : '否'}。\n`;
+      }
       if (yj.weaknessCause) r += `- 身弱病因：${yj.weaknessCause.title || yj.weaknessCause.type}；${yj.weaknessCause.conclusion || ''}\n`;
       if (yj.strongCause) r += `- 身强来源：${yj.strongCause.title || yj.strongCause.type}；${yj.strongCause.conclusion || ''}\n`;
       if (yj.functionalTasks && yj.functionalTasks.length) yj.functionalTasks.forEach(task => {

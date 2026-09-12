@@ -70,7 +70,7 @@ test('月令食神未透保留冻结的硬破格依据', () => {
   ));
 });
 
-test('丙火未月水调候不通过候选加分升为正式喜神', () => {
+test('丙火未月水势已经制衡暑燥时不再机械登记调候', () => {
   const calculator = loadCalculator();
   const chart = calculator.buildFromPillars(
     pillars(['甲子', '辛未', '丙寅', '甲子']),
@@ -78,15 +78,71 @@ test('丙火未月水调候不通过候选加分升为正式喜神', () => {
   );
   const result = calculator.getYongJi(chart);
   const water = result.candidateScores.find(row => row.wx === '水');
+  const climate = calculator.getClimateState(chart);
 
-  // v2 合绊后该盘落中和边界 50（SBase=0），基线不再为负；
-  // 核心意图不变：水不得经调候加分升为正式喜神
+  // 两子水已有完整根气，未月只是夏候入口，不能再自动写成“火炎土燥、仍需补水”。
+  assert.equal(climate.summerGate, true);
+  assert.equal(climate.needsCooling, false);
+  assert.equal(climate.moistureStatus, '润局已到位');
   assert.ok(water.SBase <= 0, '该盘水的扶抑基线不为正');
   assert.equal(water.SNeed, water.SBase, '未月丙火的水调候仅作说明，不进入正式候选加分');
   assert.ok(result.jiShen.includes('水'));
   assert.notEqual(result.elementClassification['水'], '喜神');
   assert.notEqual(water.role, '喜神');
-  assert.match(result.primaryReason, /调候辅助/);
+  assert.equal(result.tiaoHouYongShen.includes('水'), false);
+  assert.doesNotMatch(result.primaryReason, /火炎土燥|需水调候|调候辅助/);
+});
+
+test('子月火已成势时只保留冬候入口，不再判寒凝补火', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['丙午', '戊子', '丁巳', '甲午']), 'male');
+  const climate = calculator.getClimateState(chart);
+  const result = calculator.getYongJi(chart);
+
+  assert.equal(climate.winterGate, true);
+  assert.equal(climate.effectiveFire, true);
+  assert.equal(climate.needsWarmth, false);
+  assert.equal(climate.warmthStatus, '暖局已到位');
+  assert.doesNotMatch(result.primaryReason, /冬火微弱|需.*暖局/);
+});
+
+test('午月旺水有根时不因月份自动判火炎土燥', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['壬子', '丙午', '癸亥', '壬子']), 'male');
+  const climate = calculator.getClimateState(chart);
+  const result = calculator.getYongJi(chart);
+
+  assert.equal(climate.summerGate, true);
+  assert.equal(climate.effectiveWater, true);
+  assert.equal(climate.needsCooling, false);
+  assert.equal(climate.moistureStatus, '润局已到位');
+  assert.doesNotMatch(result.primaryReason, /夏火炎炎|火炎土燥|需水调候/);
+});
+
+test('AI 上下文收到调候终裁，不得把季节候选重新说成既成病象', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['壬子', '丙午', '癸亥', '壬子']), 'male');
+  const yongJi = calculator.getYongJi(chart);
+  const context = require('../api/ai-chat.js')._test.buildChartContext({
+    dayMasterStrength: calculator.calcDayMasterStrength(chart),
+    pattern: yongJi.resolvedPattern,
+    yongJi,
+  });
+
+  assert.match(context, /调候终裁：季节偏性已受制衡/);
+  assert.match(context, /需暖=否，需润=否/);
+  assert.match(context, /禁止脱离此终裁机械补火补水/);
+});
+
+test('藏干微水只能算水源，不能冒充润局已经完成', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['辛丑', '乙未', '丙寅', '戊戌']), 'male');
+  const climate = calculator.getClimateState(chart);
+
+  assert.equal(climate.needsCooling, true);
+  assert.equal(climate.waterSeed, true);
+  assert.equal(climate.effectiveWater, false);
+  assert.equal(climate.moistureStatus, '有水源但无力');
 });
 
 test('杂格条件不清显示待定而不伪装成破格或成格', () => {

@@ -81,9 +81,10 @@ test('官杀去留只认明确五合去掉一方', () => {
 test('伤官克官按最终喜用忌拆成制官与见官', () => {
   const control = resolved(['丁未', '乙未', '庚子', '癸酉']);
   const damage = resolved(['己巳', '癸巳', '丙寅', '丁未']);
-  assert.equal(control.name, '伤官制官格');
-  assert.equal(control.status, '成格');
-  assert.match(control.source, /官星为忌，伤官为喜用/);
+  // 子癸水已经有根，未月暑燥受制衡后，不能再靠“未月必润”把官星压成忌神。
+  assert.equal(control.name, '伤官见官格');
+  assert.equal(control.status, '破格');
+  assert.match(control.source, /正官为喜用/);
   assert.equal(damage.name, '建禄格');
   const damageRelation = damage.relatedPatterns.find(row => row.name === '伤官见官格');
   assert.equal(damageRelation.status, '破格');
@@ -124,7 +125,7 @@ test('专业报告和喜用忌共享同一后置格局裁决', () => {
   const bazi = build(['丁未', '乙未', '庚子', '癸酉']);
   const yongJi = E.getYongJi(bazi);
   const facts = E.getProfessionalReportFacts(bazi, 'male');
-  assert.equal(yongJi.patternStatus.name, '伤官制官格');
-  assert.equal(facts.pattern.name, '伤官制官格');
+  assert.equal(yongJi.patternStatus.name, '伤官见官格');
+  assert.equal(facts.pattern.name, '伤官见官格');
   assert.equal(facts.pattern.basePattern, yongJi.resolvedPattern.basePattern);
 });

@@ -66,19 +66,22 @@ test('得令多根与复合生扶保留多候选，由综合评分决定核心�
   }
 });
 
-test('亥月强金的调候硬边界会同步改写身强成因主结论', () => {
+test('亥月强金已有有效火根时不再由月份强行改写核心用神', () => {
   const calculator = loadCalculator();
   const gz = ['己巳', '辛亥', '辛未', '己酉'];
-  const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+  const chart = calculator.buildFromPillars(pillars(gz), 'male');
+  const result = calculator.getYongJi(chart);
+  const climate = calculator.getClimateState(chart);
 
   assert.equal(result.dayMasterLevel, '偏强');
-  assert.deepEqual(Array.from(result.yongShen), ['火']);
+  assert.equal(climate.needsWarmth, false);
+  assert.equal(climate.warmthStatus, '暖局已到位');
+  assert.deepEqual(Array.from(result.yongShen), ['木']);
   assert.equal(result.strongCause.type, '印旺生身');
-  assert.equal(result.strongCause.primaryElement, '火');
-  assert.equal(result.strongCause.diseaseRemedyElement, '木');
-  assert.ok(result.strongSupportingElements.includes('木'));
-  assert.match(result.strongCause.selectionOverride, /亥月强金.*调候硬边界.*最终以火为核心用神/);
-  assert.match(result.primaryReason, /核心用神为火/);
+  assert.equal(result.strongCause.primaryElement, '木');
+  assert.equal(result.strongCause.selectionOverride, undefined);
+  assert.match(result.primaryReason, /核心用神为木/);
+  assert.doesNotMatch(result.primaryReason, /金寒水冷|非火不暖/);
 });
 
 test('AI 上下文传递身强来源和对应的条件辅助，不重新套模板', () => {

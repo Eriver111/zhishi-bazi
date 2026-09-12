@@ -65,7 +65,7 @@ test('财官并重与官杀主导的身弱分别按病因取用', () => {
   const calculator = loadCalculator();
   const cases = [
     { gz: ['己酉', '辛未', '癸巳', '丁巳'], cause: '财官压身', primary: '水', remedy: '金', supporting: '金' },
-    { gz: ['庚申', '己丑', '癸卯', '丁巳'], cause: '官杀克身', primary: '金', supporting: '水' },
+    { gz: ['庚申', '己丑', '癸卯', '丁巳'], cause: '七杀攻身', primary: '金', supporting: '水' },
   ];
 
   for (const item of cases) {
@@ -90,6 +90,72 @@ test('财官并重与官杀主导的身弱分别按病因取用', () => {
     }
     assert.ok(result.evidence.some(row => row.category === '取用病因'), item.gz.join(' '));
   }
+});
+
+test('官杀主导身弱拆分正官、七杀与官杀混杂，不再共用同一病因标签', () => {
+  const calculator = loadCalculator();
+  const cases = [
+    { gz: ['丁亥', '戊寅', '己未', '癸卯'], cause: '正官压身', subtype: 'proper_officer' },
+    { gz: ['庚申', '己丑', '癸卯', '丁巳'], cause: '七杀攻身', subtype: 'seven_killings' },
+    { gz: ['辛酉', '庚申', '甲寅', '辛未'], cause: '官杀混杂压身', subtype: 'mixed' },
+  ];
+
+  for (const item of cases) {
+    const result = calculator.getYongJi(calculator.buildFromPillars(pillars(item.gz), 'male'));
+    assert.ok(['偏弱', '极弱'].includes(result.dayMasterLevel), item.gz.join(' '));
+    assert.equal(result.weaknessCause.type, item.cause, item.gz.join(' '));
+    assert.equal(result.weaknessCause.officerSubtype, item.subtype, item.gz.join(' '));
+    assert.ok(result.weaknessCause.zhengGuanPressure >= 0, item.gz.join(' '));
+    assert.ok(result.weaknessCause.qiShaPressure >= 0, item.gz.join(' '));
+  }
+});
+
+test('七杀旺身偏弱且食神有力可承载时，食神制杀优先于比劫抗杀', () => {
+  const calculator = loadCalculator();
+  const gz = ['甲申', '壬辰', '壬寅', '壬寅'];
+  const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+  const cause = result.weaknessCause;
+  const byWx = Object.fromEntries(result.candidateScores.map(item => [item.wx, item]));
+
+  assert.equal(result.dayMasterLevel, '偏弱');
+  assert.equal(cause.type, '七杀攻身');
+  assert.equal(cause.foodGodEffective, true);
+  assert.equal(cause.canCarryFoodGodControl, true);
+  assert.equal(cause.foodGodControlsKill, true);
+  assert.ok(result.weaknessSupportingElements.includes(cause.outputElement));
+  assert.ok(result.weaknessSupportingElements.includes(cause.peerElement));
+  assert.ok(byWx[cause.outputElement].L2 > byWx[cause.peerElement].L2);
+  assert.ok(byWx[cause.outputElement].SNeed > byWx[cause.peerElement].SNeed, '食神制杀成立后，最终优先级也应高于比劫抗杀');
+  assert.equal(byWx[cause.outputElement].role, '喜神');
+  assert.match(cause.conclusion, /食神制杀条件成立.*优先级高于.*比劫抗杀/);
+});
+
+test('七杀旺而日主极弱时禁开食神制杀，食神只作条件辅助', () => {
+  const calculator = loadCalculator();
+  const gz = ['辛酉', '庚申', '甲寅', '辛未'];
+  const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+  const cause = result.weaknessCause;
+
+  assert.equal(result.dayMasterLevel, '极弱');
+  assert.equal(cause.type, '官杀混杂压身');
+  assert.equal(cause.canCarryFoodGodControl, false);
+  assert.equal(cause.foodGodControlsKill, false);
+  assert.ok(result.conditionalAuxiliaryElements.includes(cause.outputElement));
+  assert.match(result.conditionalAuxiliaryReason, /日主能承载继续泄身/);
+});
+
+test('纯正官旺身弱不误称食神制杀，也不把食伤默认抬成条件喜神', () => {
+  const calculator = loadCalculator();
+  const gz = ['丁亥', '戊寅', '己未', '癸卯'];
+  const result = calculator.getYongJi(calculator.buildFromPillars(pillars(gz), 'male'));
+  const cause = result.weaknessCause;
+
+  assert.equal(cause.type, '正官压身');
+  assert.equal(cause.officerSubtype, 'proper_officer');
+  assert.equal(cause.foodGodControlsKill, false);
+  assert.ok(!result.conditionalAuxiliaryElements.includes(cause.outputElement));
+  assert.match(cause.exceptionalReason, /食伤节官.*不直接把食伤抬成喜神/);
+  assert.doesNotMatch(cause.conclusion, /食神制杀条件成立/);
 });
 
 test('财多耗身优先比劫分财，印星只作有条件辅助', () => {

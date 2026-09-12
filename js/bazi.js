@@ -2634,6 +2634,77 @@ function getColdWetEarthWoodState(bazi) {
   };
 }
 
+// 调候不能把月令直接当成结论。亥子丑、巳午未只负责提供季节底色，
+// 最终是否寒凝/炎燥，还要核对全局火水的透藏、根气、燥湿土及受冲合后的有效性。
+// 此状态是旺衰、喜用忌和展示文案的唯一寒暖燥湿事实源，避免各层各自按月份硬判。
+function getClimateState(bazi) {
+  var positions = ['year','month','day','hour'];
+  var mz = bazi.month.zhi;
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var stemCount = { '木':0, '火':0, '土':0, '金':0, '水':0 };
+  var branchCount = { '木':0, '火':0, '土':0, '金':0, '水':0 };
+  positions.forEach(function(pos) {
+    stemCount[WU_XING[bazi[pos].gan]]++;
+    branchCount[DI_ZHI_WU_XING[bazi[pos].zhi]]++;
+  });
+
+  var rootPower = {};
+  ['木','火','土','金','水'].forEach(function(wx) {
+    rootPower[wx] = settlement.elementRootPower(wx);
+  });
+  var wetEarthCount = positions.filter(function(pos) {
+    return bazi[pos].zhi === '辰' || bazi[pos].zhi === '丑';
+  }).length;
+  var dryEarthCount = positions.filter(function(pos) {
+    return bazi[pos].zhi === '未' || bazi[pos].zhi === '戌';
+  }).length;
+
+  // 透干只是火种/水源；至少得根，或同类表层与根气共同成势，才算有效调候。
+  var fireSeed = stemCount['火'] > 0 || branchCount['火'] > 0 || rootPower['火'] > 0;
+  var waterSeed = stemCount['水'] > 0 || branchCount['水'] > 0 || rootPower['水'] > 0;
+  var effectiveFire = (stemCount['火'] > 0 && rootPower['火'] >= 0.75) ||
+    branchCount['火'] >= 2 || rootPower['火'] >= 2;
+  var effectiveWater = (stemCount['水'] > 0 && rootPower['水'] >= 0.75) ||
+    branchCount['水'] >= 2 || rootPower['水'] >= 2;
+
+  var coldSeason = ({ '亥':4, '子':5, '丑':4, '辰':1 })[mz] || 0;
+  var hotSeason = ({ '巳':4, '午':5, '未':3, '戌':1 })[mz] || 0;
+  var waterForce = stemCount['水'] * 1.25 + rootPower['水'] + branchCount['水'] * 0.5;
+  var fireForce = stemCount['火'] * 1.25 + rootPower['火'] + branchCount['火'] * 0.5;
+  var woodFuel = fireSeed ? Math.min(2, rootPower['木'] * 0.35 + stemCount['木'] * 0.35) : 0;
+  var metalWaterSource = waterSeed ? Math.min(1.5, rootPower['金'] * 0.25 + stemCount['金'] * 0.25) : 0;
+  var warmthForce = fireForce + woodFuel + dryEarthCount * 0.35;
+  var coolingForce = waterForce + metalWaterSource + wetEarthCount * 0.35;
+  var coldIndex = Number((coldSeason + Math.max(0, waterForce - 2) * 0.55 + wetEarthCount * 0.4 - warmthForce * 0.85).toFixed(2));
+  var heatIndex = Number((hotSeason + Math.max(0, fireForce - 2) * 0.55 + dryEarthCount * 0.4 - coolingForce * 0.85).toFixed(2));
+
+  var winterGate = ['亥','子','丑'].indexOf(mz) >= 0;
+  var summerGate = ['巳','午','未'].indexOf(mz) >= 0;
+  var needsWarmth = (winterGate || mz === '辰') && coldIndex >= 2.5;
+  var needsCooling = (summerGate || mz === '戌') && heatIndex >= 2.5;
+  var coldSeverity = !needsWarmth ? '' : (coldIndex >= 6.5 ? '重' : (coldIndex >= 4.5 ? '中' : '轻'));
+  var heatSeverity = !needsCooling ? '' : (heatIndex >= 6.5 ? '重' : (heatIndex >= 4.5 ? '中' : '轻'));
+  var warmthStatus = !fireSeed ? '缺火' : (!effectiveFire ? '有火种但无力' : (coldIndex < 3 ? '暖局已到位' : '有火但暖局未足'));
+  var moistureStatus = !waterSeed ? '缺水' : (!effectiveWater ? '有水源但无力' : (heatIndex < 3 ? '润局已到位' : '有水但润局未足'));
+  var condition = needsWarmth ? '寒凝' : (needsCooling ? '炎燥' : (winterGate || summerGate ? '季节偏性已受制衡' : '寒暖无明显偏枯'));
+
+  return {
+    monthBranch:mz,
+    seasonalGate:winterGate ? '冬候' : (summerGate ? '夏候' : ''),
+    winterGate:winterGate, summerGate:summerGate,
+    coldIndex:coldIndex, heatIndex:heatIndex,
+    needsWarmth:needsWarmth, needsCooling:needsCooling,
+    coldSeverity:coldSeverity, heatSeverity:heatSeverity,
+    fireSeed:fireSeed, waterSeed:waterSeed,
+    effectiveFire:effectiveFire, effectiveWater:effectiveWater,
+    warmthStatus:warmthStatus, moistureStatus:moistureStatus,
+    fireForce:Number(fireForce.toFixed(2)), waterForce:Number(waterForce.toFixed(2)),
+    warmthForce:Number(warmthForce.toFixed(2)), coolingForce:Number(coolingForce.toFixed(2)),
+    wetEarthCount:wetEarthCount, dryEarthCount:dryEarthCount,
+    rootPower:rootPower, condition:condition
+  };
+}
+
 function calcDayMasterStrength(bazi, options) {
   var dg = bazi.day.gan;
   var dgWx = WU_XING[dg];
@@ -3022,8 +3093,8 @@ function calcDayMasterStrength(bazi, options) {
   var mZhi = bazi.month.zhi;
   var allGan = [bazi.year.gan, bazi.month.gan, bazi.day.gan, bazi.hour.gan];
   var allZhi = [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi];
-  var isSummer = ['巳','午','未'].indexOf(mZhi) >= 0;  // 夏季火旺
-  var isWinter = ['亥','子','丑'].indexOf(mZhi) >= 0;  // 冬季水旺
+  var isSummer = ['巳','午','未'].indexOf(mZhi) >= 0;  // 夏季候选
+  var isWinter = ['亥','子','丑'].indexOf(mZhi) >= 0;  // 冬季候选
   var isSpring = ['寅','卯','辰'].indexOf(mZhi) >= 0;  // 春季木旺
   var isAutumn = ['申','酉','戌'].indexOf(mZhi) >= 0;  // 秋季金旺
 
@@ -3043,15 +3114,17 @@ function calcDayMasterStrength(bazi, options) {
     return false;
   }
 
-  // 夏季火炎土燥，需水调候润局
+  var climateState = getClimateState(bazi);
+  // 这里仅保留既有旺衰体系的季节基准校准，不能据此直接生成“炎燥”结论。
+  // 是否真的需要继续用水，由 climateState.needsCooling 在喜用与展示层另行裁决。
   if (isSummer && dgWx !== '水') {
-    if (hasWx('水')) score += 5;       // 有水润燥——水火既济，温度得宜
-    else score -= 8;                     // 无水润局——火炎土燥，偏枯
+    if (climateState.waterSeed) score += 5;
+    else score -= 8;
   }
-  // 冬季水冷金寒，需火调候暖局
+  // 同理，冬令的基础校准不等于“金寒水冷”；实际寒凝仍须通过全局阈值。
   if (isWinter && dgWx !== '火') {
-    if (hasWx('火')) {
-      score += 5;                       // 有火暖局——寒谷回春，生机勃发
+    if (climateState.fireSeed) {
+      score += 5;
       // 土日主在丑月：冻土虽旺而无用，火暖则土活
       if (dgWx === '土' && mZhi === '丑') score += 5;
     } else {
@@ -3079,7 +3152,10 @@ function calcDayMasterStrength(bazi, options) {
     }
   }
 
-  _auditMark('climate', '调候·寒暖燥湿', { season:isSummer ? '夏' : (isWinter ? '冬' : (isSpring ? '春' : '秋')) });
+  _auditMark('climate', '调候·寒暖燥湿', {
+    season:isSummer ? '夏' : (isWinter ? '冬' : (isSpring ? '春' : '秋')),
+    climateState:climateState
+  });
 
   // ---------- ⑦ 天干合化修正 ----------
   // 五合：甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火
@@ -6909,7 +6985,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       stemCondition = map.stems.join('、') + '若只浮透而无本气根，帮身能力有限，并可能继续生扶原局食伤';
       branchCondition = map.branches.join('、') + '本气根优先，能把比劫之助落实为日主承载';
     }
-    if (favorable && relation === '印星' && isWeakForCarrier && ['食伤泄身','官杀克身','财官压身'].indexOf(causeTypeForCarrier) >= 0) {
+    if (favorable && relation === '印星' && isWeakForCarrier && ['食伤泄身','官杀克身','正官压身','七杀攻身','官杀混杂压身','财官压身'].indexOf(causeTypeForCarrier) >= 0) {
       requiresRoot = true;
       var task = causeTypeForCarrier === '食伤泄身' ? '制食伤并生身' : '接通官杀—印—身的化杀通路';
       summary = '宜' + map.stems.join('、') + '透而有根，用来' + task;
@@ -7508,6 +7584,9 @@ function finalizeYongJiResult(bazi, base, context) {
     jiShen: lists.jiShen,
     tiaoHouYongShen: tiaoHouYongShen,
     tiaoHouReason: context.tiaoHouNote || '',
+    climateState: context.candidateScores && context.candidateScores.climateState
+      ? context.candidateScores.climateState
+      : getClimateState(bazi),
     dualRoleElements: dualRoleElements,
     functionalTasks: functionalTasks,
     functionalTaskElements: functionalTaskElements,
@@ -7706,6 +7785,49 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var officerPressure = pressureOf(KE_WO);
   var peerPressure = pressureOf(TONG);
   var sealPressure = pressureOf(SHENG_WO);
+  // 官、杀同属一个五行，但在病因与救应上不能合并处理。这里以统一证据结算层
+  // 的透干和有效藏干拆分十神压力，仅用于判定“正官/七杀/混杂”以及制杀门槛；
+  // 五行总压力仍沿用 pressureOf，避免另起一套旺衰分数造成重复计量。
+  var tenGodEvidence = {};
+  var addTenGodEvidence = function(tenGod, amount, source) {
+    if (!tenGodEvidence[tenGod]) tenGodEvidence[tenGod] = { pressure:0, visible:0, root:0, monthMain:false };
+    tenGodEvidence[tenGod].pressure += amount;
+    if (source === 'visible') tenGodEvidence[tenGod].visible += amount;
+    else tenGodEvidence[tenGod].root += amount;
+  };
+  ['year','month','hour'].forEach(function(pos) {
+    addTenGodEvidence(getShiShen(bazi.day.gan, bazi[pos].gan), 1, 'visible');
+  });
+  ['year','month','day','hour'].forEach(function(pos) {
+    evidenceSettlement.rootAt(pos).forEach(function(root) {
+      var tenGod = getShiShen(bazi.day.gan, root.gan);
+      addTenGodEvidence(tenGod, (root.basePower / 2) * root.effectiveCoefficient, 'root');
+      if (pos === 'month' && root.depth === '本气') tenGodEvidence[tenGod].monthMain = true;
+    });
+  });
+  var exactTenGodPressure = function(name) {
+    var item = tenGodEvidence[name] || { pressure:0, monthMain:false };
+    return item.pressure + (item.monthMain ? 1.5 : 0);
+  };
+  var zhengGuanPressure = exactTenGodPressure('正官');
+  var qiShaPressure = exactTenGodPressure('七杀');
+  var foodGodPressure = exactTenGodPressure('食神');
+  var hurtingOfficerPressure = exactTenGodPressure('伤官');
+  var meaningfulOfficer = function(name) {
+    var item = tenGodEvidence[name] || { pressure:0, visible:0, root:0, monthMain:false };
+    return exactTenGodPressure(name) >= 1.5 && (item.visible > 0 || item.monthMain || item.root >= 1);
+  };
+  var officerSubtype = meaningfulOfficer('正官') && meaningfulOfficer('七杀')
+    ? 'mixed'
+    : (qiShaPressure > zhengGuanPressure ? 'seven_killings' : 'proper_officer');
+  var dayMasterRootPower = evidenceSettlement.elementRootPower(TONG);
+  var foodGodEvidence = tenGodEvidence['食神'] || { visible:0, root:0, monthMain:false };
+  var foodGodEffective = foodGodPressure >= 1.5
+    && (foodGodEvidence.visible > 0 || foodGodEvidence.monthMain || foodGodEvidence.root >= 1);
+  // 食神制杀会继续泄日主：极弱一律不启用；偏弱也必须有完整根或足量印比承载。
+  var canCarryFoodGodControl = dmStr.level === '偏弱'
+    && (dayMasterRootPower >= 1 || peerPressure >= 1.5 || sealPressure >= 1.5);
+  var foodGodControlsKill = officerSubtype !== 'proper_officer' && foodGodEffective && canCarryFoodGodControl;
   // “中和”即使分差略偏负也不应套用身弱病因；只有旺衰层明确落入偏弱/极弱才分型。
   var isWeakLevel = dmStr.level === '偏弱' || dmStr.level === '极弱';
   var thickEarthMetalState = getThickEarthMetalState(bazi);
@@ -7791,13 +7913,47 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       conclusion:WO_KE + '财星为主要耗身来源；单就病因层通常先取' + TONG + '比劫帮身分财，' + SHENG_WO + '印星在有根、受护且不被旺财破坏时辅助。'
     };
   } else if (officerDominant) {
-    weaknessCause = {
-      type:'官杀克身', title:'官杀克身型身弱', primaryElement:SHENG_WO,
-      primaryAction:'印星承接官杀并转化为生身之力，是官杀克身的第一取用',
-      supportingElements:[TONG],
-      supportingReason:'比劫可辅助增强日主承载，但不能替代印星化杀的主线', conditionalElements:[], conditionalReason:'',
-      conclusion:KE_WO + '官杀为主要克身来源；单就病因层通常先取' + SHENG_WO + '印星化杀生身，' + TONG + '比劫辅助承载。食伤制杀只能在自身有根有力且不会继续泄弱日主时另行成立。'
-    };
+    if (officerSubtype === 'seven_killings') {
+      weaknessCause = {
+        type:'七杀攻身', title:'七杀攻身型身弱', primaryElement:SHENG_WO,
+        primaryAction:'印星承接七杀并转化为生身之力，是身弱化杀的稳妥主线',
+        supportingElements:foodGodControlsKill ? [WO_SHENG,TONG] : [TONG],
+        supportingReason:foodGodControlsKill
+          ? WO_SHENG + '食神有根有力且日主尚能承载，能够直接制约七杀，优先级高于只增强承压能力的' + TONG + '比劫；印、食神是两条制化路线，不作机械叠加。'
+          : TONG + '比劫可辅助增强承载，但不能替代印星化杀；本局食神制杀未同时通过“食神有力、日主能泄”两道门槛。',
+        conditionalElements:foodGodControlsKill ? [] : [WO_SHENG],
+        conditionalReason:foodGodControlsKill ? '' : WO_SHENG + '食神只有自身有根有力、且日主不属极弱并有根或印比承载时，才可制杀；否则继续泄身，不能列为普通喜神。',
+        conclusion:KE_WO + '七杀是主要克身来源；通常先取' + SHENG_WO + '印星化杀生身。'
+          + (foodGodControlsKill
+            ? WO_SHENG + '食神制杀条件成立，属于直接治杀，其救应优先级高于' + TONG + '比劫抗杀；'
+            : WO_SHENG + '食神制杀条件未完整成立，暂降为条件辅助；')
+          + TONG + '比劫只负责辅助承载，不作为第一治杀手段。'
+      };
+    } else if (officerSubtype === 'mixed') {
+      weaknessCause = {
+        type:'官杀混杂压身', title:'官杀混杂压身型身弱', primaryElement:SHENG_WO,
+        primaryAction:'印星统一承接官杀压力并转而生身，是混杂局较稳定的通关主线',
+        supportingElements:foodGodControlsKill ? [WO_SHENG,TONG] : [TONG],
+        supportingReason:foodGodControlsKill
+          ? WO_SHENG + '食神可直接制约其中七杀一侧，优先于' + TONG + '比劫硬抗，但不能据此宣称正官压力也已全部解除。'
+          : TONG + '比劫只作承载辅助；食神尚未同时满足有力与可泄条件，不能贸然用于制杀。',
+        conditionalElements:foodGodControlsKill ? [] : [WO_SHENG],
+        conditionalReason:foodGodControlsKill ? '' : WO_SHENG + '食神仅在有根有力且日主能承载继续泄身时，才可处理混杂中的七杀；它不能代替印星统一通关。',
+        conclusion:'正官与七杀均形成有效压力，先取' + SHENG_WO + '印星通关。'
+          + (foodGodControlsKill ? WO_SHENG + '食神可制七杀，但只解决七杀一侧；' : WO_SHENG + '食神暂不具备稳定制杀条件；')
+          + TONG + '比劫辅助承载，不能用“硬抗”替代制化。'
+      };
+    } else {
+      weaknessCause = {
+        type:'正官压身', title:'正官压身型身弱', primaryElement:SHENG_WO,
+        primaryAction:'印星承接正官并转化为生身之力，是正官旺而身弱的第一取用',
+        supportingElements:[TONG],
+        supportingReason:'比劫可辅助增强日主任官能力，但须防比劫争夺与结构副作用',
+        conditionalElements:[], conditionalReason:'',
+        exceptionalReason:WO_SHENG + '食伤只有在正官已经过量成病、食伤有力且不会继续泄坏日主时，才可另案考虑食伤节官；该例外不直接把食伤抬成喜神，不得称为“食神制杀”，也不可破坏可用的正官格。',
+        conclusion:KE_WO + '正官是主要克身来源，先取' + SHENG_WO + '印星化官生身，以' + TONG + '比劫辅助任官。食伤不是默认药神；只有正官过量成病且满足承载条件时才能称“食伤节官”，不能称“食神制杀”。'
+      };
+    }
   } else if (isWeakLevel
     && [outputPressure, wealthPressure, officerPressure].filter(function(value) { return value >= 2.5; }).length < 2
     && countMap[TONG] < 1.5 && countMap[SHENG_WO] < 1.5) {
@@ -7925,7 +8081,30 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       addL2(TONG, -65, '厚土未疏前再加金仍可能被埋，并会克制疏土之木，降为条件辅助');
       addL2(KE_WO, -20, '官杀火会继续生土，使厚土埋金加重');
     }
-    if (chengShi(KE_WO))    { addL2(SHENG_WO, 12, '官杀成势，印星化杀生身'); addL2(TONG, 4, '官杀成势，比劫帮身抗杀'); }
+    if (officerDominant && !wealthOfficerCompound) {
+      if (officerSubtype === 'seven_killings') {
+        addL2(SHENG_WO, 12, '七杀成势，印星化杀生身');
+        // L1 在身弱侧天然压低食伤、抬高比劫。既然已经通过“食神有力 + 日主能泄”
+        // 两道门槛，就必须让直接制杀在最终候选分中也高于单纯比劫抗杀，不能只在文案里优先。
+        // 55 与比劫 3 的差值跨过 L1 两侧固定的 50 分差，同时仍低于印星化杀主线。
+        if (foodGodControlsKill) addL2(WO_SHENG, 55, '食神有力且日主能承载，直接制杀，优先于比劫抗杀');
+        else addL2(WO_SHENG, -4, '七杀成势但食神制杀门槛未通过，防继续泄弱日主');
+        addL2(TONG, 3, '七杀成势，比劫只作辅助承载');
+      } else if (officerSubtype === 'mixed') {
+        addL2(SHENG_WO, 14, '官杀混杂，印星统一承接通关');
+        if (foodGodControlsKill) addL2(WO_SHENG, 55, '食神有力，可制混杂中的七杀一侧，直接治杀优先于比劫抗杀');
+        else addL2(WO_SHENG, -4, '官杀混杂且日主承载不足，食神不可贸然泄身制杀');
+        addL2(TONG, 3, '官杀混杂，比劫只作辅助承载');
+      } else {
+        addL2(SHENG_WO, 12, '正官成势，印星化官生身');
+        addL2(TONG, 4, '正官成势，比劫辅助任官');
+      }
+    } else if (chengShi(KE_WO)) {
+      // 官杀虽成势但病因被财官长链等复合结构接管时，保留原有通用扶身分，
+      // 不把单一官杀分型的奖惩重复叠加到复合病因上。
+      addL2(SHENG_WO, 12, '官杀成势，印星化杀生身');
+      addL2(TONG, 4, '官杀成势，比劫帮身抗杀');
+    }
     if (chengShi(WO_KE))    { addL2(TONG, 10, '财多成势，比劫帮身分财'); addL2(SHENG_WO, 6, '财多成势，印星生身'); }
     if (chengShi(WO_SHENG)) { addL2(SHENG_WO, 12, '食伤成势，印星制食伤生身'); }
     if (outputDrainDominant) {
@@ -8029,37 +8208,38 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   };
   var dmRuo = dmStr.level.indexOf('弱') >= 0;
   var dmQiang = dmStr.level.indexOf('强') >= 0;
+  var climateState = getClimateState(bazi);
   if (waterloggedWoodDominant) {
     // 火在这里是明确的寒湿调候任务，即使日主因水漂落在身弱侧，也不能被普通“身弱忌泄”门控抹掉。
     // 核心病药分已经在 L2 结算，L4 只登记兼任来源，不再重复加分。
     addTiaoHouYongShen('火');
     tiaoHouNote = '旺水寒湿而木失其载，火承担暖局、化湿与疏导印水的调候任务；但火须有根或先得燥土护持，不能把无根虚火当成已经完成制化。';
   }
-  if (dmWx === '土' && mz === '丑' && dmRuo) {
+  if (dmWx === '土' && mz === '丑' && dmRuo && climateState.needsWarmth) {
     addL4('火', 8, '冬土冻土，火暖局');
     tiaoHouNote = hasWxGlobal('火')
       ? '原局有火暖局，寒谷回春，调候已得。'
       : '冬土生于丑月，天寒地冻，无火则土不发育。火为调候第一要义，虽生扶日主，但暖局之功远大于生土之弊。';
   }
-  if (dmWx === '土' && mz === '丑' && dmQiang) {
+  if (dmWx === '土' && mz === '丑' && dmQiang && climateState.needsWarmth) {
     // 强土仍可能寒湿冻结：火印只登记调候任务，不给扶抑候选加分，避免把“原局需暖”误成“继续生身”。
     addTiaoHouYongShen('火');
     tiaoHouNote = '丑月寒湿冻土，火印承担暖局调候；但日主已强，火在扶抑上不宜增多，只可有度使用，不作纯忌。';
   }
-  if (dmWx === '火' && ['亥','子','丑'].indexOf(mz) >= 0 && dmRuo) {
+  if (dmWx === '火' && climateState.needsWarmth && dmRuo) {
     addL4('火', 8, '冬火微弱，火暖局扶身');
     addL4('木', 6, '冬火微弱，木生火暖局');
     tiaoHouNote = '冬火微弱，需木来生火、火来扶身，双重暖局。"火生冬月，无木不焚；烛微光弱，薪尽则灭。"';
   }
-  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0 && dmQiang) {
+  if (dmWx === '水' && ['亥','子'].indexOf(mz) >= 0 && climateState.needsWarmth && dmQiang) {
     addL4('火', 6, '冬水寒凝，火暖局');
     tiaoHouNote = '冬水寒凝，需火暖局方能流通。火为调候要义。';
   }
-  if (dmWx === '火' && ['巳','午'].indexOf(mz) >= 0 && dmQiang) {
+  if (dmWx === '火' && ['巳','午'].indexOf(mz) >= 0 && climateState.needsCooling && dmQiang) {
     addL4('水', 8, '夏火炎炎，水润局');
     tiaoHouNote = '夏火炎炎，需水润局。水虽克火为官杀，但调候之功大于克身之弊。';
   }
-  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0) {
+  if (dmWx === '木' && ['亥','子','丑'].indexOf(mz) >= 0 && climateState.needsWarmth) {
     // 弱木所见之火属于调候轴，不用 L4 强行翻转扶抑喜忌；强木才把火计入普通候选加分。
     addTiaoHouYongShen('火');
     if (dmQiang) addL4('火', 6, '冬木寒湿，火暖局');
@@ -8071,38 +8251,38 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     addL4('火', 6, '秋金当令过旺，火炼金成器');
     tiaoHouNote = '秋金当令，金气过旺，需火锻炼方能成器。"金无火炼，顽金不器。"';
   }
-  if (dmWx === '水' && mz === '辰' && dmQiang) {
+  if (dmWx === '水' && mz === '辰' && climateState.needsWarmth && dmQiang) {
     // 辰月：火=财（克泄耗侧）→ 身强才加
     addL4('火', 6, '辰月湿土，火暖局');
     tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
   }
-  if ((dmWx === '土' || dmWx === '火') && mz === '辰' && dmRuo) {
+  if ((dmWx === '土' || dmWx === '火') && mz === '辰' && climateState.needsWarmth && dmRuo) {
     // 辰月：火=印/比劫（印比侧）→ 身弱才加
     addL4('火', 6, '辰月湿土，火暖局');
     tiaoHouNote = '辰月湿土当令，阴寒气重，需火暖局方能发育。"辰为水库，无火则湿气不化。"';
   }
-  if ((dmWx === '火' || dmWx === '土') && mz === '戌' && dmQiang) {
+  if ((dmWx === '火' || dmWx === '土') && mz === '戌' && climateState.needsCooling && dmQiang) {
     addL4('水', 6, '戌月燥土，水润局');
     tiaoHouNote = '戌月燥土，火炎土燥，需水润局方能流通。水为调候第一要义。';
   }
-  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0 && dmQiang) {
+  if ((dmWx === '火' || dmWx === '土') && ['巳','午'].indexOf(mz) >= 0 && climateState.needsCooling && dmQiang) {
     addL4('水', 6, '巳午月火炎土燥，水润局');
     tiaoHouNote = '巳午月火炎土燥，需水调候润局。水为调候第一要义。';
   }
-  if ((dmWx === '火' || dmWx === '土') && mz === '未') {
+  if ((dmWx === '火' || dmWx === '土') && mz === '未' && climateState.needsCooling) {
     // 火日主本无加分（水官杀不抬升），说明无条件保留；土日主水财仅在身强时加（克泄耗侧对齐）。
     if (dmWx !== '火' && dmQiang) addL4('水', 6, '未月火土燥烈，水润局');
     addTiaoHouYongShen('水');
     tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
   }
-  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0 && dmQiang) {
+  if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0 && climateState.needsWarmth && dmQiang) {
     addL4('火', 6, '冬金寒冻，火暖局');
     tiaoHouNote = '金生冬月，水冷金寒，非火不暖。"金寒水冷，无火则金不锐。"';
   }
   // 金生未月即使因水/湿土与完整申酉根而恢复承载，季令仍属火土燥烈。
   // “得润可生金”只修正旺衰，不能反过来把增燥的火判为喜；水继续承担润燥调候。
   var restoredDryEarthMetal = getDryEarthMetalState(bazi);
-  if (dmWx === '金' && mz === '未' && restoredDryEarthMetal.supportRestored) {
+  if (dmWx === '金' && mz === '未' && restoredDryEarthMetal.supportRestored && climateState.needsCooling) {
     if (L4['水'] < 8) {
       L4['水'] = 8;
       l4Details.push({ wx:'水', val:8, note:'未月燥土虽得润，仍以水续润调候' });
@@ -8124,7 +8304,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
 
   // —— 根气质量（F7：不参与主评分，仅并列 tiebreak 与质量报告）——
   var rootQ = evaluateYongShenQuality(bazi, { yongShen: WX.slice(), xiShen: [] });
-  if (dmWx === '土' && mz === '丑' && hasWxGlobal('火')) {
+  if (dmWx === '土' && mz === '丑' && climateState.needsWarmth && hasWxGlobal('火')) {
     var fireRootNote = rootQ['火'] && rootQ['火'].score >= 3
       ? '原局火有根，暖局条件已有基础。'
       : '原局虽见火，但根气有限，暖局作用仍需结合根气与受制情况。';
@@ -8200,6 +8380,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     l4Details: l4Details,
     tiaoHouNote: tiaoHouNote,
     tiaoHouYongShen: tiaoHouYongShen,
+    climateState: climateState,
     coldWetEarthWoodState: coldWetEarthWoodState,
     weaknessCause: weaknessCause ? Object.assign(weaknessCause, {
       outputElement: WO_SHENG,
@@ -8209,7 +8390,15 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       peerElement: TONG,
       outputPressure: outputPressure,
       wealthPressure: wealthPressure,
-      officerPressure: officerPressure
+      officerPressure: officerPressure,
+      zhengGuanPressure: zhengGuanPressure,
+      qiShaPressure: qiShaPressure,
+      officerSubtype: officerSubtype,
+      foodGodPressure: foodGodPressure,
+      hurtingOfficerPressure: hurtingOfficerPressure,
+      foodGodEffective: foodGodEffective,
+      canCarryFoodGodControl: canCarryFoodGodControl,
+      foodGodControlsKill: foodGodControlsKill
     }) : null,
     strongCause: strongCause ? Object.assign(strongCause, {
       peerElement: TONG,
@@ -8315,7 +8504,8 @@ function getYongJi(bazi) {
 
     // 调候说明不覆盖扶抑喜忌；仅核准的核心用神硬边界可以接管候选赢家。
     // 偏强/强旺庚金生亥月：冬金非火不暖，火优先成为核心调候用神。
-    var forceWinterMetalFireYong = dmWx === '金' && bazi.month.zhi === '亥' && dmLevel.indexOf('强') >= 0;
+    var forceWinterMetalFireYong = dmWx === '金' && bazi.month.zhi === '亥' && dmLevel.indexOf('强') >= 0 &&
+      cs.climateState && cs.climateState.needsWarmth;
     if (forceWinterMetalFireYong) {
       cs.yongWx = '火';
       cs.tiebreak.winner = '火';
@@ -9213,6 +9403,7 @@ window.BaZiCalculator = {
     buildEvidenceSettlement: buildBaziEvidenceSettlement,
     getWaterloggedWoodState: getWaterloggedWoodState,
     getColdWetEarthWoodState: getColdWetEarthWoodState,
+    getClimateState: getClimateState,
     getPattern: getPattern,
     adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,

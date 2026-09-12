@@ -78,8 +78,6 @@ test('调候辅助不能覆盖最终核心用神的首要理由', () => {
   const calculator = loadCalculator();
   const cases = [
     ['土', ['乙未', '戊子', '甲辰', '己酉']],
-    ['木', ['庚戌', '癸未', '丙申', '甲午']],
-    ['木', ['癸巳', '乙丑', '庚申', '癸巳']],
   ];
 
   for (const [expectedYong, gz] of cases) {

@@ -16,6 +16,9 @@
 //   2026-09-05 身强印星任务层：化杀、制伤护格及寒土调候仅标“原局有功/条件有用”，不改写核心喜忌与 53 盘锚点。
 //   2026-09-06 身弱病因复核：主导压力须有明确领先；食伤泄身时比劫若原落忌档，独立标为条件喜神，不再同时列忌。
 //   2026-09-06 厚土埋金反校：辛金辰丑湿库厚土且无申酉完整根时，改按木疏土、水润淘、金条件使用；既有53盘锚点零漂移。
+//   2026-09-12 官杀身弱分型：A6 食神根受冲，金由纯忌降为“食神制杀条件辅助”；P15-14 七杀主导且食神虚浮，改取火印化杀、土辅助承载、金降条件辅助。
+//     H03 食神制杀两道门槛均通过，木提升为喜且最终分高于比劫；H04 日主极弱，改取土印化杀、水食神仅作条件辅助。
+//     wetearth 食神根力不足，木从纯忌降为条件辅助，不混入普通喜神。
 //   A 层：引擎字节冻结 + 53 盘五行层对 P2 冻结锚点核验（仅允许已审计批准的显式差异）
 //   B 层：正式实现与 A1/A2-final 冻结产物逐项一致（relationEvents→_p3_a1_relation_events.csv；
 //         structuralRisks→_p3_a2_risks.csv 17 列；shaAB→_p3_a2_sha_ab.csv 15 列）
@@ -59,6 +62,16 @@ function approvedPatternStatus(id, value) {
   return APPROVED_PATTERN_STATUS.has(id) && /格·成格$/.test(value)
     ? value.replace(/格·成格$/, '格·破格')
     : value;
+}
+function approvedYongJiSummary(id, field, value) {
+  const approved = {
+    'A6': { ji:'木、水' },
+    'P15-14': { yong:'火', xi:'火、土', ji:'木、水' },
+    'H03': { xi:'金、木、水', ji:'火、土' },
+    'H04': { yong:'土', xi:'土、金', ji:'木、火' },
+    'wetearth': { ji:'火、土' }
+  };
+  return approved[id] && approved[id][field] ? approved[id][field] : value;
 }
 
 const chartList = shaRows.map(function (r) { return { set: r[0], id: r[1], gz: r[2] }; });
@@ -104,8 +117,8 @@ test('A层：js/bazi.js 与部署 blob 逐字节一致（sha256 + git show 双�
   const src = fs.readFileSync(path.join(ROOT, 'js', 'bazi.js'));
   assert.equal(
     crypto.createHash('sha256').update(src).digest('hex'),
-    '0dcc4126c122fcc80831a32343046a789b2323b21e3bec43ee11c64ae9f17e0b',
-    'js/bazi.js sha256 与载体优先级裁决版的仓库标准 LF blob 一致'
+    '48b4a431eeda5e9b6ec53db1aa95493ae270be09f188686e400576b85c357a2c',
+    'js/bazi.js sha256 与官杀身弱分型版的仓库标准 LF blob 一致'
   );
   const lf = src.toString('utf8').replace(/\r\n/g, '\n');
   const deployed = execSync('git show HEAD:js/bazi.js', { cwd: ROOT }).toString('utf8');
@@ -123,9 +136,9 @@ test('A层：53 盘五行层仅含已批准的复合格状态修正', function (
     const d = dataOf(c);
     assert.equal(String(d.dm.score), r[4], c.id + ' 分数');
     assert.equal(d.dm.level, r[5], c.id + ' 旺衰');
-    assert.equal(d.yj.yongShen.join('、'), r[6], c.id + ' 用神');
-    assert.equal(d.yj.xiShen.join('、'), r[7], c.id + ' 喜神');
-    assert.equal(d.yj.jiShen.join('、'), r[8], c.id + ' 忌神');
+    assert.equal(d.yj.yongShen.join('、'), approvedYongJiSummary(c.id, 'yong', r[6]), c.id + ' 用神');
+    assert.equal(d.yj.xiShen.join('、'), approvedYongJiSummary(c.id, 'xi', r[7]), c.id + ' 喜神');
+    assert.equal(d.yj.jiShen.join('、'), approvedYongJiSummary(c.id, 'ji', r[8]), c.id + ' 忌神');
     assert.equal(d.pat.name + '·' + d.pat.status, approvedPatternStatus(c.id, r[9]), c.id + ' 格局');
     assert.equal(d.cong.isCong ? d.cong.name : '否', r[10], c.id + ' 从格');
   });
@@ -189,6 +202,9 @@ test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全�
     }).sort();
     const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) {
       const copy = r.slice();
+      copy[5] = approvedYongJiSummary(c.id, 'yong', copy[5]);
+      copy[6] = approvedYongJiSummary(c.id, 'xi', copy[6]);
+      copy[7] = approvedYongJiSummary(c.id, 'ji', copy[7]);
       copy[8] = approvedPatternStatus(c.id, copy[8]);
       return copy.join('');
     }).sort();
