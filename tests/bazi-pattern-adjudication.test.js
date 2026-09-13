@@ -78,13 +78,15 @@ test('官杀去留只认明确五合去掉一方', () => {
   assert.equal(leaveKilling.status, '成格');
 });
 
-test('伤官克官按最终喜用忌拆成制官与见官', () => {
+test('伤官克官先检查财星通关，负面机制不覆盖月令主格', () => {
   const control = resolved(['丁未', '乙未', '庚子', '癸酉']);
   const damage = resolved(['己巳', '癸巳', '丙寅', '丁未']);
   // 子癸水已经有根，未月暑燥受制衡后，不能再靠“未月必润”把官星压成忌神。
-  assert.equal(control.name, '伤官见官格');
-  assert.equal(control.status, '破格');
-  assert.match(control.source, /正官为喜用/);
+  assert.equal(control.name, '正官格');
+  const controlRisk = control.relatedPatterns.find(row => row.name === '伤官官星相见');
+  assert.equal(controlRisk.status, '条件待定');
+  assert.match(controlRisk.source, /财星承接伤官并转生正官/);
+  assert.ok(control.structuralMechanisms.some(row => row.name === '伤官生财、财生官'));
   assert.equal(damage.name, '建禄格');
   const damageRelation = damage.relatedPatterns.find(row => row.name === '伤官见官格');
   assert.equal(damageRelation.status, '破格');
@@ -105,9 +107,10 @@ test('偏印克食神按任务和喜忌拆成制食与夺食', () => {
   assert.equal(control.name, '枭神制食格');
   assert.equal(control.status, '成格');
   assert.match(control.source, /食神为忌，偏印为喜用/);
-  assert.equal(damage.name, '枭神夺食格');
-  assert.equal(damage.status, '破格');
-  assert.match(damage.source, /制杀、生财任务|食神为喜用/);
+  assert.equal(damage.name, '羊刃格');
+  const damageRisk = damage.relatedPatterns.find(row => row.name === '枭神夺食格');
+  assert.equal(damageRisk.status, '破格');
+  assert.match(damageRisk.source, /制杀、生财任务|食神为喜用/);
 });
 
 test('枭神制食的过度判定读取结算后根气', () => {
@@ -116,16 +119,35 @@ test('枭神制食的过度判定读取结算后根气', () => {
   assert.equal(diverted.status, '成格');
 
   const excessive = resolved(['壬子', '丙午', '甲申', '壬辰']);
-  assert.equal(excessive.name, '枭神制食太过格');
-  assert.equal(excessive.status, '破格');
-  assert.ok(excessive.breakReasons.includes('枭神制食太过'));
+  assert.equal(excessive.name, '伤官格');
+  const excessiveRisk = excessive.relatedPatterns.find(row => row.name === '枭神制食太过格');
+  assert.equal(excessiveRisk.status, '破格');
+  assert.ok(excessiveRisk.breakReasons.includes('枭神制食太过'));
 });
 
 test('专业报告和喜用忌共享同一后置格局裁决', () => {
   const bazi = build(['丁未', '乙未', '庚子', '癸酉']);
   const yongJi = E.getYongJi(bazi);
   const facts = E.getProfessionalReportFacts(bazi, 'male');
-  assert.equal(yongJi.patternStatus.name, '伤官见官格');
-  assert.equal(facts.pattern.name, '伤官见官格');
-  assert.equal(facts.pattern.basePattern, yongJi.resolvedPattern.basePattern);
+  assert.equal(yongJi.patternStatus.name, '正官格');
+  assert.equal(facts.pattern.name, '正官格');
+  assert.ok(facts.pattern.relatedPatterns.some(row => row.name === '伤官官星相见' && row.status === '条件待定'));
+  assert.ok(facts.pattern.structuralMechanisms.some(row => row.name === '伤官生财、财生官'));
+});
+
+test('伤官生财再生官时以完整通关链为主，不误裁成伤官见官', () => {
+  const bazi = build(['庚辰', '戊子', '乙巳', '丙戌']);
+  const strength = E.calcDayMasterStrength(bazi, { audit:true });
+  const yongJi = E.getYongJi(bazi);
+  const pattern = yongJi.resolvedPattern;
+
+  assert.equal(strength.level, '偏弱');
+  assert.equal(strength.score, 39);
+  assert.equal(strength.audit.stages.find(row => row.id === 'seal-command-carrier').delta, -16);
+  assert.equal(pattern.name, '偏印格');
+  assert.equal(pattern.status, '破格');
+  assert.ok(pattern.structuralMechanisms.some(row => row.name === '伤官生财、财生官' && row.status === '成立'));
+  assert.ok(pattern.relatedPatterns.some(row => row.name === '伤官官星相见' && row.status === '条件待定'));
+  assert.equal(yongJi.weaknessCause.type, '食伤财官连压');
+  assert.equal(yongJi.yongShen[0], '水');
 });

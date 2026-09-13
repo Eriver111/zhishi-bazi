@@ -20,12 +20,17 @@ function resultOf(calculator, values) {
   return calculator.getYongJi(calculator.buildFromPillars(pillars(values), 'male'));
 }
 
-test('身强印星化杀成格时，区分原局有功与继续增印', () => {
+test('身强盘七杀生印路线成立时，区分原局有功与最终结构成名', () => {
   const calculator = loadCalculator();
   const result = resultOf(calculator, ['戊辰', '丙辰', '庚子', '戊寅']);
 
   assert.equal(result.dayMasterLevel, '偏强');
-  assert.equal(result.patternStatus.name, '印星化杀格');
+  assert.equal(result.patternStatus.name, '偏印格');
+  assert.equal(result.patternStatus.formationRoute, '七杀生印');
+  assert.equal(result.patternStatus.formationStatus, '成立');
+  assert.equal(result.patternStatus.structureResult, '杀印相生');
+  assert.equal(result.patternStatus.structureStatus, '有通路但印非用');
+  assert.equal(result.patternStatus.displayName, '偏印格');
   assert.equal(result.patternStatus.status, '成格');
   assert.ok(result.jiShen.includes('土'), '身强扶抑层仍应慎增印星');
   assert.deepEqual(Array.from(result.functionalTaskElements), ['土']);

@@ -3641,6 +3641,42 @@ function calcDayMasterStrength(bazi, options) {
   if (_rootClusterPendingAdj > 0 && score < 50) score += _rootClusterPendingAdj;
   _auditMark('root-cluster-final', '多重强根最终门控', { candidate:_rootClusterPendingAdj });
 
+  // ---------- ⑧13/16 印令承载折减 ----------
+  // 月令为印只能说明生源充足，不等于日主已经把印气承接成自身力量。
+  // 若原局无印比透干、日主仅余受损微根，同时透出的食伤/财/官杀已有根并形成连续压力，
+  // 需要回收一部分“印当令”的满额信用。否则会把“印旺而身无载”的偏弱盘机械抬成中和。
+  // 本项与水多木漂互斥：水多木漂已经统一回收印星信用，不能重复扣分。
+  var _sealCommandCarrierAdj = 0;
+  var _selfRootPowerForSealCommand = _settledEvidence.elementRootPower(dgWx);
+  var _visibleSupportForSealCommand = ['year','month','hour'].filter(function(_pos) {
+    var _wx = WU_XING[bazi[_pos].gan];
+    return _wx === dgWx || _wx === SHENGWO[dgWx];
+  });
+  var _rootedPressureKinds = [];
+  [WOSHENG[dgWx], WOKE[dgWx], KEWO[dgWx]].forEach(function(_wx) {
+    var _visible = ['year','month','hour'].some(function(_pos) { return WU_XING[bazi[_pos].gan] === _wx; });
+    if (_visible && _settledEvidence.elementRootPower(_wx) > 0) _rootedPressureKinds.push(_wx);
+  });
+  var _sealCommandLowCarrier = SHENGWO[dgWx] === mwx
+    && _monthSupportCredit > 0
+    && (!_monthSupportClashPenalty || _monthSupportClashPenalty === 0)
+    && _visibleSupportForSealCommand.length === 0
+    && _selfRootPowerForSealCommand <= 0.75
+    && !_waterloggedWoodState.applies;
+  if (_sealCommandLowCarrier) {
+    var _reclaimedSealCredit = Math.min(12, Math.round(_monthSupportCredit * 0.6));
+    var _continuousPressureAdj = _rootedPressureKinds.length >= 3 ? 4 : (_rootedPressureKinds.length >= 2 ? 2 : 0);
+    _sealCommandCarrierAdj = -(_reclaimedSealCredit + _continuousPressureAdj);
+    score += _sealCommandCarrierAdj;
+  }
+  _auditMark('seal-command-carrier', '印令承载折减', {
+    applies:_sealCommandLowCarrier,
+    selfRootPower:_selfRootPowerForSealCommand,
+    visibleSupports:_visibleSupportForSealCommand.slice(),
+    rootedPressureKinds:_rootedPressureKinds.slice(),
+    adjustment:_sealCommandCarrierAdj
+  });
+
   // ---------- ⑧⅞ 水多木漂合并结算 ----------
   // 放在全部常规生扶与制化之后，统一回收已经发放给旺水印星的信用；
   // 本阶段只结算这一份结构事实，生克链和喜用层只读取结论，不再重复改旺衰分。
@@ -6421,6 +6457,76 @@ function finalizePatternStatus(bazi, pattern) {
   return pattern;
 }
 
+// 格局层级归一化：月令决定基础正格；印化官杀是制化方式；官杀印相生是结构结果。
+// 旧版曾按月干/月支上下位置，把“杀印相生格”和“印星化杀格”作为两个平级格名。
+// legacyName 仅供内部评分与存量兼容，所有对外消费者应读取 name/displayName/formationRoute。
+function normalizeOfficerSealPatternHierarchy(bazi, pattern, elementClassification) {
+  if (!pattern || pattern.congGe) return pattern;
+  var legacyName = pattern.legacyName || pattern.name;
+  if (['杀印相生格','官印相生格','印星化杀格'].indexOf(legacyName) < 0) return pattern;
+
+  var dayGan = bazi.day.gan;
+  var monthMainGan = getCangGan(bazi.month.zhi)[0] || '';
+  var monthMainRole = getShiShen(dayGan, monthMainGan);
+  var baseName = monthMainRole === '七杀' ? '七杀格'
+    : monthMainRole === '正官' ? '正官格'
+    : monthMainRole === '正印' ? '正印格'
+    : monthMainRole === '偏印' ? '偏印格'
+    : pattern.name;
+  var isOfficer = legacyName === '官印相生格';
+  var structureResult = isOfficer ? '官印相生' : '杀印相生';
+  var formationRoute = isOfficer ? '印星化官'
+    : (monthMainRole === '七杀' ? '印星化杀' : '七杀生印');
+  var WX0 = ['木','火','土','金','水'];
+  var dmWx = WU_XING[dayGan];
+  var dmIndex = WX0.indexOf(dmWx);
+  var officerWx = WX0[(dmIndex + 3) % 5];
+  var sealWx = WX0[(dmIndex + 4) % 5];
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var officerRootPower = settlement.elementRootPower(officerWx);
+  var sealRootPower = settlement.elementRootPower(sealWx);
+  var officerRooted = officerRootPower > 0;
+  var sealRooted = sealRootPower > 0;
+  var sealRole = elementClassification ? (elementClassification[sealWx] || '') : '';
+  var sealIsCoreUse = sealRole === '用神';
+  var baseRouteIntact = pattern.status === '成格';
+  var formationStatus = baseRouteIntact && officerRooted && sealRooted ? '成立' : '不成立';
+  var structureStatus = formationStatus !== '成立'
+    ? '不成立'
+    : (!elementClassification ? '待喜用裁决' : (sealIsCoreUse ? '成立' : '有通路但印非用'));
+  var structureBreakReasons = [];
+  if (!baseRouteIntact) structureBreakReasons = structureBreakReasons.concat(pattern.breakReasons || []);
+  if (!officerRooted) structureBreakReasons.push((isOfficer ? '正官' : '七杀') + '结算后无有效根气');
+  if (!sealRooted) structureBreakReasons.push('印星结算后无有效根气');
+  if (elementClassification && !sealIsCoreUse) structureBreakReasons.push('印星不是本局核心用神，只能记录相生通路，不能命名为成格结构');
+
+  var normalized = Object.assign({}, pattern, {
+    legacyName:legacyName,
+    name:baseName,
+    basePatternName:baseName,
+    displayName:structureStatus === '成立' ? baseName + '·' + structureResult : baseName,
+    formationRoute:formationRoute,
+    formationStatus:formationStatus,
+    structureResult:structureResult,
+    structureStatus:structureStatus,
+    mechanism:formationRoute,
+    structureConditions:[
+      { condition:(isOfficer ? '正官' : '七杀') + '结算后有根', met:officerRooted, detail:(isOfficer ? '正官' : '七杀') + '有效根气=' + officerRootPower, category:'HARD_BREAK' },
+      { condition:'印星结算后有根', met:sealRooted, detail:'印星有效根气=' + sealRootPower, category:'HARD_BREAK' },
+      { condition:'印星为核心用神', met:elementClassification ? sealIsCoreUse : null, detail:elementClassification ? ('印星五行' + sealWx + '为' + (sealRole || '未定')) : '待喜用忌结算', category:'HARD_BREAK' },
+      { condition:'官杀—印—身通路未被破坏', met:baseRouteIntact, detail:baseRouteIntact ? '原制化条件通过' : (pattern.breakReasons || []).join('；'), category:'HARD_BREAK' }
+    ],
+    structureBreakReasons:Array.from(new Set(structureBreakReasons))
+  });
+  normalized.desc = baseName + '为月令基础格局；' + formationRoute + '是制化方式，'
+    + structureResult + '是“官杀→印→身”的结构结果。'
+    + (structureStatus === '成立' ? '官杀与印均有根，且印为核心用神，结构成立。'
+      : structureStatus === '待喜用裁决' ? '根气与通路先行成立，仍待喜用忌确认印是否为核心用神。'
+      : structureStatus === '有通路但印非用' ? '制化通路成立，但印不是核心用神，只记录原局作用，不把结构结果升为格名。'
+      : '制化通路条件不足，仅记录结构候选，不把它替代月令主格。');
+  return normalized;
+}
+
 function getPattern(bazi) {
   var dayGan = bazi.day.gan;
   var dmWx = WU_XING[dayGan];
@@ -6573,14 +6679,14 @@ function getPattern(bazi) {
       var QUAN_YI = { 正官: '官星', 七杀: '七杀', 正财: '财星', 偏财: '偏财', 正印: '印星', 偏印: '枭神', 食神: '食神', 伤官: '伤官' };
       cdDesc = cdDesc.replace(/^月令透[^，]+，/, '月令' + (QUAN_YI[ssZhi] || ssZhi) + '当权，');
     }
-    return applyCongGePriority(bazi, finalizePatternStatus(bazi, {
+    return normalizeOfficerSealPatternHierarchy(bazi, applyCongGePriority(bazi, finalizePatternStatus(bazi, {
       name: compound,
       desc: '月干' + ssGan + ' + 月支' + ssZhi + '——' + compound + '，' + cdDesc,
       type: '同柱复合',
       monthWx: mWx, monthZhi: mZhi, monthGan: mGan,
       mechanism: mechanism,
       source: '月柱' + mGan + mZhi + '：' + ssGan + '(' + mGan + ') + ' + ssZhi + '(' + mZhi + ')'
-    }));
+    })), null);
   }
 
   // 辰戌丑未为杂气月，必须由月支所藏的“同一个天干”真实透出后才能据此立格。
@@ -6715,6 +6821,7 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     return { condition:condition, met:met, detail:detail, category:'QUALITY' };
   };
   var outputs = [];
+  var structuralMechanisms = [];
 
   var wealth = byRole(['正财','偏财']);
   var officer = byRole(['正官']);
@@ -6723,6 +6830,39 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
   var food = byRole(['食神']);
   var hurting = byRole(['伤官']);
   var owl = byRole(['偏印']);
+
+  // 连续生克链是原局的运行机制，不冒充月令主格，也不因基础格破格而消失。
+  // 只有链条各节点均透干有根时才列为成立，避免把三个十神“同时出现”误当成有效流通。
+  var outputStars = food.concat(hurting);
+  var rootedOutput = strongest(outputStars);
+  var rootedWealth = strongest(wealth);
+  var rootedOfficer = strongest(officer.concat(killing));
+  var outputWealthRooted = rootedOutput && rootedWealth && rooted(rootedOutput) && rooted(rootedWealth);
+  var wealthOfficerRooted = rootedWealth && rootedOfficer && rooted(rootedWealth) && rooted(rootedOfficer);
+  if (outputWealthRooted) {
+    structuralMechanisms.push({
+      name:(rootedOutput.role === '伤官' ? '伤官生财' : '食神生财'),
+      status:'成立', type:'连续生克链',
+      source:positionLabel[rootedOutput.pos] + rootedOutput.gan + rootedOutput.role + '→' + positionLabel[rootedWealth.pos] + rootedWealth.gan + rootedWealth.role,
+      desc:'食伤之气有明确财星承接，不按单纯泄身或孤立冲突处理。'
+    });
+  }
+  if (wealthOfficerRooted) {
+    structuralMechanisms.push({
+      name:officer.length ? '财生官' : '财生杀',
+      status:'成立', type:'连续生克链',
+      source:positionLabel[rootedWealth.pos] + rootedWealth.gan + rootedWealth.role + '→' + positionLabel[rootedOfficer.pos] + rootedOfficer.gan + rootedOfficer.role,
+      desc:'财星有明确官杀去路，须连同日主承载能力判断吉凶。'
+    });
+  }
+  if (outputWealthRooted && wealthOfficerRooted) {
+    structuralMechanisms.push({
+      name:(rootedOutput.role === '伤官' ? '伤官生财' : '食神生财') + '、' + (officer.length ? '财生官' : '财生杀'),
+      status:'成立', type:'主导连续生克链',
+      source:rootedOutput.gan + rootedOutput.role + '→' + rootedWealth.gan + rootedWealth.role + '→' + rootedOfficer.gan + rootedOfficer.role,
+      desc:'输出、财、官杀形成完整连续通路；局部相克标签必须先服从中间节点的通关事实。'
+    });
+  }
 
   // 财官印相生：三者必须全部透干且各自有根；伤官破官、七杀混杂均不成立。
   if (wealth.length && officer.length && seal.length) {
@@ -6789,7 +6929,16 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     var shangPower = rolePower(hurting), guanPower = rolePower(officer);
     var guanWx = WU_XING[officer[0].gan], shangWx = WU_XING[hurting[0].gan];
     var shangEffective = hurting.some(rooted);
-    if (isAdverse(guanWx) && isHelpful(shangWx) && shangEffective) {
+    var wealthMediatesHurtingOfficer = wealthOfficerRooted && hurting.some(function(item) {
+      return rooted(item);
+    });
+    if (wealthMediatesHurtingOfficer) {
+      outputs.push(candidate('伤官官星相见', '条件待定',
+        '伤官与正官同透，但有根财星承接伤官并转生正官',
+        '伤官克官是潜在风险；当前更强的明示路线是伤官生财、财生官，不能直接裁成伤官见官。',
+        [quality('财星通关持续有效', true, '财星透干有根，承接伤官并转生官星')],
+        ['仅在财星受制、失根或岁运切断通关时，伤官见官风险才可能转实']));
+    } else if (isAdverse(guanWx) && isHelpful(shangWx) && shangEffective) {
       var excessive = shangPower > guanPower * 2;
       outputs.push(candidate(excessive ? '伤官制官太过格' : '伤官制官格', excessive ? '破格' : '成格',
         '伤官克正官；官星为忌，伤官为喜用',
@@ -6833,19 +6982,22 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     return ai - bi;
   });
   var establishedOutput = outputs.find(function(item) { return item.status === '成格'; });
-  var selected = establishedOutput || (base.status === '破格'
-    ? outputs.find(function(item) { return item.status === '破格'; })
-    : null);
+  // 后置层只有“真正成格”的正向结构才可升级为主格。
+  // 伤官见官、枭神夺食等破坏性机制属于风险或破格原因，不能因为月令基础格恰好破格，
+  // 就反过来覆盖月令格并伪装成新的主格。
+  var selected = establishedOutput || null;
   if (!selected) {
     var preservedBase = Object.assign({}, base);
     preservedBase.relatedPatterns = outputs.map(function(item) {
       return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons };
     });
+    preservedBase.structuralMechanisms = structuralMechanisms;
     return preservedBase;
   }
   selected.relatedPatterns = outputs.filter(function(item) { return item !== selected; }).map(function(item) {
     return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons };
   });
+  selected.structuralMechanisms = structuralMechanisms;
   return selected;
 }
 
@@ -7292,7 +7444,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   return {
     version:'element-role-ledger-v3',
     principle:'先由原局确定用神、喜神、忌神及行运基础方向，再区分天干透出、地支落根、燥湿与是否被冲合，最后用具体大运干支和生克链复核是否真正变顺；十神名称和同五行标签都不能直接代替吉凶裁决。',
-    patternContext:pattern.name ? pattern.name + '·' + pattern.status : '',
+    patternContext:pattern.name ? (pattern.displayName || pattern.name) + '·' + pattern.status : '',
     entries:entries
   };
 }
@@ -7381,11 +7533,14 @@ function finalizeYongJiResult(bazi, base, context) {
   var weaknessCause = context.candidateScores && context.candidateScores.weaknessCause;
   var strongCause = context.candidateScores && context.candidateScores.strongCause;
   var establishedFunctionalPatterns = {
-    '印星化杀通关':['杀印相生格','官印相生格','印星化杀格','财官印相生格'],
+    '印星化杀通关':['财官印相生格'],
     '印星制伤护格':['伤官配印格']
   };
   var functionalTasks = ((context.candidateScores && context.candidateScores.functionalTasks) || []).filter(function(item) {
     var requiredPatterns = establishedFunctionalPatterns[item.type];
+    if (item.type === '印星化杀通关' && (pattern.structureResult === '杀印相生' || pattern.structureResult === '官印相生')) {
+      return pattern.formationStatus === '成立';
+    }
     return !requiredPatterns || (pattern.status === '成格' && requiredPatterns.indexOf(pattern.name) >= 0);
   }).map(function(item) { return Object.assign({}, item); });
   var functionalTaskElements = Array.from(new Set(functionalTasks.map(function(item) {
@@ -7535,7 +7690,7 @@ function finalizeYongJiResult(bazi, base, context) {
     });
   });
   evidence.push({
-    category:'格局', title:pattern.name + '·' + pattern.status,
+    category:'格局', title:(pattern.displayName || pattern.name) + '·' + pattern.status,
     detail:pattern.status === '破格' ? pattern.breakReasons.join('；')
       : (pattern.status === '条件待定' ? (pattern.pendingReasons || []).join('；') : pattern.source)
   });
@@ -7612,7 +7767,14 @@ function finalizeYongJiResult(bazi, base, context) {
     }),
     patternStatus: {
       name: pattern.name,
+      displayName: pattern.displayName || pattern.name,
       status: pattern.status,
+      basePatternName: pattern.basePatternName || pattern.name,
+      formationRoute: pattern.formationRoute || '',
+      formationStatus: pattern.formationStatus || '',
+      structureResult: pattern.structureResult || '',
+      structureStatus: pattern.structureStatus || '',
+      structureBreakReasons: (pattern.structureBreakReasons || []).slice(),
       breakReasons: (pattern.breakReasons || []).slice(),
       pendingReasons: (pattern.pendingReasons || []).slice()
     },
@@ -7859,6 +8021,16 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var wealthOfficerCompound = isWeakLevel && !outputDrainDominant
     && wealthPressure >= 2.5 && officerPressure >= 2.5
     && Math.max(wealthPressure, officerPressure) >= outputPressure;
+  var hasRootedVisibleElement = function(wx) {
+    return ['year','month','hour'].some(function(pos) { return WU_XING[bazi[pos].gan] === wx; })
+      && evidenceSettlement.elementRootPower(wx) > 0;
+  };
+  // 食伤→财→官杀三段都透而有根时，即使三类单项都未达到“独旺”阈值，
+  // 连续泄、耗、克仍会共同消耗日主。不能因每项分散而退化成笼统的“根气不足”。
+  var outputWealthOfficerCompound = isWeakLevel
+    && hasRootedVisibleElement(WO_SHENG)
+    && hasRootedVisibleElement(WO_KE)
+    && hasRootedVisibleElement(KE_WO);
 
   var weaknessCause = null;
   if (waterloggedWoodDominant) {
@@ -7887,6 +8059,14 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       conditionalElements:[TONG],
       conditionalReason:TONG + '比劫只能在厚土已经被' + WO_KE + '木疏开、或新来金根能够完整落地时辅助；土未松时再加金仍有被埋，并会反克疏土之木，不能当作普通喜神直接增补。',
       conclusion:'本局' + SHENG_WO + '印已经由生身资源转为埋金，病不在“缺印”，而在厚土壅塞。先取' + WO_KE + '财星疏土为用，以' + WO_SHENG + '食伤润土淘金为辅；' + TONG + '比劫须待土松或得完整强根后条件使用，' + KE_WO + '官杀再生土、' + SHENG_WO + '印再加厚均会加重原局问题。'
+    };
+  } else if (outputWealthOfficerCompound) {
+    weaknessCause = {
+      type:'食伤财官连压', title:'食伤生财、财生官杀复合型身弱', primaryElement:SHENG_WO,
+      primaryAction:'印星既可制约食伤，又可承接官杀转生日主，是截断连续泄耗克路线的第一取用',
+      supportingElements:[], supportingReason:'', conditionalElements:[TONG],
+      conditionalReason:TONG + '比劫可辅助立根担财，但单独加入也会继续生食伤；须由' + SHENG_WO + '印星先稳住食伤与官杀两端，再配合使用。',
+      conclusion:WO_SHENG + '食伤→' + WO_KE + '财星→' + KE_WO + '官杀均透而有根，形成连续泄身、耗身、克身路线；应先以' + SHENG_WO + '印星截断两端压力，' + TONG + '比劫只作有条件的承载辅助。'
     };
   } else if (outputDrainDominant) {
     weaknessCause = {
@@ -8033,7 +8213,8 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     });
   };
   if (isStrongLevel && pattern.status === '成格') {
-    if (['杀印相生格','官印相生格','印星化杀格','财官印相生格'].indexOf(pattern.name) >= 0) {
+    var officerSealLegacyName = pattern.legacyName || pattern.name;
+    if (['杀印相生格','官印相生格','印星化杀格','财官印相生格'].indexOf(officerSealLegacyName) >= 0) {
       addFunctionalTask(
         SHENG_WO, '印星化杀通关', '印星承担化杀通关任务',
         '承接官杀之气并维持官杀—印—身的通关链',
@@ -8081,7 +8262,10 @@ function calcCandidateScores(bazi, dmStr, pattern) {
       addL2(TONG, -65, '厚土未疏前再加金仍可能被埋，并会克制疏土之木，降为条件辅助');
       addL2(KE_WO, -20, '官杀火会继续生土，使厚土埋金加重');
     }
-    if (officerDominant && !wealthOfficerCompound) {
+    if (outputWealthOfficerCompound) {
+      addL2(SHENG_WO, 18, '食伤生财、财生官杀形成连续泄耗克，印星制食伤并化官杀生身');
+      addL2(TONG, -6, '比劫虽能帮身担财，但会继续生食伤，只作印星到位后的条件辅助');
+    } else if (officerDominant && !wealthOfficerCompound) {
       if (officerSubtype === 'seven_killings') {
         addL2(SHENG_WO, 12, '七杀成势，印星化杀生身');
         // L1 在身弱侧天然压低食伤、抬高比劫。既然已经通过“食神有力 + 日主能泄”
@@ -8142,9 +8326,10 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     }
   };
   var pn = pattern.name || '';
+  var legacyPn = pattern.legacyName || pn;
   var isPo = pattern.status === '破格';
   var factor = isPo ? 0.4 : 1;
-  if (pn === '杀印相生格' || pn === '官印相生格' || pn === '印星化杀格') {
+  if (legacyPn === '杀印相生格' || legacyPn === '官印相生格' || legacyPn === '印星化杀格') {
     // F6 方向门控：身弱侧 + 官杀成势 + 印未成势 → 印加分；
     // 身强/中和偏强侧或印已成势 → 不给印加分（财/食伤的加权由 L2 身强+印成势规则承担）
     if (d < 0 && chengShi(KE_WO) && !chengShi(SHENG_WO)) {
@@ -8647,7 +8832,9 @@ function getYongJi(bazi) {
     xiShen.forEach(function(wx) { if (!adjudicationClassification[wx]) adjudicationClassification[wx] = '喜神'; });
     jiShen.forEach(function(wx) { if (!adjudicationClassification[wx]) adjudicationClassification[wx] = '忌神'; });
   }
+  pattern = normalizeOfficerSealPatternHierarchy(bazi, pattern, adjudicationClassification);
   pattern = adjudicatePattern(bazi, pattern, adjudicationClassification);
+  pattern = normalizeOfficerSealPatternHierarchy(bazi, pattern, adjudicationClassification);
 
   return finalizeYongJiResult(bazi, {
     dayMasterLevel: dmLevel,
@@ -9305,6 +9492,9 @@ function getProfessionalReportFacts(bazi, gender) {
   (pattern.relatedPatterns || []).forEach(function(item) {
     addChain(item.status === '成格' ? 4 : 3, item.name + '·' + item.status,
       item.status === '破格' && item.breakReasons && item.breakReasons.length ? item.breakReasons.join('；') : item.source);
+  });
+  (pattern.structuralMechanisms || []).forEach(function(item) {
+    addChain(item.type === '主导连续生克链' ? 5 : 3, item.name + '·' + item.status, item.source + '；' + item.desc);
   });
   getGanHe(bazi).forEach(function(item) {
     addChain(item.isTransformed ? 4 : 2, item.status, item.desc);

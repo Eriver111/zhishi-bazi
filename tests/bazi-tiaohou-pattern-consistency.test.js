@@ -244,16 +244,22 @@ test('财生杀格必须能担财杀且七杀有制化', () => {
   assert.ok(!broken.breakReasons.includes('日主极弱，难以承载格局用神'));
 });
 
-test('印星化杀格接入杀印体系的财破印与印力条件', () => {
+test('印月见杀按基础印格与七杀生印路线分层，并保留财破印条件', () => {
   const calculator = loadCalculator();
   const established = calculator.getPattern(calculator.buildFromPillars(pillars(['乙酉', '戊申', '壬戌', '乙亥']), 'male'));
   const broken = calculator.getPattern(calculator.buildFromPillars(pillars(['庚寅', '甲午', '戊申', '壬辰']), 'male'));
 
-  assert.equal(established.name, '印星化杀格');
+  assert.equal(established.name, '偏印格');
+  assert.equal(established.legacyName, '印星化杀格');
+  assert.equal(established.formationRoute, '七杀生印');
+  assert.equal(established.formationStatus, '成立');
+  assert.equal(established.structureStatus, '待喜用裁决');
   assert.equal(established.status, '成格');
   assert.ok(established.establishConditions.some(row => row.condition === '印星不被财破' && row.met));
   assert.ok(established.establishConditions.some(row => row.condition === '印星有力（非燥土虚浮）' && row.met));
-  assert.equal(broken.name, '印星化杀格');
+  assert.equal(broken.name, '正印格');
+  assert.equal(broken.formationRoute, '七杀生印');
+  assert.equal(broken.formationStatus, '不成立');
   assert.equal(broken.status, '破格');
   assert.ok(broken.breakReasons.includes('财星破印，官杀印通路中断'));
 });
@@ -390,7 +396,10 @@ test('杀印相生同时见财与伤官时只由财破印判破并保留制杀�
   const wealthBlock = pattern.establishConditions.find(row => row.condition === '印星不被财破');
   const outputControl = pattern.establishConditions.find(row => row.condition === '伤官制杀参与制化');
 
-  assert.equal(pattern.name, '杀印相生格');
+  assert.equal(pattern.name, '七杀格');
+  assert.equal(pattern.legacyName, '杀印相生格');
+  assert.equal(pattern.formationRoute, '印星化杀');
+  assert.equal(pattern.formationStatus, '不成立');
   assert.equal(pattern.status, '破格');
   assert.equal(pattern.isEstablished, false);
   assert.equal(wealthBlock.met, false);
@@ -430,7 +439,10 @@ test('杀印相生见伤官时按制杀并行判断而不套用伤官克官', ()
   const outputControl = pattern.establishConditions.find(row => row.condition === '伤官制杀参与制化');
 
   assert.equal(calculator.calcDayMasterStrength(chart).level, '中和');
-  assert.equal(pattern.name, '杀印相生格');
+  assert.equal(pattern.name, '七杀格');
+  assert.equal(pattern.legacyName, '杀印相生格');
+  assert.equal(pattern.formationRoute, '印星化杀');
+  assert.equal(pattern.formationStatus, '成立');
   assert.equal(pattern.status, '成格');
   assert.ok(outputControl);
   assert.equal(outputControl.met, true);
@@ -438,6 +450,31 @@ test('杀印相生见伤官时按制杀并行判断而不套用伤官克官', ()
   assert.match(outputControl.detail, /伤官制杀/);
   assert.doesNotMatch(outputControl.detail, /伤官克官|官印链断裂/);
   assert.ok(!pattern.breakReasons.some(reason => /伤官克官|官印链断裂/.test(reason)));
+});
+
+test('杀印相生只在印为核心用神且官杀印双方有根时并入展示名', () => {
+  const calculator = loadCalculator();
+  const chart = calculator.buildFromPillars(pillars(['甲子', '壬申', '甲子', '丙子']), 'male');
+  const result = calculator.getYongJi(chart);
+  const pattern = result.resolvedPattern;
+
+  assert.deepEqual(Array.from(result.yongShen), ['水']);
+  assert.equal(pattern.name, '七杀格');
+  assert.equal(pattern.formationRoute, '印星化杀');
+  assert.equal(pattern.formationStatus, '成立');
+  assert.equal(pattern.structureResult, '杀印相生');
+  assert.equal(pattern.structureStatus, '成立');
+  assert.equal(pattern.displayName, '七杀格·杀印相生');
+
+  const context = require('../api/ai-chat.js')._test.buildChartContext({
+    dayMasterStrength: calculator.calcDayMasterStrength(chart),
+    pattern,
+    yongJi: result,
+  });
+  assert.match(context, /命局格局：七杀格·杀印相生/);
+  assert.match(context, /月令基础格局：七杀格/);
+  assert.match(context, /制化方式：印星化杀/);
+  assert.match(context, /结构结果：杀印相生（成立）/);
 });
 
 test('七杀格只见藏支印星时说明化杀不足而不写无制无化', () => {

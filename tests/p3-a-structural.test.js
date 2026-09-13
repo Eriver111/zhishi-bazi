@@ -59,9 +59,12 @@ const replayRows = parseCSV('_p2_4a_replay.csv').slice(1);     // 53 盘：set,i
 // 用当前引擎的破格状态替代旧 replay/risk 文本，其他字段仍逐项锁定。
 const APPROVED_PATTERN_STATUS = new Set(['#10', 'A5', 'H11', 'P15-09', 'H15', 'SY2']);
 function approvedPatternStatus(id, value) {
-  return APPROVED_PATTERN_STATUS.has(id) && /格·成格$/.test(value)
-    ? value.replace(/格·成格$/, '格·破格')
-    : value;
+  let normalized = value
+    .replace(/^杀印相生格·/, '七杀格·')
+    .replace(/^官印相生格·/, '正官格·');
+  return APPROVED_PATTERN_STATUS.has(id) && /格·成格$/.test(normalized)
+    ? normalized.replace(/格·成格$/, '格·破格')
+    : normalized;
 }
 function approvedYongJiSummary(id, field, value) {
   const approved = {
@@ -256,7 +259,9 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
   assert.deepEqual(JSON.parse(JSON.stringify(yj9.elementClassification)), {
     木: '用神', 火: '弱忌', 土: '弱忌', 金: '弱喜', 水: '弱喜',
   }, '#9 强弱语义由 elementClassification 明确承载');
-  assert.equal(pat9.name + '·' + pat9.status, '杀印相生格·成格', '#9 伤官制杀与印化杀并见，不套用伤官克官硬破');
+  assert.equal(pat9.name + '·' + pat9.status, '七杀格·成格', '#9 月令基础格为七杀格，印化杀只作制化路线');
+  assert.equal(pat9.formationRoute, '印星化杀', '#9 制化方式与主格分层');
+  assert.equal(pat9.structureStatus, '待喜用裁决', '#9 getPattern 阶段不提前用喜用忌给结构成名');
 
   // B. relationEvents 事实层回归（A1 冻结口径）
   function hasEv(type, pair) {
@@ -312,7 +317,7 @@ test('C：#9 黄金样本权威值 + 事实层/风险层口径 + 两层零污染
     ji: calculator.getYongJi(b9).jiShen.join(''),
     pattern: calculator.getPattern(b9).name + '·' + calculator.getPattern(b9).status
   };
-  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '杀印相生格·成格' },
+  assert.deepEqual(wxAfter, { score: 51, level: '中和', yong: '木', xi: '木金水', ji: '火土', pattern: '七杀格·成格' },
     '#9 结构层评价后五行层输出不变（两层不污染）');
 });
 
