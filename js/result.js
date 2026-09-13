@@ -2308,6 +2308,7 @@ var _reportPdfBackgroundState = [];
 var _reportPdfSheetOpen = false;
 var _reportPdfAbortController = null;
 var _reportPdfPreparationPromise = null;
+var REPORT_PDF_MAX_WAIT_MS = 120000;
 
 function reportFilename(extension) {
     var reportName = '';
@@ -2457,9 +2458,12 @@ function prepareMobileReportPdf() {
     _reportPdfAbortController = controller;
 
     function handlePreparationFailure(error) {
+        var abortReason = controller.signal && controller.signal.reason;
+        var timedOut = !!((error && error.name === 'TimeoutError')
+            || (abortReason && abortReason.name === 'TimeoutError'));
         if (generationId !== _reportPdfGenerationId
-            || controller.signal.aborted
-            || (error && error.name === 'AbortError')) {
+            || (controller.signal.aborted && !timedOut)
+            || ((error && error.name === 'AbortError') && !timedOut)) {
             return null;
         }
         _preparedReportPdfFile = null;
@@ -2467,8 +2471,30 @@ function prepareMobileReportPdf() {
         if (downloadButton) downloadButton.disabled = true;
         if (shareButton) shareButton.disabled = true;
         updatePdfProgress(0);
-        setMobileReportPdfStatus('PDF 生成失败，请使用下方“下载 HTML 备用”保存报告。');
+        setMobileReportPdfStatus(timedOut
+            ? 'PDF 生成超时，请关闭后重试，或使用下方“下载 HTML 备用”。'
+            : 'PDF 生成失败，请关闭后重试，或使用下方“下载 HTML 备用”。');
         return null;
+    }
+
+    function guardPreparation(promise) {
+        var timeoutId;
+        var timeoutPromise = new Promise(function(resolve, reject) {
+            timeoutId = window.setTimeout(function() {
+                var error = new Error('PDF 生成超时');
+                error.name = 'TimeoutError';
+                if (!controller.signal.aborted) controller.abort(error);
+                reject(error);
+            }, REPORT_PDF_MAX_WAIT_MS);
+            if (timeoutId && typeof timeoutId.unref === 'function') timeoutId.unref();
+        });
+        return Promise.race([Promise.resolve(promise), timeoutPromise]).then(function(value) {
+            window.clearTimeout(timeoutId);
+            return value;
+        }, function(error) {
+            window.clearTimeout(timeoutId);
+            throw error;
+        });
     }
 
     function startPreparation() {
@@ -2491,13 +2517,19 @@ function prepareMobileReportPdf() {
                         && !controller.signal.aborted) {
                         updatePdfProgress(value);
                     }
+                },
+                onStatus: function(message) {
+                    if (generationId === _reportPdfGenerationId
+                        && !controller.signal.aborted) {
+                        setMobileReportPdfStatus(message);
+                    }
                 }
             });
         } catch (error) {
             return handlePreparationFailure(error);
         }
 
-        return Promise.resolve(pending).then(function(file) {
+        return guardPreparation(pending).then(function(file) {
             if (generationId !== _reportPdfGenerationId || controller.signal.aborted) {
                 return null;
             }

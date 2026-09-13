@@ -454,6 +454,26 @@ test('removes the export iframe and wraps rendering errors in Chinese', async ()
   assert.equal(documentRef.removed.length, 1);
 });
 
+test('a renderer that never settles times out instead of leaving report generation pending', async () => {
+  const documentRef = createFakeDocument([{ id: 'cover' }]);
+  const { FakePdf } = createPdfHarness();
+
+  await assert.rejects(
+    ReportPdf.prepare({
+      html: '<main>report</main>',
+      documentRef,
+      windowRef: { devicePixelRatio: 1 },
+      JsPdfCtor: FakePdf,
+      blockRenderTimeoutMs: 10,
+      html2canvasImpl: () => new Promise(() => {}),
+    }),
+    /PDF 生成失败：第 1 个报告区块生成超时/,
+  );
+
+  assert.equal(documentRef.appended.length, 0);
+  assert.equal(documentRef.removed.length, 1);
+});
+
 test('downloads through a temporary anchor and revokes the object URL after a delay', () => {
   const originalDocument = globalThis.document;
   const originalUrl = globalThis.URL;

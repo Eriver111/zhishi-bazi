@@ -12,6 +12,9 @@
   var MAX_RENDER_SCALE = 1.35;
   var MAX_CANVAS_SIDE = 8192;
   var MAX_CANVAS_PIXELS = 12000000;
+  var FRAME_LOAD_TIMEOUT_MS = 15000;
+  var FONT_LOAD_TIMEOUT_MS = 8000;
+  var BLOCK_RENDER_TIMEOUT_MS = 45000;
 
   function removeNode(node) {
     if (!node) return;
@@ -47,7 +50,12 @@
 
   function waitForAbortable(promise, signal) {
     if (!signal) return Promise.resolve(promise);
-    throwIfAborted(signal);
+    var guardedPromise = Promise.resolve(promise);
+    if (signal.aborted) {
+      // 先接住底层异步任务可能稍后产生的拒绝，再返回取消结果。
+      guardedPromise.catch(function () {});
+      return Promise.reject(createAbortError(signal));
+    }
     return new Promise(function (resolve, reject) {
       var settled = false;
 
@@ -63,7 +71,7 @@
       }
 
       signal.addEventListener('abort', onAbort, { once: true });
-      Promise.resolve(promise).then(function (value) {
+      guardedPromise.then(function (value) {
         if (settled) return;
         settled = true;
         cleanup();
@@ -75,6 +83,40 @@
         reject(error);
       });
     });
+  }
+
+  function createTimeoutError(label) {
+    var error = new Error((label || '操作') + '超时');
+    error.name = 'TimeoutError';
+    return error;
+  }
+
+  function waitForStage(promise, signal, timeoutMs, label, windowRef) {
+    var timerApi = windowRef && typeof windowRef.setTimeout === 'function'
+      && typeof windowRef.clearTimeout === 'function'
+      ? windowRef
+      : global;
+    var delay = Math.max(1, Number(timeoutMs) || 1);
+    var timer;
+    var timed = new Promise(function (resolve, reject) {
+      timer = timerApi.setTimeout(function () {
+        reject(createTimeoutError(label));
+      }, delay);
+      if (timer && typeof timer.unref === 'function') timer.unref();
+    });
+
+    return waitForAbortable(Promise.race([Promise.resolve(promise), timed]), signal)
+      .finally(function () {
+        timerApi.clearTimeout(timer);
+      });
+  }
+
+  function isAbortError(error) {
+    return !!(error && error.name === 'AbortError');
+  }
+
+  function reportStatus(options, message) {
+    if (typeof options.onStatus === 'function') options.onStatus(message);
   }
 
   function resolveJsPdf(options, windowRef) {
@@ -211,16 +253,41 @@
       iframe.style.border = '0';
       documentRef.body.appendChild(iframe);
 
-      await waitForAbortable(waitForIframe(iframe, options.html || ''), signal);
+      reportStatus(options, '正在载入报告内容……');
+      await waitForStage(
+        waitForIframe(iframe, options.html || ''),
+        signal,
+        options.frameLoadTimeoutMs || FRAME_LOAD_TIMEOUT_MS,
+        '报告内容载入',
+        windowRef,
+      );
       throwIfAborted(signal);
 
       var frameDocument = iframe.contentDocument
         || (iframe.contentWindow && iframe.contentWindow.document);
       if (!frameDocument) throw new Error('无法读取报告页面');
       if (frameDocument.fonts && frameDocument.fonts.ready) {
-        await waitForAbortable(frameDocument.fonts.ready, signal);
-        if (typeof frameDocument.fonts.load === 'function') {
-          await waitForAbortable(frameDocument.fonts.load('15px "Zhishi Report Serif"'), signal);
+        reportStatus(options, '正在准备报告字体……');
+        try {
+          await waitForStage(
+            frameDocument.fonts.ready,
+            signal,
+            options.fontLoadTimeoutMs || FONT_LOAD_TIMEOUT_MS,
+            '报告字体载入',
+            windowRef,
+          );
+          if (typeof frameDocument.fonts.load === 'function') {
+            await waitForStage(
+              frameDocument.fonts.load('15px "Zhishi Report Serif"'),
+              signal,
+              options.fontLoadTimeoutMs || FONT_LOAD_TIMEOUT_MS,
+              '报告字体载入',
+              windowRef,
+            );
+          }
+        } catch (fontError) {
+          if (isAbortError(fontError)) throw fontError;
+          // 字体服务异常时继续使用系统宋体，不能让整份报告永久卡住。
         }
       }
       throwIfAborted(signal);
@@ -247,14 +314,34 @@
         throwIfAborted(signal);
         var block = blocks[index];
         var scale = getRenderScale(block, windowRef);
-        var canvas = await html2canvasImpl(blocks[index], {
-          useCORS: true,
-          backgroundColor: '#0d0f18',
-          scale: scale,
-          windowWidth: Math.max(820, block.scrollWidth || block.offsetWidth || 820),
-          scrollX: 0,
-          scrollY: 0,
-        });
+        reportStatus(options, '正在生成报告（' + (index + 1) + '/' + blocks.length + '）……');
+        var renderPromise = Promise.resolve(html2canvasImpl(blocks[index], {
+            useCORS: true,
+            backgroundColor: '#0d0f18',
+            scale: scale,
+            windowWidth: Math.max(820, block.scrollWidth || block.offsetWidth || 820),
+            scrollX: 0,
+            scrollY: 0,
+          }));
+        var canvas;
+        try {
+          canvas = await waitForStage(
+            renderPromise,
+            signal,
+            options.blockRenderTimeoutMs || BLOCK_RENDER_TIMEOUT_MS,
+            '第 ' + (index + 1) + ' 个报告区块生成',
+            windowRef,
+          );
+        } catch (renderError) {
+          // html2canvas 本身不支持取消。若它在超时/取消后才返回，仍及时释放画布。
+          renderPromise.then(function (lateCanvas) {
+            if (lateCanvas) {
+              lateCanvas.width = 0;
+              lateCanvas.height = 0;
+            }
+          }, function () {});
+          throw renderError;
+        }
 
         try {
           throwIfAborted(signal);
