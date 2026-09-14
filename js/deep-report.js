@@ -1839,7 +1839,7 @@
     return annualPillarFallback(year);
   }
 
-  function resolveAnnualDynamic(bazi, daYun, pillar, core, calculator, chain) {
+  function resolveAnnualDynamic(bazi, daYun, pillar, core, calculator, chain, timingOptions) {
     if (!daYun) {
       var originalTriggers = [];
       PILLARS.forEach(function (sourcePillar) {
@@ -1892,7 +1892,9 @@
     }
     if (chain && typeof chain.analyzeLiuNian === 'function') {
       try {
-        return chain.analyzeLiuNian(bazi, daYun, pillar, core && core.yongJi) || { triggers: [], reliefs: [] };
+        return chain.analyzeLiuNian(
+          bazi, daYun, pillar, core && core.yongJi, timingOptions || {}
+        ) || { triggers: [], reliefs: [] };
       } catch (error) {
         return { triggers: [], reliefs: [], error: '岁运关系暂无法解析' };
       }
@@ -2472,9 +2474,14 @@
     };
   }
 
-  function buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, timingStatus) {
+  function buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, timingStatus, timingOptions) {
     var pillar = annualPillarForYear(calculator, year, activeDaYun, bazi && bazi.day && bazi.day.gan);
-    var dynamic = resolveAnnualDynamic(bazi, activeDaYun, pillar, core || {}, calculator, chain);
+    var annualOptions = Object.assign({}, timingOptions || {});
+    if (bazi && bazi.birthDate && Number.isFinite(Number(bazi.birthDate.year))) {
+      annualOptions.birthYear = Number(bazi.birthDate.year);
+      annualOptions.age = Number(year) - Number(bazi.birthDate.year);
+    }
+    var dynamic = resolveAnnualDynamic(bazi, activeDaYun, pillar, core || {}, calculator, chain, annualOptions);
     var tenGod = annualTenGod(pillar, activeDaYun, bazi, calculator);
     var stemElement = calculator && calculator.WU_XING && calculator.WU_XING[pillar.gan];
     var branchElement = calculator && calculator.DI_ZHI_WU_XING && calculator.DI_ZHI_WU_XING[pillar.zhi];
@@ -2498,6 +2505,7 @@
         : '未纳入',
       tenGod: tenGod,
       dynamic: dynamic,
+      eventAdjudication: dynamic && dynamic.eventAdjudication || null,
       interactions: interactions,
       overallTriggers: annualOverallTriggers(dynamic),
       triggeredRisks: triggeredRisks,
@@ -2601,13 +2609,27 @@
     }
     var firstDaYun = daYunStarts[0];
     var lastDaYun = daYunEnds[daYunEnds.length - 1];
+    var fortunePeriods = [];
+    if (chain && typeof chain.analyzeFortune === 'function') {
+      try {
+        fortunePeriods = list((chain.analyzeFortune(bazi, daYunList, core && core.yongJi) || {}).periods);
+      } catch (error) { fortunePeriods = []; }
+    }
     var years = [];
     for (var year = targetYear; year < targetYear + 5; year += 1) {
       var activeDaYun = findDaYunForYear(daYunList, year);
+      var daYunPeriod = activeDaYun && fortunePeriods.filter(function (period) {
+        var sameRange = Number(period && period.startYear) === Number(activeDaYun.startYear) &&
+          Number(period && period.endYear) === Number(activeDaYun.endYear);
+        return sameRange || (period && period.gan === activeDaYun.gan && period.zhi === activeDaYun.zhi);
+      })[0] || null;
       var yearTimingStatus = activeDaYun ? 'active'
         : (Number.isFinite(firstDaYun) && year < firstDaYun ? 'before_start'
           : (Number.isFinite(lastDaYun) && year > lastDaYun ? 'out_of_range' : 'calculation_unavailable'));
-      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, yearTimingStatus));
+      years.push(buildAnnualFacts(bazi, core, calculator, chain, year, activeDaYun, yearTimingStatus, {
+        daYunPeriod: daYunPeriod,
+        daYunEventLedger: daYunPeriod && daYunPeriod.eventLedger || null,
+      }));
     }
     var timingStatus = years.some(function (row) { return row.daYunStatus === 'calculation_unavailable'; }) ? 'calculation_unavailable'
       : years.some(function (row) { return row.daYunStatus === 'active'; }) ? 'active'
@@ -2654,6 +2676,288 @@
       text: outcomeText,
       basis: list(basis).filter(Boolean),
     };
+  }
+
+  function compactTechnicalTerms(values, limit) {
+    var terms = [];
+    list(values).forEach(function (value) {
+      var term = textOf(value).replace(/[。；，,]+$/g, '').trim();
+      if (!term || terms.indexOf(term) >= 0 || terms.length >= (limit || 4)) return;
+      terms.push(term);
+    });
+    return terms;
+  }
+
+  function coreTechnicalTerms(facts) {
+    var core = facts && facts.core || {};
+    var strength = core.strength || {};
+    var pattern = core.pattern || {};
+    var yongJi = core.yongJi || {};
+    var level = textOf(strength.level || strength.label);
+    var patternName = textOf(pattern.displayName || pattern.name || pattern.label);
+    var patternStatus = textOf(pattern.status || pattern.formationStatus);
+    var source = yongJi.yongShenSource || {};
+    var yongElement = textOf(source.element) || list(yongJi.yongShen)[0] || '';
+    var useType = textOf(source.label || source.primaryType);
+    return compactTechnicalTerms([
+      level ? (/^日主/.test(level) ? level : '日主' + level) : '',
+      patternName ? patternName + (patternStatus && patternName.indexOf(patternStatus) < 0 ? '·' + patternStatus : '') : '',
+      yongElement ? yongElement + '为' + (useType || '用神') : '',
+    ], 3);
+  }
+
+  function timingTechnicalTerms(year) {
+    year = year || {};
+    var pillar = year.pillar || year.yearPillar || {};
+    var daYun = year.daYun || {};
+    var interaction = list(year.interactions).map(function (row) {
+      return textOf(row && (row.type || row.relation || row.name));
+    }).filter(Boolean)[0];
+    return compactTechnicalTerms([
+      pillar.gan || pillar.zhi ? year.year + '年·' + textOf(pillar.gan) + textOf(pillar.zhi) + '流年' : '',
+      daYun.gan || daYun.zhi ? textOf(daYun.gan) + textOf(daYun.zhi) + '大运' : '',
+      interaction,
+    ], 3);
+  }
+
+  function narrativeTechnicalBasis(facts, domain) {
+    // 旺衰、格局与总用神只在年度总览出现一次；其余板块只保留
+    // 本主题真正参与推断的术语，避免五个板块重复同一组底盘标签。
+    var terms = domain === 'currentYear' ? coreTechnicalTerms(facts) : [];
+    if (domain === 'wealth') {
+      var wealth = facts && facts.wealth || {};
+      var path = list(wealth.pathways).map(function (row) { return textOf(row && row.type); }).filter(Boolean)[0];
+      terms = terms.concat([path, wealth.resource && wealth.resource.state ? '财星' + wealth.resource.state : '']);
+    } else if (domain === 'relationship') {
+      var relationship = facts && facts.relationship || {};
+      var roles = relationship.spouseStar && relationship.spouseStar.roles;
+      if (!list(roles).length) {
+        roles = list(relationship.spouseStar && relationship.spouseStar.occurrences).map(function (row) { return row && row.role; });
+      }
+      terms = terms.concat([
+        compactTechnicalTerms(roles, 2).join('、') + (list(roles).length ? '为配偶星' : ''),
+        relationship.palace && relationship.palace.zhi ? '夫妻宫坐' + relationship.palace.zhi : '',
+      ]);
+    } else if (domain === 'study') {
+      var study = facts && facts.study || {};
+      terms = terms.concat([
+        study.path && study.path.type ? study.path.type + '学习路径' : '',
+        study.profile && study.profile.label,
+      ]);
+    } else if (domain === 'currentYear') {
+      terms = timingTechnicalTerms(facts && facts.currentYear).concat(terms);
+    } else if (domain === 'fiveYear') {
+      var fiveYears = facts && facts.fiveYear && facts.fiveYear.years || [];
+      var firstActive = fiveYears.filter(function (row) { return row && row.daYun; })[0] || fiveYears[0];
+      terms = timingTechnicalTerms(firstActive).concat(['大运看趋势·流年定应期']).concat(terms);
+    }
+    if (!terms.filter(Boolean).length) terms = coreTechnicalTerms(facts).slice(0, 2);
+    return compactTechnicalTerms(terms, 4);
+  }
+
+  function attachNarrativeTechnicalBasis(narrative, facts, domain) {
+    if (narrative) narrative.technicalBasis = narrativeTechnicalBasis(facts, domain);
+    return narrative;
+  }
+
+  var REPORT_TIMING_DOMAIN = {
+    wealth: { title: '接下来几年更容易见到钱的年份' },
+    relationship: { title: '接下来几年感情更容易应事的年份' },
+    study: { title: '接下来几年考试与进修更容易应事的年份' },
+  };
+
+  function annualAdjudication(year) {
+    return year && (year.eventAdjudication || year.dynamic && year.dynamic.eventAdjudication) || null;
+  }
+
+  function domainTimingCandidates(facts, domain, limit) {
+    var rows = [];
+    list(facts && facts.fiveYear && facts.fiveYear.years).forEach(function (year) {
+      if (facts && facts.currentYear && Number(year && year.year) === Number(facts.currentYear.year)) return;
+      var adjudication = annualAdjudication(year);
+      if (!adjudication) return;
+      var record = list(adjudication.domainRecords).filter(function (item) {
+        return item && item.domain === domain;
+      })[0];
+      // 只有当年确有刑冲合害等独立结构触发时才报“应期”；十神和大运背景只能定主题。
+      if (!record || !record.hasIndependentAnnualTrigger || Number(record.activationScore || 0) < 2) return;
+      rows.push({
+        year: Number(year.year), age: adjudication.age,
+        stage: adjudication.lifeStage && adjudication.lifeStage.label || '',
+        stageKey: adjudication.lifeStage && adjudication.lifeStage.key || '',
+        direction: record.direction || '条件性', confidence: record.confidence || '中',
+        eventCandidate: record.eventCandidate || '', scenarios: list(record.scenarioCandidates),
+        selectedScenario: selectTimingScenario(record, adjudication),
+        evidence: list(record.evidence),
+        score: Number(record.activationScore || 0) + Number(adjudication.triggerStrength || 0) * 0.45,
+      });
+    });
+    return rows.sort(function (a, b) { return b.score - a.score || a.year - b.year; })
+      .slice(0, limit || 2);
+  }
+
+  function selectTimingScenario(record, adjudication) {
+    record = record || {};
+    adjudication = adjudication || {};
+    var stageKey = adjudication.lifeStage && adjudication.lifeStage.key || '';
+    if (!stageKey && Number.isFinite(Number(adjudication.age))) {
+      var stageAge = Number(adjudication.age);
+      stageKey = stageAge < 16 ? 'child' : stageAge < 24 ? 'education' : stageAge < 31 ? 'launch'
+        : stageAge < 46 ? 'development' : stageAge < 61 ? 'mature' : 'late';
+    }
+    var direction = record.direction || '条件性';
+    var favorable = direction === '偏有利';
+    var adverse = direction === '偏不利';
+    if (record.domain === 'study') {
+      if (stageKey === 'child' || stageKey === 'education') {
+        return favorable ? '考试、录取、升学或证照通过更容易推进'
+          : adverse ? '考试发挥、录取推进或资格审核更容易遇到阻力'
+            : '考试、录取或学习进度会成为这一年的主要变量';
+      }
+      return favorable ? '考证、进修、岗位学习或专业评审更容易取得结果'
+        : adverse ? '考证、进修或专业评审更容易被工作和现实事务打断'
+          : '进修、考证或专业能力更新会成为这一年的主要变量';
+    }
+    if (record.domain === 'career') {
+      if (stageKey === 'child') return favorable ? '班级职责、竞赛展示或阶段成果更容易得到认可'
+        : adverse ? '学校任务、竞赛表现或与师长的要求更容易形成压力' : '学校职责、竞赛或阶段成果更容易发生变化';
+      if (stageKey === 'education') return favorable ? '实习、求职准备或第一个重要实践项目更容易落实'
+        : adverse ? '实习、求职准备或实践项目更容易反复' : '实习、求职准备或实践方向更容易发生变化';
+      if (stageKey === 'launch') return favorable ? '求职、转岗或第一个重要项目更容易落实'
+        : adverse ? '求职、岗位稳定或项目落地更容易反复' : '求职、岗位或项目方向更容易发生变化';
+      if (stageKey === 'late') return favorable ? '职责交接、顾问合作或既有成果兑现更容易落实'
+        : adverse ? '职责交接、合作收尾或工作量安排更容易形成压力' : '职责交接、合作方式或生活重心更容易调整';
+      return favorable ? '职位、重要项目、客户认可或成果兑现更容易推进'
+        : adverse ? '职位调整、项目交付、考核或上下级协调更容易形成压力'
+          : '职位、项目或工作安排更容易发生明显变化';
+    }
+    if (record.domain === 'wealth') {
+      if (stageKey === 'child') return favorable ? '家庭用于学习与成长的资源更容易到位'
+        : adverse ? '学习、照护或家庭安排带来的支出更容易增加' : '家庭资源和学习支出会成为这一年的主要变量';
+      if (stageKey === 'education') return favorable ? '奖学金、兼职收入、实习报酬或家庭支持更容易到位'
+        : adverse ? '学费、培训、租住或求职准备带来的支出更容易增加' : '学习投入、兼职收入与家庭支持会同时变化';
+      if (stageKey === 'late') return favorable ? '退休收入、资产安排、回款或家庭资源配置更容易落实'
+        : adverse ? '医疗照护、家庭支出、回款延迟或资产占用更容易增加' : '退休收入、家庭支出与资产安排会同时变化';
+      return favorable ? '收入、客户回款、项目结算或资源兑现更容易落地'
+        : adverse ? '支出、垫款、回款延迟或资金占用更容易增加'
+          : '收入机会和资金安排会同时增多，最终能否留下仍需核对';
+    }
+    if (record.domain === 'relationship') {
+      if (stageKey === 'child') return favorable ? '与父母、老师或同伴的沟通和协作更容易改善'
+        : adverse ? '与父母、老师或同伴的边界和争执更容易成为主要问题' : '家庭与同伴关系更容易被明显牵动';
+      if (stageKey === 'education') return favorable ? '关系确认、沟通靠近或合作推进更容易发生'
+        : adverse ? '关系边界、争执或疏远更容易成为主要问题' : '感情与合作关系更容易被明显牵动';
+      if (stageKey === 'late') return favorable ? '伴侣沟通、家庭协作或共同生活安排更容易改善'
+        : adverse ? '伴侣距离、家庭分工或照护安排更容易出现摩擦' : '伴侣沟通与家庭协作更容易发生变化';
+      return favorable ? '关系确认、同居婚嫁商议、沟通修复或共同安排更容易推进'
+        : adverse ? '争执、距离、分合决定或合作边界调整更容易出现'
+          : '关系确认、共同安排或分合选择更容易成为主要议题';
+    }
+    if (record.domain === 'family') {
+      return favorable ? '家庭分工、长辈支持、居住或照护安排更容易落实'
+        : adverse ? '家庭分工、长辈事务、居住或照护安排更容易增加压力'
+          : '家庭分工、长辈事务或居住安排更容易发生变化';
+    }
+    if (record.domain === 'health') {
+      return favorable ? '作息、恢复状态或既有健康管理更容易改善'
+        : adverse ? '劳累、睡眠、情绪承载或行动安全更需要留意'
+          : '作息、恢复状态或行动安全会成为这一年的主要变量';
+    }
+    if (record.domain === 'change') {
+      return favorable ? '搬迁、换环境、改计划或重新启动更容易顺利落实'
+        : adverse ? '既有安排更容易被打断，搬迁、出行或计划调整更容易反复'
+          : '环境、出行或生活重心更容易发生明显变化';
+    }
+    return list(record.scenarioCandidates)[0] || record.eventCandidate || '相关事项更容易被引动';
+  }
+
+  function timingCandidateOutcome(row) {
+    var contextMeta = [row.age !== null && row.age !== undefined ? row.age + '岁' : '', row.stage].filter(Boolean).join('·');
+    var context = row.year + '年' + (contextMeta ? '（' + contextMeta + '）' : '');
+    var scene = row.selectedScenario || row.scenarios[0] || row.eventCandidate;
+    return context + '为' + row.direction + '：' + (scene || '相关事项更容易被引动') + '。';
+  }
+
+  function attachDomainTiming(narrative, facts, domain) {
+    var meta = REPORT_TIMING_DOMAIN[domain];
+    if (!narrative || !meta) return narrative;
+    var candidates = domainTimingCandidates(facts, domain, 2);
+    // 没有足够证据时不额外塞入三个相似的“无法判断”卡片，统一留在五年边界说明中。
+    if (!candidates.length) return narrative;
+    var outcome = candidates.map(timingCandidateOutcome).join(' ');
+    var source = candidates.map(function (row) {
+      return row.year + '年：' + row.evidence.slice(0, 2).join('；');
+    }).filter(function (row) { return !/:$/.test(row); }).join(' ');
+    narrative.verdicts = list(narrative.verdicts).concat([narrativeVerdict(meta.title, '', ['TIMING_DOMAIN:' + domain], {
+      sourceText: source,
+      outcomeText: outcome,
+    })]);
+    return narrative;
+  }
+
+  function buildReportStoryline(facts) {
+    var core = facts && facts.core || {};
+    var strength = core.strength || {};
+    var pattern = core.pattern || {};
+    var yongJi = core.yongJi || {};
+    var source = yongJi.yongShenSource || {};
+    var yong = textOf(source.element) || list(yongJi.yongShen)[0] || '';
+    var ji = list(yongJi.jiShen)[0] || '';
+    var entries = list(yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries);
+    var yongEntry = entries.filter(function (item) { return item && item.element === yong; })[0] || {};
+    var jiEntry = entries.filter(function (item) { return item && item.element === ji; })[0] || {};
+    var level = textOf(strength.level || strength.label) || '旺衰已定';
+    var centralTension = /极弱|身弱|偏弱/.test(level)
+      ? '真正要解决的是承载不足：机会、钱和责任来得太快时，人容易先累、先乱，所以要先让自己接得住，再谈放大结果。'
+      : /身强|偏强|旺极/.test(level)
+        ? '你不缺推动事情的力量，真正的问题是力量能不能被疏通并变成成果；继续一味加码，反而容易变成内耗、竞争或反复。'
+        : '命局不是简单地越补越好，关键在于维持现有承载，同时让真正能解决问题的力量发挥出来。';
+    var yongState = yong
+      ? yongEntry.natalRole === '原局未现'
+        ? yong + '在原局没有直接出现，它更像后天需要等待或主动建立的关键条件。'
+        : yongEntry.natalRole === '原局有功'
+          ? yong + '已经在原局发挥作用，后面遇到它通常更容易顺，但仍要看具体干支是否把这股力量接通。'
+          : yongEntry.natalRole === '功过并见'
+            ? yong + '在原局既有帮助也有副作用，后面遇到它不能一概论好，必须看它具体落在哪里、作用到谁。'
+            : yong + '是解决原局核心问题的第一顺序，后面的行运都要先看它能不能真正发挥。'
+      : '当前没有形成单一用神，后面的判断以具体干支关系和现实反馈为主。';
+    var adverse = ji
+      ? (jiEntry.fortuneDirection || '逢' + ji + '运通常要增加一层复核')
+      : '没有单一五行能够直接概括所有阻力';
+    var domainCounts = {};
+    list(facts && facts.fiveYear && facts.fiveYear.years).forEach(function (year) {
+      var primary = annualAdjudication(year) && annualAdjudication(year).primaryEvent;
+      if (primary && primary.domain) domainCounts[primary.domain] = (domainCounts[primary.domain] || 0) + 1;
+    });
+    var domainLabels = { study: '学习考试', career: '事业工作', wealth: '收入资金', relationship: '婚恋合作', family: '家庭长辈', health: '身心安全', change: '环境变化' };
+    var focus = Object.keys(domainCounts).sort(function (a, b) { return domainCounts[b] - domainCounts[a] || a.localeCompare(b); }).slice(0, 2);
+    return {
+      headline: '整份报告先看这一条主线',
+      summary: centralTension + ' ' + yongState,
+      direction: yong ? (yongEntry.fortuneDirection || '逢' + yong + '运优先看是否真正改善原局') : '',
+      boundary: ji ? adverse + '；这只是原局给出的基础方向，具体年份仍由大运、流年与原局的实际作用复核。' : '具体年份仍由大运、流年与原局的实际作用复核。',
+      focus: focus.length ? '接下来五年的现实重点更集中在' + focus.map(function (key) { return domainLabels[key] || key; }).join('和') + '，其他板块都围绕这条主线展开。' : '',
+      technicalBasis: compactTechnicalTerms([
+        /^日主/.test(level) ? level : '日主' + level,
+        textOf(pattern.displayName || pattern.name || pattern.label),
+        yong ? yong + '为' + textOf(source.label || source.primaryType || '用神') : '',
+      ], 3),
+    };
+  }
+
+  function dedupeNarrativeSources(narratives) {
+    var seen = {};
+    ['currentYear', 'relationship', 'wealth', 'study', 'fiveYear'].forEach(function (section) {
+      var narrative = narratives && narratives[section];
+      list(narrative && narrative.verdicts).forEach(function (verdict) {
+        var source = textOf(verdict && verdict.sourceText);
+        var key = source.replace(/[\s，。；、：！？,.!?;:“”‘’"']/g, '');
+        if (key.length < 12) return;
+        if (seen[key]) verdict.sourceText = '';
+        else seen[key] = section;
+      });
+    });
+    return narratives;
   }
 
   function buildWealthNarrative(facts) {
@@ -2839,6 +3143,19 @@
     }
     // 财富分数和内部等级继续保留原始结果；公开报告最低只显示 A6。
     var publicLevel = Math.max(6, level);
+    var wealthContinuitySource = [
+      Number(resource.visibleCount) > 0 ? '财星透干' : Number(resource.hiddenCount) > 0 ? '财星藏支' : '财星不显',
+      list(quality.roots).length ? '财星有根' : '根气不足',
+      list(quality.sources).length ? '有生财来源' : '生财来源不集中',
+      list(quality.restraints).length ? '同时受到制约' : '',
+    ].filter(Boolean).join('、') + '。';
+    var wealthContinuityText = Number(resource.visibleCount) > 0 && list(quality.roots).length
+      ? '收入机会比较容易被看见，也有条件持续承接；真正拉开差距的关键，是把已经出现的客户、职位或项目做成重复收入，而不是只等偶然机会。'
+      : Number(resource.visibleCount) > 0
+        ? '赚钱机会来得比较直接，但持续性弱于机会本身；常见表现是阶段进账明显，后续能否续上，要看客户复购、项目延续或职位稳定性。'
+        : Number(resource.hiddenCount) > 0
+          ? '赚钱能力并非没有，但平时不一定直接表现为高收入；当工作平台、客户资源或相关岁运把财星引出来时，收入才更容易出现明显变化。'
+          : '原局财星不显，财富增长更依赖后天建立稳定职业、产品、客户或经营模式，单靠等待机会很难形成持续放大。';
     return {
       grade: 'A' + publicLevel,
       level: '',
@@ -2855,6 +3172,10 @@
         }),
         narrativeVerdict('钱主要从哪里来', '', scalePaths.length ? scalePaths.map(function (row) { return 'WEALTH_PATH:' + textOf(row.type || row); }) : ['WEALTH_PATH:FALLBACK'], {
           sourceText: (scalePaths.length ? '命局形成' + scalePaths.map(function (row) { return textOf(row.type || row); }).join('、') + '。' : '原局没有形成单一高权重财富链。') + (storageSourceText.length ? ' ' + storageContributions.filter(function (item) { return item.source; }).map(function (item) { return item.basis; }).join('；') + '。' : ''), outcomeText: sourceOutcome,
+        }),
+        narrativeVerdict('收入能不能持续放大', '', ['WEALTH_QUALITY:CONTINUITY'], {
+          sourceText: wealthContinuitySource,
+          outcomeText: wealthContinuityText,
         }),
         narrativeVerdict('钱能不能留下', '', (retentionRisks.length ? retentionRisks.map(function (row) { return 'WEALTH_RETENTION:' + textOf(row.type || row); }) : ['WEALTH_RETENTION:CLEAR']).concat(['WEALTH_STORAGE:' + (wealth.storage && wealth.storage.activated ? 'activated' : hasFinancialStorage ? 'present' : 'absent')]), {
           sourceText: (retentionRisks.length ? '原局存在' + retentionRisks.map(function (row) { return textOf(row.type || row); }).join('、') + '等财富留存证据。' : '原局未见明确财富留存风险。') + (storageFacts.length ? ' ' + storageFacts.join('；') + '。' : ''), outcomeText: retentionOutcome,
@@ -3148,6 +3469,18 @@
       return textOf(row && row.source) + '克' + textOf(row && row.target);
     }).filter(function (row) { return row !== '克'; });
     if (controlDirections.length) eventVerdicts.push(narrativeVerdict('两个人容易争谁说了算', controlDirections.join('、') + '。日柱参与天干相克，说明两个人在主导权、现实要求或责任分配上更容易正面顶起来；具体是谁压着谁，要按实际的生克方向判断。' + originalRoleSuffix('克'), ['PALACE_EVENT:STEM_CONTROL', 'PALACE_ROLE:' + palaceRoleText]));
+    var relationshipLandingSource = [
+      textOf(quality.visibility),
+      typeof quality.rooted === 'boolean' ? (quality.rooted ? '配偶星有根' : '配偶星根气不足') : '',
+      textOf(quality.rolePurity),
+    ].filter(Boolean).join('、') + '。';
+    var relationshipLandingText = /透干/.test(textOf(quality.visibility)) && quality.rooted
+      ? '感情对象和关系机会通常比较容易进入现实生活，也更容易从认识、接触推进到稳定相处；能否长期维持，仍要看夫妻宫受到的合冲刑害。'
+      : /透干/.test(textOf(quality.visibility))
+        ? '感情机会并不难出现，对方也容易较快进入你的生活，但关系从出现到稳定之间仍有距离，现实安排和相处方式会决定能否真正落地。'
+        : list(spouseStar.occurrences).length
+          ? '感情多半不是一开始就特别明确，更容易经过长期接触、观察或某段岁运推动后才真正确定；不能只用“桃花多不多”判断结果。'
+          : '原局配偶星不显，感情节奏更依赖大运流年的引动；没有明显引动时，关系机会可能出现得晚，或出现后推进速度较慢。';
     return {
       hideScore: true,
       headline: interactionTexts[interaction.direction] || textOf(interaction.conclusion),
@@ -3158,6 +3491,10 @@
         narrativeVerdict('配偶性格', personalityText, ['SPOUSE_PALACE:' + (palace.zhi || 'unknown'), 'PALACE_MAIN_ROLE:' + (mainHidden && mainHidden.role || 'unknown')]),
         narrativeVerdict('婚后作用', marriageEffectText, ['SPOUSE_STAR_ROLE:' + (quality.elementRole || 'neutral')]),
         narrativeVerdict('认识渠道', '缘分更容易出现在' + distanceCopy + '，属于现实接触中逐渐建立关系的类型。', ['SPOUSE_STAR_POSITION:' + firstPosition]),
+        narrativeVerdict('缘分是否容易落地', '', ['SPOUSE_STAR_QUALITY:' + (quality.visibility || 'unknown')], {
+          sourceText: relationshipLandingSource,
+          outcomeText: relationshipLandingText,
+        }),
         narrativeVerdict('年龄倾向', ageCopy, ['SPOUSE_AGE_POSITION:' + (relationship.age && relationship.age.tendency || 'unclear')]),
         narrativeVerdict('外形气质', appearanceText, ['SPOUSE_PALACE_APPEARANCE:' + (palace.zhi || 'unknown'), 'SPOUSE_STAR_ELEMENT:' + (spouseStar.element || 'unknown')]),
       ].concat(eventVerdicts),
@@ -3595,6 +3932,22 @@
     var timingBasis = year && year.daYun
       ? '按流年、大运与原局的实际关系判断。'
       : '当前大运未纳入，只按流年与原局的实际关系判断。';
+    var roleRows = [
+      { label: '流年天干', role: year.stemRole },
+      { label: '流年地支', role: year.branchRole },
+    ].concat(year && year.daYun ? [
+      { label: '大运天干', role: year.daYunStemRole },
+      { label: '大运地支', role: year.daYunBranchRole },
+    ] : []).filter(function (row) { return row.role && row.role !== '未纳入'; });
+    var favorableRoles = roleRows.filter(function (row) { return row.role === '用神' || row.role === '喜神'; }).length;
+    var adverseRoles = roleRows.filter(function (row) { return row.role === '忌神'; }).length;
+    var roleOutcome = favorableRoles > adverseRoles
+      ? '这一年的整体环境对你偏有帮助，做同样的事情更容易得到资源、配合或推进机会；但具体领域仍以真正发生的刑冲合害为准。'
+      : adverseRoles > favorableRoles
+        ? '这一年的整体环境更容易增加消耗、责任或反复，同样的目标往往要付出更多成本；若同时出现有利引动，局部事情仍然能够推进。'
+        : favorableRoles || adverseRoles
+          ? '这一年机会和压力同时存在，不能只按“吉年”或“凶年”概括；哪一件事更明显，要看岁运具体引动了事业、钱、关系还是学习。'
+          : '这一年的五行底色没有明显偏向，事情是否发生明显变化，主要取决于流年与原局形成的具体关系。';
     var headline = interactions.length
       ? timingDomainHeadline(decisiveInteractions, directionLabel)
       : hasTriggeredRisk
@@ -3603,8 +3956,37 @@
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
       outcomeText: headline,
+    }), narrativeVerdict('今年的整体顺逆底色', '', ['ANNUAL_ROLE_BALANCE'], {
+      sourceText: roleRows.map(function (row) { return row.label + '为' + row.role; }).join('，') + '。',
+      outcomeText: roleOutcome,
     })];
-    verdicts = verdicts.concat(timingDomainVerdicts(interactions));
+    var adjudication = annualAdjudication(year);
+    if (adjudication && adjudication.primaryEvent) {
+      var primary = adjudication.primaryEvent;
+      var stageText = adjudication.lifeStage && adjudication.lifeStage.label || '年龄阶段待核';
+      var concreteEnough = !!primary.hasIndependentAnnualTrigger;
+      verdicts.push(narrativeVerdict(concreteEnough ? '今年最可能应在哪件事' : '今年能锁定到什么程度', '', ['ANNUAL_EVENT:' + primary.domain], {
+        sourceText: [stageText, textOf(primary.decisionBasis), list(primary.evidence).slice(0, 2).join('；')].filter(Boolean).join('。'),
+        outcomeText: concreteEnough
+          ? selectTimingScenario(primary, adjudication) + '。这是今年最值得优先核对的现实事项。'
+          : '目前只能锁定“' + primary.label + '”主题较活跃，还缺少独立的当年结构触发，不能硬说某件具体事情一定发生。',
+      }));
+      var secondary = adjudication.secondaryEvent;
+      if (secondary && secondary.hasIndependentAnnualTrigger) {
+        verdicts.push(narrativeVerdict('其次会被带动的方面', '', ['ANNUAL_EVENT_SECONDARY:' + secondary.domain], {
+          sourceText: list(secondary.evidence).slice(0, 2).join('；'),
+          outcomeText: selectTimingScenario(secondary, adjudication) + '。',
+        }));
+      }
+    }
+    // The adjudication layer has already selected the one primary and, at
+    // most, one secondary real-world event.  Re-expanding every interaction
+    // into another set of domain cards would recreate the old "everything
+    // may happen" report and duplicate the selected events.  Keep the broad
+    // domain fallback only for legacy/incomplete ledgers without a selection.
+    if (!(adjudication && adjudication.primaryEvent)) {
+      verdicts = verdicts.concat(timingDomainVerdicts(interactions));
+    }
     var relationshipActivations = list(year.relationship && year.relationship.activations);
     if (!interactions.some(function (row) { return list(row.domains).indexOf('relationship') >= 0; })) {
       relationshipActivations.forEach(function (activation) {
@@ -3690,6 +4072,13 @@
       var decisiveOutcome = uniqueTimingTexts(timingDomainVerdicts(decisive).map(function (row) {
         return row.outcomeText;
       })).join(' ');
+      var adjudication = annualAdjudication(year);
+      var primaryEvent = adjudication && adjudication.primaryEvent;
+      var eventOutcome = primaryEvent && primaryEvent.hasIndependentAnnualTrigger
+        ? '这一年最可能应在“' + primaryEvent.label + '”：' + selectTimingScenario(primaryEvent, adjudication) + '。'
+        : primaryEvent
+          ? '这一年的现实重心偏向“' + primaryEvent.label + '”，但缺少独立的当年结构触发，不硬断具体事件。'
+          : '';
       var baseSummary = decisive.length
         ? decisiveOutcome
         : legacyRelationship.length
@@ -3697,7 +4086,7 @@
           : riskCopies.length
             ? String(year && year.year || '') + '年未见强刑冲合，但有风险信号已被岁运触发。'
             : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
-      var summary = [baseSummary]
+      var summary = [eventOutcome, baseSummary]
         .concat(riskCopies.map(function (copy) { return copy.outcomeText; }))
         .concat(reliefCopies.map(function (copy) { return copy.outcomeText; }))
         .filter(Boolean).join(' ');
@@ -3706,7 +4095,12 @@
         pillar: textOf(year && year.pillar && year.pillar.gan) + textOf(year && year.pillar && year.pillar.zhi),
         daYunLabel: daYunStatusLabel(year),
         directionLabel: directionLabel,
+        lifeStage: adjudication && adjudication.lifeStage && adjudication.lifeStage.label || '',
+        primaryEventLabel: primaryEvent && primaryEvent.label || '',
+        eventDirection: primaryEvent && primaryEvent.direction || '',
+        hasIndependentAnnualTrigger: !!(primaryEvent && primaryEvent.hasIndependentAnnualTrigger),
         sourceText: displaySelected.map(function (row) { return textOf(row.sourceText); })
+          .concat(primaryEvent ? list(primaryEvent.evidence).slice(0, 2) : [])
           .concat(riskCopies.map(function (copy) { return copy.sourceText; }))
           .concat(reliefCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
@@ -3748,6 +4142,12 @@
       : riskYears.length
         ? '未来五年已有风险信号被岁运触发，具体表现以对应年份列出的结果为准。'
         : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
+    var storyLine = years.map(function (row) {
+      var role = row.hasIndependentAnnualTrigger
+        ? (row.eventDirection === '偏有利' ? '推进' : row.eventDirection === '偏不利' ? '调整' : '转折')
+        : '蓄势';
+      return row.year + '年' + role + (row.primaryEventLabel ? '（' + row.primaryEventLabel + '）' : '');
+    }).join(' → ');
     return {
       hideScore: true,
       headline: headline,
@@ -3764,9 +4164,13 @@
       verdicts: (daYunCommonVerdict ? [daYunCommonVerdict] : []).concat([narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
         sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),
         outcomeText: headline,
+      }), narrativeVerdict('五年推进顺序', '', ['FIVE_YEAR:EVENT_LEDGER'], {
+        sourceText: '按每年的独立结构触发、最相关现实领域与年龄阶段依次排列；没有独立触发的年份只标为蓄势。',
+        outcomeText: storyLine,
       })]),
       years: years.map(function (row) {
         var clean = Object.assign({}, row);
+        clean.isCurrentYear = !!(facts && facts.currentYear && Number(facts.currentYear.year) === Number(row.year));
         delete clean.priority;
         delete clean.priorityCount;
         delete clean.riskTriggered;
@@ -3783,13 +4187,13 @@
   }
 
   function buildNarratives(facts) {
-    return {
-      currentYear: buildCurrentYearNarrative(facts),
-      relationship: buildRelationshipNarrative(facts),
-      wealth: buildWealthNarrative(facts),
-      study: buildStudyNarrative(facts),
-      fiveYear: buildFiveYearNarrative(facts),
-    };
+    return dedupeNarrativeSources({
+      currentYear: attachNarrativeTechnicalBasis(buildCurrentYearNarrative(facts), facts, 'currentYear'),
+      relationship: attachNarrativeTechnicalBasis(attachDomainTiming(buildRelationshipNarrative(facts), facts, 'relationship'), facts, 'relationship'),
+      wealth: attachNarrativeTechnicalBasis(attachDomainTiming(buildWealthNarrative(facts), facts, 'wealth'), facts, 'wealth'),
+      study: attachNarrativeTechnicalBasis(attachDomainTiming(buildStudyNarrative(facts), facts, 'study'), facts, 'study'),
+      fiveYear: attachNarrativeTechnicalBasis(buildFiveYearNarrative(facts), facts, 'fiveYear'),
+    });
   }
 
   function buildFacts(bazi, gender, options) {
@@ -3831,6 +4235,7 @@
       study: null,
       currentYear: null,
       fiveYear: null,
+      storyline: null,
     };
     facts.relationship = buildRelationshipFacts(bazi, gender, core, deps.calculator);
     facts.wealth = buildWealthFacts(bazi, core, deps.calculator);
@@ -3840,6 +4245,7 @@
       bazi, timingCore, deps.calculator, deps.chain, facts.anchorYear, gender
     );
     facts.currentYear = facts.fiveYear.years[0] || null;
+    facts.storyline = buildReportStoryline(facts);
     var narratives = buildNarratives(facts);
     if (facts.currentYear) facts.currentYear.narrative = narratives.currentYear;
     facts.relationship.narrative = narratives.relationship;
@@ -3873,6 +4279,8 @@
       storageOutcome: storageOutcome,
       deriveWealthDirection: deriveWealthDirection,
       publicStudyBand: publicStudyBand,
+      dedupeNarrativeSources: dedupeNarrativeSources,
+      selectTimingScenario: selectTimingScenario,
     };
   }
   return api;

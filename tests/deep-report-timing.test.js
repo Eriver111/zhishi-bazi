@@ -74,6 +74,34 @@ test('each of five years resolves its own DaYun across a boundary', () => {
   assert.equal(result.transitions[0].year, 2028);
 });
 
+test('dated reports pass the matched DaYun ledger and real age into annual event adjudication', () => {
+  const received = [];
+  const ledger = { domainRecords: [{ domain: 'career', direction: '偏有利' }] };
+  const chain = {
+    analyzeFortune: (_bazi, rows) => ({
+      periods: rows.map(row => ({ ...row, eventLedger: ledger })),
+    }),
+    analyzeLiuNian: (_bazi, _daYun, liuNian, _yongJi, options) => {
+      received.push({ year: liuNian.year, options });
+      return {
+        triggers: [], reliefs: [],
+        eventAdjudication: {
+          year: liuNian.year, age: options.age,
+          lifeStage: { label: '事业家庭发展阶段' },
+          primaryEvent: null, secondaryEvent: null, domainRecords: [],
+        },
+      };
+    },
+  };
+
+  const result = DeepReport.buildFiveYearFacts(chart, core, makeCalculator(), chain, 2026, 'male');
+  assert.equal(received.length, 5);
+  assert.equal(received[0].options.birthYear, 1990);
+  assert.equal(received[0].options.age, 36);
+  assert.equal(received[0].options.daYunEventLedger, ledger);
+  assert.equal(result.years[0].eventAdjudication.age, 36);
+});
+
 test('a structural risk is emphasized only when the annual nodes trigger it', () => {
   const dormant = DeepReport.buildAnnualFacts(
     chart, core, makeCalculator(), makeChain(false), 2030,

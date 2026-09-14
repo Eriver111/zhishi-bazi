@@ -378,7 +378,7 @@ test('wealth renderer preserves the four-part customer structure and escapes dir
   assert.doesNotMatch(page, /<east>/);
 });
 
-test('paid verdict renders professional source before the plain outcome and escapes both', () => {
+test('paid verdict leads with the plain outcome and keeps an escaped professional basis below it', () => {
   const facts = fixtureFacts();
   facts.currentYear.narrative = {
     hideScore: true,
@@ -395,13 +395,51 @@ test('paid verdict renders professional source before the plain outcome and esca
 
   const rendered = renderFixture({ facts });
   const page = rendered.nodes.thisYearContent.innerHTML;
-  assert.ok(page.indexOf('流年申冲日支寅') < page.indexOf('两个人更容易争吵'));
+  assert.ok(page.indexOf('两个人更容易争吵') < page.indexOf('流年申冲日支寅'));
   assert.match(page, /deep-report-verdict-source/);
   assert.match(page, /deep-report-verdict-outcome/);
   assert.doesNotMatch(page, /<img/);
   assert.match(page, /&lt;img src=x&gt;/);
   assert.match(rendered.pdfHtml, /流年申冲日支寅/);
   assert.doesNotMatch(page, /TIMING:LIUNIAN/);
+});
+
+test('paid narrative renders compact technical anchors without replacing the plain conclusion', () => {
+  const facts = fixtureFacts();
+  facts.currentYear.narrative = {
+    hideScore: true,
+    headline: '今年考试准备会比平时吃力。',
+    painPoint: '复习容易被现实安排打断。',
+    technicalBasis: ['日主偏弱', '财破印', '丙午流年'],
+    verdicts: [{ title: '考试结果', outcomeText: '准备不足时，上岸难度偏高。', sourceText: '财星制印且在本年被引动。' }],
+    note: '',
+  };
+  const page = renderFixture({ facts }).nodes.thisYearContent.innerHTML;
+  assert.match(page, /核心命理依据/);
+  assert.match(page, /日主偏弱/);
+  assert.match(page, /财破印/);
+  assert.ok(page.indexOf('今年考试准备会比平时吃力') < page.indexOf('核心命理依据'));
+  assert.ok(page.indexOf('准备不足时，上岸难度偏高') < page.indexOf('财星制印且在本年被引动'));
+});
+
+test('the paid report opens with one shared plain-language storyline', () => {
+  const facts = fixtureFacts();
+  facts.storyline = {
+    headline: '整份报告先看这一条主线',
+    summary: '先解决承载不足，再看机会能不能真正落地。',
+    direction: '逢火运总体偏顺',
+    boundary: '具体年份仍要复核实际作用。',
+    focus: '未来五年重点在事业和收入。',
+    technicalBasis: ['日主偏弱', '火为用神'],
+  };
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.thisYearContent.innerHTML;
+  assert.match(page, /整份报告先看这一条主线/);
+  assert.match(page, /先解决承载不足/);
+  assert.match(page, /行运方向/);
+  assert.match(page, /不能机械判断的地方/);
+  assert.match(page, /日主偏弱|火为用神/);
+  assert.match(rendered.pdfHtml, /整份报告先看这一条主线/);
 });
 
 test('legacy text-only verdicts remain visible during source-outcome migration', () => {
@@ -420,7 +458,7 @@ test('legacy text-only verdicts remain visible during source-outcome migration',
   assert.match(rendered.nodes.studyContent.innerHTML, /理解和表达能够连接起来/);
 });
 
-test('paid five-year report keeps the overview but does not render repetitive yearly cards', () => {
+test('paid five-year report renders compact yearly differences without repeating the current-year body', () => {
   const facts = fixtureFacts();
   facts.fiveYear.narrative = {
     hideScore: true,
@@ -440,10 +478,28 @@ test('paid five-year report keeps the overview but does not render repetitive ye
   const rendered = renderFixture({ facts });
   const page = rendered.nodes.fortuneContent.innerHTML;
   assert.match(page, /五年变化/);
-  assert.doesNotMatch(page, /deep-report-year-verdicts|deep-report-year/);
-  assert.doesNotMatch(page, /戊申|甲辰大运|流年申冲日支寅|争吵、分开住/);
+  assert.match(page, /deep-report-year-verdicts|deep-report-year/);
+  assert.match(page, /戊申|甲辰大运|流年申冲日支寅|争吵、分开住/);
   assert.doesNotMatch(page, /\/10/);
-  assert.doesNotMatch(rendered.pdfHtml, /甲辰大运|流年申冲日支寅/);
+  assert.match(rendered.pdfHtml, /甲辰大运|流年申冲日支寅/);
+});
+
+test('current-year summary is referenced once inside the five-year section instead of duplicated', () => {
+  const facts = fixtureFacts();
+  facts.fiveYear.narrative = {
+    hideScore: true,
+    headline: '未来阶段逐年有差异。',
+    painPoint: '',
+    verdicts: [],
+    years: [{
+      year: 2026, pillar: '丙午', daYunLabel: '甲辰大运', directionLabel: '偏有利',
+      sourceText: '这一大段依据不应再次出现。', summary: '这一大段今年结论不应再次出现。', isCurrentYear: true,
+    }],
+    note: '',
+  };
+  const page = renderFixture({ facts }).nodes.fortuneContent.innerHTML;
+  assert.match(page, /本年详细判断已放在“今年运势”/);
+  assert.doesNotMatch(page, /这一大段依据|这一大段今年结论/);
 });
 
 test('relationship rendering exposes escaped palace, spouse quality, day events and conditional risks', () => {

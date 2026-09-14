@@ -1501,18 +1501,28 @@
     line-height: 1.55;
 }
 .deep-report-narrative > p { margin: 10px 0; font-size: 14px; line-height: 1.9; }
+.deep-report-storyline { margin-bottom: 14px; padding: 16px 18px; border: 1px solid rgba(212,175,55,.24); border-left: 3px solid var(--gold); background: linear-gradient(135deg,rgba(212,175,55,.09),rgba(212,175,55,.025)); }
+.deep-report-storyline h3 { margin: 0 0 9px; color: var(--gold); font-family: 'STKaiti','KaiTi','FangSong',serif; font-size: 19px; }
+.deep-report-storyline p { margin: 7px 0; color: var(--text-primary); font-size: 13px; line-height: 1.85; }
+.deep-report-storyline-main { font-size: 15px !important; font-weight: 700; }
+.deep-report-storyline-basis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.deep-report-storyline-basis span { padding: 3px 8px; border: 1px solid rgba(212,175,55,.2); color: var(--gold); font-size: 10px; }
 .deep-report-pain-point {
     padding: 11px 14px;
     border-left: 3px solid #9f453b;
     background: rgba(159,69,59,.08);
     font-weight: 700;
 }
+.deep-report-technical-basis { margin: 13px 0 4px; padding: 10px 12px; border: 1px solid rgba(212,175,55,.14); background: rgba(212,175,55,.045); }
+.deep-report-technical-label { display: block; margin-bottom: 7px; color: var(--text-secondary); font-size: 10px; letter-spacing: 2px; }
+.deep-report-technical-terms { display: flex; flex-wrap: wrap; gap: 6px; }
+.deep-report-technical-terms span { padding: 3px 8px; border: 1px solid rgba(212,175,55,.22); color: var(--gold); background: rgba(212,175,55,.055); font-size: 11px; line-height: 1.5; }
 .deep-report-verdict-list { display: grid; gap: 10px; margin-top: 15px; }
 .deep-report-verdict-item { padding: 12px 14px; border: 1px solid rgba(212,175,55,.1); background: rgba(255,255,255,.018); }
 .deep-report-verdict-item h4 { margin: 0 0 5px; color: var(--gold); font-size: 13px; letter-spacing: 2px; }
 .deep-report-verdict-item p { margin: 0; color: var(--text-primary); font-size: 13px; line-height: 1.85; }
 .deep-report-verdict-item .deep-report-verdict-source,
-.deep-report-year .deep-report-verdict-source { color: var(--text-secondary); font-size: 11px; line-height: 1.75; margin-bottom: 5px; }
+.deep-report-year .deep-report-verdict-source { color: var(--text-secondary); font-size: 11px; line-height: 1.75; margin-top: 6px; }
 .deep-report-verdict-item .deep-report-verdict-outcome,
 .deep-report-year .deep-report-verdict-outcome { color: var(--text-primary); font-size: 14px; line-height: 1.9; }
 .deep-report-actions { margin-top: 15px; padding: 12px 15px; background: rgba(75,120,92,.08); }
@@ -1524,6 +1534,7 @@
 .deep-report-year-verdicts .deep-report-year { padding: 13px 14px; border: 1px solid rgba(212,175,55,.1); border-left: 2px solid var(--gold); }
 .deep-report-year-verdicts h3 { margin: 0 0 5px; color: var(--gold); font-size: 15px; }
 .deep-report-year-verdicts p { margin: 0; color: var(--text-primary); font-size: 13px; line-height: 1.75; }
+.deep-report-year-verdicts .deep-report-year-meta { margin-bottom: 6px; color: var(--text-secondary); font-size: 11px; }
 @media (max-width:600px) {
     .deep-report-grade { font-size: 32px; }
     .deep-report-level { font-size: 16px; }
@@ -2828,7 +2839,7 @@
     <script src="js/bazi.js?v=20260913a"></script>
     <script src="js/structural.js?v=1"></script>
     <script src="js/bazi-chain.js?v=11"></script>
-    <script src="js/deep-report.js?v=23"></script>
+    <script src="js/deep-report.js?v=24"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
  * 知时 — 五行环形图
@@ -2964,7 +2975,7 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=4"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=35"></script>
+    <script src="js/result.js?v=36"></script>
     <script src="js/pro-analysis.js?v=17"></script>
     <script src="js/auth.js?v=26"></script>
     <script src="js/payment.js?v=2"></script>

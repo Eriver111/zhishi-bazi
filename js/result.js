@@ -407,6 +407,10 @@ function reportCard(title, fact) {
     return '<article class="deep-report-card">' + titleHtml + state + confidence + conclusion + reportEvidence(fact.evidence) + reportConditions(fact.conditions) + '</article>';
 }
 
+function reportNarrativeFingerprint(value) {
+    return reportText(value).replace(/[\s，。；、：！？,.!?;:“”‘’"']/g, '').trim();
+}
+
 function reportNarrative(narrative) {
     if (!narrative) return '';
     var grade = reportText(narrative.grade);
@@ -423,20 +427,67 @@ function reportNarrative(narrative) {
     html += '<article class="deep-report-card deep-report-narrative">';
     if (narrative.headline) html += '<h3>' + reportEsc(reportText(narrative.headline)) + '</h3>';
     if (narrative.painPoint) html += '<p class="deep-report-pain-point">' + reportEsc(reportText(narrative.painPoint)) + '</p>';
+    if (Array.isArray(narrative.technicalBasis) && narrative.technicalBasis.length) {
+        html += '<div class="deep-report-technical-basis"><span class="deep-report-technical-label">核心命理依据</span><div class="deep-report-technical-terms">' + narrative.technicalBasis.map(function(term) {
+            return '<span>' + reportEsc(reportText(term)) + '</span>';
+        }).join('') + '</div></div>';
+    }
     if (Array.isArray(narrative.verdicts) && narrative.verdicts.length) {
+        var seenOutcomes = {};
+        [narrative.headline, narrative.painPoint].forEach(function(text) {
+            var key = reportNarrativeFingerprint(text);
+            if (key) seenOutcomes[key] = true;
+        });
         html += '<div class="deep-report-verdict-list">' + narrative.verdicts.map(function(verdict) {
             var sourceText = reportText(verdict.sourceText);
             var outcomeText = reportText(verdict.outcomeText || verdict.text);
+            var outcomeKey = reportNarrativeFingerprint(outcomeText);
+            if (outcomeKey && seenOutcomes[outcomeKey]) outcomeText = '';
+            else if (outcomeKey) seenOutcomes[outcomeKey] = true;
             var body = '';
-            if (sourceText) body += '<p class="deep-report-verdict-source">命理依据：' + reportEsc(sourceText) + '</p>';
             if (outcomeText) body += '<p class="deep-report-verdict-outcome">' + reportEsc(outcomeText) + '</p>';
+            if (sourceText) body += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(sourceText) + '</p>';
+            if (!body) return '';
             return '<section class="deep-report-verdict-item"><h4>' + reportEsc(reportText(verdict.title)) + '</h4>' + body + '</section>';
         }).join('') + '</div>';
     }
     (Array.isArray(narrative.paragraphs) ? narrative.paragraphs : []).forEach(function(paragraph) {
         if (reportText(paragraph)) html += '<p>' + reportEsc(reportText(paragraph)) + '</p>';
     });
+    if (Array.isArray(narrative.years) && narrative.years.length) {
+        html += '<div class="deep-report-year-verdicts">' + narrative.years.map(function(year) {
+            var title = reportText(year.year) + '年' + (year.pillar ? ' · ' + reportText(year.pillar) : '');
+            var meta = [year.daYunLabel, year.directionLabel, year.lifeStage,
+                year.primaryEventLabel ? '现实重点：' + year.primaryEventLabel : '']
+                .map(reportText).filter(Boolean).join(' · ');
+            var outcome = year.isCurrentYear
+                ? '本年详细判断已放在“今年运势”，这里不重复展开。'
+                : reportText(year.summary);
+            var source = year.isCurrentYear ? '' : reportText(year.sourceText);
+            var card = '<section class="deep-report-year"><h3>' + reportEsc(title) + '</h3>';
+            if (meta) card += '<p class="deep-report-year-meta">' + reportEsc(meta) + '</p>';
+            if (outcome) card += '<p class="deep-report-verdict-outcome">' + reportEsc(outcome) + '</p>';
+            if (source) card += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(source) + '</p>';
+            return card + '</section>';
+        }).join('') + '</div>';
+    }
     if (narrative.note) html += '<p class="deep-report-note">' + reportEsc(reportText(narrative.note)) + '</p>';
+    return html + '</article>';
+}
+
+function reportStoryline(storyline) {
+    if (!storyline) return '';
+    var html = '<article class="deep-report-storyline">';
+    if (storyline.headline) html += '<h3>' + reportEsc(reportText(storyline.headline)) + '</h3>';
+    if (storyline.summary) html += '<p class="deep-report-storyline-main">' + reportEsc(reportText(storyline.summary)) + '</p>';
+    if (storyline.direction) html += '<p><strong>行运方向：</strong>' + reportEsc(reportText(storyline.direction)) + '</p>';
+    if (storyline.boundary) html += '<p><strong>不能机械判断的地方：</strong>' + reportEsc(reportText(storyline.boundary)) + '</p>';
+    if (storyline.focus) html += '<p><strong>未来五年重点：</strong>' + reportEsc(reportText(storyline.focus)) + '</p>';
+    if (Array.isArray(storyline.technicalBasis) && storyline.technicalBasis.length) {
+        html += '<div class="deep-report-storyline-basis">' + storyline.technicalBasis.map(function(term) {
+            return '<span>' + reportEsc(reportText(term)) + '</span>';
+        }).join('') + '</div>';
+    }
     return html + '</article>';
 }
 
@@ -551,11 +602,11 @@ function applyAuthenticatedReportAccess(data) {
     if (data.unlocked) renderPaidContent();
 }
 
-function renderDeepCurrentYear(facts) {
+function renderDeepCurrentYear(facts, storyline) {
     var node = document.getElementById('thisYearContent');
     if (!node) return;
     if (facts && facts.narrative) {
-        node.innerHTML = reportNarrative(facts.narrative);
+        node.innerHTML = reportStoryline(storyline) + reportNarrative(facts.narrative);
         openPaidSection('thisYearSection');
         return;
     }
@@ -569,7 +620,7 @@ function renderDeepCurrentYear(facts) {
     html += reportCard('身心管理', facts && facts.wellbeing);
     html += reportOverallTriggers('综合变化', facts);
     html += reportCard('实际触发风险', { evidence: facts && facts.triggeredRisks, conditions: facts && facts.reliefs });
-    node.innerHTML = html;
+    node.innerHTML = reportStoryline(storyline) + html;
     openPaidSection('thisYearSection');
 }
 
@@ -711,7 +762,7 @@ function renderPaidContent() {
             var anchorYear = resolveDeepReportAnchor(_params);
             _deepReportFacts = window.DeepReport.buildFacts(_bazi, _params.gender, { anchorYear: anchorYear });
         }
-        renderDeepCurrentYear(_deepReportFacts.currentYear);
+        renderDeepCurrentYear(_deepReportFacts.currentYear, _deepReportFacts.storyline);
         renderDeepRelationship(_deepReportFacts.relationship);
         renderDeepWealth(_deepReportFacts.wealth);
         renderDeepStudy(_deepReportFacts.study);

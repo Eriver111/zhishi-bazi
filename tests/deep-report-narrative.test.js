@@ -73,9 +73,123 @@ test('narrative turns wealth facts into a stable A6-A10 public magnitude without
   assert.equal(first.wealth.difficulty, '');
   assert.match(first.wealth.headline, /财富|赚钱|收入|资产/);
   assert.deepEqual(first.wealth.verdicts.map(row => row.title), [
-    '财富量级与总判断', '钱主要从哪里来', '钱能不能留下', '哪里更容易打开财路',
+    '财富量级与总判断', '钱主要从哪里来', '收入能不能持续放大', '钱能不能留下', '哪里更容易打开财路',
   ]);
   assert.doesNotMatch(JSON.stringify(first.wealth), /relationEvents|structuralRisks|confidence|evidence|月令与季节|关系质量/);
+});
+
+test('domain timing reports only independently triggered years and keeps age-stage context', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years[2].eventAdjudication = {
+    year: 2028,
+    age: 32,
+    lifeStage: { label: '事业家庭发展阶段' },
+    triggerStrength: 5,
+    domainRecords: [{
+      domain: 'wealth', label: '收入资金', direction: '偏有利', confidence: '中高',
+      activationScore: 8, hasIndependentAnnualTrigger: true,
+      eventCandidate: '收入与回款更容易推进',
+      scenarioCandidates: ['客户回款或资源落地更容易推进'],
+      evidence: ['流年与原局形成财星通路'],
+    }],
+  };
+  const verdict = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '接下来几年更容易见到钱的年份');
+  assert.match(verdict.outcomeText, /2028年（32岁·事业家庭发展阶段）为偏有利/);
+  assert.match(verdict.outcomeText, /客户回款.*资源兑现/);
+  assert.doesNotMatch(verdict.outcomeText, /2026年|2027年|2029年|2030年/);
+});
+
+test('domain timing omits a year card rather than inventing timing from theme-only evidence', () => {
+  const facts = favorableFacts();
+  facts.fiveYear.years[1].eventAdjudication = {
+    year: 2027, age: 31, lifeStage: { label: '事业家庭发展阶段' }, triggerStrength: 0,
+    domainRecords: [{
+      domain: 'relationship', label: '婚恋合作', direction: '偏有利', activationScore: 7,
+      hasIndependentAnnualTrigger: false, eventCandidate: '关系主题较活跃', evidence: ['流年十神只确定主题'],
+    }],
+  };
+  const verdict = DeepReport.buildNarratives(facts).relationship.verdicts.find(row => row.title === '接下来几年感情更容易应事的年份');
+  assert.equal(verdict, undefined);
+});
+
+test('current year names one age-filtered event only when an independent trigger exists', () => {
+  const facts = favorableFacts();
+  facts.currentYear.eventAdjudication = {
+    age: 18,
+    lifeStage: { label: '升学与起步阶段' },
+    primaryEvent: {
+      domain: 'study', label: '学业考试', direction: '偏有利', hasIndependentAnnualTrigger: true,
+      scenarioCandidates: ['成绩排名、考试通过或录取推进更有利'],
+      eventCandidate: '学习进度更容易推进',
+      evidence: ['流年冲动月柱并形成有利方向'],
+      decisionBasis: '流年触发位置 + 年龄阶段',
+    },
+    secondaryEvent: null,
+  };
+  const verdict = DeepReport.buildNarratives(facts).currentYear.verdicts.find(row => row.title === '今年最可能应在哪件事');
+  assert.match(verdict.outcomeText, /考试.*录取.*更容易推进/);
+  assert.match(verdict.sourceText, /升学与起步阶段/);
+});
+
+test('current year keeps one primary and one secondary event without reopening every domain', () => {
+  const facts = favorableFacts();
+  facts.currentYear.eventAdjudication = {
+    age: 32,
+    lifeStage: { key: 'mature', label: '事业家庭发展阶段' },
+    primaryEvent: {
+      domain: 'career', label: '事业工作', hasIndependentAnnualTrigger: true,
+      evidence: ['流年与事业节点形成独立触发'], decisionBasis: '年度触发强度最高',
+    },
+    secondaryEvent: {
+      domain: 'wealth', label: '收入资金', hasIndependentAnnualTrigger: true,
+      evidence: ['同一触发同时带动资金节点'],
+    },
+  };
+  const narrative = DeepReport.buildNarratives(facts).currentYear;
+  const eventVerdicts = narrative.verdicts.filter(row => /^今年最可能应在哪件事$|^其次会被带动的方面$/.test(row.title));
+  assert.equal(eventVerdicts.length, 2);
+  assert.equal(narrative.verdicts.some(row => /会怎么变$/.test(row.title)), false);
+});
+
+test('cross-section dedupe keeps a shared reason once while retaining every outcome', () => {
+  const sameSource = '流年冲动月柱并形成明确的事业与资金触发。';
+  const narratives = {
+    currentYear: { verdicts: [{ title: '今年', sourceText: sameSource, outcomeText: '工作会先动。' }] },
+    wealth: { verdicts: [{ title: '财富', sourceText: sameSource, outcomeText: '回款随后变化。' }] },
+  };
+  DeepReport.__test.dedupeNarrativeSources(narratives);
+  assert.equal(narratives.currentYear.verdicts[0].sourceText, sameSource);
+  assert.equal(narratives.wealth.verdicts[0].sourceText, '');
+  assert.equal(narratives.wealth.verdicts[0].outcomeText, '回款随后变化。');
+});
+
+test('age-stage scenario selection narrows a broad career theme without claiming certainty', () => {
+  const launch = DeepReport.__test.selectTimingScenario(
+    { domain: 'career', direction: '偏有利', scenarioCandidates: ['事业事项推进'] },
+    { lifeStage: { key: 'launch' } }
+  );
+  const mature = DeepReport.__test.selectTimingScenario(
+    { domain: 'career', direction: '偏不利', scenarioCandidates: ['事业事项受阻'] },
+    { lifeStage: { key: 'mature' } }
+  );
+  assert.match(launch, /求职|转岗|重要项目/);
+  assert.match(mature, /职位调整|项目交付|考核|上下级/);
+  assert.doesNotMatch(launch + mature, /必然|一定/);
+});
+
+test('age-stage scenario selection never gives a child an adult romance or salary event', () => {
+  const childRelationship = DeepReport.__test.selectTimingScenario(
+    { domain: 'relationship', direction: '偏有利' },
+    { lifeStage: { key: 'child' } }
+  );
+  const childWealth = DeepReport.__test.selectTimingScenario(
+    { domain: 'wealth', direction: '偏不利' },
+    { lifeStage: { key: 'child' } }
+  );
+  assert.match(childRelationship, /父母|老师|同伴/);
+  assert.doesNotMatch(childRelationship, /婚嫁|同居|伴侣/);
+  assert.match(childWealth, /学习|照护|家庭/);
+  assert.doesNotMatch(childWealth, /客户|回款|工资|收入机会/);
 });
 
 test('wealth source turns a useful activated officer storage into a concrete plain-language earning route', () => {
@@ -200,7 +314,13 @@ test('all five paid narratives use plain Chinese conclusions and contain no raw 
     assert.doesNotMatch(copy, /relationEvents|structuralRisks|overallTriggers|confidence|evidence|elementRole|sourcePillar|targetPillar/);
     assert.ok(section.headline);
     assert.ok(Array.isArray(section.paragraphs));
+    assert.ok(Array.isArray(section.technicalBasis));
+    assert.ok(section.technicalBasis.length > 0 && section.technicalBasis.length <= 4);
   }
+  assert.match(narratives.wealth.technicalBasis.join('｜'), /食伤生财/);
+  assert.doesNotMatch(narratives.wealth.technicalBasis.join('｜'), /日主偏强|食神生财格·成格/);
+  assert.match(narratives.relationship.technicalBasis.join('｜'), /配偶星|夫妻宫/);
+  assert.match(narratives.currentYear.technicalBasis.join('｜'), /2026年·甲辰流年/);
   assert.doesNotMatch(JSON.stringify(narratives.relationship), /弱信号|可信度|证据不足|倾向参考/);
   for (const section of Object.values(narratives)) {
     assert.equal(Object.prototype.hasOwnProperty.call(section, 'actions'), false);
