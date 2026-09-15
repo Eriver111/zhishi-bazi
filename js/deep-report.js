@@ -2640,6 +2640,8 @@
       anchorYear: targetYear,
       hasDaYun: timingStatus === 'active',
       timingStatus: timingStatus,
+      daYunList: daYunList,
+      fortunePeriods: fortunePeriods,
       years: years,
       transitions: findDaYunTransitions(years),
       trend: compareAnnualFacts(years),
@@ -2675,6 +2677,87 @@
       outcomeText: outcomeText,
       text: outcomeText,
       basis: list(basis).filter(Boolean),
+    };
+  }
+
+  function wealthDomainRecord(period) {
+    return list(period && period.eventLedger && period.eventLedger.domainRecords).filter(function (row) {
+      return row && row.domain === 'wealth';
+    })[0] || null;
+  }
+
+  function buildWealthFortuneWindows(bazi, fiveYear) {
+    var birthYear = Number(bazi && bazi.birthDate && bazi.birthDate.year);
+    var periods = list(fiveYear && fiveYear.fortunePeriods);
+    if (!Number.isFinite(birthYear) || !periods.length) {
+      return {
+        available: false, periods: [], adultBest: null, earlyFoundation: null,
+        limitation: '未确认完整出生时间或起运数据，暂不判断财富兑现窗口。',
+      };
+    }
+    var rows = periods.map(function (period) {
+      var startAge = Math.max(0, Number(period.startYear) - birthYear);
+      var endAge = Math.max(startAge, Number(period.endYear) - birthYear);
+      var wealthRecord = wealthDomainRecord(period);
+      var directionBonus = wealthRecord && wealthRecord.direction === '偏有利' ? 1.5
+        : wealthRecord && wealthRecord.direction === '偏不利' ? -1.5 : 0;
+      var activation = Number(wealthRecord && wealthRecord.activationScore) || 0;
+      var score = (Number(period.verifiedScore) || 0) + directionBonus + Math.min(2, activation * 0.25);
+      var stage = endAge < 16 ? 'foundation' : startAge < 23 ? 'preparation' : 'adult';
+      return {
+        gan: period.gan, zhi: period.zhi, label: textOf(period.gan) + textOf(period.zhi),
+        startYear: Number(period.startYear), endYear: Number(period.endYear),
+        startAge: startAge, endAge: endAge, stage: stage,
+        stageLabel: stage === 'foundation' ? '家庭与成长资源期'
+          : stage === 'preparation' ? '能力与职业起步期' : '成年财富兑现期',
+        score: Number(score.toFixed(2)), verdict: period.verdict,
+        wealthDirection: wealthRecord && wealthRecord.direction || '条件性',
+        wealthEvidence: list(wealthRecord && wealthRecord.evidence),
+      };
+    });
+    function bestOf(candidates) {
+      return candidates.slice().sort(function (a, b) {
+        return b.score - a.score || a.startYear - b.startYear;
+      })[0] || null;
+    }
+    var favorableAdult = rows.filter(function (row) {
+      return row.stage === 'adult' && row.wealthDirection === '偏有利' && row.score > 0;
+    });
+    var favorableEarly = rows.filter(function (row) {
+      return row.stage !== 'adult' && row.wealthDirection === '偏有利' && row.score > 0;
+    });
+    return {
+      available: true,
+      periods: rows,
+      adultBest: bestOf(favorableAdult),
+      earlyFoundation: bestOf(favorableEarly),
+      limitation: favorableAdult.length
+        ? '大运只判断原局财富上限更可能在哪个阶段兑现，不改变原局A等级；未成年阶段只解释家庭、教育与成长资源，不解释为个人身价。'
+        : '当前大运列表中没有足够明确的成年财富上升窗口；原局A等级仍是结构上限，不能据此承诺现实兑现。',
+    };
+  }
+
+  function calibrateWealthReality(wealthFacts, input) {
+    input = input || {};
+    var natalLevel = clampNumber(Number(wealthFacts && wealthFacts.narrative && wealthFacts.narrative.grade &&
+      String(wealthFacts.narrative.grade).replace(/\D/g, '')) || 1, 1, 10);
+    var incomeLevel = clampNumber(Number(input.incomeLevel) || 1, 1, 10);
+    var assetLevel = clampNumber(Number(input.assetLevel) || 1, 1, 10);
+    var occupation = textOf(input.occupation) || '未填写';
+    var debt = textOf(input.debt) || '未填写';
+    var familySupport = textOf(input.familySupport) || '未填写';
+    var currentLevel = Math.max(assetLevel, Math.max(1, incomeLevel - 1));
+    if (debt === '较重') currentLevel = Math.max(1, currentLevel - 1);
+    var carrier = occupation === '在读/未就业' ? '财富载体尚在形成，当前好运应优先解释为家庭、教育与能力积累。'
+      : occupation === '经营者/企业主' ? '已经具备经营、客户、资本或资产载体，可重点核对成年有利大运中的实际扩张能力。'
+      : '已经具备职业或项目载体，可用真实收入、净资产和留财情况核对兑现程度。';
+    var gap = Math.max(0, natalLevel - currentLevel);
+    return {
+      natalGrade: 'A' + natalLevel, currentReferenceGrade: 'A' + currentLevel, gap: gap, carrier: carrier,
+      summary: '原局终身上限仍为A' + natalLevel + '，本次现实基准约为A' + currentLevel +
+        (gap ? '，与原局上限相差' + gap + '档。' : '，当前基准已接近原局上限。') +
+        '本次复核只校对现实兑现程度，不修改原局A等级。',
+      inputs: { occupation: occupation, incomeLevel: incomeLevel, assetLevel: assetLevel, debt: debt, familySupport: familySupport },
     };
   }
 
@@ -3141,7 +3224,18 @@
         : '原局未见同时符合喜用与实际财富通路的单一方向。';
       directionText = '得财方向不集中，不能只凭某一个五行或方位断定哪里一定更赚钱。真正决定收入的，是哪一种客户、项目、平台或合作方式能把现有路径接成收入。';
     }
-    // 财富分数和内部等级继续保留原始结果；公开报告最低只显示 A6。
+    // 留财证据已经通过承载状态、喜忌与负向路径进入基础分；这里只记录，避免同一证据重复扣分。
+    var retentionPenalty = 0;
+    var ceilingComponents = {
+      capacity: capacity.state || '未知',
+      wealthVisibility: Number(resource.visibleCount) > 0 ? '透干' : Number(resource.hiddenCount) > 0 ? '藏支' : '不显',
+      pathCount: scalePaths.length,
+      rootCount: list(quality.roots).length,
+      sourceCount: list(quality.sources).length,
+      retentionPenalty: retentionPenalty,
+      meaning: '原局一生在合适成年行运与现实载体配合下，较可能达到并留住的最高财富层级。',
+    };
+    // A1-A5 仅保留为内部结构分，公开等级最低 A6，避免被误读为现实资产的终身断言。
     var publicLevel = Math.max(6, level);
     var wealthContinuitySource = [
       Number(resource.visibleCount) > 0 ? '财星透干' : Number(resource.hiddenCount) > 0 ? '财星藏支' : '财星不显',
@@ -3156,8 +3250,30 @@
         : Number(resource.hiddenCount) > 0
           ? '赚钱能力并非没有，但平时不一定直接表现为高收入；当工作平台、客户资源或相关岁运把财星引出来时，收入才更容易出现明显变化。'
           : '原局财星不显，财富增长更依赖后天建立稳定职业、产品、客户或经营模式，单靠等待机会很难形成持续放大。';
+    var windows = wealth.fortuneWindows || {};
+    var windowVerdicts = [];
+    if (windows.adultBest) {
+      var adult = windows.adultBest;
+      windowVerdicts.push(narrativeVerdict('最可能接近财富上限的成年大运', '', ['WEALTH_ADULT_WINDOW:' + adult.label], {
+        sourceText: adult.startYear + '—' + adult.endYear + '年走' + adult.label + '大运，按原局喜忌、该运与原局互动及财富领域引动综合为“' + adult.wealthDirection + '”。',
+        outcomeText: adult.startAge + '—' + adult.endAge + '岁更适合核对职业、经营、客户或资产是否已经形成承载条件；这一步运更有机会接近原局A' + publicLevel + '上限，但不代表必然达到。',
+      }));
+    } else if (windows.available) {
+      windowVerdicts.push(narrativeVerdict('成年财富兑现窗口', '', ['WEALTH_ADULT_WINDOW:LIMITED'], {
+        sourceText: '现有大运逐步核对后，没有同时满足“成年阶段、财富领域偏有利、原局互动验证为正”的明确窗口。',
+        outcomeText: '原局A' + publicLevel + '仍是结构上限，但目前不能指定某一步大运一定明显接近它；更适合等职业、经营或资产载体形成后，再结合真实收入复核。',
+      }));
+    }
+    if (windows.earlyFoundation) {
+      var early = windows.earlyFoundation;
+      windowVerdicts.push(narrativeVerdict('早年好运如何理解', '', ['WEALTH_EARLY_WINDOW:' + early.label], {
+        sourceText: early.startYear + '—' + early.endYear + '年走' + early.label + '大运，年龄处于' + early.stageLabel + '。',
+        outcomeText: '这段好运只解释为家庭支持、教育条件、见识、技能和起步资源较容易改善，不能把原局A' + publicLevel + '上限写成当时已经拥有的个人财富。',
+      }));
+    }
     return {
       grade: 'A' + publicLevel,
+      ceiling: ceilingComponents,
       level: '',
       difficulty: '',
       headline: headline,
@@ -3183,8 +3299,8 @@
         narrativeVerdict('哪里更容易打开财路', '', direction.conflict ? ['WEALTH_DIRECTION:UNFOCUSED'] : ['WEALTH_DIRECTION:' + direction.element], {
           sourceText: directionSource, outcomeText: directionText,
         }),
-      ],
-      note: 'A等级是依据命局承财能力、财星喜忌、财富来源和留财情况综合得出的命理分级，不代表当前存款，也不是收益承诺。',
+      ].concat(windowVerdicts),
+      note: 'A等级只表示原局终身财富上限，不代表当前存款，也不是收益承诺；是否兑现还要看成年大运与现实职业、经营和资产载体。',
     };
   }
 
@@ -4244,6 +4360,7 @@
     facts.fiveYear = buildFiveYearFacts(
       bazi, timingCore, deps.calculator, deps.chain, facts.anchorYear, gender
     );
+    facts.wealth.fortuneWindows = buildWealthFortuneWindows(bazi, facts.fiveYear);
     facts.currentYear = facts.fiveYear.years[0] || null;
     facts.storyline = buildReportStoryline(facts);
     var narratives = buildNarratives(facts);
@@ -4265,6 +4382,8 @@
     deriveDayPillarInteraction: deriveDayPillarInteraction,
     buildAnnualFacts: buildAnnualFacts,
     buildFiveYearFacts: buildFiveYearFacts,
+    buildWealthFortuneWindows: buildWealthFortuneWindows,
+    calibrateWealthReality: calibrateWealthReality,
     findDaYunForYear: findDaYunForYear,
   };
   if (typeof module === 'object' && module.exports) {

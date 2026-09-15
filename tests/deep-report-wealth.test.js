@@ -488,7 +488,7 @@ test('calibrated wealth examples keep their accepted public A bands', () => {
   }
 });
 
-test('public wealth grade has A6 as its minimum while preserving higher grades', () => {
+test('public wealth grade keeps A6 as its floor while preserving higher ceilings', () => {
   assert.equal(buildRealWealthFacts('己酉 辛未 癸巳 丁巳').wealth.narrative.grade, 'A6');
   assert.equal(buildRealWealthFacts('甲戌 乙亥 戊申 壬子').wealth.narrative.grade, 'A6');
   assert.equal(buildRealWealthFacts('戊寅 甲子 辛卯 辛卯').wealth.narrative.grade, 'A9');
@@ -514,6 +514,32 @@ test('an extremely weak body cannot become rich from adverse wealth scale alone'
   assert.equal(facts.wealth.resource.elementRole, '忌神');
   assert.ok(facts.wealth.pathways.some((row) => row.scalePotential === true && row.effect === 'adverse'));
   assert.equal(level, 6, facts.wealth.narrative.grade);
+});
+
+test('wealth fortune windows never treat a childhood favorable period as personal wealth', () => {
+  const windows = DeepReport.buildWealthFortuneWindows({ birthDate: { year: 2000 } }, {
+    fortunePeriods: [
+      { gan: '甲', zhi: '子', startYear: 2004, endYear: 2013, verifiedScore: 4, verdict: '喜运', eventLedger: { domainRecords: [{ domain: 'wealth', direction: '偏有利', activationScore: 5, evidence: ['早年资源'] }] } },
+      { gan: '乙', zhi: '丑', startYear: 2024, endYear: 2033, verifiedScore: 2, verdict: '偏喜', eventLedger: { domainRecords: [{ domain: 'wealth', direction: '偏有利', activationScore: 4, evidence: ['成年财路'] }] } },
+    ],
+  });
+  assert.equal(windows.earlyFoundation.stage, 'foundation');
+  assert.equal(windows.earlyFoundation.stageLabel, '家庭与成长资源期');
+  assert.equal(windows.adultBest.label, '乙丑');
+  assert.match(windows.limitation, /未成年.*家庭.*教育|家庭、教育/);
+});
+
+test('reality calibration preserves the natal ceiling and only reports realization progress', () => {
+  const wealth = { narrative: { grade: 'A8' } };
+  const before = JSON.stringify(wealth);
+  const calibrated = DeepReport.calibrateWealthReality(wealth, {
+    occupation: '在读/未就业', incomeLevel: 3, assetLevel: 2, debt: '无或很轻', familySupport: '有一定支持',
+  });
+  assert.equal(calibrated.natalGrade, 'A8');
+  assert.equal(calibrated.currentReferenceGrade, 'A2');
+  assert.match(calibrated.carrier, /家庭、教育与能力积累/);
+  assert.match(calibrated.summary, /不修改原局A等级/);
+  assert.equal(JSON.stringify(wealth), before);
 });
 
 test('multiple Yong elements retain all matching directions instead of returning no answer', () => {

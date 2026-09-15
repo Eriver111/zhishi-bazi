@@ -325,6 +325,8 @@ test('customer narrative hides internal evidence cards while keeping decisive Ch
   const page = rendered.nodes.wealthContent.innerHTML;
 
   assert.match(page, /A7/);
+  assert.match(page, /校对现实财富基准（可选）/);
+  assert.match(page, /复核不会改动原局终身A等级/);
   assert.doesNotMatch(page, /百万元级|元级|万元级|亿元级/);
   assert.match(page, /真正的问题/);
   assert.doesNotMatch(rendered.pdfHtml, /百万元级|元级|万元级|亿元级/);

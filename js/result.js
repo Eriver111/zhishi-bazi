@@ -673,7 +673,7 @@ function renderDeepWealth(facts) {
     if (!node) return;
     if (facts && facts.narrative) {
         var wealthNarrative = Object.assign({}, facts.narrative, { level: '', difficulty: '' });
-        node.innerHTML = reportNarrative(wealthNarrative);
+        node.innerHTML = reportNarrative(wealthNarrative) + reportWealthCalibration();
         openPaidSection('wealthSection');
         return;
     }
@@ -922,6 +922,46 @@ function renderSiZhu(bazi, dayGan) {
 
         renderProfessionalAuxColumn(pos, pillar, dayGan);
     });
+}
+
+function reportWealthGradeOptions() {
+    var html = '';
+    for (var i = 1; i <= 10; i += 1) html += '<option value="' + i + '">A' + i + '</option>';
+    return html;
+}
+
+function reportWealthCalibration() {
+    return '<article class="wealth-calibration" id="wealthCalibration">' +
+        '<button class="wealth-calibration__toggle" type="button" onclick="toggleWealthCalibration()">校对现实财富基准（可选）</button>' +
+        '<div class="wealth-calibration__body" id="wealthCalibrationBody" hidden>' +
+        '<p>用当前真实情况复核“已经兑现到哪一档”。复核不会改动原局终身A等级。</p>' +
+        '<div class="wealth-calibration__grid">' +
+        '<label>当前状态<select id="wealthOccupation"><option>在读/未就业</option><option>职员/专业人士</option><option>自由职业/个体</option><option>经营者/企业主</option><option>退休/资产管理</option></select></label>' +
+        '<label>当前年收入等级<select id="wealthIncomeLevel">' + reportWealthGradeOptions() + '</select></label>' +
+        '<label>当前净资产等级<select id="wealthAssetLevel">' + reportWealthGradeOptions() + '</select></label>' +
+        '<label>负债情况<select id="wealthDebt"><option>无或很轻</option><option>正常可控</option><option>较重</option></select></label>' +
+        '<label>家庭资本支持<select id="wealthFamilySupport"><option>基本没有</option><option>有一定支持</option><option>有明显支持或继承</option></select></label>' +
+        '</div><button class="wealth-calibration__submit" type="button" onclick="runWealthCalibration()">生成复核结果</button>' +
+        '<div class="wealth-calibration__result" id="wealthCalibrationResult" aria-live="polite"></div>' +
+        '</div></article>';
+}
+
+function toggleWealthCalibration() {
+    var body = document.getElementById('wealthCalibrationBody');
+    if (body) body.hidden = !body.hidden;
+}
+
+function runWealthCalibration() {
+    var result = document.getElementById('wealthCalibrationResult');
+    if (!result || !_deepReportFacts || !window.DeepReport || typeof window.DeepReport.calibrateWealthReality !== 'function') return;
+    var calibrated = window.DeepReport.calibrateWealthReality(_deepReportFacts.wealth, {
+        occupation: document.getElementById('wealthOccupation').value,
+        incomeLevel: document.getElementById('wealthIncomeLevel').value,
+        assetLevel: document.getElementById('wealthAssetLevel').value,
+        debt: document.getElementById('wealthDebt').value,
+        familySupport: document.getElementById('wealthFamilySupport').value,
+    });
+    result.innerHTML = '<strong>' + reportEsc(calibrated.summary) + '</strong><p>' + reportEsc(calibrated.carrier) + '</p>';
 }
 
 function getPillarIndexes(pillar) {

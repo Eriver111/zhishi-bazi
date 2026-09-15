@@ -1530,6 +1530,15 @@
 .deep-report-actions ol { margin: 0; padding-left: 21px; }
 .deep-report-actions li { margin: 4px 0; font-size: 13px; line-height: 1.75; }
 .deep-report-note { color: var(--text-dim); font-size: 10px !important; opacity: .8; }
+.wealth-calibration { margin-top: 14px; padding: 14px 16px; border: 1px solid rgba(212,175,55,.18); background: rgba(212,175,55,.025); }
+.wealth-calibration__toggle,
+.wealth-calibration__submit { border: 1px solid rgba(212,175,55,.42); background: rgba(212,175,55,.1); color: var(--gold); padding: 10px 14px; cursor: pointer; font-weight: 700; }
+.wealth-calibration__body > p { color: var(--text-secondary); font-size: 12px; line-height: 1.75; }
+.wealth-calibration__grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 12px; margin: 12px 0; }
+.wealth-calibration__grid label { display: grid; gap: 5px; color: var(--text-secondary); font-size: 11px; }
+.wealth-calibration__grid select { width: 100%; border: 1px solid rgba(212,175,55,.18); background: var(--bg-card); color: var(--text-primary); padding: 9px 10px; }
+.wealth-calibration__result { margin-top: 12px; color: var(--text-primary); font-size: 13px; line-height: 1.8; }
+.wealth-calibration__result p { margin: 5px 0 0; color: var(--text-secondary); }
 .deep-report-year-verdicts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
 .deep-report-year-verdicts .deep-report-year { padding: 13px 14px; border: 1px solid rgba(212,175,55,.1); border-left: 2px solid var(--gold); }
 .deep-report-year-verdicts h3 { margin: 0 0 5px; color: var(--gold); font-size: 15px; }
@@ -1541,6 +1550,7 @@
     .deep-report-narrative { padding: 14px; }
     .deep-report-narrative h3 { font-size: 18px; }
     .deep-report-year-verdicts { grid-template-columns: 1fr; }
+    .wealth-calibration__grid { grid-template-columns: 1fr; }
 }
 
 /* ============================
@@ -2839,7 +2849,7 @@
     <script src="js/bazi.js?v=20260913a"></script>
     <script src="js/structural.js?v=1"></script>
     <script src="js/bazi-chain.js?v=11"></script>
-    <script src="js/deep-report.js?v=24"></script>
+    <script src="js/deep-report.js?v=25"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
  * 知时 — 五行环形图
@@ -2975,7 +2985,7 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=4"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=36"></script>
+    <script src="js/result.js?v=37"></script>
     <script src="js/pro-analysis.js?v=17"></script>
     <script src="js/auth.js?v=26"></script>
     <script src="js/payment.js?v=2"></script>
