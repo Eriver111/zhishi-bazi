@@ -31,7 +31,7 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=12/);
+  assert.match(result, /chart-calibration\.js\?v=13/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -54,7 +54,7 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /motherDirect/);
   assert.match(client, /study_impact/);
   assert.match(client, /domainDirection/);
-  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v3'/);
+  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v4'/);
   assert.match(client, /dedupeOptionDomains/);
   assert.match(client, /系统原判断/);
   assert.match(client, /sleep_energy/);
@@ -68,10 +68,17 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /data-selected-option/);
   assert.match(client, /很符合/);
   assert.match(client, /大致符合/);
-  assert.match(client, /slice\(0, 5\)/);
+  assert.match(client, /chosen\.length >= 5/);
+  assert.match(client, /var firstYear = birthYear \+ 6/);
+  assert.doesNotMatch(client, /nowYear - 14/);
+  assert.match(client, /\['school','youth','early-adult','midlife','mature'\]/);
+  assert.match(client, /先保证不同人生阶段均有代表题/);
+  assert.match(client, /每步大运只展开一次流年/);
+  assert.match(client, /liuNianByYear\[annualYear\] = annual/);
+  assert.match(client, /你已经走过的人生阶段中筛选辨识度最高的年份/);
 });
 
-test('candidate v3 upgrade preserves answered events and replaces only unanswered questions', () => {
+test('candidate version upgrade preserves answered events and replaces only unanswered questions', () => {
   const storage = read('lib/supabase.js');
   const endpoint = read('api/chart-calibration.js');
   assert.match(storage, /candidateVersion = safeCalibrationKey/);

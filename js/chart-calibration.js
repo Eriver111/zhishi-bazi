@@ -2,7 +2,7 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
-  var CANDIDATE_VERSION = 'bazi-cal-v3';
+  var CANDIDATE_VERSION = 'bazi-cal-v4';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
@@ -365,14 +365,27 @@
       // 没有真实出生年就无法把岁运落到真实年龄，宁可不出校对题，也不能假定成 20 岁。
       if (!isFinite(birthYear) || birthYear <= 0) return out;
       var nowYear = new Date().getFullYear();
-      var firstYear = Math.max(birthYear + 6, nowYear - 14);
+      // 从具备稳定记忆的年龄开始覆盖完整既往人生，不再只看最近十四年。
+      var firstYear = birthYear + 6;
       var yongJi = data.yongJi || (BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
       var parentAnalysis = null;
+      var dyByYear = {}, liuNianByYear = {};
       try { parentAnalysis = BaZiCalculator.analyzeParents(_bazi, data.birthInfo && data.birthInfo.gender); } catch (e) {}
+      // 每步大运只展开一次流年，完整人生扫描仍保持线性开销。
+      _daYunData.list.forEach(function(item) {
+        var annuals = [];
+        try { annuals = BaZiCalculator.calculateLiuNian(item, _bazi.day.gan) || []; } catch (e) {}
+        annuals.forEach(function(annual) {
+          var annualYear = Number(annual.year);
+          if (!isFinite(annualYear)) return;
+          dyByYear[annualYear] = item;
+          liuNianByYear[annualYear] = annual;
+        });
+      });
       for (var year = firstYear; year < nowYear; year++) {
-        var dy = _daYunData.list.filter(function(item) { return year >= Number(item.startYear) && year <= Number(item.endYear); })[0];
+        var dy = dyByYear[year] || _daYunData.list.filter(function(item) { return year >= Number(item.startYear) && year <= Number(item.endYear); })[0];
         if (!dy) continue;
-        var liuNian = (BaZiCalculator.calculateLiuNian(dy, _bazi.day.gan) || []).filter(function(item) { return Number(item.year) === year; })[0];
+        var liuNian = liuNianByYear[year];
         if (!liuNian) continue;
         var age = year - birthYear;
         var fortunePeriod = data.fortuneAnalysis && data.fortuneAnalysis.periods
@@ -403,17 +416,27 @@
           event_key: year + '-' + domain + '-' + gz, year: year, domain: domain,
           prompt: year + '年前后，下面哪一种情况最接近你的真实经历？', evidence: evidence,
           options: options, mechanism_key: options[0] ? options[0].mechanism_key : '',
-          confidence: score >= 8 ? 'high' : (score >= 4 ? 'medium' : 'low'), _score: score
+          confidence: score >= 8 ? 'high' : (score >= 4 ? 'medium' : 'low'), _score: score,
+          _stage: age <= 17 ? 'school' : (age <= 25 ? 'youth' : (age <= 35 ? 'early-adult' : (age <= 49 ? 'midlife' : 'mature')))
         });
       }
       out.sort(function(a,b) { return b._score - a._score || b.year - a.year; });
-      var domainCounts = {};
-      out = out.filter(function(item) {
-        if (Number(domainCounts[item.domain] || 0) >= 2) return false;
+      var domainCounts = {}, chosen = [], chosenKeys = {};
+      function take(item) {
+        if (!item || chosen.length >= 5 || chosenKeys[item.event_key] || Number(domainCounts[item.domain] || 0) >= 2) return false;
+        chosen.push(item); chosenKeys[item.event_key] = true;
         domainCounts[item.domain] = Number(domainCounts[item.domain] || 0) + 1;
         return true;
-      }).slice(0, 5).sort(function(a,b) { return b.year - a.year; });
-      out.forEach(function(item) { delete item._score; });
+      }
+      // 先保证不同人生阶段均有代表题，再按结构引动强度补足名额。
+      ['school','youth','early-adult','midlife','mature'].forEach(function(stage) {
+        for (var i = 0; i < out.length; i++) {
+          if (out[i]._stage === stage && take(out[i])) break;
+        }
+      });
+      for (var j = 0; j < out.length && chosen.length < 5; j++) take(out[j]);
+      out = chosen.sort(function(a,b) { return b.year - a.year; });
+      out.forEach(function(item) { delete item._score; delete item._stage; });
     } catch (error) { console.warn('[calibration] 候选生成失败:', error.message); }
     return out;
   }
@@ -448,7 +471,7 @@
       var localEvents = candidates.map(function(item) { return Object.assign({ answer:null, actual_year:null, note:'' }, item, { event_year:item.year }); });
       writeLocalEvents(key, localEvents); renderEvents(key, localEvents, originalToggle); return;
     }
-    openHtml('<div class="calibration-loading">正在从过去十四年的岁运中筛选变化最明显的年份…</div>');
+    openHtml('<div class="calibration-loading">正在从你已经走过的人生阶段中筛选辨识度最高的年份…</div>');
     request('POST', key, { action:'initialize', chart_key:key, chart_signature:signature(data), candidate_version:CANDIDATE_VERSION, candidates:candidates })
       .then(function(result) { renderEvents(key, result.events || [], originalToggle); })
       .catch(function(error) { openHtml('<div class="calibration-error">' + (error.message || '校准暂时不可用') + '<button type="button" id="calibrationContinue">先进入 AI</button></div>'); document.getElementById('calibrationContinue').onclick=function(){close();originalToggle()}; });
