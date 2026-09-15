@@ -4,6 +4,33 @@
  */
 var currentMode = 'solar';
 
+// 排盘页会异步恢复上次参数。用户一旦开始操作，旧参数不得再覆盖当前输入。
+window.__paipanInputTouched = false;
+function markPaipanInputTouched(event) {
+  var target = event && event.target;
+  if (target && target.closest && (target.closest('#birthForm') || target.closest('.mobile-birth-sheet'))) {
+    window.__paipanInputTouched = true;
+  }
+}
+document.addEventListener('pointerdown', markPaipanInputTouched, true);
+document.addEventListener('keydown', markPaipanInputTouched, true);
+
+// 时辰下拉中每个时辰包含两个具体钟点，不能只按相同的时辰 value 回填。
+function setHourClockSelection(id, hour, clock) {
+  var select = document.getElementById(id);
+  if (!select) return false;
+  var options = Array.prototype.slice.call(select.options || []);
+  var exact = options.find(function(option) {
+    if (String(option.value) !== String(hour)) return false;
+    return clock === null || clock === undefined || clock === '' ||
+      String(option.getAttribute('data-clock')) === String(clock);
+  });
+  if (!exact) return false;
+  select.selectedIndex = exact.index;
+  return true;
+}
+window.setPaipanHourClock = setHourClockSelection;
+
 // ---- 初始化 ----
 document.addEventListener('DOMContentLoaded', function() {
   // 浏览器可能恢复旧的表单控件状态；新进入或刷新时仍应采用站点默认规则。
@@ -632,17 +659,18 @@ function handleSubmit(e) {
     attempts++;
     if (!Auth.isLoggedIn()) return;
     Auth.getData('last_bazi_params').then(function(val) {
-      if (!val) return;
+      if (!val || window.__paipanInputTouched) return;
       var p = new URLSearchParams(val);
       var year = p.get('year'), month = p.get('month'), day = p.get('day');
       if (!year || !month || !day) return;
-      var setVal = function(id, value) { var el = document.getElementById(id); if (el && value) el.value = value; };
+      if (window.__paipanInputTouched) return;
+      var setVal = function(id, value) { var el = document.getElementById(id); if (el && value !== null && value !== undefined && value !== '') el.value = value; };
       setVal('sYear', year);
       setVal('sMonth', month);
       // 触发生日选项更新
       if (typeof updateSolarDays === 'function') { try { updateSolarDays(); } catch(e) {} }
       setVal('sDay', day);
-      var hour = p.get('hour'); if (hour) setVal('sHour', hour);
+      var hour = p.get('hour'); if (hour !== null) setHourClockSelection('sHour', hour, p.get('clock'));
       var minute = p.get('minute'); if (minute) setVal('sMinute', minute);
       if (p.get('gender')) {
         var r = document.querySelector('input[name="gender"][value="' + p.get('gender') + '"]');

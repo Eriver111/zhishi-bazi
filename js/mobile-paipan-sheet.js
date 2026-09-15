@@ -91,6 +91,14 @@
   function dispatchValue(target,value){
     if(!target)return;target.value=String(value);target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));
   }
+  function dispatchClock(target,clock){
+    if(!target)return false;
+    var option=Array.prototype.find.call(target.options||[],function(item){return String(item.getAttribute('data-clock'))===String(clock);});
+    if(!option)return false;
+    var oldIndex=target.selectedIndex;target.selectedIndex=option.index;
+    if(target.selectedIndex!==oldIndex){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
+    return true;
+  }
   function selectOptions(target){
     if(!target)return[];
     return Array.prototype.map.call(target.options||[],function(option,index){return{value:option.value,label:option.textContent.trim(),sourceIndex:index};}).filter(function(option){return option.value!=='';});
@@ -127,9 +135,9 @@
     var options=customOptions||selectOptions(target);
     function applyOption(option,index,scroll){
       if(!option)return false;
-      var oldValue=target?String(target.value):'';
+      var oldValue=target?String(target.value):'';var oldIndex=target?target.selectedIndex:-1;
       if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
-      var changed=!!target&&String(target.value)!==oldValue;
+      var changed=!!target&&(String(target.value)!==oldValue||target.selectedIndex!==oldIndex);
       if(changed){target.dispatchEvent(new Event('change',{bubbles:true}));target.dispatchEvent(new Event('input',{bubbles:true}));}
       highlightWheel(rail,index,scroll);refresh();if(changed)refreshDependentDay(target);
       return changed;
@@ -141,17 +149,21 @@
         rail._userScrolling=false;clearTimeout(wheelTimers[target&&target.id||label]);applyOption(option,index,true);
       });rail.appendChild(button);
     });
-    function commitWheel(){
-      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);
+    function commitWheel(force){
+      if(!force&&(rail._programmatic||!rail._userScrolling))return;
+      if(force&&!rail._userScrolling&&!rail._pendingCommit)return;
+      clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=false;
       var index=Math.max(0,Math.min(options.length-1,closestWheelIndex(rail)));var option=options[index];rail._userScrolling=false;
       if(option){rail._ignoreClickUntil=Date.now()+260;applyOption(option,index,true);}
     }
     function scheduleWheelCommit(){
-      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);wheelTimers[target&&target.id||label]=setTimeout(commitWheel,180);
+      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=true;wheelTimers[target&&target.id||label]=setTimeout(function(){commitWheel(false);},180);
     }
     ['pointerdown','touchstart','wheel'].forEach(function(type){rail.addEventListener(type,function(){rail._userScrolling=true;},{passive:true});});
     rail.addEventListener('scroll',scheduleWheelCommit,{passive:true});
-    if('onscrollend' in rail)rail.addEventListener('scrollend',commitWheel,{passive:true});
+    if('onscrollend' in rail)rail.addEventListener('scrollend',function(){commitWheel(false);},{passive:true});
+    rail._commitPending=function(){commitWheel(true);};
+    rail._cancelPending=function(){clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=false;rail._userScrolling=false;};
     column.appendChild(title);column.appendChild(rail);
     requestAnimationFrame(function(){
       var selectedIndex=options.findIndex(function(option){return option.sourceIndex!==undefined?target&&option.sourceIndex===target.selectedIndex:String(option.value)===String(target&&target.value||'');});
@@ -231,6 +243,8 @@
     overlay.hidden=false;sheet.hidden=false;requestAnimationFrame(function(){overlay.classList.add('is-open');sheet.classList.add('is-open');});document.body.classList.add('mobile-birth-sheet-open');
   }
   function close(){
+    sheet.querySelectorAll('.mobile-wheel-rail').forEach(function(rail){if(rail._commitPending)rail._commitPending();});
+    sheet.querySelectorAll('.mobile-wheel-rail').forEach(function(rail){if(rail._cancelPending)rail._cancelPending();});
     overlay.classList.remove('is-open');sheet.classList.remove('is-open');document.body.classList.remove('mobile-birth-sheet-open');
     setTimeout(function(){restoreMounted();slot.innerHTML='';overlay.hidden=true;sheet.hidden=true;refresh();if(opener&&opener.focus)opener.focus();},220);
   }
@@ -253,7 +267,7 @@
   if(mainTabs)mainTabs.querySelectorAll('[data-mode]').forEach(function(button){button.addEventListener('click',function(){setTimeout(function(){open('time',button);},0);});});
   sheet.querySelectorAll('[data-sheet-mode]').forEach(function(button){button.addEventListener('click',function(){var mode=button.getAttribute('data-sheet-mode');if(typeof switchMode==='function')switchMode(mode);renderTimePicker();refresh();});});
   todayButton.addEventListener('click',function(){
-    if(activeMode()!=='solar')return;var now=new Date();dispatchValue(document.getElementById('sYear'),now.getFullYear());dispatchValue(document.getElementById('sMonth'),now.getMonth()+1);dispatchValue(document.getElementById('sDay'),now.getDate());dispatchValue(document.getElementById('sHour'),now.getHours());dispatchValue(document.getElementById('sMinute'),now.getMinutes());buildCalendarPicker('solar');refresh();
+    if(activeMode()!=='solar')return;var now=new Date();dispatchValue(document.getElementById('sYear'),now.getFullYear());dispatchValue(document.getElementById('sMonth'),now.getMonth()+1);dispatchValue(document.getElementById('sDay'),now.getDate());dispatchClock(document.getElementById('sHour'),now.getHours());dispatchValue(document.getElementById('sMinute'),now.getMinutes());buildCalendarPicker('solar');refresh();
   });
   sheet.querySelector('.mobile-birth-sheet-confirm').addEventListener('click',close);overlay.addEventListener('click',close);document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!sheet.hidden)close();});document.addEventListener('change',refresh);document.addEventListener('input',refresh);
   slot.addEventListener('click',function(event){if(event.target.closest('.pillar-action-secondary'))setTimeout(function(){buildPillarPicker('pYearGan');},0);});

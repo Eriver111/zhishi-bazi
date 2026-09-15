@@ -1081,10 +1081,10 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/bazi-chain.js?v=11"></script><script src="js/pillar-input.js"></script>
 <script src="js/pillar-reverse-lookup.js"></script>
 <script src="js/region.js?v=20260910"></script>
-<script src="js/main.js?v=2"></script>
+<script src="js/main.js?v=3"></script>
 <script src="js/mobile-app-shell.js?v=8"></script>
 <script src="js/input-flow.js?v=7"></script>
-<script src="js/mobile-paipan-sheet.js?v=9"></script>
+<script src="js/mobile-paipan-sheet.js?v=10"></script>
 
 
 <script>
@@ -1096,13 +1096,17 @@ body.has-mobile-nav{padding-bottom:60px}
       var d=new URLSearchParams(p);
       // Auto-fill form
       setTimeout(function(){
+        if(window.__paipanInputTouched)return;
         var sy=document.getElementById('sYear'),sm=document.getElementById('sMonth'),sd=document.getElementById('sDay'),sh=document.getElementById('sHour');
         if(sy&&d.get('year'))sy.value=d.get('year');
         if(sm&&d.get('month')){
           sm.value=d.get('month');
           sm.dispatchEvent(new Event('change')); // 强制触发月份变化以生成日期选项
         }
-        if(sh&&d.get('hour'))sh.value=d.get('hour');
+        if(sh&&d.get('hour')!==null){
+          if(window.setPaipanHourClock)window.setPaipanHourClock('sHour',d.get('hour'),d.get('clock'));
+          else sh.value=d.get('hour');
+        }
         var g=document.querySelector('input[name=gender][value='+(d.get('gender')||'male')+']');
         if(g)g.checked=true;
         // 日期需要在月份change事件处理完成后再设置
