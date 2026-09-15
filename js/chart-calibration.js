@@ -596,18 +596,23 @@
   root.ZhishiCalibration.beforeAI = inspectFirstClick;
   root.ZhishiCalibration.summary = function(data) {
     var key=chartKey(data||chartData()), events=key?readLocalEvents(key):[];
-    var weights={};
+    var weights={}, denied={};
     var lines=events.filter(function(event){return event.answer==='yes'||event.answer==='no'}).map(function(event){
       var picked=(event.options||[]).filter(function(option){return option.key===event.selected_option})[0];
       var detail=picked&&(picked.followup_options||[]).filter(function(item){return item.key===event.selected_detail})[0];
       var domain=picked?picked.domain:event.domain;
-      if(event.answer==='yes'&&picked){var profileKey=domain+':'+picked.manifestation;weights[profileKey]=weights[profileKey]||{score:0,domain:domain,label:picked.label,detail:detail&&detail.label};weights[profileKey].score+=event.match_level==='partial'?1:2}
+      if(event.answer==='yes'&&picked){var profileKey=domain+':'+picked.manifestation;weights[profileKey]=weights[profileKey]||{score:0,count:0,domain:domain,label:picked.label,detail:detail&&detail.label};weights[profileKey].score+=event.match_level==='partial'?1:2;weights[profileKey].count+=1}
+      if(event.answer==='no'){(event.options||[]).forEach(function(option){var mechanism=option.mechanism_key||(option.domain+':general'),deniedKey=option.domain+':'+mechanism;if(!denied[deniedKey])denied[deniedKey]={domain:option.domain,label:option.label,mechanism:mechanism,years:[]};if(denied[deniedKey].years.indexOf(event.event_year)<0)denied[deniedKey].years.push(event.event_year)})}
       var state=event.answer==='yes'?(event.match_level==='partial'?'用户确认部分符合':'用户确认明显发生'):'用户确认没有发生';
-      var statement=picked?(picked.label+(detail?'，具体是'+detail.label:'')):event.prompt;
-      return (event.actual_year||event.event_year)+'年【'+(domainNames[domain]||'经历')+'】'+state+'：'+statement+(picked&&picked.mechanism_key?'；对应机制='+picked.mechanism_key:'')+(event.note?'；用户补充：'+event.note:'');
+      var rejected=event.answer==='no'?(event.options||[]):[];
+      var statement=picked?(picked.label+(detail?'，具体是'+detail.label:'')):(rejected.length?'本题全部候选均不符合：'+rejected.map(function(option){return option.label}).join('、'):event.prompt);
+      var mechanism=picked&&picked.mechanism_key?'；对应机制='+picked.mechanism_key:(rejected.length?'；已否认机制='+rejected.map(function(option){return option.mechanism_key||(option.domain+':general')}).join(','):'');
+      return (event.actual_year||event.event_year)+'年【'+(domainNames[domain]||'经历')+'】'+state+'：'+statement+mechanism+(event.note?'；用户补充：'+event.note:'');
     });
-    var patterns=Object.keys(weights).map(function(name){return weights[name]}).sort(function(a,b){return b.score-a.score}).slice(0,6);
-    if(patterns.length)lines.unshift('【个人应事模型】'+patterns.map(function(item){return (domainNames[item.domain]||'经历')+'更常落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这是现实反馈形成的取象权重，只调整解释方向，不得改写命盘事实。');
+    var ranked=Object.keys(weights).map(function(name){return weights[name]}).sort(function(a,b){return b.score-a.score}),patterns=ranked.filter(function(item){return item.count>=2}).slice(0,6),tentative=ranked.filter(function(item){return item.count===1}).slice(0,6),deniedPatterns=Object.keys(denied).map(function(name){return denied[name]}).slice(0,10);
+    if(deniedPatterns.length)lines.unshift('【已排除的应事方式】'+deniedPatterns.map(function(item){return (domainNames[item.domain]||'经历')+'的“'+item.label+'”〔'+item.mechanism+'〕在'+item.years.join('、')+'年被用户明确否认'}).join('；')+'。只降低这些具体机制，不要把整个领域一并排除。');
+    if(tentative.length)lines.unshift('【单次校对线索】'+tentative.map(function(item){return (domainNames[item.domain]||'经历')+'曾落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这些仅命中一次，只能作为弱提示，不能概括为用户的稳定规律。');
+    if(patterns.length)lines.unshift('【个人应事模型】'+patterns.map(function(item){return (domainNames[item.domain]||'经历')+'更常落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这些表现已在不同年份重复命中，可作为稳定取象权重；只调整解释方向，不得改写命盘事实。');
     return lines.join('\n').slice(0,2000);
   };
   root.ZhishiCalibration.open = function() {

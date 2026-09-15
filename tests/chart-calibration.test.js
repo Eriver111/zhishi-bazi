@@ -31,7 +31,7 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=11/);
+  assert.match(result, /chart-calibration\.js\?v=12/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -89,7 +89,8 @@ test('confirmed calibration is added to AI context without changing frozen facts
   const integration = read('js/ai-chat-integration.js');
   assert.match(endpoint, /getChartCalibrationSummary/);
   assert.match(endpoint, /不得据此改写四柱、旺衰、格局、喜用忌/);
-  assert.match(endpoint, /降低被用户明确否认的表现/);
+  assert.match(endpoint, /逐项降低“已排除的应事方式”/);
+  assert.match(endpoint, /单次校对线索.*只能弱参考/);
   assert.match(integration, /ChatPersistence\.decorate\(body, chatType/);
   assert.match(integration, /detectPageType\(\) === 'result' \? 'bazi'/);
   assert.match(integration, /requestHeaders\.Authorization/);
@@ -138,6 +139,42 @@ test('personal manifestation model weights exact matches above partial matches',
   assert.equal(profile.denied.career, 1);
   assert.equal(profile.deniedPatterns[0].mechanismKey, 'career:general');
   assert.equal(profile.version, 'bazi-cal-v3');
+});
+
+test('single confirmation stays tentative until the same manifestation repeats', () => {
+  const option = {
+    key: 'study:exam-pressure', label: '考试压力明显', detail: '重要考试发挥受影响',
+    domain: 'study', manifestation: 'exam-pressure', mechanism_key: 'wealth-breaks-resource',
+    followup_options: []
+  };
+  const once = calibrationModel.buildCalibrationProfile([
+    { event_year: 2023, answer: 'yes', match_level: 'exact', selected_option: option.key, options: [option] }
+  ]);
+  assert.equal(once.patterns.length, 0);
+  assert.equal(once.tentativePatterns.length, 1);
+  const repeated = calibrationModel.buildCalibrationProfile([
+    { event_year: 2023, answer: 'yes', match_level: 'exact', selected_option: option.key, options: [option] },
+    { event_year: 2025, answer: 'yes', match_level: 'partial', selected_option: option.key, options: [option] }
+  ]);
+  assert.equal(repeated.patterns.length, 1);
+  assert.equal(repeated.tentativePatterns.length, 0);
+});
+
+test('rejecting a multi-option year records every displayed mechanism', () => {
+  const options = [
+    { key: 'career:rule-conflict', label: '与规则冲突', detail: '工作审核受阻', domain: 'career', manifestation: 'rule-conflict', mechanism_key: 'hurting-officer-sees-officer' },
+    { key: 'wealth:peer-loss', label: '合伙损失', detail: '合作分钱不利', domain: 'wealth', manifestation: 'peer-loss', mechanism_key: 'peer-wealth' },
+    { key: 'family:parent-change', label: '父母变化', detail: '父母状态变化', domain: 'family', manifestation: 'parent-change', mechanism_key: 'parent-palace:clash' }
+  ];
+  const profile = calibrationModel.buildCalibrationProfile([
+    { event_year: 2024, answer: 'no', domain: 'career', mechanism_key: options[0].mechanism_key, options }
+  ]);
+  assert.deepEqual(profile.deniedPatterns.map(function(item) { return item.mechanismKey; }).sort(), [
+    'hurting-officer-sees-officer', 'parent-palace:clash', 'peer-wealth'
+  ]);
+  assert.equal(profile.denied.career, 1);
+  assert.equal(profile.denied.wealth, 1);
+  assert.equal(profile.denied.family, 1);
 });
 
 test('option evidence survives server normalization', () => {
