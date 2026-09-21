@@ -16,6 +16,48 @@ function pillars(values) {
   return { year: records[0], month: records[1], day: records[2], hour: records[3] };
 }
 
+test('调候 2.5—3 边界不再同时需要调候和判作已到位', () => {
+  const calculator = loadCalculator();
+  const cases = [
+    ['丁巳 癸丑 甲申 乙丑', 'warmth', 2.6],
+    ['壬子 癸丑 庚午 丙戌', 'warmth', 2.95],
+    ['壬戌 丁未 丁未 戊申', 'moisture', 2.95],
+    ['癸丑 戊午 辛卯 辛卯', 'moisture', 2.5],
+    ['壬寅 辛亥 戊子 己未', 'warmth', 3],
+    ['己亥 庚午 甲申 辛未', 'moisture', 3]
+  ];
+  for (const [text, kind, index] of cases) {
+    const bazi = calculator.buildFromPillars(pillars(text.split(' ')), 'male');
+    const climate = calculator.getClimateState(bazi);
+    const warm = kind === 'warmth';
+    assert.equal(warm ? climate.coldIndex : climate.heatIndex, index);
+    assert.equal(warm ? climate.needsWarmth : climate.needsCooling, true);
+    assert.notEqual(warm ? climate.warmthStatus : climate.moistureStatus, warm ? '暖局已到位' : '润局已到位');
+    const yong = calculator.getYongJi(bazi);
+    assert.deepEqual(yong.climateState, climate, '喜用忌必须消费相同调候终裁');
+  }
+});
+
+test('非冬候的指数不越过季节门槛制造补火需求', () => {
+  const calculator = loadCalculator();
+  const bazi = calculator.buildFromPillars(pillars('壬申 癸卯 己亥 癸酉'.split(' ')), 'male');
+  const climate = calculator.getClimateState(bazi);
+  assert.equal(climate.coldIndex, 2.5);
+  assert.equal(climate.needsWarmth, false);
+  assert.equal(climate.warmthStatus, '缺火', '缺元素不等同于需要补元素');
+});
+
+test('热指数 2.95 的燥土弱金不能被错误已润状态送回土印取用', () => {
+  const calculator = loadCalculator();
+  const bazi = calculator.buildFromPillars(pillars('丁亥 丁未 辛未 戊戌'.split(' ')), 'male');
+  const climate = calculator.getClimateState(bazi), yong = calculator.getYongJi(bazi);
+  assert.equal(climate.heatIndex, 2.95);
+  assert.equal(climate.needsCooling, true);
+  assert.equal(climate.moistureStatus, '有水但润局未足');
+  assert.equal(yong.yongShen[0], '水');
+  assert.match(yong.reasoning, /润局尚未到位/);
+});
+
 test('丙火生未月时调候说明不覆盖水的正式扶抑忌神', () => {
   const calculator = loadCalculator();
   const chart = calculator.buildFromPillars(

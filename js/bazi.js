@@ -2914,8 +2914,10 @@ function getClimateState(bazi) {
   var needsCooling = (summerGate || mz === '戌') && heatIndex >= 2.5;
   var coldSeverity = !needsWarmth ? '' : (coldIndex >= 6.5 ? '重' : (coldIndex >= 4.5 ? '中' : '轻'));
   var heatSeverity = !needsCooling ? '' : (heatIndex >= 6.5 ? '重' : (heatIndex >= 4.5 ? '中' : '轻'));
-  var warmthStatus = !fireSeed ? '缺火' : (!effectiveFire ? '有火种但无力' : (coldIndex < 3 ? '暖局已到位' : '有火但暖局未足'));
-  var moistureStatus = !waterSeed ? '缺水' : (!effectiveWater ? '有水源但无力' : (heatIndex < 3 ? '润局已到位' : '有水但润局未足'));
+  // 满足程度消费同一份需求终裁，不能在 2.5—3 之间同时“需要”和“已到位”。
+  // 缺少火种/水源仍只描述载体，不因缺某五行就自动产生调候需求。
+  var warmthStatus = !fireSeed ? '缺火' : (!effectiveFire ? '有火种但无力' : (!needsWarmth ? '暖局已到位' : '有火但暖局未足'));
+  var moistureStatus = !waterSeed ? '缺水' : (!effectiveWater ? '有水源但无力' : (!needsCooling ? '润局已到位' : '有水但润局未足'));
   var condition = needsWarmth ? '寒凝' : (needsCooling ? '炎燥' : (winterGate || summerGate ? '季节偏性已受制衡' : '寒暖无明显偏枯'));
 
   return {
@@ -7040,7 +7042,7 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
       source:source,
       desc:desc,
       establishConditions:conditions || [],
-      breakReasons:breakReasons || [],
+      breakReasons:status === '条件待定' ? [] : (breakReasons || []),
       pendingReasons:status === '条件待定' ? (breakReasons || []) : [],
       basePattern:base.name + '·' + base.status,
       basePatternFacts:base
@@ -7096,17 +7098,41 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     });
   }
 
-  // 财官印相生：三者必须全部透干且各自有根；伤官破官、七杀混杂均不成立。
+  // 财官印相生：有根只证明节点存在。与官印结构层一致，印须为核心用神；
+  // 财印贴邻或节点被合牵制时，不能仅靠五行顺生就断言流通完成。
   if (wealth.length && officer.length && seal.length) {
     var w = strongest(wealth), o = strongest(officer), s = strongest(seal);
     var chainRooted = rooted(w) && rooted(o) && rooted(s);
     var chainClean = !hurting.length && !killing.length;
-    var chainMet = chainRooted && chainClean;
-    outputs.push(candidate('财官印相生格', chainMet ? '成格' : '破格',
+    var sealIsCoreUse = cls[WU_XING[s.gan]] === '用神';
+    var adjacentWealthSeal = Math.abs(allPositions.indexOf(w.pos) - allPositions.indexOf(s.pos)) === 1;
+    var chainBindings = [];
+    [w,o,s].forEach(function(node) {
+      // 合日主保留为合身事实；这里只检查链条节点之间的相互牵制。
+      [w,o,s].forEach(function(other) {
+        if (allPositions.indexOf(node.pos) >= allPositions.indexOf(other.pos)) return;
+        if (GAN_HE[node.gan] === other.gan) chainBindings.push(positionLabel[node.pos] + node.gan + '与' + positionLabel[other.pos] + other.gan + '五合');
+      });
+    });
+    var sealSupportBlocked = getThickEarthMetalState(bazi).applies || getWaterloggedWoodState(bazi).applies;
+    var chainPending = [];
+    if (!sealIsCoreUse) chainPending.push('印星不是本局核心用神，仅记录相生关系');
+    if (adjacentWealthSeal) chainPending.push('财印贴邻相克，官星不在两者之间，通关有效性待核');
+    if (chainBindings.length) chainPending.push(chainBindings.join('；') + '，节点受合牵制，连续生化待核');
+    if (sealSupportBlocked) chainPending.push('原局已有印多埋金或水多木漂证据，不能直接认定印能有效生身');
+    var chainMet = chainRooted && chainClean && !chainPending.length;
+    var chainStatus = !chainRooted || !chainClean ? '破格' : (chainMet ? '成格' : '条件待定');
+    var chainReasons = !chainRooted || !chainClean
+      ? [!chainRooted ? '财官印至少一项虚透，连续相生无力' : '官星受伤或官杀混杂，财官印通路不清'] : chainPending;
+    outputs.push(candidate('财官印相生格', chainStatus,
       positionLabel[w.pos] + w.gan + '财→' + positionLabel[o.pos] + o.gan + '官→' + positionLabel[s.pos] + s.gan + '印',
-      '财、官、印三气透出并形成财生官、官生印、印生身的连续通路。',
-      [hard('财官印全部透干有根', chainRooted, chainRooted ? '三者均透干有根' : '财、官、印中至少一项虚透无根'), hard('官星清纯不受伤混', chainClean, chainClean ? '无伤官克官、无七杀混杂' : (hurting.length ? '伤官透出克官' : '七杀透出导致官杀混杂'))],
-      chainMet ? [] : [chainRooted ? '官星受伤或官杀混杂，财官印通路不清' : '财官印至少一项虚透，连续相生无力']));
+      chainMet ? '财官印透干有根，印为核心用神，且未见财印贴邻、节点互合或印生身失效证据，财官印相生结构成立。' : '财官印相生关系可见，但根气、取用及通路条件须分别核验，不能仅凭三者同时出现判成格。',
+      [hard('财官印全部透干有根', chainRooted, chainRooted ? '三者均透干有根' : '财、官、印中至少一项虚透无根'), hard('官星清纯不受伤混', chainClean, chainClean ? '无伤官克官、无七杀混杂' : (hurting.length ? '伤官透出克官' : '七杀透出导致官杀混杂')),
+        quality('印星为核心用神', sealIsCoreUse, '印星五行' + WU_XING[s.gan] + '为' + (cls[WU_XING[s.gan]] || '未定')),
+        quality('财印无贴邻相克', !adjacentWealthSeal, adjacentWealthSeal ? '财印贴邻，须核实官星能否通关' : '未见财印贴邻'),
+        quality('链条节点无相互合绊', !chainBindings.length, chainBindings.join('；') || '未见节点互合'),
+        quality('印生身无已知失效证据', !sealSupportBlocked, sealSupportBlocked ? '印的作用已受埋金或漂木机制限制' : '未触发埋金、漂木机制')],
+      chainReasons));
   }
 
   // 伤官合杀：只认天干真实五合，且伤官、七杀均须有根；同现正官则格局不清。
@@ -7221,13 +7247,15 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
   if (!selected) {
     var preservedBase = Object.assign({}, base);
     preservedBase.relatedPatterns = outputs.map(function(item) {
-      return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons };
+      return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons,
+        pendingReasons:item.pendingReasons, establishConditions:item.establishConditions };
     });
     preservedBase.structuralMechanisms = structuralMechanisms;
     return preservedBase;
   }
   selected.relatedPatterns = outputs.filter(function(item) { return item !== selected; }).map(function(item) {
-    return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons };
+    return { name:item.name, status:item.status, source:item.source, breakReasons:item.breakReasons,
+      pendingReasons:item.pendingReasons, establishConditions:item.establishConditions };
   });
   selected.structuralMechanisms = structuralMechanisms;
   return selected;
@@ -9727,7 +9755,8 @@ function getProfessionalReportFacts(bazi, gender) {
       : (pattern.status === '条件待定' ? (pattern.pendingReasons || []).join('；') : pattern.source));
   (pattern.relatedPatterns || []).forEach(function(item) {
     addChain(item.status === '成格' ? 4 : 3, item.name + '·' + item.status,
-      item.status === '破格' && item.breakReasons && item.breakReasons.length ? item.breakReasons.join('；') : item.source);
+      item.status === '条件待定' && item.pendingReasons && item.pendingReasons.length ? item.pendingReasons.join('；')
+        : (item.status === '破格' && item.breakReasons && item.breakReasons.length ? item.breakReasons.join('；') : item.source));
   });
   (pattern.structuralMechanisms || []).forEach(function(item) {
     addChain(item.type === '主导连续生克链' ? 5 : 3, item.name + '·' + item.status, item.source + '；' + item.desc);

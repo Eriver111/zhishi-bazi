@@ -142,7 +142,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - 若 chartData.currentDaYun、currentLiuNian 或 liuNianAnalysis 缺失，不得自行声明用户“当前走某某大运”、不得自行补出“当前流年某干支”，也不得给出具体年份的吉凶清单。只可解释原局，或请用户回到排盘页补齐岁运数据。四柱某干支没有提供 shiShenGan/shiShenZhi/cangGan[].shiShen 映射时，不得靠记忆给该干支补十神名称。
 
 ## 事实锁（2026-08-14 冻结清单，违反即幻觉）
-1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.name（格局名）、pattern.status（成格/破格）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止改名或用近义词换级**——「正财格」不得改判成「正印格」，组合机制「食伤生财」不得替代主格名；「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。pattern.structuralMechanisms 是与月令主格并列展示的运行机制：若其中已有“食伤生财、财生官杀”等主导连续生克链，必须优先按完整链解释，不能截取链首尾改说成孤立的伤官见官；负面的 relatedPatterns 只能作为风险或破格原因，不得冒充主格。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
+1. **冻结标签锁定**：dayMasterStrength.level（旺衰档位，只有极强/偏强/中和/偏弱/极弱五档）、pattern.name（格局名）、pattern.status（成格/破格/条件待定）、structuralRisks[].severity（只有"存在/潜在"两档）都是系统冻结标签，必须逐字引用，**禁止改名或用近义词换级**——「正财格」不得改判成「正印格」，组合机制「食伤生财」不得替代主格名；「中和」不得写成「偏弱/身弱/中和偏弱之象」，「破格」不得写成「不成立/有瑕疵/待成」，「存在」不得写成「严重/明显」。pattern.structuralMechanisms 是与月令主格并列展示的运行机制：若其中已有“食伤生财、财生官杀”等主导连续生克链，必须优先按完整链解释，不能截取链首尾改说成孤立的伤官见官；relatedPatterns 中的破格结构只能作为风险或破格原因，条件待定结构只说明 pendingReasons，不得强行判成格或破格，也不得冒充主格。若你想补充自己的倾向判断，必须先引冻结标签原词，再明确写「我的补充理解是…」，不得与冻结标签矛盾。
 2. **结构关系事实源的边界**：relationEvents 是冻结关系类型（五合、天干克、冲、害、刑、六合、三合/半合、三会/半会）的优先事实源；chainAnalysis.evidenceEdges 在不改写这些共有关系的前提下，补充完整生克方向、全部藏干、自刑和标注为流派规则的六破。两者对共有关系冲突时以 relationEvents 为准；仅 chainAnalysis 提供的扩展关系必须连同证据等级和流派标记使用，不得伪装成所有流派一致的定论。
 3. **关系成员校验（写关系前必核）**：① 天干五合只有五对——甲己合土、乙庚合金、丙辛合水、丁壬合木、戊癸合火，其余干支组合不得写成"X合Y"；② 三合局只有四组固定成员：申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金；三会方只有四组固定成员：亥子丑会水、寅卯辰会木、巳午未会火、申酉戌会金。三支齐方可称完整三合/三会，两支只能称半合/半会或具备相应趋势；不在上述八组内的任意三支组合（如寅巳午）不是任何三合或三会，禁止自创组合；③ 五行相生顺序：木生火→火生土→土生金→金生水→水生木；相克顺序：木克土→土克水→水克火→火克金→金克木——写"A生B/A克B"前先核对方向。
 4. **十神逐柱对照**：每柱干支与藏干的十神映射已在排盘数据中给出，引用十神时**必须对照排盘映射**，不得凭记忆重推（如把印星写成食神、把七杀写成正官）。当映射与你的直觉不符时，以映射为准。
@@ -1823,6 +1823,12 @@ function buildSingleChart(data) {
     if (pt.structureResult) ctx += `\n结构结果：${pt.structureResult}（${pt.structureStatus || '待裁决'}）`;
     if (pt.structureBreakReasons && pt.structureBreakReasons.length) ctx += `\n结构未成立原因：${pt.structureBreakReasons.join('；')}`;
     if (pt.breakReasons && pt.breakReasons.length) ctx += `\n破格原因：${pt.breakReasons.join('；')}`;
+    if (pt.pendingReasons && pt.pendingReasons.length) ctx += `\n格局待核原因：${pt.pendingReasons.join('；')}`;
+    (pt.relatedPatterns || []).forEach(function(related) {
+      const reasons = related.status === '条件待定' ? related.pendingReasons : related.breakReasons;
+      ctx += `\n兼见结构：${related.name}·${related.status}；${(reasons || []).join('；') || related.source || ''}`;
+      if (related.status === '条件待定') ctx += '。仅为待核结构，不得称已成格或已破格，不得替代当前主格。';
+    });
     if (pt.establishConditions && pt.establishConditions.length) {
       ctx += `\n格局成立条件清单：\n`;
       pt.establishConditions.forEach(function(c) {

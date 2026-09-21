@@ -45,12 +45,69 @@ test('从势格按余气印比分成真从与假从', () => {
   assert.equal(falseFollowing.trueFollowing, false);
 });
 
-test('财官印相生要求三者透干有根且官星清纯', () => {
-  const pattern = resolved(['癸未', '丁亥', '己未', '甲子']);
+test('财官印相生要求透干有根、印为核心用神且通路无已知阻碍', () => {
+  const pattern = resolved(['甲午', '丁丑', '己卯', '癸酉']);
   assert.equal(pattern.name, '财官印相生格');
   assert.equal(pattern.status, '成格');
   assert.ok(pattern.establishConditions.every(row => row.met));
   assert.match(pattern.source, /财→.*官→.*印/);
+});
+
+test('原三透有根样本财印贴邻且印非核心用神时保留月令主格', () => {
+  const pattern = resolved(['癸未', '丁亥', '己未', '甲子']);
+  assert.equal(pattern.name, '正财格');
+  const chain = pattern.relatedPatterns.find(p => p.name === '财官印相生格');
+  assert.equal(chain.status, '条件待定');
+  assert.equal(chain.breakReasons.length, 0, '待核条件不冒充硬破格证据');
+  assert.ok(chain.pendingReasons.some(r => r.includes('财印贴邻')));
+  assert.ok(chain.pendingReasons.some(r => r.includes('不是本局核心用神')));
+});
+
+test('同一有根通路按印的最终作用裁决，不反向改写旺衰与喜用', () => {
+  const bazi = build(['甲午', '丁丑', '己卯', '癸酉']);
+  const base = E.getPattern(bazi);
+  for (const role of ['喜神', '忌神', undefined]) {
+    const pattern = E.adjudicatePattern(bazi, base, {火:role});
+    assert.notEqual(pattern.name, '财官印相生格');
+    const chain = pattern.relatedPatterns.find(p => p.name === '财官印相生格');
+    assert.equal(chain.status, '条件待定');
+    assert.ok(chain.establishConditions.some(c => c.condition === '印星为核心用神' && !c.met));
+  }
+  assert.equal(E.adjudicatePattern(bazi, base, {火:'用神'}).name, '财官印相生格');
+});
+
+test('财印五合只记录牵制待核，不凭有根断成格或擅断合化', () => {
+  const pattern = resolved(['庚辰', '乙酉', '丁亥', '壬寅']);
+  const chain = pattern.relatedPatterns.find(p => p.name === '财官印相生格');
+  assert.equal(chain.status, '条件待定');
+  assert.ok(chain.pendingReasons.some(r => r.includes('年干庚与月干乙五合')));
+  assert.ok(chain.establishConditions.some(c => c.condition === '印星为核心用神' && c.met));
+  assert.ok(chain.establishConditions.some(c => c.condition === '链条节点无相互合绊' && !c.met));
+  assert.equal(chain.breakReasons.length, 0);
+});
+
+test('埋金漂木证据不能被财官印三透有根覆盖', () => {
+  for (const [pillars, seal] of [[['乙卯', '己丑', '庚午', '丁丑'], '土'], [['壬子', '庚子', '乙亥', '己丑'], '水']]) {
+    const bazi = build(pillars);
+    // 独立校验阻断证据，不依赖喜用分类恰好先拦住此盘。
+    const pattern = E.adjudicatePattern(bazi, E.getPattern(bazi), {[seal]:'用神'});
+    const chain = pattern.relatedPatterns.find(p => p.name === '财官印相生格');
+    assert.equal(chain.status, '条件待定');
+    assert.ok(chain.establishConditions.some(c => c.condition === '财官印全部透干有根' && c.met));
+    assert.ok(chain.establishConditions.some(c => c.condition === '印生身无已知失效证据' && !c.met));
+  }
+});
+
+test('财官印待核证据传递到专业报告，月令格保持一致', () => {
+  const bazi = build(['庚辰', '乙酉', '丁亥', '壬寅']);
+  const yong = E.getYongJi(bazi), facts = E.getProfessionalReportFacts(bazi, 'male');
+  assert.equal(facts.pattern.name, yong.resolvedPattern.name);
+  assert.deepEqual(facts.pattern.relatedPatterns, yong.resolvedPattern.relatedPatterns);
+  assert.ok(facts.pattern.relatedPatterns.some(p => p.name === '财官印相生格' && p.pendingReasons.length > 0));
+  const context = require('../api/ai-chat.js')._test.buildChartContext({pattern:facts.pattern, yongJi:yong});
+  assert.match(context, /兼见结构：财官印相生格·条件待定/);
+  assert.match(context, /年干庚与月干乙五合/);
+  assert.match(context, /不得称已成格或已破格/);
 });
 
 test('伤官合杀只认天干真实五合且双方有根', () => {
