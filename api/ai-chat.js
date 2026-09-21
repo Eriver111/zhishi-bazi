@@ -11,6 +11,19 @@ const { deductCredit, getCreditsByCode, saveChatHistory, isMonthlyActive, trackF
 const { requireAuth } = require('../lib/auth.js');
 const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 const { buildZiweiContext } = require('../lib/ziwei-context.js');
+const { hepanReplyScopes } = require('../lib/hepan-reply-scopes.js');
+
+function sendAiFailure(res, error) {
+  if (error && error.code === 'HEPAN_VALIDATION_FAILED') {
+    return res.status(502).json({
+      error: '这次合盘解读未能完成，请重试一次（未扣次数）。',
+      code: error.code,
+      retryable: true,
+      charged: false
+    });
+  }
+  return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
+}
 
 const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY || '';
@@ -408,7 +421,7 @@ module.exports = async function handler(req, res) {
           if (!freeGuard.ok) return res.status(429).json({ error: freeGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
           var freeReply; try { freeReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
             freeGuard.release();
-            return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
+            return sendAiFailure(res, aiErr);
           }
           await bumpFreeUsageByUser(userId);
           freeGuard.release();
@@ -433,7 +446,7 @@ module.exports = async function handler(req, res) {
             if (!fallbackGuard.ok) return res.status(429).json({ error: fallbackGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
             var paidReply; try { paidReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
               fallbackGuard.release();
-              return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
+              return sendAiFailure(res, aiErr);
             }
             var creditsAfterDeduct;
             if (!userMonthlyFallback) {
@@ -483,7 +496,7 @@ module.exports = async function handler(req, res) {
         if (!anonGuard.ok) return res.status(429).json({ error: anonGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
         var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, '', calibrationSummary); } catch(aiErr) {
           anonGuard.release();
-          return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
+          return sendAiFailure(res, aiErr);
         }
         // 同时以两个标识记录（防止用户换ID或换IP任一方式绕过）
         const trackResult = await trackFreeUsage(free_id, serverFingerprint);
@@ -600,7 +613,7 @@ module.exports = async function handler(req, res) {
     try { reply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, aiMeta, memorySummary, calibrationSummary); } catch(aiErr) {
       console.error('AI call failed:', aiErr);
       paidGuard.release();
-      return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后重试（未扣次数）' });
+      return sendAiFailure(res, aiErr);
     }
 
     // ---- AI 成功后才真正扣减 ----
@@ -737,6 +750,10 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
 
   if (history && Array.isArray(history)) {
     history.filter(function(h, index, list) {
+      // The former failure fact table was saved as an assistant answer. Do not
+      // feed that operational notice back to the model as relationship advice.
+      if (chartData && chartData.type === 'hepan' && h && h.role === 'assistant' &&
+          /^刚才生成的(?:合盘回答|大运归属)未通过/.test(String(h.content || ''))) return false;
       // 页面通常先把当前问题放入本地数组，避免历史与末尾问题重复注入。
       return !(index === list.length - 1 && h && h.role === 'user' && String(h.content || '').trim() === String(question).trim());
     }).slice(-12).forEach(h => {
@@ -813,15 +830,15 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   }
   if (mode !== 'ziwei' && mode !== 'liuren') {
     // 合盘身份归属属于不可妥协的排盘事实。若一次定向修正后仍未通过，
-    // 不把张冠李戴的正文交给用户，直接降级为双方已冻结的身份事实表。
+    // 返回失败，让所有免费/付费入口在扣次数和保存回答之前退出。
     var unresolvedHepanIdentity = validationWarnings.filter(function(w) {
       return w.indexOf('E1-合盘') === 0;
     });
     if (unresolvedHepanIdentity.length) {
-      reply = buildHepanIdentityFactFallback(chartData, unresolvedHepanIdentity);
-      validationWarnings = runReplyValidation(chartData, reply, question);
-      v2Applied = true;
-      console.log('[ai-validator] 合盘身份归属仍有冲突，已阻断原回答并返回冻结事实表');
+      console.log('[ai-validator] 合盘身份归属仍有冲突，本轮失败且不扣次数');
+      var validationError = new Error('Hepan reply failed identity validation');
+      validationError.code = 'HEPAN_VALIDATION_FAILED';
+      throw validationError;
     }
   }
   var expertScorecard = buildExpertReplyScorecard(question, chartData, reply, validationWarnings);
@@ -982,21 +999,6 @@ function runReplyValidation(chartData, reply, question) {
       { role:'甲方', id:'P1', data:chartData.person1 || {} },
       { role:'乙方', id:'P2', data:chartData.person2 || {} }
     ];
-    var uniqueGenderRole = {};
-    hepanPeople.forEach(function(item) {
-      var gender = item.data.gender;
-      if (!gender) return;
-      if (uniqueGenderRole[gender]) uniqueGenderRole[gender] = null;
-      else uniqueGenderRole[gender] = item.role;
-    });
-    function roleFromLine(line) {
-      var hasP1 = /甲方|P1/.test(line);
-      var hasP2 = /乙方|P2/.test(line);
-      if (hasP1 !== hasP2) return hasP1 ? '甲方' : '乙方';
-      if (/男方/.test(line) && uniqueGenderRole.male) return uniqueGenderRole.male;
-      if (/女方/.test(line) && uniqueGenderRole.female) return uniqueGenderRole.female;
-      return '';
-    }
     function getDayGan(person) {
       return String((person.dayMaster && person.dayMaster.gan) ||
         (person.fourPillars && person.fourPillars.day && person.fourPillars.day.gan) || '');
@@ -1007,11 +1009,9 @@ function runReplyValidation(chartData, reply, question) {
       if (level === '中和') return 'neutral';
       return '';
     }
-    var activeRole = '';
-    String(reply).split(/\n/).forEach(function(line) {
-      var explicitRole = roleFromLine(line);
-      if (explicitRole) activeRole = explicitRole;
-      if (!activeRole) return;
+    hepanReplyScopes(reply, hepanPeople).forEach(function(scope) {
+      var activeRole = scope.role;
+      var line = scope.text;
       var item = hepanPeople.filter(function(person) { return person.role === activeRole; })[0];
       if (!item) return;
 
