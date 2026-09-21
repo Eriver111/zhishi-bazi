@@ -16,8 +16,8 @@ test('bazi input retains every calculation control and script', () => {
   assert.ok(html.indexOf('js/county-longitudes.js') < html.indexOf('js/bazi.js'));
   assert.match(html, /name=["']gender["']/);
   const ziHourInput = html.match(/<input[^>]+id=["']zishiHuanri["'][^>]*>/)?.[0] || '';
-  assert.match(ziHourInput, /\bchecked\b/, 'Zi-hour rollover must default on');
-  assert.match(main, /ziHourRollover\.checked\s*=\s*true/, 'script must override stale browser-restored Zi-hour state');
+  assert.doesNotMatch(ziHourInput, /\bchecked\b/, 'WenZhen split Zi-hour rule must default on');
+  assert.match(main, /ziHourRollover\.checked\s*=\s*false/, 'script must override stale browser-restored Zi-hour state');
   assert.match(main, /addEventListener\('pageshow'/, 'back-forward restoration must clear the loading state');
   assert.match(main, /resetSubmitButton\(document\.querySelector\('\.submit'\)\)/);
 });
@@ -26,7 +26,7 @@ test('Hepan gives both people the same default Zi-hour rollover rule as personal
   const html = read('hepan.html');
   for (const id of ['zishiHuanri-p1', 'zishiHuanri-p2']) {
     const input = html.match(new RegExp(`<input[^>]+id=["']${id}["'][^>]*>`))?.[0] || '';
-    assert.match(input, /\bchecked\b/, `${id} must default on`);
+    assert.doesNotMatch(input, /\bchecked\b/, `${id} must default to split Zi-hour`);
   }
 });
 
@@ -42,7 +42,7 @@ test('mobile birth forms keep advanced settings available while shortening the m
   assert.equal((hepan.match(/<details class="birth-advanced">/g) || []).length, 2);
   assert.match(css, /\.mobile-submit-dock\{position:fixed/);
   assert.match(flow, /真太阳时/);
-  assert.match(paipan, /js\/input-flow\.js\?v=7/);
+  assert.match(paipan, /js\/input-flow\.js\?v=8/);
   assert.match(hepan, /js\/hepan-archive-picker\.js\?v=1/);
 });
 

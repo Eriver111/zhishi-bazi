@@ -9,7 +9,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 test('mobile paipan loads the dedicated bottom-sheet interaction after the base flow', () => {
   const html = read('paipan.html');
   assert.match(html, /css\/mobile-paipan-sheet\.css\?v=8/);
-  assert.match(html, /js\/input-flow\.js\?v=7[\s\S]*js\/mobile-paipan-sheet\.js\?v=10/);
+  assert.match(html, /js\/input-flow\.js\?v=8[\s\S]*js\/mobile-paipan-sheet\.js\?v=10/);
 });
 
 test('mobile paipan summarizes the main form and moves editors into an accessible sheet', () => {
@@ -78,7 +78,7 @@ test('calendar restore keeps the exact clock instead of collapsing two hours int
   assert.match(main, /getAttribute\('data-clock'\)/);
   assert.match(main, /setHourClockSelection\('sHour', hour, p\.get\('clock'\)\)/);
   assert.match(html, /setPaipanHourClock\('sHour',d\.get\('hour'\),d\.get\('clock'\)\)/);
-  assert.match(html, /js\/main\.js\?v=3/);
+  assert.match(html, /js\/main\.js\?v=4/);
 });
 
 test('late account restore cannot overwrite birth data after the user starts editing', () => {

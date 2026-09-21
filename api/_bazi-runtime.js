@@ -65,6 +65,7 @@ function chartFromQuery(query) {
     hour: numberParam(params, 'hour', NaN),
     clock: numberParam(params, 'clock', 0),
     minute: numberParam(params, 'minute', 0),
+    clockAlreadyNormalized: params.get('report_clock_normalized') === '1' || /\./.test(params.get('clock') || ''),
     gender,
     prov: params.get('prov') || '',
     city: params.get('city') || '',

@@ -7,7 +7,7 @@
     var z=checked('zishiHuanri'+suffix),s=checked('solarEnabled'+suffix);
     var details=scope?document.querySelector('#'+scope+'Section .birth-advanced'):document.querySelector('#birthForm .birth-advanced');
     var out=details&&details.querySelector('[data-settings-summary]');
-    if(out) out.textContent=(s?'真太阳时':'北京时间')+'、'+(z?'子时换日':'子时不换日');
+      if(out) out.textContent=(s?'真太阳时':'北京时间')+'、'+(z?'23点换日':'区分早晚子时');
   }
   function refreshPaipan(){
     var out=document.querySelector('[data-birth-summary]');if(!out)return;

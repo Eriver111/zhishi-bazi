@@ -199,7 +199,7 @@ function buildAIBirthInfo(params, bazi, identityParams) {
     var solarInfo = bazi && bazi.solarInfo;
     var precise = null;
     if (solarInfo && Number.isFinite(Number(solarInfo.solarMinutes))) {
-        precise = aiClockParts(Number(solarInfo.solarMinutes) / 60, 0, true);
+        precise = aiClockParts(Math.floor(Number(solarInfo.solarMinutes)) / 60, 0, true);
         info.timeBasis = '真太阳时';
     } else {
         precise = aiClockParts(params.clock, params.minute, params.reportClockNormalized || !Number.isInteger(Number(params.clock)));
@@ -783,7 +783,7 @@ function renderDaYun(daYunData, dayGan, currentYear) {
     const timingStr = (ti.years > 0 ? ti.years + '年' : '') + ti.months + '个月' + ti.days + '天';
     const jqName = daYunData.targetJieQi ? '（距' + daYunData.targetJieQi + '）' : '';
     document.getElementById('dayunDirection').innerHTML =
-        dirLabel + ' · 出生后' + timingStr + '0时起运' + jqName +
+        dirLabel + ' · 出生后' + timingStr + (ti.hours || 0) + '时起运' + jqName +
         '<br><small style="color:var(--text-dim)">大运虚岁标签：' + daYunData.list[0]?.displayAge + '岁起</small>';
 
     let html = '';
@@ -1907,16 +1907,16 @@ function renderSolarTime(year, month, day, birthHour) {
         return;
     }
     if (!solarInfo) {
-        var fallbackLocation = (_params.prov || _params.city || _params.dist) ? {
-            province:_params.prov || '', city:_params.city || '', district:_params.dist || '', allowFallback:true
-        } : '';
-        solarInfo = window.BaZiCalculator.getTrueSolarHour(birthHour, fallbackLocation, year, month, day, 0, 0);
+        var civilClock = aiClockParts(_params.clock, 0, true);
+        el.textContent = (_params.solar === '0' ? '未启用' : '未选择出生地，当前未使用县级经度')
+            + '（按北京时间' + (civilClock ? ' ' + civilClock.text : '') + '排盘）';
+        return;
     }
 
     // 用 solarMinutes 直接取真太阳时间
     var tm = solarInfo.solarMinutes;
     var sH = Math.floor(tm / 60);
-    var sM = Math.round(tm % 60);
+    var sM = Math.floor(tm % 60);
     if (sM >= 60) { sH++; sM = 0; }
     if (sH >= 24) sH -= 24;
     var solarStr = String(sH).padStart(2,'0') + ':' + String(sM).padStart(2,'0');
@@ -1987,6 +1987,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var normalizedBirth = window.BaZiCalculator.normalizeBirthInput({
             year:_params.year, month:_params.month, day:_params.day, hour:_params.hour,
             clock:_params.clock, minute:_params.minute, gender:_params.gender,
+            clockAlreadyNormalized:_params.reportClockNormalized,
             location:(_params.prov || _params.city || _params.dist) ? {
                 province:_params.prov || '', city:_params.city || '', district:_params.dist || '', allowFallback:true
             } : '',

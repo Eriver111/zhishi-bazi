@@ -80,8 +80,10 @@ test('wet earth adjustment remains effective after the later position weighting'
     day: { gan: '癸', zhi: '卯' },
     hour: { gan: '丁', zhi: '巳' },
   };
-  // 湿土修正后的阶段分为33；月干己土紧贴癸水再按位置权重扣1分。
-  assert.equal(calculator.calcDayMasterStrength(chart).score, 32);
+  // 卯仅藏乙木，不能作为癸水长生根再获得年干印星的6分补偿。
+  const audit = calculator.auditDayMasterStrength(chart);
+  assert.equal(audit.result.score, 26);
+  assert.equal(audit.scoreTrace.find(stage => stage.id === 'sha-seal-mediation').delta, 0);
 });
 
 test('the day stem itself does not block a weak following pattern', () => {

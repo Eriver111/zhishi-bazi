@@ -1,0 +1,16 @@
+{
+  "source": "https://pcbz.iwzwh.com/#/paipan/index",
+  "observedAt": "2026-09-21",
+  "notes": "Synthetic inputs entered through the public UI; no saved personal cases. Unknown location means Beijing clock. splitZi maps to checked 早晚子时, the inverse of ziHourNextDay. Timing is years/months/days/hours. Only fields actually observed are frozen.",
+  "cases": [
+    {"name":"立春前", "date":[2024,2,4,16,24], "gender":"male", "splitZi":false, "pillars":"癸卯 乙丑 戊戌 庚申"},
+    {"name":"立春后", "date":[2024,2,4,16,50], "gender":"male", "splitZi":true, "pillars":"甲辰 丙寅 戊戌 庚申", "timing":[9,10,27,17], "firstYear":2034, "firstAge":"11", "firstPillar":"丁卯"},
+    {"name":"年末顺行", "date":[1990,12,11,16,0], "gender":"male", "splitZi":true, "pillars":"庚午 戊子 庚戌 甲申", "timing":[8,6,2,8], "firstYear":1999, "firstAge":"10", "firstPillar":"己丑"},
+    {"name":"分早晚子时", "date":[1990,1,1,23,30], "gender":"male", "splitZi":true, "pillars":"己巳 丙子 丙寅 庚子", "timing":[8,6,0,18], "firstYear":1998, "firstAge":"9", "firstPillar":"乙亥"},
+    {"name":"不分早晚子时", "date":[1990,1,1,23,30], "gender":"male", "splitZi":false, "pillars":"己巳 丙子 丁卯 庚子"},
+    {"name":"真太阳时跨立春", "date":[2024,2,4,17,0], "gender":"male", "splitZi":false, "location":{"province":"新疆","city":"乌鲁木齐市","district":"天山区","allowFallback":false}, "solarClock":[14,36], "referenceLongitude":87.6317, "pillars":"癸卯 乙丑 戊戌 己未", "timing":[9,9,18,21], "firstYear":2033, "firstAge":"10", "firstPillar":"甲子"},
+    {"name":"小寒前", "date":[2024,1,6,4,30], "gender":"male", "splitZi":true, "pillars":"癸卯 甲子 己巳 丙寅"},
+    {"name":"小寒后", "date":[2024,1,6,4,50], "gender":"male", "splitZi":true, "pillars":"癸卯 乙丑 己巳 丙寅", "timing":[0,0,0,1], "firstYear":2024, "firstAge":"1", "firstPillar":"甲子"},
+    {"name":"闰日女性早子时", "date":[2000,2,29,0,30], "gender":"female", "splitZi":true, "pillars":"庚辰 戊寅 丁巳 庚子"}
+  ]
+}

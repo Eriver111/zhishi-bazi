@@ -94,11 +94,21 @@ test('伤官克官先检查财星通关，负面机制不覆盖月令主格', ()
 });
 
 test('伤官制官力量超过两倍时不伪装成好格', () => {
-  const pattern = resolved(['丙申', '己未', '辛亥', '壬戌']);
-  assert.equal(pattern.name, '偏印格');
+  // 单独验证裁决层的两倍门槛；不依赖某一取用短路规则产生的五行分类。
+  const chart = build(['丙子', '己亥', '辛亥', '壬子']);
+  const pattern = E.adjudicatePattern(chart, E.getPattern(chart), {水:'喜神',火:'忌神'});
   const excessive = pattern.relatedPatterns.find(row => row.name === '伤官制官太过格');
   assert.equal(excessive.status, '破格');
   assert.ok(excessive.breakReasons.includes('伤官制官太过'));
+});
+
+test('丙火可由未戌中的丁火通根，不能用漏根的旧力量比裁成制官太过', () => {
+  const chart = build(['丙申', '己未', '辛亥', '壬戌']);
+  const settlement = E.buildEvidenceSettlement(chart);
+  assert.ok(settlement.stemAt('year').rootPower > 0);
+  assert.ok(settlement.stemAt('hour').effectivePower < 2 * settlement.stemAt('year').effectivePower);
+  const pattern = resolved(['丙申', '己未', '辛亥', '壬戌']);
+  assert.ok(!pattern.relatedPatterns.some(row => row.name === '伤官制官太过格'));
 });
 
 test('偏印克食神按任务和喜忌拆成制食与夺食', () => {

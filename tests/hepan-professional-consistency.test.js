@@ -129,7 +129,7 @@ test('Hepan person carries the exact calculator DaYun instead of leaving it to A
     normalized.year, normalized.month, normalized.day, normalized.hour, normalized.clock
   );
 
-  assert.ok(person._daYunData && person._daYunData.list.length === 8);
+  assert.ok(person._daYunData && person._daYunData.list.length === 12);
   assert.deepEqual(person._daYunData, expected);
 });
 

@@ -35,7 +35,7 @@ window.setPaipanHourClock = setHourClockSelection;
 document.addEventListener('DOMContentLoaded', function() {
   // 浏览器可能恢复旧的表单控件状态；新进入或刷新时仍应采用站点默认规则。
   var ziHourRollover = document.getElementById('zishiHuanri');
-  if (ziHourRollover) ziHourRollover.checked = true;
+  if (ziHourRollover) ziHourRollover.checked = false;
   initSolarSelects();
   initLunarSelects();
   initPillarSelects();

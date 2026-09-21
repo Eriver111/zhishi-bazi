@@ -22,6 +22,7 @@
       var clock=safeNumber(p,'clock',0);var normalized=BaZiCalculator.normalizeBirthInput({
         year:safeNumber(p,'year',NaN),month:safeNumber(p,'month',NaN),day:safeNumber(p,'day',NaN),hour:hour,
         clock:clock,minute:safeNumber(p,'minute',0),gender:genderOf(chart),prov:p.get('prov')||'',city:p.get('city')||'',dist:p.get('dist')||'',
+        clockAlreadyNormalized:!Number.isInteger(clock)||p.get('report_clock_normalized')==='1',
         trueSolarTime:!(!Number.isInteger(clock)||p.get('report_clock_normalized')==='1')&&p.get('solar')!=='0',ziHourNextDay:p.get('zishi')==='1'
       });
       bazi=BaZiCalculator.calculate(normalized.year,normalized.month,normalized.day,normalized.hour,genderOf(chart),normalized.clock,normalized.dayPillarOffset);

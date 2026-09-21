@@ -11,6 +11,17 @@ function loadCalculator() {
   return context.window.BaZiCalculator;
 }
 
+test('solar-time display uses the effective minute and never recalculates disabled correction at midnight', () => {
+  const { context, elements } = loadResult();
+  elements.solarTimeText = { textContent: '' };
+  vm.runInNewContext("_params={clock:16+50/60,minute:50,solar:'0'};_bazi={solarInfo:null};renderSolarTime(2024,2,4,8);", context);
+  assert.equal(elements.solarTimeText.textContent, '未启用（按北京时间 16:50排盘）');
+  vm.runInNewContext("_params={clock:14.6,minute:0,prov:'新疆',city:'乌鲁木齐市',dist:'天山区'};_bazi={solarInfo:{solarMinutes:876.9,eotMin:-14,lng:87.62}};renderSolarTime(2024,2,4,7);", context);
+  assert.match(elements.solarTimeText.textContent, /^14:36/);
+  const info = context.buildAIBirthInfo({year:2024,month:2,day:4,hour:7,clock:14.6,gender:'male'}, {solarInfo:{solarMinutes:876.9}});
+  assert.equal(info.timeText, '14:36');
+});
+
 function loadResult(search = '') {
   const pillarInputSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'pillar-input.js'), 'utf8');
   const resultSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'result.js'), 'utf8');

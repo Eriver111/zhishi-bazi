@@ -27,7 +27,7 @@ test('archive library is separate from profile while reusing saved_charts', () =
   assert.match(script, /继续问 AI/);
   assert.match(script, /sessionStorage\.setItem\('zhishi_open_archive_ai','1'\)/);
   assert.match(script, /ask\.addEventListener\('click',openAi\)/);
-  assert.match(page, /archive-library\.js\?v=4/);
+  assert.match(page, /archive-library\.js\?v=5/);
   assert.match(profile, /进入命盘档案库/);
   assert.doesNotMatch(profile, /charts\.forEach\(function\(c, i\)/);
 });
