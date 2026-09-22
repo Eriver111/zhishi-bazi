@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<link rel="stylesheet" href="/css/service-notice.css?v=3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知时 · 六爻占卜</title>
@@ -168,12 +169,15 @@
 <link rel="stylesheet" href="/css/app-experience.css?v=1">
 <script src="/js/app-experience.js?v=1" defer></script>
 <script src="/js/mobile-app-shell.js?v=9" defer></script>
+
+<script src="/js/service-notice.js?v=2" defer></script>
+<link rel="stylesheet" href="/css/chart-experience.css?v=3">
+<script src="/js/chart-experience.js?v=2" defer></script>
 </head>
-<body>
+<body class="chart-studio">
 <div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/liuyao" style="color:#e8cf70;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">六爻</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/face" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.color='#e8cf70';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='#a09888';this.style.background='transparent'">观面</a><a href="/palm" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.color='#e8cf70';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='#a09888';this.style.background='transparent'">观手</a><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.color='#e8cf70';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='#a09888';this.style.background='transparent'">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.color='#e8cf70';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='#a09888';this.style.background='transparent'">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.color='#e8cf70';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='#a09888';this.style.background='transparent'">梅花易数</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap" onmouseenter="this.style.color='#e8cf70';this.style.background='rgba(201,168,76,.06)'" onmouseleave="this.style.color='#a09888';this.style.background='transparent'">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 <div class="liuyao-page">
-  <div class="page-title">六爻占卜</div>
-  <div class="page-sub">诚心默念所问之事 · 掷钱六次以成卦</div>
+  <header class="studio-hero"><div class="studio-hero-copy"><span class="studio-kicker">I CHING · 六爻</span><h1>一事一问，<br>静心起卦</h1><p>三枚铜钱，六次成卦。留下一次思考的记录。</p></div><img src="/images/studio/liuyao-v1.webp" width="720" height="480" alt="" aria-hidden="true" decoding="async" onerror="this.hidden=true"></header>
 
   <!-- 北京时间 -->
   <div class="bj-clock">
@@ -183,6 +187,10 @@
 
   <!-- ====== 摇卦区 ====== -->
   <div class="card" id="tossCard">
+<ol class="studio-steps" aria-label="起卦步骤"><li aria-current="step"><b>1</b>写下所问</li><li><b>2</b>掷钱六次</li><li><b>3</b>查看卦象</li></ol>
+        <label class="studio-question-label" for="question">此刻，你想了解什么？</label>
+        <input type="text" id="question" placeholder="例如：如何更好地准备这次面试？" style="width:100%;padding:12px 16px;font-size:14px;font-family:inherit;background:rgba(30,28,24,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;color:var(--tx);outline:none;margin-bottom:12px;box-sizing:border-box">
+<p class="studio-question-help">聚焦一件具体的事。开始掷钱后，本次问题保持不变。</p>
         <h3 style="font-size:13px;color:var(--gold-l);letter-spacing:2px;margin-bottom:16px;text-align:center">第 <span id="tossNum">1</span> / 6 次掷钱</h3>
         <div class="coin-stage" id="coinStage">
           <div class="coin" id="c0"><div class="face">—</div><div class="face back">- -</div></div>
@@ -190,8 +198,9 @@
           <div class="coin" id="c2"><div class="face">—</div><div class="face back">- -</div></div>
         </div>
         <div class="coin-result" id="coinResult">三枚铜钱，诚心默念后开始</div>
-        <input type="text" id="question" placeholder="心中默念所问之事..." style="width:100%;padding:12px 16px;font-size:14px;font-family:inherit;background:rgba(30,28,24,.6);border:1px solid rgba(201,168,76,.15);border-radius:10px;color:var(--tx);outline:none;margin-bottom:12px;box-sizing:border-box">
-        <button class="btn-submit" onclick="doToss()" id="tossBtn">摇卦</button>
+
+        <div class="studio-cast-progress" id="studioCastProgress" aria-live="polite" aria-label="已完成 0 / 6 爻"><span>初爻</span><span>二爻</span><span>三爻</span><span>四爻</span><span>五爻</span><span>上爻</span></div>
+<button class="btn-submit" onclick="doToss()" id="tossBtn">开始第一次掷钱</button><button type="button" class="studio-restart" id="studioRestart" hidden>重新起卦</button>
         <div id="tossLog" style="margin-top:12px"></div>
     </div>
 
@@ -228,7 +237,7 @@ function updateDots(n){
 function doToss(){
   var question=document.getElementById('question').value.trim();
   if(!question){ alert('请先默念所问之事'); return; }
-  if(tossCount>=6) return;
+  if(tossCount>=6 || document.getElementById('tossBtn').disabled) return;
   var btn=document.getElementById('tossBtn'); btn.disabled=true; btn.textContent='掷钱中...';
   var ph=document.getElementById('placeholder'); if(ph) ph.style.display='none';
   for(var i=0;i<3;i++){ var c=document.getElementById('c'+i); c.classList.remove('flip'); c.classList.remove('tails'); void c.offsetWidth; c.classList.add('flip'); }
@@ -254,7 +263,7 @@ function doToss(){
     log.innerHTML+='<div class="coin-row"><span class="label">第'+tossCount+'爻</span><span class="result">'+(yang?'━━━':'━ ━')+(changing?' ◯':'')+'</span><span class="yao-type">'+type+'</span></div>';
     if(tossCount<6){
       document.getElementById('tossNum').textContent=tossCount+1;
-      btn.textContent='摇卦（'+tossCount+'/6）';
+      btn.textContent='继续掷钱 · 第 '+(tossCount+1)+' / 6 次';
       btn.disabled=false;
     } else {
       btn.textContent='卦已成';
@@ -321,7 +330,7 @@ function doAnalyze(){
   // ====== 构建卦象英雄区 ======
   var hero='<div class="card">';
   // 本卦卦名+符号
-  hero+='<div class="gua-hero">';
+  hero+='<div class="gua-hero studio-gua-compare"><section class="studio-gua-panel"><small>本卦</small>';
   hero+='<div class="gua-title">'+zg.guaName+'</div>';
   hero+='<div class="gua-sub">'+zg.gong+'宫 · '+zg.gongWX+' · '+zg.guaType+'卦</div>';
   // 爻线
@@ -343,7 +352,7 @@ function doAnalyze(){
 
   // 变卦
   if(chgZg){
-    hero+='<div class="gua-arrow"><span>→</span></div>';
+    hero+='</section><section class="studio-gua-panel"><small>变卦</small>';
     hero+='<div class="gua-title" style="font-size:20px">'+chgZg.guaName+'</div>';
     hero+='<div class="gua-sub">'+chgZg.gong+'宫 · '+chgZg.gongWX+' · '+chgZg.guaType+'卦</div>';
     hero+='<div class="yao-lines">';
@@ -359,7 +368,7 @@ function doAnalyze(){
     }
     hero+='</div>';
   }
-  hero+='</div>'; // gua-hero
+  hero+='</section></div>'; // gua-hero
 
   // 关键信息标签
   hero+='<div style="text-align:center;padding:8px 0 0">';
@@ -372,7 +381,7 @@ function doAnalyze(){
 
   // ====== 折叠详情 ======
   var detail='<div class="card" style="padding:12px 24px">';
-  detail+='<div class="detail-toggle" onclick="var p=this.nextElementSibling;var open=p.classList.contains(\'open\');p.classList.toggle(\'open\');this.textContent=open?\'展开排盘详情 ▼\':\'收起排盘详情 ▲\'">展开排盘详情 ▼</div>';
+  detail+='<button type="button" class="detail-toggle" onclick="var p=this.nextElementSibling;var open=p.classList.contains(\'open\');p.classList.toggle(\'open\');this.textContent=open?\'展开排盘详情 ▼\':\'收起排盘详情 ▲\'">展开排盘详情 ▼</button>';
   detail+='<div class="detail-panel">';
 
   // 时间信息
@@ -440,7 +449,7 @@ function doAnalyze(){
   // AI按钮
   var aiBtn='<div class="card" style="text-align:center;padding:16px 24px" id="aiBtnArea">'+
     '<button class="btn-submit" onclick="doAIReading()" style="margin-top:0">积分解锁 AI 解读</button>'+
-    '<p style="font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p></div>';
+    '<p style="font-size:11px;color:var(--tx3);margin-top:6px">排卦免费 · AI解读消耗1次积分</p><p class="service-footer">AI 生成内容可能有误，仅供学习与娱乐。<a href="/disclaimer">使用说明</a></p></div>';
 
   res.innerHTML=hero+detail+guaCi+aiBtn;
   res._zg=zg; res._chgZg=chgZg; res._origDB=origDB; res._chgDB=chgDB; res._movingLines=movingLines; res._lines=lines; res._chgLines=chgLines; res._calendar=calendar; res._fData=fData;
@@ -499,5 +508,6 @@ window.doAIReading=function(){
   });
 };
 </script>
+<aside class="service-footer" aria-label="使用说明">传统文化学习与娱乐参考，不作为现实决策依据。<a href="/disclaimer">免责声明与服务说明</a></aside>
 </body>
 </html>

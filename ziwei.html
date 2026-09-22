@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<!DOCTYPE html><html lang="zh-CN"><head>
+<link rel="stylesheet" href="/css/service-notice.css?v=3"><meta charset="UTF-8">
 <meta name="view-transition" content="same-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover"><title>知时 · 紫微斗数</title>
 <link rel="stylesheet" href="css/style.css">
@@ -107,18 +108,16 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 <link rel="stylesheet" href="/css/app-experience.css?v=1">
 <script src="/js/app-experience.js?v=1" defer></script>
 <script src="/js/mobile-app-shell.js?v=9" defer></script>
-</head><body class="loading">
-<div class="page-loader" id="pageLoader">
-  <div class="hexa-reveal" id="hexaReveal"></div>
-  <div class="hexa-name" id="hexaName"></div>
-  <div class="hexa-sub" id="hexaSub"></div>
-</div>
 
+<script src="/js/service-notice.js?v=2" defer></script>
+<link rel="stylesheet" href="/css/chart-experience.css?v=3">
+<script src="/js/chart-experience.js?v=2" defer></script>
+</head><body class="chart-studio">
 <div class="top-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(22,20,17,.94);border-bottom:1px solid rgba(180,160,140,.06);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(13,21,37,.96);border:1px solid rgba(180,160,140,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 <div class="app">
-<div class="header"><div class="header-line"></div><h1><a href="/">知 时</a></h1><div class="tagline">紫 微 斗 数 · 三 合 盘</div></div>
+<header class="studio-hero"><div class="studio-hero-copy"><span class="studio-kicker">ZI WEI · 紫微斗数</span><h1>星辰之间，<br>见自己</h1><p>细读十二宫，探索传统星曜文化。</p></div><img src="/images/studio/ziwei-v1.webp" width="720" height="480" alt="" aria-hidden="true" decoding="async" onerror="this.hidden=true"></header>
 
-<div class="card" style="width:100%;max-width:960px;padding:20px 24px">
+<div class="card" id="zwBirthCard" style="width:100%;max-width:960px;padding:20px 24px">
       <div class="card-title">出 生 信 息</div>
       <div class="mode-tabs zw-calendar-tabs">
         <button type="button" class="mode-tab active" data-zw-calendar="solar" onclick="switchZwCalendar('solar')">公历</button>
@@ -142,12 +141,14 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <button class="submit" onclick="doPaipan()">开 始 排 盘</button>
     </div>
 
+<div id="studioZwEmpty" class="studio-result-empty"><strong>从出生信息开始</strong>排盘后，可切换三合、四化与飞星盘，点选宫位细读星曜。</div>
+<div class="studio-result-tabs" id="studioZwTabs" role="tablist" aria-label="紫微结果视图" hidden><button type="button" id="zwOverviewTab" role="tab" aria-selected="true" aria-controls="zwOverview" data-zw-view="overview">命盘总览</button><button type="button" id="zwReadingTab" role="tab" aria-selected="false" aria-controls="zwReading" tabindex="-1" data-zw-view="reading">专业解读</button></div>
 <div class="info" id="infoBar" style="margin-top:12px">请填写出生信息后点击排盘</div>
-<div style="position:relative;width:100%;max-width:960px;margin:0 auto"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div>
+<section id="zwOverview" data-zw-panel="overview" role="tabpanel" aria-labelledby="zwOverviewTab" style="width:100%"><p class="zw-chart-hint">点选宫位查看星曜 · 手机上可左右滑动完整命盘</p><div class="zw-chart-shell"><div class="zw-chart-canvas"><div class="grid" id="zwGrid"></div><svg class="svg-overlay" id="svgLines"></svg></div></div><section class="zw-palace-reader" id="zwPalaceReader" aria-live="polite" hidden></section>
 <div class="zw-mode-bar" id="zwModeBar" style="display:none"><button class="zw-mode-btn active" onclick="switchZwMode('sanhe')">三 合 盘</button><button class="zw-mode-btn" onclick="switchZwMode('sihua')">四 化 盘</button><button class="zw-mode-btn" onclick="switchZwMode('feixing')">飞 星 盘</button></div>
 <div class="zw-mode-hint" id="zwModeHint" style="display:none"></div>
-<div class="triad-grid" id="triads"></div>
-<div id="zwAnalysis"></div>
+</section><section id="zwReading" data-zw-panel="reading" role="tabpanel" aria-labelledby="zwReadingTab" hidden><div class="triad-grid" id="triads"></div>
+<div id="zwAnalysis"></div></section>
 </div>
 
 <script src="js/region.js?v=20260910"></script>
@@ -169,34 +170,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 
 
 
-<script>
-(function(){
-var G=['111111乾为天|元亨利贞','000000坤为地|厚德载物','010001水雷屯|刚柔始交','100010山水蒙|童蒙求我','010111水天需|险在前也','111010天水讼|讼不可成','000010地水师|师出以律','010000水地比|亲附辅弼','110111风天小畜|以懿文德','111011天泽履|履虎尾也','000111地天泰|天地交泰','111000天地否|大往小来','111101天火同人|类族辨物','101111火天大有|顺天休命','000100地山谦|裒多益寡','001000雷地豫|作乐崇德','011001泽雷随|随时之义','100110山风蛊|振民育德','000011地泽临|教思无穷','110000风地观|观民设教','101001火雷噬嗑|明罚敕法','100101山火贲|明庶政也','000001山地剥|上厚下安','100000地雷复|闭关休息','111001天雷无妄|天命不佑','100111山天大畜|多识前言','100001山雷颐|节饮食也','011110泽风大过|独立不惧','010010坎为水|常德行也','101101离为火|明照四方','011100泽山咸|感而遂通','001110雷风恒|立不易方','111100天山遁|远小人也','001111雷天大壮|非礼弗履','101000火地晋|自昭明德','000101地火明夷|用晦而明','110101风火家人|言有物也','101011火泽睽|以同而异','010100水山蹇|反身修德','001010雷水解|赦过宥罪','110001山泽损|惩忿窒欲','100011风雷益|迁善改过','011111泽天夬|施禄及下','111110天风姤|施命诰四方','011000泽地萃|除戎器也','000110地风升|积小高大','011010泽水困|致命遂志','010110水风井|劳民劝相','101110泽火革|治历明时','011101火风鼎|正位凝命','001001震为雷|恐惧修省','100100艮为山|思不出位','110100风山渐|居贤德善','001011雷泽归妹|永终知敝','001101雷火丰|折狱致刑','101100火山旅|明慎用刑','110110巽为风|申命行事','011011兑为泽|朋友讲习','110010风水涣|享于帝也','010011水泽节|制数度也','110011风泽中孚|议狱缓死','001100雷山小过|行过恭也','010101水火既济|思患预防','101010火水未济|慎辨物居'];
-var h=G[Math.floor(Math.random()*64)],b=h.substring(0,6),r=h.substring(6).split('|'),n=r[0],s=r[1];
-var box=document.getElementById('hexaReveal'),delays=[800,650,500,350,200,80];
-for(var i=0;i<6;i++){
-  if(b[i]==='1'){
-    var el=document.createElement('div');el.className='hexa-yao-yang';el.style.animationDelay=delays[i]+'ms';box.appendChild(el);
-  }else{
-    var el=document.createElement('div');el.className='hexa-yao-yin';el.style.animationDelay=delays[i]+'ms';
-    el.innerHTML='<span></span><span></span>';box.appendChild(el);
-  }
-}
-document.getElementById('hexaName').textContent=n;document.getElementById('hexaName').style.animationDelay='1050ms';
-document.getElementById('hexaSub').textContent='—— '+s;document.getElementById('hexaSub').style.animationDelay='1250ms';
-})();
-</script>
 
-<script>
-document.body.classList.add('loading');
-window.addEventListener('load',function(){
-  setTimeout(function(){
-    var l=document.getElementById('pageLoader');
-    if(l)l.classList.add('hidden');
-    document.body.classList.remove('loading');
-    document.body.classList.add('loaded');
-  },2500);
-});
-</script>
 
+
+
+<aside class="service-footer" aria-label="使用说明">传统文化学习与娱乐参考，不作为现实决策依据。<a href="/disclaimer">免责声明与服务说明</a></aside>
 </body></html>

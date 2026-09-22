@@ -21,9 +21,11 @@
   function fill(chart){
     var p=new URLSearchParams(chart.params);
     var data={name:label(chart,p),sYear:p.get('year'),sMonth:p.get('month'),sDay:p.get('day'),sHour:p.get('hour'),sMinute:p.get('minute')||'',gender:p.get('gender'),prov:p.get('prov'),city:p.get('city'),dist:p.get('dist'),calMode:'solar',zishi:p.get('zishi')!=='0',solar:p.get('solar')!=='0'};
+    data.sClock=p.get('clock');
     if(activePid==='p1')modeP1='solar';else modeP2='solar';
     applyPersonData(activePid,data);switchModeForPersonUI(activePid,'solar');
     if(window.ZhishiInputFlow)window.ZhishiInputFlow.refresh();
+    if(window.ChartExperience)window.ChartExperience.refresh();
     if(typeof showToast==='function')showToast('已从档案填入'+data.name);
   }
   function open(pid){

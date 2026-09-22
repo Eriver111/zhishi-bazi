@@ -43,7 +43,7 @@ test('mobile birth forms keep advanced settings available while shortening the m
   assert.match(css, /\.mobile-submit-dock\{position:fixed/);
   assert.match(flow, /真太阳时/);
   assert.match(paipan, /js\/input-flow\.js\?v=8/);
-  assert.match(hepan, /js\/hepan-archive-picker\.js\?v=1/);
+  assert.match(hepan, /js\/hepan-archive-picker\.js\?v=3/);
 });
 
 test('Hepan mobile flow presents one person at a time with persistent completion summaries', () => {
