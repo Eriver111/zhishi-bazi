@@ -78,7 +78,7 @@ test('calendar restore keeps the exact clock instead of collapsing two hours int
   assert.match(main, /getAttribute\('data-clock'\)/);
   assert.match(main, /setHourClockSelection\('sHour', hour, p\.get\('clock'\)\)/);
   assert.match(html, /setPaipanHourClock\('sHour',d\.get\('hour'\),d\.get\('clock'\)\)/);
-  assert.match(html, /js\/main\.js\?v=4/);
+  assert.match(html, /js\/main\.js\?v=5/);
 });
 
 test('late account restore cannot overwrite birth data after the user starts editing', () => {

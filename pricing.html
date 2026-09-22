@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知时 · AI提问次数与会员</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/landing.css">
@@ -37,8 +37,12 @@
 .pricing-note{text-align:center;margin-top:24px;color:var(--tx3);font-size:11px;line-height:1.8}
 @media(max-width:600px){.pricing-grid{grid-template-columns:1fr 1fr;gap:12px}.pricing-card{padding:20px 14px}.pricing-price{font-size:28px}}@media(max-width:400px){.pricing-wrap{padding:40px 8px 60px}.pricing-hero h1{font-size:26px;letter-spacing:3px}.pricing-grid{grid-template-columns:1fr;gap:10px}.pricing-card{padding:16px 12px}.pricing-price{font-size:24px}.pricing-name{font-size:15px}.pricing-btn{font-size:14px;padding:10px}}
 </style>
-<link rel="stylesheet" href="css/theme-light.css?v=4">
+<link rel="stylesheet" href="css/theme-light.css?v=5">
 <link rel="stylesheet" href="css/theme-light-pages.css?v=3">
+<link rel="stylesheet" href="/css/mobile-app-shell.css?v=32">
+<link rel="stylesheet" href="/css/app-experience.css?v=1">
+<script src="/js/app-experience.js?v=1" defer></script>
+<script src="/js/mobile-app-shell.js?v=9" defer></script>
 </head>
 <body>
 <div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap;transition:all .2s" onmouseenter="this.style.background='rgba(201,168,76,.06)';this.style.color='#e8cf70'" onmouseleave="this.style.background='transparent';this.style.color='#a09888'">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
@@ -113,8 +117,8 @@
   <p class="pricing-note">所有方案前2次AI提问免费 · 兑换码绑定手机可找回<br>AI积分包与深度报告相互独立，购买AI提问积分不会自动解锁深度报告。</p>
 </div>
 
-<script src="js/auth.js?v=5"></script>
-<script src="js/payment.js"></script>
+<script src="js/auth.js?v=28"></script>
+<script src="js/payment.js?v=5"></script>
 
 <!-- 支付逻辑：与 paywall.js 统一 -->
 <script>
@@ -152,6 +156,8 @@ function stopPolling() {
 }
 
 function buyCredits(mode, amount, name) {
+  if(window._creditCreating)return;
+  window._creditCreating=true;
   // 防止重复点击
   var allBtns = document.querySelectorAll('.pricing-btn');
   allBtns.forEach(function(b) { b.disabled = true; });
@@ -159,7 +165,6 @@ function buyCredits(mode, amount, name) {
   // 强制清空旧状态
   stopPolling();
   _currentOrderId = null;
-  localStorage.removeItem('credit_ord');
   var container = document.getElementById('qrContainer');
   if (container) container.innerHTML = '生成二维码中...';
 
@@ -178,11 +183,7 @@ function buyCredits(mode, amount, name) {
   var ch=localStorage.getItem('channel'); if(ch) body.channel=ch;
   // 登录用户：带上token，购买后积分直接到账
   if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) { body.token = Auth.getToken(); }
-  fetch('/api/create-order', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
+  PaymentFlow.createOrder(body)
   .then(function(r) { return r.json(); })
   .then(function(d) {
     if (myReqId !== _reqId) { allBtns.forEach(function(b) { b.disabled = false; }); return; }
@@ -200,9 +201,9 @@ function buyCredits(mode, amount, name) {
       : { payUrl: d.pay_url || '', qrImageUrl: '' };
 
     if (isMobile() && payment.payUrl) {
-      if (status) status.textContent = '正在跳转支付宝...';
+      if (status) status.textContent = '正在打开' + PaymentFlow.methodLabel(d) + '收银台...';
       // 手机端跳转后通过 URL ?paid=xxx 恢复，无需轮询
-      setTimeout(function() { window.location.href = payment.payUrl; }, 800);
+      window.location.href = payment.payUrl;
       return; // 不启动轮询，也不显示二维码
     } else {
       var container = document.getElementById('qrContainer');
@@ -218,15 +219,15 @@ function buyCredits(mode, amount, name) {
         allBtns.forEach(function(b) { b.disabled = false; });
         return;
       }
-      if (status) status.textContent = '请扫码支付 ' + amount + ' 元（支付后自动到账）';
+      if (status) status.textContent = '请用' + PaymentFlow.methodLabel(d) + '扫码支付 ' + d.amount + ' 元（支付后自动到账）';
     }
     startPolling(d.out_trade_no);
   })
   .catch(function(e) {
-    if (status) status.textContent = '网络错误，请重试';
+    if (status) status.textContent = e.name === 'AbortError' ? '连接超时，请重试' : e.message || '网络错误，请重试';
     if (retry) retry.style.display = 'block';
     allBtns.forEach(function(b) { b.disabled = false; });
-  });
+  }).finally(function() { window._creditCreating=false; allBtns.forEach(function(b) { b.disabled=false; }); });
 }
 
 function startPolling(orderId) {
@@ -280,11 +281,11 @@ function onPaySuccess(data) {
   var isLoggedIn = typeof Auth !== 'undefined' && Auth.isLoggedIn();
   if (isLoggedIn) {
     // 登录用户：双重保险 — 积分直接到账 + 显示兑换码
-      var codeHtml = data.code ? '<div style="background:rgba(201,168,76,.1);border:2px dashed rgba(201,168,76,.35);border-radius:10px;padding:14px;margin:10px 0"><div style="font-size:11px;color:var(--tx3);margin-bottom:6px">📋 你的兑换码（已自动到账，此码备用）</div><code style="font-size:20px;font-weight:900;color:#e8d070;letter-spacing:3px;font-family:monospace;user-select:all;word-break:break-all">' + data.code + '</code><button onclick="var c=\'' + data.code + '\';if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){var b=this;b.textContent=\'✅ 已复制\';b.style.background=\'rgba(76,175,80,.2)\';b.style.borderColor=\'#4CAF50\'}.bind(this)).catch(function(){prompt(\'请手动复制:\',c)})}else{prompt(\'请手动复制:\',c)}" style="margin-top:10px;padding:8px 20px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold-l);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:2px">📋 复制兑换码</button></div>' : '';
+      var codeHtml = data.code ? '<div style="background:rgba(201,168,76,.1);border:2px dashed rgba(201,168,76,.35);border-radius:10px;padding:14px;margin:10px 0"><div style="font-size:11px;color:var(--tx3);margin-bottom:6px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></svg> 你的兑换码（已自动到账，此码备用）</div><code style="font-size:20px;font-weight:900;color:#e8d070;letter-spacing:3px;font-family:monospace;user-select:all;word-break:break-all">' + data.code + '</code><button onclick="var c=\'' + data.code + '\';if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){var b=this;b.textContent=\'已复制\';b.style.background=\'rgba(76,175,80,.2)\';b.style.borderColor=\'#4CAF50\'}.bind(this)).catch(function(){prompt(\'请手动复制:\',c)})}else{prompt(\'请手动复制:\',c)}" style="margin-top:10px;padding:8px 20px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold-l);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:2px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></svg> 复制兑换码</button></div>' : '';
       toast.innerHTML = ''
-        + '<div style="font-size:40px;margin-bottom:4px">🧧</div>'
+        + '<div style="font-size:40px;margin-bottom:4px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13M12 8H7a3 3 0 1 1 3-3zm0 0h5a3 3 0 1 0-3-3z"/></svg></div>'
         + '<div style="font-size:22px;color:var(--gold-l);letter-spacing:3px;font-weight:700;margin-bottom:4px">购买成功</div>'
-        + '<div style="color:#7ec87e;font-size:14px;font-weight:700;line-height:1.8">✅ 积分已自动到账，可直接使用</div>'
+        + '<div style="color:#7ec87e;font-size:14px;font-weight:700;line-height:1.8"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12l4 4L19 6"/></svg> 积分已自动到账，可直接使用</div>'
         + codeHtml
         + '<div style="display:flex;gap:10px;margin-top:16px">'
         + '<a href="/profile" style="flex:1;padding:12px 20px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border-radius:25px;text-decoration:none;font-weight:700;letter-spacing:2px;font-size:14px">我的积分</a>'
@@ -292,13 +293,13 @@ function onPaySuccess(data) {
         + '</div>';
   } else {
     // 未登录用户：展示兑换码（需要手动激活）
-    var codeText = data.code ? '<div style="font-size:14px;color:var(--tx2);margin-top:12px;margin-bottom:4px">你的兑换码</div><div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;margin:8px 0"><code style="font-size:22px;font-weight:900;color:#e8d070;letter-spacing:3px;font-family:monospace;user-select:all;word-break:break-all">' + data.code + '</code></div><button onclick="var c=\'' + data.code + '\';if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){var b=this;b.textContent=\'✅ 已复制\';b.style.background=\'rgba(76,175,80,.2)\';b.style.borderColor=\'#4CAF50\'}.bind(this)).catch(function(){prompt(\'请手动复制:\',c)})}else{prompt(\'请手动复制:\',c)}" style="margin:4px 0 8px;padding:10px 24px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold-l);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:2px">📋 复制兑换码</button>' : '';
+    var codeText = data.code ? '<div style="font-size:14px;color:var(--tx2);margin-top:12px;margin-bottom:4px">你的兑换码</div><div style="background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.3);border-radius:10px;padding:12px 16px;margin:8px 0"><code style="font-size:22px;font-weight:900;color:#e8d070;letter-spacing:3px;font-family:monospace;user-select:all;word-break:break-all">' + data.code + '</code></div><button onclick="var c=\'' + data.code + '\';if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){var b=this;b.textContent=\'已复制\';b.style.background=\'rgba(76,175,80,.2)\';b.style.borderColor=\'#4CAF50\'}.bind(this)).catch(function(){prompt(\'请手动复制:\',c)})}else{prompt(\'请手动复制:\',c)}" style="margin:4px 0 8px;padding:10px 24px;border:1px solid var(--gold);background:rgba(201,168,76,.15);color:var(--gold-l);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:2px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></svg> 复制兑换码</button>' : '';
     toast.innerHTML = ''
-      + '<div style="font-size:40px;margin-bottom:4px">🧧</div>'
+      + '<div style="font-size:40px;margin-bottom:4px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13M12 8H7a3 3 0 1 1 3-3zm0 0h5a3 3 0 1 0-3-3z"/></svg></div>'
       + '<div style="font-size:22px;color:var(--gold-l);letter-spacing:3px;font-weight:700;margin-bottom:4px">购买成功</div>'
       + '<div style="color:var(--tx2);font-size:13px;line-height:1.8">积分已发放到账户</div>'
       + codeText
-      + '<p style="color:#e07050;font-size:13px;font-weight:600;margin:8px 0 4px;line-height:1.5">⚠️ 请截图或复制兑换码<br><span style="font-size:11px;color:#c99;font-weight:400">登录后购买可自动到账，无需兑换码</span></p>'
+      + '<p style="color:#e07050;font-size:13px;font-weight:600;margin:8px 0 4px;line-height:1.5"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.3 4a2 2 0 0 1 3.4 0l8 14a2 2 0 0 1-1.7 3H4a2 2 0 0 1-1.7-3zM12 9v5m0 3h.01"/></svg> 请截图或复制兑换码<br><span style="font-size:11px;color:#c99;font-weight:400">登录后购买可自动到账，无需兑换码</span></p>'
       + '<div style="display:flex;gap:10px;margin-top:12px">'
       + '<a href="paipan.html" style="flex:1;padding:12px 20px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1a1a;border-radius:25px;text-decoration:none;font-weight:700;letter-spacing:2px;font-size:14px">开始使用</a>'
       + '<button onclick="this.parentElement.parentElement.remove()" style="flex:1;padding:12px 20px;background:rgba(255,255,255,.04);color:var(--tx2);border:1px solid rgba(255,255,255,.1);border-radius:25px;font-size:13px;cursor:pointer;font-family:inherit">我知道了</button>'

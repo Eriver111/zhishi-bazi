@@ -89,15 +89,21 @@
   var drawer;
   var drawerOverlay;
   var drawerTrigger;
+  var drawerBackground = [];
 
   function openDrawer() {
     if (!drawer) return;
     drawer.classList.add('is-open');
     drawerOverlay.classList.add('is-open');
     drawer.setAttribute('aria-hidden', 'false');
+    drawer.inert = false;
     drawerTrigger = document.querySelector('[aria-controls="mobileAppDrawer"]');
     if (drawerTrigger) drawerTrigger.setAttribute('aria-expanded', 'true');
     document.body.classList.add('mobile-drawer-open');
+    drawerBackground = Array.from(document.body.children).filter(function(node) {
+      return node !== drawer && node !== drawerOverlay && !node.inert;
+    });
+    drawerBackground.forEach(function(node) { node.inert = true; });
     var close = drawer.querySelector('.mobile-app-drawer__close');
     if (close) close.focus();
   }
@@ -107,8 +113,11 @@
     drawer.classList.remove('is-open');
     drawerOverlay.classList.remove('is-open');
     drawer.setAttribute('aria-hidden', 'true');
+    drawer.inert = true;
     if (drawerTrigger) drawerTrigger.setAttribute('aria-expanded', 'false');
     document.body.classList.remove('mobile-drawer-open');
+    drawerBackground.forEach(function(node) { node.inert = false; });
+    drawerBackground = [];
     if (drawerTrigger) drawerTrigger.focus();
   }
 
@@ -122,6 +131,9 @@
     drawer.className = 'mobile-app-drawer';
     drawer.setAttribute('aria-label', '全部功能');
     drawer.setAttribute('aria-hidden', 'true');
+    drawer.setAttribute('role', 'dialog');
+    drawer.setAttribute('aria-modal', 'true');
+    drawer.inert = true;
     drawer.innerHTML =
       '<div class="mobile-app-drawer__head"><div><strong>知 时</strong><span>知天时，见自己</span></div><button class="mobile-app-drawer__close" type="button" aria-label="关闭菜单">' + icons.close + '</button></div>' +
       '<div class="mobile-app-drawer__body">' +
@@ -134,6 +146,14 @@
     document.body.append(drawerOverlay, drawer);
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && drawer.classList.contains('is-open')) closeDrawer();
+      if (event.key !== 'Tab' || !drawer.classList.contains('is-open')) return;
+      var focusable = drawer.querySelectorAll('button, a[href]');
+      var first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+    window.addEventListener('pagehide', function () {
+      if (drawer.classList.contains('is-open')) closeDrawer();
     });
   }
 
@@ -191,6 +211,9 @@
     ];
     var activeIndex = 0;
     var scrollPositions = { basic: 0, professional: 0, reading: 0 };
+    var state = window.ZhishiPageState;
+    var stateKey = state && state.pageKey('result-view');
+    var savedView = state && state.get(stateKey);
 
     function activate(item, button, restoreScroll) {
       var previous = items[activeIndex];
@@ -222,6 +245,16 @@
       if (item.key === 'basic') button.className = 'is-active';
       button.addEventListener('click', function () { activate(item, button, true); });
       tabs.appendChild(button);
+    });
+    tabs.addEventListener('keydown', function(event) {
+      var next = event.key === 'ArrowRight' ? (activeIndex + 1) % items.length
+        : event.key === 'ArrowLeft' ? (activeIndex + items.length - 1) % items.length
+        : event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : -1;
+      if (next < 0) return;
+      event.preventDefault();
+      var button = tabs.querySelectorAll('button')[next];
+      activate(items[next], button, true);
+      button.focus({ preventScroll: true });
     });
 
     function hasHorizontalScroller(target) {
@@ -270,6 +303,29 @@
 
     document.body.classList.add('mobile-result-view-basic');
     document.body.insertBefore(tabs, container);
+    if (state) {
+      if (savedView && resultMedia.matches) {
+        var index = items.findIndex(function(item) { return item.key === savedView.tab; });
+        if (index >= 0) activate(items[index], tabs.querySelectorAll('button')[index], false);
+        items.forEach(function(item) { scrollPositions[item.key] = Math.max(0, Number((savedView.positions || {})[item.key]) || 0); });
+      }
+      function saveView() {
+        if (!resultMedia.matches || state.sync()) return;
+        scrollPositions[items[activeIndex].key] = window.scrollY;
+        state.set(stateKey, { tab: items[activeIndex].key, positions: scrollPositions });
+      }
+      window.addEventListener('pagehide', saveView);
+      document.addEventListener('visibilitychange', function() { if (document.hidden) saveView(); });
+      window.addEventListener('pageshow', function(event) {
+        if (event.persisted || !savedView || !resultMedia.matches || location.hash) return;
+        requestAnimationFrame(function() { window.scrollTo({ top: scrollPositions[items[activeIndex].key], behavior: 'instant' }); });
+      });
+      state.onReset(function() {
+        savedView = null;
+        activate(items[0], tabs.querySelector('button'), true);
+        scrollPositions = { basic: 0, professional: 0, reading: 0 };
+      });
+    }
   }
 
   function syncResultSectionOrder(media) {
@@ -293,7 +349,10 @@
   var resultMedia = window.matchMedia('(max-width: 700px)');
   syncResultSectionOrder(resultMedia);
   if (resultMedia.addEventListener) {
-    resultMedia.addEventListener('change', function () { syncResultSectionOrder(resultMedia); });
+    resultMedia.addEventListener('change', function () {
+      syncResultSectionOrder(resultMedia);
+      if (!resultMedia.matches && drawer && drawer.classList.contains('is-open')) closeDrawer();
+    });
   }
 
   createDrawer();

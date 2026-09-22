@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="view-transition" content="same-origin">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <style>
 :root{--ink:#0e0c0a;--gold:#c9a84c;--gold-l:#e8cf70;--tx:#d8d0c0}
 body{background:var(--ink);color:var(--tx);font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh}
@@ -579,9 +579,11 @@ body::before{
   .trust-grid{grid-template-columns:1fr}
 }
 </style>
-<link rel="stylesheet" href="css/theme-light.css?v=4">
+<link rel="stylesheet" href="css/theme-light.css?v=5">
 <link rel="stylesheet" href="css/theme-light-home.css?v=4">
-<link rel="stylesheet" href="css/mobile-app-shell.css?v=14">
+<link rel="stylesheet" href="css/mobile-app-shell.css?v=32">
+<link rel="stylesheet" href="/css/app-experience.css?v=1">
+<script src="/js/app-experience.js?v=1" defer></script>
 </head>
 <body>
 <!-- ====== 墨色山水背景 v3 · 古画真迹 ====== -->
@@ -748,8 +750,8 @@ body::before{
   <section class="cta-bottom">
     <h2>准备好了吗？</h2>
     <p>输入你的生辰，看看千年前的东方智慧如何解读你的生命密码</p>
-    <a href="paipan" class="cta-btn">📜 免费起盘</a>
-    <a href="hepan" class="cta-btn">💞 合盘缘分</a>
+    <a href="paipan" class="cta-btn"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18M7 15h3m4 0h3m-10 3h3"/></svg> 免费起盘</a>
+    <a href="hepan" class="cta-btn"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/></svg> 合盘缘分</a>
   </section>
 
   <!-- ====== Footer ====== -->
@@ -759,7 +761,7 @@ body::before{
   </footer>
 </div>
 
-<script src="js/mobile-app-shell.js?v=8"></script>
+<script src="js/mobile-app-shell.js?v=9"></script>
 <script>
 (function initHomepageNavMore(){
   var wrap=document.querySelector('#zhishi-nav .nav-more');
@@ -829,7 +831,7 @@ body::before{
 <script src="js/mo-xing-he.js"></script>
 <script src="js/bg-animation.js"></script>
 <script src="js/effects.js"></script>
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=28"></script>
 <script src="js/home-fortune.js?v=2"></script>
 <script>
 // 古籍书名滚动

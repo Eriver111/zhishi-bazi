@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script src="/js/page-state.js?v=1"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知时AI · 易学助手</title>
 <meta name="description" content="知时AI，结合命盘数据提供易学问答。">
 <link rel="stylesheet" href="css/style.css">
@@ -51,8 +52,9 @@ body{position:fixed;inset:0;width:100%}
 @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
 @media (max-width:768px){.input-row textarea{font-size:16px}}
 </style>
-<link rel="stylesheet" href="css/theme-light.css?v=4">
+<link rel="stylesheet" href="css/theme-light.css?v=5">
 <link rel="stylesheet" href="css/theme-light-pages.css?v=3">
+<link rel="stylesheet" href="css/chat-experience.css?v=1">
 </head>
 <body>
 <div class="page">
@@ -80,14 +82,15 @@ body{position:fixed;inset:0;width:100%}
       <span>提问次数已用完</span><a href="profile.html">前往个人中心兑换</a>
     </div>
     <div class="input-row" id="inputRow">
-      <textarea id="input" placeholder="输入你的问题..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
-      <button class="send" id="sendBtn" onclick="send()">▶</button>
+      <textarea id="input" placeholder="输入你的问题..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&event.keyCode!==229){event.preventDefault();send()}"></textarea>
+      <button class="send" id="sendBtn" onclick="send()" aria-label="发送消息"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20V4m-7 7l7-7 7 7"/></svg></button>
     </div>
   </div>
 </div>
 
 <script src="js/chat-viewport.js?v=2"></script>
-<script src="js/chat-persistence.js?v=3"></script>
+<script src="js/chat-persistence.js?v=4"></script>
+<script src="js/chat-experience.js?v=1"></script>
 <script>
 var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:'',conversationId:'',chartKey:'',historyLoaded:false};
 
@@ -152,6 +155,7 @@ function syncUserCredits(){
 }
 
 function currentChatContext(){
+  if(window.ChatExperience&&ChatExperience.hasContext())return ChatExperience.context();
   var zwMode=false;try{zwMode=new URLSearchParams(location.search).get('t')==='zw'}catch(e){}
   var type=zwMode?'ziwei':'bazi',data=null;
   try{var raw=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data');if(raw)data=JSON.parse(raw)}catch(e){}
@@ -171,8 +175,8 @@ function restoreChatHistory(force){
     AI.conversationId=data.conversation_id||'';
     AI.historyLoaded=true;
     setHistoryButton(data.storage_ready===false?'待启用':'已保存',data.storage_ready!==false);
-    if(force||AI.messages.length===0){
-      document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];
+    if(force||AI.resumePending||AI.messages.length===0){
+      document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];AI.resumePending=false;
       (data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)});
     }
   }).catch(function(){setHistoryButton('记录异常',false)});
@@ -188,12 +192,13 @@ function updateCreditsUI(){
 }
 
 function addMsg(role,text){
+  var follow=ChatExperience.beforeAppend(role);
   AI.messages.push({role:role,content:text});
   var d=document.getElementById('emptyState');if(d)d.style.display='none';
   var div=document.createElement('div');div.className='msg '+role;
-  div.innerHTML='<div class="avatar">'+(role==='user'?'我':'师')+'</div><div class="bubble">'+text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</div>';
+  div.innerHTML='<div class="avatar">'+(role==='user'?'我':'师')+'</div><div class="bubble">'+ChatExperience.escape(text).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</div>';
   document.getElementById('messages').appendChild(div);
-  document.getElementById('messages').scrollTop=99999;
+  ChatExperience.afterAppend(follow);
 }
 
 function toggleMode(){
@@ -208,20 +213,21 @@ function send(){
   var inp=document.getElementById('input');var text=inp.value.trim();if(!text)return;
   if(AI.freeRemaining<=0&&AI.credits<=0&&!AI.isMonthly){document.getElementById('quotaBar').style.display='flex';return}
   inp.value='';AI.isWaiting=true;document.getElementById('sendBtn').disabled=true;
-  addMsg('user',text);showThinking();
+  ChatExperience.start(text);addMsg('user',text);showThinking();
 
   var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
   // 检测紫微/八字模式
   var zwMode=false;try{var sp2=new URLSearchParams(window.location.search);zwMode=sp2.get('t')==='zw'}catch(e){}
   // 附加上次保存的排盘数据
-  try { var cd2=localStorage.getItem(zwMode?'ai_ziwei_data':'ai_chart_data'); if(cd2) {body.chartData=JSON.parse(cd2);if(body.chartData.calibrationSummary)body.calibration_summary=body.chartData.calibrationSummary;if(zwMode)body.mode='ziwei';} } catch(ex) {}
+  try { body.chartData=currentChatContext().data;if(body.chartData){if(body.chartData.calibrationSummary)body.calibration_summary=body.chartData.calibrationSummary;if(zwMode)body.mode='ziwei';} } catch(ex) {}
   // 无排盘数据时提醒
   if(!body.chartData){
     if(zwMode){
-      addMsg('ai','⚠️ 未检测到紫微排盘数据。请先在<a href=\"ziwei.html\">紫微斗数排盘</a>页面完成排盘，再向我提问，分析会更精准。');
+      addMsg('ai','未检测到紫微排盘数据。请先在紫微斗数排盘页面完成排盘，再向我提问，分析会更精准。');
     } else {
-      addMsg('ai','⚠️ 未检测到排盘数据。建议先通过<a href=\"paipan.html\">八字排盘</a>获取完整命盘，再向我提问，分析会更精准。');
+      addMsg('ai','未检测到排盘数据。建议先通过八字排盘获取完整命盘，再向我提问，分析会更精准。');
     }
+    hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;ChatExperience.finish(true);
     return;
   }
   if(AI.freeRemaining>0&&!AI.isMonthly&&AI.credits<=0){body.free_mode=true;body.free_id=AI.freeId}
@@ -230,19 +236,20 @@ function send(){
   ChatPersistence.decorate(body,persistContext.type,body.chartData,AI.conversationId);
 
   var headers={'Content-Type':'application/json'};if(typeof Auth!=='undefined'&&Auth.isLoggedIn())headers['Authorization']='Bearer '+Auth.getToken();
-  fetch('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
-  .then(function(r){return r.json()}).then(function(d){
+  ChatExperience.request('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
+  .then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
-    if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
+    if(d.error){addMsg('ai',d.error);ChatExperience.finish(true);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
     if(d.conversation_id){AI.conversationId=d.conversation_id;setHistoryButton('已保存',true)}
-    var pre='';try{var cd3=JSON.parse(localStorage.getItem('ai_chart_data')||'{}');if(cd3.pattern&&cd3.pattern.name)pre+='【系统判定】格局：'+cd3.pattern.name+'。';if(cd3.dayMasterStrength)pre+='日主旺衰：'+cd3.dayMasterStrength.level+'（'+cd3.dayMasterStrength.score+'/100）。';if(pre)pre+='以下为AI详细解读：\n\n---\n\n';}catch(ex){}addMsg('ai',pre+d.reply);
+    var pre='';try{var cd3=body.chartData||{};if(cd3.pattern&&cd3.pattern.name)pre+='【系统判定】格局：'+cd3.pattern.name+'。';if(cd3.dayMasterStrength)pre+='日主旺衰：'+cd3.dayMasterStrength.level+'（'+cd3.dayMasterStrength.score+'/100）。';if(pre)pre+='以下为AI详细解读：\n\n---\n\n';}catch(ex){}addMsg('ai',pre+d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}
     if(d.is_monthly){AI.isMonthly=true;updateCreditsUI()}
-  }).catch(function(e){hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','网络错误，请重试')});
+    ChatExperience.finish(false);
+  }).catch(function(e){if(e.name==='IdentityChangedError')return;hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','连接中断或等待超时，回答可能仍在生成。请先查看历史记录，再决定是否重试。');ChatExperience.finish(true)});
 }
 
 </script>
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=28"></script>
 </body>
 </html>

@@ -148,6 +148,37 @@ let _reportPaidAt = '';
 let _accountReportAccessResolved = false;
 let _deepReportFacts = null;
 
+function restoreTimingView() {
+    var store = window.ZhishiPageState;
+    if (!store || !_daYunData) return;
+    var key = store.pageKey('timing');
+    var saved = store.get(key);
+    if (saved && Number.isInteger(saved.dayun) && _daYunData.list[saved.dayun]) {
+        showLiuNian(saved.dayun);
+        if (Number.isInteger(saved.year) && saved.year >= 0 && saved.year < 10) selectLiuNian(saved.year);
+    }
+    function save() {
+        store.set(key, { dayun: _currentDaYunIndex, year: _currentLiuNianIndex });
+    }
+    store.onReset(function () {
+        var year = new Date().getFullYear();
+        var index = _daYunData.list.findIndex(function (dy) { return year >= dy.startYear && year <= dy.endYear; });
+        showLiuNian(Math.max(0, index));
+    });
+    window.addEventListener('pagehide', save);
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted || !saved) return;
+        requestAnimationFrame(function () {
+            ['dayunTable', 'liunianTable'].forEach(function (id) {
+                var table = document.getElementById(id);
+                var selected = table && table.querySelector('.active, .active-ln');
+                if (selected && selected.getBoundingClientRect().width) centerTimingColumn(table, selected);
+            });
+        });
+    });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+}
+
 function reportAnchorKey(params) {
     var key = {
         mode: params.mode || '', year: params.year, month: params.month, day: params.day,
@@ -775,6 +806,12 @@ function renderPaidContent() {
 }
 
 // ==================== 大运渲染 ====================
+function centerTimingColumn(table, column) {
+    var scroller = table.closest('.dayun-scroll-wrapper, .liunian-scroll-wrapper') || table;
+    var box = column.getBoundingClientRect(), viewport = scroller.getBoundingClientRect();
+    scroller.scrollLeft += box.left - viewport.left - scroller.clientWidth / 2 + box.width / 2;
+}
+
 function renderDaYun(daYunData, dayGan, currentYear) {
     const table = document.getElementById('dayunTable');
     const dirLabel = daYunData.isForward ? '顺行' : '逆行';
@@ -802,13 +839,13 @@ function renderDaYun(daYunData, dayGan, currentYear) {
     table.innerHTML = html;
 
     // 高亮当前大运
-    setTimeout(() => {
-        const currentCol = table.querySelector('.current');
+    requestAnimationFrame(() => {
+        const currentCol = table.querySelector('[data-index="' + _currentDaYunIndex + '"]');
         if (currentCol) {
             currentCol.classList.add('active');
-            currentCol.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            centerTimingColumn(table, currentCol);
         }
-    }, 300);
+    });
 }
 
 // ==================== 流年渲染 ====================
@@ -825,13 +862,12 @@ function showLiuNian(daYunIndex) {
     _currentDaYunIndex = daYunIndex;
     _currentLiuNianIndex = -1; // 重置流年选中
 
-    renderLiuNian(dy, _dayGan, currentYear);
-
     // 更新表格中的大运列
     updateDayunColumn(daYunIndex);
 
     // 清空流年列（等待用户点击流年）
     clearLiuNianColumn();
+    renderLiuNian(dy, _dayGan, currentYear);
 }
 
 function renderLiuNian(daYunItem, dayGan, currentYear) {
@@ -857,15 +893,12 @@ function renderLiuNian(daYunItem, dayGan, currentYear) {
     table.innerHTML = html;
 
     // 滚动到当前年份
-    setTimeout(() => {
-        const cur = table.querySelector('.current-year');
-        if (cur) {
-            cur.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            // 自动选中当前年份
-            const idx = parseInt(cur.getAttribute('data-index'));
-            selectLiuNian(idx);
-        }
-    }, 200);
+    const cur = table.querySelector('.current-year');
+    if (cur) selectLiuNian(parseInt(cur.getAttribute('data-index')));
+    requestAnimationFrame(() => {
+        const selected = table.querySelector('.active-ln');
+        if (selected) centerTimingColumn(table, selected);
+    });
 }
 
 // 点击流年 - 更新表格中的流年列
@@ -1266,7 +1299,7 @@ function refreshShenShaDetail() {
         html += `
         <div class="ss-accordion-item" data-index="${index}">
             <div class="ss-accordion-header" onclick="toggleAccordion(this)">
-                <span class="ss-accordion-arrow">▶</span>
+                <span class="ss-accordion-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
                 <span class="ss-accordion-type-badge ${ss.type}">${typeLabels[ss.type]}</span>
                 <span class="ss-accordion-name">${ss.name}</span>
                 <span class="ss-accordion-pos">${ss.posText}</span>
@@ -1598,7 +1631,7 @@ function renderCharacter(bazi) {
             // 外层气质卡片
             h += '<div style="margin-bottom:12px;border:1px solid rgba(201,168,76,.15);border-radius:10px;overflow:hidden">';
             h += '<div style="background:rgba(201,168,76,.08);padding:10px 16px;display:flex;align-items:center;gap:10px">';
-            h += '<span style="font-size:18px">🎭</span>';
+            h += '<span style="font-size:18px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span>';
             h += '<div><span style="color:var(--gold-l);font-size:14px;font-weight:700;letter-spacing:2px">外在气质</span>';
             h += '<span style="color:var(--tx3);font-size:10px;margin-left:8px">时柱 ' + hy.hour.gan + ' → ' + hy.hour.shiShen + '</span></div>';
             h += '</div>';
@@ -1611,12 +1644,12 @@ function renderCharacter(bazi) {
             h += '</div>';
             // 分隔或表里如一标注
             if (hy.isSame) {
-                h += '<div style="text-align:center;padding:6px 0;font-size:11px;color:var(--gold-l);letter-spacing:2px;opacity:.7">⬆ 表里如一 · 内外一致 ⬆</div>';
+                h += '<div style="text-align:center;padding:6px 0;font-size:11px;color:var(--gold-l);letter-spacing:2px;opacity:.7">表里如一 · 内外一致</div>';
             }
             // 内在驱动力卡片
             h += '<div style="margin-bottom:12px;border:1px solid rgba(91,127,165,.15);border-radius:10px;overflow:hidden">';
             h += '<div style="background:rgba(91,127,165,.08);padding:10px 16px;display:flex;align-items:center;gap:10px">';
-            h += '<span style="font-size:18px">🧠</span>';
+            h += '<span style="font-size:18px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3L2 8l10 5 10-5zM2 12l10 5 10-5M2 16l10 5 10-5"/></svg></span>';
             h += '<div><span style="color:#8ab0d0;font-size:14px;font-weight:700;letter-spacing:2px">内在驱动力</span>';
             h += '<span style="color:var(--tx3);font-size:10px;margin-left:8px">年柱 ' + hy.year.gan + ' → ' + hy.year.shiShen + '</span></div>';
             h += '</div>';
@@ -2070,6 +2103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     render(resultData);
+    restoreTimingView();
 });
 
 // ==================== 下载 / 保存报告 ====================
@@ -2138,7 +2172,7 @@ function buildReportHTML() {
         // 付费内容且未解锁 → 占位提示
         if (sec.paywalled && paywallActive) {
             sec.html = '<div class="locked-placeholder">'
-                + '<div class="locked-icon">🔒</div>'
+                + '<div class="locked-icon"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="10" width="16" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4M12 15v2"/></svg></div>'
                 + '<p class="locked-title">此内容需单独购买深度报告</p>'
                 + '<p class="locked-desc">「' + sec.title + '」为深度命理分析内容，不使用 AI 提问积分，需在报告页单独购买后查看。</p>'
                 + '<p class="locked-hint">请返回知时官网（knowbazi.online）完成支付后，重新生成完整 PDF 报告。</p>'
@@ -2339,7 +2373,7 @@ function buildReportHTML() {
     // 屏幕操作栏（打印时隐藏）
     + '<div class="no-print">'
     + '<div class="toolbar">'
-    + '<button class="primary" onclick="window.print()">📄 保存为 PDF</button>'
+    + '<button class="primary" onclick="window.print()"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H4v20h16V8zm0 0v6h6M8 13h8m-8 4h6"/></svg> 保存为 PDF</button>'
     + '<button onclick="window.close()">✕ 关闭页面</button>'
     + '</div>'
     + '<p style="color:#8a8070;font-size:12px;margin-top:8px;letter-spacing:1px">点击「保存为 PDF」→ 目标另存为 PDF → 保存</p>'
@@ -2854,7 +2888,7 @@ function submitFeedback() {
 }
 
 // ============ v3.0 ============
-function renderPillarAnalysis(bazi){console.log("PILLAR CALLED");var c=document.getElementById('pillarAnalysis');if(!c)return;var m={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};var cl={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};var sg={'木':'火','火':'土','土':'金','金':'水','水':'木'};var ke={'木':'土','土':'水','水':'火','火':'金','金':'木'};var ps=['year','month','day','hour'],ns=['年柱','月柱','日柱','时柱'];var h='<div style="display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 0">';for(var i=0;i<4;i++){var p=bazi[ps[i]],g=p.gan,w=m[g]||'?';h+='<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;min-width:55px">';h+='<div style="font-size:10px;color:var(--tx3)">'+ns[i]+'</div>';h+='<div style="font-size:20px;font-weight:700;color:'+(cl[w]||'#fff')+'">'+g+'</div>';h+='<div style="font-size:13px;color:var(--tx2)">'+p.zhi+'</div>';if(i===2)h+='<div style="font-size:9px;color:var(--gold-l)">☀日主</div>';h+='</div>';if(i<3){var w2=m[bazi[ps[i+1]].gan],rel='';if(sg[w]===w2)rel='<span style="color:#4f8;font-size:14px">生➡</span>';else if(ke[w]===w2)rel='<span style="color:#f44;font-size:14px">克➡</span>';else if(sg[w2]===w)rel='<span style="color:#4f8;font-size:14px">⬅生</span>';else if(ke[w2]===w)rel='<span style="color:#f44;font-size:14px">⬅克</span>';else rel='<span style="color:#888">—</span>';h+='<div style="min-width:30px;text-align:center">'+rel+'</div>';}}h+='</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:8px">🟢相生 🔴相克 箭头→被影响方</div>';c.innerHTML=h}
+function renderPillarAnalysis(bazi){console.log("PILLAR CALLED");var c=document.getElementById('pillarAnalysis');if(!c)return;var m={'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};var cl={'木':'#6db86d','火':'#e07050','土':'#c9a84c','金':'#e8d5a3','水':'#5b9fd4'};var sg={'木':'火','火':'土','土':'金','金':'水','水':'木'};var ke={'木':'土','土':'水','水':'火','火':'金','金':'木'};var ps=['year','month','day','hour'],ns=['年柱','月柱','日柱','时柱'];var h='<div style="display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 0">';for(var i=0;i<4;i++){var p=bazi[ps[i]],g=p.gan,w=m[g]||'?';h+='<div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;min-width:55px">';h+='<div style="font-size:10px;color:var(--tx3)">'+ns[i]+'</div>';h+='<div style="font-size:20px;font-weight:700;color:'+(cl[w]||'#fff')+'">'+g+'</div>';h+='<div style="font-size:13px;color:var(--tx2)">'+p.zhi+'</div>';if(i===2)h+='<div style="font-size:9px;color:var(--gold-l)">日主</div>';h+='</div>';if(i<3){var w2=m[bazi[ps[i+1]].gan],rel='';if(sg[w]===w2)rel='<span style="color:#4f8;font-size:14px">生→</span>';else if(ke[w]===w2)rel='<span style="color:#f44;font-size:14px">克→</span>';else if(sg[w2]===w)rel='<span style="color:#4f8;font-size:14px">←生</span>';else if(ke[w2]===w)rel='<span style="color:#f44;font-size:14px">←克</span>';else rel='<span style="color:#888">—</span>';h+='<div style="min-width:30px;text-align:center">'+rel+'</div>';}}h+='</div><div style="text-align:center;font-size:10px;color:var(--tx3);margin-bottom:8px"><span class="relation-key relation-key--sheng">相生</span> <span class="relation-key relation-key--ke">相克</span> 箭头→被影响方</div>';c.innerHTML=h}
 function renderDayMasterPower(bazi,facts){var c=document.getElementById('dayMasterPower');if(!c)return;var r;try{r=facts&&facts.strength?facts.strength:calcDayMasterStrength(bazi)}catch(e){r={score:50,level:'中和',detail:'日主中和'}}var l=r.score||50;var lb=r.level||'中和';var co=(lb==='极强'||lb==='偏强')?'#e44':lb==='中和'?'#ca4':'#48f';var h='<div style="display:flex;align-items:center;gap:8px;padding:4px 0">';h+='<span style="font-size:11px;color:var(--tx3)">身弱</span>';h+='<div style="flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:4px"><div style="width:'+l+'%;height:100%;background:'+co+';border-radius:4px"></div></div>';h+='<span style="font-size:11px;color:var(--tx3)">身强</span>';h+='<span style="font-weight:700;color:'+co+';font-size:15px;margin-left:8px">'+lb+'</span></div>';h+='<p style="color:var(--tx2);font-size:11px;margin-top:4px;line-height:1.6">'+r.detail+'</p>';var ry=facts&&facts.renYuan;if(ry&&ry.visible&&ry.text)h+='<p class="renyuan-note" style="color:var(--tx3);font-size:9px;margin-top:3px;line-height:1.55">'+ry.text+'</p>';c.innerHTML=h}
 function renderPattern(bazi,facts){
   var c=document.getElementById('patternAnalysis');if(!c)return;var p,yj;

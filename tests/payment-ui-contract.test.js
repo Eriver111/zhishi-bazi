@@ -156,6 +156,7 @@ test('desktop report payment renders the gateway QR image instead of treating QR
       removeItem(key) { storage.delete(key); }
     },
     fetch: async (_url, options) => {
+      if (_url === '/api/payment-methods') return { ok: true, json: async () => ({methods:[{id:'alipay'}]}) };
       orderBody = JSON.parse(options.body);
       return { async json() {
         return {
@@ -186,12 +187,12 @@ test('desktop report payment renders the gateway QR image instead of treating QR
   assert.equal(nodes.qrContainer.children.length, 1);
   assert.equal(nodes.qrContainer.children[0].tagName, 'IMG');
   assert.equal(nodes.qrContainer.children[0].src, 'https://zpayz.cn/qrcode/example.jpg');
-  assert.equal(nodes.qrStatus.textContent, '请扫码支付 ¥9.9（支付后自动解锁）');
+  assert.equal(nodes.qrStatus.textContent, '请用支付宝扫码支付 ¥9.9（支付后自动解锁）');
   assert.deepEqual(orderBody, {
     report_params: { year: 1990, month: 6, day: 15, hour: 8, gender: 'female' },
     token: '',
     amount: 9.9,
-    description: '八字完整分析报告'
+    description: '八字完整分析报告', payment_method: 'alipay'
   });
 });
 
@@ -582,6 +583,7 @@ test('hepan deep report creates a hepan order instead of falling through to the 
       removeItem() {}
     },
     fetch: async (_url, options) => {
+      if (_url === '/api/payment-methods') return { ok: true, json: async () => ({methods:[{id:'alipay'}]}) };
       orderBody = JSON.parse(options.body);
       return {
         async json() {
@@ -618,7 +620,7 @@ test('hepan deep report creates a hepan order instead of falling through to the 
   assert.deepEqual(orderBody, {
     hash: '甲|子|乙|丑|婚恋',
     amount: 13.9,
-    description: '合盘完整分析报告'
+    description: '合盘完整分析报告', token: '', payment_method: 'alipay'
   });
   assert.equal(nodes.hepanQrContainer.children[0].src, 'https://zpayz.cn/qrcode/hepan.jpg');
 });
@@ -654,7 +656,7 @@ test('each deep-report paywall polls and unlocks only its own report type', () =
   assert.match(hepan, /pending\.legacy&&d\.report_key==='legacy'/);
 });
 
-test('service worker rolls the static cache so deployed payment scripts replace stale copies', async () => {
+test('service worker rolls the cache and precaches only the lightweight shared shell', async () => {
   const events = {};
   let openedCache = '';
   let cachedAssets = [];
@@ -686,16 +688,11 @@ test('service worker rolls the static cache so deployed payment scripts replace 
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v59');
-  assert.ok(cachedAssets.includes('/js/payment.js'));
-  assert.ok(cachedAssets.includes('/js/paywall.js?v=11'));
-  assert.ok(cachedAssets.includes('/js/bazi.js?v=20260921b'));
-  assert.ok(cachedAssets.includes('/js/bazi-chain.js?v=11'));
-  assert.ok(cachedAssets.includes('/js/result.js?v=39'));
-  assert.ok(cachedAssets.includes('/js/ai-chat-integration.js?v=20260911c'));
-  assert.ok(cachedAssets.includes('/js/chat-persistence.js?v=3'));
-  assert.ok(cachedAssets.includes('/js/hepan-person.js?v=3'));
-  assert.ok(cachedAssets.includes('/js/hepan-paywall.js?v=2'));
+  assert.equal(openedCache, 'zhishi-v60');
+  assert.ok(cachedAssets.includes('/js/mobile-app-shell.js?v=9'));
+  assert.ok(cachedAssets.includes('/css/mobile-app-shell.css?v=32'));
+  assert.ok(cachedAssets.includes('/js/app-experience.js?v=1'));
+  assert.equal(cachedAssets.some(asset => /payment|paywall|bazi|vendor/.test(asset)), false);
 });
 
 test('bazi paywall sends account credentials and supports account report recovery', () => {

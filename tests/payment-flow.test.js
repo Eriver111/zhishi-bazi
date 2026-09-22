@@ -71,10 +71,14 @@ function loadFreshWithMocks(modulePath, mocks) {
 
 function withPaymentEnv(fn) {
   const previous = {
+    PAY_ALIPAY_ENABLED: process.env.PAY_ALIPAY_ENABLED,
+    PAY_DEFAULT_METHOD: process.env.PAY_DEFAULT_METHOD,
     PAY_PID: process.env.PAY_PID,
     PAY_KEY: process.env.PAY_KEY,
     SITE_URL: process.env.SITE_URL
   };
+  process.env.PAY_ALIPAY_ENABLED = 'true';
+  process.env.PAY_DEFAULT_METHOD = 'alipay';
   process.env.PAY_PID = 'merchant';
   process.env.PAY_KEY = 'secret';
   process.env.SITE_URL = 'https://zhishi.online';

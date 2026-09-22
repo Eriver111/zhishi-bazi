@@ -266,7 +266,7 @@ test('result page loads local PDF dependencies in order and exposes one accessib
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
     '/js/report-pdf.js?v=4',
-    'js/result.js?v=39',
+    'js/result.js?v=41',
   ];
   const indexes = scripts.map((src) => html.indexOf(`src="${src}`));
 
@@ -655,15 +655,15 @@ test('desktop export retains the existing new-tab print-to-PDF route', () => {
   assert.deepEqual(calls.open, [{ url: 'blob:desktop-report', target: '_blank' }]);
 });
 
-test('service worker rolls the mobile PDF cache and precaches all local PDF scripts', () => {
+test('service worker rolls the cache without competing with navigation for PDF downloads', () => {
   const source = read('sw.js');
-  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v59'/g) || []).length, 1);
+  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v60'/g) || []).length, 1);
   assert.equal((source.match(/var CACHE_NAME\s*=/g) || []).length, 1);
   for (const asset of [
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
     '/js/report-pdf.js?v=4',
   ]) {
-    assert.equal((source.match(new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length, 1);
+    assert.equal((source.match(new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length, 0);
   }
 });

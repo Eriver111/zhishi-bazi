@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script src="/js/page-state.js?v=1"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知时 · 大六壬AI</title>
 <meta name="description" content="大六壬占断，融合九宗门四课三传的AI易学助手。">
 <link rel="stylesheet" href="css/style.css">
@@ -51,8 +52,9 @@ body{position:fixed;inset:0;width:100%}
 @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
 @media (max-width:768px){.input-row textarea{font-size:16px}}
 </style>
-<link rel="stylesheet" href="css/theme-light.css?v=4">
+<link rel="stylesheet" href="css/theme-light.css?v=5">
 <link rel="stylesheet" href="css/theme-light-pages.css?v=3">
+<link rel="stylesheet" href="css/chat-experience.css?v=1">
 </head>
 <body>
 <div class="page">
@@ -80,14 +82,15 @@ body{position:fixed;inset:0;width:100%}
       <span>提问次数已用完</span><a href="profile.html">前往个人中心兑换</a>
     </div>
     <div class="input-row" id="inputRow">
-      <textarea id="input" placeholder="输入你的问题..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
-      <button class="send" id="sendBtn" onclick="send()">▶</button>
+      <textarea id="input" placeholder="输入你的问题..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&event.keyCode!==229){event.preventDefault();send()}"></textarea>
+      <button class="send" id="sendBtn" onclick="send()" aria-label="发送消息"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20V4m-7 7l7-7 7 7"/></svg></button>
     </div>
   </div>
 </div>
 
 <script src="js/chat-viewport.js?v=2"></script>
-<script src="js/chat-persistence.js?v=1"></script>
+<script src="js/chat-persistence.js?v=4"></script>
+<script src="js/chat-experience.js?v=1"></script>
 <script>
 var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:'',conversationId:'',chartKey:'',historyLoaded:false};
 
@@ -144,14 +147,14 @@ function syncUserCredits(){
     });
   });
 }
-function currentLiurenChart(){try{var raw=localStorage.getItem('ai_liuren_data');return raw?JSON.parse(raw):null}catch(e){return null}}
+function currentLiurenChart(){if(window.ChatExperience&&ChatExperience.hasContext())return ChatExperience.context().data;try{var raw=localStorage.getItem('ai_liuren_data');return raw?JSON.parse(raw):null}catch(e){return null}}
 function setHistoryButton(text,saved){var b=document.getElementById('historyBtn');if(!b)return;b.textContent=text;b.classList.toggle('saved',!!saved)}
 function restoreChatHistory(force){
   if(!window.ChatPersistence)return;if(AI.historyLoaded&&!force)return;
   ChatPersistence.load('liuren',currentLiurenChart()).then(function(data){
     AI.chartKey=data.chart_key||'';if(!data.logged_in){setHistoryButton('登录保存',false);return}
     AI.conversationId=data.conversation_id||'';AI.historyLoaded=true;setHistoryButton(data.storage_ready===false?'待启用':'已保存',data.storage_ready!==false);
-    if(force||AI.messages.length===0){document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];(data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)})}
+    if(force||AI.resumePending||AI.messages.length===0){document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];AI.resumePending=false;(data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)})}
   }).catch(function(){setHistoryButton('记录异常',false)});
 }
 
@@ -166,12 +169,13 @@ function updateCreditsUI(){
 }
 
 function addMsg(role,text){
+  var follow=ChatExperience.beforeAppend(role);
   AI.messages.push({role:role,content:text});
   var d=document.getElementById('emptyState');if(d)d.style.display='none';
   var div=document.createElement('div');div.className='msg '+role;
-  div.innerHTML='<div class="avatar">'+(role==='user'?'我':'AI')+'</div><div class="bubble">'+text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</div>';
+  div.innerHTML='<div class="avatar">'+(role==='user'?'我':'AI')+'</div><div class="bubble">'+ChatExperience.escape(text).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</div>';
   document.getElementById('messages').appendChild(div);
-  document.getElementById('messages').scrollTop=99999;
+  ChatExperience.afterAppend(follow);
 }
 
 function toggleMode(){
@@ -186,13 +190,13 @@ function send(){
   var inp=document.getElementById('input');var text=inp.value.trim();if(!text)return;
   if(AI.freeRemaining<=0&&AI.credits<=0&&!AI.isMonthly){document.getElementById('quotaBar').style.display='flex';return}
   inp.value='';AI.isWaiting=true;document.getElementById('sendBtn').disabled=true;
-  addMsg('user',text);showThinking();
+  ChatExperience.start(text);addMsg('user',text);showThinking();
 
   var chartData=currentLiurenChart();
   // 无排盘数据时提醒
   if(!chartData){
-    addMsg('ai','⚠️ 未检测到大六壬课盘。请先在<a href="liuren.html">大六壬起课</a>页面完成起课，再向AI提问。');
-    hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
+    addMsg('ai','未检测到大六壬课盘。请先在大六壬起课页面完成起课，再向AI提问。');
+    hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;ChatExperience.finish(true);
     return;
   }
   var body={question:text,mode:'liuren',response_mode:AI.mode,history:AI.messages.slice(-6),chartData:chartData};
@@ -201,19 +205,20 @@ function send(){
   else{body.code=AI.code}
 
   var headers={'Content-Type':'application/json'};if(typeof Auth!=='undefined'&&Auth.isLoggedIn())headers['Authorization']='Bearer '+Auth.getToken();
-  fetch('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
-  .then(function(r){return r.json()}).then(function(d){
+  ChatExperience.request('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
+  .then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
-    if(d.error){addMsg('ai',d.error);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
+    if(d.error){addMsg('ai',d.error);ChatExperience.finish(true);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
     if(d.conversation_id){AI.conversationId=d.conversation_id;setHistoryButton('已保存',true)}
     var pre='';try{var cd3=currentLiurenChart()||{};if(cd3.sanChuan&&cd3.sanChuan.keTi)pre+='【系统课盘】'+cd3.sanChuan.keTi+'课。';if(cd3.dateInfo&&cd3.dateInfo.date)pre+='起课：'+cd3.dateInfo.date+'。';if(pre)pre+='\n\n';}catch(ex){}addMsg('ai',pre+d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}
     if(d.is_monthly){AI.isMonthly=true;updateCreditsUI()}
-  }).catch(function(e){hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','网络错误，请重试')});
+    ChatExperience.finish(false);
+  }).catch(function(e){if(e.name==='IdentityChangedError')return;hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','连接中断或等待超时，回答可能仍在生成。请先查看历史记录，再决定是否重试。');ChatExperience.finish(true)});
 }
 
 </script>
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=28"></script>
 </body>
 </html>

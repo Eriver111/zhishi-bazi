@@ -1,0 +1,6 @@
+.chat-latest { display: block; margin: 0 auto 8px; padding: 7px 14px; border: 1px solid #d8c9af; border-radius: 20px; background: #fbf6eb; color: #84362f; font: inherit; font-size: 12px; cursor: pointer; }
+.chat-latest[hidden], .chat-connection-status[hidden] { display: none; }
+.chat-connection-status { padding: 6px 8px 10px; font-size: 12px; line-height: 1.5; color: #755d42; }
+.messages { overscroll-behavior-y: contain; overflow-anchor: none; }
+.input-row textarea { max-height: 120px; }
+.topbar { padding-top: max(12px, env(safe-area-inset-top)); }

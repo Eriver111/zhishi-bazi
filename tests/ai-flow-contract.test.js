@@ -65,7 +65,7 @@ test('Ziwei chat synchronizes account entitlement and authenticates AI requests'
   assert.match(chat, /AI\.isMonthly\s*=\s*true/);
   assert.match(chat, /AI\.credits\s*=\s*d\.credits/);
   assert.match(chat, /headers\[['"]Authorization['"]\]\s*=\s*['"]Bearer ['"]\s*\+\s*Auth\.getToken\(\)/);
-  assert.match(chat, /fetch\(['"]\/api\/ai-chat['"],\{method:['"]POST['"],headers:headers/);
+  assert.match(chat, /ChatExperience\.request\(['"]\/api\/ai-chat['"],\{method:['"]POST['"],headers:headers/);
 });
 
 test('one-shot tools do not gain follow-up chat routes', () => {

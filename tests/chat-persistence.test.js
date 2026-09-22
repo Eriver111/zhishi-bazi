@@ -94,7 +94,7 @@ test('history endpoint requires login and returns the chart-scoped conversation'
 test('chat pages load shared persistence and database migration keeps payment schema untouched', () => {
   for (const file of ['ai-chat.html', 'zw-ai-chat.html']) {
     const html = fs.readFileSync(path.join(root, file), 'utf8');
-    assert.match(html, /chat-persistence\.js\?v=[123]/);
+    assert.match(html, /chat-persistence\.js\?v=[1234]/);
     assert.match(html, /ChatPersistence\.decorate/);
     assert.match(html, /登录保存/);
   }

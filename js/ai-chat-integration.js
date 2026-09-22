@@ -147,7 +147,7 @@
     // 消息区
     html += '<div class="chat-messages-wrap" id="aiMessages">';
     html += '<div class="chat-empty-wrap" id="aiEmpty">';
-    html += '<div class="empty-icon">🏮</div>';
+    html += '<div class="empty-icon"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11a9 9 0 0 1-9 9H4l-3 2 2-6a9 9 0 1 1 18-5zM7 11h.01M12 11h.01M17 11h.01"/></svg></div>';
     html += '<h4>知时AI</h4>';
     html += '<p id="aiEmptyDesc">首次体验免费，可提问 2 次</p>';
     html += '<code id="aiEmptyCode">免费体验中 · 无需付费</code>';
@@ -161,7 +161,7 @@
     // 输入区
     html += '<div class="chat-input-wrap" id="aiInputWrap">';
     html += '<textarea id="aiInput" placeholder="输入你的问题..." rows="1" onkeydown="window._aiKey(event)"></textarea>';
-    html += '<button class="chat-send" id="aiSendBtn" onclick="window._aiSend()">▶</button>';
+    html += '<button class="chat-send" id="aiSendBtn" onclick="window._aiSend()" aria-label="发送消息"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20V4m-7 7l7-7 7 7"/></svg></button>';
     html += '</div>';
 
     html += '</div>'; // .ai-drawer
@@ -338,42 +338,21 @@
   }
 
   // ===== 支付 =====
+  var paymentCreating = false;
   function startPayment(mode) {
+    if (paymentCreating) return;
+    paymentCreating = true;
     mode = mode || 'credit_pack';
-    var label = mode === 'monthly' ? '¥29.9 包月30天' : '¥9.9 买10次';
-
-    fetch('/api/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: mode, money: mode === 'monthly' ? 29.9 : 9.9, name: label })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.error) { alert('创建订单失败：' + data.error); return; }
-      if (data.pay_url) {
-        localStorage.setItem('ai_pending_order', data.out_trade_no);
-        localStorage.setItem('ai_pending_mode', mode);
-        window.open(data.pay_url, '_blank');
-        startPolling(data.out_trade_no, mode);
-        // 提示用户
-        if ($emptyState) {
-          document.getElementById('aiEmptyDesc').textContent = '支付完成后自动激活，请稍候...';
-        }
-      } else if (data.test_mode) {
-        var testCode = prompt('【测试模式】输入兑换码（留空自动生成）：');
-        if (!testCode) testCode = 'TEST' + Math.random().toString(36).slice(2, 8).toUpperCase();
-        if (mode === 'monthly') {
-          handleMonthlySuccess(testCode, '30天后');
-        } else {
-          handlePaymentSuccess(testCode, 10);
-        }
-      } else {
-        localStorage.setItem('ai_pending_order', data.out_trade_no);
-        localStorage.setItem('ai_pending_mode', mode);
-        startPolling(data.out_trade_no, mode);
-      }
-    })
-    .catch(function(e) { alert('网络错误，请重试'); });
+    PaymentFlow.createOrder({ mode: mode,
+      token: typeof Auth !== 'undefined' && Auth.isLoggedIn() ? Auth.getToken() : ''
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.error) throw new Error(data.error);
+      localStorage.setItem('ai_pending_order', data.out_trade_no);
+      localStorage.setItem('ai_pending_mode', mode);
+      startPolling(data.out_trade_no, mode);
+      PaymentFlow.openCashier(data);
+    }).catch(function(e) { alert(e.name === 'AbortError' ? '支付连接超时，请重试' : e.message || '支付连接失败，请重试'); })
+      .finally(function() { paymentCreating = false; });
   }
 
   function startPolling(outTradeNo, mode) {
@@ -385,6 +364,7 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.paid) {
+            var cashier = document.getElementById('paymentCashier'); if (cashier) cashier.remove();
             clearInterval(poll);
             localStorage.removeItem('ai_pending_order');
             localStorage.removeItem('ai_pending_mode');
@@ -423,7 +403,7 @@
 
     updateMonthlyDisplay();
     showBuyBar();
-    if ($statusLine) $statusLine.textContent = '👑 会员有效 · ' + expires;
+    if ($statusLine) $statusLine.textContent = '会员有效 · ' + expires;
     if ($emptyState) document.getElementById('aiEmptyDesc').textContent = '会员期间无限次提问';
 
     if (AI.messages.length === 0) addGreeting();
@@ -471,7 +451,7 @@
 
   function updateMonthlyDisplay() {
     if ($badge) { $badge.textContent = '∞'; $badge.style.display = 'flex'; $badge.style.background = '#8a6d28'; }
-    if ($creditsLabel) $creditsLabel.innerHTML = '👑 <strong>会员</strong> · 无限次';
+    if ($creditsLabel) $creditsLabel.innerHTML = '<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12l4 4L19 6"/></svg> <strong>会员</strong> · 无限次';
     if ($inputWrap) $inputWrap.style.display = 'flex';
     if ($input) $input.disabled = false;
     if ($sendBtn) $sendBtn.disabled = false;
@@ -989,11 +969,11 @@
 
   function addGreeting() {
     var cd = buildChartData();
-    var g = '🧧 **知时AI已就绪**\n\n';
+    var g = '**知时AI已就绪**\n\n';
     if (cd && cd.dayMaster) { g += '你的日主为**' + cd.dayMaster.gan + '**' + (cd.dayMaster.wuXing ? '（' + cd.dayMaster.wuXing + '）' : '') + (cd.dayMasterStrength && cd.dayMasterStrength.level ? '，命局**' + cd.dayMasterStrength.level + '**' : '') + '。\n\n可以问我任何命理问题：\n• 我的喜用神是什么？\n• 财运事业如何？\n• 今年运势怎么样？\n• 婚姻感情如何？'; }
     else { g += '你可以问我任何八字命理问题。'; }
-    if (AI.isMonthly) g = '👑 **会员已激活**\n\n' + g;
-    if (AI.freeRemaining > 0) g += '\n\n💡 你还有 ' + AI.freeRemaining + ' 次免费提问机会';
+    if (AI.isMonthly) g = '**会员已激活**\n\n' + g;
+    if (AI.freeRemaining > 0) g += '\n\n你还有 ' + AI.freeRemaining + ' 次免费提问机会';
     addMessage('ai', g);
   }
 
@@ -1063,7 +1043,7 @@
         // 老付费用户：给一个有价值的迁移提示
         var migratedCode = 'MIG' + Math.random().toString(36).slice(2, 6).toUpperCase();
         // 弹窗提示
-        var migrateMsg = '🎁 **老用户权益升级**\n\n感谢你之前的支持！作为早期付费用户，你已获得：\n• 30 天免费会员（价值 ¥29.9）\n• 20 次额外 AI 提问额度\n\n你的专属兑换码：**' + migratedCode + '**\n\n请前往个人中心兑换。';
+        var migrateMsg = '**老用户权益升级**\n\n感谢你之前的支持！作为早期付费用户，你已获得：\n• 30 天免费会员（价值 ¥29.9）\n• 20 次额外 AI 提问额度\n\n你的专属兑换码：**' + migratedCode + '**\n\n请前往个人中心兑换。';
         addMessage('ai', migrateMsg);
         open();
         localStorage.setItem('ai_migrated', '1');
@@ -1074,7 +1054,7 @@
 
   function showMyCode(code){var el=document.getElementById('aiMyCode');var d=document.getElementById('aiCodeDisplay');var b=document.getElementById('aiBindPhone');if(el)el.style.display='block';if(d)d.textContent=code||AI.code||'';if(b)b.style.display='block'}
   window._aiCopyCode=function(){var c=AI.code;if(!c)return;if(navigator.clipboard){navigator.clipboard.writeText(c).then(function(){alert('兑换码已复制: '+c)})}else{prompt('复制兑换码:',c)}};
-  window._aiBindPhone=function(){var p=document.getElementById('aiPhoneInput').value.trim();if(!/^1d{10}$/.test(p)){alert('请输入正确手机号');return}if(!AI.code){alert('请先激活兑换码');return}var m=document.getElementById('aiBindMsg');if(m)m.textContent='绑定中...';fetch('/api/bind-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code,phone:p})}).then(function(r){return r.json()}).then(function(d){if(m)m.textContent=d.success?'✅ 已绑定':'❌ 失败';if(d.success)localStorage.setItem('ai_bound_phone',p)})};
+  window._aiBindPhone=function(){var p=document.getElementById('aiPhoneInput').value.trim();if(!/^1d{10}$/.test(p)){alert('请输入正确手机号');return}if(!AI.code){alert('请先激活兑换码');return}var m=document.getElementById('aiBindMsg');if(m)m.textContent='绑定中...';fetch('/api/bind-phone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:AI.code,phone:p})}).then(function(r){return r.json()}).then(function(d){if(m)m.textContent=d.success?'已绑定':'绑定失败';if(d.success)localStorage.setItem('ai_bound_phone',p)})};
   var _origPS=handlePaymentSuccess;handlePaymentSuccess=function(c,cr){_origPS(c,cr);showMyCode(c);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp}};
   var _origMS=handleMonthlySuccess;handleMonthlySuccess=function(c,e){_origMS(c,e);showMyCode(c)};
   var _origRS=restoreSession;restoreSession=function(){var sc=localStorage.getItem('ai_chat_code');if(sc)showMyCode(sc);var sp=localStorage.getItem('ai_bound_phone');if(sp){var pi=document.getElementById('aiPhoneInput');if(pi)pi.value=sp};_origRS();
@@ -1132,7 +1112,7 @@
     fetch('/api/referral?ref='+ref+'&visitor='+visitor).then(function(r){return r.json()}).then(function(d){
       if(d.success){
         var el=document.getElementById('aiEmpty');
-        if(el){el.innerHTML='<div class="chat-empty-wrap"><div class="empty-icon">🎁</div><h4>朋友邀请你来的！</h4><p>你和朋友各获得 1 次额外免费提问</p><code>直接开始提问吧</code></div>'}
+        if(el){el.innerHTML='<div class="chat-empty-wrap"><div class="empty-icon"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13M12 8H7a3 3 0 1 1 3-3zm0 0h5a3 3 0 1 0-3-3z"/></svg></div><h4>朋友邀请你来的！</h4><p>你和朋友各获得 1 次额外免费提问</p><code>直接开始提问吧</code></div>'}
         // 刷新免费次数
         AI.freeRemaining=1; updateFreeDisplay(); showBuyBar();
       }

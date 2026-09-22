@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知时 · 合盘结果 | knowbazi.online</title>
 <meta name="robots" content="noindex">
 <style>
@@ -3239,7 +3239,11 @@ body.has-mobile-nav{padding-bottom:60px}
   body.has-mobile-nav{padding-bottom:60px}
   
 }
-</style><link rel="stylesheet" href="css/theme-light.css?v=4"><link rel="stylesheet" href="css/theme-light-results.css?v=5"></head>
+</style><link rel="stylesheet" href="css/theme-light.css?v=5"><link rel="stylesheet" href="css/theme-light-results.css?v=5"><link rel="stylesheet" href="/css/mobile-app-shell.css?v=32">
+<link rel="stylesheet" href="/css/app-experience.css?v=1">
+<script src="/js/app-experience.js?v=1" defer></script>
+<script src="/js/mobile-app-shell.js?v=9" defer></script>
+</head>
 <body>
 <div id="zhishi-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(28,26,22,.92);border-bottom:1px solid rgba(201,168,76,.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:13px"><a href="/" style="font-size:18px;font-weight:900;letter-spacing:4px;color:#e8cf70;text-decoration:none;margin-right:8px">知时</a><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><a href="/paipan" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">八字排盘</a><a href="/ziwei" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">紫微斗数</a><a href="/fengshui" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">风水</a><a href="/face" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观面</a><a href="/palm" style="color:#a09888;text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap">观手</a><div style="position:relative;display:inline-block" onmouseenter="this.querySelector('.dd-menu').style.display='block'" onmouseleave="this.querySelector('.dd-menu').style.display='none'"><span onclick="var m=this.nextElementSibling;m.style.display=m.style.display=='block'?'none':'block'" style="color:#a09888;cursor:pointer;padding:6px 10px;border-radius:6px;white-space:nowrap;user-select:none">更多 ▾</span><div class="dd-menu" style="display:none;position:absolute;top:100%;left:0;background:rgba(28,26,22,.96);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:4px 0;min-width:120px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.6)"><a href="/hepan" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">合盘缘分</a><a href="/fortune" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">今日运势</a><a href="/meihua" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">梅花易数</a><a href="/liuyao" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">六爻占卜</a><a href="/liuren" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">大六壬</a><a href="/profile" style="display:block;color:#a09888;text-decoration:none;padding:8px 16px;white-space:nowrap">个人中心</a></div></div><a href="/pricing" style="color:#c9a84c;text-decoration:none;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.25);white-space:nowrap">积分</a><span id="nav-user-area" class="nav-user" style="margin-left:4px;font-size:12px"></span></div></div>
 
@@ -3270,14 +3274,14 @@ body.has-mobile-nav{padding-bottom:60px}
     </div>
     <div style="display:flex;gap:14px">
       <div style="flex:1;display:flex;align-items:center;gap:14px;padding:20px 16px;border-radius:14px;border:1px solid rgba(42,166,108,.2);background:linear-gradient(135deg,rgba(42,166,108,.12),rgba(42,166,108,.04));box-shadow:0 0 30px rgba(42,166,108,.04);transition:all .3s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-        <div style="font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(42,166,108,.15)">&#x1F4F1;</div>
+        <div style="font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(42,166,108,.15)"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-2 13h.01"/></svg></div>
         <div>
           <div style="font-size:13px;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:1px;margin-bottom:4px">联系客服微信</div>
           <div style="font-size:18px;color:#4fd490;font-weight:700;letter-spacing:2px;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Source Han Sans SC',sans-serif">EriverLife</div>
         </div>
       </div>
       <div style="flex:1;display:flex;align-items:center;gap:14px;padding:20px 16px;border-radius:14px;border:1px solid rgba(201,168,76,.18);background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));box-shadow:0 0 30px rgba(201,168,76,.04);cursor:pointer;transition:all .3s" onmouseover="this.style.background='linear-gradient(135deg,rgba(201,168,76,.16),rgba(201,168,76,.06))';this.style.borderColor='rgba(201,168,76,.3)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03))';this.style.borderColor='rgba(201,168,76,.18)';this.style.transform='none'" onclick="showFeedback()">
-        <div style="font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,.12)">&#x1F4AC;</div>
+        <div style="font-size:32px;flex-shrink:0;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,.12)"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11a9 9 0 0 1-9 9H4l-3 2 2-6a9 9 0 1 1 18-5zM7 11h.01M12 11h.01M17 11h.01"/></svg></div>
         <div>
           <div style="font-size:13px;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:1px;margin-bottom:4px">帮助我们做得更好</div>
           <div style="font-size:12px;color:var(--gold);font-weight:500;letter-spacing:1px">你的建议和反馈</div>
@@ -3308,12 +3312,12 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/hepan-person.js?v=3"></script>
 <script src="js/bazi-chain.js?v=11"></script><script src="js/lunar.js"></script>
 <script src="js/hepan-core.js?v=3"></script>
-<script src="js/payment.js"></script>
-<script src="js/hepan-paywall.js?v=2"></script>
-<script src="js/auth.js?v=5"></script>
-<script src="js/hepan-result.js?v=4"></script>
-<script src="js/chat-persistence.js?v=3"></script>
-<script src="js/ai-chat-integration.js?v=20260911c"></script>
+<script src="js/payment.js?v=5"></script>
+<script src="js/hepan-paywall.js?v=5"></script>
+<script src="js/auth.js?v=28"></script>
+<script src="js/hepan-result.js?v=5"></script>
+<script src="js/chat-persistence.js?v=4"></script>
+<script src="js/ai-chat-integration.js?v=20260922b"></script>
 
 <script>
 // ============================================
@@ -3378,23 +3382,25 @@ function submitFeedback() {
     
     var pw=document.createElement('div');pw.id='hpPaywall';
     pw.style.cssText='position:absolute;inset:0;background:#0e0c0a;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10;border-radius:12px';
-    pw.innerHTML='<div style="font-size:48px">🔒</div><h3 style="color:var(--gold-l);margin:8px 0">完整合盘分析报告</h3><p style="color:var(--tx2);font-size:13px;text-align:center">跨盘干支交互 · 核心相处模式<br>未来三年节点 · 宜忌指南</p><div style="font-size:30px;font-weight:900;color:var(--gold-l);margin:10px 0">¥13.9</div><button class="submit-btn" onclick="startHPay()" style="max-width:280px">🔓 解锁合盘报告</button><p style="color:var(--tx3);font-size:11px;margin-top:8px">一次付费 · 永久查看 · 支持下载</p><div style="margin-top:20px;padding:14px 18px;background:rgba(201,168,76,.08);border:1px dashed var(--bd2);border-radius:10px;text-align:center"><p style="color:var(--gold-l);font-size:15px;font-weight:600">🤖 试试知时AI解读合盘</p><p style="color:var(--gold);font-size:13px;margin-top:6px;cursor:pointer" onclick="window._aiOpen()">👉 前2次免费 · 深度解读合盘缘分</p></div>';
+    pw.innerHTML='<div style="font-size:48px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="10" width="16" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4M12 15v2"/></svg></div><h3 style="color:var(--gold-l);margin:8px 0">完整合盘分析报告</h3><p style="color:var(--tx2);font-size:13px;text-align:center">跨盘干支交互 · 核心相处模式<br>未来三年节点 · 宜忌指南</p><div style="font-size:30px;font-weight:900;color:var(--gold-l);margin:10px 0">¥13.9</div><button class="submit-btn" onclick="startHPay()" style="max-width:280px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="10" width="16" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 7.5-2M12 15v2"/></svg> 解锁合盘报告</button><p style="color:var(--tx3);font-size:11px;margin-top:8px">一次付费 · 永久查看 · 支持下载</p><div style="margin-top:20px;padding:14px 18px;background:rgba(201,168,76,.08);border:1px dashed var(--bd2);border-radius:10px;text-align:center"><p style="color:var(--gold-l);font-size:15px;font-weight:600"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11a9 9 0 0 1-9 9H4l-3 2 2-6a9 9 0 1 1 18-5zM7 11h.01M12 11h.01M17 11h.01"/></svg> 试试知时AI解读合盘</p><p style="color:var(--gold);font-size:13px;margin-top:6px;cursor:pointer" onclick="window._aiOpen()"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg> 前2次免费 · 深度解读合盘缘分</p></div>';
     wrap.appendChild(pw);
   }
   
+  var hpCreating=false;
   function startHPay(){
-    var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hash:_hh,amount:13.9,description:'合盘完整分析报告'})})
+    if(hpCreating)return;
+    hpCreating=true;
+    PaymentFlow.createOrder({hash:_hh,amount:13.9,description:'合盘完整分析报告',
+      token:typeof Auth!=='undefined'&&Auth.isLoggedIn()?Auth.getToken():''})
     .then(function(r){return r.json()}).then(function(d){
-      if(d.error){alert(d.error);return}
+      if(d.error)throw new Error(d.error);
       var pending={oid:d.out_trade_no,h:_hh,k:d.report_key};localStorage.setItem('hpo2',JSON.stringify(pending));
-      // 手机直接跳转，电脑显示二维码
-      if(isMobile&&d.pay_url){window.location.href=d.pay_url}
-      else if(d.pay_url){var qr='https://api.quickchart.io/qr?size=220&text='+encodeURIComponent(d.pay_url);var w=window.open('','_blank','width=400,height=500');if(w){w.document.write('<html><head><title>扫码支付 ¥13.9</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;background:#181612;color:#d8d0c0}img{border-radius:12px;border:2px solid #c9a84c}</style></head><body><h3>📱 扫码支付 ¥13.9</h3><img src="'+qr+'" style="width:220px;height:220px"><p style="margin-top:12px;color:#989080">支付后自动解锁，请勿关闭页面</p></body></html>');w.document.close()}}
       pollHP(pending);
-    }).catch(function(){alert('网络错误，请重试')});
+      PaymentFlow.openCashier(d);
+    }).catch(function(e){alert(e.name==='AbortError'?'连接超时，请重试':e.message||'网络错误，请重试')})
+      .finally(function(){hpCreating=false;});
   }
-  
+
   function pollHP(pending){if(!pending||pending.h!==_hh)return;var n=0;var t=setInterval(function(){n++;if(n>120){clearInterval(t);return};fetch('/api/check-order?expected_type=hepan&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){if(d.status==='paid'&&d.report_type==='hepan'&&d.report_key===pending.k){clearInterval(t);localStorage.removeItem('hpo2');unlockHP()}}).catch(function(){})},2000)}
   
   function unlockHP(){

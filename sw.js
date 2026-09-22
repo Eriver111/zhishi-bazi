@@ -1,18 +1,28 @@
-// 知时 Service Worker v59 — 调候终裁与格局待核证据同步到结果页。
-var CACHE_NAME = 'zhishi-v59';
+// 知时 Service Worker v60 — lightweight mobile shell and intent-based navigation.
+var CACHE_NAME = 'zhishi-v60';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
   '/css/style.css', '/css/landing.css', '/css/auth.css',
-  '/css/theme-light.css?v=4', '/css/theme-light-forms.css?v=5', '/css/theme-light-results.css?v=5',
-  '/css/interactions.css', '/css/poster.css',
-  '/js/bazi.js?v=20260921b', '/js/bazi-chain.js?v=11', '/js/mo-xing-he.js?v=1781962250',
-  '/js/ai-chat-integration.js?v=20260911c', '/js/chat-persistence.js?v=3', '/js/hepan-person.js?v=3', '/js/chart-calibration.js?v=13', '/js/result.js?v=39', '/js/desktop-result-workspace.js?v=1',
-  '/js/payment.js', '/js/payment.js?v=2', '/js/paywall.js?v=11',
-  '/js/hepan-paywall.js?v=2',
-  '/js/vendor/html2canvas.min.js?v=2', '/js/vendor/jspdf.umd.min.js?v=2',
-  '/js/report-pdf.js?v=4'
+  '/css/theme-light.css?v=5', '/css/theme-light-forms.css?v=5', '/css/theme-light-results.css?v=5',
+  '/css/mobile-app-shell.css?v=32', '/js/mobile-app-shell.js?v=9',
+  '/css/app-experience.css?v=1', '/js/app-experience.js?v=1'
 ];
+var SHELL_ASSETS = STATIC_ASSETS.slice(-4);
+var PUBLIC_PAGES = ['/', '/paipan', '/hepan', '/ziwei', '/liuyao', '/meihua', '/face', '/palm', '/fengshui', '/fortune'];
+var warmPages = new Map();
+var warming = new Map();
+var WARM_TTL = 30000;
+function publicPage(value) {
+  var url;
+  try { url = new URL(value, self.location.origin); } catch (_) { return null; }
+  if (url.origin !== self.location.origin || url.search || url.hash) return null;
+  var path = url.pathname.replace(/\.html$/, '').replace(/^\/index$/, '/') || '/';
+  return PUBLIC_PAGES.indexOf(path) >= 0 ? url : null;
+}
+function pruneWarmPages() {
+  warmPages.forEach(function(entry, key) { if (Date.now() - entry.time >= WARM_TTL) warmPages.delete(key); });
+}
 
 self.addEventListener('install', function(e) {
   e.waitUntil(
@@ -28,7 +38,7 @@ self.addEventListener('install', function(e) {
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(keys.filter(function(k) { return k !== CACHE_NAME; }).map(function(k) { return caches.delete(k); }));
+      return Promise.all(keys.filter(function(k) { return k.indexOf('zhishi-') === 0 && k !== CACHE_NAME; }).map(function(k) { return caches.delete(k); }));
     })
   );
   self.clients.claim();
@@ -36,6 +46,21 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if (!e.data || e.data.type !== 'WARM_PUBLIC_PAGE' || !e.source || !e.source.url) return;
+  if (new URL(e.source.url).origin !== self.location.origin) return;
+  var url = publicPage(e.data.url);
+  if (!url) return;
+  pruneWarmPages();
+  if (warmPages.has(url.href) || warming.has(url.href) || warming.size >= 2) return;
+  var task = fetch(url.href, { credentials: 'omit', cache: 'no-store' }).then(function(response) {
+    if (!response.ok || response.redirected || !/text\/html/i.test(response.headers.get('content-type') || '')) return;
+    // Keep only a short-lived, one-use public document in worker memory.
+    // Query strings, account pages, API responses and reports never enter here.
+    if (warmPages.size >= 3) warmPages.delete(warmPages.keys().next().value);
+    warmPages.set(url.href, { response: response, time: Date.now() });
+  }).catch(function() {}).finally(function() { warming.delete(url.href); });
+  warming.set(url.href, task);
+  e.waitUntil(task);
 });
 
 // 策略：HTML和代码资源优先取最新版本；断网时再回退缓存。
@@ -43,9 +68,39 @@ self.addEventListener('fetch', function(e) {
   var url = new URL(e.request.url);
   var path = url.pathname;
 
-  // HTML 始终走网络（保证最新页面结构）
-  if (path.endsWith('.html') || path === '/') {
+  if (e.request.method !== 'GET' || url.origin !== self.location.origin || path.indexOf('/api/') === 0) return;
+
+  // Navigation may consume a recently warmed public page once. Never cache
+  // birth parameters, payment returns, personal data or authenticated HTML.
+  if (e.request.mode === 'navigate' || path.endsWith('.html') || path === '/') {
+    pruneWarmPages();
+    var eligible = e.request.mode === 'navigate' && publicPage(url.href);
+    if (eligible && (warmPages.has(url.href) || warming.has(url.href))) {
+      // A quick tap can navigate before the pointer-down prefetch finishes.
+      // Reuse that request instead of competing with it for bandwidth.
+      e.respondWith(Promise.resolve(warming.get(url.href)).then(function() {
+        pruneWarmPages();
+        var warm = warmPages.get(url.href);
+        warmPages.delete(url.href);
+        return warm ? warm.response : fetch(e.request);
+      }));
+      return;
+    }
     e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Only explicitly versioned shell bundles use cache-first. Algorithm and
+  // payment scripts retain network-first so current fixes are not hidden.
+  if (SHELL_ASSETS.indexOf(path + url.search) >= 0) {
+    e.respondWith(caches.open(CACHE_NAME).then(function(cache) {
+      return cache.match(e.request).then(function(hit) {
+        return hit || fetch(e.request).then(function(response) {
+          if (response.ok) e.waitUntil(cache.put(e.request, response.clone()));
+          return response;
+        });
+      });
+    }));
     return;
   }
 
@@ -54,10 +109,10 @@ self.addEventListener('fetch', function(e) {
     e.respondWith(
       caches.open(CACHE_NAME).then(function(cache) {
         return fetch(e.request).then(function(response) {
-            if (response && response.ok) cache.put(e.request, response.clone());
+            if (response && response.ok) e.waitUntil(cache.put(e.request, response.clone()));
             return response;
           }).catch(function() {
-            return cache.match(e.request);
+            return cache.match(e.request).then(function(hit) { return hit || Response.error(); });
         });
       })
     );

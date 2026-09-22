@@ -25,21 +25,21 @@
         '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:8px">命局总纲</div>'+
         '<div id="reportSummary"></div></div>'+
       '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:16px;margin-bottom:14px">'+
-        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:12px">📐 四柱生克 · 刑冲合害</div>'+
+        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:12px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M10 3v18m0-11h11m-5 0v11"/></svg> 四柱生克 · 刑冲合害</div>'+
         '<div id="pillarAnalysis"></div>'+
         '<canvas id="radarCanvas" style="display:block;margin:14px auto 0;width:250px;height:250px"></canvas>'+
         '<div style="text-align:center;font-size:10px;color:var(--tx3);margin-top:4px">▲ 五行能量分布雷达图</div>'+
       '</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
         '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px">'+
-          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">⚡ 旺衰依据</div>'+
+          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19a10 10 0 1 1 16 0M12 12l4-4M5 12h1m6-7v1m6 6h1M8 19h8"/><circle cx="12" cy="12" r="1"/></svg> 旺衰依据</div>'+
           '<div id="dayMasterPower"></div></div>'+
         '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px">'+
-          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">📋 格局成败</div>'+
+          '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3L2 8l10 5 10-5zM2 12l10 5 10-5M2 16l10 5 10-5"/></svg> 格局成败</div>'+
           '<div id="patternAnalysis"></div></div>'+
       '</div>'+
       '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px">'+
-        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">🎯 喜用忌神</div>'+
+        '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> 喜用忌神</div>'+
         '<div id="xiyongAnalysis"></div></div>'+
       '<div class="pro-sub" style="background:rgba(201,168,76,.03);border:1px solid rgba(201,168,76,.08);border-radius:12px;padding:14px 16px;margin-top:14px">'+
         '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">原局作用链</div>'+
@@ -48,7 +48,27 @@
         '<div class="pro-sub-title" style="color:var(--gold-l);font-size:14px;font-weight:700;margin-bottom:10px">岁运联动</div>'+
         '<div id="fortuneInteractionAnalysis"></div></div>';
 
-    renderSummary(facts);renderPillars(bazi);renderPower(bazi,facts);renderPattern(bazi,facts);renderXiyong(bazi,facts);renderActionChains(facts);renderFortuneInteraction(facts);drawRadar(bazi);
+    renderSummary(facts);renderPillars(bazi);renderPower(bazi,facts);renderPattern(bazi,facts);renderXiyong(bazi,facts);renderActionChains(facts);renderFortuneInteraction(facts);scheduleRadar(bazi);
+  }
+
+  function scheduleRadar(bazi) {
+    var canvas = document.getElementById('radarCanvas');
+    if (!canvas) return;
+    var drawn = false, observer;
+    function paint() {
+      if (drawn) return;
+      drawn = true;
+      if (observer) observer.disconnect();
+      drawRadar(bazi);
+      canvas.setAttribute('data-rendered', 'true');
+    }
+    if (typeof IntersectionObserver === 'function') {
+      observer = new IntersectionObserver(function(entries) {
+        if (entries.some(function(entry) { return entry.isIntersecting; })) paint();
+      }, { rootMargin: '120px' });
+      observer.observe(canvas);
+    } else paint();
+    if (window.addEventListener) window.addEventListener('beforeprint', paint, { once: true });
   }
 
   function renderSummary(facts){
@@ -64,17 +84,17 @@
     s+='<div style="font-size:22px;font-weight:700;color:'+(TC[gw]||'#fff')+'">'+g+'</div>';
     s+='<div style="font-size:18px;font-weight:600;color:var(--tx);margin:1px 0">'+z+'</div>';
     s+='<div style="font-size:10px;color:var(--tx3)">'+gw+'·'+zw+'</div>';
-    if(isDay)s+='<div style="font-size:9px;color:var(--gold-l);background:rgba(201,168,76,.15);border-radius:8px;padding:1px 8px;display:inline-block;margin-top:3px">☀ 日主</div>';
+    if(isDay)s+='<div style="font-size:9px;color:var(--gold-l);background:rgba(201,168,76,.15);border-radius:8px;padding:1px 8px;display:inline-block;margin-top:3px">日主</div>';
     s+='</div>';
     return s;
   }
 
   function arrow(a,b,isGan){
     var aw=TG[a],bw=TG[b];
-    if(SG[aw]===bw)return'<div style="min-width:44px;text-align:center;font-size:11px;font-weight:700"><span style="color:#4f8">━━生➡</span></div>';
-    if(KE[aw]===bw)return'<div style="min-width:44px;text-align:center;font-size:11px;font-weight:700"><span style="color:#f44">━━克➡</span></div>';
-    if(SG[bw]===aw)return'<div style="min-width:44px;text-align:center;font-size:11px"><span style="color:#4f8">⬅生━━</span></div>';
-    if(KE[bw]===aw)return'<div style="min-width:44px;text-align:center;font-size:11px"><span style="color:#f44">⬅克━━</span></div>';
+    if(SG[aw]===bw)return'<div style="min-width:44px;text-align:center;font-size:11px;font-weight:700"><span style="color:#4f8">━━生→</span></div>';
+    if(KE[aw]===bw)return'<div style="min-width:44px;text-align:center;font-size:11px;font-weight:700"><span style="color:#f44">━━克→</span></div>';
+    if(SG[bw]===aw)return'<div style="min-width:44px;text-align:center;font-size:11px"><span style="color:#4f8">←生━━</span></div>';
+    if(KE[bw]===aw)return'<div style="min-width:44px;text-align:center;font-size:11px"><span style="color:#f44">←克━━</span></div>';
     return'<div style="min-width:44px;text-align:center;font-size:10px;color:#666">━━</div>';
   }
 
@@ -97,7 +117,7 @@
       h+='<div style="font-size:10px;color:var(--tx3);margin-bottom:1px">'+ns[i]+'</div>';
       h+='<div style="font-size:'+(isD?'26px':'20px')+';font-weight:700;color:'+((TC[gw[i]]||'#fff')||'#fff')+'">'+gs[i]+'</div>';
       h+='<div style="font-size:10px;color:var(--tx3);margin-top:1px">'+gw[i]+'</div>';
-      if(isD)h+='<div style="font-size:8px;color:var(--gold-l);background:rgba(201,168,76,.2);border-radius:8px;padding:0 6px;display:inline-block;margin-top:2px">☀日主</div>';
+      if(isD)h+='<div style="font-size:8px;color:var(--gold-l);background:rgba(201,168,76,.2);border-radius:8px;padding:0 6px;display:inline-block;margin-top:2px">日主</div>';
       h+='</div>';
       if(i<3){
         var r1='',c1='';if(SG[gw[i]]===gw[i+1]){r1='生→';c1='#4f8'}else if(KE[gw[i]]===gw[i+1]){r1='克→';c1='#f44'}else if(SG[gw[i+1]]===gw[i]){r1='←生';c1='#4f8'}else if(KE[gw[i+1]]===gw[i]){r1='←克';c1='#f44'}else{r1='—';c1='#666'}
@@ -146,7 +166,7 @@
     h+='</div>';
 
     // Legend
-    h+='<div style="text-align:center;font-size:9px;color:var(--tx3);margin-top:6px">🟢生 🔴克 🟠刑 🟡伏吟 · 箭头→被影响方</div>';
+    h+='<div style="text-align:center;font-size:9px;color:var(--tx3);margin-top:6px"><span class="relation-key relation-key--sheng">生</span> <span class="relation-key relation-key--ke">克</span> <span class="relation-key relation-key--xing">刑</span> <span class="relation-key relation-key--fuyin">伏吟</span> · 箭头→被影响方</div>';
     h+='</div></div>';
     c.innerHTML=h;
 }
@@ -169,7 +189,7 @@ function renderPower(bazi,facts){
     var dm=facts&&facts.strength?facts.strength:(typeof calcDayMasterStrength==="function"?calcDayMasterStrength(bazi):{score:50,level:"中和",detail:"日主中和",evidence:[]});var l=dm.score||50;
     var lb=dm.level||'中和';
     var co=(lb==='极强'||lb==='偏强')?'#e07050':lb==='中和'?'#c9a84c':'#5b9fd4';
-    var emoji=(lb==='极强'||lb==='偏强')?'🔥':lb==='中和'?'⚖️':'💧';
+    var strengthIcon='<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 19a10 10 0 1 1 16 0M12 12l4-4M5 12h1m6-7v1m6 6h1M8 19h8"/><circle cx="12" cy="12" r="1"/></svg>';
 
     // ---- 动态批语 ----
     var detail='';
@@ -205,9 +225,9 @@ function renderPower(bazi,facts){
     var dtQuote='';
     if(typeof DITIANSUI!=='undefined'&&DITIANSUI[dayGan]){
       var dt=DITIANSUI[dayGan];
-      dtQuote='📖 《滴天髓》："'+dt.shi+'"';
+      dtQuote='《滴天髓》："'+dt.shi+'"';
     }else{
-      dtQuote='📖 《滴天髓》论'+dayGan+dayGan+'：参见滴天髓十天干章。';
+      dtQuote='《滴天髓》论'+dayGan+dayGan+'：参见滴天髓十天干章。';
     }
 
     // ---- v5.3 人元司令分野（与本气不同时显示为小字参考）----
@@ -218,7 +238,7 @@ function renderPower(bazi,facts){
     }
 
     c.innerHTML=''+
-      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+emoji+'</span>'+
+      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:22px">'+strengthIcon+'</span>'+
       '<div style="font-size:22px;font-weight:900;color:'+co+';margin:4px 0">'+lb+'（'+l+'分）</div></div>'+
       '<div style="display:flex;align-items:center;gap:4px;padding:2px 0"><span style="font-size:9px;color:var(--tx3)">弱</span>'+
       '<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:'+l+'%;height:100%;background:linear-gradient(90deg,#5b9fd4,#c9a84c,#e07050);border-radius:3px"></div></div>'+
@@ -238,12 +258,11 @@ function renderPattern(bazi,facts){
 
     var source=p.source||('月令'+p.monthZhi+' · 五行'+p.monthWx);
     var brokenNote=p.status==='破格'?'<div style="font-size:10px;color:#a45b4f;margin-top:4px">破格'+(p.breakReasons&&p.breakReasons.length?' · '+p.breakReasons.join('；'):'')+'</div>':'';
-    var iconMap={'食神制杀':'⚔️','伤官制杀':'⚔️','杀印相生':'🛡️','官印相生':'🏛️','印星化杀':'🛡️','食神生财':'💰','伤官生财':'💰','财生官':'🏛️','伤官配印':'🎨','从强格':'👑','从杀格':'🗡️','从财格':'💰','从儿格':'🌱','假从势格':'⚖️'};
-    var icon=iconMap[p.name]||'🔮';
+    var patternIcon='<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3L2 8l10 5 10-5zM2 12l10 5 10-5M2 16l10 5 10-5"/></svg>';
     var congBadge=p.congGe?'<span style="display:inline-block;font-size:9px;font-weight:700;color:#1a1408;background:#e8c05a;border-radius:8px;padding:1px 7px;margin-left:5px;vertical-align:2px">从格</span>':'';
 
     c.innerHTML=''+
-      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:24px">'+icon+'</span>'+
+      '<div style="text-align:center;margin-bottom:6px"><span style="font-size:24px">'+patternIcon+'</span>'+
       '<div style="font-size:18px;font-weight:900;color:var(--gold-l);margin:4px 0">'+p.name+congBadge+'</div>'+
       brokenNote+
       '<div style="font-size:10px;color:var(--tx2)">'+source+'</div></div>'+

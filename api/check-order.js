@@ -20,12 +20,29 @@ const TOKEN_SECRET = process.env.TOKEN_SECRET || 'knowbazi';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const query = req.query || {};
     const orderId = query.orderId || query.out_trade_no || '';
     if (!orderId) return res.status(400).json({ error: '缺少 orderId' });
+
+    if (String(orderId).startsWith('wx_')) {
+      if (!/^wx_[a-f0-9]{24}$/.test(orderId)) return res.status(400).json({ error: '订单号无效' });
+      const store = require('../lib/payment-order-store.js');
+      const order = await store.get(orderId);
+      if (!order || order.provider !== 'xunhu' || order.payment_method !== 'wechat') {
+        return res.status(404).json({ error: '未找到订单' });
+      }
+      if (query.expected_type && query.expected_type !== order.report_type) {
+        return res.status(409).json({ error: '报告类型不匹配', status: 'invalid' });
+      }
+      if (order.status !== 'paid') return res.status(200).json({ orderId, paid: false, status: 'pending' });
+      if (order.kind !== 'report') return sendPaidCredit(res, await store.entitlement(order));
+      return res.status(200).json({ orderId, status: 'paid', report_type: order.report_type,
+        report_key: order.report_key, token: signToken(orderId, order.report_key) });
+    }
 
     if (isCreditOrder(orderId)) {
       const credits = await getCreditsByOrderId(orderId);
@@ -82,7 +99,7 @@ module.exports = async function handler(req, res) {
       report_key: reportKey
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: '暂时无法查询支付状态，请稍后重试', code: 'PAYMENT_STATUS_UNAVAILABLE' });
   }
 };
 

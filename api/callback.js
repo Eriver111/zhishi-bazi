@@ -24,6 +24,7 @@ const PAY_KEY = process.env.PAY_KEY || '';
 module.exports = async function handler(req, res) {
   try {
     const params = req.method === 'POST' ? (req.body || {}) : (req.query || {});
+    if (!PAY_KEY || String(params.out_trade_no || '').startsWith('wx_')) return res.status(400).send('fail');
     if (!params.sign) return res.status(200).send('no sign');
 
     // 验签

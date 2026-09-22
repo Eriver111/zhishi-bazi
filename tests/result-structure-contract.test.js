@@ -62,10 +62,15 @@ test('hepan result keeps its existing result and AI integration hooks', () => {
   }
 });
 
-test('result-capable pages load the result skin after every existing stylesheet', () => {
+test('result-capable pages load the result skin after report styles and before mobile experience overrides', () => {
   for (const page of ['result.html', 'hepan-result.html', 'ziwei.html', 'liuren.html']) {
     const hrefs = stylesheetHrefs(read(page));
-    assert.match(hrefs.at(-1), /^css\/theme-light-results\.css\?v=\d+$/, `${page} must load the result skin last`);
+    const reportStyles = hrefs.filter(href => !/^\/?css\/(?:mobile-app-shell|app-experience)\.css\?v=\d+$/.test(href));
+    assert.match(reportStyles.at(-1), /^css\/theme-light-results\.css\?v=\d+$/, `${page} must load the result skin after report styles`);
+    const skinIndex = hrefs.indexOf(reportStyles.at(-1));
+    for (const href of hrefs.filter(href => !reportStyles.includes(href))) {
+      assert.ok(hrefs.indexOf(href) > skinIndex, `${page} must apply mobile overrides after the report skin`);
+    }
   }
 
   for (const page of ['ziwei.html', 'liuren.html']) {

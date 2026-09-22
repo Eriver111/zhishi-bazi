@@ -33,7 +33,7 @@ test('direct-pillar dependencies load in calculation order before main', () => {
     'js/pillar-input.js',
     'js/pillar-reverse-lookup.js',
     'js/region.js?v=20260910',
-    'js/main.js?v=4',
+    'js/main.js?v=5',
   ];
   let previous = -1;
   for (const script of scripts) {

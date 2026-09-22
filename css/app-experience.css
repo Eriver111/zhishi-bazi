@@ -1,0 +1,57 @@
+/* Native document navigation stays functional when transitions are unavailable. */
+@media (max-width: 700px) {
+  @view-transition { navigation: auto; }
+
+  :root { --app-header-height: calc(58px + env(safe-area-inset-top, 0px)); }
+  html { background: #fbf6eb; scroll-padding-top: calc(var(--app-header-height) + 12px); }
+  body { padding-top: var(--app-header-height) !important; }
+  #pageLoader.page-loader { display: none !important; }
+  .mobile-app-header { height: var(--app-header-height); box-sizing: border-box; view-transition-name: app-header; }
+  .mobile-app-nav { view-transition-name: app-navigation; }
+  body.mobile-page-result .mobile-result-tabs { top: var(--app-header-height); }
+
+  ::view-transition-group(*) { animation-duration: 160ms; animation-timing-function: ease-out; }
+  ::view-transition-old(root) { animation: app-page-out 100ms ease-out both !important; }
+  ::view-transition-new(root) { animation: app-page-in 160ms ease-out both !important; }
+  ::view-transition-old(app-header), ::view-transition-old(app-navigation) { animation: none; opacity: 0; }
+  ::view-transition-new(app-header), ::view-transition-new(app-navigation) { animation: none; }
+
+  html::after {
+    content: ''; position: fixed; z-index: 1500; pointer-events: none;
+    top: env(safe-area-inset-top, 0px); left: 0; width: 100%; height: 2px;
+    background: #84362f; transform: scaleX(0); transform-origin: left; opacity: 0;
+  }
+  html.app-is-navigating::after { opacity: 1; animation: app-navigation-progress 4s cubic-bezier(.15,.8,.2,1) forwards !important; }
+  .mobile-app-nav a.is-pending { color: #84362f; background: rgba(132,54,47,.10); }
+  /* Override the theme's blanket motion reset only for navigation feedback. */
+  .mobile-app-nav, .mobile-app-header__button,
+  .mobile-app-drawer, .mobile-app-drawer__overlay { transition: transform 160ms ease, opacity 160ms ease !important; }
+  .app-keyboard-open .mobile-app-nav { transform: translateY(110%); opacity: 0; pointer-events: none; }
+
+  a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .mobile-app-nav a, .mobile-app-header__button, .mobile-app-drawer a, .mobile-result-tabs button { -webkit-user-select: none; user-select: none; }
+  .mobile-app-nav a:focus-visible, .mobile-app-header__button:focus-visible,
+  .mobile-app-drawer a:focus-visible, .mobile-result-tabs button:focus-visible { outline: 2px solid #84362f; outline-offset: -3px; }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+  select, textarea { font-size: max(16px, 1em); scroll-margin-bottom: 100px; }
+  .mobile-app-drawer__body { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+
+  @media (hover: none) {
+    .feat-card, .pricing-card { transition: transform 120ms ease !important; }
+    .feat-card:hover, .pricing-card:hover, .trust-item:hover, .card:hover { transform: none; }
+    .feat-card:hover::after, .pricing-card:hover::after { animation: none; opacity: 0; }
+    .feat-card:active, .pricing-card:active { transform: scale(.985); }
+  }
+}
+@keyframes app-page-out { to { opacity: 0; } }
+@keyframes app-page-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes app-navigation-progress { from { transform: scaleX(.08); } to { transform: scaleX(.9); } }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+  html { scroll-behavior: auto !important; }
+  .mobile-app-header__button, .mobile-app-nav, .mobile-app-nav a,
+  .mobile-app-drawer, .mobile-app-drawer__overlay,
+  .feat-card, .pricing-card { transition: none !important; }
+  html.app-is-navigating::after { animation: none !important; transform: scaleX(.6); }
+}

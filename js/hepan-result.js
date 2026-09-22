@@ -234,7 +234,7 @@
     var idAttr = (idx !== undefined) ? ' id="hp-drawer-' + idx + '"' : '';
     return '<div class="' + cls + '"' + idAttr + '>' +
       '<div class="hp-drawer-toggle" onclick="this.parentElement.classList.toggle(\'hp-drawer-open\')">' +
-        '<span class="hp-drawer-arrow">▶</span>' +
+        '<span class="hp-drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>' +
         '<h2>' + escapeHtml(title) + '</h2>' +
       '</div>' +
       '<div class="hp-drawer-body drawer-body">' + bodyHtml + '</div>' +
@@ -744,7 +744,7 @@
     // 操作栏
     +'<div class="no-print">'
     +'<div class="toolbar">'
-    +'<button onclick="window.print()">📄 保存为 PDF</button>'
+    +'<button onclick="window.print()"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H4v20h16V8zm0 0v6h6M8 13h8m-8 4h6"/></svg> 保存为 PDF</button>'
     +'<button onclick="window.close()">✕ 关闭页面</button>'
     +'</div>'
     +'<p style="color:#8a8070;font-size:12px;margin-top:8px;letter-spacing:1px">点击「保存为 PDF」→ 目标另存为 PDF → 保存</p>'
@@ -768,7 +768,7 @@
     +'<div class="section"><div class="section-title">双方命中相合与相克之处</div><div class="section-body">'+(crItems||'<p>无显著跨盘交互</p>')+'</div></div>\n'
     +'<div class="section"><div class="section-title">你们的相处密码</div><div class="section-body"><b>'+r.coreMode.title+'</b><br>'+r.coreMode.detail+'</div></div>\n'
     +'<div class="section break-before"><div class="section-title">未来三年关键节点</div><div class="advice-row">'+yrHtml+'</div></div>\n'
-    +'<div class="section"><div class="section-title">专属宜忌指南</div><div class="dd-row"><div class="dd-col"><h4 class="do">✅ 宜</h4><ul>'+doHtml+'</ul></div><div class="dd-col"><h4 class="dont">⚠️ 忌</h4><ul>'+dontHtml+'</ul></div></div></div>\n'
+    +'<div class="section"><div class="section-title">专属宜忌指南</div><div class="dd-row"><div class="dd-col"><h4 class="do"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12l4 4L19 6"/></svg> 宜</h4><ul>'+doHtml+'</ul></div><div class="dd-col"><h4 class="dont"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.3 4a2 2 0 0 1 3.4 0l8 14a2 2 0 0 1-1.7 3H4a2 2 0 0 1-1.7-3zM12 9v5m0 3h.01"/></svg> 忌</h4><ul>'+dontHtml+'</ul></div></div></div>\n'
 
     // 页脚
     +'<div class="footer">'

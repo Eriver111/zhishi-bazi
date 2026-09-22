@@ -19,7 +19,7 @@ test('all public themed pages request the static UI cache version', () => {
     'fengshui.html', 'face.html', 'palm.html', 'pricing.html', 'profile.html',
     'archives.html', 'ai-chat.html', 'lr-ai-chat.html', 'zw-ai-chat.html'
   ];
-  pages.forEach((page) => assert.match(read(page), /css\/theme-light\.css\?v=4/, page));
+  pages.forEach((page) => assert.match(read(page), /css\/theme-light\.css\?v=5/, page));
 });
 
 test('decorative canvas engines remain API-compatible without starting render loops', () => {

@@ -33,7 +33,7 @@ window.setPaipanHourClock = setHourClockSelection;
 
 // ---- 初始化 ----
 document.addEventListener('DOMContentLoaded', function() {
-  // 浏览器可能恢复旧的表单控件状态；新进入或刷新时仍应采用站点默认规则。
+  // 先建立站点默认值；初始化完成后由受控的标签页草稿恢复用户明确选择的设置。
   var ziHourRollover = document.getElementById('zishiHuanri');
   if (ziHourRollover) ziHourRollover.checked = false;
   initSolarSelects();
@@ -247,7 +247,7 @@ function updateLunarMonths() {
   var y = parseInt(document.getElementById('lYear').value);
   var mS = document.getElementById('lMonth');
   var prev = document.getElementById('lunarPreview');
-  if (!y) { mS.innerHTML = '<option value="">选择月份</option>'; prev.classList.remove('show'); return; }
+  if (!y) { mS.innerHTML = '<option value="">选择月份</option>'; if (prev) prev.classList.remove('show'); return; }
 
   // 查该年闰月
   var leapMonth = LunarCalendar.leapMonth(y);
@@ -274,7 +274,7 @@ function updateLunarDays() {
   var mV = document.getElementById('lMonth').value;
   var dS = document.getElementById('lDay');
   var prev = document.getElementById('lunarPreview');
-  if (!y || !mV) { dS.innerHTML = '<option value="">选择日期</option>'; prev.classList.remove('show'); return; }
+  if (!y || !mV) { dS.innerHTML = '<option value="">选择日期</option>'; if (prev) prev.classList.remove('show'); return; }
 
   var lm = parseInt(mV);
   var isLeap = false;
@@ -648,7 +648,7 @@ function handleSubmit(e) {
 
   setTimeout(function() {
     window.location.href = 'result?' + params.toString();
-  }, 600);
+  }, 0);
 }
 
 // 登录用户：页面加载时恢复上次排盘参数

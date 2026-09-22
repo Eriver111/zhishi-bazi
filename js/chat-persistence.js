@@ -72,6 +72,7 @@
   }
 
   async function load(mode, chartData) {
+    var generation = root.ZhishiPageState && root.ZhishiPageState.epoch();
     var loggedIn = await authReady();
     var chartKey = chartIdentity(mode, chartData);
     if (!loggedIn) return { logged_in: false, chart_key: chartKey, messages: [] };
@@ -80,6 +81,7 @@
       cache: 'no-store'
     });
     var data = await response.json();
+    if (root.ZhishiPageState && root.ZhishiPageState.epoch() !== generation) throw new Error('登录状态已改变，请重新打开对话');
     if (!response.ok) throw new Error(data.error || '历史对话读取失败');
     data.logged_in = true;
     data.chart_key = chartKey;

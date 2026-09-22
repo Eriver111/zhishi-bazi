@@ -16,6 +16,15 @@ var Auth = (function () {
     injectNavUser();
     if (_token) verifyAndRestore();
     checkMigration();
+    window.addEventListener('storage', function (event) {
+      if (event.key && event.key !== 'ai_auth_token') return;
+      var next;
+      try { next = localStorage.getItem('ai_auth_token'); } catch (e) { return; }
+      if (next === _token) return;
+      _token = next; _user = null;
+      updateNavUI();
+      if (_token) verifyAndRestore();
+    });
   }
 
   // ============ Token/User 管理 ============
@@ -24,6 +33,7 @@ var Auth = (function () {
   function isLoggedIn() { return !!_token && !!_user; }
 
   function setAuth(token, user) {
+    if (_token !== token) resetPageState();
     _token = token;
     _user = user;
     try { localStorage.setItem('ai_auth_token', token); } catch (e) {}
@@ -33,16 +43,25 @@ var Auth = (function () {
   }
 
   function logout() {
+    resetPageState();
     _token = null;
     _user = null;
     try { localStorage.removeItem('ai_auth_token'); } catch (e) {}
     updateNavUI();
   }
 
+  function resetPageState() {
+    try { localStorage.setItem('zhishi_ui_epoch', Date.now().toString(36) + Math.random().toString(36).slice(2)); } catch (e) {}
+    try { sessionStorage.removeItem('zhishi_ui_state'); } catch (e) {}
+    window.dispatchEvent(new Event('zhishi:identitychange'));
+  }
+
   function verifyAndRestore() {
+    var verifyingToken = _token;
     fetch('/api/auth/verify', { headers: { 'Authorization': 'Bearer ' + _token } })
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        if (_token !== verifyingToken) return;
         if (d.valid && d.user) {
           _user = d.user;
           updateNavUI();
@@ -263,8 +282,8 @@ var Auth = (function () {
         '</div></div>';
     }
 
-    var pwToggle = '<span onclick="var p=document.getElementById(\'authPassword\');var t=p.type===\'password\'?\'text\':\'password\';p.type=t;this.textContent=t===\'password\'?\'👁\':\'🙈\'" style="position:absolute;right:12px;top:34px;cursor:pointer;font-size:18px;user-select:none" title="显示密码">👁</span>';
-    var cpwToggle = isLogin ? '' : '<span onclick="var p=document.getElementById(\'authPassword2\');var t=p.type===\'password\'?\'text\':\'password\';p.type=t;this.textContent=t===\'password\'?\'👁\':\'🙈\'" style="position:absolute;right:12px;top:34px;cursor:pointer;font-size:18px;user-select:none" title="显示密码">👁</span>';
+    var pwToggle = '<button type="button" class="auth-password-toggle" aria-label="显示密码" aria-pressed="false" title="显示密码" onclick="var p=document.getElementById(\'authPassword\');var show=p.type===\'password\';p.type=show?\'text\':\'password\';this.setAttribute(\'aria-pressed\',String(show));this.setAttribute(\'aria-label\',show?\'隐藏密码\':\'显示密码\');this.title=show?\'隐藏密码\':\'显示密码\';this.querySelector(\'.password-eye-slash\').style.display=show?\'\':\'none\'"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="M3 3l18 18" style="display:none"/></svg></button>';
+    var cpwToggle = isLogin ? '' : '<button type="button" class="auth-password-toggle" aria-label="显示密码" aria-pressed="false" title="显示密码" onclick="var p=document.getElementById(\'authPassword2\');var show=p.type===\'password\';p.type=show?\'text\':\'password\';this.setAttribute(\'aria-pressed\',String(show));this.setAttribute(\'aria-label\',show?\'隐藏密码\':\'显示密码\');this.title=show?\'隐藏密码\':\'显示密码\';this.querySelector(\'.password-eye-slash\').style.display=show?\'\':\'none\'"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="M3 3l18 18" style="display:none"/></svg></button>';
 
     overlay.innerHTML =
       '<div class="auth-modal">' +
@@ -380,7 +399,7 @@ var Auth = (function () {
 
   function showProfile() {
     if (!_user) return;
-    var msg = '📧 ' + _user.email + '\n📅 注册时间：' + (_user.created_at || '未知');
+    var msg = '邮箱：' + _user.email + '\n注册时间：' + (_user.created_at || '未知');
     alert(msg);
   }
 
@@ -496,12 +515,12 @@ var Auth = (function () {
   if (!document.querySelector('link[href*="mobile-app-shell.css"]')) {
     var style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = '/css/mobile-app-shell.css?v=31';
+    style.href = '/css/mobile-app-shell.css?v=32';
     document.head.appendChild(style);
   }
   if (!window.__ZHISHI_MOBILE_APP_SHELL__ && !document.querySelector('script[src*="mobile-app-shell.js"]')) {
     var script = document.createElement('script');
-    script.src = '/js/mobile-app-shell.js?v=8';
+    script.src = '/js/mobile-app-shell.js?v=9';
     (document.body || document.head).appendChild(script);
   }
 })();
@@ -544,7 +563,7 @@ if (document.readyState === 'loading') {
       var div = document.createElement('div');
       div.id = 'pwa-footer-link';
       div.style.cssText = 'text-align:center;padding:8px 0 16px;font-size:11px;color:var(--tx3);cursor:pointer;letter-spacing:1px;opacity:.5;transition:opacity .3s';
-      div.innerHTML = '📱 添加到主屏幕';
+      div.innerHTML = '<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-2 13h.01"/></svg> 添加到主屏幕';
       div.title = '将知时添加到手机桌面，像 App 一样使用';
       div.onmouseenter = function(){ this.style.opacity = '1'; };
       div.onmouseleave = function(){ this.style.opacity = '.5'; };
@@ -552,13 +571,13 @@ if (document.readyState === 'loading') {
         try {
           if (window._pwaInstall) {
             window._pwaInstall.prompt();
-            div.textContent = '✅ 已触发安装';
+            div.textContent = '已触发安装';
           } else {
             var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
-              alert('📱 添加到主屏幕\n\n1. 点击底部中间的「分享」按钮\n2. 滑动找到「添加到主屏幕」\n3. 点击「添加」');
+              alert('添加到主屏幕\n\n1. 点击底部中间的「分享」按钮\n2. 滑动找到「添加到主屏幕」\n3. 点击「添加」');
             } else {
-              alert('📱 添加到主屏幕\n\n点击浏览器菜单 → 添加到主屏幕\n即可像 App 一样使用知时');
+              alert('添加到主屏幕\n\n点击浏览器菜单 → 添加到主屏幕\n即可像 App 一样使用知时');
             }
           }
         } catch(x) {}

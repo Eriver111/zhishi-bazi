@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知时 · 风水</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/auth.css">
@@ -141,9 +141,13 @@
   .room-type-grid{grid-template-columns:1fr;gap:8px}
 }
 </style>
-<link rel="stylesheet" href="css/theme-light.css?v=4">
+<link rel="stylesheet" href="css/theme-light.css?v=5">
 <link rel="stylesheet" href="css/theme-light-forms.css?v=1">
 <link rel="stylesheet" href="css/theme-light-pages.css?v=1">
+<link rel="stylesheet" href="/css/mobile-app-shell.css?v=32">
+<link rel="stylesheet" href="/css/app-experience.css?v=1">
+<script src="/js/app-experience.js?v=1" defer></script>
+<script src="/js/mobile-app-shell.js?v=9" defer></script>
 </head>
 <body>
 <canvas id="bgCanvas" style="position:fixed;inset:0;z-index:0;width:100%;height:100%"></canvas>
@@ -237,7 +241,7 @@
 </div>
 
 <script src="js/bg-animation.js"></script>
-<script src="js/auth.js?v=5"></script>
+<script src="js/auth.js?v=28"></script>
 <script>
 // ===== State =====
 var _roomType = ''; // 'house' | 'apartment' | 'villa'
@@ -250,20 +254,20 @@ var _dirs = ['北','东北','东','东南','南','西南','西','西北'];
 var _dirMap = { '北':'南','东北':'西南','东':'西','东南':'西北','南':'北','西南':'东北','西':'东','西北':'东南' };
 
 var ROOM_TYPES = [
-  { key:'house', icon:'🏠', title:'自建房 / 平房', desc:'独立院落或单层平房，有独立朝向' },
-  { key:'apartment', icon:'🏢', title:'楼房 / 公寓', desc:'单元楼内一套，整栋楼统一朝向' },
-  { key:'villa', icon:'🏡', title:'别墅 / 复式', desc:'独栋或多层，需考虑楼层叠加' }
+  { key:'house', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10l9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/></svg>', title:'自建房 / 平房', desc:'独立院落或单层平房，有独立朝向' },
+  { key:'apartment', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="2" width="14" height="20" rx="1"/><path d="M9 6h1m4 0h1M9 10h1m4 0h1M9 14h1m4 0h1M10 22v-4h4v4"/></svg>', title:'楼房 / 公寓', desc:'单元楼内一套，整栋楼统一朝向' },
+  { key:'villa', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 9l8-6 8 6M4 8v13h12V8m0 5h4v8H4m4 0v-6h4v6M9 10h2"/></svg>', title:'别墅 / 复式', desc:'独栋或多层，需考虑楼层叠加' }
 ];
 
 var BEDROOM_TYPES = ['主卧','次卧','老人房','儿童房','书房','客房'];
 
 // Default photo slots — adapts by room type
 var BASE_PHOTO_SLOTS = [
-  { key:'door', title:'大门', guide:'站在门外正对大门拍摄，拍到门框和门外视野', icon:'🚪', required:true },
-  { key:'living', title:'客厅', guide:'站在客厅入口处拍摄整个客厅空间', icon:'🛋️', required:true },
-  { key:'kitchen', title:'厨房', guide:'站在厨房门口向内拍，拍到灶台和水槽相对位置', icon:'🍳', required:true },
-  { key:'master_bedroom', title:'主卧', guide:'站在卧室门口拍向窗户方向，拍到床的摆放', icon:'🛏️', required:true },
-  { key:'floorplan', title:'户型图', guide:'如有户型图请拍照上传，可大幅提升分析精度', icon:'📐', required:false }
+  { key:'door', title:'大门', guide:'站在门外正对大门拍摄，拍到门框和门外视野', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></svg>', required:true },
+  { key:'living', title:'客厅', guide:'站在客厅入口处拍摄整个客厅空间', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M5 15h14M3 19v-7a2 2 0 0 1 4 0v3m10 0v-3a2 2 0 0 1 4 0v7H3m2 0v2m14-2v2"/></svg>', required:true },
+  { key:'kitchen', title:'厨房', guide:'站在厨房门口向内拍，拍到灶台和水槽相对位置', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M7 1v3m10-3v3M7 13h10v5H7zm0-7h.01M17 6h.01"/></svg>', required:true },
+  { key:'master_bedroom', title:'主卧', guide:'站在卧室门口拍向窗户方向，拍到床的摆放', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 19v3m18-3v3M3 13V5h18v8M3 13h18v6H3zm3 0V9h5v4m2 0V9h5v4"/></svg>', required:true },
+  { key:'floorplan', title:'户型图', guide:'如有户型图请拍照上传，可大幅提升分析精度', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M10 3v18m0-11h11m-5 0v11"/></svg>', required:false }
 ];
 
 var PHOTO_SLOTS = []; // populated dynamically
@@ -367,18 +371,18 @@ function buildLayoutSelects(){
 
   var html = '';
   // Fixed: door, living room, kitchen
-  html += '<div class="room-group-label">📌 基本格局</div>';
-  html += makeOptionRow('🚪 大门在', 'selDoor', false);
-  html += makeOptionRow('🛋️ 客厅在', 'selLiving', false);
-  html += makeOptionRow('🍳 厨房在', 'selKitchen', false);
+  html += '<div class="room-group-label"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M10 3v18m0-11h11m-5 0v11"/></svg> 基本格局</div>';
+  html += makeOptionRow('<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></svg> 大门在', 'selDoor', false);
+  html += makeOptionRow('<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M5 15h14M3 19v-7a2 2 0 0 1 4 0v3m10 0v-3a2 2 0 0 1 4 0v7H3m2 0v2m14-2v2"/></svg> 客厅在', 'selLiving', false);
+  html += makeOptionRow('<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M7 1v3m10-3v3M7 13h10v5H7zm0-7h.01M17 6h.01"/></svg> 厨房在', 'selKitchen', false);
 
   // Dynamic bedrooms
-  html += '<div class="room-group-label" style="margin-top:16px">🛏️ 卧室 <span style="font-size:10px;color:var(--tx3);font-weight:400" id="bedroomCount"></span></div>';
+  html += '<div class="room-group-label" style="margin-top:16px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 19v3m18-3v3M3 13V5h18v8M3 13h18v6H3zm3 0V9h5v4m2 0V9h5v4"/></svg> 卧室 <span style="font-size:10px;color:var(--tx3);font-weight:400" id="bedroomCount"></span></div>';
   html += '<div id="bedroomRows"></div>';
   html += '<div class="add-room-btn" onclick="addBedroom()">＋ 添加卧室</div>';
 
   // Dynamic bathrooms
-  html += '<div class="room-group-label" style="margin-top:16px">🚽 卫生间 <span style="font-size:10px;color:var(--tx3);font-weight:400" id="bathroomCount"></span></div>';
+  html += '<div class="room-group-label" style="margin-top:16px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zm2 0V5a3 3 0 0 1 6 0M8 5h5M7 20v2m10-2v2"/></svg> 卫生间 <span style="font-size:10px;color:var(--tx3);font-weight:400" id="bathroomCount"></span></div>';
   html += '<div id="bathroomRows"></div>';
   html += '<div class="add-room-btn" onclick="addBathroom()">＋ 添加卫生间</div>';
 
@@ -399,7 +403,7 @@ function refreshBedroomRows(){
     BEDROOM_TYPES.forEach(function(t){
       tOpt += '<option value="'+t+'"'+(b.type===t?' selected':'')+'>'+t+'</option>';
     });
-    var label = '🛏️ 卧室'+(i+1);
+    var label = '<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 19v3m18-3v3M3 13V5h18v8M3 13h18v6H3zm3 0V9h5v4m2 0V9h5v4"/></svg> 卧室'+(i+1);
     var typeSel = '<select id="type'+id+'" onchange="_bedrooms['+i+'].type=this.value" style="min-width:70px;margin-right:6px;font-size:12px">'+tOpt+'</select>';
     var dirOpt = '<option value="">-- 方位 --</option>';
     _dirs.forEach(function(d){ dirOpt += '<option value="'+d+'"'+(b.dir===d?' selected':'')+'>'+d+'</option>'; });
@@ -420,7 +424,7 @@ function refreshBathroomRows(){
     var dirOpt = '<option value="">-- 方位 --</option>';
     _dirs.forEach(function(d){ dirOpt += '<option value="'+d+'"'+(b.dir===d?' selected':'')+'>'+d+'</option>'; });
     var delBtn = _bathrooms.length > 1 ? '<button class="btn-sm danger" title="删除" onclick="removeBathroom('+i+')">×</button>' : '';
-    html += '<div class="layout-row"><span class="icon-label">🚽 卫生间'+(i+1)+'</span><div style="display:flex;align-items:center"><select id="'+id+'" onchange="_bathrooms['+i+'].dir=this.value;checkStep2Ready()">'+dirOpt+'</select>'+delBtn+'</div></div>';
+    html += '<div class="layout-row"><span class="icon-label"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zm2 0V5a3 3 0 0 1 6 0M8 5h5M7 20v2m10-2v2"/></svg> 卫生间'+(i+1)+'</span><div style="display:flex;align-items:center"><select id="'+id+'" onchange="_bathrooms['+i+'].dir=this.value;checkStep2Ready()">'+dirOpt+'</select>'+delBtn+'</div></div>';
   });
   wrap.innerHTML = html;
   document.getElementById('bathroomCount').textContent = _bathrooms.length + '间';
@@ -496,9 +500,9 @@ function buildPhotoSlots(){
   PHOTO_SLOTS = [];
 
   // Door & Living & Kitchen are always needed
-  PHOTO_SLOTS.push({ key:'door', title:'大门', guide:'站在门外正对大门拍摄，拍到门框和门外视野', icon:'🚪', required:true });
-  PHOTO_SLOTS.push({ key:'living', title:'客厅', guide:'站在客厅入口处拍摄整个客厅空间', icon:'🛋️', required:true });
-  PHOTO_SLOTS.push({ key:'kitchen', title:'厨房', guide:'站在厨房门口向内拍，拍到灶台和水槽相对位置', icon:'🍳', required:true });
+  PHOTO_SLOTS.push({ key:'door', title:'大门', guide:'站在门外正对大门拍摄，拍到门框和门外视野', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></svg>', required:true });
+  PHOTO_SLOTS.push({ key:'living', title:'客厅', guide:'站在客厅入口处拍摄整个客厅空间', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M5 15h14M3 19v-7a2 2 0 0 1 4 0v3m10 0v-3a2 2 0 0 1 4 0v7H3m2 0v2m14-2v2"/></svg>', required:true });
+  PHOTO_SLOTS.push({ key:'kitchen', title:'厨房', guide:'站在厨房门口向内拍，拍到灶台和水槽相对位置', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M7 1v3m10-3v3M7 13h10v5H7zm0-7h.01M17 6h.01"/></svg>', required:true });
 
   // Bedrooms: first one is required, rest optional
   _bedrooms.forEach(function(b, i){
@@ -506,7 +510,7 @@ function buildPhotoSlots(){
     PHOTO_SLOTS.push({
       key: 'bedroom_'+i, title: label,
       guide: '站在'+label+'门口拍向窗户方向，拍到床的摆放',
-      icon: '🛏️', required: i === 0
+      icon: '<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 19v3m18-3v3M3 13V5h18v8M3 13h18v6H3zm3 0V9h5v4m2 0V9h5v4"/></svg>', required: i === 0
     });
   });
 
@@ -515,17 +519,17 @@ function buildPhotoSlots(){
     PHOTO_SLOTS.push({
       key: 'bathroom_'+i, title: '卫生间'+(i>0?i+1:''),
       guide: '拍卫生间门或内部，注意通风和采光',
-      icon: '🚽', required: i === 0
+      icon: '<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zm2 0V5a3 3 0 0 1 6 0M8 5h5M7 20v2m10-2v2"/></svg>', required: i === 0
     });
   });
 
   // Villa extras
   if(_roomType === 'villa'){
-    PHOTO_SLOTS.push({ key:'stairs', title:'楼梯', guide:'拍楼梯区域，注意楼梯位置和走向', icon:'🪜', required:false });
+    PHOTO_SLOTS.push({ key:'stairs', title:'楼梯', guide:'拍楼梯区域，注意楼梯位置和走向', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 21h6v-6h6V9h6V3M3 15V3h12"/></svg>', required:false });
   }
 
   // Floor plan always optional
-  PHOTO_SLOTS.push({ key:'floorplan', title:'户型图', guide:'如有户型图请拍照上传，可大幅提升分析精度', icon:'📐', required:false });
+  PHOTO_SLOTS.push({ key:'floorplan', title:'户型图', guide:'如有户型图请拍照上传，可大幅提升分析精度', icon:'<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M10 3v18m0-11h11m-5 0v11"/></svg>', required:false });
 
   // Render
   PHOTO_SLOTS.forEach(function(slot){

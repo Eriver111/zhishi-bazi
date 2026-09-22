@@ -17,10 +17,11 @@ const {
   makeBaziReportLabel
 } = require('../lib/report-identity.js');
 const { createReportOrder, hasPaidReport } = require('../lib/supabase.js');
+const { selectMethod, assertBrowserSupport } = require('../lib/payment-channels.js');
 
 const PAY_URL = (process.env.PAY_API_URL || 'https://zpayz.cn/mapi.php').trim();
-const PAY_PID = process.env.PAY_PID; if(!PAY_PID) throw new Error('PAY_PID env required');
-const PAY_KEY = process.env.PAY_KEY; if(!PAY_KEY) throw new Error('PAY_KEY env required');
+const PAY_PID = process.env.PAY_PID;
+const PAY_KEY = process.env.PAY_KEY;
 const TOKEN_SECRET = process.env.TOKEN_SECRET || 'knowbazi-change-me';
 const SITE = (process.env.SITE_URL || 'https://zhishi.online').trim();
 
@@ -67,6 +68,7 @@ function buildBaziReturnUrl(params) {
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -82,6 +84,13 @@ module.exports = async function handler(req, res) {
         var payload = verifyToken(token);
         if (payload && payload.uid) userId = payload.uid;
       } catch(e) {}
+    }
+
+    const method = selectMethod(body.payment_method, process.env);
+    assertBrowserSupport(method, req, process.env);
+    if (method === 'wechat') {
+      const result = await require('../lib/wechat-orders.js').create(body, userId, req, buildBaziReturnUrl);
+      return res.status(200).json(result);
     }
 
     // ---- v3.0 AI 付费模式（次数包 + 月会员）----
@@ -131,14 +140,14 @@ module.exports = async function handler(req, res) {
           return res.status(502).json({ error: '支付服务返回异常，请稍后重试' });
         }
         if (String(zdata.code) !== '1') {
-          return res.status(502).json({ error: zdata.msg || '支付下单失败' });
+          return res.status(502).json({ error: '支付暂不可用，请稍后重试或联系客服', code: 'PAYMENT_UNAVAILABLE' });
         }
         const normalized = normalizeGatewayPayment(zdata);
         if (!normalized.payUrl && !normalized.qrContent && !normalized.qrImage) {
           return res.status(502).json({ error: '支付服务未返回可用的付款地址' });
         }
         return res.status(200).json({
-          out_trade_no: finalOrderId,
+          out_trade_no: finalOrderId, payment_method: 'alipay',
           ...paymentResponseFields(zdata),
           amount: payAmount, mode: mode, status: 'pending'
         });
@@ -193,21 +202,21 @@ module.exports = async function handler(req, res) {
         const text = await payResp.text();
         let data;
         try { data = JSON.parse(text); } catch (e) {
-          return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
+          return res.status(502).json({ error: '支付服务返回异常，请稍后重试' });
         }
         if (String(data.code) !== '1') {
-          return res.status(502).json({ error: data.msg || '支付下单失败' });
+          return res.status(502).json({ error: '支付暂不可用，请稍后重试或联系客服', code: 'PAYMENT_UNAVAILABLE' });
         }
         const normalized = normalizeGatewayPayment(data);
         qrcode = normalized.qrContent;
         payUrl = normalized.payUrl;
         var qrImage = normalized.qrImage;
       } catch (e) {
-        return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
+        return res.status(502).json({ error: '支付服务连接失败，请稍后重试' });
       }
 
       return res.status(200).json({
-        orderId, out_trade_no: finalOrderId, amount: payAmount,
+        orderId, out_trade_no: finalOrderId, amount: payAmount, payment_method: 'alipay',
         report_key: safeHepanHash,
         qrcode, qr_content: qrcode, qr_image: qrImage || '', pay_url: payUrl,
         status: 'pending'
@@ -276,28 +285,30 @@ module.exports = async function handler(req, res) {
       const text = await payResp.text();
       let data;
       try { data = JSON.parse(text); } catch (e) {
-        return res.status(502).json({ error: 'zpayz返回: ' + text.slice(0, 300) });
+        return res.status(502).json({ error: '支付服务返回异常，请稍后重试' });
       }
       if (String(data.code) !== '1') {
-        return res.status(502).json({ error: data.msg || '支付下单失败' });
+        return res.status(502).json({ error: '支付暂不可用，请稍后重试或联系客服', code: 'PAYMENT_UNAVAILABLE' });
       }
       const normalized = normalizeGatewayPayment(data);
       qrcode = normalized.qrContent;
       payUrl = normalized.payUrl;
       var qrImage = normalized.qrImage;
     } catch (e) {
-      return res.status(502).json({ error: 'zpayz请求失败: ' + e.message });
+      return res.status(502).json({ error: '支付服务连接失败，请稍后重试' });
     }
 
     return res.status(200).json({
-      orderId, out_trade_no: finalOrderId, amount: payAmount,
+      orderId, out_trade_no: finalOrderId, amount: payAmount, payment_method: 'alipay',
       report_key: reportKey,
       qrcode, qr_content: qrcode, qr_image: qrImage || '', pay_url: payUrl,
       status: 'pending'
     });
 
   } catch (e) {
-    console.error('[create-order] 500 error:', e.message, e.stack);
-    return res.status(500).json({ error: '服务器内部错误，请稍后重试', detail: e.message });
+    if (e.code === 'EXTERNAL_BROWSER_REQUIRED') return res.status(409).json({ error: e.message, code: e.code });
+    if (e.code === 'PAYMENT_METHOD_UNAVAILABLE') return res.status(503).json({ error: e.message, code: e.code });
+    if (e.code === 'INVALID_REPORT_PARAMS') return res.status(400).json({ error: '缺少或无效的报告参数' });
+    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
   }
 };

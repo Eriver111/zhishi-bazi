@@ -21,6 +21,7 @@ function renderProfessionalReport() {
   const nodes = {};
   const node = id => nodes[id] || (nodes[id] = { id, innerHTML: '', style: {}, classList: { add() {} } });
   const canvas = node('radarCanvas');
+  canvas.setAttribute = function(name, value) { this[name] = value; };
   canvas.getContext = () => ({
     scale() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {},
     arc() {}, fillText() {}, createRadialGradient() { return { addColorStop() {} }; },

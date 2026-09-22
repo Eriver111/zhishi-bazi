@@ -161,13 +161,11 @@ function readRequestBody(req, options) {
       try {
         resolve(JSON.parse(body));
       } catch (_) {
-        var parsed = {};
-        body.split('&').forEach(function(part) {
-          var pair = part.split('=');
-          if (pair.length === 2) {
-            parsed[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
-          }
-        });
+        var parsed = Object.create(null);
+        for (const [key, value] of new URLSearchParams(body)) {
+          if (Object.hasOwn(parsed, key)) { reject(new Error('Duplicate form field')); return; }
+          parsed[key] = value;
+        }
         resolve(parsed);
       }
     }
@@ -209,7 +207,7 @@ trackPV(pn);
 
 // API
 if(pn.startsWith('/api/')){const n=pn.slice(5);if(!/^[a-z0-9_\/-]+$/i.test(n)||n.split('/').includes('..')){res.writeHead(404);res.end('404');return}try{const h=require('./api/'+n+'.js');req.query={};const qs=(req.url||'').indexOf('?');if(qs>=0)req.url.slice(qs+1).split('&').forEach(p=>{const[k,v]=p.split('=');if(k)req.query[decodeURIComponent(k)]=decodeURIComponent(v||'')});if(req.method==='POST')req.body=await readRequestBody(req,{maxBytes:apiBodyLimit(pn)});// 注入渠道标记�?body
-if(channel&&req.body&&!req.body.channel)req.body.channel=channel;
+if(channel&&req.body&&!req.body.channel&&pn!=='/api/payment-notify'&&pn!=='/api/callback')req.body.channel=channel;
 await h(req,res)}catch(e){if(!_sent){if(e&&e.code==='REQUEST_BODY_TOO_LARGE')res.status(413).json({ok:false,error:e.message});else res.json({error:e.message})}}return}
 const fp=resolvePublicFile(__dirname,pn);if(fp)try{let b=fs.readFileSync(fp);let ct=M[path.extname(pn).toLowerCase()]||'text/plain';
 // HTML 页面注入渠道持久化脚�?

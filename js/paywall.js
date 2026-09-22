@@ -192,7 +192,7 @@ function renderPaywall(skipLayout,prepareOnly){
     +'</div>'
     +'<div style="width:100%;padding:20px;background:rgba(24,22,18,.6);border-top:1px solid rgba(180,160,140,.08);text-align:center">'
     +'<p style="color:var(--tx2);font-size:13px;margin-bottom:10px">不想看报告？试试 AI 命理师</p>'
-    +'<a href="/ai-chat.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:20px;color:var(--gold-l);text-decoration:none;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .3s" onmouseenter="this.style.boxShadow=\'0 0 20px rgba(201,168,76,.15)\'" onmouseleave="this.style.boxShadow=\'none\'">🤖 前2次免费 · 开始对话</a>'
+    +'<a href="/ai-chat.html" style="display:inline-block;padding:10px 28px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:20px;color:var(--gold-l);text-decoration:none;font-size:14px;letter-spacing:2px;font-weight:600;transition:all .3s" onmouseenter="this.style.boxShadow=\'0 0 20px rgba(201,168,76,.15)\'" onmouseleave="this.style.boxShadow=\'none\'"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11a9 9 0 0 1-9 9H4l-3 2 2-6a9 9 0 1 1 18-5zM7 11h.01M12 11h.01M17 11h.01"/></svg> 前2次免费 · 开始对话</a>'
     +'</div>';
   var purchaseNotice=document.createElement('p');
   purchaseNotice.textContent='登录后购买可在个人中心长期查看；游客购买仅保存在本设备。';
@@ -212,21 +212,24 @@ function injectQRModal(){
   if(document.getElementById('qrModal'))return;
   var m=document.createElement('div');m.id='qrModal';
   m.style.cssText='display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><a id="qrMobileBtn" href="#" target="_self" style="display:none;margin:0 auto 12px;padding:12px 20px;background:#1677FF;color:#fff;font-size:15px;font-weight:600;letter-spacing:2px;border-radius:6px;text-decoration:none;max-width:260px">📱 打开支付宝支付 ¥9.9</a><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
+  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><a id="qrMobileBtn" href="#" target="_self" style="display:none;margin:0 auto 12px;padding:12px 20px;background:#1677FF;color:#fff;font-size:15px;font-weight:600;letter-spacing:2px;border-radius:6px;text-decoration:none;max-width:260px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-2 13h.01"/></svg> 打开支付 ¥9.9</a><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
   document.body.appendChild(m);
 }
 
-var _qrTimer=null;
+var _qrTimer=null, _qrCreating=false;
 
 function isMobile(){return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent)}
 
-function startRP(retryCount){
-  retryCount=retryCount||0;
+function startRP(){
+  if(_qrCreating)return;
+  _qrCreating=true;
+  if(_qrTimer)clearInterval(_qrTimer);
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
-  var status=document.getElementById('qrStatus');if(status)status.textContent=retryCount>0?'正在重试连接('+(retryCount+1)+'/3)...':'正在连接支付...';
+  var status=document.getElementById('qrStatus');if(status)status.textContent='正在连接支付...';
   var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='none';
   var container=document.getElementById('qrContainer');
   if(container)container.innerHTML='<p style=color:var(--tx2)>生成支付二维码...</p>';
+  var oldButton=document.getElementById('qrMobileBtn');if(oldButton){oldButton.style.display='none';oldButton.removeAttribute('href');}
 
   var orderBody={
     report_params:_baziPayParams,
@@ -234,13 +237,8 @@ function startRP(retryCount){
     amount:9.9,description:'八字完整分析报告'
   };
 
-  // 带超时的 fetch（15秒）
-  var controller=new AbortController();
-  var timeoutId=setTimeout(function(){controller.abort();},15000);
-
-  fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderBody),signal:controller.signal})
+  PaymentFlow.createOrder(orderBody)
   .then(function(r){
-    clearTimeout(timeoutId);
     return r.json().catch(function(){return {error:'支付服务返回异常(HTTP '+r.status+')'};});
   })
   .then(function(d){
@@ -250,13 +248,7 @@ function startRP(retryCount){
       return;
     }
     if(d.error){
-      // 500错误自动重试（最多3次）
-      if(retryCount<2){
-        setTimeout(function(){startRP(retryCount+1);},1000);
-        if(status)status.textContent='支付服务繁忙，自动重试中('+(retryCount+2)+'/3)...';
-        return;
-      }
-      if(status)status.textContent='错误: '+d.error+(d.detail?' ('+d.detail+')':'');
+      if(status)status.textContent='错误: '+d.error;
       if(retry)retry.style.display='block';
       return;
     }
@@ -267,13 +259,9 @@ function startRP(retryCount){
     var payUrl=payment.payUrl;
     var mobileBtn=document.getElementById('qrMobileBtn');
     if(isMobile()&&payUrl){
-      // 手机端：显示直接跳转按钮（兜底）+ 立即自动跳转支付宝
-      if(mobileBtn){mobileBtn.href=payUrl;mobileBtn.style.display='block';}
-      if(status)status.textContent='正在跳转支付宝...';
-      // 同时渲染小号二维码做备用
-      if(window.PaymentFlow&&container){
-        payment=window.PaymentFlow.renderQr(container,d,{size:140,failureText:'二维码加载失败，请点击”重新支付”'});
-      }
+      if(mobileBtn){mobileBtn.href=payUrl;mobileBtn.textContent='打开'+PaymentFlow.methodLabel(d)+'收银台 ¥9.9';mobileBtn.style.display='block';}
+      if(status)status.textContent='正在打开'+PaymentFlow.methodLabel(d)+'收银台...';
+      if(container)container.textContent='请在收银台完成付款';
       // 立即跳转（不用setTimeout，保留用户手势上下文）
       window.location.href=payUrl;
     } else {
@@ -286,21 +274,14 @@ function startRP(retryCount){
         if(retry)retry.style.display='block';
         return;
       }
-      if(status)status.textContent='请扫码支付 ¥9.9（支付后自动解锁）';
+      if(status)status.textContent='请用'+PaymentFlow.methodLabel(d)+'扫码支付 ¥9.9（支付后自动解锁）';
     }
     startQRPoll(pending);
   }).catch(function(e){
-    clearTimeout(timeoutId);
-    // 网络错误或超时，自动重试
-    if(retryCount<2){
-      setTimeout(function(){startRP(retryCount+1);},1000);
-      if(status)status.textContent='网络波动，自动重试中('+(retryCount+2)+'/3)...';
-      return;
-    }
-    var msg=e.name==='AbortError'?'请求超时，请检查网络后重试':'连接失败，请重试';
+    var msg=e.name==='AbortError'?'请求超时，请检查网络后重试':e.message||'连接失败，请重试';
     if(status)status.textContent=msg;
     if(retry)retry.style.display='block';
-  });
+  }).finally(function(){_qrCreating=false;});
 }
 
 function startQRPoll(pending){
