@@ -218,22 +218,20 @@ test('homepage more menu script supports keyboard, outside click, focus, mouse a
   assert.match(html, /setAttribute\(['"]aria-expanded['"],\s*['"](?:true|false)['"]\)/);
 });
 
-test('homepage adds three usage steps before the four trust cards and keeps two direct bottom CTAs', () => {
+test('homepage keeps direct tools and moves service information into navigation', () => {
   const html = activeMarkup(read('index.html'));
-  const usageStart = html.search(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\busage-section\b[^"']*\1/i);
-  const trustStart = html.search(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\btrust-section\b[^"']*\1/i);
-  assert.ok(usageStart >= 0 && usageStart < trustStart, 'usage section must appear before the trust section');
-  const usage = html.match(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\busage-section\b[^"']*\1[^>]*>([\s\S]*?)<\/section\s*>/i);
-  assert.equal((usage?.[2].match(/<article\b/g) || []).length, 3);
-  for (const heading of ['选择功能', '提交信息', '查看结果']) assert.match(textContent(usage?.[2] || ''), new RegExp(heading));
-  const trust = html.match(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\btrust-section\b[^"']*\1[^>]*>([\s\S]*?)<\/section\s*>/i);
-  assert.equal((trust?.[2].match(/class="trust-item"/g) || []).length, 4);
-  const trustText = textContent(trust?.[2] || '');
-  assert.match(trustText, /基础排盘由本地规则计算，AI解读仅供传统文化参考/);
-  assert.doesNotMatch(trustText, /1900[-–—]2100|严格往返验证|全范围准确/);
-  const cta = html.match(/<section\b[^>]*\bclass\s*=\s*(["'])[^"']*\bcta-bottom\b[^"']*\1[^>]*>([\s\S]*?)<\/section\s*>/i);
-  const ctaLinks = [...(cta?.[2] || '').matchAll(/<a\b[^>]*>[\s\S]*?<\/a\s*>/gi)];
-  assert.deepEqual(ctaLinks.map(({ 0: tag }) => attributeValue(tag, 'href')), ['paipan', 'hepan']);
+  assert.match(html, /class="hero"/);
+  assert.match(html, /id="mobileHomeFortune"/);
+  assert.equal((html.match(/class="feat-card"/g) || []).length, 9);
+  assert.doesNotMatch(html, /<section[^>]+class="(?:usage-section|trust-section|cta-bottom)"/);
+  assert.doesNotMatch(html, /<(?:footer|aside)[^>]+class="(?:land-footer|service-footer)"/);
+  const menu = html.slice(html.indexOf('id="nav-more-menu"'), html.indexOf('<canvas id="mxhCanvas"'));
+  assert.match(menu, /href="\/disclaimer"/);
+  assert.match(menu, /href="\/profile#profileCustomerService"/);
+  const shell = read('js/mobile-app-shell.js');
+  assert.match(shell, /使用与服务/);
+  assert.match(shell, /href="\/disclaimer"/);
+  assert.match(shell, /href="\/profile#profileCustomerService"/);
 });
 
 test('homepage loads a dedicated responsive light stylesheet after the shared theme', () => {

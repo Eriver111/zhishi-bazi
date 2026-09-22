@@ -23,7 +23,7 @@ function worker() {
     },
     caches: {
       open: async () => cache, match: cache.match,
-      keys: async () => ['zhishi-v59', 'zhishi-v60', 'another-app'],
+      keys: async () => ['zhishi-v60', 'zhishi-v61', 'another-app'],
       delete: async key => deleted.push(key),
     },
     self: {
@@ -128,11 +128,11 @@ test('API calls, mutations and external requests bypass the worker', async () =>
 
 test('only exact versioned shell resources use cache-first; business scripts remain network-first', async () => {
   const sw = worker();
-  const shell = '/js/mobile-app-shell.js?v=9';
+  const shell = '/js/mobile-app-shell.js?v=10';
   sw.stored.set(origin + shell, new Response('shell-cache'));
   assert.equal(await (await sw.get(shell, { mode: 'cors' })).text(), 'shell-cache');
   assert.equal(sw.requests.length, 0);
-  for (const url of ['/js/bazi.js?v=9', '/js/payment.js', '/js/mobile-app-shell.js?v=10']) {
+  for (const url of ['/js/bazi.js?v=9', '/js/payment.js', '/js/mobile-app-shell.js?v=11']) {
     sw.stored.set(origin + url, new Response('stale'));
     assert.match(await (await sw.get(url, { mode: 'cors' })).text(), /^network-/);
   }
@@ -143,5 +143,5 @@ test('only exact versioned shell resources use cache-first; business scripts rem
 
 test('activation removes only obsolete caches owned by this site', async () => {
   const sw = worker(); await sw.activate();
-  assert.deepEqual(sw.deleted, ['zhishi-v59']);
+  assert.deepEqual(sw.deleted, ['zhishi-v60']);
 });

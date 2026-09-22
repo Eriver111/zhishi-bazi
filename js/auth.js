@@ -520,7 +520,7 @@ var Auth = (function () {
   }
   if (!window.__ZHISHI_MOBILE_APP_SHELL__ && !document.querySelector('script[src*="mobile-app-shell.js"]')) {
     var script = document.createElement('script');
-    script.src = '/js/mobile-app-shell.js?v=9';
+    script.src = '/js/mobile-app-shell.js?v=10';
     (document.body || document.head).appendChild(script);
   }
 })();

@@ -1,11 +1,11 @@
-// 知时 Service Worker v60 — lightweight mobile shell and intent-based navigation.
-var CACHE_NAME = 'zhishi-v60';
+// 知时 Service Worker v61 — lightweight mobile shell and intent-based navigation.
+var CACHE_NAME = 'zhishi-v61';
 
 // 只预缓存真正存在的静态资源
 var STATIC_ASSETS = [
   '/css/style.css', '/css/landing.css', '/css/auth.css',
   '/css/theme-light.css?v=5', '/css/theme-light-forms.css?v=5', '/css/theme-light-results.css?v=5',
-  '/css/mobile-app-shell.css?v=32', '/js/mobile-app-shell.js?v=9',
+  '/css/mobile-app-shell.css?v=32', '/js/mobile-app-shell.js?v=10',
   '/css/app-experience.css?v=1', '/js/app-experience.js?v=1'
 ];
 var SHELL_ASSETS = STATIC_ASSETS.slice(-4);

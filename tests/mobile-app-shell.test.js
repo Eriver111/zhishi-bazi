@@ -12,13 +12,13 @@ test('home and paipan share one versioned mobile shell without touching desktop 
 
   for (const source of [home, paipan]) {
     assert.match(source, /css\/mobile-app-shell\.css\?v=32/);
-    assert.match(source, /js\/mobile-app-shell\.js\?v=9/);
+    assert.match(source, /js\/mobile-app-shell\.js\?v=10/);
   }
 
   assert.doesNotMatch(home, /class="mobile-home-dashboard"/);
   assert.match(home, /class="mobile-home-fortune"/);
   assert.match(home, /js\/home-fortune\.js\?v=2/);
-  assert.match(paipan, /<script src="js\/main\.js\?v=\d+"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=9"><\/script>/);
+  assert.match(paipan, /<script src="js\/main\.js\?v=\d+"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=10"><\/script>/);
 });
 
 test('feature pages share the same back header and result uses a four-pillar mobile grid', () => {
@@ -31,8 +31,8 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(auth, /'\/result', '\/ziwei', '\/hepan', '\/hepan-result', '\/fortune'/);
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
   assert.match(auth, /mobile-app-shell\.css\?v=32/);
-  assert.match(auth, /mobile-app-shell\.js\?v=9/);
-  assert.match(read('result.html'), /js\/auth\.js\?v=28/);
+  assert.match(auth, /mobile-app-shell\.js\?v=10/);
+  assert.match(read('result.html'), /js\/auth\.js\?v=29/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);

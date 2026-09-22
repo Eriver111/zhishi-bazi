@@ -141,6 +141,7 @@
         '<section><h2>卜筮</h2><div class="mobile-app-drawer__grid"><a href="/liuyao"><b>爻</b><span>六爻占卜</span></a><a href="/meihua"><b>梅</b><span>梅花易数</span></a></div></section>' +
         '<section><h2>观相 · 堪舆</h2><div class="mobile-app-drawer__grid"><a href="/face"><b>面</b><span>AI 观面</span></a><a href="/palm"><b>手</b><span>AI 观手</span></a><a href="/fengshui"><b>宅</b><span>八宅堪舆</span></a></div></section>' +
         '<section><h2>账户</h2><div class="mobile-app-drawer__list"><a href="/archives">命盘档案</a><a href="/profile">个人中心</a><a href="/pricing">积分与会员</a></div></section>' +
+        '<section><h2>使用与服务</h2><div class="mobile-app-drawer__list"><a href="/disclaimer">免责声明与服务说明</a><a href="/profile#profileCustomerService">联系客服与反馈</a></div></section>' +
       '</div>';
     drawer.querySelector('.mobile-app-drawer__close').addEventListener('click', closeDrawer);
     document.body.append(drawerOverlay, drawer);
