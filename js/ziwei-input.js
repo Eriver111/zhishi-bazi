@@ -67,10 +67,12 @@
     var trueMinute = solarInfo ? solarInfo.trueMinute : minute;
     var solarMinutes = solarInfo ? solarInfo.solarMinutes : hour * 60 + minute;
     var dayOffset = solarInfo ? solarInfo.dayOffset : 0;
-    var timeIndex = normalized.hour === 0 && normalized.dayPillarOffset && trueHour === 23 ? 12 : normalized.hour;
+    // 先对完整日期换日，再交给 iztro 排盘。2.5.8 的晚子索引只局部进日，
+    // 遇农历月底、除夕或闰月中界时，年/月系星曜仍可能沿用原日期。
+    var timeIndex = normalized.hour;
     var chartDate = new Date(normalized.year, normalized.month - 1, normalized.day);
-    if (normalized.hour === 0 && normalized.dayPillarOffset && trueHour !== 23) {
-      chartDate.setDate(chartDate.getDate() + 1);
+    if (normalized.dayPillarOffset) {
+      chartDate.setDate(chartDate.getDate() + normalized.dayPillarOffset);
     }
     var summary = (useTrueSolarTime && solarInfo ? '真太阳时 ' : '北京时间 ')
       + String(trueHour).padStart(2, '0') + ':' + String(trueMinute).padStart(2, '0')

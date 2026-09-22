@@ -218,8 +218,8 @@
   <div id="aiReading"></div>
 </div>
 
-<script src="js/bazi.js?v=20260921b"></script>
-<script src="js/liuyao-core.js?v=7"></script>
+<script src="js/bazi.js?v=20260922a"></script>
+<script src="js/liuyao-core.js?v=8"></script>
 <script src="js/yijing-db.js?v=7"></script>
 <script src="js/auth.js?v=29"></script>
 <script>
@@ -310,8 +310,8 @@ function doAnalyze(){
   if(typeof YIJING==='undefined'){ res.innerHTML='<div class="card"><p style="text-align:center;color:#e07050">数据库未加载</p></div>'; return; }
 
   var today=getBeijingTime();
-  var nY=today.getUTCFullYear(), nM=today.getUTCMonth()+1, nD=today.getUTCDate(), nH=today.getUTCHours();
-  var calendar=LIUYAO.getCalendarContext(nY,nM,nD,nH);
+  var nY=today.getUTCFullYear(), nM=today.getUTCMonth()+1, nD=today.getUTCDate(), nH=today.getUTCHours(), nMin=today.getUTCMinutes(), nSec=today.getUTCSeconds();
+  var calendar=LIUYAO.getCalendarContext(nY,nM,nD,nH,nMin,nSec);
   var dayGanIdx=calendar.dayGanIdx;
   var monthZhi=calendar.monthZhi;
   try{ var zg=LIUYAO.zhuangGua(lines, dayGanIdx, monthZhi); }

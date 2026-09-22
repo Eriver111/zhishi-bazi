@@ -2256,8 +2256,8 @@ function calculateSpouseAge(bazi, peiSS) {
     const dayZhi = bazi.day.zhi;
     const CHONG = { '子午':true,'午子':true,'丑未':true,'未丑':true,'寅申':true,'申寅':true,'卯酉':true,'酉卯':true,'辰戌':true,'戌辰':true,'巳亥':true,'亥巳':true };
     const HE = { '子丑':true,'丑子':true,'寅亥':true,'亥寅':true,'卯戌':true,'戌卯':true,'辰酉':true,'酉辰':true,'巳申':true,'申巳':true,'午未':true,'未午':true };
-    const YIMA = ['寅','申','巳','亥'];
-    let hasYiMa = YIMA.includes(dayZhi);
+    // 寅申巳亥只是可能落驿马的支，是否为本盘驿马须按统一神煞表取证。
+    const hasYiMa = calculateShenSha(bazi).some(item => item.name === '驿马' && item.positions.includes('day'));
     let chongNote = '';
     let heNote = '';
 
@@ -6894,7 +6894,7 @@ function getPattern(bazi) {
       breakReasons: [],
       desc: cong.desc,
       source: cong.source + '（原局' + pResult.name + '，既成从格，以从格论）',
-      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + '，日主弱极顺势而从。', category: 'INFO' }],
+      establishConditions: [{ condition: '从格成立', met: true, detail: cong.source + (cong.zhuanWang ? '，日主强极，按专旺顺势。' : '，日主弱极顺势而从。'), category: 'INFO' }],
       congGe: true,
       basePattern: pResult.name + '·' + pResult.status,
       mechanism: null,
@@ -8909,7 +8909,7 @@ function getYongJi(bazi) {
     xiShen = cong.xiOverride;
     jiShen = cong.jiOverride;
     yongShen = xiShen.slice(0, 1);
-    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按扶抑法，需顺势而为。⚠️注意：从格判定的喜忌与普通扶抑法相反。举例：木为食伤（泄气），正常身弱忌泄，但此命已弃命从势，故木反为喜。'
+    reasoning = '日主' + dmLevel + '（' + dmStr.score + '分），成' + cong.name + '。' + cong.source + '——不按普通扶抑法，需按当前成立的' + (cong.zhuanWang ? '专旺' : '从格') + '方向取用。'
       + '喜：' + xiShen.join('、') + '来顺势助旺。'
       + '忌：' + jiShen.join('、') + '来逆势破格。';
     return finalizeYongJiResult(bazi, {
@@ -9318,7 +9318,11 @@ function getCongGe(bazi) {
     // 同五行异阴阳也能作为根（如己土可通戊土根），不能只按同一个天干字匹配。
     var rootPower = evidenceSettlementCong.elementRootPower(wx);
     var seatWx = DI_ZHI_WU_XING[bazi[pos].zhi];
-    var unsupportedSeat = seatWx === KEWO || seatWx === WOSHENG || seatWx === WOKE;
+    // 坐支是否生扶，要以这枚印比透干本身为对象；不能拿日主的官杀
+    // 直接当成印星的克星（如己日丁印坐卯，是木生火，并非木克火）。
+    var stemElementIndex = WXL.indexOf(wx);
+    var seatSupportsStem = seatWx === wx || seatWx === WXL[(stemElementIndex + 4) % 5];
+    var unsupportedSeat = !seatSupportsStem;
     return {
       position:pos,
       gan:gan,
@@ -9328,7 +9332,7 @@ function getCongGe(bazi) {
       seatBranch:bazi[pos].zhi,
       seatElement:seatWx,
       unsupportedSeat:unsupportedSeat,
-      subduedBySeat:seatWx === KEWO
+      subduedBySeat:seatWx === WXL[(stemElementIndex + 3) % 5]
     };
   }).filter(Boolean);
   var rootedGanHelp = helpingStems.filter(function(item) { return item.rooted; });
@@ -9358,7 +9362,7 @@ function getCongGe(bazi) {
   });
   var dayZhiGuanXi = DI_ZHI_WU_XING[bazi.day.zhi];
   var dayZhiIsKeXie = (KEWO === dayZhiGuanXi || WOSHENG === dayZhiGuanXi || WOKE === dayZhiGuanXi);
-  if (level === '极强' && kePower <= 1 && shiPower <= 1 && !dayZhiIsKeXie && !hasCangKeXie) {
+  if (level === '极强' && kePower <= 1 && shiPower <= 1 && caiPower <= 1 && !dayZhiIsKeXie && !hasCangKeXie) {
     var zhuanWangName = zhuanWangNames[dgWx] || '从强格';
     return {
       isCong: true, name: zhuanWangName,
@@ -9431,18 +9435,24 @@ function getCongGe(bazi) {
   if (canBeFalseFollowingCandidate) {
     var candidateName = '假从势候选';
     var candidateDirection = '克泄耗共同成势';
+    var followingElements = [KEWO, WOKE, WOSHENG];
+    var supportingElements = [SHENGWO, dgWx];
     if (kePower >= 4 && caiPower >= 2) {
       candidateName = '假从财杀候选';
       candidateDirection = '财星生官杀，财杀共同成势';
+      followingElements = [KEWO, WOKE];
     } else if (kePower >= 5 && kePower >= caiPower && kePower >= shiPower) {
       candidateName = '假从杀候选';
       candidateDirection = '官杀主导全局';
+      followingElements = [KEWO, WOKE];
     } else if (caiPower >= 5 && caiPower >= kePower && caiPower >= shiPower) {
       candidateName = '假从财候选';
       candidateDirection = '财星主导全局';
+      followingElements = [WOKE, WOSHENG, KEWO];
     } else if (shiPower >= 5 && shiPower >= kePower && shiPower >= caiPower) {
       candidateName = '假从儿候选';
       candidateDirection = '食伤主导全局';
+      followingElements = [WOSHENG, WOKE];
     }
     var candidatePositionNames = { year:'年', month:'月', hour:'时' };
     var purityIssues = floatingGanHelp.map(function(item) {
@@ -9456,14 +9466,16 @@ function getCongGe(bazi) {
       isCong:false,
       isCandidate:true,
       name:candidateName,
-      desc:'日主弱极且' + candidateDirection + '，但仍有无根印比透出或月令受扰，暂不能按真从格反转喜忌。需以木水等顺势运与火土等扶身运的真实反馈复核。',
+      desc:'日主弱极且' + candidateDirection + '，但仍有无根印比透出或月令受扰，暂不能按真从格反转喜忌。需对照' + followingElements.join('、') + '等顺势方向与' + supportingElements.join('、') + '印比扶身方向的真实岁运反馈复核，不能仅凭运中出现某五行定吉凶。',
       source:'极弱假从候选：单一无根印比不作硬根，但原局不纯，暂按普通极弱取用',
       trueFollowing:false,
       normalMethodRequired:true,
       direction:candidateDirection,
+      followingElements:followingElements,
+      supportingElements:supportingElements,
       floatingHelpingStems:floatingGanHelp,
       purityIssues:purityIssues,
-      verification:['木水等顺势岁运是否持续改善','火土等扶身岁运是否明显改善或反而受阻']
+      verification:[followingElements.join('、') + '等顺势方向的岁运反馈是否持续改善', supportingElements.join('、') + '印比扶身方向的岁运反馈是否明显改善或反而受阻']
     };
   }
   return { isCong: false };
@@ -9494,7 +9506,7 @@ function getGanHe(bazi) {
           if (DI_ZHI_WU_XING[bazi[pos[k]].zhi] === huaWx) hasHuaRoot = true;
         }
 
-        var controls = { "木":"金","火":"水","土":"木","金":"火","水":"金" };
+        var controls = { "木":"金","火":"水","土":"木","金":"火","水":"土" };
         var hasBlocker = false;
         var blockerDetail = "";
         for (var k = 0; k < 4; k++) {

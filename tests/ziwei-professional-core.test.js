@@ -36,16 +36,16 @@ test('maps every clock hour to the traditional two-hour branch', () => {
   assert.deepEqual(Array.from({ length: 24 }, (_, hour) => input.clockHourToBranchIndex(hour)), expected);
 });
 
-test('keeps early Zi on the civil day and maps late Zi to iztro late-Zi scope', () => {
+test('keeps early Zi on the civil day and advances the full late-Zi chart date', () => {
   const input = loadInput();
   const calculator = loadBaziCalculator();
   const early = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 0, minute: 30, calculator, useTrueSolarTime: false, ziHourNextDay: true });
   const late = input.normalizeBirth({ year: 2000, month: 1, day: 1, hour: 23, minute: 30, calculator, useTrueSolarTime: false, ziHourNextDay: true });
 
   assert.equal(early.timeIndex, 0);
-  assert.equal(late.timeIndex, 12);
+  assert.equal(late.timeIndex, 0);
   assert.equal(early.solarDate, '2000-1-1');
-  assert.equal(late.solarDate, '2000-1-1');
+  assert.equal(late.solarDate, '2000-1-2');
   assert.equal(early.dayPillarOffset, 0);
   assert.equal(late.dayPillarOffset, 1);
 
@@ -131,7 +131,7 @@ test('Ziwei page loads the BaZi calculator before its normalization adapter', ()
   const bazi = html.indexOf('js/bazi.js');
   const input = html.indexOf('js/ziwei-input.js');
   assert.ok(bazi >= 0 && input > bazi);
-  assert.match(html, /js\/ziwei-input\.js\?v=4/);
+  assert.match(html, /js\/ziwei-input\.js\?v=5/);
   assert.match(html, /js\/ziwei-professional\.js\?v=6/);
   assert.match(html, /js\/ziwei-render\.js\?v=12/);
   const render = fs.readFileSync(path.join(__dirname, '..', 'js', 'ziwei-render.js'), 'utf8');

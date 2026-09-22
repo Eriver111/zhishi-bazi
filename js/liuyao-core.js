@@ -161,14 +161,9 @@ var LIUYAO = (function(){
       else monthState.push('月令关系待定');
     }
 
-    // 十二长生：月支是"旺"，爻支顺排十二宫
-    var CHANG_SHENG=['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
-    var DZ_IDX={子:0,丑:1,寅:2,卯:3,辰:4,巳:5,午:6,未:7,申:8,酉:9,戌:10,亥:11};
-    var changSheng=[];
-    for(var i=0;i<6;i++){
-      var offset=(DZ_IDX[yaoDZ[i]] - DZ_IDX[monthZhi] + 12) % 12;
-      changSheng.push(CHANG_SHENG[offset]);
-    }
+    // 爻五行在月建的十二长生；采用《增删卜易》水土长生申的口径。
+    // 这是状态记录，不能单凭“长生/墓/绝”覆盖月破、生克及动变证据。
+    var changSheng=yaowx.map(function(wx){ return getChangSheng(wx,monthZhi); });
 
     return {
       guaName:gName, gong:guaInfo.gong, gongWX:gongWX, guaType:guaInfo.type,
@@ -248,11 +243,22 @@ var LIUYAO = (function(){
     return '关系待定';
   }
 
-  function getCalendarContext(year, month, day, hour){
+  function getChangSheng(yaoWX, targetZhi){
+    var names=['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
+    var start={木:11,火:2,土:8,金:5,水:8};
+    var branchIndex=DZ.indexOf(targetZhi);
+    if(start[yaoWX]===undefined||branchIndex<0) return '';
+    return names[(branchIndex-start[yaoWX]+12)%12];
+  }
+
+  function getCalendarContext(year, month, day, hour, minute, second){
     if(typeof BaZiCalculator==='undefined'||!BaZiCalculator.calculate){
       throw new Error('干支历法引擎未加载');
     }
-    var chart=BaZiCalculator.calculate(year,month,day,0,'male',hour,0);
+    // 节气精确到秒；不能把交节所在小时整段归到旧月。
+    var clock=hour+(minute||0)/60+(second||0)/3600;
+    var branchIndex=hour===23?0:Math.floor((hour+1)/2);
+    var chart=BaZiCalculator.calculate(year,month,day,branchIndex,'male',clock,0);
     var dayIndex=-1;
     for(var i=0;i<60;i++){
       if(i%10===chart.day.ganIndex&&i%12===chart.day.zhiIndex){dayIndex=i;break;}
@@ -337,6 +343,7 @@ var LIUYAO = (function(){
     zhuangGua:zhuangGua,
     getFuShen:getFuShen,
     getHuaRelation:getHuaRelation,
+    getChangSheng:getChangSheng,
     getCalendarContext:getCalendarContext,
     getDayState:getDayState,
     formatProfessionalFacts:formatProfessionalFacts

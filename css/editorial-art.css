@@ -1,0 +1,42 @@
+/* Original illustrations are decorative; titles and actions remain real text. */
+.tool-gallery-heading{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:26px 0 20px;padding-bottom:16px;border-bottom:1px solid #d9ccba}
+.tool-gallery-heading h2{margin:0;color:#443a30;font:500 24px/1.5 "Songti SC","Noto Serif SC",serif;letter-spacing:3px}
+.tool-gallery-heading p{margin:0;color:#877765;font-size:12px;letter-spacing:1px}
+.landing-wrap .features{grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 22px;margin-top:0}
+.landing-wrap .feat-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;padding:0 0 22px;text-align:left;text-decoration:none;background:#fbf7ee!important;border:1px solid #e4d9c9!important;border-radius:12px;overflow:hidden;box-shadow:none!important;backdrop-filter:none}
+.landing-wrap .feat-card::before{display:none}
+.landing-wrap .feat-card:hover{transform:none;border-color:#b6a28a!important;box-shadow:0 8px 24px #5d49310a!important}
+.landing-wrap .feat-card:focus-visible{outline:2px solid #84362f;outline-offset:4px}
+.feat-art{display:block;aspect-ratio:3/2;overflow:hidden;background:#f3ebdd;border-bottom:1px solid #e8dfd2}
+.feat-art img{display:block;width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply}
+.feat-meta{display:flex;justify-content:space-between;align-items:center;margin:18px 20px 8px;color:#907b62;font:11px/1.4 Georgia,serif;letter-spacing:2px}
+.feat-meta span:last-child{font:18px/1 Georgia,serif;color:#84362f}
+.landing-wrap .feat-card h3{margin:0 20px 9px;font:600 23px/1.5 "Songti SC","Noto Serif SC",serif;letter-spacing:2px}
+.landing-wrap .feat-card p{margin:0 20px;color:#80705e!important;font-size:12px;line-height:1.9;letter-spacing:0}
+.editorial-hero{display:flex!important;align-items:center;justify-content:space-between;gap:20px;min-height:180px;margin:0 auto 24px!important;padding:20px 0 26px!important;border-bottom:1px solid #ddd0be;text-align:left!important;width:100%;box-sizing:border-box}
+.editorial-hero::before,.editorial-hero::after{display:none!important}
+.editorial-copy{min-width:0;flex:1}
+.editorial-kicker{display:block;margin-bottom:12px;color:#8c7057;font:10px/1.5 "PingFang SC",sans-serif;letter-spacing:2px}
+body .editorial-hero h1{margin:0 0 12px!important;font:500 34px/1.35 "Songti SC","Noto Serif SC",serif!important;letter-spacing:4px!important;color:#42372d!important;text-shadow:none!important;filter:none!important;background:none!important;-webkit-text-fill-color:currentColor}
+.editorial-hero p,.editorial-hero .date{margin:0;color:#877361;font:12px/1.9 "PingFang SC",sans-serif;letter-spacing:1px}
+.editorial-hero img{display:block;width:43%;max-width:300px;height:auto;aspect-ratio:3/2;object-fit:contain;mix-blend-mode:multiply;pointer-events:none}
+@media(max-width:720px){
+  .tool-gallery-heading{margin:16px 0;padding-bottom:12px;align-items:center}
+  .tool-gallery-heading h2{font-size:20px;letter-spacing:2px}
+  .tool-gallery-heading p{font-size:10px;letter-spacing:0}
+  body.mobile-page-home .landing-wrap .hero{min-height:410px!important;padding:46px 0 26px!important}
+  body.mobile-page-home .landing-wrap .features,.landing-wrap .features{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px;margin-top:0}
+  .landing-wrap .feat-card{padding-bottom:16px;border-radius:10px}
+  .feat-meta{margin:12px 12px 6px;font-size:9px}
+  .landing-wrap .feat-card h3{margin:0 12px 6px;font-size:18px;letter-spacing:1px}
+  .landing-wrap .feat-card p{margin:0 12px;font-size:11px;line-height:1.8}
+  .landing-wrap .feat-card:last-child{grid-column:1/-1;display:grid;grid-template-columns:40% minmax(0,1fr);grid-template-rows:auto auto 1fr;padding:0;align-items:start}
+  .landing-wrap .feat-card:last-child .feat-art{grid-column:1;grid-row:1/4;height:100%;min-height:145px;border:0;border-right:1px solid #e8dfd2;aspect-ratio:auto}
+  .landing-wrap .feat-card:last-child .feat-art img{object-fit:cover}
+  .landing-wrap .feat-card:last-child p{padding-bottom:16px}
+  body.mobile-page-paipan .editorial-hero,.editorial-hero{display:flex!important;min-height:114px;gap:10px;padding:3px 0 15px!important;margin-bottom:16px!important}
+  body .editorial-hero h1{font-size:27px!important;letter-spacing:2px!important;margin-bottom:8px!important}
+  .editorial-kicker{font-size:8px;letter-spacing:1.5px;margin-bottom:8px}
+  .editorial-hero p,.editorial-hero .date{font-size:10px;line-height:1.8;letter-spacing:0}
+  .editorial-hero img{width:42%;max-width:175px}
+}

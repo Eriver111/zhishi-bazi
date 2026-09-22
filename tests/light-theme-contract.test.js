@@ -151,7 +151,12 @@ test('homepage exposes the available nine uniform tools and no standalone AI con
     textContent(match[0].match(/<h3\b[^>]*>([\s\S]*?)<\/h3\s*>/i)?.[1] || ''),
   ]), expectedTools);
   for (const { 0: card } of featureLinks) {
-    assert.match(card, /<div\b[^>]*\bclass\s*=\s*(["'])[^"']*\bfeat-icon\b[^"']*\1[^>]*>/i);
+    const art = card.match(/<img\b[^>]*>/i)?.[0] || '';
+    assert.equal(attributeValue(art, 'loading'), 'lazy', 'below-fold artwork must not delay navigation');
+    assert.equal(attributeValue(art, 'width'), '720');
+    assert.equal(attributeValue(art, 'height'), '480');
+    assert.equal(attributeValue(art, 'alt'), '', 'decorative art must not repeat the tool label');
+    assert.ok(fs.existsSync(path.join(root, attributeValue(art, 'src'))), 'tool artwork must be bundled locally');
     assert.match(card, /<p\b[^>]*>[\s\S]*?<\/p\s*>/i);
     assert.doesNotMatch(card, /\bstyle\s*=\s*(["'])[^"']*(?:^|;)\s*(?:color|background)\s*:/i, 'feature cards must not carry per-card colors');
   }

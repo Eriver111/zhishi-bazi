@@ -172,7 +172,7 @@ test('合盘页面加载会话隔离并以 hepan 类型装饰请求', () => {
   const html = fs.readFileSync(path.join(root, 'hepan-result.html'), 'utf8');
   const integration = fs.readFileSync(path.join(root, 'js', 'ai-chat-integration.js'), 'utf8');
   const api = fs.readFileSync(path.join(root, 'api', 'ai-chat.js'), 'utf8');
-  assert.match(html, /chat-persistence\.js\?v=3/);
+  assert.match(html, /chat-persistence\.js\?v=4/);
   assert.match(integration, /p\._daYunData\.list\.map/);
   assert.match(integration, /d\.currentDaYun = currentCycle/);
   assert.match(integration, /d\.parentAnalysis = BaZiCalculator\.analyzeParents\(p\._bazi/);

@@ -189,7 +189,7 @@ function ganRelationType(gan1, gan2) {
   return '比'; // fallback
 }
 
-/** 地支关系: '六合' | '三合' | '六冲' | '六害' | '相刑' | '无' */
+/** 这里只比较两支，不能据此宣称三支齐全或合化成功。 */
 function zhiRelationType(zhi1, zhi2) {
   if (HP_ZLH[zhi1] === zhi2) return '六合';
   if (HP_ZLC[zhi1] === zhi2) return '六冲';
@@ -199,7 +199,7 @@ function zhiRelationType(zhi1, zhi2) {
   for (var i = 0; i < ZHI_SAN_HE_GROUPS.length; i++) {
     var g = ZHI_SAN_HE_GROUPS[i];
     if (g.members.indexOf(zhi1) !== -1 && g.members.indexOf(zhi2) !== -1 && zhi1 !== zhi2) {
-      return '三合';
+      return g.members[1] === zhi1 || g.members[1] === zhi2 ? '半合' : '拱合';
     }
   }
   // 相生/相克 by 五行
@@ -243,7 +243,8 @@ var GAN_HE_DESCS = {
 
 var ZHI_REL_DESCS = {
   '六合': '日支六合是地支里最好的缘分配合，你们的夫妻宫（内心深处）天然契合，日常相处轻松自在，不容易起大矛盾，有一种「回到家就安心」的感觉。',
-  '三合': '日支三合是一种凝聚力很强的格局，像三条河水汇成一条江，你们在一起做事特别有默契，目标一致，配合得当，关系有方向感。',
+  '半合': '两人的日支属于同一三合组，且包含中神，可记为半合。这里只有两支，不能据此认定完整三合局、合化成功或现实关系一定融洽。',
+  '拱合': '两人的日支属于同一三合组，但缺少中神，仅记为拱合线索。不能当成完整三合局，关系如何仍需双方完整原局和实际相处验证。',
   '六冲': '日支六冲是比较考验感情的配置，就像水火相遇，一开始激情满满，但久了容易为小事起争执。需要学会互相让步，不然矛盾会越积越多。',
   '六害': '日支相穿（六害）要注意了，这不是明显的冲突，而是日积月累的磨损，像鞋子里的沙子，走久了才知道疼。日常要多沟通，别让不满悄悄堆积。',
   '相刑': '日支相刑容易产生互不理解的情况，两个人各自坚持自己的方式，谁也不服谁。长期这样会很累，需要有一方先学会低头。',
@@ -297,11 +298,13 @@ function analyzeDailyRelation(p1, p2) {
   }
 
   // 地支描述
-  var zhiDesc = ZHI_REL_DESCS[zr] || (zr === '三合' ? ZHI_REL_DESCS['三合'] : '日支关系比较中性，需要在日常生活中慢慢磨合。');
+  var zhiDesc = ZHI_REL_DESCS[zr] || '日支关系比较中性，需要在日常生活中慢慢磨合。';
   var zhiScore = 0;
   switch (zr) {
     case '六合': zhiScore = 35; break;
-    case '三合': zhiScore = 30; break;
+    // 沿用原两支关系的规则权重，本次只纠正证据名称，不重标评分。
+    case '半合':
+    case '拱合': zhiScore = 30; break;
     case '生':
     case '被生': zhiScore = 28; break;
     case '比': zhiScore = 22; break;
@@ -362,6 +365,10 @@ var WX_ELEMENT_NAMES = { '木':'木元素','火':'火元素','土':'土元素','
 
 function analyzeWuxingComplement(p1, p2) {
   var w1 = p1.wuxing, w2 = p2.wuxing;
+  var x1 = calcXiyong(p1), x2 = calcXiyong(p2);
+  function isFavorable(x, wx) {
+    return x.jiShen.indexOf(wx) < 0 && x.yongShen.concat(x.xiShen).indexOf(wx) >= 0;
+  }
   var totalWuxing = {};
   HP_WXO.forEach(function(wx) {
     totalWuxing[wx] = (w1[wx] || 0) + (w2[wx] || 0);
@@ -374,13 +381,13 @@ function analyzeWuxingComplement(p1, p2) {
     if (!w2[wx] || w2[wx] === 0) p2Missing.push(wx); else p2Has.push(wx);
   });
 
-  // 互补分析: 对方有的刚好是我缺的
+  // 缺项不是取用依据：只保留个人冻结喜用中认可、且不在忌神里的缺项。
   var complementPairs = [];
   p1Missing.forEach(function(wx) {
-    if (p2Has.indexOf(wx) !== -1) complementPairs.push({ wx: wx, from: p2.name, to: p1.name });
+    if (p2Has.indexOf(wx) !== -1 && isFavorable(x1, wx)) complementPairs.push({ wx: wx, from: p2.name, to: p1.name });
   });
   p2Missing.forEach(function(wx) {
-    if (p1Has.indexOf(wx) !== -1) complementPairs.push({ wx: wx, from: p1.name, to: p2.name });
+    if (p1Has.indexOf(wx) !== -1 && isFavorable(x2, wx)) complementPairs.push({ wx: wx, from: p1.name, to: p2.name });
   });
 
   // 各自的五行分布描述
@@ -393,19 +400,19 @@ function analyzeWuxingComplement(p1, p2) {
   if (complementPairs.length >= 3) {
     detail = p1WxDesc + ' ' + p2WxDesc + ' 你们五行互补非常明显——';
     var cpDescs = complementPairs.map(function(cp) {
-      return cp.from + '的' + WX_ELEMENT_NAMES[cp.wx] + '刚好补上' + cp.to + '的缺口';
+      return cp.from + '的盘中有' + WX_ELEMENT_NAMES[cp.wx] + '，对应' + cp.to + '已确认的喜用方向';
     });
-    detail += cpDescs.join('，') + '。这就像拼图刚好对上，对方身上有你需要的东西，相处久了会发现缺了对方反而不完整。互补性很强，是天生的好搭档。';
+    detail += cpDescs.join('，') + '。这只是跨盘五行对应线索，不能把对方命盘的五行直接加进自己的原局，也不代表关系结果。';
     complementScore = 95;
   } else if (complementPairs.length >= 1) {
     detail = p1WxDesc + ' ' + p2WxDesc + ' 你们有一定的互补性——';
     var cpDescs2 = complementPairs.map(function(cp) {
-      return cp.from + '的' + WX_ELEMENT_NAMES[cp.wx] + '刚好补上' + cp.to + '的缺口';
+      return cp.from + '的盘中有' + WX_ELEMENT_NAMES[cp.wx] + '，对应' + cp.to + '已确认的喜用方向';
     });
-    detail += cpDescs2.join('，') + '。虽然在有些方面还需要磨合，但你们能给彼此提供对方没有的东西，这是关系的重要基础。';
+    detail += cpDescs2.join('，') + '。这不等于对方能够补足自己的原局；实际支持仍要看双方的相处。';
     complementScore = 78;
   } else {
-    detail = p1WxDesc + ' ' + p2WxDesc + ' 你们的五行分布比较相似，没有特别明显的互补关系。这意味着你们不会特别需要对方来补充自己，但也不会因为五行差异产生矛盾。好处是相处轻松不累，坏处是少了那种「非你不可」的吸引力。';
+    detail = p1WxDesc + ' ' + p2WxDesc + ' 未发现同时满足“本人缺项、个人喜用认可、对方盘中存在”的互补线索。缺少某五行不等于需要补充，这也不能用来判断关系好坏。';
     complementScore = 58;
   }
 
@@ -417,7 +424,7 @@ function analyzeWuxingComplement(p1, p2) {
     if (total <= 1) imbalanced.push(wx + '偏少');
   });
   if (imbalanced.length > 0) {
-    detail += ' 需要注意你们俩加起来' + imbalanced.join('、') + '，这可能影响整体的平衡感。';
+    detail += ' 按当前天干、地支及藏干出现次数的合计规则，' + imbalanced.join('、') + '；该次数不代表各自旺衰，也不是要求补缺的依据。';
     complementScore -= imbalanced.length * 3;
   }
 
@@ -426,6 +433,7 @@ function analyzeWuxingComplement(p1, p2) {
   return {
     p1Wuxing: p1WxDesc,
     p2Wuxing: p2WxDesc,
+    complementPairs: complementPairs,
     complementScore: complementScore,
     detail: detail
   };
@@ -638,12 +646,13 @@ function analyzeCrossPillars(p1, p2) {
             detail: p1.name + '的' + PILLAR_NAMES[i] + '地支' + p1p.zhi + '和' + p2.name + '的' + PILLAR_NAMES[j] + '地支' + p2p.zhi + '六合。地支合说明底层的能量在互相吸引，你们在很多事情上不用多说就能理解对方，是很好的缘分信号。'
           });
           break;
-        case '三合':
+        case '半合':
+        case '拱合':
           results.push({
             type: '合',
             pillar1: p1.name + '的' + PILLAR_NAMES[i] + '(' + p1p.gan + p1p.zhi + ')',
             pillar2: p2.name + '的' + PILLAR_NAMES[j] + '(' + p2p.gan + p2p.zhi + ')',
-            detail: p1.name + '的' + PILLAR_NAMES[i] + '地支' + p1p.zhi + '和' + p2.name + '的' + PILLAR_NAMES[j] + '地支' + p2p.zhi + '属于三合局的关系。三合是大合，力量很强，代表两人在某个重大方向上观念一致、能够互相成就。'
+            detail: p1.name + '的' + PILLAR_NAMES[i] + '地支' + p1p.zhi + '和' + p2.name + '的' + PILLAR_NAMES[j] + '地支' + p2p.zhi + '是' + zr + '线索，只有两支，不能据此认定完整三合局或合化。'
           });
           break;
         case '六害':
@@ -682,27 +691,13 @@ function analyzeCrossPillars(p1, p2) {
     }
   }
 
-  // 去重：同一对柱子如果合冲克生都有，优先保留最重要的
-  var deduped = [];
-  var seenPairs = {};
-  results.forEach(function(r) {
-    var key = r.pillar1 + '|' + r.pillar2;
-    var revKey = r.pillar2 + '|' + r.pillar1;
-    if (!seenPairs[key] && !seenPairs[revKey]) {
-      seenPairs[key] = true;
-      seenPairs[revKey] = true;
-      deduped.push(r);
-    }
-  });
-
-  // 按重要性排序: 合 > 生 > 冲 > 克
+  // 天干合与地支冲可以同时成立，不按显示姓名/柱对去重。
+  // 完整证据参与评分与AI上下文，不能先截取有利的前8条再打分。
   var typeOrder = { '合':0, '生':1, '冲':2, '克':3 };
-  deduped.sort(function(a, b) {
+  results.sort(function(a, b) {
     return (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
   });
-
-  // 最多返回8条
-  return deduped.slice(0, 8);
+  return results;
 }
 
 // =====================================================
@@ -725,8 +720,8 @@ function analyzeCoreMode(p1, p2, relationType) {
     // 日支(夫妻宫)权重最高
     var zr = zhiRelationType(p1.dayZhi, p2.dayZhi);
     var ziPart = '';
-    if (zr === '六合' || zr === '三合') {
-      ziPart = '你们俩的夫妻宫（日支）形成' + (zr === '六合' ? '六合' : '三合') + '，这是夫妻关系最重要的基础打得牢固。夫妻宫合，意味着两人的内心世界对得上频道，日常生活中能自然磨合，不会为鸡毛蒜皮的事闹得不可开交。';
+    if (zr === '六合' || zr === '半合' || zr === '拱合') {
+      ziPart = '两人的夫妻宫（日支）存在' + zr + '关系，可以作为互动线索。两支关系不等于完整三合局，出现合也不能直接认定现实相处没有矛盾。';
     } else if (zr === '六冲') {
       ziPart = '你们俩的夫妻宫（日支）六冲，这是婚姻中最需要用心经营的情况。冲不代表不能在一起，而是需要双方都有意识地去平衡和包容。很多看似恩爱的夫妻其实日支也是冲的，关键在于他们学会了「你退一步我让一步」。';
     } else if (zr === '六害' || zr === '相刑') {
@@ -773,7 +768,7 @@ function analyzeCoreMode(p1, p2, relationType) {
     }
 
     // 五行互补 - 情侣更看重互补的新鲜感
-    var wxPart = '从五行来看，' + (wc.complementScore >= 70 ? '你们五行互补很好，对方身上有你所缺的东西，这种差异感在热恋期特别有吸引力。恋爱就是互相探索的过程，差异越大反而越有趣。' : '你们的五行分布比较接近，好处是相处不累、不用费心磨合，但可能少了点「互补的新鲜感」。情侣间的差异有时候反而是最好的调味剂。');
+    var wxPart = wc.complementPairs.length ? '双方盘中存在符合个人喜用方向的五行对应，但不能据此断言能补足对方原局或增强现实吸引力。' : '未发现符合个人喜用方向的缺项对应；这不代表五行分布相近，也不代表缺少吸引力。';
 
     // 桃花相关
     var taohuaPart = '';
@@ -803,7 +798,7 @@ function analyzeCoreMode(p1, p2, relationType) {
     }
 
     // 五行平衡 - 朋友更看重平衡和稳定
-    var wxBalancePart = '从五行来看，朋友之间五行平衡比互补更重要。' + (wc.complementScore >= 70 ? '你们五行互补性好，能够在不同方面给彼此支持，是很好的互补型朋友。' : '你们的五行相近，相处起来轻松自在，是有共同话题和共同节奏的好朋友。');
+    var wxBalancePart = '五行对应只提供观察线索，不能替代彼此的能力、兴趣和实际协作经历；不按缺什么补什么判定友谊。';
 
     // 志趣相投
     var zhiQuPart = '';
@@ -868,43 +863,20 @@ function generateYearlyAdvice(p1, p2, relationType) {
     var yearGz = getYearGanZhi(year);
     var yearGan = yearGz.gan, yearZhi = yearGz.zhi;
 
-    // 分析流年干支与两人日柱的互动
-    var interactions = [];
-    // p1 日干
-    var p1Gr = ganRelationType(yearGan, p1.dayGan);
-    if (p1Gr === '合') interactions.push('对' + p1.name + '来说天干合，这一年运势不错');
-    if (p1Gr === '克') interactions.push('对' + p1.name + '来说天干受克，需注意压力');
-    // p2 日干
-    var p2Gr = ganRelationType(yearGan, p2.dayGan);
-    if (p2Gr === '合') interactions.push('对' + p2.name + '来说天干合，这一年运势不错');
-
-    // 日支互动
-    var yzDz1 = zhiRelationType(yearZhi, p1.dayZhi);
-    var yzDz2 = zhiRelationType(yearZhi, p2.dayZhi);
-
-    var advice = '';
-    if (yzDz1 === '六合' || yzDz2 === '六合') {
-      advice = year + '年（' + yearGan + yearZhi + '年）：流年地支与你们其中一人的夫妻宫六合，这一年感情运势上升，适合订婚、结婚或者一起做重要决定。如果有外出旅行的机会，能进一步增进感情。';
-    } else if (yzDz1 === '六冲' && yzDz2 === '六冲') {
-      advice = year + '年（' + yearGan + yearZhi + '年）：流年地支同时冲你们俩的日支，这一年两人都容易情绪不稳。建议少做大决定，多一些耐心和包容，尽量避免因为小事闹大。过了这个年份就好。';
-    } else if (yzDz1 === '六冲' || yzDz2 === '六冲') {
-      var whoStr = yzDz1 === '六冲' ? p1.name : p2.name;
-      advice = year + '年（' + yearGan + yearZhi + '年）：流年冲' + whoStr + '的夫妻宫，这一年' + whoStr + '情绪波动会比较大，对方要多理解和包容。最好别在气头上做任何决定。';
-    } else if (yzDz1 === '三合' || yzDz2 === '三合') {
-      advice = year + '年（' + yearGan + yearZhi + '年）：流年与你们的日支形成三合，是有利于人际关系和感情发展的一年。如果有重要的人生计划可以放在这一年推进。';
-    } else if (interactions.length > 0) {
-      advice = year + '年（' + yearGan + yearZhi + '年）：' + interactions.join('，') + '。总体来看是比较平稳的一年，适合稳扎稳打经营感情。';
-    } else {
-      if (relationType === '夫妻') {
-        advice = year + '年（' + yearGan + yearZhi + '年）：流年对你们的夫妻宫没有特别的冲合，是比较平淡的一年。平淡对夫妻来说是福气，好好享受日常的小日子就好。';
-      } else if (relationType === '情侣') {
-        advice = year + '年（' + yearGan + yearZhi + '年）：没有大的流年干扰，这一年可以专注于恋爱本身，多创造一些共同的回忆。平淡的年份反而适合夯实感情基础。';
-      } else {
-        advice = year + '年（' + yearGan + yearZhi + '年）：这一年流年平稳，朋友关系不会有大的波折。可以一起规划和执行一些共同的目标，比如旅行、学习新技能等等。';
-      }
-    }
-
-    results.push({ year: year, advice: advice });
+    // 双方分别保留事实；一方六合不能覆盖另一方六冲，也不直接据此断吉凶。
+    var interactions = [p1, p2].map(function(person, index) {
+      return { personId: index === 0 ? 'P1' : 'P2', name: person.name,
+        ganRelation: ganRelationType(yearGan, person.dayGan),
+        zhiRelation: zhiRelationType(yearZhi, person.dayZhi) };
+    });
+    var descriptions = interactions.map(function(item) {
+      var person = item.personId === 'P1' ? p1 : p2;
+      return item.name + '：流年干' + yearGan + '对日干' + person.dayGan + '为“' + item.ganRelation +
+        '”，流年支' + yearZhi + '与日支' + person.dayZhi + '为“' + item.zhiRelation + '”';
+    });
+    var advice = year + '年（' + yearGan + yearZhi + '年，以立春为年度分界）：' + descriptions.join('；') +
+      '。以上仅列流年与双方日柱的关系，半合、拱合不等于完整三合局。尚未结合各自大运、喜忌与完整原局，不能据此判定婚期、关系结果或全年吉凶。';
+    results.push({ year: year, advice: advice, interactions: interactions });
   }
 
   return results;
@@ -938,25 +910,17 @@ function generateDosAndDonts(p1, p2, relationType) {
   var j1 = Array.isArray(xiy.p1.jiShen) ? xiy.p1.jiShen.slice() : [];
   var j2 = Array.isArray(xiy.p2.jiShen) ? xiy.p2.jiShen.slice() : [];
   var shareJi = j1.filter(function(w){return j2.indexOf(w)>-1});
-  var shareXi = j1.filter(function(w){return xiy.p1.xiShen.indexOf(w)>-1});
+  var favorable1 = xiy.p1.yongShen.concat(xiy.p1.xiShen);
+  var favorable2 = xiy.p2.yongShen.concat(xiy.p2.xiShen);
+  var shareXi = HP_WXO.filter(function(w){return favorable1.indexOf(w)>-1 && favorable2.indexOf(w)>-1 && j1.indexOf(w)<0 && j2.indexOf(w)<0;});
 
-  // 五行强弱提取
-  var wxP1 = p1.wuxing, wxP2 = p2.wuxing;
-  var WX_ALL = HP_WXO;
-  var weakBoth = [];
-  WX_ALL.forEach(function(wx){
-    if((wxP1[wx]||0)<=1&&(wxP2[wx]||0)<=1)weakBoth.push(wx);
-  });
-
-  // 找出驿马（寅申巳亥）柱
-  function hasYiMa(pillars){
-    var ym=['寅','申','巳','亥'];
-    for(var i=0;i<pillars.length;i++){
-      if(ym.indexOf(pillars[i].zhi)>-1)return pillars[i];
-    }
-    return null;
+  // 神煞沿用个人排盘；出现寅申巳亥本身不等于命带驿马。
+  function hasYiMa(person){
+    return (person.shenSha || []).some(function(item){
+      return item === '驿马' || (item && item.name === '驿马');
+    });
   }
-  var ym1=hasYiMa(p1.pillars), ym2=hasYiMa(p2.pillars);
+  var ym1=hasYiMa(p1), ym2=hasYiMa(p2);
 
   // 日柱是否羊刃
   var yrdSet={'丙午':1,'壬子':1,'丁巳':1,'癸亥':1};
@@ -977,22 +941,15 @@ function generateDosAndDonts(p1, p2, relationType) {
     '水':{do:'多创造深度聊天和思想碰撞的机会，一起看书、听讲座、交流想法',dont:'别回避深入对话，水主智慧，不敢聊心里话只会让距离越来越远'}
   };
 
-  // 给共忌五行对应的「宜」
-  shareJi.forEach(function(wx){
+  // 活动只是可选的相处建议，不把共忌或统计缺项写成补益需要。
+  shareXi.forEach(function(wx){
     var act=WX_ACTIVITY[wx+''];
-    if(act)dosH.push(act.do+'（'+wx+'为共忌，需主动平衡）');
-  });
-
-  // 给缺五行对应的「宜」
-  weakBoth.forEach(function(wx){
-    var act=WX_ACTIVITY[wx+''];
-    if(act&&shareJi.indexOf(wx)<0)dosM.push(act.do+'（'+wx+'不足，需有意识补充）');
+    if(act)dosH.push(act.do+'（双方喜用方向有'+wx+'，仅作活动灵感，不代表活动能改变命局）');
   });
 
   // 共忌对应的「忌」
   shareJi.forEach(function(wx){
-    var act=WX_ACTIVITY[wx+''];
-    if(act)dontsH.push(act.dont+'（'+wx+'为共忌，过度放任易失衡）');
+    dontsH.push('不要因为统计缺少'+wx+'就要求双方补'+wx+'；个人专业判定中'+wx+'为共忌，缺项不等于需要补充');
   });
 
   // =========================================================
@@ -1006,7 +963,7 @@ function generateDosAndDonts(p1, p2, relationType) {
     dosH.push('当两人意见相左时，各自冷静十分钟再聊，不要当场争输赢（日支'+zr+'，情绪易瞬间引爆）');
     dontsH.push('别在气头上说重话，日柱'+zr+'意味着你们一旦互相伤害，伤口比普通关系更深');
     if(ym1||ym2){
-      dosM.push('定期一起出门走走，短途旅行最好，流动的空间能大大缓解冲的压力（寅申巳亥为驿马，动则通）');
+      dosM.push('如果双方喜欢出行，可安排短途散步或旅行；个人排盘有驿马记录，但活动效果仍以实际体验为准');
     } else {
       dosM.push('培养一个能一起流汗的运动习惯，跑跑步、打打球，冲的能量需要身体来释放');
     }
@@ -1016,13 +973,13 @@ function generateDosAndDonts(p1, p2, relationType) {
   } else if(zr==='六害'){
     dosM.push('多关注对方的感受而不是对错，日支'+zr+'关系中是非多，争赢了道理可能输了感情');
     dontsM.push('别跟共同的朋友聊两人之间的矛盾，六害关系容易被外界放大是非');
-  } else if(zr==='三合'||zr==='六合'){
-    dosM.push('日柱'+zr+'是上等配置，你们之间有一种天然的默契，多相信直觉');
+  } else if(zr==='半合'||zr==='拱合'||zr==='六合'){
+    dosM.push('把日支'+zr+'作为沟通观察线索，是否有默契仍以真实相处为准');
   }
 
   // 日干五合
-  if(gr==='五合'){
-    dosH.push('你们是天干'+p1.dayGan+'、'+p2.dayGan+'五合，这是最难得的组合之一，天生互补，遇到分歧多想想这个');
+  if(gr==='合'){
+    dosH.push('你们的日干'+p1.dayGan+'、'+p2.dayGan+'有五合关系，可作为沟通线索；遇到分歧仍要听清对方实际需要');
   } else if(gr==='克'){
     dontsM.push('别在公开场合争强好胜，日干'+gr+'关系容易在众人面前擦出火星子');
   }
@@ -1038,14 +995,14 @@ function generateDosAndDonts(p1, p2, relationType) {
   // 3. 跨盘冲合驱动的建议
   // =========================================================
   if(crChong>=3){
-    dontsH.push('避免长期异地分居或长时间冷战，两位盘面之间有'+crChong+'处相冲，距离远了容易生变');
-    dosH.push('在两人的共同空间里布置一些圆润的装饰（圆形家具、弧形摆设），在居家层面化解冲的能量');
+    dontsH.push('跨盘记录有'+crChong+'处相冲，不能据此认定异地必然生变；关系出现分歧时先核对真实原因，避免长期冷战');
+    dosH.push('如果日常确有反复的分歧，约定暂停争执、再沟通的方式；不把调整家具形状当成解决关系问题的方法');
   } else if(crChong>=1){
     dontsM.push('不要在三观差异大的事情上反复较劲，盘面存在冲克，求同存异比求全更实际');
   }
 
   if(crHe>=3){
-    dosM.push('你们天生合得来，一起做任何事情都比单打独斗效果好，适合共同创业或合作项目');
+    dosM.push('跨盘的合关系可作为互动观察线索；是否合作应先核对能力、分工和风险，不能由合的数量直接决定');
   }
 
   // =========================================================
@@ -1107,19 +1064,16 @@ function generateDosAndDonts(p1, p2, relationType) {
     dontsH.push('别强迫对方变成跟自己一样的人，五行互补度低意味着你们的优势完全不在一个赛道，各走各路再回头看对方反而是风景');
     dosH.push('利用好各自的特长分工合作，一个负责规划一个负责执行，一个主外一个主内，互补型联盟反而最稳固');
   } else if(wc.complementScore>=70){
-    dosM.push('五行高度互补，你们在一起能形成一个完整的能量环，独处时各自有短板，合在一起刚好补齐');
+    dosM.push('双方有符合喜用方向的五行对应，可交流各自偏好的支持方式；不要把对方当成必须补足自己命局的人');
   }
 
   // =========================================================
   // 7. 驿马特化建议
   // =========================================================
   if(ym1||ym2){
-    var ymWho=ym1?p1.name:(ym2?p2.name:'');
-    var ymZhi=(ym1||ym2||{}).zhi;
-    if(ymZhi){
-      dosM.push(ymWho+'的盘面有驿马星（'+ymZhi+'），多安排一些一起出行、旅行、外出的活动，动起来对你们的运势都有帮助');
-      if(crChong>0)dontsM.push('不要把'+ymWho+'拘束在家或办公室太久，有驿马的人憋着会烦躁，情绪积累反而容易爆发冲突');
-    }
+    var ymWho=[ym1?p1.name:'', ym2?p2.name:''].filter(Boolean).join('、');
+    dosM.push(ymWho+'的个人排盘记录有驿马，可把共同出行作为活动选项，是否喜欢仍以本人意愿为准');
+    if(crChong>0)dontsM.push('不要仅凭驿马或相冲就替'+ymWho+'决定是否出行，先沟通时间、预算与个人意愿');
   }
 
   // =========================================================

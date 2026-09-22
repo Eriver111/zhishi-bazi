@@ -587,6 +587,7 @@ body::before{
 <script src="/js/app-experience.js?v=1" defer></script>
 
 <script src="/js/service-notice.js?v=2" defer></script>
+<link rel="stylesheet" href="/css/editorial-art.css?v=2">
 </head>
 <body>
 <!-- ====== 墨色山水背景 v3 · 古画真迹 ====== -->
@@ -657,54 +658,63 @@ body::before{
   </section>
 
   <!-- ====== Features ====== -->
-  <section class="features">
-    <a href="/paipan" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>命</span></div>
+  <div class="tool-gallery-heading"><h2 id="toolGalleryTitle">探索知时</h2><p>选择一个感兴趣的视角</p></div>
+  <section class="features" aria-labelledby="toolGalleryTitle">
+    <a href="/paipan" class="feat-card" aria-label="八字排盘">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/bazi-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>01 / ZHISHI</span><span>↗</span></span>
       <h3>八字排盘</h3>
-      <p>公历农历双输入 · 真太阳时校正<br>十神旺衰 · 大运流年 · 纳音神煞</p>
+      <p>四柱与十神的关系<br>旺衰、格局与岁运</p>
     </a>
-    <a href="/ziwei" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>斗</span></div>
+    <a href="/ziwei" class="feat-card" aria-label="紫微斗数">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/ziwei-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>02 / ZHISHI</span><span>↗</span></span>
       <h3>紫微斗数</h3>
-      <p>三合飞星四化 · 十二宫精断<br>十四主星 · 辅星杂曜 · 格局论断</p>
+      <p>十二宫与星曜分布<br>命盘与专业解读</p>
     </a>
-    <a href="/liuyao" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>爻</span></div>
+    <a href="/liuyao" class="feat-card" aria-label="六爻占卜">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/liuyao-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>03 / ZHISHI</span><span>↗</span></span>
       <h3>六爻占卜</h3>
-      <p>掷钱起卦 · 六爻装卦<br>世应用神 · 动变生克 · 月建日辰</p>
+      <p>静心一问，六次成卦<br>读懂本卦与变卦</p>
     </a>
-    <a href="/meihua" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>梅</span></div>
+    <a href="/meihua" class="feat-card" aria-label="梅花易数">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/meihua-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>04 / ZHISHI</span><span>↗</span></span>
       <h3>梅花易数</h3>
-      <p>以数起卦 · 万物类象<br>本卦变卦 · 互卦综卦 · AI 解卦</p>
+      <p>以数起卦，观物取象<br>记录此刻的思考</p>
     </a>
-    <a href="/hepan" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>缘</span></div>
+    <a href="/hepan" class="feat-card" aria-label="合盘缘分">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/hepan-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>05 / ZHISHI</span><span>↗</span></span>
       <h3>合盘缘分</h3>
-      <p>双人八字深度合盘<br>五行互补 · 相处模式 · 关键节点</p>
+      <p>对照两人的命盘<br>了解差异与相处方式</p>
     </a>
- 
-    <a href="/fengshui" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>宅</span></div>
+    <a href="/fengshui" class="feat-card" aria-label="八宅风水">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/fengshui-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>06 / ZHISHI</span><span>↗</span></span>
       <h3>八宅风水</h3>
-      <p>坐向定局 · 《八宅明镜》九星分布<br>多图识煞 · 门主灶三要互配</p>
+      <p>从坐向到居住格局<br>探索传统空间文化</p>
     </a>
-    <a href="/face" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>观</span></div>
+    <a href="/face" class="feat-card" aria-label="AI 观面">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/face-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>07 / ZHISHI</span><span>↗</span></span>
       <h3>AI 观面</h3>
-      <p>上传正面照片 · 《麻衣神相》十二宫<br>逐宫分析 · 好坏都客观指出</p>
+      <p>从五官到表情<br>了解传统观相文化</p>
     </a>
-    <a href="/palm" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>手</span></div>
+    <a href="/palm" class="feat-card" aria-label="AI 观手">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/palm-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>08 / ZHISHI</span><span>↗</span></span>
       <h3>AI 观手</h3>
-      <p>上传手掌照片 · 《神相全编》掌纹<br>生命智慧感情线 · 五指掌丘分析</p>
+      <p>观察掌形与纹路<br>体验传统观手文化</p>
     </a>
-    <a href="/fortune" class="feat-card" style="text-decoration:none">
-      <div class="feat-icon"><span>运</span></div>
+    <a href="/fortune" class="feat-card" aria-label="今日运势">
+      <span class="feat-art" aria-hidden="true"><img src="/images/studio/fortune-v1.webp" width="720" height="480" alt="" loading="lazy" decoding="async"></span>
+      <span class="feat-meta" aria-hidden="true"><span>09 / ZHISHI</span><span>↗</span></span>
       <h3>今日运势</h3>
-      <p>结合个人资料查看每日趋势<br>宜忌参考 · 理性规划 · 一次性解读</p>
+      <p>查看今日干支与宜忌<br>为日常留一点思考</p>
     </a>
-   </section>
+  </section>
 
 </div>
 
