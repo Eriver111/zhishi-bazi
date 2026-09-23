@@ -14,7 +14,7 @@ const themeCSS=['theme-light.css','theme-light-results.css'].map(f=>fs.readFileS
   await page.setContent('<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><main style="max-width:760px;margin:auto;padding:16px"><section class="section-drawer section-parents drawer-open" id="parentsSection"><div class="section-header"><h2>父母关系</h2></div><div class="drawer-body"><div class="parents-content" id="parentsContent"></div></div></section></main></body></html>');
   await page.addStyleTag({content:baseCSS+css+themeCSS+'body{display:block;min-width:0;margin:0}main{width:100%;box-sizing:border-box}'});
   for(const file of ['bazi.js','result.js'])await page.addScriptTag({content:fs.readFileSync(path.join(root,'js',file),'utf8')});
-  for(const pillars of ['癸未 庚申 甲寅 戊辰','己亥 癸酉 己未 甲戌','丁酉 癸卯 乙巳 丙戌']){
+  for(const pillars of ['癸未 庚申 甲寅 戊辰','己亥 癸酉 己未 甲戌','丁酉 癸卯 乙巳 丙戌','己未 戊辰 壬子 癸卯','癸未 乙卯 壬午 戊申','丙戌 己亥 丙寅 甲午']){
    const counts=await page.evaluate(pillars=>{
     _bazi=Object.fromEntries(pillars.split(' ').map((p,i)=>[['year','month','day','hour'][i],{gan:p[0],zhi:p[1]}]));
     _params={gender:'male',mode:'pillars'};
@@ -28,6 +28,18 @@ const themeCSS=['theme-light.css','theme-light-results.css'].map(f=>fs.readFileS
    assert.equal(await page.locator('.parents-limited[open]').count(),0);
    const visible=await page.locator('#parentsContent').innerText();
    assert.doesNotMatch(visible,/不足以|尚不能|无法确定|暂不单独/);
+   assert.doesNotMatch(visible,/可以先抓住|这条线索指向|协调决定|不指定是哪位父母/);
+   if(pillars==='己未 戊辰 壬子 癸卯')assert.match(visible,/你想按自己的打算做，家里更希望你照原来的规矩来/);
+   if(pillars==='癸未 乙卯 壬午 戊申'){
+    // Previously year official + month hurting officer fabricated a shared rules theme.
+    assert.equal(await page.evaluate(()=>__fixture.judgements.child.direction),'insufficient');
+    assert.doesNotMatch(visible,/原来的规矩/);
+   }
+   if(pillars==='丙戌 己亥 丙寅 甲午'){
+    const child=await page.evaluate(()=>__fixture.childRelationshipText);
+    assert.match(child,/你有想法时，更容易把它拿出来和家人商量/);
+    assert.doesNotMatch(child,/原来的规矩|照说好的办法/);
+   }
    if(counts.readable){
     const detail=page.locator('.pr-card details').first();await detail.locator('summary').click();
     assert.equal(await detail.getAttribute('open'),'');

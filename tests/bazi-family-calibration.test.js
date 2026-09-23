@@ -41,7 +41,7 @@ test('neutral role does not become pressure, and adverse role does not become la
   assert.equal(row(n,'mother').direction,'thematic');
   assert.equal(n.judgements.mother.support,false);
   assert.ok(n.judgements.mother.themeRequirements.every(c=>c.met));
-  assert.match(n.motherText,/哪些照顾.*哪些决定/);
+  assert.match(n.motherText,/哪些事由母亲帮你安排，哪些事你自己来/);
   roles(ctx,{水:'忌神'});const p=calc.analyzeParents(b,'male');
   assert.ok(p.judgements.mother.responsibilityPressure);
   assert.ok(p.judgements.mother.pressureRequirements.every(c=>c.met));
@@ -64,7 +64,8 @@ test('a personal household theme needs both cross-pillar context and an actual d
   const p=calc.analyzeParents(chart('壬子 癸亥 甲寅 丁卯'),'male');
   assert.equal(row(p,'child').direction,'thematic');
   assert.ok(row(p,'child').requiredConditions.every(c=>c.met));
-  assert.match(p.childRelationshipText,/照顾由谁提供、生活怎样安排/);
+  assert.match(p.childRelationshipText,/谁需要帮忙、谁能腾出时间/);
+  assert.doesNotMatch(p.childRelationshipText,/起分歧|争论|谈不拢/);
   assert.match(row(p,'child').sourceText,/亥与日柱寅合/);
   // Removing the cross-pillar upbringing theme cannot leave a generic relational claim behind.
   const withoutTheme=calc.analyzeParents(chart('壬子 丙午 甲寅 丁卯'),'male');
@@ -102,7 +103,8 @@ test('a parent star only in the year background does not establish personal pres
   assert.equal(p.judgements.mother.responsibilityPressure,false);
   assert.equal(p.judgements.mother.interactionFriction,false);
   assert.equal(row(p,'mother').direction,'thematic');
-  assert.match(p.motherText,/早年家庭背景/);
+  assert.match(p.motherText,/小时候/);
+  assert.equal(row(p,'mother').reading.scope,'早年成长背景');
   assert.ok(p.judgements.mother.themeRequirements.every(c=>c.met));
 });
 

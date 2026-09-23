@@ -7,6 +7,52 @@ function chart(s){return Object.fromEntries(s.split(' ').map((p,i)=>[['year','mo
 const row=(p,key)=>p.claims.find(c=>c.claimKey==='parents.'+key);
 const roles=(ctx,c)=>{ctx.getYongJi=()=>({elementClassification:c,xiShen:[],jiShen:[]});};
 
+test('family-day theme readings explain the interaction and keep cooperation distinct from friction',()=>{
+ const {ctx,calc}=load();
+ const fixtures=[
+  ['辛酉 辛丑 癸卯 辛酉','care',true],
+  ['丁酉 辛亥 丙寅 戊戌','practical',false],
+  ['癸巳 丙辰 癸卯 乙卯','practical',true],
+  ['己未 戊辰 壬子 癸卯','rules',true],
+  ['丙寅 甲午 壬午 辛亥','expression',true],
+  ['己亥 戊辰 癸酉 辛酉','rules',false],
+  ['乙亥 壬午 壬午 丁未','independence',true],
+  ['甲午 丙寅 己未 壬申','care',false],
+  ['壬辰 壬寅 癸亥 丙辰','independence',false],
+  ['丙戌 己亥 丙寅 甲午','expression',false]
+ ];
+ function check(p,theme,friction){
+  assert.equal(p.judgements.child.direction,'thematic');
+  assert.ok(p.evidence.earlyEnvironment.themes.includes(theme));
+  assert.equal(p.evidence.selfFamilyEvents.some(e=>e.type!=='合'),friction);
+  assert.ok(row(p,'child').requiredConditions.every(c=>c.met));
+  assert.doesNotMatch(p.childRelationshipText,/可以先抓住|这条线索|协调决定|不指定是哪位|观察点|互动主题|父亲|母亲/);
+  if(friction)assert.match(p.childRelationshipText,/分歧|争论|谈不拢|各说各的|听谁的/);
+  else assert.doesNotMatch(p.childRelationshipText,/分歧|争论|谈不拢|各说各的|控制|不被爱/);
+  assert.match(row(p,'child').blockers.join('；'),/不指定是哪位父母/);
+ }
+ fixtures.forEach(([p,t,f])=>check(calc.analyzeParents(chart(p),'male'),t,f));
+});
+
+test('complete ten-god names keep hurting officer out of officials and rob wealth out of wealth',()=>{
+ const {ctx,calc}=load();roles(ctx,{});
+ const p=calc.analyzeParents(chart('丁巳 丁亥 甲寅 乙卯'),'male');
+ const early=p.evidence.earlyEnvironment;
+ assert.ok(early.nodes.filter(n=>n.role==='伤官').length>=2);
+ assert.ok(early.nodes.filter(n=>n.role==='伤官').every(n=>n.theme==='expression'));
+ assert.ok(early.themes.includes('expression'));
+ assert.equal(early.themes.includes('rules'),false);
+ assert.doesNotMatch(p.familyText,/守规矩|听谁的|按要求做/);
+ const officials=calc.analyzeParents(chart('庚辰 辛酉 甲卯 丙午'),'male');
+ assert.ok(officials.evidence.earlyEnvironment.nodes.filter(n=>n.role==='正官'||n.role==='七杀').every(n=>n.theme==='rules'));
+ assert.ok(officials.evidence.earlyEnvironment.themes.includes('rules'));
+ const peers=calc.analyzeParents(chart('壬辰 壬寅 癸亥 丙辰'),'male').evidence.earlyEnvironment;
+ assert.ok(peers.nodes.filter(n=>n.role==='劫财').length>=2);
+ assert.ok(peers.nodes.filter(n=>n.role==='劫财').every(n=>n.theme==='independence'));
+ assert.ok(peers.themes.includes('independence'));
+ assert.equal(peers.themes.includes('practical'),false);
+});
+
 test('help restrained elsewhere is not expanded into personal arguments or lack of care',()=>{
  const {ctx,calc}=load();roles(ctx,{水:'喜神'});
  const p=calc.analyzeParents(chart('癸亥 癸酉 甲卯 丁巳'),'male'),c=row(p,'mother');
@@ -60,6 +106,7 @@ test('parent passages and inherited family themes remain attributable across 512
   const m=calc.analyzeParents(b,'male'),f=calc.analyzeParents(b,'female');
   assert.equal(JSON.stringify(m.claims),JSON.stringify(f.claims));
   for(const c of m.claims){
+   if(c.status!=='insufficient')assert.doesNotMatch(c.outcomeText,/可以先抓住|这条线索指向|解读重点|最具体的观察点|关系的连接点|这一侧的互动主题/);
    if(!c.reading)continue;
    assert.ok(c.outcomeText.startsWith(c.reading.headline));
    assert.equal(new Set(c.reading.parts.map(p=>p.text)).size,c.reading.parts.length);
