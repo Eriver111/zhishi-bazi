@@ -115,6 +115,8 @@ function optionLabel(event) {
   return {
     domain: option.domain,
     label: option.label,
+    eventText: option.detail,
+    legacyBroad: (/^rule:/.test(option.mechanism_key)||/:scene-/.test(option.manifestation))&&!/:e2$/.test(option.manifestation),
     detail: detail ? detail.label : '',
     manifestation: option.manifestation,
     mechanismKey: option.mechanism_key || safeKey(event && event.mechanism_key, 80)
@@ -141,6 +143,10 @@ function buildCalibrationProfile(events, options) {
     if (event.answer === 'yes') {
       const picked = optionLabel(event);
       if (!picked) return;
+      // Keep old answers in history, but broad scene wording cannot validate the
+      // new concrete event contract. Partial agreement is not a full outcome.
+      if ((/^rule:/.test(picked.mechanismKey)||/:scene-/.test(picked.manifestation)) &&
+          (!/:e2$/.test(picked.manifestation)||event.match_level==='partial')) return;
       const key = picked.domain + ':' + picked.mechanismKey + ':' + picked.manifestation;
       if (!buckets[key]) buckets[key] = { ...picked, score: 0, count: 0, years: [], byYear:{}, details:[] };
       if(buckets[key].details.indexOf(picked.detail)<0)buckets[key].details.push(picked.detail);
@@ -187,7 +193,7 @@ function buildCalibrationProfile(events, options) {
   rankedPatterns.forEach(function(item){ item.detail=item.details.length===1?item.details[0]:'';delete item.details;delete item.byYear; });
   const patterns = rankedPatterns.filter(function(item) { return item.count >= 2; }).slice(0, 6);
   const tentativePatterns = rankedPatterns.filter(function(item) { return item.count === 1; }).slice(0, 6);
-  return { version: 'bazi-cal-v5', patterns, tentativePatterns, denied, deniedPatterns: Object.values(deniedMechanisms), events };
+  return { version: 'bazi-cal-v6', patterns, tentativePatterns, denied, deniedPatterns: Object.values(deniedMechanisms), events };
 }
 
 
@@ -265,7 +271,7 @@ function buildReportReview(events, candidates, options) {
       original:c.detail,sourceEvidence:c.evidence,confirmedYears:positive?positive.years:[],deniedYears:denied?denied.years:[],
       outcome,futureConfirmed:false});
   });
-  return {version:'report-review-v4',answered:history.length,skipped:profile.events.filter(e=>e.answer==='unsure').length,
+  return {version:'report-review-v5',answered:history.length,skipped:profile.events.filter(e=>e.answer==='unsure').length,
     history,adjustments,processReferences:buildProcessReferences(profile.events,supportedCandidates),candidates:supportedCandidates,profile,boundary:'往事复核只调整报告中的机制解释及相关总结，不修改家庭关系、四柱与原局判读；共同作用方式可跨场景参考，具体事件与结果不能直接迁移；经历符合不等于因果已证实，也不保证未来事件发生。'};
 }
 

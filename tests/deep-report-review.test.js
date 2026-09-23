@@ -56,7 +56,7 @@ function clientFixture({authenticated=false,stored=[],post}={}){
     alert(s){box.alerts.push(s);},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},
     Auth:{getToken:()=>authenticated?'mock-token':''},ChatPersistence:{chartIdentity:()=> 'chart-key'},
     ZhishiAIContext:{buildChartData:()=>({fourPillars:{},birthInfo:{}})},ZhishiCalibrationModel:model,
-    fetch(url,opts){if(opts.method==='POST')return post(JSON.parse(opts.body));return Promise.resolve({ok:true,json:async()=>({ready:true,calibration:{candidate_version:'bazi-cal-v9'},events:stored})});}};
+    fetch(url,opts){if(opts.method==='POST')return post(JSON.parse(opts.body));return Promise.resolve({ok:true,json:async()=>({ready:true,calibration:{candidate_version:'bazi-cal-v10'},events:stored})});}};
   box.window=box;
   let src=fs.readFileSync(path.join(root,'js/chart-calibration.js'),'utf8').replace('root.ZhishiCalibration.beforeAI = inspectFirstClick;','root.ZhishiCalibration.beforeAI = inspectFirstClick;root.__save=saveAnswer;');
   vm.runInNewContext(src,box);return {box,node,storage};

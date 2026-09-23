@@ -118,7 +118,7 @@ rules.forEach(rule=>{rule.commonProcess=commonProcesses[rule.id];});
 function describeOption(option){
  if(!option)return null;
  const rule=rules.find(r=>'rule:'+r.id===option.mechanism_key);if(!rule)return null;
- const match=String(option.manifestation||'').match(/^([^:]+)(?::(student|exam|work|transition|home|retired|daily))?$/);if(!match)return null;
+ const match=String(option.manifestation||'').match(/^([^:]+)(?::(student|exam|work|transition|home|retired|daily))?:e2$/);if(!match)return null;
  const scene=match[2]||'unspecified';
  const valid=rule.outcomes.some(o=>o.manifestation===match[1]&&(o.domain===option.domain||o.domain==='career'&&option.domain==='study'&&['student','exam'].includes(scene)));
  return valid?{id:rule.id,name:rule.name,commonProcess:rule.commonProcess,scene,domain:option.domain,manifestation:match[1]}:null;
@@ -126,47 +126,6 @@ function describeOption(option){
 
 // A manifestation is bound to a life setting. Feedback from school must not
 // silently validate an employment outcome, even when the structural rule matches.
-const settings={
- student:{label:'在读',task:'课程、作业或集体活动',goal:'学习阶段目标',people:'同学或学习伙伴',authority:'老师要求、校规或评价标准',support:'教材、答疑或学习方法',resource:'学习材料、时间与可支配费用',output:'答题、作业或作品',plan:'课程与校园生活安排'},
- exam:{label:'备考进修',task:'复习、练习或报名准备',goal:'备考阶段目标',people:'备考伙伴',authority:'考试要求、报名条件或评审标准',support:'课程、指导或复习方法',resource:'备考时间、资料与培训费用',output:'模拟答题、展示或考核作业',plan:'复习与考核安排'},
- transition:{label:'求职调整',task:'申请、面试准备或方向探索',goal:'求职或转型阶段目标',people:'同行或协助者',authority:'申请条件、甄选流程或约定',support:'信息、指导或准备方法',resource:'求职时间、培训费用与生活预算',output:'申请材料、面试表达或试做成果',plan:'求职与生活安排'},
- home:{label:'居家生活',task:'生活事务、照料分工或个人计划',goal:'生活安排目标',people:'协作分担者',authority:'办事要求、共同约定或分工规则',support:'实用信息、指导或办事方法',resource:'可支配时间、物资与生活预算',output:'办事成果或个人创作',plan:'日常生活与照料安排'},
- retired:{label:'退休生活',task:'日常办事、兴趣活动或共同安排',goal:'个人生活目标',people:'同伴或协助者',authority:'办事规定、活动要求或共同约定',support:'可靠信息、指导或办事方法',resource:'可支配时间、生活预算与物资',output:'办事成果或兴趣作品',plan:'日常生活与活动安排'},
- daily:{label:'生活场景待细分',task:'个人事务或共同任务',goal:'当时的主要目标',people:'同伴或协助者',authority:'相关要求、流程或共同约定',support:'资料、指导或处理方法',resource:'可支配时间、费用与物资',output:'实际表达或完成的成果',plan:'当时的主要生活安排'}
-};
-const sceneTexts={
- 'wealth-breaks-seal':'原本用于{goal}的{resource}受到挤占，打断了准备或推进',
- 'peer-takes-wealth':'因共同支出分摊、代垫未还或费用争议，可支配的钱实际减少；正常约定内分摊不算损失',
- 'output-controls-officer':'自己的表达或做法与{authority}发生明显冲突，影响了{task}的推进',
- 'seal-restrains-output':'反复接收指导、检查或修改，打断了{output}，出现无法按计划完成的情况',
- 'officer-pressure':'{authority}集中增多，{task}的节奏受到挤压',
- 'peer-resists-kill':'面对较重的{task}，靠持续投入或{people}分担承压',
- 'peer-carries-wealth':'通过{people}分担费用或执行，接住了原先独自难以承担的{resource}安排',
- 'seal-transforms-kill':'面对较严的{authority}，通过{support}理清办法，原先难处理的{task}逐渐能推进',
- 'officer-seal-support':'按照{authority}准备，借助{support}完成要求，获得明确审核或评价认可',
- 'food-controls-kill':'面对较难的{task}，靠方法训练与实际发挥解决关键难点，形成了可核对的阶段成果',
- 'output-controls-kill':'通过{output}展示解决办法，使原先被动承压的局面有所改善',
- 'hurt-combines-kill':'通过说明理由、展示{output}或协商条件，缓和了原先强硬的要求',
- 'blade-joins-kill':'面对紧迫的{task}，靠明确分工和果断行动推进了原先卡住的事情',
- 'seal-guides-output':'把分散的想法通过{support}整理成有条理的{output}，达到可检验的要求',
- 'output-generates-wealth':'通过实际技能服务或作品获得了可支配收入；只有得到认可、尚无报酬时不算收入兑现',
- 'wealth-generates-officer':'投入{resource}后获得了参与资格或更明确的责任；单纯增加花费不算获得认可',
- 'wealth-feeds-kill':'投入{resource}越多，随之而来的期限和要求越紧，{task}的压力反而加重',
- 'officer-protects-wealth':'通过明确费用约定、凭据或分配规则，减少代垫未还或不合理分摊，守住可支配的钱',
- 'wealth-regulates-seal':'具体的预算、期限或实际需求，促使自己停止过度准备，开始推进{task}',
- 'seal-supports-self':'借助{support}减少独自摸索，原先吃力的{task}逐渐稳定',
- 'seal-overrestricts-output':'反复查资料、等待认可或修改，反而拖慢了{output}，没能按计划完成',
- 'output-drains-self':'持续投入{output}或{task}，恢复时间不足，后续进度受影响；不据此判断疾病',
- 'peer-through-output':'通过{people}协作、分工或共同练习，形成了实际的{output}，而非只有讨论',
- 'officer-regulates-peers':'明确分工、期限和规则后，{people}之间原先争抢或各行其是的情况改善',
- 'output-regulates-officer':'通过{output}说明实际问题并改进办法，减少了重复要求或不合理限制',
- 'wealth-officer-seal-flow':'{resource}、可参与的机会与{support}接上，使自己更有能力推进{task}',
- 'clash-releases-obstruction':'{plan}调整后，原先卡住的事情开始推进；变化本身不等于有利',
- 'clash-damages-support':'原先依赖的{support}或稳定安排发生变化，需要重新适应{task}',
- 'combine-connects':'与{people}的联系加深，共同参与的{plan}增多；不据此推断恋爱或婚姻',
- 'punishment-rework':'{task}中同类要求、沟通或返工反复出现，需要多次处理',
- 'recurrence-revisits':'过去的{plan}或未处理完的问题再次出现，需要复查、收尾或重新选择'
-};
 function resolveScene(input){
  if(!input)return null;
  const age=input.age==null?null:Number(input.age);
@@ -177,18 +136,71 @@ function sceneOutcomes(rule,domain,life){
  const historicalStudy=life&&life.historical&&life.status==='unknown'&&domain==='study';
  const scene=historicalStudy?(Number(life.age)<24?'student':'exam'):resolveScene(life);
  let rows=rule.outcomes.filter(o=>o.domain===domain);
- if(!scene)return rows;
+ if(!scene)return concreteOutcomes(rule,rows,'daily','',life);
  if(domain==='study'&&!['student','exam'].includes(scene))return [];
  // School/learning manifestations have their own domain and annual evidence gate.
  if(domain==='study'&&!rows.length&&['student','exam'].includes(scene))rows=rule.outcomes.filter(o=>o.domain==='career').map(o=>({...o,domain:'study'}));
- if(scene==='working')return rows.map(o=>({...o,manifestation:o.manifestation+'@work'}));
- const s=settings[scene],format=t=>t.replace(/\{(\w+)\}/g,(_,k)=>s[k]);
- return rows.filter(o=>!(rule.id==='output-generates-wealth'&&life.age!=null&&Number(life.age)<18)).map(o=>{
-  let detail=format(sceneTexts[rule.id]);
-  if(rule.id==='wealth-breaks-seal'&&domain==='wealth')detail='出现非计划性钱财损失、代垫未还或退款未到账，影响可支配费用；正常购买资料、消费或转存不算损失';
-  if(rule.id==='peer-resists-kill')detail+=o.manifestation==='costly-completion'?'，最终完成了'+s.goal:'，但'+s.goal+'仍未完成或只能勉强维持';
+ return concreteOutcomes(rule,rows,scene==='working'?'work':scene,scene==='working'?'work':scene,life,historicalStudy);
+}
+// Questions name an observable episode and its outcome before a user answers.
+// Context changes the object, never manufactures a past occupation or a diagnosis.
+const eventScenes={
+ student:{submission:'作业、论文或参赛作品',task:'课程作业或考试准备',person:'老师',approval:'答辩、课程考核或参赛审核',deadline:'交作业或考试',group:'小组作业',change:'转班、转学或更换任课老师',support:'课程或辅导',retry:'补考、重修或重新报名'},
+ exam:{submission:'报名材料、模拟答卷或考核作业',task:'复习练习或报名准备',person:'授课老师或审核人员',approval:'报名资格或考核',deadline:'报名或考试',group:'备考小组的模拟练习',change:'更换培训班、考点或复习课程',support:'培训课程或辅导',retry:'补考或再次报名'},
+ work:{submission:'设计稿、方案或交付成品',task:'项目交付',person:'负责人或审核人员',approval:'转正、资格评审或验收',deadline:'交付或验收',group:'多人协作的交付项目',change:'调岗、换团队或更换负责人',support:'培训或技术支持',retry:'重新投标、补办验收或重做旧方案'},
+ transition:{submission:'简历、申请材料或试做作品',task:'投递申请或面试准备',person:'招聘或审核人员',approval:'申请审核或面试',deadline:'投递或面试',group:'与他人合作的试做作品',change:'更换申请渠道、面试地点或准备课程',support:'求职指导或培训',retry:'再次投递或重新参加面试'},
+ home:{submission:'办事申请材料或手工作品',task:'证件办理或照料分工',person:'办事窗口人员或合作方',approval:'证件或办事申请审核',deadline:'提交材料或预约办理',group:'多人分担的照料排班',change:'搬家或更换办事地点',support:'办事指导或代办协助',retry:'补交证件材料或重新预约'},
+ retired:{submission:'办事申请材料或兴趣作品',task:'证件办理或兴趣活动报名',person:'办事窗口人员或活动组织者',approval:'办事申请或活动报名审核',deadline:'提交材料或活动报名',group:'共同组织的兴趣活动',change:'搬家或更换活动地点',support:'办事指导或活动课程',retry:'补交申请材料或重新报名'},
+ daily:{submission:'作品或申请材料',task:'有截止日期的提交或申请',person:'提出要求的人或审核人员',approval:'申请审核或成果验收',deadline:'提交或审核',group:'需要多人交付成果的合作',change:'更换居住地点或办理地点',support:'已约定的指导或协助',retry:'补交旧申请材料或重新预约'}
+};
+// Each label states the episode, while detail defines when it counts and excludes
+// ordinary/no-result cases. Rule conditions and annual evidence remain separate.
+const concreteEvents={
+ 'wealth-breaks-seal':['报名或学习准备因费用中断','已经报名或开始的学习、培训，因为费用被临时挪用或无法支付而停课、退课或放弃报名；只有忙碌但仍按计划完成不算'],
+ 'peer-takes-wealth':['借出或代垫的钱未按约收回','曾给他人借钱或代垫费用，到约定期限仍未收回，导致自己实际可用的钱减少；自愿赠送和正常费用分摊不算'],
+ 'output-controls-officer':['因反驳要求被退回或取消资格','曾明确反驳{person}的要求，随后{submission}被退回、审核暂停或参与资格被取消；只有心里不认同、结果未受影响不算'],
+ 'seal-restrains-output':['被要求重做，导致延期或未能提交','已经准备好的{submission}，因新增检查或修改要求被退回重做，导致延期或未能提交；正常修改并按时完成不算'],
+ 'officer-pressure':['临时新增限期要求，连续压缩休息','在{task}期间，临时新增必须完成的要求，为赶{deadline}连续多天加时或压缩休息；仅主观觉得压力大不算'],
+ 'peer-resists-kill':['加时或找人分担后完成限期任务','为了完成{task}，连续多天加时、压缩休息或请人分担'],
+ 'peer-carries-wealth':['有人合担费用后完成原定付款','一笔原本无法独自承担的已约定费用，在他人共同出资或代垫后按期付清；只得到口头承诺不算'],
+ 'seal-transforms-kill':['经指导补齐要求，原审核得以通过','{approval}原先未通过，在接受指导、补学或培训并重新准备后通过；只参加课程但没有通过结果不算'],
+ 'officer-seal-support':['凭学习证明或证书通过正式审核','提交所需的学习证明、资格证书或培训记录后，{approval}正式通过；只有口头夸奖不算'],
+ 'food-controls-kill':['专项练习后通过原先未过的考核','针对曾失败或不达标的环节进行专项练习，之后通过{approval}；只感觉熟练了、没有通过结果不算'],
+ 'output-controls-kill':['展示成果后，原先的拒绝改为接受','提供{submission}说明解决办法后，原先拒绝或要求补做的一方明确接受了提交；只进行争论而结果未变不算'],
+ 'hurt-combines-kill':['协商后获得延期或减少提交要求','就{deadline}与{person}协商，对方明确同意延长期限或减少提交要求；自己单方面推迟不算'],
+ 'blade-joins-kill':['临时接手紧急交付并按期完成','临近{deadline}时临时接手他人未完成的部分，通过加快处理或重新分工，最终按期完成提交；只是接手、最终未完成不算'],
+ 'seal-guides-output':['按指导重写后，提交获得通过','{submission}原先条理或格式不合要求，按指导整理重写后通过{approval}；只做整理而未通过不算'],
+ 'output-generates-wealth':['作品或服务收到实际报酬','出售自己的作品、提供技能服务或完成约定交付后，实际收到报酬；只有浏览、夸奖、承诺付款而尚未到账不算'],
+ 'wealth-generates-officer':['出资或提供资源后获正式负责权','为一项合作提供资金或物资后，被正式指定负责预算、分工或签字确认；只是多花钱、未获得负责权不算'],
+ 'wealth-feeds-kill':['垫付增加后又被要求补交或担责','已经为一项合作支付或垫付费用，随后又被要求追加付款、补交材料或承担违约责任；按原合同正常分期付款不算'],
+ 'officer-protects-wealth':['凭约定或凭据追回欠款','原本未按约收回的钱，通过出示借条、合同、转账凭据或明确分配约定，实际追回或核减了应付金额；只订规则但没有执行结果不算'],
+ 'wealth-regulates-seal':['交费或明确期限后完成首次提交','原先反复准备却未提交，交费或确定{deadline}之后，实际完成了首次提交；只有决定开始或继续搜资料不算'],
+ 'seal-supports-self':['借助指导完成此前办不成的提交','在{task}上曾卡在一个明确步骤，获得指导或操作资料后完成了{submission}的提交；只拿到资料但仍未完成不算'],
+ 'seal-overrestricts-output':['初稿反复准备，尚未提交就已逾期','为完善{submission}一直自行查资料、改写，尚未交出初稿就错过{deadline}，需要延期或重新报名；已经提交后被他人退回重做不算这一项'],
+ 'output-drains-self':['连续赶交付后，取消后续安排休息','连续多天赶{submission}而压缩休息，之后因精力跟不上取消、请假或延期了已约定的安排；单次晚睡或普通疲惫不算'],
+ 'peer-through-output':['多人分工完成了一次实际交付','在{group}中与他人明确分工，最终共同提交了可验收的成果；只有讨论、建群或口头约定不算'],
+ 'officer-regulates-peers':['明确负责人后，重复争抢停止','{group}曾因重复分工或互相推诿而停下，明确负责人和期限后恢复并完成交付；只有制定规则、仍未完成不算'],
+ 'output-regulates-officer':['提交改进方案后，重复要求被取消','向{person}提交具体改进办法后，对方取消了原先重复填写、重复提交或不必要的处理步骤；只有抱怨、流程没有改变不算'],
+ 'wealth-officer-seal-flow':['费用支持与培训到位后完成资格审核','获得费用或物资支持后，参加了规定的培训，并通过相应资格审核；只获得其中一项不算整条过程符合'],
+ 'clash-releases-obstruction':['更换地点后，原申请得以办成','在{change}之后，此前被搁置的一项申请或提交得到受理并办成；仅换环境但原问题仍未解决不算'],
+ 'clash-damages-support':['约好的支持取消，提交被迫延期','已约定的{support}被取消或中断，导致原定提交或预约延期，需要重新报名或找人接替；只更换联系人但安排照常不算'],
+ 'combine-connects':['与同一人开始固定见面并共同完成一件事','与同一人从偶尔联系变为固定见面或协作，并共同完成一次报名、出行或成果提交；只聊天增多而无共同执行不算'],
+ 'punishment-rework':['同一份提交因相同问题被退回两次以上','同一份{submission}因同一个问题被退回或要求补交至少两次；不同材料各修改一次不算'],
+ 'recurrence-revisits':['以前结束或搁置的申请被重新启动','此前已结束或搁置的申请再次被通知处理，实际进行了{retry}；只是回想旧事、没有重新办理不算']
+};
+function concreteOutcomes(rule,rows,scene,suffix,life,historicalStudy){
+ const s=eventScenes[scene],spec=concreteEvents[rule.id];
+ return rows.filter(o=>!(rule.id==='output-generates-wealth'&&life&&life.age!=null&&Number(life.age)<18)).map(o=>{
+  let label=spec[0],detail=spec[1].replace(/\{(\w+)\}/g,(_,k)=>s[k]);
+  if(rule.id==='wealth-breaks-seal'&&o.domain==='wealth'){
+   label='课程或资格办理中止，已缴费用未退';detail='已缴费的课程、培训或资格办理被取消或中止，按约应退的费用到期仍未退回，造成可支配费用减少；正常购买资料、正常消费或转存不算损失';
+  }
+  if(rule.id==='peer-resists-kill'){
+   const completed=o.manifestation==='costly-completion';label=completed?'加时或分担后，最终按期交齐':'加时或分担后，仍逾期或未交齐';
+   detail+=completed?'，最终在约定期限前交齐并被接收；只是觉得累、没有按期完成不算':'，最终仍超过约定期限或未能交齐；只有过程很累但按期交齐不算';
+  }
   if(historicalStudy)detail='如果当年在读、学习或备考：'+detail;
-  return {...o,manifestation:o.manifestation+'@'+scene,label:rule.name+'·'+({study:'学习与准备',career:s.task,wealth:'可支配费用',relationship:'联系与协作',change:s.plan}[domain]||s.task)+(rule.id==='peer-resists-kill'?(o.manifestation==='costly-completion'?'：累但完成':'：累仍受阻'):''),detail};
+  return {...o,manifestation:o.manifestation+(suffix?'@'+suffix:'')+':e2',label,detail};
  });
 }
 const arr=x=>Array.isArray(x)?x:[];
@@ -276,13 +288,13 @@ function candidates(domain,analysis){
   const opposites={'wealth-breaks-seal':'财制印','wealth-regulates-seal':'财破印','peer-takes-wealth':'比劫担财','peer-carries-wealth':'比劫夺财'};
   if(opposites[rule.id]&&signals.some(s=>s.type===opposites[rule.id]))return [];
   return sceneOutcomes(rule,domain,life).map(o=>({key:domain+':'+rule.id+':'+o.manifestation.replace('@',':'),domain,mechanism_key:'rule:'+rule.id,manifestation:o.manifestation.replace('@',':'),label:o.label,detail:o.detail,
-   reportBaseline:rule.id==='peer-resists-kill'?'压力仍然存在，推进主要靠持续投入、硬扛或同伴分担，过程较为耗力；承载能否持续决定任务能推进到哪一步，不直接断定已经完成。':o.detail+'。适用前提：'+rule.condition+'。',
-   reportLabel:rule.id==='peer-resists-kill'?'比劫抗杀·承压方式':o.label,
+   reportBaseline:rule.id==='peer-resists-kill'?'压力仍然存在，推进主要靠持续投入、硬扛或同伴分担，过程较为耗力；承载能否持续决定任务能推进到哪一步，不直接断定已经完成。':'本年可核对的具体表现：'+o.detail+'。适用前提：'+rule.condition+'。',
+   reportLabel:rule.id==='peer-resists-kill'?'比劫抗杀·承压方式':rule.name+'·'+o.label,
    evidence:['规则候选：'+rule.name+'；共同作用：'+rule.commonProcess+'；成立条件：'+rule.condition,'触发依据：'+matches.map(s=>s.detail||s.conclusion||s.type).join('；'),'反例与边界：'+rule.counterexample],
    followup_prompt:'是否确实出现了上述过程和结果？',followup_options:[],
    _priority:Math.max(...matches.map(s=>Number(s.strength)||1))
   }));
  }).sort((a,b)=>b._priority-a._priority);
 }
-return {version:'imagery-v3',rules,candidates,collectSignals,resolveScene,sceneOutcomes,describeOption};
+return {version:'imagery-v4',rules,candidates,collectSignals,resolveScene,sceneOutcomes,describeOption};
 });

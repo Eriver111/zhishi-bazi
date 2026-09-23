@@ -38,10 +38,61 @@ test('neutral role does not become pressure, and adverse role does not become la
   const {ctx,calc}=load();const b=chart('癸亥 癸卯 甲午 丙寅');
   roles(ctx,{水:'中性'});const n=calc.analyzeParents(b,'male');
   assert.equal(n.judgements.mother.responsibilityPressure,false);
+  assert.equal(row(n,'mother').direction,'thematic');
+  assert.equal(n.judgements.mother.support,false);
+  assert.ok(n.judgements.mother.themeRequirements.every(c=>c.met));
+  assert.match(n.motherText,/哪些照顾.*哪些决定/);
   roles(ctx,{水:'忌神'});const p=calc.analyzeParents(b,'male');
   assert.ok(p.judgements.mother.responsibilityPressure);
   assert.ok(p.judgements.mother.pressureRequirements.every(c=>c.met));
   assert.doesNotMatch(p.motherText,/不爱|不关心|必然|肯定|感情不好/);
+});
+
+test('thematic parent reading is withdrawn with the carrying root, not relabelled as support',()=>{
+  const {ctx,calc}=load();roles(ctx,{水:'中性'});
+  const b=chart('癸亥 癸卯 甲午 丙寅');
+  assert.equal(row(calc.analyzeParents(b,'male'),'mother').direction,'thematic');
+  const settle=ctx.buildBaziEvidenceSettlement;
+  ctx.buildBaziEvidenceSettlement=b=>{const s=settle(b);return {...s,roots:s.roots.filter(r=>r.element!=='水')};};
+  const p=calc.analyzeParents(b,'male');
+  assert.equal(row(p,'mother').direction,'insufficient');
+  assert.equal(p.judgements.mother.support,false);
+});
+
+test('a personal household theme needs both cross-pillar context and an actual day relation',()=>{
+  const {ctx,calc}=load();roles(ctx,{});
+  const p=calc.analyzeParents(chart('壬子 癸亥 甲寅 丁卯'),'male');
+  assert.equal(row(p,'child').direction,'thematic');
+  assert.ok(row(p,'child').requiredConditions.every(c=>c.met));
+  assert.match(p.childRelationshipText,/照顾由谁提供、生活怎样安排/);
+  assert.match(row(p,'child').sourceText,/亥与日柱寅合/);
+  // Removing the cross-pillar upbringing theme cannot leave a generic relational claim behind.
+  const withoutTheme=calc.analyzeParents(chart('壬子 丙午 甲寅 丁卯'),'male');
+  assert.equal(row(withoutTheme,'child').direction,'insufficient');
+});
+
+test('support and pressure interpretations name different interactions without claiming emotional closeness',()=>{
+  const {ctx,calc}=load(),b=chart('癸亥 癸卯 甲午 丙寅');
+  roles(ctx,{水:'喜神'});const support=calc.analyzeParents(b,'male');
+  roles(ctx,{水:'忌神'});const pressure=calc.analyzeParents(b,'male');
+  assert.equal(row(support,'mother').direction,'mixed');
+  assert.match(support.motherText,/能得到照顾与安排上的助力.*实际执行却容易打折/);
+  assert.match(pressure.motherText,/学习与生活该怎样安排、选择是否稳妥/);
+  assert.doesNotMatch(support.motherText+pressure.motherText,/无法确定|不足以|感情亲密|不爱你/);
+  assert.notEqual(support.summaryText,pressure.summaryText);
+});
+
+test('a chart with no family conclusion gets one compact notice instead of five empty cards',()=>{
+  const {ctx,calc}=load();const p=calc.analyzeParents(chart('丁酉 癸卯 乙巳 丙戌'),'male');
+  assert.ok(p.claims.every(c=>c.status==='insufficient'));
+  const node={innerHTML:''};ctx.document={addEventListener(){},getElementById(id){return id==='parentsContent'?node:null;}};
+  ctx.window.BaZiCalculator={analyzeParents:()=>p};
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/result.js'),'utf8'),ctx);
+  ctx.renderParents({},'male');
+  assert.equal((node.innerHTML.match(/class="pr-card"/g)||[]).length,0);
+  assert.equal((node.innerHTML.match(/parents-limited/g)||[]).length,1);
+  assert.match(node.innerHTML,/本盘家庭专项线索较少/);
+  assert.ok(node.innerHTML.indexOf('parents-limited')<node.innerHTML.indexOf(p.fatherText));
 });
 
 test('a parent star only in the year background does not establish personal pressure',()=>{
@@ -50,7 +101,9 @@ test('a parent star only in the year background does not establish personal pres
   assert.ok(p.evidence.parentStars.mother.rooted);
   assert.equal(p.judgements.mother.responsibilityPressure,false);
   assert.equal(p.judgements.mother.interactionFriction,false);
-  assert.equal(row(p,'mother').direction,'insufficient');
+  assert.equal(row(p,'mother').direction,'thematic');
+  assert.match(p.motherText,/早年家庭背景/);
+  assert.ok(p.judgements.mother.themeRequirements.every(c=>c.met));
 });
 
 test('month-day clash is retained even when year-day has no relationship',()=>{
@@ -110,9 +163,11 @@ test('AI receives each direction, prerequisites and counterevidence rather than 
   assert.match(text,/该段方向：mixed/);assert.match(text,/条件核对：/);
   assert.match(text,/限制与反证：/);assert.match(text,/mixed表示帮助与牵制并存/);
   assert.match(text,/成长环境证据：/);
+  assert.match(text,/thematic表示有承载的互动主题/);
+  assert.match(text,/缺线索的部分集中简述一次/);
 });
 
-test('family page shows five conclusions first and keeps caveats in escaped detail blocks',()=>{
+test('family page shows supported conclusions first and groups missing conclusions in escaped details',()=>{
   const {ctx,calc}=load();const p=calc.analyzeParents(chart('癸未 庚申 甲寅 戊辰'),'male');
   p.claims[0].outcomeText+='<img src=x onerror=alert(1)>';
   p.claims[0].blockers.push('<script>bad()</script>');
@@ -120,8 +175,9 @@ test('family page shows five conclusions first and keeps caveats in escaped deta
   ctx.window.BaZiCalculator={analyzeParents:()=>p};
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/result.js'),'utf8'),ctx);
   ctx.renderParents({},'male');
-  assert.equal((node.innerHTML.match(/class="pr-card"/g)||[]).length,5);
-  assert.equal((node.innerHTML.match(/<details /g)||[]).length,5);
+  const limited=p.claims.filter(c=>c.status==='insufficient').length;
+  assert.equal((node.innerHTML.match(/class="pr-card"/g)||[]).length,5-limited);
+  assert.equal((node.innerHTML.match(/<details /g)||[]).length,5+(limited?1:0));
   assert.match(node.innerHTML,/原生家庭与成长方式/);
   assert.ok(node.innerHTML.indexOf('家庭的帮助与牵制并存')<node.innerHTML.indexOf('<details'));
   assert.match(node.innerHTML,/&lt;img/);assert.doesNotMatch(node.innerHTML,/<img|<script>/);
@@ -142,6 +198,7 @@ test('512 generated charts preserve gender symmetry, attributable directions and
       if(j.interactionFriction)assert.ok(j.frictionRequirements.every(c=>c.met));
       if(j.direction==='pressure')assert.ok(j.responsibilityPressure||j.interactionFriction);
       if(j.direction==='supportive'||j.direction==='mixed')assert.ok(j.support);
+      if(j.direction==='thematic')assert.ok(j.themeRequirements.every(c=>c.met));
       const star=a.evidence.parentStars[key];
       assert.equal(star.rootPower,star.rootEvidence.reduce((n,r)=>n+r.effectivePower,0));
     }

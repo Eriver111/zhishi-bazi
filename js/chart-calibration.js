@@ -2,7 +2,7 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
-  var CANDIDATE_VERSION = 'bazi-cal-v9';
+  var CANDIDATE_VERSION = 'bazi-cal-v10';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
@@ -346,15 +346,38 @@
       followup_prompt: '如果是这一类，具体更接近哪件事？',
       followup_options: domain === 'family' && parentContext ? parentContext.consequences : (followupSets[domain] || followupSets.change)
     };
-    // Old generic choices also need neutral wording when historical employment is unknown.
+    // Without a named mechanism, ask about a defined event, not a broad life theme.
+    // This does not label a generic event as proof of a professional mechanism.
     var life=analysis.reportLifeContext||analysis.eventAdjudication&&analysis.eventAdjudication.lifeContext;
-    if(life&&domain!=='family'&&root.DeepReport&&root.DeepReport.contextScenario){
-      var scenario=root.DeepReport.contextScenario(domain,domainDirection(domain,analysis)==='good'?'偏有利':domainDirection(domain,analysis)==='bad'?'偏不利':'条件性',life);
-      if(scenario){option.label={study:'学习与准备',career:'任务与协作',wealth:'可支配费用',relationship:'联系与相处',change:'生活安排',health:'精力与节奏'}[domain];option.detail=scenario;option.followup_options=[];option.manifestation+=':scene-'+(root.ReportImagery?root.ReportImagery.resolveScene(life):'daily');option.key=domain+':'+option.manifestation;}
+    if(domain!=='family'){
+      var concrete=concreteQuestion(domain,domainDirection(domain,analysis),life);
+      option.label=concrete[0];option.detail=concrete[1];option.followup_options=[];
+      option.manifestation+=':scene-'+(root.ReportImagery?root.ReportImagery.resolveScene(life)||'daily':'daily')+':e2';option.key=domain+':'+option.manifestation;
     }
     var professional=root.ZhishiCalibrationModel&&root.ZhishiCalibrationModel.professionalCandidates
       ? root.ZhishiCalibrationModel.professionalCandidates(domain,analysis) : [];
     return professional.length ? Object.assign(option,professional[0]) : option;
+  }
+
+  function concreteQuestion(domain,direction,life){
+    var positive=direction==='good',negative=direction==='bad';
+    var rows={
+      study:positive?['考试或录取得到正式通过','如果当年在读、学习或备考：一次已经参加的重要考试或录取审核正式通过；只有成绩感觉进步、没有通过结果不算']:
+        negative?['考试未通过，需要补考或重报','如果当年在读、学习或备考：一次已参加的重要考试或资格审核未通过，需要补考、重报或推迟下一阶段；只有担心考不好不算']:
+        ['正式转班、转学或更换专业','如果当年在读：实际完成转班、转学或更换专业手续；只是考虑、咨询而没有转成不算'],
+      career:positive?['已提交的申请或成果得到正式接收','一份已经提交的申请材料或成果，通过了审核或验收，并收到明确接收通知；只有口头鼓励不算']:
+        negative?['提交被退回，导致延期或未通过','已提交的材料或成果被退回补交、重做，导致原定审核延期或未通过；正常修改且按时通过不算']:
+        ['退出原有合作，加入新的合作','实际结束了一项持续参与的合作，并开始另一项有明确分工的合作；临时聊天、意向或一次聚会不算'],
+      wealth:positive?['收到原先没有的报酬或补贴','实际到账一笔新增报酬、奖金或补贴；借入资金、账户间转账、口头承诺不算收入增加']:
+        negative?['应收的钱逾期未到账','已经约定应收或应退的一笔钱，到期限仍未到账；正常消费、储蓄或自愿赠送不算损失']:
+        ['一次支出导致其他付款延期','发生一笔原计划外的支出，导致另一笔已安排的付款延期或取消；普通日常消费不算'],
+      relationship:positive?['双方明确确定恋爱关系','双方明确同意开始恋爱或确认伴侣关系；只有聊天频繁、单方面喜欢不算']:
+        negative?['明确分手或停止固定联系','与当时固定交往的对象明确分手，或双方实际停止原有固定联系；一次争吵后照常交往不算']:
+        ['因异地而改变固定见面安排','与固定交往对象开始或结束异地，实际改变了见面频率与居住安排；仅短途旅行不算'],
+      health:['作息或精力问题导致取消既定安排','因持续睡不好或疲惫，实际请假、取消或延期了一项已约定的学习、工作或出行安排；普通晚睡、偶尔疲劳但安排照常不算，不据此判断疾病'],
+      change:['实际搬离原住处并长期居住','离开原来长期居住的住处，在新住处连续生活；短期旅游、探亲或仅计划搬家不算']
+    };
+    return rows[domain]||rows.change;
   }
 
   function competingOptions(domain, analysis, age, tenGod, parentContext) {
@@ -506,7 +529,7 @@
         evidence.unshift(year + '年' + gz + '，处于' + dyGz + '大运；流年天干为' + analysis.stemRole + '，地支为' + analysis.branchRole + '。');
         out.push({
           event_key: year + '-' + domain + '-' + gz, year: year, domain: domain,
-          prompt: year + '年前后，下面哪一种情况最接近你的真实经历？', evidence: evidence,
+          prompt: year + '年前后，下面哪一件事确实发生过？', evidence: evidence,
           options: options, mechanism_key: options[0] ? options[0].mechanism_key : '',
           confidence: score >= 8 ? 'high' : (score >= 4 ? 'medium' : 'low'), _score: score,
           _stage: age <= 17 ? 'school' : (age <= 25 ? 'youth' : (age <= 35 ? 'early-adult' : (age <= 49 ? 'midlife' : 'mature')))
@@ -575,15 +598,16 @@
     if(originalToggle && originalToggle.isActive && !originalToggle.isActive())return;
     if (!events.length) { close(); if (originalToggle) originalToggle(); return; }
     var answered = events.filter(function(event) { return event.answer; }).length;
-    var html = '<header class="calibration-head"><span>命盘应事校对</span><h2 id="calibrationTitle">核对你经历过的事</h2><p>每个年份只选最接近真实经历的一类，再补充具体发生了什么。问题和依据在回答前已经锁定，不会根据你的选择倒推命盘。</p><div class="calibration-progress"><i style="width:' + Math.round(answered / events.length * 100) + '%"></i></div><small>' + answered + ' / ' + events.length + ' 已完成</small></header><div class="calibration-list">';
+    var html = '<header class="calibration-head"><span>命盘应事校对</span><h2 id="calibrationTitle">核对你经历过的事</h2><p>先看清具体事件和结果，再选确实发生过的一项；只符合一部分请标记“大致符合”，都没有就选“都不符合”。问题和依据在回答前已经锁定，不会根据你的选择倒推命盘。</p><div class="calibration-progress"><i style="width:' + Math.round(answered / events.length * 100) + '%"></i></div><small>' + answered + ' / ' + events.length + ' 已完成</small></header><div class="calibration-list">';
     events.forEach(function(event) {
       var answer = event.answer || '';
       var options = Array.isArray(event.options) ? event.options : [];
       html += '<article class="calibration-event ' + (options.length?'is-structured':'is-legacy') + '" data-event="' + escapeAttr(event.event_key) + '" data-answer="' + escapeAttr(answer) + '" data-selected-option="' + escapeAttr(event.selected_option||'') + '" data-selected-detail="' + escapeAttr(event.selected_detail||'') + '" data-match-level="' + escapeAttr(event.match_level||'exact') + '"><div class="calibration-event__year">' + event.event_year + '<small>' + (domainNames[event.domain] || '经历') + '</small></div><div class="calibration-event__content"><p>' + escapeHtml(event.prompt) + '</p><details><summary>为什么重点看这一年</summary><ul>' + (event.evidence || []).map(function(text){return '<li>'+escapeHtml(text)+'</li>'}).join('') + '</ul></details>';
       if (options.length) {
+        if(answer&&options.some(function(o){return (/^rule:/.test(o.mechanism_key)||/:scene-/.test(o.manifestation))&&!/:e2$/.test(o.manifestation);})){html+='<p class="calibration-legacy-notice">这道旧题的范围较宽，原回答保留；不会据此认定新版具体事件已经发生。</p>';}
         html += '<div class="calibration-options">';
         options.forEach(function(option, optionIndex) {
-          html += '<button type="button" data-option="'+escapeAttr(option.key)+'" class="calibration-option '+(event.selected_option===option.key&&answer==='yes'?'is-selected':'')+'"><b>'+(optionIndex+1)+'</b><span><strong>'+escapeHtml(option.label)+'</strong></span></button>';
+          html += '<button type="button" data-option="'+escapeAttr(option.key)+'" class="calibration-option '+(event.selected_option===option.key&&answer==='yes'?'is-selected':'')+'"><b>'+(optionIndex+1)+'</b><span><strong>'+escapeHtml(option.label)+'</strong><small>'+escapeHtml(option.detail)+'</small></span></button>';
         });
         html += '</div><div class="calibration-answers calibration-answers--negative"><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">都不符合</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div>';
         options.forEach(function(option) {
@@ -799,8 +823,9 @@
       if(event.answer==='no'){(event.options||[]).forEach(function(option){var mechanism=option.mechanism_key||(option.domain+':general'),deniedKey=option.domain+':'+mechanism;if(!denied[deniedKey])denied[deniedKey]={domain:option.domain,label:option.label,mechanism:mechanism,years:[]};if(denied[deniedKey].years.indexOf(event.event_year)<0)denied[deniedKey].years.push(event.event_year)})}
       var state=event.answer==='yes'?(event.match_level==='partial'?'用户确认部分符合':'用户确认明显发生'):'用户确认没有发生';
       var rejected=event.answer==='no'?(event.options||[]):[];
-      var statement=picked?(picked.label+(detail?'，具体是'+detail.label:'')):(rejected.length?'本题全部候选均不符合：'+rejected.map(function(option){return option.label}).join('、'):event.prompt);
-      var mechanism=picked&&picked.mechanism_key?'；对应机制='+picked.mechanism_key:(rejected.length?'；已否认机制='+rejected.map(function(option){return option.mechanism_key||(option.domain+':general')}).join(','):'');
+      if(picked&&(/^rule:/.test(picked.mechanism_key)||/:scene-/.test(picked.manifestation))&&!/:e2$/.test(picked.manifestation))state='旧版宽泛题反馈，仅保留原表述，不确认具体事件';
+      var statement=picked?((picked.detail||picked.label)+(detail?'，具体是'+detail.label:'')):(rejected.length?'本题全部候选均不符合：'+rejected.map(function(option){return option.detail||option.label}).join('、'):event.prompt);
+      var mechanism=picked&&picked.mechanism_key?'；待核对机制='+picked.mechanism_key:(rejected.length?'；已否认候选所属机制='+rejected.map(function(option){return option.mechanism_key||(option.domain+':general')}).join(','):'');
       return (event.actual_year||event.event_year)+'年【'+(domainNames[domain]||'经历')+'】'+state+'：'+statement+mechanism+(event.note?'；用户补充：'+event.note:'');
     });
     var patterns=profile.patterns,tentative=profile.tentativePatterns,deniedPatterns=profile.deniedPatterns.map(function(p){return {domain:p.domain,label:p.label,mechanism:p.mechanismKey,years:p.years};});

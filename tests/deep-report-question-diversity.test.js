@@ -70,6 +70,6 @@ test('guest upgrade preserves original answered records and safely replaces only
  const data=chart(1990,5,'female'),original=context.__generate(data),saved={...original[0],event_year:original[0].year,answer:'no',note:'synthetic original'},old={...original[1],event_year:original[1].year,answer:null};
  const storage=new Map([['zhishi_calibration_data:test',JSON.stringify([saved,old])]]);context.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};
  const result=context.__local('test',data),retained=result.find(r=>r.event_key===saved.event_key);
- assert.equal(JSON.stringify(retained),JSON.stringify(saved));assert.ok(result.length<=5);assert.equal(storage.get('zhishi_calibration_version:test'),'bazi-cal-v9');
+ assert.equal(JSON.stringify(retained),JSON.stringify(saved));assert.ok(result.length<=5);assert.equal(storage.get('zhishi_calibration_version:test'),'bazi-cal-v10');
  const stored=storage.get('zhishi_calibration_data:test');context.__local('test',data);assert.equal(storage.get('zhishi_calibration_data:test'),stored);
 });

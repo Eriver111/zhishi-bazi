@@ -15,9 +15,9 @@ test('result chart data stores the shared renyuan evidence', () => {
 });
 
 test('result page cache-busts the repaired renderer bundle', () => {
-  assert.match(resultHtml, /js\/result\.js\?v=49/);
+  assert.match(resultHtml, /js\/result\.js\?v=51/);
   assert.match(resultHtml, /js\/pro-analysis\.js\?v=20/);
-  assert.match(resultHtml, /js\/bazi\.js\?v=20260923d/);
+  assert.match(resultHtml, /js\/bazi\.js\?v=20260923g/);
 });
 
 test('strength renderer appends the shared note after the canonical detail', () => {

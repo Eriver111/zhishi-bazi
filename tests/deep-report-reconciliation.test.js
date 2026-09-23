@@ -81,7 +81,7 @@ test('rejecting wealth-breaks-seal loss retains peer-loss as a separate supporte
  assert.equal(review.adjustments.length,5);
  Report.applyReportReview(f,review);
  for(const row of f.fiveYear.years){assert.equal(row.eventAdjudication.primaryEvent.reportMechanismKey,'rule:peer-takes-wealth');assert.equal(row.eventAdjudication.domainRecords.find(r=>r.reportMechanismKey==='rule:wealth-breaks-seal').reportExcluded,true);}
- assert.match(publicText(f.wealth.narrative),/合伙分配/);
+ assert.match(publicText(f.wealth.narrative),/借钱或代垫费用/);
  assert.doesNotMatch(publicText(f.currentYear.narrative)+publicText(f.fiveYear.narrative),/正常消费、储蓄转投资/);
  assert.equal(JSON.stringify(calc.analyzeParents(bazi,'male')),family);
 });
@@ -90,7 +90,7 @@ test('a rejected manifestation does not disprove another manifestation or a diff
  const loss=Model.professionalCandidates('wealth',{triggers:[{type:'财破印'}]})[0];
  const events=[{event_key:'loss-2024',event_year:2024,domain:'wealth',answer:'no',options:[loss]}];
  const review=Model.buildReportReview(events,[{...loss,year:2027,hasIndependentAnnualTrigger:true},{...loss,manifestation:'normal-spending',year:2027,hasIndependentAnnualTrigger:true},{...loss,mechanism_key:'rule:peer-takes-wealth',year:2027,hasIndependentAnnualTrigger:true}],{currentYear:2026});
- assert.equal(review.adjustments.length,1);assert.equal(review.adjustments[0].manifestation,'unexpected-loss');
+ assert.equal(review.adjustments.length,1);assert.equal(review.adjustments[0].manifestation,'unexpected-loss:e2');
 });
 
 test('old broad ten-god answers cannot silently validate a newly named professional rule',()=>{

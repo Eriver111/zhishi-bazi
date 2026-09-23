@@ -4684,8 +4684,8 @@ function analyzeParentsLegacy(bazi, gender) {
 }
 
 
-// ==================== 父母关系分析 v2（宫星同参） ====================
-// 年柱为父母宫：年干取父、年支取母；偏财为父星、正印为母星。
+// ==================== 父母关系分析（宫星同参） ====================
+// 偏财为父星、正印为母星；年干支生克不直接指定父母强弱。
 // 年月看家庭与成长环境，父母星取专属线索；结构与现实关系分开，再按作用链合参。
 function analyzeParents(bazi, gender) {
     var DAY = bazi.day.gan;
@@ -4880,7 +4880,7 @@ function analyzeParents(bazi, gender) {
         var item = {claimKey:'parents.'+key,title:title,outcomeText:text,
             sourceRefs:unique(sources),sourceText:unique(sources).join('；'),
             status:state==='insufficient'?'insufficient':'symbolic',scope:'传统家庭关系解读',
-            ruleId:'parents-v6-family',direction:state,requiredConditions:requirements || [],
+            ruleId:'parents-v8-family',direction:state,requiredConditions:requirements || [],
             conditions:['由宫位、星的承载与作用共同取象；不把结构方向当作已核实的家庭经历。',
                 '资源支持、情感亲疏与父母婚姻分别判断；实际经历优先。'],
             blockers:unique(blockers||[]),realityConfirmed:false};
@@ -4919,7 +4919,10 @@ function analyzeParents(bazi, gender) {
             });
         });
         var friction=present&&connected&&affectedLocalRoots.length>0;
-        var state=support ? ((friction||diverted.length||disturbed.length)?'mixed':'supportive') : (load||friction?'pressure':'insufficient');
+        // 支持方向与互动主题分开：中性或只有早年落点，不等于这一侧没有可读信息。
+        // 主题仍须专属星、有效承载及宫位连接；不靠辅助星替换身份。
+        var thematic=present&&star.rooted&&(early||connected);
+        var state=support ? ((friction||diverted.length||disturbed.length)?'mixed':'supportive') : (load||friction?'pressure':thematic?'thematic':'insufficient');
         var blockers=[];
         if(!present)blockers.push('专属父母星不显，辅助同类星不替代本人身份');
         if(!star.rooted)blockers.push('缺少有效根气，不能只凭透干确认稳定支持或持续压力');
@@ -4929,6 +4932,11 @@ function analyzeParents(bazi, gender) {
         if(!connected)blockers.push('只见背景位，不能凭位置确认当前亲疏');
         return {star:star,auxiliary:auxiliary,present:present,early:early,connected:connected,
             support:support,load:load,friction:friction,state:state,sources:sources,blockers:blockers,
+            frictionEvents:localPressure.filter(function(e) { return affectedLocalRoots.some(function(r) {
+                return r.relationSettlementIds.indexOf('branch-disturbance:'+e.from+'-'+e.to)>=0;
+            }); }),
+            themeRequirements:[{key:'primaryStar',met:present},{key:'effectiveRoot',met:star.rooted},
+                {key:'earlyOrPersonalConnection',met:early||connected}],
             disturbedRoots:disturbed.map(function(r) { return r.id; }),
             requirements:[{key:'primaryStar',met:present},{key:'effectiveRoot',met:star.rooted},
                 {key:'favorableRole',met:star.role==='favorable'},{key:'earlyOrPersonalConnection',met:early||connected}],
@@ -4963,30 +4971,128 @@ function analyzeParents(bazi, gender) {
         : earlyLoads.length?'pressure':themes.length?'thematic':'insufficient';
     var familyHeadline=familyState==='supportive'?'家庭对你的作用偏向托举，支持主要体现在具体资源和生活安排上。'
         :familyState==='mixed'?'家庭的帮助与牵制并存。能从家里得到支持，但在安排和选择上也需要协调，不能简单归为助力大或关系差。'
-        :familyState==='pressure'?'家庭互动更容易带来责任与安排上的压力，个人选择与家庭期待之间的边界是这一部分的重点。'
+        :familyState==='pressure'?'家里对你该怎样做事、承担哪些责任，容易有较多要求。你想按自己的打算来，家人又希望你听从安排，这是相处时容易起分歧的地方。'
         :themes.length?'':'家庭支持的方向尚未集中，父亲与母亲需要分开判断，不给整个家庭贴统一的好坏标签。';
     var familyText=claim('family','原生家庭与成长方式',familyHeadline+themes.map(function(t){return themeCopy[t];}).join(''),
         earlyNodes.map(function(n){return POS_CN[n.pos]+n.gan+'为'+n.role;}).concat(earlyEvents.map(describeEvent),earlySupports.concat(earlyLoads).reduce(function(r,a){return r.concat(a.sources);},[])),
         familyState,[{key:'earlyParentSupport',met:earlySupports.length>0},{key:'earlyParentPressure',met:earlyLoads.length>0},
             {key:'crossPillarTheme',met:themes.length>0}],['不由家庭结构推算家境金额、父母职业或既往变故']);
+    // 生活化解释逐段记录依据，不能因为需要丰富文案而无条件拼接性格/经历。
+    function readingPart(key,title,text,requirements,sources,scope) {
+        return {key:key,title:title,text:text,ruleId:'parents-v8-family:'+key,
+            requiredConditions:requirements,sourceRefs:unique(sources),scope:scope||'相处倾向',realityConfirmed:false};
+    }
+    function expandReading(key,parts) {
+        var item=claims.filter(function(c){return c.claimKey==='parents.'+key;})[0];
+        if(!item||item.status==='insufficient'||!parts.length)return item?item.outcomeText:'';
+        item.reading={mode:item.direction,scope:item.scope,headline:item.outcomeText,parts:parts};
+        item.outcomeText+='\n\n'+parts.map(function(p){return p.title+'：'+p.text;}).join('\n\n');
+        return item.outcomeText;
+    }
+    function parentReading(a,who,key) {
+        var f=key==='father', personal=a.connected;
+        var scope=personal?'亲子互动':'早年成长背景';
+        var direct=a.star.appearances.some(function(p){return p.layer==='stem'&&p.pos!=='year';});
+        var parts=[],headline='',mode='insufficient';
+        var supported=a.requirements, pressured=a.load?a.pressureRequirements:a.frictionRequirements;
+        function add(id,title,text,req,sources) { parts.push(readingPart(id,title,text,req,sources||a.sources,scope)); }
+        if(a.state==='insufficient')return null;
+        if(!personal) {
+            // 只有年柱时，连支持分支也不能偷偷转换成当下关系。
+            mode=a.support?(a.state==='mixed'?'early_support_constrained':'early_support'):'early_theme';
+            headline=a.support?(a.state==='mixed'?who+'在早年成长中有支持基础，但帮助落实有条件。':who+'在早年成长中的作用偏向提供支持。'):who+'这一侧的线索主要落在早年家庭背景。';
+            add(mode,'成长中的影响',a.support?(f
+                ?'这份影响更偏向给成长提供实际条件：必要的花费、遇事怎样处理、怎样承担责任。它塑造的是你对生活有没有着落的感受。'
+                :'这份影响更偏向照料与学习条件：有人替你考虑日常安排，在需要照应时提供帮助。解读重点是成长阶段怎样被照顾。'):(f
+                ?'重点看小时候家里怎样分配花费、谁承担实际事务、长辈如何要求你把事情做好。这一侧留下的更多是做事标准和责任观念。'
+                :'重点看小时候由谁安排学习与生活、怎样提醒和照料你、遇到选择时怎样替你考虑。这一侧对应的是成长中的照顾方式。'),
+                (a.support?supported:a.themeRequirements).concat([{key:'yearBackgroundOnly',met:!personal}]));
+            if(a.support&&a.state==='mixed')add('early_delivery_limits','成长中的落差',
+                '这部分助力受到其他条件牵制，成长中能依靠的安排与实际落实到的帮助，容易存在落差。这里保留早年资源条件的限制，不延伸为当前争吵或疏远。',
+                supported.concat([{key:'yearBackgroundOnly',met:!personal},{key:'rootConditioned',met:a.state==='mixed'}]));
+            return {mode:mode,headline:headline,parts:parts,scope:scope};
+        }
+        if(a.support) {
+            mode=a.friction?'help_with_friction':a.state==='mixed'?'help_constrained':'help_available';
+            headline=a.friction?who+'这一侧的帮助与相处摩擦并存。':a.state==='mixed'?who+'这一侧有支持基础，但帮助的落实受到条件牵制。':who+'这一侧更偏向提供支持，关系中的助力比较明确。';
+            add('practical_support','能得到的帮助',f
+                ?'遇到需要花钱、找资源或解决现实难题的时候，这一侧更有条件给你具体协助。父亲的作用主要落在事情怎样办、困难怎样解决。'
+                :'支持更集中在学习与生活的照料：帮你准备条件、考虑后路，在需要照应时提供帮助。母亲的作用主要落在让生活和学习有着落。',supported);
+            if(a.friction) {
+                add('help_and_autonomy','有帮助，也有分歧',f
+                    ?'父亲愿意出钱或出力帮你，但也容易希望事情按他的办法办。你需要他的帮助，却不想因此事事听他的；钱怎样花、事情怎么做，容易成为双方争论的内容。'
+                    :'母亲愿意照顾你，但也容易替你作主。你希望她能帮忙、听你说想法，而不是直接替你定下来；她想替你安排，你又想自己决定，双方容易因此起分歧。',supported.concat(a.frictionRequirements));
+            } else if(a.state==='mixed') {
+                add('delivery_limits','帮助为什么会打折',f
+                    ?'有实际助力可借，但需要时能否立即到位、能帮到哪一步，容易受到其他安排牵制。对你来说，更适合把已经落实的帮助算进计划，把尚未落实的部分留出余地。'
+                    :'能得到照顾与安排上的助力，实际执行却容易打折。计划里有人帮忙，与最后有人能腾出时间把事做完，是两个环节；这一侧的落差更集中在后一个环节。',supported.concat([{key:'rootConditioned',met:a.state==='mixed'}]));
+            } else {
+                add(direct?'open_help':'practical_connection','相处中的连接',direct?(f
+                    ?'遇到拿不定主意或自己办不了的事时，更容易得到父亲的建议和帮忙。两个人一起把问题解决，比只说关心的话，更容易让你感到他靠得住。'
+                    :'需要有人照应、帮你安排日常事情时，更容易得到母亲的帮助。这种关系更容易在日常相处中变亲近：你提出需要，她能帮上忙。'):(f
+                    ?'这一侧的联系更值得从实际行动中看：需要用钱、办事或承担责任时，是否有具体配合。共同处理问题，是这段关系较容易建立连接的地方。'
+                    :'这一侧的联系更值得从日常照料中看：学习与生活是否有人协助安排，需要照应时是否有人搭手。共同照顾好生活，是这段关系较容易建立连接的地方。'),supported.concat([{key:'personalConnection',met:personal}],direct?[{key:'personallyExposed',met:direct}]:[{key:'noPersonalExposure',met:!direct}]));
+            }
+        } else if(a.state==='pressure') {
+            mode=a.load?(a.friction?'expectations_and_friction':'expectations'):'friction';
+            headline=a.load?who+'这一侧更容易让你感到责任和期待的分量。':who+'这一侧更容易在具体安排上与你起分歧。';
+            add(a.load?'expectations':'decision_friction',a.load?'要求落在哪里':'分歧落在哪里',a.load?(f
+                ?'更看重花钱是否值得、做事是否有结果、该由谁承担责任。你提出自己的选择时，容易先面对现实得失的衡量，受到的评价也更偏向事情做得怎样。'
+                :'更看重学习与生活该怎样安排、选择是否稳妥。对方替你考虑的部分较重，你自己的喜好容易让位于“这样做更妥当”的要求。'):(f
+                ?'分钱、办事和承担责任时，双方的办法容易碰到一起。卡住的重点是事情由谁决定、出了问题由谁承担，而不是单纯缺少联系。'
+                :'母亲希望你按她认为妥当的方式生活，你有自己的打算。双方容易在她能不能替你安排、你能不能自己决定这些事情上意见不同。'),pressured);
+            if(a.load) add('recognition_pressure','相处中的感受',f
+                ?'这类互动容易让你觉得，需要先把事情做出结果，自己的想法才更容易被认真听取。相处的压力偏向“我要证明自己能负责”，关系中的距离也容易从评价和要求中产生。'
+                :'你容易觉得，母亲虽然在替你考虑，却没有认真听你自己想怎样做。她越想把事情替你安排好，你越希望她先听听你的意见，再给建议。',a.pressureRequirements);
+        } else {
+            mode='interaction_theme';
+            headline=who+'这一侧的互动主题'+(f?'更集中在实际事务。':'更集中在照顾与安排。');
+            add('neutral_topic','关系里值得看的细节',f
+                ?'花钱、办事、承担责任时怎样配合，是这一侧最具体的观察点。可以重点看对方给了哪些实际帮助，以及哪些决定由你自己作出。'
+                :'学习与生活中的照顾怎样落实，是这一侧最具体的观察点。可以重点看哪些照顾由对方提供、哪些决定由自己作出；帮助和自主空间需要分别看。',a.themeRequirements);
+        }
+        if(a.friction) {
+            var types=unique(a.frictionEvents.map(function(e){return e.type;}));
+            var conflict=types.indexOf('冲')>=0?'双方容易在已经有不同打算时正面碰上：你想照自己的方案做，对方又有一套安排。一次意见分歧，容易变成到底听谁的。'
+                :types.indexOf('刑')>=0?'同一个要求容易被反复提起：你认为已经做到了，对方仍觉得不够；谈事情容易绕回原来的标准，让人有反复被检查的感觉。'
+                :'双方对同一做法的感受容易错位：一方认为是在帮忙或提醒，另一方却感到被干涉。分歧容易停在“我这样做到底哪里不对”。';
+            add('communication_'+(types.indexOf('冲')>=0?'clash':types.indexOf('刑')>=0?'repeated_standard':'mismatch'),'沟通容易卡住的地方',conflict,a.frictionRequirements,a.sources.concat(a.frictionEvents.map(describeEvent)));
+        }
+        return {mode:mode,headline:headline,parts:parts,scope:scope};
+    }
     function parentText(a,who,key) {
-        var topic=key==='father'?'资源、实际帮助和办事安排':'照顾、教育和生活安排';
-        var text=a.state==='supportive'?who+'这一侧更偏向提供支持，作用集中在'+topic+'。这份帮助与是否善于表达感情分开看。'
-            :a.state==='mixed'?(a.friction?who+'这一侧的帮助与相处摩擦并存，'+topic+'是需要协调的重点。':who+'这一侧有支持基础，但帮助的落实受到条件牵制，'+topic+'并不是每次都能顺利推进。')
-            :a.state==='pressure'?(a.load?who+'这一侧更容易让你感到责任和期待的分量，压力重点偏向'+topic+'。'
-                :who+'这一侧的互动更容易遇到安排上的拉扯，家庭要求与个人选择需要协调。')
-            :!a.present?(a.auxiliary.appearances.length?who+'的专属线索不显，但仍有'+(key==='father'?'财星资源':'印星照顾')+'线索，不能把这一侧读成空白或缺席。'
+        var text=!a.present?(a.auxiliary.appearances.length?who+'的专属线索不显，但仍有'+(key==='father'?'财星资源':'印星照顾')+'线索，不能把这一侧读成空白或缺席。'
                 :who+'这一侧缺少直接线索，暂不单独判断支持程度和亲疏。')
             :who+'这一侧的线索没有集中到支持或压力的单一方向，现有结构不足以给出稳定的关系判断。';
+        var reading=parentReading(a,who,key);
+        if(reading)text=reading.headline+'\n\n'+reading.parts.map(function(p){return p.title+'：'+p.text;}).join('\n\n');
         var result=claim(key,who+'对你的影响',text,a.sources,a.state,
-            a.state==='pressure'?(a.load?a.pressureRequirements:a.frictionRequirements):a.requirements,a.blockers);
+            a.state==='thematic'?a.themeRequirements:a.state==='pressure'?(a.load?a.pressureRequirements:a.frictionRequirements):a.requirements,a.blockers);
         judgements[key].support=a.support;judgements[key].responsibilityPressure=a.load;judgements[key].interactionFriction=a.friction;
         judgements[key].supportRequirements=a.requirements;judgements[key].pressureRequirements=a.pressureRequirements;
         judgements[key].frictionRequirements=a.frictionRequirements;
+        judgements[key].themeRequirements=a.themeRequirements;
+        judgements[key].interactionMode=reading?reading.mode:'insufficient';
+        judgements[key].timeScope=reading?reading.scope:'未定';
+        claims[claims.length-1].reading=reading;
         return result;
     }
     var fatherText=parentText(fatherAssessment,'父亲','father');
     var motherText=parentText(motherAssessment,'母亲','mother');
+    var growthCopy={
+        practical:'讨论一个打算时，家里更容易先问要花多少钱、做出来有什么用、最后谁来负责。成长中受到的要求偏向把想法变成看得见的结果。',
+        care:'家庭更容易通过吃住、学习、作息这些细节参与成长。关心常和具体安排放在一起，逐渐独立时，需要把接受照顾与自己作决定分开。',
+        rules:'家庭中的评价更容易围绕是否守规矩、有没有尽责、选择够不够稳妥。表达自己的意愿时，需要面对一套已经存在的标准。',
+        expression:'家庭更容易关注有没有自己的想法、会什么、做出了什么。成长中的重要课题偏向把想法讲清楚、把能力表现出来。',
+        independence:'家庭成员更容易各有主张。面对同一件事，先有自己的判断再商量配合，成长中需要学习怎样既保留主见，也给别人参与的空间。'
+    };
+    var growthParts=themes.map(function(t){
+        var nodes=earlyNodes.filter(function(n){return n.theme===t;});
+        return readingPart('growth_'+t,'成长中反复面对的要求',growthCopy[t],
+            [{key:'crossPillarTheme',met:unique(nodes.map(function(n){return n.pos;})).length===2}],
+            nodes.map(function(n){return POS_CN[n.pos]+n.gan+'为'+n.role;}),'早年成长方式');
+    });
+    familyText=expandReading('family',growthParts);
     // 父母相处只消费实际父母星各自落点之间的关系；一般年柱受冲不冒充夫妻矛盾。
     function anchoredEarlyPositions(star) {
         return unique(star.appearances.filter(function(a) {
@@ -5001,8 +5107,8 @@ function analyzeParents(bazi, gender) {
     var betweenCombine=betweenEvents.filter(function(e){return e.type==='合';});
     var betweenState=betweenDamage.length?(betweenCombine.length?'mixed':'pressure'):betweenCombine.length?'coordinated':'insufficient';
     var betweenText=betweenState==='mixed'?'父母相处的线索同时带有联系与摩擦，更像在共同安排中需要反复协调，而非单纯疏远或一味和顺。'
-        :betweenState==='pressure'?'父母之间的互动更偏向安排和意见上的拉扯，面对家庭事务时，步调一致是需要磨合的部分。'
-        :betweenState==='coordinated'?'父母之间偏向围绕共同事务协商和配合，家庭安排是双方形成联系的重点。'
+        :betweenState==='pressure'?'父母在家里的事情该怎么办、该由谁负责上，容易各有一套想法。一方定下的办法，另一方未必愿意照做，需要把分工和做法谈清楚。'
+        :betweenState==='coordinated'?'父母之间偏向围绕共同事务协商和配合。即使各自有自己的想法，也更容易因为需要一起完成家庭安排而保持联系。'
         :'现有线索不足以判断父母谁主导、谁退让，也不由你的命盘直接断定他们婚姻好坏。';
     var parentsRelationshipText=claim('between','父母之间的相处',betweenText,
         ['父星早年有根落点：'+(fatherAnchors.map(function(p){return POS_CN[p];}).join('、')||'未见'),
@@ -5014,15 +5120,46 @@ function analyzeParents(bazi, gender) {
     var childDamage=selfEvents.filter(function(e){return e.type!=='合';});
     var childCombine=selfEvents.filter(function(e){return e.type==='合';});
     var childState=personalSupports.length?(personalLoads.length||personalSupports.some(function(a){return a.state==='mixed';})?'mixed':'supportive'):personalLoads.length?'pressure':'insufficient';
-    var childText=childState==='mixed'?(personalLoads.length?'你与父母的互动兼有支持和自主空间的拉扯。得到帮助与希望自己作决定可以同时存在，关键分歧更集中在事情由谁安排。':'你与父母之间有支持基础，但具体帮助的落实有条件，不宜把一次受阻理解成整段关系疏远。')
-        :childState==='supportive'?'你与父母之间更偏向有事能够商量、遇到具体安排能够获得支持。情感表达的方式还需要与实际相处区分。'
-        :childState==='pressure'?'你与父母的互动更容易围绕责任、安排和个人选择产生压力，边界比单纯增加相处时间更值得关注。'
+    // 一般宫位关系只解释家庭安排与个人选择，不冒充某位父母的根气受损或夫妻矛盾。
+    var interactionTheme=selfEvents.length>0&&themes.length>0;
+    if(childState==='insufficient'&&interactionTheme)childState='thematic';
+    var interactionTopics={practical:'钱怎么花、责任怎样分担',care:'照顾由谁提供、生活怎样安排',
+        rules:'哪些规矩继续遵守、哪些决定由自己作出',expression:'自己的想法怎样表达、意见怎样被听见',independence:'各自作主的范围和需要共同商量的事'};
+    var interactionTopic=themes.map(function(t){return interactionTopics[t];}).join('，以及');
+    var childText=childState==='mixed'?(personalLoads.length?'家里能给你帮助，也容易要求你按他们的想法做。你愿意接受帮助，但仍想自己决定，两边容易因为事情到底听谁的而起分歧。':'你与父母之间有支持基础，但具体帮助的落实有条件，不宜把一次受阻理解成整段关系疏远。')
+        :childState==='supportive'?'你与父母之间的助力主要落在实际支持上。需要资源、照料或处理具体安排时，更有条件借助家庭的力量；接受帮助之后，自己的计划仍需要由自己推进。'
+        :childState==='pressure'?'你不照父母的安排做时，他们容易觉得你没把事情当回事；你又觉得自己的想法没有被听进去。需要谈清的是哪件事听取他们的意见、哪件事由你自己决定，以及结果由谁负责。'
+        :childState==='thematic'?'亲子互动可以先抓住'+interactionTopic+'。'+(childDamage.length
+            ?'家庭安排与自己的想法之间有需要磨合的地方，尤其在改变原有计划时；这条线索指向怎样协调决定，不指定是哪位父母造成矛盾。'
+            :'家庭安排与个人选择联系较多，需要协商的是哪些事情共同决定、哪些由自己负责；共同参与不直接等于感情亲密。')
         :'你与父母的情感亲疏尚不能单独定性，先看上面父亲与母亲各自的支持和压力，不把其中一侧概括成全家的关系。';
     var childRelationshipText=claim('child','你与父母的互动',childText,
-        selfEvents.map(describeEvent).concat(assessments.reduce(function(r,a){return r.concat(a.sources);},[])),childState,
-        [{key:'personalSupport',met:personalSupports.length>0},{key:'personalPressure',met:personalLoads.length>0}],
+        selfEvents.map(describeEvent).concat(earlyNodes.filter(function(n){return themes.indexOf(n.theme)>=0;}).map(function(n){return POS_CN[n.pos]+n.gan+'为'+n.role;}),assessments.reduce(function(r,a){return r.concat(a.sources);},[])),childState,
+        childState==='thematic'?[{key:'familyDayRelation',met:selfEvents.length>0},{key:'crossPillarTheme',met:themes.length>0}]
+            :[{key:'personalSupport',met:personalSupports.length>0},{key:'personalPressure',met:personalLoads.length>0}],
         ['位置靠近也不等于相处亲密；同柱食伤与财星不直接确认共同兴趣',
             childCombine.length?'相合线索保留，不单独推出亲密或冲突':'未见相合不等于疏远']);
+    var childParts=[];
+    var helping=personalSupports.map(function(a){return a===fatherAssessment?'父亲':'母亲';});
+    var pressing=personalLoads.map(function(a){return a===fatherAssessment?'父亲':'母亲';});
+    var differentSides=helping.length===1&&pressing.length===1&&helping[0]!==pressing[0];
+    if(differentSides)childParts.push(readingPart('different_parent_roles','两边带来的感受不同',
+        helping[0]+'这一侧更有具体助力，'+pressing[0]+'这一侧更容易带来要求和相处压力。同样是面对家人，你需要的相处方式并不完全一样；可以接受一侧的帮助，同时单独处理另一侧对你的期待。',
+        [{key:'onePersonalSupport',met:helping.length===1},{key:'onePersonalPressure',met:pressing.length===1},{key:'differentParents',met:differentSides}],
+        assessments.reduce(function(r,a){return r.concat(a.sources);},[])));
+    else if(childState==='supportive')childParts.push(readingPart('family_reliance','关系的连接点',
+        '这类关系更容易通过具体回应建立信任：遇事有人搭手，提出需要后有实际配合。可以把家庭看作处理生活难题的一部分助力，自己的选择和日常安排则逐渐由自己接过来。',
+        [{key:'personalSupport',met:personalSupports.length>0},{key:'noPersonalPressure',met:personalLoads.length===0},{key:'unconditionedSupport',met:personalSupports.every(function(a){return a.state==='supportive';})}],
+        personalSupports.reduce(function(r,a){return r.concat(a.sources);},[])));
+    else if(childState==='mixed'&&personalLoads.length)childParts.push(readingPart('closeness_and_choice','为什么有依靠也有距离',
+        '同一段关系里，接受家里的帮助与希望自己作主可以同时存在。需要帮助时会靠近，意见不一致时又想拉开一点距离；要处理的是帮助是否附带安排，以及哪些选择需要自己承担。',
+        [{key:'personalSupport',met:personalSupports.length>0},{key:'personalPressure',met:personalLoads.length>0}],
+        assessments.reduce(function(r,a){return r.concat(a.sources);},[])));
+    else if(childState==='pressure')childParts.push(readingPart('responsibility_and_distance','距离容易怎样产生',
+        '当一次交流总要回到做得够不够、选得对不对，相处容易变成说明理由、争取认可。关系需要调整的地方，是让具体要求有范围，让自己的意愿也能被讨论；单纯增加联系，并不一定能解开这个结。',
+        [{key:'personalPressure',met:personalLoads.length>0},{key:'noPersonalSupport',met:personalSupports.length===0}],
+        personalLoads.reduce(function(r,a){return r.concat(a.sources);},[])));
+    childRelationshipText=expandReading('child',childParts);
     function getStarCloseness(star) {
         var near=0,far=0,exposedNear=false;
         star.appearances.forEach(function(a){
@@ -5037,7 +5174,8 @@ function analyzeParents(bazi, gender) {
         return hasStarInPositions(['偏财'],[pos])&&hasStarInPositions(['食神','伤官'],[pos]);
     }).map(function(pos){return {pos:pos,label:POS_CN[pos],status:'cooccurrence_only'};});
     var foundationLevel=familyState==='supportive'?'supportive':familyState==='pressure'?'limited':'mixed';
-    var summaryText='家庭整体：'+(familyHeadline||themes.map(function(t){return themeCopy[t];}).join(''))+'父亲与母亲的作用分别判断，父母婚姻与亲子关系不互相替代。';
+    var summaryText=claims.filter(function(c){return c.direction!=='insufficient';}).map(function(c){return c.title+'：'+c.outcomeText.split('。')[0]+'。';}).join('\n')
+        ||'本盘家庭专项线索较少，未形成独立的关系结论。';
 
     return {
         analysisType: 'interpretive_hypothesis',
@@ -5058,7 +5196,7 @@ function analyzeParents(bazi, gender) {
         fatherPresent: father.appearances.length > 0,
         motherPresent: mother.appearances.length > 0,
         evidence: {
-            methodVersion: 'parents-v6-family',
+            methodVersion: 'parents-v8-family',
             earlyEnvironment: { nodes:earlyNodes, themes:themes, events:earlyEvents },
             parentPairEvents: betweenEvents,
             selfFamilyEvents: selfEvents,

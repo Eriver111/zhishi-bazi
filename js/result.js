@@ -1616,17 +1616,34 @@ function renderMarriage(bazi, gender) {
 
 
 // ==================== 父母关系渲染 ====================
+function parentNarrativeHTML(text) {
+    return reportText(text).split(/\n\n+/).map(function(paragraph,index) {
+        var separator=paragraph.indexOf('：');
+        var body=index>0&&separator>0&&separator<20
+            ?'<strong>'+reportEsc(paragraph.slice(0,separator+1))+'</strong>'+reportEsc(paragraph.slice(separator+1))
+            :reportEsc(paragraph);
+        return '<p>'+body+'</p>';
+    }).join('');
+}
+
 function renderParents(bazi, gender) {
     const parents = window.BaZiCalculator.analyzeParents(bazi, gender);
     const el = document.getElementById('parentsContent');
     if (!el) return;
 
     if (Array.isArray(parents.claims) && parents.claims.length) {
+        const readable = parents.claims.filter(function(claim) { return claim.status !== 'insufficient'; });
+        const limited = parents.claims.filter(function(claim) { return claim.status === 'insufficient'; });
         el.innerHTML = '<div class="inference-boundary-note">家庭、父母与亲子互动分别解读。以下为传统命理推断，以实际经历为准；每段可展开查看依据。</div>'
-            + parents.claims.map(function(claim) {
+            + readable.map(function(claim) {
                 return '<div class="pr-card"><div class="pr-card-body"><div class="pr-card-title">' + reportEsc(claim.title)
-                    + '</div><div class="pr-card-text">' + reportEsc(claim.outcomeText) + '</div>' + reportClaimDetails(claim) + '</div></div>';
-            }).join('');
+                    + '</div><div class="pr-card-text">' + parentNarrativeHTML(claim.outcomeText) + '</div>' + reportClaimDetails(claim) + '</div></div>';
+            }).join('')
+            + (!readable.length ? '<p class="inference-boundary-note">本盘家庭专项线索较少，暂未形成独立的关系结论。</p>' : '')
+            + (limited.length ? '<details class="report-claim-details parents-limited"><summary>其他家庭信息 · 查看解读范围</summary><p>以下部分暂不作单独结论，不代表对应关系不好。'+(readable.length?'这不抵消上方已列出的线索。':'')+'</p>'
+                + limited.map(function(claim) {
+                    return '<section><strong>' + reportEsc(claim.title) + '</strong><p>' + reportEsc(claim.outcomeText) + '</p>' + reportClaimDetails(claim) + '</section>';
+                }).join('') + '</details>' : '');
         return;
     }
 

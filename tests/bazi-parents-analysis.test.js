@@ -70,7 +70,7 @@ test('父母报告提供五段候选解释并把结构证据与推断分层', ()
   for (const field of ['familyText', 'fatherText', 'motherText', 'parentsRelationshipText', 'childRelationshipText']) {
     assert.ok(result[field].length > 20, field);
   }
-  assert.equal(result.evidence.methodVersion, 'parents-v6-family');
+  assert.equal(result.evidence.methodVersion, 'parents-v8-family');
   assert.equal(result.facts, undefined);
   assert.ok(['supportive', 'mixed', 'limited'].includes(result.inferences.family.level));
 });
@@ -119,7 +119,7 @@ test('AI 上下文完整传入父母宫星同参五段候选和可校正边界',
   assert.equal(parentAnalysis.userCorrectable, true);
   assert.equal(parentAnalysis.realityPriority, 'user_confirmed_experience');
   assert.match(context, /性质：规则推断，不是现实事实；可校正=是/);
-  assert.match(context, /方法版本：parents-v6-family/);
+  assert.match(context, /方法版本：parents-v8-family/);
   assert.match(context, /父星结构证据：偏财/);
   assert.match(context, /母星结构证据：正印/);
   assert.match(context, /父母宫结构证据：癸未/);

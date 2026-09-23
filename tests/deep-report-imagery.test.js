@@ -104,7 +104,7 @@ const futureOptions=options=>options.map(c=>({...c,year:2026,hasIndependentAnnua
 
 test('every imagery rule owns an explicit common process and validates its contextual identity',()=>{
  for(const rule of Imagery.rules){assert.ok(rule.commonProcess&&rule.commonProcess.length>10);for(const o of rule.outcomes){
-  const descriptor=Imagery.describeOption({domain:o.domain,manifestation:o.manifestation,mechanism_key:'rule:'+rule.id});assert.equal(descriptor.commonProcess,rule.commonProcess);assert.equal(descriptor.scene,'unspecified');
+  const descriptor=Imagery.describeOption({domain:o.domain,manifestation:o.manifestation+':e2',mechanism_key:'rule:'+rule.id});assert.equal(descriptor.commonProcess,rule.commonProcess);assert.equal(descriptor.scene,'unspecified');
  }}
  assert.equal(Imagery.describeOption({domain:'career',manifestation:'invented:work',mechanism_key:'rule:output-controls-officer'}),null);
  assert.equal(Imagery.describeOption({domain:'family',manifestation:'authority-conflict:work',mechanism_key:'rule:output-controls-officer'}),null);
@@ -179,7 +179,7 @@ test('student, exam, employment and non-working peer resistance have different c
  const rows={};for(const status of ['student','exam','working','transition','home','retired','unknown']){
   const a=peers();a.reportLifeContext={status,age:28};rows[status]=Imagery.candidates(['student','exam'].includes(status)?'study':'career',a).filter(c=>c.mechanism_key==='rule:peer-resists-kill');assert.equal(rows[status].length,2);
  }
- assert.match(rows.student[0].detail,/课程、作业/);assert.match(rows.exam[0].detail,/复习、练习/);assert.match(rows.transition[0].detail,/申请、面试/);assert.match(rows.home[0].detail,/生活事务、照料/);assert.match(rows.retired[0].detail,/兴趣活动/);
+ assert.match(rows.student[0].detail,/课程作业/);assert.match(rows.exam[0].detail,/复习练习/);assert.match(rows.transition[0].detail,/投递申请或面试/);assert.match(rows.home[0].detail,/证件办理或照料/);assert.match(rows.retired[0].detail,/兴趣活动/);
  assert.equal(new Set(Object.values(rows).map(r=>r[0].manifestation)).size,7);
 });
 test('school feedback does not confirm a job result and exact same setting remains usable',()=>{
@@ -244,8 +244,8 @@ test('denying costly completion does not automatically assert failure; another s
 test('confirming high effort with stalled outcome never validates the completed-goal interpretation',()=>{
  const opts=peerOptions(),event={event_key:'past',event_year:2024,answer:'yes',selected_option:opts[1].key,match_level:'exact',options:opts};
  const review=Model.buildReportReview([event],opts,{currentYear:2026}),f=report();
- assert.equal(review.adjustments.length,1);assert.equal(review.adjustments[0].manifestation,'costly-stalled');
- Report.applyReportReview(f,review);assert.equal(f.currentYear.eventAdjudication.primaryEvent.reportManifestation,'costly-stalled');assert.equal(f.currentYear.eventAdjudication.secondaryEvent,null);
+ assert.equal(review.adjustments.length,1);assert.equal(review.adjustments[0].manifestation,'costly-stalled:e2');
+ Report.applyReportReview(f,review);assert.equal(f.currentYear.eventAdjudication.primaryEvent.reportManifestation,'costly-stalled:e2');assert.equal(f.currentYear.eventAdjudication.secondaryEvent,null);
 });
 test('partial agreement with effort does not validate completed-goal claims even across two years',()=>{
  const opts=peerOptions(),events=[2021,2024].map(year=>({event_key:'partial-'+year,event_year:year,answer:'yes',selected_option:opts[0].key,match_level:'partial',options:opts}));
