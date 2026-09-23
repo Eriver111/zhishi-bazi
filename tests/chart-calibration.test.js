@@ -31,7 +31,7 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=13/);
+  assert.match(result, /chart-calibration\.js\?v=19/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -54,7 +54,7 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /motherDirect/);
   assert.match(client, /study_impact/);
   assert.match(client, /domainDirection/);
-  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v4'/);
+  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v9'/);
   assert.match(client, /dedupeOptionDomains/);
   assert.match(client, /系统原判断/);
   assert.match(client, /sleep_energy/);
@@ -68,7 +68,7 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /data-selected-option/);
   assert.match(client, /很符合/);
   assert.match(client, /大致符合/);
-  assert.match(client, /chosen\.length >= 5/);
+  assert.match(client, /5-preserved\.length/);
   assert.match(client, /var firstYear = birthYear \+ 6/);
   assert.doesNotMatch(client, /nowYear - 14/);
   assert.match(client, /\['school','youth','early-adult','midlife','mature'\]/);
@@ -145,7 +145,7 @@ test('personal manifestation model weights exact matches above partial matches',
   assert.deepEqual(profile.patterns[0].years, [2022, 2024]);
   assert.equal(profile.denied.career, 1);
   assert.equal(profile.deniedPatterns[0].mechanismKey, 'career:general');
-  assert.equal(profile.version, 'bazi-cal-v3');
+  assert.equal(profile.version, 'bazi-cal-v5');
 });
 
 test('single confirmation stays tentative until the same manifestation repeats', () => {

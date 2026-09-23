@@ -88,7 +88,7 @@ function initChartName() {
 
 function initSolarSelects() {
   var yS = document.getElementById('sYear');
-  for (var y = 2025; y >= 1900; y--) {
+  for (var y = Math.max(2025, new Date().getFullYear()); y >= 1900; y--) {
     var o = document.createElement('option'); o.value = y; o.textContent = y + '年'; yS.appendChild(o);
   }
   var mS = document.getElementById('sMonth');
@@ -150,7 +150,7 @@ function initHourSelects() {
 
 function initLunarSelects() {
   var yS = document.getElementById('lYear');
-  for (var y = 2025; y >= 1900; y--) {
+  for (var y = Math.max(2025, new Date().getFullYear()); y >= 1900; y--) {
     var o = document.createElement('option'); o.value = y;
     o.textContent = y + '年（' + LunarCalendar.ANIMALS[(y-4)%12] + '年）';
     yS.appendChild(o);

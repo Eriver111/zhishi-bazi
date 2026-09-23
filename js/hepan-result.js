@@ -316,13 +316,14 @@
 
     return drawer('喜用神分析',
       '<div class="hp-xiyong-grid">' +
-        renderXiyongCard(p1.name, x1.xiShen, x1.yongShen, x1.jiShen) +
-        renderXiyongCard(p2.name, x2.xiShen, x2.yongShen, x2.jiShen) +
+        renderXiyongCard(p1.name, x1.xiShen, x1.yongShen, x1.jiShen, x1) +
+        renderXiyongCard(p2.name, x2.xiShen, x2.yongShen, x2.jiShen, x2) +
       '</div>' +
       (detail ? '<div class="hp-xiyong-complement">' + escapeHtml(detail) + '</div>' : ''), idx, true);
   }
 
-  function renderXiyongCard(name, xiShen, yongShen, jiShen) {
+  function renderXiyongCard(name, xiShen, yongShen, jiShen, facts) {
+    facts = facts || {};
     var xsStr = Array.isArray(xiShen) ? xiShen.join('、') : (xiShen || '');
     var ysStr = Array.isArray(yongShen) ? yongShen.join('、') : (yongShen || '');
     var jsStr = Array.isArray(jiShen) ? jiShen.join('、') : (jiShen || '');
@@ -331,8 +332,11 @@
       '<div class="hp-xiyong-card">' +
         '<div class="hp-xiyong-name">' + escapeHtml(name) + '</div>' +
         '<div class="hp-xiyong-row"><span class="hp-xiyong-tag xi">喜神</span><span>' + escapeHtml(xsStr || '-') + '</span></div>' +
-        '<div class="hp-xiyong-row"><span class="hp-xiyong-tag yong">用神</span><span>' + escapeHtml(ysStr || '-') + '</span></div>' +
+        '<div class="hp-xiyong-row"><span class="hp-xiyong-tag yong">用神</span><span>' + escapeHtml(ysStr || (facts.selectionStatus === 'undetermined' ? '尚未确定' : '-')) + '</span></div>' +
         '<div class="hp-xiyong-row"><span class="hp-xiyong-tag ji">忌神</span><span>' + escapeHtml(jsStr || '-') + '</span></div>' +
+        ((facts.neutralElements || []).length ? '<div class="hp-xiyong-row"><span class="hp-xiyong-tag">中性</span><span>' + escapeHtml(facts.neutralElements.join('、')) + '（方向待辨）</span></div>' : '') +
+        ((facts.tiaoHouYongShen || []).length ? '<div class="hp-xiyong-row"><span class="hp-xiyong-tag">调候</span><span>' + escapeHtml(facts.tiaoHouYongShen.join('、')) + '</span></div>' : '') +
+        (facts.selectionStatus === 'undetermined' ? '<p>' + escapeHtml(facts.selectionReason || '现有证据尚不足以确定唯一用神。') + '</p>' : '') +
       '</div>';
   }
 

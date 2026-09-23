@@ -12,6 +12,7 @@
   var locationFields=form.querySelector('.birth-location-fields');
   var advanced=form.querySelector('.birth-advanced');
   var opener=null,mounted=null,wheelTimers={},autoMatching=false;
+  var closeTimer=null,closing=false,viewRevision=0;
   var pillarPairs=[['pYearGan','pYearZhi','年柱'],['pMonthGan','pMonthZhi','月柱'],['pDayGan','pDayZhi','日柱'],['pHourGan','pHourZhi','时柱']];
   var stems=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
   var branches=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -78,7 +79,7 @@
     mounted.marker.remove();mounted=null;
   }
   function mount(node){
-    restoreMounted();slot.innerHTML='';if(!node)return;
+    clearWheels();restoreMounted();slot.innerHTML='';if(!node)return;
     var marker=document.createComment('mobile-birth-sheet-anchor');node.parentNode.insertBefore(marker,node);slot.appendChild(node);mounted={node:node,marker:marker};
   }
   function syncSheetTabs(){
@@ -103,12 +104,15 @@
     if(!target)return[];
     return Array.prototype.map.call(target.options||[],function(option,index){return{value:option.value,label:option.textContent.trim(),sourceIndex:index};}).filter(function(option){return option.value!=='';});
   }
+  function clearWheels(){
+    slot.querySelectorAll('.mobile-wheel-rail').forEach(function(rail){if(rail._cancelPending)rail._cancelPending();});
+  }
   function refreshDependentDay(target){
     if(!target||!/^(s|l)(Year|Month)$/.test(target.id))return;
     var dayId=target.id.charAt(0)==='s'?'sDay':'lDay';
     defaultValue(dayId,1);
     var oldColumn=slot.querySelector('.mobile-wheel-column[data-target-id="'+dayId+'"]');
-    if(oldColumn)oldColumn.replaceWith(buildWheel(document.getElementById(dayId),'日'));
+    if(oldColumn){var oldRail=oldColumn.querySelector('.mobile-wheel-rail');if(oldRail&&oldRail._cancelPending)oldRail._cancelPending();oldColumn.replaceWith(buildWheel(document.getElementById(dayId),'日'));}
   }
   function highlightWheel(rail,optionIndex,scroll){
     var selected=null;
@@ -133,8 +137,10 @@
     var title=document.createElement('div');title.className='mobile-wheel-label';title.textContent=label;
     var rail=document.createElement('div');rail.className='mobile-wheel-rail';rail.setAttribute('role','listbox');rail.setAttribute('aria-label',label);
     var options=customOptions||selectOptions(target);
+    // A removed or closing wheel must never write to the still-live form fields.
+    function isLive(){return !sheet.hidden&&!closing&&slot.contains(rail);}
     function applyOption(option,index,scroll){
-      if(!option)return false;
+      if(!option||!isLive())return false;
       var oldValue=target?String(target.value):'';var oldIndex=target?target.selectedIndex:-1;
       if(target&&option.sourceIndex!==undefined)target.selectedIndex=option.sourceIndex;else if(target)target.value=String(option.value);
       var changed=!!target&&(String(target.value)!==oldValue||target.selectedIndex!==oldIndex);
@@ -145,11 +151,13 @@
     options.forEach(function(option,index){
       var button=document.createElement('button');button.type='button';button.className='mobile-wheel-option';button.dataset.value=String(option.value);button.dataset.optionIndex=String(index);button.textContent=option.label;button.setAttribute('role','option');
       button.addEventListener('click',function(){
+        if(!isLive())return;
         if(rail._ignoreClickUntil&&Date.now()<rail._ignoreClickUntil)return;
         rail._userScrolling=false;clearTimeout(wheelTimers[target&&target.id||label]);applyOption(option,index,true);
       });rail.appendChild(button);
     });
     function commitWheel(force){
+      if(!isLive())return;
       if(!force&&(rail._programmatic||!rail._userScrolling))return;
       if(force&&!rail._userScrolling&&!rail._pendingCommit)return;
       clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=false;
@@ -157,15 +165,16 @@
       if(option){rail._ignoreClickUntil=Date.now()+260;applyOption(option,index,true);}
     }
     function scheduleWheelCommit(){
-      if(rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=true;wheelTimers[target&&target.id||label]=setTimeout(function(){commitWheel(false);},180);
+      if(!isLive()||rail._programmatic||!rail._userScrolling)return;clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=true;wheelTimers[target&&target.id||label]=setTimeout(function(){commitWheel(false);},180);
     }
-    ['pointerdown','touchstart','wheel'].forEach(function(type){rail.addEventListener(type,function(){rail._userScrolling=true;},{passive:true});});
+    ['pointerdown','touchstart','wheel'].forEach(function(type){rail.addEventListener(type,function(){if(isLive())rail._userScrolling=true;},{passive:true});});
     rail.addEventListener('scroll',scheduleWheelCommit,{passive:true});
     if('onscrollend' in rail)rail.addEventListener('scrollend',function(){commitWheel(false);},{passive:true});
     rail._commitPending=function(){commitWheel(true);};
     rail._cancelPending=function(){clearTimeout(wheelTimers[target&&target.id||label]);rail._pendingCommit=false;rail._userScrolling=false;};
     column.appendChild(title);column.appendChild(rail);
     requestAnimationFrame(function(){
+      if(!isLive())return;
       var selectedIndex=options.findIndex(function(option){return option.sourceIndex!==undefined?target&&option.sourceIndex===target.selectedIndex:String(option.value)===String(target&&target.value||'');});
       highlightWheel(rail,selectedIndex>=0?selectedIndex:0,true);
     });
@@ -186,7 +195,7 @@
     }
   }
   function buildCalendarPicker(mode){
-    restoreMounted();slot.innerHTML='';
+    clearWheels();restoreMounted();slot.innerHTML='';
     ensureCalendarDefaults(mode);
     var wrap=document.createElement('div');wrap.className='mobile-calendar-picker';
     var ids=mode==='solar'?['sYear','sMonth','sDay','sHour','sMinute']:['lYear','lMonth','lDay','lHour','lMinute'];
@@ -210,7 +219,7 @@
     },80);
   }
   function buildPillarPicker(activeId){
-    restoreMounted();slot.innerHTML='';
+    clearWheels();restoreMounted();slot.innerHTML='';
     var candidates=document.getElementById('pillarCandidates');var hasCandidates=!!(candidates&&!candidates.hidden);
     var wrap=document.createElement('div');wrap.className='mobile-pillar-picker';wrap.classList.toggle('has-candidates',hasCandidates);var preview=document.createElement('div');preview.className='mobile-pillar-preview';
     pillarPairs.forEach(function(pair){
@@ -238,15 +247,17 @@
   }
   function renderTimePicker(){syncSheetTabs();if(activeMode()==='pillars')buildPillarPicker('pYearGan');else buildCalendarPicker(activeMode());}
   function open(kind,trigger){
+    clearTimeout(closeTimer);closeTimer=null;closing=false;var revision=++viewRevision;
     opener=trigger||document.activeElement;sheet.dataset.kind=kind;sheetTabs.hidden=kind!=='time';todayButton.hidden=kind!=='time'||activeMode()==='pillars';sheetTitle.textContent=kind==='location'?'选择出生地点':(kind==='settings'?'排盘设置':'');
     if(kind==='time')renderTimePicker();else if(kind==='location')mount(locationFields);else{if(advanced)advanced.open=true;mount(advanced);}
-    overlay.hidden=false;sheet.hidden=false;requestAnimationFrame(function(){overlay.classList.add('is-open');sheet.classList.add('is-open');});document.body.classList.add('mobile-birth-sheet-open');
+    overlay.hidden=false;sheet.hidden=false;requestAnimationFrame(function(){if(revision!==viewRevision||closing)return;overlay.classList.add('is-open');sheet.classList.add('is-open');});document.body.classList.add('mobile-birth-sheet-open');
   }
   function close(){
+    if(sheet.hidden||closing)return;
     sheet.querySelectorAll('.mobile-wheel-rail').forEach(function(rail){if(rail._commitPending)rail._commitPending();});
-    sheet.querySelectorAll('.mobile-wheel-rail').forEach(function(rail){if(rail._cancelPending)rail._cancelPending();});
+    closing=true;++viewRevision;clearWheels();
     overlay.classList.remove('is-open');sheet.classList.remove('is-open');document.body.classList.remove('mobile-birth-sheet-open');
-    setTimeout(function(){restoreMounted();slot.innerHTML='';overlay.hidden=true;sheet.hidden=true;refresh();if(opener&&opener.focus)opener.focus();},220);
+    closeTimer=setTimeout(function(){closeTimer=null;restoreMounted();slot.innerHTML='';overlay.hidden=true;sheet.hidden=true;closing=false;refresh();if(opener&&opener.focus)opener.focus();},220);
   }
   function valueText(id){var el=document.getElementById(id);if(!el||!el.value)return'';var option=el.selectedOptions&&el.selectedOptions[0];return option?option.textContent.trim():String(el.value);}
   function refresh(){

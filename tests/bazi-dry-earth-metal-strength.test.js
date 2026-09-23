@@ -60,7 +60,8 @@ test('护栏：纯燥厚土无水无金根，保留土多金埋修正', () => {
   const chart = pillars('戊戌 己未 辛未 戊戌');
   const strength = calculator.calcDayMasterStrength(chart, { audit: true });
 
-  assert.equal(strength.score, 33);
+  // 年月未戌刑并不涉及日柱；同支重字不再把这笔 -1 放大为 -2。
+  assert.equal(strength.score, 34);
   assert.equal(strength.level, '偏弱');
   assert.equal(strength.audit.stages.find(stage => stage.id === 'dry-earth-buries-metal').delta, -8);
 });

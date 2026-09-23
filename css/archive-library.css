@@ -18,3 +18,19 @@ body{min-height:100vh;background:#eee3cf;color:var(--archive-ink)}
 .archive-hero__meta{gap:12px}.archive-hero__actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
 .archive-record--hepan{grid-template-columns:minmax(0,1fr) minmax(190px,auto) auto}.archive-record--hepan .archive-record__pillars{display:flex;flex-direction:column;gap:3px}.archive-record__pair{display:flex;align-items:center;gap:5px}.archive-record__pair::before{content:attr(data-person);min-width:28px;color:var(--archive-muted);font:10px/1.4 inherit}.archive-record__type{display:inline-block;margin-left:6px;padding:2px 6px;color:var(--archive-red);background:rgba(132,54,47,.07);border-radius:8px;font-size:9px;font-weight:600;vertical-align:1px}
 @media(max-width:700px){.archive-filters{overflow-x:auto}.archive-record--hepan{grid-template-columns:minmax(0,1fr) auto}.archive-record--hepan .archive-record__pillars{grid-column:1;grid-row:2}.archive-record--hepan .archive-record__ai{grid-column:2;grid-row:1 / span 2}}
+
+.archive-record__more{display:none}
+.archive-list-tail{text-align:center;padding:18px 0 10px;color:var(--archive-muted);font-size:12px}
+.archive-load-more{display:block;min-height:44px;min-width:150px;margin:8px auto;padding:10px 18px;border:1px solid var(--archive-line);border-radius:12px;background:var(--archive-paper);color:var(--archive-red);font:14px/1.5 inherit;cursor:pointer}
+.archive-load-more[hidden]{display:none}
+@media(max-width:700px){
+ .archive-tools{position:sticky;top:calc(56px + env(safe-area-inset-top));z-index:20;margin:0 -2px 14px;padding:8px 2px;background:#eee3cf}
+ .archive-search input{font-size:16px;min-height:48px}
+ .archive-filters button{min-height:44px;min-width:48px;padding:8px}
+ .archive-touch-ready .archive-record,.archive-touch-ready .archive-record--hepan{grid-template-columns:minmax(0,1fr) 44px;gap:6px 10px;padding:15px 10px 15px 16px;min-height:88px;touch-action:pan-y}
+ .archive-touch-ready .archive-record__pillars{grid-column:1;grid-row:2;gap:7px}
+ .archive-touch-ready .archive-record__ai,.archive-touch-ready .archive-record__calibrate,.archive-touch-ready .archive-record__delete{display:none}
+ .archive-touch-ready .archive-record__more{display:block;grid-column:2;grid-row:1 / span 2;align-self:center;width:44px;height:48px;border:0;border-radius:12px;background:rgba(132,54,47,.05);color:var(--archive-red);font-size:15px;letter-spacing:2px;touch-action:manipulation;cursor:pointer}
+ .archive-record:hover{transform:none;box-shadow:0 8px 24px rgba(70,49,28,.05)}
+ .archive-record__name{font-size:16px}.archive-record__sub{font-size:12px}
+}

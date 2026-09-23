@@ -5,7 +5,7 @@
 }(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
 
-  var SCHEMA_VERSION = '2.0.0';
+  var SCHEMA_VERSION = '2.1.0';
 
   var PILLARS = ['year', 'month', 'day', 'hour'];
   var PILLAR_LABELS = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
@@ -2659,13 +2659,14 @@
     ][level];
   }
 
-  function wealthStrengthState(facts, capacity) {
+  function wealthStrengthState(facts) {
     var strength = facts && facts.core && facts.core.strength || {};
-    var score = Number(strength.score);
     var level = textOf(strength.level);
-    if ((Number.isFinite(score) && score >= 55) || /身强|偏强|旺极|从强/.test(level) || /顺势|可承接/.test(textOf(capacity && capacity.state))) return 'strong';
-    if ((Number.isFinite(score) && score < 45) || /身弱|偏弱|弱极/.test(level) || textOf(capacity && capacity.state) === '承压') return 'weak';
-    return 'balanced';
+    if (/^(极强|偏强|身强|旺极)$/.test(level)) return 'strong';
+    if (/^(极弱|偏弱|身弱|弱极)$/.test(level)) return 'weak';
+    if (level === '中和') return 'balanced';
+    if (typeof strength.score !== 'number' || !Number.isFinite(strength.score)) return 'unknown';
+    return strength.score >= 60 ? 'strong' : strength.score < 40 ? 'weak' : 'balanced';
   }
 
   function narrativeVerdict(title, text, basis, details) {
@@ -2732,8 +2733,8 @@
       adultBest: bestOf(favorableAdult),
       earlyFoundation: bestOf(favorableEarly),
       limitation: favorableAdult.length
-        ? '大运只判断原局财富上限更可能在哪个阶段兑现，不改变原局A等级；未成年阶段只解释家庭、教育与成长资源，不解释为个人身价。'
-        : '当前大运列表中没有足够明确的成年财富上升窗口；原局A等级仍是结构上限，不能据此承诺现实兑现。',
+        ? '大运只筛选原局财富潜力值得核对的阶段，不改变原局A等级；未成年阶段只解释家庭、教育与成长资源，不解释为个人身价。'
+        : '当前大运列表中没有足够明确的成年财富上升窗口；原局A等级仍是模型参考，不能据此承诺现实兑现。',
     };
   }
 
@@ -2754,8 +2755,8 @@
     var gap = Math.max(0, natalLevel - currentLevel);
     return {
       natalGrade: 'A' + natalLevel, currentReferenceGrade: 'A' + currentLevel, gap: gap, carrier: carrier,
-      summary: '原局终身上限仍为A' + natalLevel + '，本次现实基准约为A' + currentLevel +
-        (gap ? '，与原局上限相差' + gap + '档。' : '，当前基准已接近原局上限。') +
+      summary: '原局模型潜力仍为A' + natalLevel + '，本次现实基准约为A' + currentLevel +
+        (gap ? '，与原局参考相差' + gap + '档。' : '，当前基准已接近原局参考。') +
         '本次复核只校对现实兑现程度，不修改原局A等级。',
       inputs: { occupation: occupation, incomeLevel: incomeLevel, assetLevel: assetLevel, debt: debt, familySupport: familySupport },
     };
@@ -2863,7 +2864,7 @@
         return item && item.domain === domain;
       })[0];
       // 只有当年确有刑冲合害等独立结构触发时才报“应期”；十神和大运背景只能定主题。
-      if (!record || !record.hasIndependentAnnualTrigger || Number(record.activationScore || 0) < 2) return;
+      if (!record || record.reportExcluded || record.reportVariantSuppressed || !record.hasIndependentAnnualTrigger || Number(record.activationScore || 0) < 2) return;
       rows.push({
         year: Number(year.year), age: adjudication.age,
         stage: adjudication.lifeStage && adjudication.lifeStage.label || '',
@@ -2879,15 +2880,35 @@
       .slice(0, limit || 2);
   }
 
+  function contextScenario(domain, direction, life) {
+    if (!life || life.status === 'working' || domain === 'family') return '';
+    var school=life.status==='student'||life.status==='unknown'&&life.age!=null&&life.age>=6&&life.age<18;
+    var subjects=school?{study:'课程学习、答题与阶段成果',career:'学校任务、集体活动与同伴协作',wealth:'可支配费用与学习物资',relationship:'同伴联系与日常相处',change:'课程、居住或校园生活安排',health:'精力恢复与日常节奏'}
+      :life.status==='exam'?{study:'复习计划、练习与考核准备',career:'备考任务与考核要求',wealth:'备考费用与生活预算',relationship:'备考协作与重要关系的沟通',change:'复习与生活安排',health:'精力恢复与复习节奏'}
+      :life.status==='transition'?{career:'求职准备、申请与方向选择',wealth:'生活预算与求职成本',relationship:'重要联系与相处安排',change:'求职方向与生活安排',health:'精力恢复与日常节奏'}
+      :life.status==='home'?{career:'生活事务与照料分工',wealth:'生活预算与共同开支',relationship:'共同生活中的沟通与协作',change:'居住、照料与个人计划',health:'精力恢复与日常节奏'}
+      :life.status==='retired'?{career:'日常办事、兴趣活动与共同任务',wealth:'可支配费用与生活开支',relationship:'同伴联系与日常相处',change:'居住、活动与生活安排',health:'精力恢复与活动节奏'}
+      :{study:'当时的学习或准备安排（如有）',career:'个人任务、实际要求与协作',wealth:'可支配费用与资源安排',relationship:'重要联系与日常相处',change:'主要生活安排与个人计划',health:'精力恢复与日常节奏'};
+    return subjects[domain] ? subjects[domain]+(direction==='偏有利'?'更容易理顺，具体成果仍需核对':direction==='偏不利'?'更容易遇到阻力，需要调整原有安排':'是本年需要核对的变化方向，具体结果取决于现实安排') : '';
+  }
+
   function selectTimingScenario(record, adjudication) {
     record = record || {};
     adjudication = adjudication || {};
+    var reference=record.reportProcessReference;
+    var processText=reference?' 往事可参考的共同作用方式：'+reference.commonProcess+'。'+(reference.state==='mixed-reference'?'同类解释也收到过不符合反馈，需要保留不同表现。':'')+'这条线索用于核对当前场景，不表示相同事件或结果会重演。':'';
+    if (record.reportFeedback) return (record.reportScenario || record.reportFeedback.original || record.reportFeedback.label || '')+'。'+record.reportFeedback.outcome+processText;
+    if (record.reportScenario) return record.reportScenario+processText;
+    var contextual=contextScenario(record.domain,record.direction,adjudication.lifeContext);
+    if(contextual)return contextual;
     var stageKey = adjudication.lifeStage && adjudication.lifeStage.key || '';
     if (!stageKey && Number.isFinite(Number(adjudication.age))) {
       var stageAge = Number(adjudication.age);
       stageKey = stageAge < 16 ? 'child' : stageAge < 24 ? 'education' : stageAge < 31 ? 'launch'
         : stageAge < 46 ? 'development' : stageAge < 61 ? 'mature' : 'late';
     }
+    var concrete = list(record.scenarioCandidates).map(textOf).filter(Boolean);
+    if (['launch','development','mature'].indexOf(stageKey) >= 0 && concrete.length && !/^事业事项/.test(concrete[0])) return concrete[0];
     var direction = record.direction || '条件性';
     var favorable = direction === '偏有利';
     var adverse = direction === '偏不利';
@@ -2990,9 +3011,12 @@
     var yongEntry = entries.filter(function (item) { return item && item.element === yong; })[0] || {};
     var jiEntry = entries.filter(function (item) { return item && item.element === ji; })[0] || {};
     var level = textOf(strength.level || strength.label) || '旺衰已定';
-    var centralTension = /极弱|身弱|偏弱/.test(level)
+    var following = core.congGe || pattern.congGe || /从格|专旺/.test(textOf(yongJi.method));
+    var centralTension = following
+      ? '本局按'+textOf(pattern.name || yongJi.method)+'顺势取用。报告重点是顺势条件是否完整，以及后续作用有没有改变原局方向，不能套用普通身弱先补扶的判断。'
+      : /极弱|身弱|偏弱/.test(level)
       ? '真正要解决的是承载不足：机会、钱和责任来得太快时，人容易先累、先乱，所以要先让自己接得住，再谈放大结果。'
-      : /身强|偏强|旺极/.test(level)
+      : /身强|偏强|极强|旺极/.test(level)
         ? '你不缺推动事情的力量，真正的问题是力量能不能被疏通并变成成果；继续一味加码，反而容易变成内耗、竞争或反复。'
         : '命局不是简单地越补越好，关键在于维持现有承载，同时让真正能解决问题的力量发挥出来。';
     var yongState = yong
@@ -3010,7 +3034,7 @@
     var domainCounts = {};
     list(facts && facts.fiveYear && facts.fiveYear.years).forEach(function (year) {
       var primary = annualAdjudication(year) && annualAdjudication(year).primaryEvent;
-      if (primary && primary.domain) domainCounts[primary.domain] = (domainCounts[primary.domain] || 0) + 1;
+      if (primary && primary.domain && primary.hasIndependentAnnualTrigger) domainCounts[primary.domain] = (domainCounts[primary.domain] || 0) + 1;
     });
     var domainLabels = { study: '学习考试', career: '事业工作', wealth: '收入资金', relationship: '婚恋合作', family: '家庭长辈', health: '身心安全', change: '环境变化' };
     var focus = Object.keys(domainCounts).sort(function (a, b) { return domainCounts[b] - domainCounts[a] || a.localeCompare(b); }).slice(0, 2);
@@ -3153,15 +3177,13 @@
           ? '知识、资质、专业信誉和长期资产更容易成为财富入口。'
           : /比劫/.test(pathText)
             ? '合作与圈层能够带来机会，同时也会产生更明显的利益分配。'
-            : storageSourceText.length ? '' : '你的钱主要还是从一份做得久、能反复带来客户或项目的正经收入中来，不是靠突然碰到一笔横财。';
+            : storageSourceText.length ? '' : '当前没有足够结构依据确定主要收入路径。可结合现实职业、技能或经营方式再核对，不补定工资、项目或横财来源。';
     var strengthState = wealthStrengthState(facts, capacity);
-    var retentionText = strengthState === 'strong'
-      ? '你的日主偏强，担得住财。钱进来以后，更容易有一部分留在手里，并慢慢变成存款、资产或能继续回款的东西。'
-      : strengthState === 'weak'
-        ? '你的日主偏弱，容易出现“富屋贫人”：有挣钱的能力和想法，也能遇到赚钱机会，但钱一多，项目投入、家庭责任或意外支出也容易跟着增加，最后形成财来财去。'
-        : '你的日主力量处在中间，正常收入能够接住一部分，但项目、责任或支出突然放大时，手里的钱也会明显变少。';
+    var retentionText = capacity.method === '从格顺势'
+      ? '本局按从格顺势评估财富承接，不套用普通身弱难担财的模板。实际留存还要看路径、支出与分配。'
+      : '主引擎旺衰为'+textOf(facts && facts.core && facts.core.strength && facts.core.strength.level || '待核')+'，财富承接状态为'+textOf(capacity.state || '待核')+'。承接是结构条件，不能单独确认现金留存；需结合下列通路与阻断。';
     if (isolatedHiddenWealth) {
-      retentionText = '你的日主虽然偏强，但财星都藏在地支，又没有接成稳定的赚钱通路。这不是“有库就能留财”：有赚钱想法，也能遇到零散进账，但收入不容易持续做大，最后留下的钱也有限。';
+      retentionText = '财星藏支且未接上明确财富通路，当前不足以确认收入放大与留存条件；有库也不能直接断能存下钱。';
     }
     if (retentionRisks.length) {
       var retentionDetails = [];
@@ -3215,9 +3237,9 @@
       var secondaryDirections = list(direction.secondary).reduce(function (rows, element) {
         return rows.concat((WEALTH_DIRECTIONS[element] || []).filter(function (item) { return rows.indexOf(item) < 0; }));
       }, []);
-      directionText = (primaryDirections.length ? primaryDirections.join('、') + '是更容易得财的主要方向。' : '') +
+      directionText = (primaryDirections.length ? primaryDirections.join('、') + '是按用神对应的传统方位取象。' : '') +
         (secondaryDirections.length ? secondaryDirections.join('、') + '是第二顺位。' : '') +
-        '这里既指去这些方向工作或做生意，也指这些方向来的客户、市场、单位和项目更容易给你带来实际收入。';
+        '方位是辅助线索，无法仅凭地域确认客户、项目或收入；实际路径与经营条件仍需单独核对。';
     } else {
       directionSource = actualPaths.length
         ? '已见财富通路，但能接入通路的喜用元素没有形成单一优势。'
@@ -3233,7 +3255,7 @@
       rootCount: list(quality.roots).length,
       sourceCount: list(quality.sources).length,
       retentionPenalty: retentionPenalty,
-      meaning: '原局一生在合适成年行运与现实载体配合下，较可能达到并留住的最高财富层级。',
+      meaning: '本模型在原局结构条件下的财富潜力参考，尚非经过现实验证的终身净资产上限。',
     };
     // A1-A5 仅保留为内部结构分，公开等级最低 A6，避免被误读为现实资产的终身断言。
     var publicLevel = Math.max(6, level);
@@ -3254,21 +3276,21 @@
     var windowVerdicts = [];
     if (windows.adultBest) {
       var adult = windows.adultBest;
-      windowVerdicts.push(narrativeVerdict('最可能接近财富上限的成年大运', '', ['WEALTH_ADULT_WINDOW:' + adult.label], {
+      windowVerdicts.push(narrativeVerdict('值得核对的成年财富窗口', '', ['WEALTH_ADULT_WINDOW:' + adult.label], {
         sourceText: adult.startYear + '—' + adult.endYear + '年走' + adult.label + '大运，按原局喜忌、该运与原局互动及财富领域引动综合为“' + adult.wealthDirection + '”。',
-        outcomeText: adult.startAge + '—' + adult.endAge + '岁更适合核对职业、经营、客户或资产是否已经形成承载条件；这一步运更有机会接近原局A' + publicLevel + '上限，但不代表必然达到。',
+        outcomeText: adult.startAge + '—' + adult.endAge + '岁更适合核对职业、经营、客户或资产是否已经形成承载条件；这一步运更有机会接近原局A' + publicLevel + '模型潜力对应的条件，但不代表必然达到。',
       }));
     } else if (windows.available) {
       windowVerdicts.push(narrativeVerdict('成年财富兑现窗口', '', ['WEALTH_ADULT_WINDOW:LIMITED'], {
         sourceText: '现有大运逐步核对后，没有同时满足“成年阶段、财富领域偏有利、原局互动验证为正”的明确窗口。',
-        outcomeText: '原局A' + publicLevel + '仍是结构上限，但目前不能指定某一步大运一定明显接近它；更适合等职业、经营或资产载体形成后，再结合真实收入复核。',
+        outcomeText: '原局A' + publicLevel + '仍是模型潜力参考，目前不能指定某一步大运一定兑现；职业、经营或资产载体形成后，可结合真实收入复核。',
       }));
     }
     if (windows.earlyFoundation) {
       var early = windows.earlyFoundation;
       windowVerdicts.push(narrativeVerdict('早年好运如何理解', '', ['WEALTH_EARLY_WINDOW:' + early.label], {
         sourceText: early.startYear + '—' + early.endYear + '年走' + early.label + '大运，年龄处于' + early.stageLabel + '。',
-        outcomeText: '这段好运只解释为家庭支持、教育条件、见识、技能和起步资源较容易改善，不能把原局A' + publicLevel + '上限写成当时已经拥有的个人财富。',
+        outcomeText: '这段窗口只用于核对家庭支持、教育条件、见识、技能和起步资源，不能把原局A' + publicLevel + '参考写成当时已经拥有的个人财富。',
       }));
     }
     return {
@@ -3300,7 +3322,7 @@
           sourceText: directionSource, outcomeText: directionText,
         }),
       ].concat(windowVerdicts),
-      note: 'A等级只表示原局终身财富上限，不代表当前存款，也不是收益承诺；是否兑现还要看成年大运与现实职业、经营和资产载体。',
+      note: 'A等级是原局模型潜力参考，不是现实终身财富上限；兑现条件包括成年大运与实际职业、经营和资源。',
     };
   }
 
@@ -3318,19 +3340,10 @@
   }
 
   function studyLevelText(level) {
-    return [
-      '',
-      '传统应试会明显吃力，达到本科需要投入比多数人更多的时间和稳定训练。',
-      '传统应试会比较吃力，达到本科需要投入更多时间和稳定训练。',
-      '学习过程会更吃力，达到本科需要更长时间的稳定训练。',
-      '本科需要更多努力，学习状态一松，成绩就容易掉下来。',
-      '本科有机会，稳定投入比临场发挥更决定结果。',
-      '本科阶段通常可达，但更高层次需要持续投入和稳定发挥。',
-      '本科基础较稳，继续深造仍要靠长期投入把优势维持住。',
-      '本科相对轻松，具备研究生或更高层级深造潜力。',
-      '本科相对轻松，研究生或更高层级深造潜力较强。',
-      '本科相对轻松，在研究型学习和长期深造上更容易形成优势。',
-    ][level];
+    return level >= 8 ? '学习结构中的支持条件较集中，可重点观察系统学习与持续深造的适配性。'
+      : level >= 6 ? '学习结构有一定承接条件，长期投入、输出练习与现实基础需要配合。'
+      : level >= 4 ? '学习支持与限制并见，可优先识别最影响持续投入的环节。'
+      : '当前学习结构中的支持条件较少，适合进一步核对环境、兴趣与练习方式；不能由此认定学习能力低。';
   }
 
   function buildStudyNarrative(facts) {
@@ -3350,7 +3363,7 @@
     var publicBand = publicStudyBand(level);
     // Cached reports can retain the former L1–L10 label strings.  The public
     // label must always be recalculated from the retained internal rank.
-    var levelLabel = publicBand.label;
+    var levelLabel = level >= 8 ? '深造支持较集中' : level >= 4 ? '学习条件有待配合' : '学习支持需补充';
     var levelOutcome = studyLevelText(level);
     var profile = study.profile || studyProfileRecord('composite', ['PROFILE:LEGACY_COMPOSITE']);
     var limitations = list(study.limitations);
@@ -3364,13 +3377,7 @@
         : /待建立|拉扯/.test(expressionText)
           ? '你容易出现“听懂了但写不出来、做不出来”的问题，输出训练决定最终成绩。'
           : '真正的问题不是聪明程度，而是能否把优势稳定维持到长期考试和成果交付，这也是最容易低估的短板。';
-    var headline = level >= 8
-      ? '你的学习结构具备继续深造的基础，本科相对轻松，研究生及更高层级也有明显潜力。'
-      : level >= 6
-        ? '本科阶段通常可达，更高层次的差距主要出现在长期投入和应试稳定性。'
-      : level >= 4
-          ? '本科需要更多努力，纯靠临场发挥很难把成绩一直维持在更高层次。'
-          : '传统应试会比较吃力，达到本科需要投入更多时间和稳定训练。';
+    var headline = levelOutcome;
     function studyStateText(kind, fact) {
       var state = textOf(fact && fact.state);
       var maps = {
@@ -3405,13 +3412,13 @@
       var role = textOf(fact && fact.elementRole);
       return narrativeVerdict(title, '', ['STUDY_' + key.toUpperCase() + ':' + state], {
         sourceText: title + '在命局中呈现“' + state + '”' + (role && role !== '中性' ? '，对应五行为本命' + role : '') + '。',
-        outcomeText: studyStateText(key, fact),
+        outcomeText: '本项传统结构线索：'+studyStateText(key, fact)+' 是否符合你的实际学习表现，需要用练习、成绩与学习经历核对。',
       });
     }
     var verdicts = [
-      narrativeVerdict('可达到的学习层级', '', list(band.basis).length ? band.basis : ['STUDY_BAND:L' + level], {
-        sourceText: '综合学习结构、四项承接能力与已确认阻断后，学业层级落在“' + levelLabel + '”。',
-        outcomeText: levelLabel + '：' + levelOutcome + '这表示命局具备的学习与应试承接上限，不代表具体学校录取。',
+      narrativeVerdict('学习与深造潜力', '', list(band.basis).length ? band.basis : ['STUDY_BAND:L' + level], {
+        sourceText: '综合学习结构、四项条件与已确认阻断后，结构参考为“' + levelLabel + '”。',
+        outcomeText: levelLabel + '：' + levelOutcome + '这属于结构参考，不能据此确定本科、研究生或其他实际学历。',
       }),
       narrativeVerdict('你的学习类型', '', list(profile.basis).length ? profile.basis : ['STUDY_PROFILE:' + (profile.key || 'composite')], {
         sourceText: textOf(profile.sourceText),
@@ -3462,16 +3469,16 @@
       '亥': ['感受力强、包容随和，重精神交流，但想法深、不喜欢被追问到底', '线条柔润，眼神温和，体态自然，气质安静并带一点神秘感'],
     };
     var roleProfiles = {
-      '七杀': '夫妻宫主气对应七杀，所以对方做事更果断、要求更高，也更习惯自己掌握节奏',
-      '正官': '夫妻宫主气对应正官，所以对方重规则、名分和责任，对伴侣也有明确标准',
-      '食神': '夫妻宫主气对应食神，所以对方性格较温和，会照顾生活感受，也在意两个人相处得舒不舒服',
-      '伤官': '夫妻宫主气对应伤官，所以对方表达直接、自我意识强，不喜欢被固定规矩束缚',
-      '正财': '夫妻宫主气对应正财，所以对方务实、会安排生活，也比较重视稳定和秩序',
-      '偏财': '夫妻宫主气对应偏财，所以对方擅长与人打交道，对机会和现实资源也更敏感',
-      '正印': '夫妻宫主气对应正印，所以对方较温和体贴，重视安全感和精神支持，但也容易照顾得过多',
-      '偏印': '夫妻宫主气对应偏印，所以对方观察细、有自己的想法，很多情绪不会马上说出来，也需要个人空间',
-      '比肩': '夫妻宫主气对应比肩，所以对方独立、自尊心强，希望两个人平等，不愿长期处于弱势',
-      '劫财': '夫妻宫主气对应劫财，所以对方行动力强、爱憎分明，发生分歧时也更容易争主导权',
+      '七杀': '夫妻宫主气对应七杀，可取象为做事更果断、要求更高，也更习惯自己掌握节奏',
+      '正官': '夫妻宫主气对应正官，可取象为重规则、名分和责任，对伴侣也有明确标准',
+      '食神': '夫妻宫主气对应食神，可取象为性格较温和，会照顾生活感受，也在意两个人相处得舒不舒服',
+      '伤官': '夫妻宫主气对应伤官，可取象为表达直接、自我意识强，不喜欢被固定规矩束缚',
+      '正财': '夫妻宫主气对应正财，可取象为务实、会安排生活，也比较重视稳定和秩序',
+      '偏财': '夫妻宫主气对应偏财，可取象为擅长与人打交道，对机会和现实资源也更敏感',
+      '正印': '夫妻宫主气对应正印，可取象为较温和体贴，重视安全感和精神支持，但也容易照顾得过多',
+      '偏印': '夫妻宫主气对应偏印，可取象为观察细、有自己的想法，很多情绪不会马上说出来，也需要个人空间',
+      '比肩': '夫妻宫主气对应比肩，可取象为独立、自尊心强，希望两个人平等，不愿长期处于弱势',
+      '劫财': '夫妻宫主气对应劫财，可取象为行动力强、爱憎分明，发生分歧时也更容易争主导权',
     };
     var starElementLooks = {
       '木': '配偶星属木，进一步加强修长、清秀和有成长感的特征',
@@ -3489,114 +3496,69 @@
       '正财': '务实、会过日子', '偏财': '懂人情和机会', '正印': '重感情和安全感', '偏印': '心思细、有自己的想法',
       '比肩': '独立、不愿示弱', '劫财': '行动快、好胜心强',
     };
-    var personalityText = branchProfile[0] + '。' + (roleProfiles[mainHidden && mainHidden.role] || '夫妻宫主气让这些特点更明显') + '。';
-    if (secondaryHidden.length) personalityText += '夫妻宫里同时还藏有' + secondaryHidden.map(function (row) { return row.role; }).join('、') + '，所以对方还有' + secondaryHidden.map(function (row) { return secondaryRoleCopies[row.role] || '不轻易外露'; }).join('、') + '的一面。';
+    var personalityText = '传统相处画像线索：'+branchProfile[0] + '。' + (roleProfiles[mainHidden && mainHidden.role] || '夫妻宫主气让这些特点更明显') + '。';
+    if (secondaryHidden.length) personalityText += '夫妻宫里同时还藏有' + secondaryHidden.map(function (row) { return row.role; }).join('、') + '，可补充观察' + secondaryHidden.map(function (row) { return secondaryRoleCopies[row.role] || '不轻易外露'; }).join('、') + '的一面。';
     var interactionTexts = {
-      '夫妻宫生身': partnerLabel + '更愿意照顾你，遇到现实问题时也更容易主动帮你。',
-      '命主生夫妻宫': '这段关系里通常是你付出更多，照顾、迁就和承担往往先由你开始。',
-      '命主克夫妻宫': '你更想掌握两个人的生活节奏，遇到重要事情时通常希望按你的想法推进。',
-      '夫妻宫克身': partnerLabel + '的主见和现实要求比你更强，很多事情会推着你走，你也容易觉得自己被管得多、被压着。',
-      '干支同类': '两个人都很有主见，平时能并肩做事，但争起来也都不愿先让步。',
+      '夫妻宫生身':'这组关系线索偏向接受支持与回应，可观察双方如何表达照顾和需要。',
+      '命主生夫妻宫':'这组关系线索偏向投入与付出，可观察照顾和责任是否形成双方认可的分工。',
+      '命主克夫妻宫':'这组关系线索偏向主动安排与边界，可观察重要决定是否经过协商。',
+      '夫妻宫克身':'这组关系线索偏向对要求与责任的回应，可观察共同目标与个人节奏如何协调。',
+      '干支同类':'这组关系线索偏向平等与自主，可观察双方意见相近和不同的时候如何协商。'
     };
-    var marriageEffectText = quality.elementRole === '用神' || quality.elementRole === '喜神'
-      ? '配偶星在命局中属于' + quality.elementRole + '，所以' + partnerLabel + '进入你的生活后，更容易给你带来实际帮助，例如资源、收入机会、生活安排或做事秩序。'
-      : quality.elementRole === '忌神'
-        ? '配偶星在命局中属于忌神，所以进入关系后，你更容易觉得钱、责任和精力都被感情占住；对方越强势，这种压力通常越明显。'
-        : '配偶星在命局中没有明显落在喜神或忌神上，所以' + partnerLabel + '带来的帮助和压力都不算特别集中；两个人有时靠近、有时疏远的情况，更容易跟着大运流年变化。';
-    var firstPosition = spouseStar.occurrences && spouseStar.occurrences[0] && spouseStar.occurrences[0].pillar || 'unknown';
+    var marriageEffectText = '配偶星五行为'+textOf(quality.elementRole || '中性')+'，用于判断结构中的支持或负担方向；资源支持、责任分担和情感亲密需要分别核对，不能据喜忌给现实伴侣判好坏。';
+    var positionMap = { outside_or_early:'year', work_or_local:'month', close_circle:'day', later_or_distant:'hour' };
+    var positionSignal = relationship.distance && relationship.distance.tendency;
+    var positions = list(spouseStar.occurrences).map(function(o) { return o.pillar; }).filter(Boolean);
+    var uniquePositions = positions.filter(function(p,i) { return positions.indexOf(p) === i; });
+    var firstPosition = positionSignal === 'unclear' ? 'unknown' : positionMap[positionSignal] || (uniquePositions.length === 1 ? uniquePositions[0] : 'unknown');
     var distanceCopies = { year: '原有生活圈之外、长辈关系圈或较早阶段', month: '工作、学习、同事同学或熟人圈', day: '身边长期接触、关系基础较近的圈层', hour: '后期工作圈、异地或人生较晚阶段' };
-    var distanceCopy = distanceCopies[firstPosition] || '现实生活中能够持续接触的圈层';
-    var ageCopy = relationship.age && relationship.age.tendency === 'older_tendency'
+    var distanceCopy = distanceCopies[firstPosition] || '';
+    var ageUnclear = !relationship.age || !relationship.age.tendency || relationship.age.tendency === 'unclear';
+    var ageCopy = ageUnclear ? '年龄线索未集中，当前不指定年长、年幼或同龄，也不用心理成熟度替代年龄判断。' : relationship.age && relationship.age.tendency === 'older_tendency'
       ? '配偶年龄更容易略大，或即使年龄接近，心理成熟度和现实经验也更强。'
       : relationship.age && relationship.age.tendency === 'younger_tendency'
         ? '配偶年龄更容易略小，或在性格和生活阶段上显得更年轻。'
         : '配偶年龄以与命主相仿为主，也可能只是略年长、表现得更成熟。';
-    var appearanceText = branchProfile[1] + '。' + (starElementLooks[spouseStar.element] || '') + '。';
+    var appearanceText = textOf(relationship.appearance && relationship.appearance.conclusion) || '外形线索不足，不由单一地支补定五官、身高或体型。';
     var eventVerdicts = [];
-    var palaceRoleText = palace.elementRole || '中性';
-    var originalEvents = list(palace.dayInvolvingEvents);
-    var eventTypes = originalEvents.map(function (row) { return textOf(row && row.type) || textOf(row); });
-    function hasOriginalEvent(pattern) { return eventTypes.some(function (type) { return pattern.test(type); }); }
-    function originalEventDirections(pattern) {
-      return originalEvents.filter(function (row) { return pattern.test(textOf(row && row.type)); }).map(function (row) {
-        return textOf(row && row.source) + '与' + textOf(row && row.target) + '形成' + textOf(row && row.type);
-      }).filter(function (row) { return row !== '与形成'; }).join('、');
-    }
-    var favorablePalace = favorableRole(palaceRoleText);
-    function originalRoleSuffix(type) {
-      if (favorablePalace) {
-        if (type === '合') return '夫妻宫本身为' + palaceRoleText + '，合住以后，两个人更容易真正靠近，也更愿意把生活和未来安排放到一起。';
-        if (type === '冲') return '夫妻宫本身为' + palaceRoleText + '，被冲以后，原本能带来帮助和稳定的部分会被打乱，所以整体偏不利。';
-        return '夫妻宫本身为' + palaceRoleText + '，出现这种作用后，原本比较顺的相处和配偶帮助会被干扰。';
-      }
-      if (palaceRoleText === '忌神') {
-        if (type === '合') return '夫妻宫本身为忌神，合住以后更容易出现明明相处很累，却又舍不得彻底分开的情况。';
-        if (type === '冲') return '夫妻宫本身为忌神，被冲以后，原来让你难受的相处方式可能被打破，但关系本身也会经历明显变化。';
-        return '夫妻宫本身为忌神，这种作用会让争执、不信任或被对方压着的感觉更明显，不能因为宫位是忌神就把刑害克直接说成好事。';
-      }
-      return '夫妻宫喜忌不明显，所以这里只能确定关系会发生变化，不能单凭这一项判断最后一定变好或变坏。';
-    }
-    if (hasOriginalEvent(/六冲|冲/)) eventVerdicts.push(narrativeVerdict('感情容易出现明显变化', originalEventDirections(/六冲|冲/) + '。夫妻宫受冲，关系更容易突然改变，常见表现是争吵、分开住、聚少离多，或者其中一方重新考虑这段感情还要不要继续。' + originalRoleSuffix('冲'), ['PALACE_EVENT:CLASH', 'PALACE_ROLE:' + palaceRoleText]));
-    if (hasOriginalEvent(/刑/)) eventVerdicts.push(narrativeVerdict('同一个问题容易反复争执', originalEventDirections(/刑/) + '。夫妻宫带刑，说明两个人容易较劲、互不服气；一个问题吵完看似过去，之后还可能因为类似的事情再次翻旧账。' + originalRoleSuffix('刑'), ['PALACE_EVENT:PUNISHMENT', 'PALACE_ROLE:' + palaceRoleText]));
-    if (hasOriginalEvent(/六害|害/)) eventVerdicts.push(narrativeVerdict('不满容易憋在心里', originalEventDirections(/六害|害/) + '。夫妻宫受害，很多问题不一定当场吵出来，但心里的不满会慢慢积累，久了容易怀疑对方、不再完全信任对方。' + originalRoleSuffix('害'), ['PALACE_EVENT:HARM', 'PALACE_ROLE:' + palaceRoleText]));
-    originalEvents.filter(function (row) { return /六合|三合局|半合|三会方|半会/.test(textOf(row && row.type)); }).forEach(function (row) {
+    var seenEvents = {};
+    list(palace.dayInvolvingEvents).forEach(function(row) {
       var type = textOf(row && row.type);
-      var pair = list(row && row.elements).map(textOf).filter(function (value) { return /^[子丑寅卯辰巳午未申酉戌亥]{2,3}$/.test(value); })[0] || '';
-      var canonicalPairs = { '午寅': '寅午', '戌寅': '寅戌', '戌午': '午戌', '卯亥': '亥卯', '未亥': '亥未', '未卯': '卯未', '子申': '申子', '辰申': '申辰', '辰子': '子辰', '酉巳': '巳酉', '丑巳': '巳丑', '丑酉': '酉丑' };
-      pair = canonicalPairs[pair] || pair;
-      var formedElement = list(row && row.elements).map(textOf).map(function (value) {
-        var match = value.match(/(?:合|会)([木火土金水])/);
-        return match && match[1];
-      }).filter(Boolean)[0] || '';
-      var formedRole = classifyElementRole(formedElement, facts && facts.core && facts.core.yongJi);
-      var directionLabel = favorableRole(formedRole) ? '偏有利' : (formedRole === '忌神' ? '偏不利' : '中性');
-      var directionText = textOf(row && row.source) + '与' + textOf(row && row.target) + '形成' + (pair || '') + type + (formedElement ? formedElement + '势' : '');
-      var resultText = favorableRole(formedRole)
-        ? formedElement + '在本命中为' + formedRole + '，所以这项组合对感情偏有利：两个人更愿意靠近，也更容易把生活、家庭和未来安排真正放到一起。'
-        : formedRole === '忌神'
-          ? formedElement + '在本命中为忌神，所以这项组合对感情偏不利：它会让你心里没底、内心反复琢磨，怀疑对方到底靠不靠谱、这段感情还能不能继续走下去；两个人也容易一阵亲近、一阵疏远，明明互相牵挂，却很难长期保持稳定。'
-          : '所趋五行在本命中喜忌不明显，所以这里只能确定两个人的联系会变多，不能只靠这一项判断最后是好是坏。';
-      var limitText = type === '半合' || type === '半会'
-        ? '半合只表示气势趋向，并不等于已经完全合化，也不等同于暗合或隐秘关系。'
-        : '是否真正成化仍以月令、透干和受制情况为准。';
-      eventVerdicts.push(narrativeVerdict('夫妻宫' + type + (formedElement || '') + '·' + directionLabel, directionText + '。' + resultText + limitText, ['PALACE_EVENT:BRANCH_COMBINATION:' + type, 'FORMED_ELEMENT:' + (formedElement || 'unknown'), 'FORMED_ROLE:' + formedRole]));
+      var key = type+':'+textOf(row.source)+':'+textOf(row.target);
+      if (!type || seenEvents[key]) return;
+      seenEvents[key] = true;
+      var stemEvent = /天干|五合/.test(type);
+      if (stemEvent) {
+        var other = list(row.pillars).filter(function(p) { return p !== 'day'; })[0];
+        var related = list(spouseStar.occurrences).some(function(o) {
+          return o.pillar === other && o.layer === '天干' && (!o.gan || textOf(row).indexOf(o.gan) >= 0);
+        });
+        if (!related) return;
+      }
+      var eventSource = [textOf(row.source),textOf(row.target)].filter(Boolean).join('与')+'形成'+type;
+      if (list(row.elements).length) eventSource += '（'+list(row.elements).map(textOf).join('、')+'）';
+      var theme = /冲/.test(type) ? '个人节奏与共同安排'
+        : /刑/.test(type) ? '反复出现的分歧与边界'
+        : /害/.test(type) ? '未说清的期待与沟通'
+        : /合|会/.test(type) ? '关系参与和共同计划' : '决策与责任分配';
+      eventVerdicts.push(narrativeVerdict('关系线索·'+type,'',['PALACE_EVENT:'+key],{
+        sourceText:eventSource+'；夫妻宫五行为'+textOf(palace.elementRole || '中性')+'。',
+        outcomeText:'这项结构适合观察“'+theme+'”。它不能单独确认争吵、分居、亲密或分合；需要与配偶星、其他作用及现实相处一起核对。'+(/合|会/.test(type) ? '合会只列结构联系，是否成化及有利方向须另有有效裁决，不能仅凭合就断和睦。' : '')
+      }));
     });
-    var spouseCombineRows = originalEvents.filter(function (row) {
-      if (!/天干五合/.test(textOf(row && row.type))) return false;
-      var otherPillar = list(row && row.pillars).filter(function (pillar) { return pillar !== 'day'; })[0];
-      var eventText = textOf(row);
-      return list(spouseStar.occurrences).some(function (item) {
-        return item && item.pillar === otherPillar && item.layer === '天干' && (!item.gan || eventText.indexOf(item.gan) >= 0);
-      });
-    });
-    if (spouseCombineRows.length) {
-      var spouseCombineDirections = spouseCombineRows.map(function (row) {
-        return textOf(row && row.source) + '与' + textOf(row && row.target) + '五合';
-      }).filter(function (row) { return row !== '与五合'; });
-      var spouseLabel = relationship.gender === 'female' ? '正官或七杀夫星合身' : relationship.gender === 'male' ? '正财妻星合身' : '配偶星合身';
-      var spouseRoleCopy = favorableRole(quality.elementRole)
-        ? '配偶星在本命中为' + quality.elementRole + '，所以' + partnerLabel + '更容易真正进入你的生活，并在钱、资源、家庭或日常安排上帮到你。'
-        : quality.elementRole === '忌神'
-          ? '配偶星在本命中为忌神，所以' + partnerLabel + '会很深地参与到你的生活里，但你也更容易觉得感情占用了太多钱、精力或责任。'
-          : '配偶星在本命中喜忌不明显，所以只能确定' + partnerLabel + '会比较直接地参与到你的现实生活中，不能只靠这一项断好坏。';
-      eventVerdicts.push(narrativeVerdict(spouseLabel, spouseCombineDirections.join('、') + '。与日主相合的这个天干，正好也是本命的配偶星，所以才放进婚姻板块；这表示另一半会比较直接地进入你的钱、家庭和生活安排。' + spouseRoleCopy + '至于五合能不能真正化成另一种五行，还要看月令、透干和有没有受制。', ['PALACE_EVENT:SPOUSE_STAR_COMBINATION', 'SPOUSE_STAR_ROLE:' + (quality.elementRole || 'neutral')]));
-    }
-    var controlDirections = originalEvents.filter(function (row) { return /天干克|克/.test(textOf(row && row.type)); }).map(function (row) {
-      return textOf(row && row.source) + '克' + textOf(row && row.target);
-    }).filter(function (row) { return row !== '克'; });
-    if (controlDirections.length) eventVerdicts.push(narrativeVerdict('两个人容易争谁说了算', controlDirections.join('、') + '。日柱参与天干相克，说明两个人在主导权、现实要求或责任分配上更容易正面顶起来；具体是谁压着谁，要按实际的生克方向判断。' + originalRoleSuffix('克'), ['PALACE_EVENT:STEM_CONTROL', 'PALACE_ROLE:' + palaceRoleText]));
     var relationshipLandingSource = [
       textOf(quality.visibility),
       typeof quality.rooted === 'boolean' ? (quality.rooted ? '配偶星有根' : '配偶星根气不足') : '',
       textOf(quality.rolePurity),
     ].filter(Boolean).join('、') + '。';
-    var relationshipLandingText = /透干/.test(textOf(quality.visibility)) && quality.rooted
-      ? '感情对象和关系机会通常比较容易进入现实生活，也更容易从认识、接触推进到稳定相处；能否长期维持，仍要看夫妻宫受到的合冲刑害。'
-      : /透干/.test(textOf(quality.visibility))
-        ? '感情机会并不难出现，对方也容易较快进入你的生活，但关系从出现到稳定之间仍有距离，现实安排和相处方式会决定能否真正落地。'
+    var hasExposedSpouse = list(spouseStar.exposed).length > 0 || /透干|透藏并见/.test(textOf(quality.visibility));
+    var relationshipLandingText = hasExposedSpouse && quality.rooted
+      ? '配偶星透出且有根，显现与承载两项条件同时存在，可作为关注关系落地的结构线索；是否遇到对象、是否稳定相处仍需现实状态与岁运支持。'
+      : hasExposedSpouse
+        ? '配偶星有透出线索，但根气承载尚不足；显现与稳定是两项条件，不能由透干单独确认感情机会已经出现。'
         : list(spouseStar.occurrences).length
-          ? '感情多半不是一开始就特别明确，更容易经过长期接触、观察或某段岁运推动后才真正确定；不能只用“桃花多不多”判断结果。'
-          : '原局配偶星不显，感情节奏更依赖大运流年的引动；没有明显引动时，关系机会可能出现得晚，或出现后推进速度较慢。';
+          ? '配偶星以藏干线索为主，当前不能直接确定关系出现的方式与时间，可结合显现条件和实际接触情况再核对。'
+          : '原局配偶星不显，这条线索不足以确定关系节奏；不能据此断晚婚、没有对象或推进缓慢。';
     return {
       hideScore: true,
       headline: interactionTexts[interaction.direction] || textOf(interaction.conclusion),
@@ -3606,7 +3568,7 @@
         narrativeVerdict('夫妻主导关系', interactionTexts[interaction.direction] || textOf(interaction.conclusion), ['DAY_PILLAR_INTERACTION:' + (interaction.direction || 'unknown')]),
         narrativeVerdict('配偶性格', personalityText, ['SPOUSE_PALACE:' + (palace.zhi || 'unknown'), 'PALACE_MAIN_ROLE:' + (mainHidden && mainHidden.role || 'unknown')]),
         narrativeVerdict('婚后作用', marriageEffectText, ['SPOUSE_STAR_ROLE:' + (quality.elementRole || 'neutral')]),
-        narrativeVerdict('认识渠道', '缘分更容易出现在' + distanceCopy + '，属于现实接触中逐渐建立关系的类型。', ['SPOUSE_STAR_POSITION:' + firstPosition]),
+        narrativeVerdict('认识渠道', distanceCopy ? '位置取象偏向'+distanceCopy+'。这是认识场景的弱线索，需要现实接触经历核对。' : '位置线索分散，暂不能锁定工作圈、熟人介绍或异地等认识渠道。', ['SPOUSE_STAR_POSITION:' + firstPosition]),
         narrativeVerdict('缘分是否容易落地', '', ['SPOUSE_STAR_QUALITY:' + (quality.visibility || 'unknown')], {
           sourceText: relationshipLandingSource,
           outcomeText: relationshipLandingText,
@@ -3965,10 +3927,13 @@
     return '';
   }
 
-  function annualRiskCopies(risks) {
+  function annualRiskCopies(risks, lifeContext) {
     var seen = {};
     return list(risks).map(function (risk) {
-      return Object.assign({}, annualRiskNarrative(risk), { basisRisk: textOf(risk) });
+      var copy = Object.assign({}, annualRiskNarrative(risk), { basisRisk: textOf(risk) });
+      if (lifeContext && !lifeContext.studyRelevant && ['财破印','财坏印'].indexOf(textOf(risk && risk.type)) >= 0)
+        copy.outcomeText = '现实事务与原有准备之间可能出现牵制；重点核对计划被打断、时间被占用等情况，不据此推断考试结果。';
+      return copy;
     }).filter(function (copy) {
       var key = [copy.title, copy.sourceText, copy.outcomeText].join('|');
       if (seen[key]) return false;
@@ -4032,8 +3997,9 @@
 
   function buildCurrentYearNarrative(facts) {
     var year = facts && facts.currentYear || {};
+    if (year.reportReconciliation) return reviewedAnnualNarrative(year);
     var interactions = publicTimingInteractions(year.interactions);
-    var riskCopies = annualRiskCopies(year.triggeredRisks);
+    var riskCopies = annualRiskCopies(year.triggeredRisks, year.lifeContext);
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var decisiveInteractions = prioritizedTimingInteractions(interactions);
@@ -4062,13 +4028,13 @@
       : adverseRoles > favorableRoles
         ? '这一年的整体环境更容易增加消耗、责任或反复，同样的目标往往要付出更多成本；若同时出现有利引动，局部事情仍然能够推进。'
         : favorableRoles || adverseRoles
-          ? '这一年机会和压力同时存在，不能只按“吉年”或“凶年”概括；哪一件事更明显，要看岁运具体引动了事业、钱、关系还是学习。'
+          ? '这一年机会和压力同时存在，不能只按“吉年”或“凶年”概括；哪一件事更明显，要看岁运具体引动了哪些与你当前阶段相关的领域。'
           : '这一年的五行底色没有明显偏向，事情是否发生明显变化，主要取决于流年与原局形成的具体关系。';
     var headline = interactions.length
       ? timingDomainHeadline(decisiveInteractions, directionLabel)
       : hasTriggeredRisk
         ? '本年有风险信号被岁运触发，下面列出已有依据和可能出现的具体表现。'
-        : '本年没有发现足以单独改变原局方向的强引动，现实表现以原有方向延续为主。';
+        : '本年没有发现足以单独改变原局方向的强引动，当前规则暂未识别明确变化窗口，不能据此断现实一定平稳。';
     var verdicts = [narrativeVerdict('年度总体变化', '', ['ANNUAL_PILLAR:' + pillarText], {
       sourceText: '流年为' + (pillarText || '未定') + '，当前处于' + daYunText + '；' + timingBasis,
       outcomeText: headline,
@@ -4081,10 +4047,10 @@
       var primary = adjudication.primaryEvent;
       var stageText = adjudication.lifeStage && adjudication.lifeStage.label || '年龄阶段待核';
       var concreteEnough = !!primary.hasIndependentAnnualTrigger;
-      verdicts.push(narrativeVerdict(concreteEnough ? '今年最可能应在哪件事' : '今年能锁定到什么程度', '', ['ANNUAL_EVENT:' + primary.domain], {
+      verdicts.push(narrativeVerdict(primary.reportFeedback ? '结合往事反馈看今年' : concreteEnough ? '今年最可能应在哪件事' : '今年能锁定到什么程度', '', ['ANNUAL_EVENT:' + primary.domain], {
         sourceText: [stageText, textOf(primary.decisionBasis), list(primary.evidence).slice(0, 2).join('；')].filter(Boolean).join('。'),
         outcomeText: concreteEnough
-          ? selectTimingScenario(primary, adjudication) + '。这是今年最值得优先核对的现实事项。'
+          ? selectTimingScenario(primary, adjudication) + (primary.reportFeedback ? '' : '。这是今年最值得优先核对的现实事项。')
           : '目前只能锁定“' + primary.label + '”主题较活跃，还缺少独立的当年结构触发，不能硬说某件具体事情一定发生。',
       }));
       var secondary = adjudication.secondaryEvent;
@@ -4130,7 +4096,7 @@
           : decisiveOutcome
         : hasTriggeredRisk
           ? riskCopies[0].outcomeText
-          : '没有强引动不等于没有事情发生，只表示主要结果更接近原有方向的延续。',
+          : '没有强引动不等于没有事情发生，只表示这套规则暂未识别明确窗口。',
       paragraphs: [],
       verdicts: verdicts,
       note: year && year.daYun
@@ -4147,7 +4113,11 @@
     var daYunInteractions = [];
     var seenDaYun = {};
     var daYunCounts = {};
+    // Broad decade prose has no mechanism-level attribution. Once a year's interpretation
+    // is revised, use the selected annual ledger throughout this five-year summary.
+    var hasReview = sourceYears.some(function(year) { return !!year.reportReconciliation; });
     sourceYears.forEach(function (year) {
+      if (hasReview) return;
       publicTimingInteractions(year && year.interactions).filter(function (row) {
         return row && row.source === '大运';
       }).forEach(function (row) {
@@ -4156,6 +4126,7 @@
       });
     });
     sourceYears.forEach(function (year) {
+      if (hasReview) return;
       publicTimingInteractions(year && year.interactions).filter(function (row) {
         return row && row.source === '大运' && daYunCounts[timingInteractionStableKey(row)] > 1;
       }).forEach(function (row) {
@@ -4172,13 +4143,14 @@
       outcomeText: uniqueTimingTexts(daYunVerdicts.map(function (row) { return row.outcomeText; })).join(' '),
     }) : null;
     var years = sourceYears.map(function (year) {
+      if (year.reportReconciliation) return reviewedFiveYearRow(year);
       var interactions = publicTimingInteractions(year && year.interactions).filter(function (row) {
         return row && !(row.source === '大运' && daYunCounts[timingInteractionStableKey(row)] > 1);
       });
       var decisive = prioritizedTimingInteractions(interactions);
       var displaySelected = decisive.slice(0, 2);
       var legacyRelationship = !decisive.length ? list(year && year.relationship && year.relationship.activations) : [];
-      var riskCopies = annualRiskCopies(year && year.triggeredRisks);
+      var riskCopies = annualRiskCopies(year && year.triggeredRisks, year && year.lifeContext);
       var directionLabel = !interactions.length && riskCopies.length
         ? '风险已触发'
         : timingDirectionLabel(interactions);
@@ -4191,7 +4163,7 @@
       var adjudication = annualAdjudication(year);
       var primaryEvent = adjudication && adjudication.primaryEvent;
       var eventOutcome = primaryEvent && primaryEvent.hasIndependentAnnualTrigger
-        ? '这一年最可能应在“' + primaryEvent.label + '”：' + selectTimingScenario(primaryEvent, adjudication) + '。'
+        ? (primaryEvent.reportFeedback ? '结合往事反馈：' : '这一年最可能应在“' + primaryEvent.label + '”：') + selectTimingScenario(primaryEvent, adjudication) + '。'
         : primaryEvent
           ? '这一年的现实重心偏向“' + primaryEvent.label + '”，但缺少独立的当年结构触发，不硬断具体事件。'
           : '';
@@ -4201,7 +4173,7 @@
           ? legacyRelationship.map(annualRelationshipActivationText).join(' ')
           : riskCopies.length
             ? String(year && year.year || '') + '年未见强刑冲合，但有风险信号已被岁运触发。'
-            : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，事业、资金和关系以原有方向延续为主。';
+            : String(year && year.year || '') + '年没有发现足以改变原局方向的强引动，不能据此确认事业、资金和关系保持不变。';
       var summary = [eventOutcome, baseSummary]
         .concat(riskCopies.map(function (copy) { return copy.outcomeText; }))
         .concat(reliefCopies.map(function (copy) { return copy.outcomeText; }))
@@ -4243,7 +4215,7 @@
     }) ? '变化明显、好坏暂不能定'
       : highestLabels.indexOf('偏有利') >= 0 && highestLabels.indexOf('偏不利') >= 0
         ? '有利与压力并见'
-        : highestLabels[0] || '平稳延续';
+        : highestLabels[0] || '未见突出窗口';
     var highestOutcome = aggregateFiveYearOutcomes(highestYears);
     var adverseYears = highestYears.filter(function (row) { return row.directionLabel === '偏不利'; });
     var riskYears = years.filter(function (row) { return row.riskTriggered; });
@@ -4257,11 +4229,12 @@
       ? highestYears.map(function (row) { return row.year; }).join('、') + '年是未来五年的变化重点，整体表现为' + overallDirection + '。'
       : riskYears.length
         ? '未来五年已有风险信号被岁运触发，具体表现以对应年份列出的结果为准。'
-        : '未来五年没有出现足以单独改变原局方向的强引动，整体以原有方向延续为主。';
+        : hasReview ? '结合往事反馈后，当前没有保留可优先列出的年度事件；原有结构触发仍保留在依据中。'
+        : '未来五年没有出现足以单独改变原局方向的强引动，当前不能指定明确的变化重点。';
     var storyLine = years.map(function (row) {
       var role = row.hasIndependentAnnualTrigger
         ? (row.eventDirection === '偏有利' ? '推进' : row.eventDirection === '偏不利' ? '调整' : '转折')
-        : '蓄势';
+        : '窗口待定';
       return row.year + '年' + role + (row.primaryEventLabel ? '（' + row.primaryEventLabel + '）' : '');
     }).join(' → ');
     return {
@@ -4275,13 +4248,13 @@
           ? highestOutcome
           : riskYears.length
           ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
-          : '五年内没有集中出现偏不利的强关系，主要差别在于事情落地的快慢。',
+          : '后续按每年的具体触发安排节奏；没有突出窗口的年份，不另行指定必然发生的事件。',
       paragraphs: [],
       verdicts: (daYunCommonVerdict ? [daYunCommonVerdict] : []).concat([narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
         sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),
         outcomeText: headline,
       }), narrativeVerdict('五年推进顺序', '', ['FIVE_YEAR:EVENT_LEDGER'], {
-        sourceText: '按每年的独立结构触发、最相关现实领域与年龄阶段依次排列；没有独立触发的年份只标为蓄势。',
+        sourceText: '按每年的独立结构触发、最相关现实领域与年龄阶段依次排列；没有独立触发的年份保留窗口待定。',
         outcomeText: storyLine,
       })]),
       years: years.map(function (row) {
@@ -4302,13 +4275,121 @@
     };
   }
 
+  function unavailableNarrative(domain) {
+    return { grade:'', level:'', hideScore:true, headline:'本项资料尚不完整', painPoint:'',
+      paragraphs:[], verdicts:[], note:'补齐相关排盘依据后再生成本项解读。', evidenceStatus:'insufficient', domain:domain };
+  }
+
+  function constrainNarrative(narrative, domain, facts) {
+    if (!narrative || narrative.evidenceStatus === 'insufficient') return narrative;
+    var limits = {
+      wealth:'A等级是本模型的财富潜力参考；兑现仍需现实职业、经营和资源条件，不能据此确认终身金额上限。',
+      relationship:'相处画像属于传统取象线索；不能确认现实人物的性格、样貌、年龄或关系结局。',
+      study:'学习结构不等于真实成绩或学历；教育环境、当前基础和投入需要另行核对。',
+      currentYear:'时间窗口表示规则触发，不是事件发生概率；实际职业和关系状态决定适用场景。',
+      fiveYear:'年份排序来自结构触发，不是命定时间表；缺少信号不表示现实没有变化。'
+    };
+    list(narrative.verdicts).forEach(function(v, index) {
+      var refs = list(v.basis).filter(Boolean);
+      var hasUnknown = refs.some(function(ref) { return /unknown|unclear|FALLBACK|UNFOCUSED/.test(ref); });
+      v.claimKey = domain+':'+index+':'+v.title;
+      v.sourceRefs = refs.slice();
+      v.ruleId = 'report-inference-v1';
+      v.status = hasUnknown ? 'insufficient' : /currentYear|fiveYear/.test(domain) ? 'conditional' : 'symbolic';
+      v.scope = domain;
+      v.conditions = [limits[domain]].filter(Boolean);
+      v.blockers = hasUnknown ? ['当前依据不足以支持单一明确结论'] : [];
+      v.realityConfirmed = false;
+      v.requiredConditions = [];
+      if (domain === 'wealth') {
+        var wealth = facts.wealth || {};
+        var activePaths = list(wealth.pathways).filter(function(p) { return p && p.positive === true; });
+        var pressures = list(wealth.retention && wealth.retention.risks).map(function(p) { return textOf(p.type || p); });
+        if (/钱主要|持续放大|量级/.test(v.title)) {
+          v.requiredConditions.push({ key:'wealthPath', label:'已确认有利财富路径', met:activePaths.length > 0 });
+          v.conditions.unshift(activePaths.length ? '已确认路径：'+activePaths.map(function(p) { return p.type; }).join('、')+'；路径存在不等于现实收入已经形成。' : '尚未确认有利财富路径；有规模线索也需进一步核对能否兑现。');
+        }
+        if (/留下|量级/.test(v.title) && pressures.length) {
+          v.blockers = v.blockers.concat(pressures);
+          v.conditions.unshift('需要同时核对的留存限制：'+pressures.join('、')+'。');
+        }
+      }
+      if (domain === 'relationship') {
+        var relationship = facts.relationship || {};
+        var quality = relationship.spouseStar && relationship.spouseStar.quality || {};
+        if (v.title === '缘分是否容易落地') {
+          v.requiredConditions.push({key:'exposed',label:'配偶星显现',met:/透干|透藏并见/.test(quality.visibility || '')});
+          v.requiredConditions.push({key:'rooted',label:'配偶星根气',met:quality.rooted === true});
+          v.blockers = v.blockers.concat(v.requiredConditions.filter(function(c) { return !c.met; }).map(function(c) { return c.label+'条件未完整'; }));
+        }
+      }
+    });
+    narrative.note = /currentYear|fiveYear/.test(domain)
+      ? [narrative.note,limits[domain]].filter(Boolean).join(' ')
+      : limits[domain];
+    return narrative;
+  }
+
   function buildNarratives(facts) {
-    return dedupeNarrativeSources({
-      currentYear: attachNarrativeTechnicalBasis(buildCurrentYearNarrative(facts), facts, 'currentYear'),
-      relationship: attachNarrativeTechnicalBasis(attachDomainTiming(buildRelationshipNarrative(facts), facts, 'relationship'), facts, 'relationship'),
-      wealth: attachNarrativeTechnicalBasis(attachDomainTiming(buildWealthNarrative(facts), facts, 'wealth'), facts, 'wealth'),
-      study: attachNarrativeTechnicalBasis(attachDomainTiming(buildStudyNarrative(facts), facts, 'study'), facts, 'study'),
-      fiveYear: attachNarrativeTechnicalBasis(buildFiveYearNarrative(facts), facts, 'fiveYear'),
+    facts = facts || {};
+    var validWealth = facts.wealth && facts.wealth.resource && facts.wealth.capacity && facts.wealth.capacity.state &&
+      (typeof facts.wealth.resource.visibleCount === 'number' || typeof facts.wealth.resource.hiddenCount === 'number');
+    var validRelationship = facts.relationship && facts.relationship.palace && facts.relationship.palace.zhi && facts.relationship.spouseStar;
+    var validStudy = facts.study && ((facts.study.educationBand && Number.isFinite(facts.study.educationBand.rank)) ||
+      ['absorption','expression','discipline','application'].some(function(key) { return facts.study[key] && facts.study[key].state; }));
+    var narratives = {
+      currentYear: facts.currentYear ? attachNarrativeTechnicalBasis(buildCurrentYearNarrative(facts), facts, 'currentYear') : unavailableNarrative('currentYear'),
+      relationship: validRelationship ? attachNarrativeTechnicalBasis(attachDomainTiming(buildRelationshipNarrative(facts), facts, 'relationship'), facts, 'relationship') : unavailableNarrative('relationship'),
+      wealth: validWealth ? attachNarrativeTechnicalBasis(attachDomainTiming(buildWealthNarrative(facts), facts, 'wealth'), facts, 'wealth') : unavailableNarrative('wealth'),
+      study: facts.study && facts.study.relevant === false ? null : validStudy ? attachNarrativeTechnicalBasis(attachDomainTiming(buildStudyNarrative(facts), facts, 'study'), facts, 'study') : unavailableNarrative('study'),
+      fiveYear: facts.fiveYear && list(facts.fiveYear.years).length ? attachNarrativeTechnicalBasis(buildFiveYearNarrative(facts), facts, 'fiveYear') : unavailableNarrative('fiveYear')
+    };
+    Object.keys(narratives).forEach(function(domain) { constrainNarrative(narratives[domain],domain,facts); });
+    // Each card retains its own source; identical facts are not independent corroboration.
+    return narratives;
+  }
+
+  // Life context selects relevant report topics; it never changes the chart or A grade.
+  function resolveLifeContext(input, birthYear, currentYear) {
+    input = input || {};
+    var age = Number(birthYear) > 0 ? Number(currentYear) - Number(birthYear) : null;
+    if (!Number.isFinite(age) || age < 0 || age > 120) age = null;
+    var labels = {student:'在读',exam:'正在备考或进修',working:'已结束学业，工作中',transition:'已结束学业，求职或调整中',home:'以居家事务或照料安排为主',retired:'已退休',unknown:'暂不填写'};
+    var status = Object.prototype.hasOwnProperty.call(labels,input.status) ? input.status : 'unknown';
+    var school = status === 'student' || status === 'exam' || (status === 'unknown' && age !== null && age >= 6 && age < 18);
+    var stageKey = age === null ? 'unknown' : age < 16 ? 'child' : age < 24 ? 'education' : age < 31 ? 'launch' : age < 46 ? 'development' : age < 61 ? 'mature' : 'late';
+    if (status === 'student') stageKey = age !== null && age < 16 ? 'child' : 'education';
+    if (status === 'working' || status === 'transition') stageKey = age !== null && age < 31 ? 'launch' : age !== null && age < 46 ? 'development' : 'mature';
+    if (status === 'retired') stageKey = 'late';
+    if (status === 'unknown' && age !== null && age >= 18 && age < 24) stageKey = 'launch';
+    return {status:status, age:age, asOfYear:Number(currentYear), label:labels[status], studyRelevant:school, stageKey:stageKey,
+      source:status === 'unknown' ? 'age_default' : 'user',
+      note:school ? '学业内容按目前在读或学习阶段展开；未来身份变化后可重新选择。' : '后续不展开升学、考试预测；如正在备考或进修，可修改当前状态。'};
+  }
+
+  function applyLifeContext(facts, context) {
+    facts.lifeContext = context;
+    facts.study.relevant = context.studyRelevant;
+    (facts.fiveYear.years || []).forEach(function(row) {
+      var rowContext=resolveLifeContext({status:Number(row.year)<context.asOfYear ? 'unknown' : context.status},context.age===null ? null : context.asOfYear-context.age,Number(row.year));
+      row.lifeContext = rowContext;
+      var original = annualAdjudication(row);
+      if (original) {
+        var records = list(original.domainRecords).filter(function(record) { return rowContext.studyRelevant || record.domain !== 'study'; })
+          .map(function(record) { return Object.assign({},record,{label:record.domain==='career'&&rowContext.status!=='working'?(rowContext.studyRelevant?'学习任务与协作':rowContext.status==='transition'?'求职与方向调整':'生活事务与协作'):record.label,scenarioCandidates:list(record.scenarioCandidates).filter(function(item){return rowContext.studyRelevant || !/升学|考试|备考|学费|奖学金|录取/.test(textOf(item));})}); });
+        var adjudication = Object.assign({},original,{domainRecords:records,primaryEvent:records[0]||null,secondaryEvent:records[1]||null,
+          lifeStage:{key:rowContext.stageKey,label:(rowContext.status==='unknown' ? ({child:'儿童阶段',education:'青少年阶段',launch:'青年阶段',development:'成年发展阶段',mature:'成熟阶段',late:'晚年阶段'}[rowContext.stageKey]||'年龄阶段未填写') : rowContext.label) + (rowContext.age === null ? '' : '（该年约'+rowContext.age+'岁）')},lifeContext:rowContext});
+        row.eventAdjudication = adjudication;
+        row.dynamic = Object.assign({},row.dynamic,{eventAdjudication:adjudication});
+      }
+      if (!rowContext.studyRelevant) {
+        row.study = null;
+        // Retain raw structural evidence separately; filter only its applicable report domains.
+        row.originalInteractions = row.interactions;
+        row.interactions = list(row.interactions).map(function(item) {
+          return Object.assign({},item,{domains:list(item.domains).filter(function(domain){return domain !== 'study';})});
+        }).filter(function(item,index){return item.domains.length || !list(row.originalInteractions[index].domains).length;});
+      }
     });
   }
 
@@ -4360,6 +4441,8 @@
     facts.fiveYear = buildFiveYearFacts(
       bazi, timingCore, deps.calculator, deps.chain, facts.anchorYear, gender
     );
+    if (options.lifeContext) applyLifeContext(facts, resolveLifeContext(options.lifeContext,
+      bazi.birthDate && bazi.birthDate.year, options.currentYear || new Date().getFullYear()));
     facts.wealth.fortuneWindows = buildWealthFortuneWindows(bazi, facts.fiveYear);
     facts.currentYear = facts.fiveYear.years[0] || null;
     facts.storyline = buildReportStoryline(facts);
@@ -4372,15 +4455,129 @@
     return facts;
   }
 
+  // Report-only interpretation layer. Scores, signs, structural risks and the core chart
+  // remain unchanged. The baseline is captured after life-stage selection, so resetting
+  // feedback restores that baseline rather than compounding earlier edits.
+  function reviewedAnnualNarrative(year) {
+    var adjudication=annualAdjudication(year), reconciliation=year.reportReconciliation;
+    var selected=[adjudication.primaryEvent,adjudication.secondaryEvent].filter(Boolean);
+    var outcomes=selected.map(function(record){return selectTimingScenario(record,adjudication);});
+    var headline=selected.length ? (reconciliation.changes.length?'结合往事反馈，':'从具体作用机制看，')+year.year+'年优先关注'+selected.map(function(r){return r.label||r.domain;}).join('、')+'。'
+      : year.year+'年原先的重点事件解释已撤下，本轮没有足够依据指定替代事件。';
+    var verdicts=selected.map(function(record,index){
+      return narrativeVerdict(index?'其次关注的方面':reconciliation.changes.length?'结合往事反馈看今年':'今年的主要作用方式','',['ANNUAL_EVENT:'+record.domain],{
+        sourceText:list(record.evidence).join('；'),outcomeText:outcomes[index],
+      });
+    });
+    var withdrawn=reconciliation.changes.filter(function(change){return change.excluded;});
+    if(withdrawn.length)verdicts.push(narrativeVerdict('本轮修正','',['REPORT_REVIEW:WITHDRAWN'],{
+      sourceText:'来源：同领域、同机制的往事反馈；不等同于未来事件的验证。',
+      outcomeText:withdrawn.map(function(change){return '“'+change.label+'”的原解释'+(change.state==='mixed'?'收到正反两种反馈':'与已答经历不符')+'，本轮不再列为重点。';}).join('')+'这不会把原方向反转，也不表示以后一定不会发生。',
+    }));
+    return {hideScore:true,headline:headline,painPoint:outcomes.join(' '),paragraphs:[],verdicts:verdicts,
+      revisions:reconciliation.changes,
+      note:'年度正文统一采用有实际触发的机制候选；未归属具体机制的宽泛文案不重复展开。未作答部分仍为传统取象假设，作答也不等于未来保证。'};
+  }
+
+  function reviewedFiveYearRow(year) {
+    var adjudication=annualAdjudication(year), primary=adjudication.primaryEvent;
+    var narrative=reviewedAnnualNarrative(year);
+    var outcomes=[primary,adjudication.secondaryEvent].filter(Boolean).map(function(record){return selectTimingScenario(record,adjudication);});
+    return {year:year.year,pillar:textOf(year.pillar&&year.pillar.gan)+textOf(year.pillar&&year.pillar.zhi),
+      daYunLabel:daYunStatusLabel(year),directionLabel:primary ? primary.direction : '解释已修正',
+      lifeStage:adjudication.lifeStage&&adjudication.lifeStage.label||'',primaryEventLabel:primary&&primary.label||'',
+      eventDirection:primary&&primary.direction||'',hasIndependentAnnualTrigger:!!primary,
+      sourceText:[primary,adjudication.secondaryEvent].filter(Boolean).map(function(r){return list(r.evidence).join('；');}).join('；'),
+      summary:narrative.headline+' '+narrative.verdicts.map(function(v){return v.outcomeText;}).join(' '),
+      prioritizedOutcome:outcomes.join(' '),priorityOutcomes:outcomes,
+      priority:primary ? Number(primary.activationScore||0) : 0,priorityCount:outcomes.length,
+      riskTriggered:false,revisions:year.reportReconciliation.changes};
+  }
+
+  function applyReportReview(facts, review) {
+    facts.reportReview = review;
+    list(facts.fiveYear && facts.fiveYear.years).forEach(function(row){
+      var original=annualAdjudication(row);
+      if(!original)return;
+      if(!row.reportOriginalAdjudication)row.reportOriginalAdjudication=JSON.parse(JSON.stringify(original));
+      var adjudication=JSON.parse(JSON.stringify(row.reportOriginalAdjudication)), changes=[];
+      delete row.reportReconciliation;
+      var supported=list(review&&review.candidates).filter(function(c){return Number(c.year)===Number(row.year)&&c.hasIndependentAnnualTrigger===true&&c.mechanism_key;});
+      var hasProfessional=supported.some(function(c){return /^rule:/.test(c.mechanism_key)&&c.reportBaseline;});
+      // A domain can contain several professional mechanisms. Split only using the
+      // pre-answer candidate ledger; rejecting one must not erase another mechanism.
+      var baseRecords=adjudication.domainRecords;
+      if(supported.length)adjudication.domainRecords=list(baseRecords).reduce(function(out,record){
+        var options=supported.filter(function(c){return c.domain===record.domain;});
+        return out.concat(options.length?options.map(function(c){
+          var group=options.filter(function(o){return o.mechanism_key===c.mechanism_key;});
+          var groupFeedback=list(review&&review.adjustments).filter(function(a){return Number(a.year)===Number(row.year)&&a.domain===c.domain&&a.mechanismKey===c.mechanism_key;});
+          var selectedFeedback=groupFeedback.filter(function(a){return a.manifestation===c.manifestation;});
+          // Outcome variants are alternatives, not independent corroboration. A denied
+          // completion must not automatically turn into an assertion of failure (or vice versa).
+          var suppress=group.length>1 && (groupFeedback.length ? selectedFeedback.length!==1||groupFeedback.filter(function(a){return a.state==='tentative'||a.state==='repeated';}).length>1 : group[0]!==c);
+          var processReference=list(review&&review.processReferences).filter(function(r){return Number(r.year)===Number(row.year)&&r.domain===c.domain&&r.mechanismKey===c.mechanism_key&&r.manifestation===c.manifestation&&r.scope==='common_process_only';})[0];
+          return Object.assign({},record,{
+            label:groupFeedback.length?c.label:(c.reportLabel||c.label),reportMechanismKey:c.mechanism_key,reportManifestation:c.manifestation,
+            reportScenario:groupFeedback.length?c.detail:(c.reportBaseline||c.detail),reportVariantSuppressed:suppress,
+            reportProcessReference:processReference||null,
+            evidence:list(record.evidence).concat(list(c.evidence),processReference?['跨场景参考（不验证本年事件）：'+list(processReference.sources).map(function(s){return s.year+'年：'+s.original;}).join('；')].concat(list(processReference.counterYears).length?['同类解释不符合年份：'+processReference.counterYears.join('、')]:[]):[])
+          });
+        }):[record]);
+      },[]);
+      list(adjudication.domainRecords).forEach(function(record,index){
+        delete record.reportFeedback;
+        delete record.reportExcluded;
+        record.reportOriginalRank=index;
+        var matching=list(review && review.adjustments).filter(function(item){return Number(item.year)===Number(row.year) && item.domain===record.domain
+          && (!supported.length || record.reportMechanismKey===item.mechanismKey && record.reportManifestation===item.manifestation)
+          && ['deprioritized','mixed','repeated','tentative'].indexOf(item.state)>=0;});
+        if(matching.length!==1 || !record.hasIndependentAnnualTrigger)return;
+        var feedback=matching[0];
+        record.reportFeedback=feedback;
+        record.reportExcluded=feedback.state==='deprioritized'||feedback.state==='mixed';
+        changes.push({domain:record.domain,mechanismKey:feedback.mechanismKey,label:record.label||record.domain,state:feedback.state,excluded:record.reportExcluded,
+          original:selectTimingScenario(Object.assign({},record,{reportFeedback:null}),adjudication),
+          reason:feedback.outcome,sourceEvidence:list(feedback.sourceEvidence),
+          confirmedYears:list(feedback.confirmedYears),deniedYears:list(feedback.deniedYears)});
+      });
+      if(changes.length||hasProfessional){
+        var eligible=list(adjudication.domainRecords).filter(function(record){return record.hasIndependentAnnualTrigger&&!record.reportExcluded&&!record.reportVariantSuppressed;});
+        eligible.sort(function(a,b){
+          // Repeated support breaks a structural-score tie only; it cannot create a trigger.
+          return Number(b.activationScore||0)-Number(a.activationScore||0)
+            || Number(!!(b.reportFeedback&&b.reportFeedback.state==='repeated'))-Number(!!(a.reportFeedback&&a.reportFeedback.state==='repeated'))
+            || a.reportOriginalRank-b.reportOriginalRank;
+        });
+        adjudication.primaryEvent=eligible[0]||null;adjudication.secondaryEvent=eligible[1]||null;
+        adjudication.domainRecords=eligible.concat(adjudication.domainRecords.filter(function(r){return eligible.indexOf(r)<0;}));
+        row.reportReconciliation={changes:changes,scope:'annual_interpretation',futureConfirmed:false};
+      } else adjudication=JSON.parse(JSON.stringify(row.reportOriginalAdjudication));
+      row.eventAdjudication=adjudication;
+      row.dynamic=Object.assign({},row.dynamic,{eventAdjudication:adjudication});
+    });
+    facts.storyline=buildReportStoryline(facts);
+    var narratives=buildNarratives(facts);
+    if(facts.currentYear)facts.currentYear.narrative=narratives.currentYear;
+    facts.relationship.narrative=narratives.relationship;facts.wealth.narrative=narratives.wealth;
+    facts.study.narrative=narratives.study;facts.fiveYear.narrative=narratives.fiveYear;
+    return facts;
+  }
+
   var api = {
     SCHEMA_VERSION: SCHEMA_VERSION,
     buildFacts: buildFacts,
+    resolveLifeContext: resolveLifeContext,
+    contextScenario: contextScenario,
+    applyLifeContext: applyLifeContext,
+    applyReportReview: applyReportReview,
     buildNarratives: buildNarratives,
     buildWealthFacts: buildWealthFacts,
     buildRelationshipFacts: buildRelationshipFacts,
     buildStudyFacts: buildStudyFacts,
     deriveDayPillarInteraction: deriveDayPillarInteraction,
     buildAnnualFacts: buildAnnualFacts,
+    matchTriggeredRisks: matchTriggeredRisks,
     buildFiveYearFacts: buildFiveYearFacts,
     buildWealthFortuneWindows: buildWealthFortuneWindows,
     calibrateWealthReality: calibrateWealthReality,

@@ -60,7 +60,14 @@ const APPROVED_PATTERN_STATUS = new Set(['#10', 'A5', 'H11', 'P15-09', 'H15', 'S
 // 2026-09-21：撤销将异五行藏干误认成日主长生根的补偿。
 // A2 己见酉只有金根：-13；wetearth 癸见卯只有木根：-6。
 // 仅校正测试预期，不改写历史 CSV，也不在业务引擎中按命盘特判。
-const ROOT_CORRECTION = { A2:{score:'27',level:'极弱'}, wetearth:{score:'26',level:'极弱'} };
+// 2026-09-22 统一关系结算：仅在测试侧登记可逐阶段归因的分差，旧CSV保持不变。
+// P15-16 丁壬争合不化，撤销合化扣分：28→29；H15 两庚争合乙，返还减半：38→37；
+// H18 午未趋土不再叠加通用日支转换：34→35；P15-19 丙辛遇戊阻化，撤销-1并返还2：51→54。
+const SCORE_CORRECTION = {
+  A2:{score:'27',level:'极弱'}, wetearth:{score:'26',level:'极弱'},
+  'P15-16':{score:'29',level:'极弱'}, H15:{score:'37',level:'偏弱'},
+  H18:{score:'35',level:'偏弱'}, 'P15-19':{score:'54',level:'中和'}
+};
 function approvedPatternStatus(id, value) {
   let normalized = value
     .replace(/^杀印相生格·/, '七杀格·')
@@ -72,6 +79,8 @@ function approvedPatternStatus(id, value) {
 function approvedYongJiSummary(id, field, value) {
   const approved = {
     'A2': { ji:'木、水' },
+    // 2026-09-23：枭夺食已使制杀无效，撤销金的4分成格奖励；水的1.8分月令冲救应保留。
+    'A3': { yong:'水', xi:'水、金、木' },
     'A6': { ji:'木、水' },
     'P15-14': { yong:'火', xi:'火、土', ji:'木、水' },
     'H03': { xi:'金、木、水', ji:'火、土' },
@@ -143,8 +152,8 @@ test('A层：53 盘五行层仅含已归因的规则修正', function () {
     assert.ok(replayById[key], c.id + ' 缺 replay 锚点');
     const r = replayById[key];
     const d = dataOf(c);
-    assert.equal(String(d.dm.score), ROOT_CORRECTION[c.id]?.score || r[4], c.id + ' 分数');
-    assert.equal(d.dm.level, ROOT_CORRECTION[c.id]?.level || r[5], c.id + ' 旺衰');
+    assert.equal(String(d.dm.score), SCORE_CORRECTION[c.id]?.score || r[4], c.id + ' 分数');
+    assert.equal(d.dm.level, SCORE_CORRECTION[c.id]?.level || r[5], c.id + ' 旺衰');
     assert.equal(d.yj.yongShen.join('、'), approvedYongJiSummary(c.id, 'yong', r[6]), c.id + ' 用神');
     assert.equal(d.yj.xiShen.join('、'), approvedYongJiSummary(c.id, 'xi', r[7]), c.id + ' 喜神');
     assert.equal(d.yj.jiShen.join('、'), approvedYongJiSummary(c.id, 'ji', r[8]), c.id + ' 忌神');
@@ -211,14 +220,21 @@ test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全�
     }).sort();
     const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) {
       const copy = r.slice();
-      if (ROOT_CORRECTION[c.id]) {
-        copy[3] = ROOT_CORRECTION[c.id].score;
-        copy[4] = ROOT_CORRECTION[c.id].level;
+      if (SCORE_CORRECTION[c.id]) {
+        copy[3] = SCORE_CORRECTION[c.id].score;
+        copy[4] = SCORE_CORRECTION[c.id].level;
       }
       copy[5] = approvedYongJiSummary(c.id, 'yong', copy[5]);
       copy[6] = approvedYongJiSummary(c.id, 'xi', copy[6]);
       copy[7] = approvedYongJiSummary(c.id, 'ji', copy[7]);
       copy[8] = approvedPatternStatus(c.id, copy[8]);
+      if (c.id === 'A3' && copy[9] === '关键用神/格局节点受冲') {
+        // 金仍是格局食伤节点，但已不是首用；只删除旧首用带来的两项节点标签。
+        [11,12,14].forEach(function(index) {
+          assert.ok(copy[index].includes('用神同五行；用神干庚之禄；'));
+          copy[index] = copy[index].replaceAll('用神同五行；用神干庚之禄；', '');
+        });
+      }
       return copy.join('');
     }).sort();
     assert.equal(fresh.length, frozen.length, c.id + ' 风险行数与冻结一致');

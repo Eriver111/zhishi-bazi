@@ -1886,12 +1886,13 @@
     if (dyGan === lnGan && dyZhi === lnZhi) {
       var isXi = (yongJi && yongJi.yongShen && yongJi.yongShen.indexOf(dyGanWx) >= 0) ||
                  (yongJi && yongJi.xiShen && yongJi.xiShen.indexOf(dyGanWx) >= 0);
+      var isJi = yongJi && (yongJi.jiShen || []).indexOf(dyGanWx) >= 0;
       triggers.push({
         type: '岁运并临', severity: 'high',
-        detail: dyGan + dyZhi + '岁运并临——大运与流年干支完全相同，相关五行作用容易集中显现。' + (isXi ? '该五行属喜用，可关注有利议题的放大' : '该五行不属喜用，宜留意压力议题的放大'),
-        isGood: isXi
+        detail: dyGan + dyZhi + '岁运并临——大运与流年干支完全相同，相关五行作用容易集中显现。' + (isXi ? '该五行属喜用，可关注有利议题的放大' : isJi ? '该五行属忌神，宜留意压力议题的放大' : '该五行喜忌方向未定，不能仅凭岁运并临判吉凶'),
+        isGood: isXi ? true : isJi ? false : null
       });
-      if (isXi) opportunityScore += 4; else dangerScore += 4;
+      if (isXi) opportunityScore += 4; else if (isJi) dangerScore += 4;
     }
 
     // === 2. 天克地冲 ===

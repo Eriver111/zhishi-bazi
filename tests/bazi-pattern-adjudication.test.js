@@ -110,11 +110,11 @@ test('财官印待核证据传递到专业报告，月令格保持一致', () =>
   assert.match(context, /不得称已成格或已破格/);
 });
 
-test('伤官合杀只认天干真实五合且双方有根', () => {
-  const pattern = resolved(['戊辰', '辛酉', '丁未', '癸亥']);
+test('伤官合杀须贴邻有效合绊且双方有根', () => {
+  const pattern = resolved(['戊辰', '癸亥', '丁未', '辛丑']);
   assert.equal(pattern.name, '伤官合杀格');
   assert.equal(pattern.status, '成格');
-  assert.ok(pattern.establishConditions.some(row => row.condition === '伤官与七杀真实五合' && row.met));
+  assert.ok(pattern.establishConditions.some(row => row.condition === '伤官与七杀有效合绊' && row.met));
   assert.ok(pattern.establishConditions.some(row => row.condition === '伤官七杀双方有根' && row.met));
 });
 
@@ -126,13 +126,16 @@ test('羊刃驾杀必须从羊刃基础格起步且七杀透干有根', () => {
   assert.ok(pattern.establishConditions.some(row => row.condition === '七杀透干有根' && row.met));
 });
 
-test('官杀去留只认明确五合去掉一方', () => {
-  const leaveOfficer = resolved(['丁卯', '壬申', '丙子', '癸酉']);
-  const leaveKilling = resolved(['丙申', '壬子', '庚辰', '丁亥']);
+test('官杀去留须有根且不重复使用同一救应载体', () => {
+  const leaveOfficer = resolved(['丁巳', '壬申', '丙午', '癸酉']);
+  const leaveKilling = resolved(['丁亥', '壬午', '庚戌', '丙申']);
   assert.equal(leaveOfficer.name, '去杀留官格');
   assert.equal(leaveOfficer.status, '成格');
-  assert.equal(leaveKilling.name, '去官留杀格');
-  assert.equal(leaveKilling.status, '成格');
+  assert.notEqual(leaveKilling.name, '去官留杀格');
+  const pending = leaveKilling.relatedPatterns.find(item => item.name === '去官留杀格');
+  assert.equal(pending.status, '条件待定');
+  assert.ok(pending.establishConditions.some(row => row.condition === '正官有明确去处' && row.met));
+  assert.ok(pending.establishConditions.some(row => row.condition === '所留七杀有独立制化' && !row.met));
 });
 
 test('伤官克官先检查财星通关，负面机制不覆盖月令主格', () => {

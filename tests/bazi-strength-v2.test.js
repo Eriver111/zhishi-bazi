@@ -29,9 +29,10 @@ function strength(values) {
   return loadCalculator().calcDayMasterStrength(pillars(values));
 }
 
-test('目标盘 丁亥丁未壬子戊申 失令但有强根 → 中和 44（原 31 偏弱）', () => {
+test('丁亥丁未壬子戊申失令有强根，丁壬争合减半返还后仍中和', () => {
   const r = strength(['丁亥', '丁未', '壬子', '戊申']);
-  assert.equal(r.score, 44);
+  // 年丁与月丁争合日壬，按统一关系事实将合绊返还从2减为1。
+  assert.equal(r.score, 43);
   assert.equal(r.level, '中和');
 });
 
@@ -42,7 +43,7 @@ test('目标盘用神喜忌随分数自然传导', () => {
     'female'
   );
   const result = calculator.getYongJi(chart);
-  assert.equal(result.dayMasterScore, 44);
+  assert.equal(result.dayMasterScore, 43);
   assert.equal(result.dayMasterLevel, '中和');
   assert.equal(result.method, '扶抑为主');
 });
@@ -112,15 +113,22 @@ test('失令辛金两酉禄根并见巳酉半合，不得按普通单根判身�
     pillars(['乙酉', '戊子', '辛巳', '丁酉']),
     'male'
   );
-  const r = calculator.calcDayMasterStrength(chart);
-  assert.equal(r.score, 60);
-  assert.equal(r.level, '偏强');
+  const r = calculator.calcDayMasterStrength(chart, { audit: true });
+  // 双根仍成立，但补偿不能从32整包加28越过自身50分门槛。
+  const compensation = r.audit.stages.find(row => row.id === 'root-cluster-final');
+  assert.equal(compensation.before, 32);
+  assert.equal(compensation.meta.candidate, 28);
+  assert.equal(compensation.delta, 18);
+  assert.equal(r.score, 50);
+  assert.equal(r.level, '中和');
 
   const yj = calculator.getYongJi(chart);
-  assert.equal(yj.dayMasterLevel, '偏强');
-  assert.equal(yj.yongShen.join('、'), '火');
-  assert.equal(yj.xiShen.join('、'), '火、木、水');
-  assert.equal(yj.jiShen.join('、'), '土、金');
+  assert.equal(yj.dayMasterLevel, '中和');
+  assert.ok(yj.candidateScores.every(row => row.SBase === 0));
+  assert.equal(yj.selectionStatus, 'undetermined');
+  assert.equal(yj.yongShen.length, 0);
+  assert.equal(yj.xiShen.length, 0);
+  assert.equal(yj.jiShen.length, 0);
 });
 
 test('单处年支强根仍由原规则裁决，不触发多重强根成势', () => {
@@ -151,14 +159,24 @@ test('禄旺根被原局六冲时不得按完整多重强根加分', () => {
 test('禄旺根按最终合会取向结算，不得把互斥关系重复牵走', () => {
   const cases = [
     // 真实出生盘：2016-12-25 16:00，双申均被日支巳合向子月水势。
-    { gz: ['丙申', '庚子', '辛巳', '丙申'], score: 26, level: '极弱' },
+    // 天干两丙争合辛，不再扣合化1分，并按争合返还1分；地支根气取向不变。
+    { gz: ['丙申', '庚子', '辛巳', '丙申'], score: 28, level: '极弱' },
     // 真实出生盘：1965-04-23 12:00，巳午未三支齐全，统一按南方火会结算；
-    // 不再同时以午未合土牵走午火，故丁火根气成势。
-    { gz: ['乙巳', '庚辰', '丁未', '丙午'], score: 68, level: '偏强' },
+    // 不再以午未合土重复牵走午火，仍识别两处强根；补偿44+24现在只填至50。
+    { gz: ['乙巳', '庚辰', '丁未', '丙午'], score: 50, level: '中和', rootBaseline: 44, rootCandidate: 24 },
   ];
   for (const c of cases) {
-    const r = strength(c.gz);
-    assert.equal(r.score, c.score, c.gz.join(' ') + ' 异类合局仍被误计强根');
+    const calculator = loadCalculator();
+    const r = calculator.calcDayMasterStrength(calculator.buildFromPillars(pillars(c.gz), 'male'), { audit: true });
+    if (c.rootCandidate) {
+      const gate = r.audit.stages.find(row => row.id === 'root-cluster-gate');
+      const final = r.audit.stages.find(row => row.id === 'root-cluster-final');
+      assert.equal(gate.meta.roots.length, 2, '南方会的两处强根仍在');
+      assert.equal(final.before, c.rootBaseline);
+      assert.equal(final.meta.candidate, c.rootCandidate);
+      assert.equal(final.delta, 6);
+    }
+    assert.equal(r.score, c.score, c.gz.join(' ') + ' 根气结算或补偿边界不一致');
     assert.equal(r.level, c.level, c.gz.join(' ') + ' 档位漂移');
   }
 });

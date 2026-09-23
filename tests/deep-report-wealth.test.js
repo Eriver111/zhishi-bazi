@@ -427,7 +427,7 @@ test('a large adverse wealth field is graded for scale but remains below A10 whe
   assert.ok(facts.wealth.pathways.some((row) => row.type === '合会引财'));
   assert.equal(facts.wealth.narrative.grade, 'A9');
   assert.match(facts.wealth.narrative.verdicts[1].outcomeText, /技能|产品|项目|内容|客户/);
-  assert.match(facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText, /财来财去|不容易.*留|压力/);
+  assert.match(facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText, /不能单独确认现金留存/);
 });
 
 test('extremely weak charts do not gain wealth rank from adverse wealth-to-officer flow', () => {

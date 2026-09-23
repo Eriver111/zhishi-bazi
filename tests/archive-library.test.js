@@ -27,7 +27,7 @@ test('archive library is separate from profile while reusing saved_charts', () =
   assert.match(script, /继续问 AI/);
   assert.match(script, /sessionStorage\.setItem\('zhishi_open_archive_ai','1'\)/);
   assert.match(script, /ask\.addEventListener\('click',openAi\)/);
-  assert.match(page, /archive-library\.js\?v=5/);
+  assert.match(page, /archive-library\.js\?v=6/);
   assert.match(profile, /进入命盘档案库/);
   assert.doesNotMatch(profile, /charts\.forEach\(function\(c, i\)/);
 });
@@ -50,7 +50,7 @@ test('completed Hepan charts are saved, reopened and deleted from the shared arc
   assert.match(archive, /'\/hepan-result\?'/);
   assert.match(archive, /确定删除这份/);
   assert.match(resultPage, /hepan-person\.js\?v=3/);
-  assert.match(resultPage, /hepan-result\.js\?v=5/);
+  assert.match(resultPage, /hepan-result\.js\?v=6/);
 });
 
 test('Hepan can reuse either person from a saved personal chart without accepting Hepan records', () => {

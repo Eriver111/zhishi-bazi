@@ -274,10 +274,11 @@ function renderPattern(bazi,facts){
     var colors={木:'#4f9857',火:'#c8543d',土:'#a77b2b',金:'#9a7a31',水:'#397eaf'};
     var esc=function(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]})};
     var h='<div data-element-role-ledger="v3" data-fortune-guidance="v2" style="border:1px solid var(--bd);border-radius:9px;overflow:hidden"><div style="padding:9px 11px;border-left:3px solid var(--gold);background:rgba(201,168,76,.08)"><b style="font-size:11px;color:var(--tx)">喜用忌与行运方向</b><div style="font-size:9px;line-height:1.55;color:var(--tx3);margin-top:2px">先由原局定方向，具体大运再按干支关系复核。</div></div>';
-    ['用神','喜神','忌神'].forEach(function(role,index){
+    if(yj.selectionStatus==='undetermined')h+='<div data-yong-selection="undetermined" style="padding:9px 11px;font-size:10px;line-height:1.65;color:var(--tx2)"><b>核心用神尚未确定</b><br>'+esc(yj.selectionReason||yj.primaryReason||'当前证据尚不足以确定唯一取用。')+'</div>';
+    ['用神','喜神','忌神'].concat(ledger.entries.some(function(item){return item.fortuneRole==='中性'})?['中性']:[]).forEach(function(role,index){
       var items=ledger.entries.filter(function(item){return item.fortuneRole===role});
       h+='<div style="padding:9px 10px;'+(index?'border-top:1px solid var(--bd);':'')+'"><div style="display:flex;align-items:flex-start;gap:8px"><b style="width:32px;flex:none;font-size:10px;color:'+(role==='忌神'?'#b7695d':'var(--gold-l)')+'">'+role+'</b><div style="flex:1">';
-      if(!items.length)h+='<span style="font-size:10px;color:var(--tx3)">—</span>';
+      if(!items.length)h+='<span style="font-size:10px;color:var(--tx3)">'+(role==='用神'&&yj.selectionStatus==='undetermined'?'尚未确定':'—')+'</span>';
       items.forEach(function(item){h+='<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;'+(items.indexOf(item)?'margin-top:5px':'')+'"><span style="font-size:16px;font-weight:900;color:'+(colors[item.element]||'var(--gold-l)')+'">'+esc(item.element)+'</span>'+(item.branchPreference?'<span style="font-size:9px;font-weight:800;color:var(--tx)">（'+esc(item.branchPreference)+'）</span>':'')+(item.useGodType?'<span style="font-size:8px;font-weight:700;color:var(--gold-l);padding:1px 5px;border:1px solid rgba(201,168,76,.28);border-radius:8px">'+esc(item.useGodType)+'</span>':'')+'<span style="font-size:9px;color:var(--tx2)">'+esc(item.fortuneDirection)+'</span><span style="margin-left:auto;font-size:8px;color:var(--tx3)">'+esc(item.fortuneLevel)+'</span></div>'});
       h+='</div></div></div>';
     });
@@ -303,6 +304,7 @@ function renderPattern(bazi,facts){
       var wxColors={木:'#6db86d',火:'#e07050',土:'#c9a84c',金:'#b99a54',水:'#5b9fd4'};
       var h='<div style="font-size:10px;color:var(--tx2);line-height:1.6;margin-bottom:9px"><b style="color:var(--gold-l)">取用方法：</b>'+(yj.method||'扶抑为主')+'<br>'+(yj.primaryReason||yj.reasoning||'')+'</div>';
       var groups=[['用神',yj.yongShen],['喜神',yj.xiShen]];
+      if(yj.neutralElements&&yj.neutralElements.length)groups.push(['中性（方向待辨）',yj.neutralElements]);
       if(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)groups.push(['调候用神',yj.tiaoHouYongShen]);
       if(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)groups.push(['条件辅助',yj.conditionalAuxiliaryElements]);
       groups.push([(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)||(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)||(yj.functionalDualRoleElements&&yj.functionalDualRoleElements.length)?'结构忌神':'忌神',yj.jiShen]);

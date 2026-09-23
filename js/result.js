@@ -442,6 +442,24 @@ function reportNarrativeFingerprint(value) {
     return reportText(value).replace(/[\s，。；、：！？,.!?;:“”‘’"']/g, '').trim();
 }
 
+function reportClaimDetails(claim) {
+    if (!claim || !claim.claimKey) return '';
+    var labels = { symbolic:'传统线索', conditional:'条件性推断', insufficient:'依据待补充' };
+    var source = reportText(claim.sourceText);
+    var conditions = (claim.conditions || []).concat(claim.blockers || []);
+    return '<details class="report-claim-details"><summary>依据与条件 · ' + reportEsc(labels[claim.status] || '推断参考') + '</summary>'
+        + (source ? '<p class="deep-report-verdict-source">' + reportEsc(source) + '</p>' : '')
+        + conditions.map(function(row) { return '<p>' + reportEsc(reportText(row)) + '</p>'; }).join('') + '</details>';
+}
+
+function reportRevisionDetails(revisions) {
+    if (!Array.isArray(revisions) || !revisions.length) return '';
+    return '<details class="report-claim-details"><summary>查看本轮修改依据与原解释</summary>' + revisions.map(function(r) {
+        return '<section><strong>'+reportEsc(r.label)+'</strong><p>原解释（仅供追溯）：'+reportEsc(r.original)+'</p><p>调整原因：'+reportEsc(r.reason)+'</p>'
+            +'<p>'+reportEsc((r.sourceEvidence||[]).join('；'))+'</p></section>';
+    }).join('') + '</details>';
+}
+
 function reportNarrative(narrative) {
     if (!narrative) return '';
     var grade = reportText(narrative.grade);
@@ -457,7 +475,7 @@ function reportNarrative(narrative) {
     }
     html += '<article class="deep-report-card deep-report-narrative">';
     if (narrative.headline) html += '<h3>' + reportEsc(reportText(narrative.headline)) + '</h3>';
-    if (narrative.painPoint) html += '<p class="deep-report-pain-point">' + reportEsc(reportText(narrative.painPoint)) + '</p>';
+    if (narrative.painPoint && reportNarrativeFingerprint(narrative.painPoint) !== reportNarrativeFingerprint(narrative.headline)) html += '<p class="deep-report-pain-point">' + reportEsc(reportText(narrative.painPoint)) + '</p>';
     if (Array.isArray(narrative.technicalBasis) && narrative.technicalBasis.length) {
         html += '<div class="deep-report-technical-basis"><span class="deep-report-technical-label">核心命理依据</span><div class="deep-report-technical-terms">' + narrative.technicalBasis.map(function(term) {
             return '<span>' + reportEsc(reportText(term)) + '</span>';
@@ -477,13 +495,19 @@ function reportNarrative(narrative) {
             else if (outcomeKey) seenOutcomes[outcomeKey] = true;
             var body = '';
             if (outcomeText) body += '<p class="deep-report-verdict-outcome">' + reportEsc(outcomeText) + '</p>';
-            if (sourceText) body += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(sourceText) + '</p>';
+            if (verdict.claimKey) body += reportClaimDetails(verdict);
+            else if (sourceText) body += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(sourceText) + '</p>';
             if (!body) return '';
+            // The conclusion already appears above; retain its audit details without another empty verdict heading.
+            if (!outcomeText && verdict.claimKey) return body;
             return '<section class="deep-report-verdict-item"><h4>' + reportEsc(reportText(verdict.title)) + '</h4>' + body + '</section>';
         }).join('') + '</div>';
     }
+    var paragraphSeen = seenOutcomes || {};
+    [narrative.headline,narrative.painPoint].forEach(function(value){paragraphSeen[reportNarrativeFingerprint(value)]=true;});
     (Array.isArray(narrative.paragraphs) ? narrative.paragraphs : []).forEach(function(paragraph) {
-        if (reportText(paragraph)) html += '<p>' + reportEsc(reportText(paragraph)) + '</p>';
+        var key=reportNarrativeFingerprint(paragraph);
+        if (key && !paragraphSeen[key]) { html += '<p>' + reportEsc(reportText(paragraph)) + '</p>'; paragraphSeen[key]=true; }
     });
     if (Array.isArray(narrative.years) && narrative.years.length) {
         html += '<div class="deep-report-year-verdicts">' + narrative.years.map(function(year) {
@@ -499,9 +523,11 @@ function reportNarrative(narrative) {
             if (meta) card += '<p class="deep-report-year-meta">' + reportEsc(meta) + '</p>';
             if (outcome) card += '<p class="deep-report-verdict-outcome">' + reportEsc(outcome) + '</p>';
             if (source) card += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(source) + '</p>';
+            if (!year.isCurrentYear) card += reportRevisionDetails(year.revisions);
             return card + '</section>';
         }).join('') + '</div>';
     }
+    html += reportRevisionDetails(narrative.revisions);
     if (narrative.note) html += '<p class="deep-report-note">' + reportEsc(reportText(narrative.note)) + '</p>';
     return html + '</article>';
 }
@@ -723,6 +749,7 @@ function renderDeepWealth(facts) {
 function renderDeepStudy(facts) {
     var node = document.getElementById('studyContent');
     if (!node) return;
+    if (facts && facts.relevant === false) { node.innerHTML=''; var section=document.getElementById('studySection');if(section)section.style.display='none';return; }
     if (facts && facts.narrative) {
         node.innerHTML = reportNarrative(facts.narrative);
         openPaidSection('studySection');
@@ -787,17 +814,43 @@ function renderPaidContent() {
         return;
     }
     if (typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn() && !_accountReportAccessResolved) return;
+    if (window.ZhishiCalibration && window.ZhishiCalibration.beforeReport &&
+        !window.ZhishiCalibration.beforeReport(function(){_deepReportFacts=null;renderPaidContent();})) {
+        ['thisYearContent','marriageContent','wealthContent','studyContent','fortuneContent'].forEach(function(id){var node=document.getElementById(id);if(node)node.innerHTML='';});
+        ['marriageSection','wealthSection','studySection','fortuneSection'].forEach(function(id){var node=document.getElementById(id);if(node)node.style.display='none';});
+        var pending=document.getElementById('thisYearContent');
+        if(pending)pending.innerHTML='<div class="report-review"><h3>报告已解锁</h3><p>先确认当前状态并核对往事，完成或选择跳过后查看报告。</p><button type="button" onclick="renderPaidContent()">继续填写</button></div>';
+        openPaidSection('thisYearSection');return;
+    }
     try {
         if (!_deepReportFacts) {
             if (!window.DeepReport || typeof window.DeepReport.buildFacts !== 'function') throw new Error('缺少深度报告事实模块');
             var anchorYear = resolveDeepReportAnchor(_params);
-            _deepReportFacts = window.DeepReport.buildFacts(_bazi, _params.gender, { anchorYear: anchorYear });
+            _deepReportFacts = window.DeepReport.buildFacts(_bazi, _params.gender, { anchorYear: anchorYear, lifeContext: window.ZhishiCalibration && window.ZhishiCalibration.reportContext ? window.ZhishiCalibration.reportContext() : undefined });
+        }
+        if(window.ZhishiCalibration && window.ZhishiCalibration.getReportReview && !_deepReportFacts.reviewLoaded) {
+            if(_deepReportFacts.reviewLoading)return;
+            var preparingFacts=_deepReportFacts;preparingFacts.reviewLoading=true;
+            window.ZhishiCalibration.getReportReview(preparingFacts).then(function(review){
+                if(_deepReportFacts!==preparingFacts)return;
+                if(window.DeepReport.applyReportReview)window.DeepReport.applyReportReview(preparingFacts,review);
+                preparingFacts.reportReview=review;preparingFacts.reviewLoaded=true;renderPaidContent();
+            }).catch(function(){
+                if(_deepReportFacts!==preparingFacts)return;
+                preparingFacts.reviewLoaded=true;preparingFacts.reviewError='往事反馈暂未读取成功，本次按当前状态展示基础报告，可稍后重试读取。';renderPaidContent();
+            });
+            return;
         }
         renderDeepCurrentYear(_deepReportFacts.currentYear, _deepReportFacts.storyline);
         renderDeepRelationship(_deepReportFacts.relationship);
         renderDeepWealth(_deepReportFacts.wealth);
         renderDeepStudy(_deepReportFacts.study);
         renderDeepFiveYear(_deepReportFacts.fiveYear);
+        if (window.ZhishiCalibration && window.ZhishiCalibration.getReportReview) {
+            var currentNode=document.getElementById('thisYearContent');
+            if(currentNode) currentNode.innerHTML += '<section id="reportReviewPanel" class="report-review" aria-live="polite"></section>';
+            refreshReportReview();
+        }
     } catch (error) {
         console.error('[deep-report]', error);
         _deepReportFacts = null;
@@ -810,6 +863,81 @@ function centerTimingColumn(table, column) {
     var scroller = table.closest('.dayun-scroll-wrapper, .liunian-scroll-wrapper') || table;
     var box = column.getBoundingClientRect(), viewport = scroller.getBoundingClientRect();
     scroller.scrollLeft += box.left - viewport.left - scroller.clientWidth / 2 + box.width / 2;
+}
+
+var _reportReviewRequest = 0;
+function reportReviewHTML(review, error) {
+    var html='<h3>用过往经历复核报告</h3><p>核对具体命理机制对应的经历，再调整报告内同机制的解释与总结。家庭关系不随此校准改写；不作答也可继续阅读。</p>';
+    html+='<p class="deep-report-note">登录后保存到当前账号；未登录时保存在当前设备。原判断与反馈分别保留。</p>';
+    html+='<button type="button" class="report-review-button" onclick="changeReportContext()">修改当前状态</button>';
+    html+='<button type="button" class="report-review-button" onclick="openReportReview()">'+(review&&review.answered?'补充或修改往事复核':'开始往事复核')+'</button>';
+    if(error)return html+'<p role="alert">'+reportEsc(error)+'</p><button type="button" onclick="refreshReportReview()">重新读取</button>';
+    if(_deepReportFacts && _deepReportFacts.lifeContext)html+='<p>'+reportEsc(_deepReportFacts.lifeContext.label+'：'+_deepReportFacts.lifeContext.note)+'</p>';
+    if(!review||!review.answered)return html+'<p class="deep-report-note">选择“都不符合”同样有用；记不清可以跳过，不会算作符合。</p>';
+    var processReferences=Array.isArray(review.processReferences)?review.processReferences:[];
+    html+='<h4>这次复核补充了什么</h4><p>已记录 '+review.answered+' 项往事反馈。'+(review.adjustments.length?'以下说明反馈对后续解读的影响。':processReferences.length?'找到了可跨场景参考的共同作用方式；当前场景的具体事件与结果仍需单独核对。':'当前未找到与这些反馈相匹配且有独立年度触发的窗口，保留原报告，不强行套用。')+'</p>';
+    var groups=[];
+    review.adjustments.forEach(function(a){
+        var key=JSON.stringify([a.domain,a.mechanismKey,a.manifestation,a.state,a.original,a.label,a.confirmedYears,a.deniedYears]);
+        var group=groups.find(function(g){return g.key===key;});
+        if(!group){group={key:key,item:a,years:[],sources:[]};groups.push(group);}
+        if(group.years.indexOf(a.year)<0)group.years.push(a.year);
+        a.sourceEvidence.forEach(function(s){var line=a.year+'年：'+s;if(group.sources.indexOf(line)<0)group.sources.push(line);});
+    });
+    groups.forEach(function(group){
+        var a=group.item;
+        html+='<article class="report-review-adjustment"><strong>'+reportEsc(group.years.sort(function(a,b){return a-b;}).join('、')+'年 · '+a.label)+'</strong><p>'+reportEsc(a.outcome)+'</p>'
+            +'<details class="report-claim-details"><summary>原判断与调整依据</summary><p>原候选：'+reportEsc(a.original)+'</p>'
+            +(a.confirmedYears.length?'<p>相近反馈年份：'+reportEsc(a.confirmedYears.join('、'))+'</p>':'')
+            +(a.deniedYears.length?'<p>不符合的年份：'+reportEsc(a.deniedYears.join('、'))+'</p>':'')
+            +'<p>'+reportEsc(group.sources.join('；'))+'</p></details></article>';
+    });
+    var processGroups=[];
+    processReferences.forEach(function(r){
+        var key=JSON.stringify([r.mechanismKey,r.commonProcess,r.sourceYears,r.counterYears]);
+        var group=processGroups.find(function(g){return g.key===key;});
+        if(!group){group={key:key,item:r,years:[]};processGroups.push(group);}
+        if(group.years.indexOf(r.year)<0)group.years.push(r.year);
+    });
+    processGroups.forEach(function(group){var r=group.item;
+        html+='<article class="report-review-adjustment"><strong>'+reportEsc(r.name+' · 共同作用方式')+'</strong><p>'+reportEsc(r.commonProcess)+'</p>'
+            +'<p>'+reportEsc('可参考窗口：'+group.years.sort(function(a,b){return a-b;}).join('、')+'年。借鉴的是作用方式，不是把过去的具体事件或结果搬到未来。')+'</p>'
+            +'<details class="report-claim-details"><summary>跨场景参考依据</summary><p>'+reportEsc(r.sources.map(function(s){return s.year+'年：'+s.original;}).join('；'))+'</p>'
+            +(r.counterYears.length?'<p>'+reportEsc('同类解释也曾不符合：'+r.counterYears.join('、')+'年，因此保留不同表现。')+'</p>':'')
+            +'</details></article>';
+    });
+    html+='<details class="report-claim-details"><summary>查看原始问题与往事反馈</summary>';
+    review.history.forEach(function(h){
+        html+='<section><strong>'+reportEsc(h.year+'年原问题')+'</strong><p>'+reportEsc(h.original)+'</p><p>原候选：'+reportEsc(h.originalOptions.join('；'))+'</p>'
+            +'<p>你的反馈：'+reportEsc(h.answer==='no'?'都不符合':(h.matchLevel==='partial'?'部分符合：':'符合：')+h.confirmed)+'</p>'
+            +(h.actualYear!==h.year?'<p>你确认的实际年份：'+reportEsc(h.actualYear)+'</p>':'')
+            +(h.note?'<p>你的补充：'+reportEsc(h.note)+'</p>':'')+'</section>';
+    });
+    return html+'</details><p class="deep-report-note">'+reportEsc(review.boundary)+'</p>';
+}
+function refreshReportReview() {
+    var node=document.getElementById('reportReviewPanel'),facts=_deepReportFacts,requestId=++_reportReviewRequest;
+    if(!node||!facts)return Promise.resolve();
+    if(facts.reviewLoaded && !facts.reviewError){node.innerHTML=reportReviewHTML(facts.reportReview);return Promise.resolve();}
+    node.innerHTML=reportReviewHTML(null,facts.reviewError);
+    return window.ZhishiCalibration.getReportReview(facts).then(function(review){
+        if(requestId!==_reportReviewRequest||facts!==_deepReportFacts)return;
+        if(window.DeepReport.applyReportReview)window.DeepReport.applyReportReview(facts,review);
+        facts.reportReview=review;facts.reviewError='';facts.reviewLoaded=true;
+        renderPaidContent();
+    }).catch(function(){
+        if(requestId===_reportReviewRequest&&facts===_deepReportFacts)node.innerHTML=reportReviewHTML(null,'复核记录暂未读取成功，原报告仍可正常阅读。');
+    });
+}
+function changeReportContext() {
+    if(window.ZhishiCalibration && window.ZhishiCalibration.beforeReport)
+        window.ZhishiCalibration.beforeReport(function(){_deepReportFacts=null;renderPaidContent();},true);
+}
+function openReportReview() {
+    var node=document.getElementById('reportReviewPanel');
+    if(!window.ZhishiCalibration||!window.ZhishiCalibration.open){if(node)node.innerHTML=reportReviewHTML(null,'复核组件尚未就绪，请刷新后重试。');return;}
+    window.ZhishiCalibration.open({finishLabel:'完成复核，返回报告',onComplete:function(){_deepReportFacts=null;renderPaidContent();},
+        onError:function(message){if(node)node.innerHTML=reportReviewHTML(null,message);}});
 }
 
 function renderDaYun(daYunData, dayGan, currentYear) {
@@ -967,7 +1095,7 @@ function reportWealthCalibration() {
     return '<article class="wealth-calibration" id="wealthCalibration">' +
         '<button class="wealth-calibration__toggle" type="button" onclick="toggleWealthCalibration()">校对现实财富基准（可选）</button>' +
         '<div class="wealth-calibration__body" id="wealthCalibrationBody" hidden>' +
-        '<p>用当前真实情况复核“已经兑现到哪一档”。复核不会改动原局终身A等级。</p>' +
+        '<p>用当前真实情况复核“已经兑现到哪一档”。复核不会改动原局模型A等级。</p>' +
         '<div class="wealth-calibration__grid">' +
         '<label>当前状态<select id="wealthOccupation"><option>在读/未就业</option><option>职员/专业人士</option><option>自由职业/个体</option><option>经营者/企业主</option><option>退休/资产管理</option></select></label>' +
         '<label>当前年收入等级<select id="wealthIncomeLevel">' + reportWealthGradeOptions() + '</select></label>' +
@@ -1493,6 +1621,15 @@ function renderParents(bazi, gender) {
     const el = document.getElementById('parentsContent');
     if (!el) return;
 
+    if (Array.isArray(parents.claims) && parents.claims.length) {
+        el.innerHTML = '<div class="inference-boundary-note">家庭、父母与亲子互动分别解读。以下为传统命理推断，以实际经历为准；每段可展开查看依据。</div>'
+            + parents.claims.map(function(claim) {
+                return '<div class="pr-card"><div class="pr-card-body"><div class="pr-card-title">' + reportEsc(claim.title)
+                    + '</div><div class="pr-card-text">' + reportEsc(claim.outcomeText) + '</div>' + reportClaimDetails(claim) + '</div></div>';
+            }).join('');
+        return;
+    }
+
     el.innerHTML = `
         <div class="inference-boundary-note" style="margin:0 0 14px;padding:10px 12px;border-left:2px solid rgba(201,168,76,.45);color:var(--text-secondary);font-size:12px;line-height:1.75">以下内容是宫星同参形成的候选解释，不是现实关系的既成事实。若与你的实际经历不同，以真实经历为准，并可交给 AI 重新权衡。</div>
         <div class="pr-card pr-family">
@@ -1689,8 +1826,8 @@ function renderThisYear(bazi, gender) {
     var labelColor = ty.isFavorable ? '#81C784' : '#feca57';
 
     // 吉/凶标签
-    var overallTag = ty.isFavorable ? '利好' : '偏紧';
-    var overallColor = ty.isFavorable ? '#81C784' : '#feca57';
+    var overallTag = ({'大吉':'利好','偏吉':'较好','中性':'平稳','偏凶':'偏紧','大凶':'注意'})[ty.verificationVerdict] || '待复核';
+    var overallColor = ty.verificationVerdict === '大吉' || ty.verificationVerdict === '偏吉' ? '#81C784' : '#feca57';
 
     // 冲合警告
     var chongHtml = '';
@@ -1767,7 +1904,7 @@ function renderWealth(bazi, gender) {
 
     var wxColors = { '木': '#4CAF50', '火': '#F44336', '土': '#CD853F', '金': '#FFD700', '水': '#2196F3' };
     var caiColor = wxColors[wl.caiWX] || '#b8a878';
-    var wangLabels = { '身强': '比较强', '中和偏强': '还不错', '中和偏弱': '有点弱', '身弱': '比较弱' };
+    var wangLabels = { '极强':'极强', '偏强':'偏强', '中和':'中和', '偏弱':'偏弱', '极弱':'极弱' };
 
     // 财星位置
     var posNames = { year: '祖上', month: '青年', day: '自己', hour: '晚年' };
@@ -1799,12 +1936,12 @@ function renderWealth(bazi, gender) {
 
         // ==== 一句话总结 ====
         + '<div style="font-size:14px;color:var(--text-primary);line-height:2;padding:16px 18px;background:rgba(20,25,40,.5);border:1px solid rgba(212,175,55,.08);border-radius:3px;margin-bottom:16px">'
-        +   '<p style="margin:0"> <b>概览：</b>' + (wl.wealthSummary || '你的财运有根有底，别着急，好事在后头') + '</p>'
+        +   '<p style="margin:0"> <b>概览：</b>' + (wl.wealthSummary || '财星结构尚待分析') + '</p>'
         + '</div>'
 
         // ==== 财富量级（核心） ====
         + '<div style="margin-bottom:10px">'
-        +   '<span style="font-size:12px;color:var(--gold);letter-spacing:3px;font-weight:600"> 未来财富量级</span>'
+        +   '<span style="font-size:12px;color:var(--gold);letter-spacing:3px;font-weight:600"> 财星结构与承载</span>'
         + '</div>'
         + '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:16px 18px;background:rgba(212,175,55,.04);border:1px solid rgba(212,175,55,.12);border-radius:3px;margin-bottom:16px">'
         +   levelHtml
@@ -2139,6 +2276,7 @@ var PAYWALLED_SECTIONS = ['thisYearSection', 'marriageSection', 'wealthSection',
 
 function buildReportHTML() {
     var paywallActive = _isPaywallActive();
+    if(!paywallActive && typeof window !== 'undefined' && window.ZhishiCalibration && window.ZhishiCalibration.reportPending && (window.ZhishiCalibration.reportPending() || (typeof _deepReportFacts !== 'undefined' && _deepReportFacts && _deepReportFacts.reviewLoading && !_deepReportFacts.reviewLoaded)))throw new Error('请先完成或跳过往事复核，待报告生成后再导出。');
     var inheritedStyles = '';
 
     // PDF 在独立 iframe 中渲染。复制当前结果页样式，避免四柱、
@@ -2168,6 +2306,7 @@ function buildReportHTML() {
     sections.forEach(function(sec) {
         var el = document.getElementById(sec.id);
         if (!el) return;
+        if(sec.id==='studySection' && typeof _deepReportFacts !== 'undefined' && _deepReportFacts && _deepReportFacts.study && _deepReportFacts.study.relevant===false)return;
 
         // 付费内容且未解锁 → 占位提示
         if (sec.paywalled && paywallActive) {
@@ -2186,6 +2325,7 @@ function buildReportHTML() {
         clone.querySelectorAll('.drawer-arrow,.toggle-icon').forEach(function(a) { a.remove(); });
         clone.querySelectorAll('button,.share-btn,.download-btn,.dl-btn').forEach(function(b) { b.remove(); });
         clone.querySelectorAll('.section-drawer').forEach(function(s) { s.classList.add('drawer-open'); });
+        clone.querySelectorAll('details.report-claim-details').forEach(function(s) { s.setAttribute('open', ''); });
         // 移除脚本标签
         clone.querySelectorAll('script').forEach(function(s) { s.remove(); });
         // 移除 onclick 等事件属性（避免打印页中误触）
@@ -2914,10 +3054,11 @@ function renderElementRoleLedgerHtml(yj){
       '<div style="font-size:12px;font-weight:800;color:var(--tx)">喜用忌与行运方向</div>'+
       '<div style="font-size:10px;line-height:1.6;color:var(--tx3);margin-top:3px">先由原局定方向，具体大运再按干支关系复核。</div>'+
     '</div>';
-  ['用神','喜神','忌神'].forEach(function(role,index){
+  if(yj.selectionStatus==='undetermined')h+='<div data-yong-selection="undetermined" style="padding:9px 12px;font-size:11px;line-height:1.65;color:var(--tx2)"><b>核心用神尚未确定</b><br>'+esc(yj.selectionReason||yj.primaryReason||'当前证据尚不足以确定唯一取用。')+'</div>';
+  ['用神','喜神','忌神'].concat(ledger.entries.some(function(item){return item.fortuneRole==='中性'})?['中性']:[]).forEach(function(role,index){
     var items=ledger.entries.filter(function(item){return item.fortuneRole===role});
     h+='<div style="padding:10px 12px;'+(index?'border-top:1px solid var(--bd);':'')+'"><div style="display:flex;align-items:flex-start;gap:10px"><b style="width:34px;flex:none;font-size:11px;color:'+(role==='忌神'?'#b7695d':'var(--gold-l)')+'">'+role+'</b><div style="flex:1">';
-    if(!items.length)h+='<span style="font-size:11px;color:var(--tx3)">—</span>';
+    if(!items.length)h+='<span style="font-size:11px;color:var(--tx3)">'+(role==='用神'&&yj.selectionStatus==='undetermined'?'尚未确定':'—')+'</span>';
     items.forEach(function(item){
       h+='<div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;'+(items.indexOf(item)?'margin-top:6px':'')+'"><span style="font-size:17px;font-weight:900;color:'+(colors[item.element]||'var(--gold-l)')+'">'+esc(item.element)+'</span>'+(item.branchPreference?'<span style="font-size:10px;font-weight:800;color:var(--tx)">（'+esc(item.branchPreference)+'）</span>':'')+(item.useGodType?'<span style="font-size:9px;font-weight:700;color:var(--gold-l);padding:1px 6px;border:1px solid rgba(201,168,76,.28);border-radius:8px">'+esc(item.useGodType)+'</span>':'')+(item.tiaoHouRole?'<span style="font-size:9px;font-weight:700;color:var(--gold-l);padding:1px 6px;border:1px solid rgba(201,168,76,.28);border-radius:8px">'+esc(item.tiaoHouRole)+'</span>':'')+'<span style="font-size:10px;color:var(--tx2)">'+esc(item.fortuneDirection)+'</span><span style="margin-left:auto;font-size:9px;color:var(--tx3)">'+esc(item.fortuneLevel)+'</span></div>';
     });
@@ -2943,6 +3084,7 @@ function renderYongJi(bazi,facts){
   var tag=function(wx){return'<span style="display:inline-block;padding:3px 12px;margin:2px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;background:'+(wxColors[wx]||'#888')+'">'+wx+'</span>'};
   var h='<p style="color:var(--tx2);font-size:11px;line-height:1.6;margin-bottom:8px"><b style="color:var(--gold-l)">'+(yj.method||'扶抑为主')+'</b> · '+(yj.primaryReason||yj.reasoning||'')+'</p>';
   var groups=[['用神',yj.yongShen],['喜神',yj.xiShen]];
+  if(yj.neutralElements&&yj.neutralElements.length)groups.push(['中性（方向待辨）',yj.neutralElements]);
   if(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)groups.push(['调候用神',yj.tiaoHouYongShen]);
   if(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)groups.push(['条件辅助',yj.conditionalAuxiliaryElements]);
   groups.push([(yj.tiaoHouYongShen&&yj.tiaoHouYongShen.length)||(yj.conditionalAuxiliaryElements&&yj.conditionalAuxiliaryElements.length)||(yj.functionalDualRoleElements&&yj.functionalDualRoleElements.length)?'结构忌神':'忌神',yj.jiShen]);

@@ -569,7 +569,9 @@ function analyzeXiyong(p1, p2) {
   var p2XiMatch = intersect(x2.xiShen, (x1.yongShen||[]).concat(x1.xiShen||[]));
   var x1Text=(x1.xiShen||[]).join('、'),x2Text=(x2.xiShen||[]).join('、');
 
-  if (p1XiMatch && p2XiMatch) {
+  if (x1.selectionStatus === 'undetermined' || x2.selectionStatus === 'undetermined' || !x1.xiShen.length || !x2.xiShen.length) {
+    detail = '至少一方的喜用方向尚未形成明确依据，暂不能据此判断喜用互补；未定不等于方向相反，应结合已经确定的关系事实观察。';
+  } else if (p1XiMatch && p2XiMatch) {
     detail = '你们俩的喜用神互相支持，这是非常好的信号！' + p1.name + '偏向' + x1Text + '来平衡，' + p2.name + '偏向' + x2Text + '。两人的有利五行存在交集，相处时更容易找到彼此都舒服的节奏。';
   } else if (p1XiMatch || p2XiMatch) {
     detail = '你们俩的喜用神有一部分是互补的。';
@@ -581,8 +583,8 @@ function analyzeXiyong(p1, p2) {
   }
 
   return {
-    p1: { xiShen: x1.xiShen, yongShen: x1.yongShen, jiShen: x1.jiShen },
-    p2: { xiShen: x2.xiShen, yongShen: x2.yongShen, jiShen: x2.jiShen },
+    p1: x1,
+    p2: x2,
     complementDetail: detail
   };
 }
@@ -593,7 +595,12 @@ function calcXiyong(person) {
     return {
       xiShen: (facts.xiShen || []).slice(),
       yongShen: (facts.yongShen || []).slice(),
-      jiShen: (facts.jiShen || []).slice()
+      jiShen: (facts.jiShen || []).slice(),
+      selectionStatus:facts.selectionStatus || ((facts.yongShen || []).length ? 'determined' : 'unknown'),
+      selectionReason:facts.selectionReason || '',
+      neutralElements:(facts.neutralElements || []).slice(),
+      tiaoHouYongShen:(facts.tiaoHouYongShen || []).slice(),
+      tiaoHouReason:facts.tiaoHouReason || ''
     };
   }
   if (person._bazi && typeof BaZiCalculator !== 'undefined' && BaZiCalculator.getProfessionalReportFacts) {

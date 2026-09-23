@@ -1523,6 +1523,16 @@
 .deep-report-verdict-item { padding: 12px 14px; border: 1px solid rgba(212,175,55,.1); background: rgba(255,255,255,.018); }
 .deep-report-verdict-item h4 { margin: 0 0 5px; color: var(--gold); font-size: 13px; letter-spacing: 2px; }
 .deep-report-verdict-item p { margin: 0; color: var(--text-primary); font-size: 13px; line-height: 1.85; }
+.report-claim-details { margin-top: 10px; color: var(--text-secondary); font-size: 12px; line-height: 1.75; }
+.report-claim-details summary { cursor: pointer; padding: 8px 0; color: var(--text-secondary); }
+.report-claim-details p { margin: 6px 0; }
+.report-review { margin:20px 0; padding:20px; border:1px solid var(--bd); border-radius:16px; background:var(--bg-card,transparent); line-height:1.8; }
+.report-review h3 { margin:0 0 10px; font-size:18px; }
+.report-review h4 { margin:20px 0 8px; }
+.report-review p { margin:8px 0; }
+.report-review button { min-height:44px; padding:10px 16px; border:1px solid var(--bd); border-radius:10px; color:var(--tx); background:transparent; cursor:pointer; font:inherit; }
+.report-review .report-review-button { color:var(--gold-l); border-color:currentColor; }
+.report-review-adjustment { border-top:1px solid var(--bd); padding:14px 0; }
 .deep-report-verdict-item .deep-report-verdict-source,
 .deep-report-year .deep-report-verdict-source { color: var(--text-secondary); font-size: 11px; line-height: 1.75; margin-top: 6px; }
 .deep-report-verdict-item .deep-report-verdict-outcome,
@@ -2040,6 +2050,8 @@
 .feedback-submit:hover { background:rgba(212,175,55,.2) }
 .feedback-submit:disabled { opacity:.4;cursor:not-allowed }
 .feedback-result { text-align:center;margin-top:14px;font-size:13px;color:#8a8;min-height:20px }
+    .report-life-select {display:block;width:100%;max-width:100%;box-sizing:border-box;margin:12px 0;padding:14px;border:1px solid var(--border-color,#d7cdb9);border-radius:12px;background:var(--bg-card,#fffaf0);color:inherit;font:inherit;}
+    #calibrationReportSkip {display:block;margin:16px auto;min-height:44px;}
 </style>
 <style>
 /* ============================================
@@ -2854,10 +2866,10 @@
     </div>
 
     <script src="js/county-longitudes.js?v=county-centroid-v1-r2"></script>
-    <script src="js/bazi.js?v=20260922a"></script>
+    <script src="js/bazi.js?v=20260923d"></script>
     <script src="js/structural.js?v=1"></script>
-    <script src="js/bazi-chain.js?v=11"></script>
-    <script src="js/deep-report.js?v=25"></script>
+    <script src="js/bazi-chain.js?v=12"></script>
+    <script src="js/deep-report.js?v=32"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
  * 知时 — 五行环形图
@@ -2993,14 +3005,16 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=4"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=41"></script>
-    <script src="js/pro-analysis.js?v=19"></script>
+    <script src="js/result.js?v=49"></script>
+    <script src="js/pro-analysis.js?v=20"></script>
     <script src="js/auth.js?v=29"></script>
     <script src="js/payment.js?v=5"></script>
     <script src="js/paywall.js?v=14"></script>
 <script src="js/chat-persistence.js?v=4"></script>
 <script src="js/ai-chat-integration.js?v=20260922b"></script>
-<script src="js/chart-calibration.js?v=13"></script>
+<script src="js/report-imagery.js?v=3"></script>
+<script src="js/calibration-model.js?v=4"></script>
+<script src="js/chart-calibration.js?v=19"></script>
 <script src="js/desktop-result-workspace.js?v=1"></script>
     <script>
         MoXingHe.start('mxhCanvas', false);

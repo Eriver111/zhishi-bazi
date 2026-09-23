@@ -128,7 +128,10 @@ test('丙火未月水势已经制衡暑燥时不再机械登记调候', () => {
   assert.equal(climate.moistureStatus, '润局已到位');
   assert.ok(water.SBase <= 0, '该盘水的扶抑基线不为正');
   assert.equal(water.SNeed, water.SBase, '未月丙火的水调候仅作说明，不进入正式候选加分');
-  assert.ok(result.jiShen.includes('水'));
+  assert.equal(water.SBase, 0);
+  assert.equal(result.jiShen.includes('水'), false, '没有净负需求，不能用固定排序把已润之水判忌');
+  assert.equal(result.elementClassification['水'], '中性');
+  assert.equal(water.role, '中性');
   assert.notEqual(result.elementClassification['水'], '喜神');
   assert.notEqual(water.role, '喜神');
   assert.equal(result.tiaoHouYongShen.includes('水'), false);
@@ -274,7 +277,8 @@ test('财生官格同时检查承载、伤官破官和官杀混杂', () => {
 
 test('财生杀格必须能担财杀且七杀有制化', () => {
   const calculator = loadCalculator();
-  const established = calculator.getPattern(calculator.buildFromPillars(pillars(['己亥', '乙亥', '己未', '辛未']), 'male'));
+  // 辛酉提供食神实际根气；旧辛未无金根，不能作为制杀成立的正例。
+  const established = calculator.getPattern(calculator.buildFromPillars(pillars(['己亥', '乙亥', '己未', '辛酉']), 'male'));
   const broken = calculator.getPattern(calculator.buildFromPillars(pillars(['癸酉', '庚戌', '甲申', '壬申']), 'male'));
 
   assert.equal(established.name, '财生杀格');
@@ -346,8 +350,11 @@ test('冬土仅见弱火时不把调候作用写成已经完成', () => {
 
   assert.deepEqual(Array.from(result.yongShen), ['水']);
   assert.equal(result.elementClassification['火'], '忌神');
-  assert.match(result.primaryReason, /原局虽见火/);
-  assert.match(result.primaryReason, /根气有限/);
+  const fire = result.candidateScores.find(row => row.wx === '火');
+  assert.equal(fire.rooted, false);
+  assert.equal(fire.rootPower, 0);
+  assert.match(result.primaryReason, /原局火虽透出/);
+  assert.match(result.primaryReason, /未见地支根气/);
   assert.doesNotMatch(result.primaryReason, /寒谷回春|调候已得/);
 });
 

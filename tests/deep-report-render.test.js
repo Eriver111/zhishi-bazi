@@ -326,7 +326,7 @@ test('customer narrative hides internal evidence cards while keeping decisive Ch
 
   assert.match(page, /A7/);
   assert.match(page, /校对现实财富基准（可选）/);
-  assert.match(page, /复核不会改动原局终身A等级/);
+  assert.match(page, /复核不会改动原局模型A等级/);
   assert.doesNotMatch(page, /百万元级|元级|万元级|亿元级/);
   assert.match(page, /真正的问题/);
   assert.doesNotMatch(rendered.pdfHtml, /百万元级|元级|万元级|亿元级/);
@@ -404,6 +404,23 @@ test('paid verdict leads with the plain outcome and keeps an escaped professiona
   assert.match(page, /&lt;img src=x&gt;/);
   assert.match(rendered.pdfHtml, /流年申冲日支寅/);
   assert.doesNotMatch(page, /TIMING:LIUNIAN/);
+});
+
+test('evidence disclosure preserves A grade and escapes sources, conditions and blockers', () => {
+  const facts = fixtureFacts();
+  facts.wealth.narrative = {
+    grade:'A8', headline:'财富潜力参考', note:'按现实条件核对',
+    verdicts:[{title:'财富量级与总判断',outcomeText:'保留差异化结论',claimKey:'wealth:0',status:'symbolic',
+      sourceText:'<img src=x onerror=alert(1)>',conditions:['条件<script>bad()</script>'],blockers:['阻断<b>条件</b>']}]
+  };
+  const rendered = renderFixture({facts});
+  for(const html of [rendered.html,rendered.pdfHtml]) {
+    assert.match(html,/A8/);
+    assert.match(html,/依据与条件/);
+    assert.match(html,/&lt;img/);
+    assert.match(html,/&lt;script/);
+    assert.doesNotMatch(html,/<img src=x|<script>bad/);
+  }
 });
 
 test('paid narrative renders compact technical anchors without replacing the plain conclusion', () => {

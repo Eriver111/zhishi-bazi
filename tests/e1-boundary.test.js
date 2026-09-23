@@ -13,7 +13,9 @@ const apiSource = fs.readFileSync(path.join(root, 'api', 'ai-chat.js'), 'utf8');
 // 提取 runReplyValidation（648-639，纯函数；文件 CRLF，终点为函数结束后紧跟的 JSDoc）
 const m = apiSource.match(/function runReplyValidation\(chartData, reply, question\) \{([\s\S]*?)\r?\n\}\r?\n\r?\n\/\*\*/);
 assert.ok(m, 'runReplyValidation 提取失败——api/ai-chat.js 结构变化，需人工复核');
-const runReplyValidation = new Function('chartData', 'reply', 'question', m[1].replace(/^  /gm, ''));
+const selectionHelper = apiSource.slice(apiSource.indexOf('function validateFrozenYongSelection('), apiSource.indexOf('function runReplyValidation('));
+assert.ok(selectionHelper.startsWith('function validateFrozenYongSelection('), '冻结取用校验依赖提取失败');
+const runReplyValidation = new Function('chartData', 'reply', 'question', selectionHelper + '\n' + m[1].replace(/^  /gm, ''));
 
 function e1warns(text) {
   return runReplyValidation({ type: 'bazi' }, text)

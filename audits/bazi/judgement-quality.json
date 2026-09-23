@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-22",
+  "scope": "Internal audit label quality; no replacement judgement or external accuracy claim",
+  "quarantinedCases": [
+    {
+      "caseId": "R08-C03",
+      "status": "pending-review",
+      "reason": "四支为子、寅、卯、酉，冻结判读却引用不存在的丑根作为旺衰依据；旺衰及其连带取用、格局标签须重新独立复核。",
+      "evidence": [
+        "audits/bazi/round-08/cases.json#R08-C03",
+        "audits/bazi/round-08/independent-rulings.md#R08-C03"
+      ],
+      "affectedFields": ["strength", "following", "useful", "favorable", "unfavorable", "pattern"],
+      "replacementRuling": null
+    },
+    {
+      "caseId": "R08-C04",
+      "status": "pending-review",
+      "reason": "四支为子、寅、卯、亥，冻结判读却以丑根、丑中己土判旺衰及破从，并将己土所见亥中甲木误记为印；相关标签须重新独立复核。",
+      "evidence": [
+        "audits/bazi/round-08/cases.json#R08-C04",
+        "audits/bazi/round-08/independent-rulings.md#R08-C04"
+      ],
+      "affectedFields": ["strength", "following", "useful", "favorable", "unfavorable", "pattern"],
+      "replacementRuling": null
+    }
+  ]
+}

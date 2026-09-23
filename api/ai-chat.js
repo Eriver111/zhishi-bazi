@@ -14,6 +14,9 @@ const { buildZiweiContext } = require('../lib/ziwei-context.js');
 const { hepanReplyScopes } = require('../lib/hepan-reply-scopes.js');
 
 function sendAiFailure(res, error) {
+  if (error && error.code === 'YONGJI_VALIDATION_FAILED') {
+    return res.status(502).json({ error:'这次解读未能保持已核对的取用结论，请重试一次（未扣次数）。', code:error.code, retryable:true, charged:false });
+  }
   if (error && error.code === 'HEPAN_VALIDATION_FAILED') {
     return res.status(502).json({
       error: '这次合盘解读未能完成，请重试一次（未扣次数）。',
@@ -128,7 +131,8 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用。必须读取 **yongShenSource**，明确它是扶抑用神、格局用神、格局救应用神、调候用神还是顺势用神；secondaryTypes 只表示兼调候、兼格局或兼通关，不得把兼任作用冒充第一取用来源。yongShen/xiShen/jiShen 是兼容旧功能的摘要字段，不是每个五行现实作用的全部结论。另有 **climateState（寒暖燥湿终裁）**、**tiaoHouYongShen（调候用神）**、**weaknessCause（身弱病因）**、**strongCause（身强来源）**、对应的 **weaknessSupportingElements/strongSupportingElements（辅助喜神）**、**conditionalAuxiliaryElements（条件辅助）** 和 **functionalTasks（功能用神任务）** 等解释轴。亥子丑或巳午未只构成季节候选，必须服从 climateState.needsWarmth/needsCooling；二者均为 false 时，禁止仅凭月份再说金寒水冷、火炎土燥或要求继续补火补水。调候用于寒暖燥湿；身弱病因区分食伤泄身、财多耗身、正官压身、七杀攻身、官杀混杂压身、财官压身、失令少根或复合耗泄克。正官压身默认取印化官、比劫辅助任官，食伤只能在正官确已过量成病且不破可用官格时称“食伤节官”，禁止称“食神制杀”；七杀攻身中，只有 weaknessCause.foodGodControlsKill=true 才可说食神制杀成立，并且直接制杀的优先级高于比劫抗杀，但日主极弱或食神无力时必须以印化杀为先；官杀混杂时食神最多处理七杀一侧，不能宣称已化解全部官杀。身强来源区分比劫成势、印旺生身、印比并旺、得令多根或复合生扶。辅助喜神须服从第一取用，条件辅助则只有满足 conditionalAuxiliaryReason 的前置条件才可搭配。functionalTasks 只记录某五行在原局承担化杀、制伤护格等任务，必须同时引用 conclusion 与 condition；它不能自行改写 elementRoleLedger 已冻结的 fortuneRole，也不能单凭“原局有功”推断某步岁运吉凶。禁止把所有身弱机械说成“喜印比”，也禁止把所有身强机械说成“喜财官食伤”。
 - **yongJi.elementRoleLedger**（原局五行角色账本）：这是解释每个五行时的优先事实源。fortuneRole/fortuneLevel/fortuneDirection 是从原局裁决出的行运基础方向；currentState、natalRole、functions、risks 说明该五行在原局正在做什么。carrierGuidance 是干支载体裁决：必须区分天干透出、地支本气根、浮透、燥湿及同柱承接，不能把同属一个五行的甲乙与寅卯、戊己与辰戌丑未视为完全等效。用神必须解释为“该五行进入岁运时通常更有利”，不能因为原局已经有力就反说成不宜再遇；但分析某一步具体大运时，还必须结合该步干支、刑冲合害、成局与生克链复核，可以把基础方向升降级。禁止只凭正官、正印等十神名称判吉，也禁止把所有同五行大运写成完全相同。
 - **professionalFacts.fortuneInteraction / 岁运验证字段**：verificationVerdict、verificationScore、verificationSummary 是在原局喜用方向之上，结合具体大运、流年和原局互动得到的本步结果；回答“这步运是否顺”时优先引用这些字段。triggeredRole/triggeredLevel 只是原局基础方向，shiShen 只说明事项落点，均不得越过 verificationVerdict 单独下吉凶结论。
-- **yongJi.evidence 候选对比**（五行候选评分对比）：仅解释"为什么取这个用神、未取哪个候选"，是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
+- **yongJi.selectionStatus / neutralElements**（取用是否确定）：上面的用、喜、忌三类仅容纳已确定的方向，不要求塞满五行。selectionStatus=undetermined 时必须明确“核心用神尚未确定”，引用 selectionReason；空 yongShen 是冻结的未定结论，不能补成某个五行，也不能把候选根气排序或固定顺序当作确定首用。neutralElements 表示无明确方向或正负作用相抵，不等于忌神、双方不合或行运不利。独立成立的调候任务仍可说明，但不能冒充已定核心用神。
+- **yongJi.evidence 候选对比**（五行候选评分对比）：解释已定取用的依据或为何尚不能确定；是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
 - **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。月令印旺不等于日主自动身强；当审计已作“印令承载折减”时，必须说明印有生源但日主缺少可靠根气承接，禁止再以“印当令”把偏弱说回中和。
 - **pillarRelations**（四柱生克）：相邻柱的相生相克已算好，解读时直接用
 - **branchRelations**（地支冲合刑害）：四柱地支间的六冲、六合、相刑、六害已算好
@@ -142,7 +146,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **parentAnalysis**（父母宫星同参）：这是父母主题的结构证据与候选解释，不是现实经历的冻结事实。familyText、fatherText、motherText、parentsRelationshipText、childRelationshipText 和 summaryText 都只能作为命理倾向参考；父母宫说明家庭结构，父母星说明父母本人，星的喜忌、远近或某个十神名称均不能单独推出亲疏、沟通频率、支持程度、健康或寿元。回答父母问题应引用其中的结构依据，但用户明确陈述的真实经历优先；若二者不一致，必须承认“此前只是命理推断”，以用户经历为准重新权衡其他机制，不得辩称用户经历只是表面现象。
 - **fortuneAnalysis**（大运联动）：系统对每步大运的喜用忌动态评估。原局的喜用忌是静态的，但大运介入后元素角色会变化（如原局忌金，但走水运时金生水→水生木，金反成水源）。分析运势时必须结合 fortuneAnalysis 的每步大运方向（喜运/忌运/偏喜/偏忌）和互动标注（冲提纲/补三合等），不能脱离大运语境谈流年；但这些档位只表示规则结构方向，不是用户那十年现实结果的冻结事实。用户实际经历可校正“有利/不利具体兑现在哪里”，不得为了维护档位而否认现实。
 - **fortuneAnalysis.periods[].eventLedger**（大运事件账本）：这是每步大运基于结构关系生成的领域推断，不是已经发生的事实。stage 只说明该年龄段通常关注的现实重心；domainRecords 分别给出家庭、学习、事业、财富、感情、身心等领域的 direction、confidence、evidence、conclusion 和 decisionBasis。回答“早年印运是否得家人庇护”“中年财运是否事业变好”时应优先读取对应领域记录与 conditions，但必须使用倾向性语言；用户给出的已发生事件高于账本推断，并可用于解释哪些机制实际兑现、哪些没有兑现。禁止从十神名称直接推出事件，禁止把一项领域的方向借给另一领域。
-- **yongJi.yongShenQuality**（用神真假评估）：系统评估每个用神/喜神的根气强弱（真用神/偏真/弱/假）。用神真假直接影响命局层次——真用神有力则一生层次高，假用神虚浮则需大运补根方显其用。在分析五行喜忌时必须结合用神真假，不可把假用神当作真用来论。
+- **yongJi.yongShenQuality**（原局承载证据）：rooted、rootPower、rootEvidence说明地支藏干根及其结算状态；score是根气、透干和受克相加减的项目综合参考分，不能当作纯根气。多次透干不能凭空产生根，受克扣分也不代表根已经消失。根气仅说明当前取用的承载条件，不据此承诺人生层次、财富量级或何时必然得运。候选旧字段rootScore同样是综合参考分，必须区分真实rootPower。旧数据没有这些证据字段时，不根据旧“真/假用神”文案补造藏干事实。
 - **dayBranchAnalysis**（日支夫妻宫专项）：日支、十神映射、根气、冲合刑害及三合三会成员属于结构事实；“配偶性格、婚姻稳定度、聚散或矛盾程度”属于可校正推断。分析婚姻时应引用结构证据，但不得把 stability、ssDesc、summary 当作用户现实婚姻的既成事实。用户明确提供的恋爱、结婚、离婚、分居等经历优先，冲突时保留日支结构并重写解释。
 - **合盘 analysis**（双盘关系候选）：双方各自四柱、日主、旺衰、喜用忌、大运顺序及跨盘干支关系属于结构证据；契合评分只是规则启发式指数，不是现实相处质量、成功率或事件概率。ganDesc、zhiDesc、coreMode、yearlyAdvice、dosAndDonts、互补描述等均是可校正候选，不得当作双方已经发生的经历。用户明确陈述的实际关系、相处方式与事件优先，冲突时保留结构关系、撤回未兑现推断并重新解释。
 - **liuNianAnalysis**（流年三方互动）：流年干支、大运干支、原局关系以及岁运并临、天克地冲、三刑成员等属于结构事实；trigger 的现实事项、dangerScore/opportunityScore 和综合判词属于规则方向推断，不是事件已经发生或现实概率。分析今年运势时应以具体结构触发为依据并使用条件语言；用户已发生的实际情况优先，可用来校正触发最终落在哪个领域，但不能倒改流年干支与结构关系。
@@ -840,6 +844,11 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
       validationError.code = 'HEPAN_VALIDATION_FAILED';
       throw validationError;
     }
+    if (validationWarnings.some(function(w) { return w.indexOf('E1-取用未定或中性被改写') === 0; })) {
+      var selectionError = new Error('Reply failed frozen useful-element selection validation');
+      selectionError.code = 'YONGJI_VALIDATION_FAILED';
+      throw selectionError;
+    }
   }
   var expertScorecard = buildExpertReplyScorecard(question, chartData, reply, validationWarnings);
   console.log('[ai-expert-score] total=' + expertScorecard.total + ' grade=' + expertScorecard.grade +
@@ -859,6 +868,43 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
  * 命中只返回 warning 字符串数组；callAI 负责 console.log 与响应透出（qa_debug 时）。
  * 本函数为纯函数，不依赖外部状态。
  */
+function validateFrozenYongSelection(yongJi, text, prefix, warnings) {
+  // Missing legacy metadata is different from a new, explicitly frozen empty list.
+  if (!yongJi || !yongJi.selectionStatus) return;
+  if (yongJi.selectionStatus !== 'undetermined' && !(yongJi.neutralElements || []).length) return;
+  const warningPrefix = prefix ? 'E1-合盘喜用忌归属冲突：' : 'E1-取用未定或中性被改写：';
+  function isQualified(index, end) {
+    const beforeLines = text.slice(0, index).split(/[。！？；;]/).pop().split(/\n/);
+    const sameLine = beforeLines.pop() || '';
+    const priorLine = beforeLines.pop() || '';
+    // Preserve only an immediately preceding introduction, not an unrelated
+    // earlier sentence containing “尚未”. Contrast starts a new assertion.
+    const before = ((/[：:]\s*$/.test(priorLine) ? priorLine + '\n' : '') + sameLine)
+      .split(/但是|不过|然而|但/).pop();
+    if (/不能|不可|不应|不宜|尚未|未能|未定|没有|并非|不是|禁止|避免|假设|假如|如果|若/.test(before)) return true;
+    const after = text.slice(end).split(/[，,。！？；;\n]/)[0];
+    return /^(?:的(?:说法|判断|结论|条件)|这[一个](?:说法|判断|结论))?(?:尚无依据|没有依据|缺乏依据|不能成立|不成立|尚未满足|未满足|是否成立|是否适合|尚待核|仍需核|还需核|只是.{0,3}假设|仅是.{0,3}假设|仅为.{0,3}假设|只是候选|并非定论)/.test(after);
+  }
+  [['用神','yongShen'], ['喜神','xiShen'], ['忌神','jiShen']].forEach(function(rule) {
+    if (!Array.isArray(yongJi[rule[1]])) return;
+    const expected = yongJi[rule[1]];
+    const re = new RegExp('(?:^|[\\s，。；：:]|甲方|乙方|P1|P2|你的|我的|他的|她的|但是|不过|然而|但)\\*{0,2}(?:核心)?' + rule[0] + '\\*{0,2}(?:为|是|：|:)?\\s*[「“]?([金木水火土](?:[、，和及与\\s]*[金木水火土])*)', 'g');
+    let match;
+    while ((match = re.exec(text)) !== null) {
+      const claimed = [...new Set(match[1].match(/[金木水火土]/g) || [])];
+      const assertionIndex = match.index + match[0].indexOf(rule[0]);
+      if (!isQualified(assertionIndex, re.lastIndex) && claimed.some(wx => !expected.includes(wx))) warnings.push(warningPrefix + prefix + rule[0] + '超出冻结清单，不能将无证据方向补成定论');
+    }
+  });
+  if (Array.isArray(yongJi.yongShen)) {
+    const reverse = /([金木水火土])(?:为|作|作为)(?:核心)?用神/g;
+    let match;
+    while ((match = reverse.exec(text)) !== null) {
+      if (!isQualified(match.index, reverse.lastIndex) && !yongJi.yongShen.includes(match[1])) warnings.push(warningPrefix + prefix + '不能将冻结清单之外的' + match[1] + '指定为核心用神');
+    }
+  }
+}
+
 function runReplyValidation(chartData, reply, question) {
   var warnings = [];
   if (!reply) return warnings;
@@ -884,6 +930,7 @@ function runReplyValidation(chartData, reply, question) {
 
   if (!chartData) return warnings;
   if (chartData.type === 'ziwei' || chartData.type === 'liuren') return warnings;
+  if (chartData.type !== 'hepan') validateFrozenYongSelection(chartData.yongJi, String(reply), '', warnings);
 
   // ---------- 通用：直接问诊必须回答冻结锚点（E7，触发一次定向补答） ----------
   // 老师傅式回答可以讨论反证和流派差异，但不能绕开用户直接问的核心结论。
@@ -1009,6 +1056,7 @@ function runReplyValidation(chartData, reply, question) {
       if (level === '中和') return 'neutral';
       return '';
     }
+    var selectionIntro = { role:'', text:'' };
     hepanReplyScopes(reply, hepanPeople).forEach(function(scope) {
       var activeRole = scope.role;
       var line = scope.text;
@@ -1036,11 +1084,20 @@ function runReplyValidation(chartData, reply, question) {
 
       // 只校验带“用神/喜神/忌神”标签的明确清单；解释某五行的条件作用不会被误判。
       var yongJi = item.data.yongJi || {};
+      var usesSelectionValidation = yongJi.selectionStatus && (yongJi.selectionStatus === 'undetermined' || (yongJi.neutralElements || []).length);
+      var selectionText = selectionIntro.role === activeRole ? selectionIntro.text + '\n' + line : line;
+      // Carry only the immediately adjacent same-person introduction. A blank
+      // scope, completed sentence or another person ends its qualification.
+      selectionIntro = /[：:]\s*$/.test(line) ? { role:activeRole, text:line } : { role:'', text:'' };
+      validateFrozenYongSelection(yongJi, selectionText, activeRole, warnings);
       [
         { label:'用神', field:'yongShen' },
         { label:'喜神', field:'xiShen' },
         { label:'忌神', field:'jiShen' }
       ].forEach(function(rule) {
+        // New frozen pending/neutral metadata is owned by the qualified-claim
+        // validator; the legacy matcher must not re-reject its exemptions.
+        if (usesSelectionValidation) return;
         var expected = Array.isArray(yongJi[rule.field]) ? yongJi[rule.field].map(String) : [];
         if (!expected.length) return;
         var claimRe = new RegExp(rule.label + '(?:为|是|：|:)?\\s*[「“]?([金木水火土、，和及与\\s]+)');
@@ -1571,7 +1628,7 @@ function buildHepanIdentityFactFallback(chartData, warnings) {
     var yongJiText = ['用神', '喜神', '忌神'].map(function(label, index) {
       var field = ['yongShen', 'xiShen', 'jiShen'][index];
       var values = Array.isArray(yongJi[field]) ? yongJi[field] : [];
-      return label + '：' + (values.length ? values.join('、') : '未提供');
+      return label + '：' + (values.length ? values.join('、') : yongJi.selectionStatus === 'undetermined' ? '尚未确定' : '未提供');
     }).join('；');
     var pillars = ['year','month','day','hour'].map(function(pos) {
       var p = person.fourPillars && person.fourPillars[pos];
@@ -1806,6 +1863,15 @@ function buildSingleChart(data) {
     ctx += `  口径锁：只能表述为“假从候选/倾向”，不得直接称从格、不得按从格反转本站喜用忌；若用户提供真实经历，只能据顺势运与扶身运反馈提出复核，不得嘴硬。\n`;
   }
 
+  const followingReview = (data.congGe && data.congGe.followingReview) ||
+    (data.yongJi && data.yongJi.congGe && data.yongJi.congGe.followingReview) ||
+    (data.yongJi && data.yongJi.followingCandidate && data.yongJi.followingCandidate.followingReview) ||
+    (data.pattern && data.pattern.followingReview);
+  if (followingReview) {
+    ctx += `\n从弱生扶专项证据：${followingReview.summary}\n`;
+    ctx += '口径约束：残余印比存在不能改写成绝无根气；reviewRequired 表示承载或纯度待核，不等于已破格，也不授权模型自行翻转冻结喜忌。根气系数与入口参考量不能换算成制化兼任余力。\n';
+  }
+
   // v3.1: 格局
   if (data.pattern) {
     const pt = data.pattern;
@@ -1827,6 +1893,7 @@ function buildSingleChart(data) {
     (pt.relatedPatterns || []).forEach(function(related) {
       const reasons = related.status === '条件待定' ? related.pendingReasons : related.breakReasons;
       ctx += `\n兼见结构：${related.name}·${related.status}；${(reasons || []).join('；') || related.source || ''}`;
+      if (related.controlEvidence) ctx += `\n制化载体证据：${related.controlEvidence.summary}`;
       if (related.status === '条件待定') ctx += '。仅为待核结构，不得称已成格或已破格，不得替代当前主格。';
     });
     if (pt.establishConditions && pt.establishConditions.length) {
@@ -1842,6 +1909,8 @@ function buildSingleChart(data) {
   if (data.yongJi) {
     const yj = data.yongJi;
     ctx += `\n喜用忌神分析：\n`;
+    if (yj.selectionStatus === 'undetermined') ctx += `  取用状态：核心用神尚未确定。${yj.selectionReason || yj.primaryReason || ''} 不得将候选或空清单补成确定首用。\n`;
+    if (yj.neutralElements && yj.neutralElements.length) ctx += `  中性（方向待辨）：${yj.neutralElements.join('、')}；不在已定喜忌内，不据此断吉凶。\n`;
     ctx += `  用神：${(yj.yongShen || []).join('、') || '—'}\n`;
     ctx += `  喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
     if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) ctx += `  调候用神：${yj.tiaoHouYongShen.join('、')}（寒暖燥湿轴，宜有度）\n`;
@@ -1860,7 +1929,7 @@ function buildSingleChart(data) {
     ctx += `  ${(yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) || (yj.conditionalAuxiliaryElements && yj.conditionalAuxiliaryElements.length) || (yj.functionalDualRoleElements && yj.functionalDualRoleElements.length) ? '结构忌神' : '忌神'}：${(yj.jiShen || []).join('、') || '—'}\n`;
     if (yj.dualRoleElements && yj.dualRoleElements.length) ctx += `  双重角色：${yj.dualRoleElements.join('、')}在扶抑结构上不宜增多，但兼具调候作用，不作纯忌论。\n`;
     ctx += `  取用方法：${yj.method || '—'}\n`;
-    if (yj.yongShenSource) ctx += `  用神来源：${yj.yongShenSource.element || (yj.yongShen || [])[0] || '—'}·${yj.yongShenSource.label || yj.yongShenSource.primaryType || '未标注'}\n`;
+    if (yj.yongShenSource && yj.selectionStatus !== 'undetermined') ctx += `  用神来源：${yj.yongShenSource.element || (yj.yongShen || [])[0] || '—'}·${yj.yongShenSource.label || yj.yongShenSource.primaryType || '未标注'}\n`;
     ctx += `  核心依据：${yj.primaryReason || yj.reasoning || ''}\n`;
     if (yj.evidence && yj.evidence.length) {
       ctx += `  判定证据：\n`;
@@ -1923,13 +1992,19 @@ function buildSingleChart(data) {
         ctx += `  综合边界：${chain.constraints.join('；')}\n`;
       }
     }
-    // v5.2 用神真假评估
+    // 根气事实与综合承载分分开披露，旧数据的混合分不再标为根气分。
     if (yj.yongShenQuality) {
-      ctx += `  用神真假评估：\n`;
+      ctx += `  用神原局承载证据：\n`;
       Object.entries(yj.yongShenQuality).forEach(function(entry) {
         var wx = entry[0], q = entry[1];
-        ctx += `    - ${wx}：${q.quality}（根气得分${q.score}）\n`;
-        if (q.roots && q.roots.length) ctx += `      根气详情：${q.roots.join('；')}\n`;
+        if (typeof q.rooted === 'boolean' && typeof q.rootPower === 'number') {
+          ctx += `    - ${wx}：${q.quality}（有效根气${q.rootPower}；综合承载参考分${q.score}）\n`;
+          if (q.roots && q.roots.length) ctx += `      藏干根气：${q.roots.join('；')}\n`;
+          if (q.exposedPositions && q.exposedPositions.length) ctx += `      透干柱位：${q.exposedPositions.join('、')}\n`;
+          if (q.restraints && q.restraints.length) ctx += `      透干受克证据：${q.restraints.map(a => a.by + '（' + a.pos + '）').join('；')}\n`;
+        } else {
+          ctx += `    - ${wx}：旧版综合承载参考分${q.score}；缺少独立根气字段，不能据旧质量标签断言有根或无根。\n`;
+        }
       });
     }
   }
@@ -2001,6 +2076,14 @@ function buildSingleChart(data) {
     ctx += `  父母之间：${parents.parentsRelationshipText || '—'}\n`;
     ctx += `  本人与父母：${parents.childRelationshipText || '—'}\n`;
     ctx += `  综合：${parents.summaryText || '—'}\n`;
+    if (Array.isArray(parents.claims)) parents.claims.forEach(function(claim) {
+      ctx += `  条件约束[${claim.claimKey || ''}]：${claim.status || 'symbolic'}；${(claim.conditions || []).join('；')}\n`;
+      if (claim.direction) ctx += `    该段方向：${claim.direction}；依据：${claim.sourceText || '未提供'}\n`;
+      if (Array.isArray(claim.requiredConditions)) ctx += `    条件核对：${claim.requiredConditions.map(function(c) { return c.key + '=' + (c.met ? '满足' : '未满足'); }).join('；')}\n`;
+      if (claim.blockers && claim.blockers.length) ctx += `    限制与反证：${claim.blockers.join('；')}\n`;
+    });
+    if (parentEvidence.earlyEnvironment) ctx += `  成长环境证据：${(parentEvidence.earlyEnvironment.nodes || []).map(function(n) { return n.pos + n.gan + n.role; }).join('、')}\n`;
+    if (parents.judgements) ctx += `  家庭段落按各自方向作答：先讲具体判断，再解释依据；mixed表示帮助与牵制并存，不得只挑其中一面。insufficient只限制该段，不把所有家庭内容统一改成无法判断。不得把资源支持改写成情感亲密，把责任压力改写成父母不爱或家庭失和。\n`;
     ctx += `  推断边界：以上文字不是已发生事实。父母宫只说明家庭结构，父母星说明父母本人；星的喜忌、远近或单一十神不能直接判断亲疏、沟通、支持、健康或寿元。用户明确陈述的实际关系与经历优先，冲突时应承认原推断偏差并重新解释。\n`;
   }
 
@@ -2291,7 +2374,9 @@ function generateMockReply(question, chartData, bazi, mode) {
     if (hasChart && chartData.yongJi) {
       const yj = chartData.yongJi;
       r += `系统判定采用**${yj.method || '综合取用'}**：${yj.primaryReason || yj.reasoning || ''}\n\n`;
-      if (yj.yongShenSource) r += `- 用神来源：${yj.yongShenSource.element || (yj.yongShen || [])[0] || '—'} · ${yj.yongShenSource.label || yj.yongShenSource.primaryType || '未标注'}\n`;
+      if (yj.selectionStatus === 'undetermined') r += `- 核心用神尚未确定：${yj.selectionReason || '现有证据不足以确定唯一首用。'}\n`;
+      if (yj.neutralElements && yj.neutralElements.length) r += `- 中性（方向待辨）：${yj.neutralElements.join('、')}\n`;
+      if (yj.yongShenSource && yj.selectionStatus !== 'undetermined') r += `- 用神来源：${yj.yongShenSource.element || (yj.yongShen || [])[0] || '—'} · ${yj.yongShenSource.label || yj.yongShenSource.primaryType || '未标注'}\n`;
       r += `- 用神：${(yj.yongShen || []).join('、') || '—'}\n`;
       r += `- 喜神：${(yj.xiShen || []).join('、') || '—'}\n`;
       if (yj.tiaoHouYongShen && yj.tiaoHouYongShen.length) r += `- 调候用神：${yj.tiaoHouYongShen.join('、')}（用于寒暖燥湿，宜有度）\n`;

@@ -2,7 +2,7 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
-  var CANDIDATE_VERSION = 'bazi-cal-v4';
+  var CANDIDATE_VERSION = 'bazi-cal-v9';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
@@ -29,7 +29,7 @@
     return (analysis.triggers || []).filter(function(t) {
       var text = (t.type || '') + '|' + (t.detail || '');
       if (domain === 'relationship') return t.target === 'day' || /日柱|日支|夫妻/.test(text);
-      if (domain === 'family') return t.target === 'year' || /年柱|父母/.test(text);
+      if (domain === 'family') return t.target === 'year' || t.target === 'month' || /年柱|月柱|父母/.test(text);
       if (domain === 'study') return t.target === 'month' || /月柱|月支|印星|学业/.test(text);
       if (domain === 'career') return t.target === 'month' || t.target === 'hour' || /月柱|时柱|伤官见官|官逢伤官/.test(text);
       if (domain === 'wealth') return /财|比肩|劫财|资金/.test(text);
@@ -201,7 +201,7 @@
   }
   function request(method, key, body) {
     var url = '/api/chart-calibration' + (method === 'GET' ? '?chart_key=' + encodeURIComponent(key) : '');
-    return fetch(url, {
+    var task = fetch(url, {
       method: method, cache: 'no-store',
       headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token() },
       body: method === 'POST' ? JSON.stringify(body) : undefined
@@ -211,6 +211,10 @@
         return data;
       });
     });
+    if(method !== 'GET')return task;
+    var timer;
+    var timeout=new Promise(function(resolve,reject){timer=setTimeout(function(){reject(new Error('读取超时，请稍后重试'));},12000);});
+    return Promise.race([task,timeout]).then(function(data){if(typeof clearTimeout==='function')clearTimeout(timer);return data;},function(error){if(typeof clearTimeout==='function')clearTimeout(timer);throw error;});
   }
 
   function annualDomainScores(analysis, liuNian, age) {
@@ -285,7 +289,7 @@
   };
 
   function mechanismKey(domain, analysis, tenGod, parentContext) {
-    var triggers = (analysis.triggers || []).map(function(item){return item.type || ''}).join('|');
+    var triggers = domainTriggers(domain, analysis).map(function(item){return item.type || ''}).join('|');
     if (domain === 'relationship' && /六冲|天克地冲/.test(triggers)) return 'day-palace:clash';
     if (domain === 'relationship' && /六合|半合|三合/.test(triggers)) return 'day-palace:combine';
     if (domain === 'career' && /伤官见官|官逢伤官/.test(triggers)) return 'output-controls-officer';
@@ -318,6 +322,7 @@
 
   function optionEvidence(domain, analysis, parentContext) {
     var evidence = domainTriggers(domain, analysis).slice(0,2).map(function(t){ return t.detail || t.type; }).filter(Boolean);
+    if(!evidence.length){var record=(analysis.eventAdjudication && analysis.eventAdjudication.domainRecords||[]).filter(function(item){return item.domain===domain && item.hasIndependentAnnualTrigger;})[0];if(record)evidence=(record.evidence||[]).slice(0,2);}
     if (domain === 'family' && parentContext) {
       var quadrantText = {'palace-good-star-good':'父母宫稳、父母星也有力','palace-good-star-weak':'父母宫尚稳，但被引动的父母星偏弱','palace-damaged-star-good':'父母宫有损，但被引动的父母星仍有力量','palace-damaged-star-weak':'父母宫和被引动的父母星同时承压'};
       if (parentContext.target === 'father' && parentContext.star) evidence.push('原局偏财父星为' + parentContext.star.state + '，属于' + parentContext.star.roleLabel + '；' + quadrantText[parentContext.quadrant] + '。');
@@ -328,7 +333,9 @@
   }
 
   function competingOption(domain, analysis, age, tenGod, parentContext) {
-    return {
+    var option = {
+      _triggerKeys: domainTriggers(domain, analysis).map(function(t){return (t.target||'')+':'+(t.type||'');}),
+      _independent: !!(analysis.eventAdjudication && (analysis.eventAdjudication.domainRecords||[]).some(function(r){return r.domain===domain && r.hasIndependentAnnualTrigger;})),
       key: domain + ':' + manifestationKey(domain, analysis, tenGod),
       label: conciseLabel(domain, analysis, tenGod, parentContext),
       detail: predictedPrompt(domain, analysis, age, tenGod, parentContext).replace(/^这一年是否/, '').replace(/[？?]$/, ''),
@@ -339,24 +346,96 @@
       followup_prompt: '如果是这一类，具体更接近哪件事？',
       followup_options: domain === 'family' && parentContext ? parentContext.consequences : (followupSets[domain] || followupSets.change)
     };
+    // Old generic choices also need neutral wording when historical employment is unknown.
+    var life=analysis.reportLifeContext||analysis.eventAdjudication&&analysis.eventAdjudication.lifeContext;
+    if(life&&domain!=='family'&&root.DeepReport&&root.DeepReport.contextScenario){
+      var scenario=root.DeepReport.contextScenario(domain,domainDirection(domain,analysis)==='good'?'偏有利':domainDirection(domain,analysis)==='bad'?'偏不利':'条件性',life);
+      if(scenario){option.label={study:'学习与准备',career:'任务与协作',wealth:'可支配费用',relationship:'联系与相处',change:'生活安排',health:'精力与节奏'}[domain];option.detail=scenario;option.followup_options=[];option.manifestation+=':scene-'+(root.ReportImagery?root.ReportImagery.resolveScene(life):'daily');option.key=domain+':'+option.manifestation;}
+    }
+    var professional=root.ZhishiCalibrationModel&&root.ZhishiCalibrationModel.professionalCandidates
+      ? root.ZhishiCalibrationModel.professionalCandidates(domain,analysis) : [];
+    return professional.length ? Object.assign(option,professional[0]) : option;
+  }
+
+  function competingOptions(domain, analysis, age, tenGod, parentContext) {
+    var base=competingOption(domain,analysis,age,tenGod,parentContext);
+    var candidates=root.ZhishiCalibrationModel&&root.ZhishiCalibrationModel.professionalCandidates
+      ? root.ZhishiCalibrationModel.professionalCandidates(domain,analysis):[];
+    return candidates.length?candidates.map(function(c){return Object.assign({},base,c);}):[base];
   }
 
   function dedupeOptionDomains(rankedDomains, scores, parentContext) {
-    var chosen = [];
-    rankedDomains.forEach(function(name) {
-      if (chosen.length >= 3) return;
-      if (parentContext && parentContext.activationScore >= 2 && chosen.indexOf('family') >= 0 && (name === 'change' || name === 'wealth')) return;
-      if (chosen.indexOf(name) < 0) chosen.push(name);
-    });
-    ['family','relationship','career','study','health','wealth','change'].some(function(name) {
-      if (chosen.length >= 3) return true;
-      if (chosen.indexOf(name) < 0 && scores[name] >= 0) chosen.push(name);
-      return chosen.length >= 3;
-    });
-    return chosen.slice(0,3);
+    // Do not re-add a domain discarded during deduplication via a fallback list.
+    return rankedDomains.filter(function(name,index,rows){return scores[name]>=0 && rows.indexOf(name)===index;});
   }
 
-  function generateCandidates(data) {
+  function optionMeaning(option) {
+    var owner=option.domain==='family' ? ((option.mechanism_key||'').match(/^parent-([^:]+)/)||[])[1]||'family' : '';
+    return [option.domain,option.manifestation||option.key,owner].join(':');
+  }
+  function optionText(option) { return String(option.detail||'').replace(/[\s，。；、？！,.!?;：:]/g,''); }
+  function distinctYearOptions(options) {
+    var seenText={};
+    return options.filter(function(option){
+      if(option.domain!=='change')return true;
+      // A broad environment change must not compete with the same triggered school/job/home event.
+      return !options.some(function(specific){return ['study','career','family','relationship'].indexOf(specific.domain)>=0 &&
+        (option._triggerKeys||[]).some(function(key){return (specific._triggerKeys||[]).indexOf(key)>=0;});});
+    }).filter(function(option){var key=optionText(option);if(seenText[key])return false;seenText[key]=true;return true;});
+  }
+  function selectDistinctCandidates(pool, preserved) {
+    preserved=(preserved||[]).filter(function(item){return !!item.answer;});
+    var chosen=[],chosenYears={},domainCounts={},meanings={},texts={},repeated=false;
+    function register(item) {
+      var year=Number(item.year||item.event_year);chosenYears[year]=true;
+      domainCounts[item.domain]=Number(domainCounts[item.domain]||0)+1;
+      (item.options||[]).forEach(function(option){
+        var key=optionMeaning(option);if(!meanings[key])meanings[key]=[];
+        meanings[key].push({year:year,option:option});texts[optionText(option)]=true;
+      });
+    }
+    preserved.forEach(register);
+    var limit=Math.max(0,5-preserved.length);
+    function prepare(item,allowRepeat) {
+      if(!item || chosenYears[Number(item.year)] || chosen.length>=limit)return null;
+      var repeat=null,options=distinctYearOptions(item.options||[]).filter(function(option){
+        var matches=meanings[optionMeaning(option)]||[];
+        if(!matches.length && !texts[optionText(option)])return true;
+        if(!allowRepeat || repeated || repeat || matches.length!==1 || !option._independent)return false;
+        var prior=matches[0];
+        // A ±1-year recollection must not count the same episode twice. Older saved options
+        // without independent-trigger metadata are not evidence for a repeat invitation.
+        if(!prior.option._independent || Math.abs(Number(item.year)-prior.year)<3 ||
+          !option.mechanism_key || option.mechanism_key!==prior.option.mechanism_key)return false;
+        repeat={year:prior.year,key:option.key};return true;
+      }).slice(0,3);
+      if(!options.length || (allowRepeat && !repeat))return null;
+      if(Number(domainCounts[options[0].domain]||0)>=2)return null;
+      var prompt=item.prompt;
+      if(repeat && options.some(function(o){return o.key===repeat.key;})) {
+        prompt+=' 其中一项与'+repeat.year+'年作跨年对照：两年各有独立触发，核对是否对应相似经历，也可以两年都选不符合。';
+      } else repeat=null;
+      return Object.assign({},item,{domain:options[0].domain,options:options,prompt:prompt,
+        mechanism_key:options[0].mechanism_key,_repeat:repeat});
+    }
+    function take(item,allowRepeat) {
+      var next=prepare(item,allowRepeat);if(!next)return false;
+      chosen.push(next);register(next);if(next._repeat)repeated=true;return true;
+    }
+    // 先保证不同人生阶段均有代表题；题目要有新信息，不为凑满五题重复提问。
+    ['school','youth','early-adult','midlife','mature'].forEach(function(stage){
+      pool.some(function(item){return item._stage===stage && take(item,false);});
+    });
+    pool.forEach(function(item){take(item,false);});
+    if(chosen.length<limit)pool.some(function(item){return take(item,true);});
+    return chosen.sort(function(a,b){return b.year-a.year;}).map(function(item){
+      var clean=Object.assign({},item);delete clean._score;delete clean._stage;delete clean._repeat;
+      clean.options=item.options.map(function(option){var copy=Object.assign({},option);delete copy._triggerKeys;delete copy._independent;return copy;});
+      return clean;
+    });
+  }
+
+  function generateCandidates(data, preserved) {
     var out = [];
     try {
       if (typeof _bazi === 'undefined' || !_bazi || typeof _daYunData === 'undefined' || !_daYunData || !_daYunData.list) return out;
@@ -368,7 +447,11 @@
       // 从具备稳定记忆的年龄开始覆盖完整既往人生，不再只看最近十四年。
       var firstYear = birthYear + 6;
       var yongJi = data.yongJi || (BaZiCalculator.getYongJi ? BaZiCalculator.getYongJi(_bazi) : null);
+      var mechanismContext={chain:root.BaZiChain.analyze?root.BaZiChain.analyze(_bazi):{},yongJi:yongJi,
+        pattern:yongJi&&yongJi.resolvedPattern||data.pattern||{},congGe:data.congGe||false};
       var parentAnalysis = null;
+      var structuralRisks=data.structuralRisks;
+      if(!Array.isArray(structuralRisks) && root.StructuralAnalysis)structuralRisks=root.StructuralAnalysis.evaluate(_bazi,BaZiCalculator).structuralRisks;
       var dyByYear = {}, liuNianByYear = {};
       try { parentAnalysis = BaZiCalculator.analyzeParents(_bazi, data.birthInfo && data.birthInfo.gender); } catch (e) {}
       // 每步大运只展开一次流年，完整人生扫描仍保持线性开销。
@@ -395,6 +478,9 @@
             })[0]
           : null;
         var analysis = root.BaZiChain.analyzeLiuNian(_bazi, dy, liuNian, yongJi, { age:age, birthYear:birthYear || null, daYunPeriod:fortunePeriod });
+        if(root.DeepReport&&root.DeepReport.matchTriggeredRisks)analysis=Object.assign({},analysis,{reportTriggeredRisks:root.DeepReport.matchTriggeredRisks(structuralRisks,liuNian,dy,analysis,BaZiCalculator,year,_bazi.day.gan)});
+        // The present occupation is not evidence of a person's occupation in a past year.
+        analysis=Object.assign({},analysis,{reportMechanismContext:mechanismContext,reportLifeContext:{status:'unknown',age:age,historical:true}});
         var high = (analysis.triggers || []).filter(function(t) { return t.severity === 'high'; }).length;
         var score = Number(analysis.dangerScore || 0) + Number(analysis.opportunityScore || 0) + high * 2 + Math.min((analysis.triggers || []).length, 4);
         var tenGod = '';
@@ -405,7 +491,13 @@
         var rankedDomains = Object.keys(scores).filter(function(name){return scores[name] >= 0}).sort(function(a,b){return scores[b]-scores[a]});
         var domain = rankedDomains[0] || annualDomain(analysis, liuNian, age);
         var optionDomains = dedupeOptionDomains(rankedDomains, scores, parentContext);
-        var options = optionDomains.map(function(name){return competingOption(name, analysis, age, tenGod, name === 'family' ? parentContext : null)});
+        if (analysis.eventAdjudication && Array.isArray(analysis.eventAdjudication.domainRecords)) {
+          optionDomains=optionDomains.filter(function(name){return analysis.eventAdjudication.domainRecords.some(function(r){return r.domain===name&&r.hasIndependentAnnualTrigger;});});
+        }
+        if (!optionDomains.length) continue;
+        // Round-robin domains so expanding a rule's variants cannot crowd every other domain out.
+        var optionGroups=optionDomains.map(function(name){return competingOptions(name,analysis,age,tenGod,name==='family'?parentContext:null);});
+        var options=[];for(var oi=0;oi<Math.max.apply(null,optionGroups.map(function(g){return g.length;}));oi++)optionGroups.forEach(function(g){if(g[oi])options.push(g[oi]);});
         var gz = (liuNian.gan || '') + (liuNian.zhi || '');
         var dyGz = (dy.gan || '') + (dy.zhi || '');
         var evidence = (analysis.triggers || []).slice().sort(function(a,b) {
@@ -421,22 +513,7 @@
         });
       }
       out.sort(function(a,b) { return b._score - a._score || b.year - a.year; });
-      var domainCounts = {}, chosen = [], chosenKeys = {};
-      function take(item) {
-        if (!item || chosen.length >= 5 || chosenKeys[item.event_key] || Number(domainCounts[item.domain] || 0) >= 2) return false;
-        chosen.push(item); chosenKeys[item.event_key] = true;
-        domainCounts[item.domain] = Number(domainCounts[item.domain] || 0) + 1;
-        return true;
-      }
-      // 先保证不同人生阶段均有代表题，再按结构引动强度补足名额。
-      ['school','youth','early-adult','midlife','mature'].forEach(function(stage) {
-        for (var i = 0; i < out.length; i++) {
-          if (out[i]._stage === stage && take(out[i])) break;
-        }
-      });
-      for (var j = 0; j < out.length && chosen.length < 5; j++) take(out[j]);
-      out = chosen.sort(function(a,b) { return b.year - a.year; });
-      out.forEach(function(item) { delete item._score; delete item._stage; });
+      out = selectDistinctCandidates(out, preserved);
     } catch (error) { console.warn('[calibration] 候选生成失败:', error.message); }
     return out;
   }
@@ -447,15 +524,29 @@
     shell = document.createElement('div'); shell.id = 'calibrationShell'; shell.className = 'calibration-shell';
     shell.innerHTML = '<div class="calibration-backdrop" data-close="1"></div><section class="calibration-panel" role="dialog" aria-modal="true" aria-labelledby="calibrationTitle"><button class="calibration-close" type="button" data-close="1" aria-label="关闭">×</button><div id="calibrationBody"></div></section>';
     document.body.appendChild(shell);
-    shell.addEventListener('click', function(event) { if (event.target.getAttribute('data-close') === '1') close(); });
+    shell.addEventListener('click', function(event) { if (event.target.getAttribute('data-close') === '1') { close(); if (reportDismiss) reportDismiss(); } });
     return shell;
   }
   function openHtml(html) { var shell = ensureShell(); document.getElementById('calibrationBody').innerHTML = html; shell.classList.add('is-open'); document.body.classList.add('calibration-open'); }
   function close() { var shell = document.getElementById('calibrationShell'); if (shell) shell.classList.remove('is-open'); document.body.classList.remove('calibration-open'); }
   function choiceKey(key) { return 'zhishi_calibration_choice:' + key; }
   function localDataKey(key) { return 'zhishi_calibration_data:' + key; }
-  function readLocalEvents(key) { try { return JSON.parse(localStorage.getItem(localDataKey(key)) || '[]'); } catch(e) { return []; } }
-  function writeLocalEvents(key, events) { try { localStorage.setItem(localDataKey(key), JSON.stringify(events)); } catch(e) {} }
+  function readLocalEvents(key) { try { var rows=JSON.parse(localStorage.getItem(localDataKey(key)) || '[]');return Array.isArray(rows)?rows:[]; } catch(e) { return []; } }
+  function prepareLocalEvents(key, data) {
+    var existing=readLocalEvents(key), version='';
+    try{version=localStorage.getItem('zhishi_calibration_version:'+key)||'';}catch(e){}
+    if(!existing.length || version===CANDIDATE_VERSION)return existing;
+    if(typeof _bazi==='undefined' || !_bazi || typeof _daYunData==='undefined' || !_daYunData || !_daYunData.list)return existing;
+    var answered=existing.filter(function(event){return !!event.answer;});
+    var fresh=generateCandidates(data,answered).map(function(item){return Object.assign({answer:null,actual_year:null,note:''},item,{event_year:item.year});});
+    // Never replace saved answers with newly generated wording, even when the old set repeats.
+    if(!fresh.length && !answered.length)return existing;
+    var upgraded=answered.concat(fresh).sort(function(a,b){return Number(b.event_year)-Number(a.event_year);});
+    if(!writeLocalEvents(key,upgraded))return existing;
+    try{localStorage.setItem('zhishi_calibration_version:'+key,CANDIDATE_VERSION);}catch(e){}
+    return upgraded;
+  }
+  function writeLocalEvents(key, events) { try { localStorage.setItem(localDataKey(key), JSON.stringify(events)); return true; } catch(e) { return false; } }
 
   function showConsent(key, originalToggle) {
     var storageText=token()?'确认结果只保存在你的账号下':'未登录时确认结果只保存在当前设备';
@@ -466,21 +557,25 @@
 
   function start(key, originalToggle) {
     var data = chartData(), candidates = generateCandidates(data);
-    if (!candidates.length) { close(); originalToggle(); return; }
+    if (!candidates.length) { calibrationUnavailable('当前没有可定位的往事年份，可以先阅读报告。', originalToggle); return; }
     if (!token()) {
       var localEvents = candidates.map(function(item) { return Object.assign({ answer:null, actual_year:null, note:'' }, item, { event_year:item.year }); });
-      writeLocalEvents(key, localEvents); renderEvents(key, localEvents, originalToggle); return;
+      var existing=prepareLocalEvents(key,data);
+      if(existing.length)localEvents=existing;
+      if(writeLocalEvents(key, localEvents)){try{localStorage.setItem('zhishi_calibration_version:'+key,CANDIDATE_VERSION);}catch(e){}} renderEvents(key, localEvents, originalToggle); return;
     }
     openHtml('<div class="calibration-loading">正在从你已经走过的人生阶段中筛选辨识度最高的年份…</div>');
+    attachReportSkip();
     request('POST', key, { action:'initialize', chart_key:key, chart_signature:signature(data), candidate_version:CANDIDATE_VERSION, candidates:candidates })
       .then(function(result) { renderEvents(key, result.events || [], originalToggle); })
-      .catch(function(error) { openHtml('<div class="calibration-error">' + (error.message || '校准暂时不可用') + '<button type="button" id="calibrationContinue">先进入 AI</button></div>'); document.getElementById('calibrationContinue').onclick=function(){close();originalToggle()}; });
+      .catch(function(error) { if(!originalToggle || !originalToggle.isActive || originalToggle.isActive())calibrationUnavailable(error.message || '校准暂时不可用', originalToggle); });
   }
 
   function renderEvents(key, events, originalToggle) {
+    if(originalToggle && originalToggle.isActive && !originalToggle.isActive())return;
     if (!events.length) { close(); if (originalToggle) originalToggle(); return; }
     var answered = events.filter(function(event) { return event.answer; }).length;
-    var html = '<header class="calibration-head"><span>命盘应事校对</span><h2 id="calibrationTitle">我先判断，你选最接近的一项</h2><p>每个年份只选最接近真实经历的一类，再补充具体发生了什么。问题和依据在回答前已经锁定，不会根据你的选择倒推命盘。</p><div class="calibration-progress"><i style="width:' + Math.round(answered / events.length * 100) + '%"></i></div><small>' + answered + ' / ' + events.length + ' 已完成</small></header><div class="calibration-list">';
+    var html = '<header class="calibration-head"><span>命盘应事校对</span><h2 id="calibrationTitle">核对你经历过的事</h2><p>每个年份只选最接近真实经历的一类，再补充具体发生了什么。问题和依据在回答前已经锁定，不会根据你的选择倒推命盘。</p><div class="calibration-progress"><i style="width:' + Math.round(answered / events.length * 100) + '%"></i></div><small>' + answered + ' / ' + events.length + ' 已完成</small></header><div class="calibration-list">';
     events.forEach(function(event) {
       var answer = event.answer || '';
       var options = Array.isArray(event.options) ? event.options : [];
@@ -504,8 +599,9 @@
       }
       html += '</div></article>';
     });
-    html += '</div><div class="calibration-footer"><div id="calibrationConsistency" class="calibration-consistency">结构化选项会自动避免互相矛盾的记录</div><button type="button" class="calibration-primary" id="calibrationFinish">完成校对，进入 AI</button><p>命理分析仅供传统文化研究与参考。</p></div>';
+    html += '</div><div class="calibration-footer"><div id="calibrationConsistency" class="calibration-consistency">不同年份可以有不同经历；不符合请如实选择。</div><button type="button" class="calibration-primary" id="calibrationFinish">' + escapeHtml(originalToggle && originalToggle.finishLabel || '完成校对，进入 AI') + '</button><p>命理分析仅供传统文化研究与参考。</p></div>';
     openHtml(html);
+    attachReportSkip();
     document.querySelectorAll('.calibration-event').forEach(function(card) {
       card.querySelectorAll('[data-option]').forEach(function(button) {
         button.onclick = function() { selectStructuredOption(key, card, button.getAttribute('data-option')); };
@@ -521,7 +617,14 @@
       });
       card.querySelectorAll('[data-save-note]').forEach(function(save) { save.onclick = function() { saveAnswer(key, card, 'yes', true); }; });
     });
-    document.getElementById('calibrationFinish').onclick = function() { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} close(); if (originalToggle) originalToggle(); };
+    document.getElementById('calibrationFinish').onclick = function() {
+      var button=this;button.disabled=true;button.textContent='正在确认保存…';
+      Promise.all(Object.keys(saveQueues).filter(function(k){return k.indexOf(key+':')===0;}).map(function(k){return saveQueues[k];})).then(function(){
+        if(Object.keys(saveErrors).some(function(k){return k.indexOf(key+':')===0;})){button.disabled=false;button.textContent='有答案未保存，请重选后再完成';return;}
+        try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {}
+        close();if(originalToggle)originalToggle();
+      });
+    };
   }
 
   function selectStructuredOption(key, card, optionKey) {
@@ -542,6 +645,7 @@
     card.querySelectorAll('[data-match]').forEach(function(button){button.classList.toggle('is-selected',button.getAttribute('data-match')===match)});
   }
 
+  var saveQueues = {}, saveErrors = {};
   function saveAnswer(key, card, answer, withNote) {
     var structured=card.classList.contains('is-structured');
     if (answer!=='yes') { card.setAttribute('data-answer',answer); card.setAttribute('data-selected-option',''); card.setAttribute('data-selected-detail',''); card.setAttribute('data-match-level',answer==='no'?'none':'unsure'); }
@@ -561,13 +665,15 @@
     if (!token()) {
       var localEvents=readLocalEvents(key), eventKey=card.getAttribute('data-event');
       localEvents.forEach(function(event){if(event.event_key===eventKey){Object.assign(event,payload);delete event.action;delete event.chart_key}});
-      writeLocalEvents(key,localEvents); updateProgress();
+      if(!writeLocalEvents(key,localEvents)){saveErrors[key+':'+eventKey]=true;alert('当前设备无法保存，请允许本地存储后重新作答');return;}
+      delete saveErrors[key+':'+eventKey]; updateProgress();
       if(withNote&&followup){var localSave=followup.querySelector('[data-save-note]');localSave.textContent='已保存';setTimeout(function(){localSave.textContent='保存补充'},1200)}
       return;
     }
-    request('POST', key, payload)
-      .then(function() { if (withNote) { var save=followup.querySelector('[data-save-note]'); save.textContent='已保存'; setTimeout(function(){save.textContent='保存补充'},1200); } updateProgress(); })
-      .catch(function() { alert('保存失败，请稍后重试'); });
+    var queueKey=key+':'+payload.event_key;
+    saveQueues[queueKey]=(saveQueues[queueKey]||Promise.resolve()).then(function(){return request('POST',key,payload);})
+      .then(function(){delete saveErrors[queueKey];if(withNote&&followup){var save=followup.querySelector('[data-save-note]');save.textContent='已保存';}updateProgress();})
+      .catch(function(){saveErrors[queueKey]=true;alert('保存失败，请重新选择该题后再完成复核');});
   }
   function updateProgress() {
     var total = document.querySelectorAll('.calibration-event').length;
@@ -590,7 +696,7 @@
     }
     request('GET', key).then(function(result) {
       if (result.ready && result.calibration && result.calibration.candidate_version !== CANDIDATE_VERSION) {
-        var candidates = generateCandidates(data);
+        var candidates = generateCandidates(data, result.events || []);
         return request('POST', key, { action:'initialize', chart_key:key, chart_signature:signature(data), candidate_version:CANDIDATE_VERSION, candidates:candidates }).then(function(upgraded) {
           if ((upgraded.events||[]).some(function(event){return !event.answer})) renderEvents(key,upgraded.events||[],originalToggle);
           else { try { localStorage.setItem(choiceKey(key), 'done'); } catch(e) {} originalToggle(); }
@@ -615,10 +721,75 @@
     setTimeout(function(){clearInterval(wait)},10000);
   }
 
+  var reportSessions = Object.create(null), reportDismiss = null, reportSkip = null;
+  function reportScope() {
+    var data = chartData(), key = chartKey(data);
+    var user = root.Auth && root.Auth.getUser ? root.Auth.getUser() : null;
+    // Authenticated accounts without a resolved identity must not share guest state.
+    if (!key || (token() && !(user && user.id))) return '';
+    return (user && user.id ? String(user.id) : 'guest') + ':' + key;
+  }
+  function lifeStorageKey(scope) { return 'zhishi_report_life_v1:' + scope; }
+  function readLifeContext(scope) {
+    try { return JSON.parse(localStorage.getItem(lifeStorageKey(scope)) || '{}') || {}; } catch(e) { return {}; }
+  }
+  function attachReportSkip() {
+    if (!reportSkip) return;
+    var body = document.getElementById('calibrationBody');
+    var skip = document.createElement('button');
+    skip.type='button';skip.id='calibrationReportSkip';skip.className='calibration-secondary';
+    skip.textContent='暂时跳过，查看报告';skip.onclick=reportSkip;body.appendChild(skip);
+  }
+  function calibrationUnavailable(message, done) {
+    openHtml('<div class="calibration-error" role="alert">'+escapeHtml(message)+'</div><button type="button" class="calibration-primary" id="calibrationContinue">'+escapeHtml(done && done.finishLabel || '继续')+'</button>');
+    document.getElementById('calibrationContinue').onclick=function(){close();if(done)done();};
+  }
+  // Called only after the existing payment entitlement check. Duplicate unlock callbacks share one gate.
+  function beforeReport(onReady, force) {
+    var scope=reportScope();
+    if(!scope) return true; // Missing chart/account context must never trap a paid user.
+    var session=reportSessions[scope];
+    if(!session && !force){try{if(sessionStorage.getItem('zhishi_report_ready_v1:'+scope)==='1')session=reportSessions[scope]={done:true,pending:false,context:readLifeContext(scope)};}catch(e){}}
+    if(session && session.done && !force) return true;
+    if(session && session.pending) return false;
+    session={pending:true,done:false,context:readLifeContext(scope)};
+    reportSessions[scope]=session;
+    var finish=function(){
+      if(scope!==reportScope() || reportSessions[scope]!==session)return;
+      session.pending=false;session.done=true;reportDismiss=null;reportSkip=null;
+      try{sessionStorage.setItem('zhishi_report_ready_v1:'+scope,'1');}catch(e){}
+      close();if(onReady)onReady();
+    };
+    reportDismiss=function(){session.pending=false;reportDismiss=null;reportSkip=null;};
+    reportSkip=finish;
+    var birth=chartData().birthInfo||{},birthYear=Number(birth.year||String(birth.standardTime||'').slice(0,4));
+    if(!birthYear)birthYear=Number(new URLSearchParams(location.search).get('year'));
+    var life=root.DeepReport && root.DeepReport.resolveLifeContext ? root.DeepReport.resolveLifeContext(session.context,birthYear,new Date().getFullYear()) : {};
+    var choices=[['unknown','暂不填写，按年龄范围展开'],['student','目前在读'],['exam','正在备考或进修'],['working','已结束学业，目前工作中'],['transition','已结束学业，求职或调整中'],['home','以居家事务或照料安排为主'],['retired','已经退休']];
+    openHtml('<header class="calibration-head"><span>报告已解锁 · 第一步</span><h2 id="calibrationTitle">先核对经历，再看报告</h2><p>先确认当前状态，再回答几道往事问题。报告会据此选择适合你现阶段的内容。</p>'+(life.age==null?'':'<p>当前年龄约 '+life.age+' 岁，实际状态以你的选择为准。</p>')+'</header><div class="calibration-list"><label for="reportLifeStatus">你现在处于哪种状态？</label><select id="reportLifeStatus" class="report-life-select">'+choices.map(function(item){return '<option value="'+item[0]+'" '+((session.context.status||'unknown')===item[0]?'selected':'')+'>'+item[1]+'</option>';}).join('')+'</select>'+'<p>学业已结束时，后续不再展开升学考试预测。过去的升学经历仍可用于复核。</p><p>当前状态仅保存在此设备的当前账号与命盘下；可随时修改。</p></div><div class="calibration-actions"><button type="button" class="calibration-primary" id="reportLifeNext">下一步：核对往事</button><button type="button" class="calibration-secondary" id="reportLifeSkip">暂时跳过，查看报告</button></div>');
+    var capture=function(){
+      session.context={status:document.getElementById('reportLifeStatus').value};
+      try{localStorage.setItem(lifeStorageKey(scope),JSON.stringify(session.context));}catch(e){}
+    };
+    document.getElementById('reportLifeSkip').onclick=function(){capture();finish();};
+    document.getElementById('reportLifeNext').onclick=function(){
+      capture();this.disabled=true;
+      root.ZhishiCalibration.open({finishLabel:'完成复核，生成报告',onComplete:finish,
+        isActive:function(){return reportSessions[scope]===session && session.pending && scope===reportScope();},
+        onError:function(message){calibrationUnavailable(message,finish);}});
+    };
+    return false;
+  }
+
   root.ZhishiCalibration = root.ZhishiCalibration || {};
+  root.ZhishiCalibration.beforeReport = beforeReport;
+  root.ZhishiCalibration.reportPending = function(){var scope=reportScope();return !!(scope && reportSessions[scope] && !reportSessions[scope].done);};
+  root.ZhishiCalibration.reportContext = function(){var scope=reportScope();return scope && reportSessions[scope] ? reportSessions[scope].context : readLifeContext(scope);};
   root.ZhishiCalibration.beforeAI = inspectFirstClick;
   root.ZhishiCalibration.summary = function(data) {
     var key=chartKey(data||chartData()), events=key?readLocalEvents(key):[];
+    var profile=root.ZhishiCalibrationModel ? root.ZhishiCalibrationModel.buildCalibrationProfile(events) : {patterns:[],tentativePatterns:[],deniedPatterns:[],events:[]};
+    events=profile.events;
     var weights={}, denied={};
     var lines=events.filter(function(event){return event.answer==='yes'||event.answer==='no'}).map(function(event){
       var picked=(event.options||[]).filter(function(option){return option.key===event.selected_option})[0];
@@ -632,21 +803,73 @@
       var mechanism=picked&&picked.mechanism_key?'；对应机制='+picked.mechanism_key:(rejected.length?'；已否认机制='+rejected.map(function(option){return option.mechanism_key||(option.domain+':general')}).join(','):'');
       return (event.actual_year||event.event_year)+'年【'+(domainNames[domain]||'经历')+'】'+state+'：'+statement+mechanism+(event.note?'；用户补充：'+event.note:'');
     });
-    var ranked=Object.keys(weights).map(function(name){return weights[name]}).sort(function(a,b){return b.score-a.score}),patterns=ranked.filter(function(item){return item.count>=2}).slice(0,6),tentative=ranked.filter(function(item){return item.count===1}).slice(0,6),deniedPatterns=Object.keys(denied).map(function(name){return denied[name]}).slice(0,10);
+    var patterns=profile.patterns,tentative=profile.tentativePatterns,deniedPatterns=profile.deniedPatterns.map(function(p){return {domain:p.domain,label:p.label,mechanism:p.mechanismKey,years:p.years};});
     if(deniedPatterns.length)lines.unshift('【已排除的应事方式】'+deniedPatterns.map(function(item){return (domainNames[item.domain]||'经历')+'的“'+item.label+'”〔'+item.mechanism+'〕在'+item.years.join('、')+'年被用户明确否认'}).join('；')+'。只降低这些具体机制，不要把整个领域一并排除。');
     if(tentative.length)lines.unshift('【单次校对线索】'+tentative.map(function(item){return (domainNames[item.domain]||'经历')+'曾落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这些仅命中一次，只能作为弱提示，不能概括为用户的稳定规律。');
-    if(patterns.length)lines.unshift('【个人应事模型】'+patterns.map(function(item){return (domainNames[item.domain]||'经历')+'更常落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这些表现已在不同年份重复命中，可作为稳定取象权重；只调整解释方向，不得改写命盘事实。');
+    if(patterns.length)lines.unshift('【个人应事模型】'+patterns.map(function(item){return (domainNames[item.domain]||'经历')+'更常落在“'+item.label+(item.detail?'－'+item.detail:'')+'”'}).join('；')+'。这些表现得到不同年份的反馈支持，可优先作为解释线索，但不构成未来事件保证；只调整解释方向，不得改写命盘事实。');
+    var life=root.ZhishiCalibration.reportContext();
+    if(life.status && life.status !== 'unknown')lines.unshift('【当前生活状态】'+({student:'在读',exam:'备考或进修',working:'已结束学业并工作',transition:'已结束学业，求职或调整中',home:'以居家事务或照料安排为主',retired:'已退休'}[life.status]||'未填写')+'；后续按实际状态选择场景，不把既往反馈当成未来保证。');
     return lines.join('\n').slice(0,2000);
   };
-  root.ZhishiCalibration.open = function() {
-    var data=chartData(), key=chartKey(data); if (!data || !key) return;
-    request('GET', key).then(function(result) {
-      if (result.ready && result.calibration && result.calibration.candidate_version !== CANDIDATE_VERSION) {
-        var candidates=generateCandidates(data);
-        return request('POST',key,{action:'initialize',chart_key:key,chart_signature:signature(data),candidate_version:CANDIDATE_VERSION,candidates:candidates}).then(function(upgraded){renderEvents(key,upgraded.events||[],null)});
+  function futureReviewCandidates(facts) {
+    var out=[],data=chartData();
+    if(!data||typeof _bazi==='undefined'||!_bazi)return out;
+    var birthYear=Number(data.birthInfo && (data.birthInfo.year || String(data.birthInfo.standardTime||'').slice(0,4)));
+    if(!birthYear)birthYear=Number(new URLSearchParams(location.search).get('year'));
+    if(!birthYear)return out;
+    var parents=BaZiCalculator.analyzeParents(_bazi,data.birthInfo&&data.birthInfo.gender);
+    (facts&&facts.fiveYear&&facts.fiveYear.years||[]).forEach(function(row){
+      if(!row.daYun||row.daYunStatus!=='active'||!row.pillar)return;
+      var age=Number(row.year)-birthYear,ln=Object.assign({year:Number(row.year)},row.pillar);
+      // Consume the report's already adjudicated annual facts; do not run a second timing engine after feedback.
+      var core=facts.core||{};
+      var analysis=row.dynamic&&Object.assign({},row.dynamic,{reportLifeContext:row.lifeContext||{status:'unknown',age:age},reportTriggeredRisks:row.triggeredRisks||[],reportMechanismContext:{chain:core.chain||{},yongJi:core.yongJi||{},pattern:core.pattern||{},congGe:core.congGe}});
+      if(!analysis)return;
+      var tenGod=BaZiCalculator.getShiShen(_bazi.day.gan,ln.gan);
+      var parentContext=parentYearContext(parents,analysis,tenGod,row.daYun,ln,age);
+      (analysis.eventAdjudication&&analysis.eventAdjudication.domainRecords||[]).forEach(function(record){
+        if(!record.hasIndependentAnnualTrigger)return;
+        var professional=root.ZhishiCalibrationModel&&root.ZhishiCalibrationModel.professionalCandidates
+          ? root.ZhishiCalibrationModel.professionalCandidates(record.domain,analysis) : [];
+        var options=professional.length?professional:[competingOption(record.domain,analysis,age,tenGod,record.domain==='family'?parentContext:null)];
+        options.forEach(function(option){out.push(Object.assign({},option,{year:Number(row.year),hasIndependentAnnualTrigger:true}));});
+      });
+    });
+    // The same school mechanism can be supported by both task and study records.
+    // Prefer its study landing rather than repeating it as a second prediction.
+    return out.filter(function(c){return c.domain!=='career'||!out.some(function(other){return other.year===c.year&&other.domain==='study'&&other.mechanism_key===c.mechanism_key&&other.manifestation===c.manifestation;});});
+  }
+  root.ZhishiCalibration.getReportReview = function(facts) {
+    var data=chartData(),key=chartKey(data);
+    if(!key||!root.ZhishiCalibrationModel)return Promise.resolve(null);
+    var fetchEvents=token()?request('GET',key).then(function(r){return r.events||[];}):Promise.resolve(readLocalEvents(key));
+    return fetchEvents.then(function(events){return root.ZhishiCalibrationModel.buildReportReview(events,futureReviewCandidates(facts));});
+  };
+  root.ZhishiCalibration.open = function(options) {
+    options=options||{};
+    var done=typeof options.onComplete==='function'?options.onComplete:function(){};
+    done.finishLabel=options.finishLabel||'完成校对';
+    done.isActive=options.isActive||function(){return true;};
+    var data=chartData(),key=chartKey(data);
+    if(!data||!key){if(options.onError)options.onError('当前命盘信息尚未就绪，请稍后重试');return;}
+    if(!token()){
+      var local=prepareLocalEvents(key,data);
+      if(local.length)renderEvents(key,local,done);else start(key,done);
+      return;
+    }
+    request('GET',key).then(function(result){
+      if(!done.isActive())return;
+      if(result.ready&&result.calibration&&result.calibration.candidate_version!==CANDIDATE_VERSION){
+        var candidates=generateCandidates(data, result.events || []);
+        return request('POST',key,{action:'initialize',chart_key:key,chart_signature:signature(data),candidate_version:CANDIDATE_VERSION,candidates:candidates})
+          .then(function(upgraded){if(done.isActive())renderEvents(key,upgraded.events||[],done);});
       }
-      if (result.ready) renderEvents(key, result.events || [], null); else showConsent(key, function(){});
-    }).catch(function(){});
+      if(result.ready)renderEvents(key,result.events||[],done);else start(key,done);
+    }).catch(function(error){
+      if(!done.isActive())return;
+      if(options.onError)options.onError(error.message||'复核暂时不可用');
+      else openHtml('<div class="calibration-error">'+escapeHtml(error.message||'复核暂时不可用')+'</div>');
+    });
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', resumeArchiveCalibration); else resumeArchiveCalibration();
 })(window);

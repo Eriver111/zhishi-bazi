@@ -29,45 +29,38 @@ test('父母星固定采用偏财看父、正印看母，不随性别互换', ()
 });
 
 test('父母星扫描完整四柱，能够识别日支母星与时柱父星', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['丙寅', '丁卯', '甲子', '戊辰']), 'female');
-  const fatherPositions = result.evidence.parentStars.father.appearances.map(item => item.pos);
-  const motherPositions = result.evidence.parentStars.mother.appearances.map(item => item.pos);
-
-  assert.ok(fatherPositions.includes('hour'));
-  assert.ok(motherPositions.includes('day'));
-  assert.match(result.fatherText, /时干戊/);
-  assert.match(result.motherText, /日支本气癸/);
+  const result = loadCalculator().analyzeParents(chart(['丙寅','丁卯','甲子','戊辰']),'female');
+  assert.ok(result.evidence.parentStars.father.appearances.some(a => a.pos === 'hour'));
+  assert.ok(result.evidence.parentStars.mother.appearances.some(a => a.pos === 'day'));
+  assert.match(result.claims.find(c=>c.claimKey==='parents.father').sourceText,/时干戊/);
+  assert.match(result.claims.find(c=>c.claimKey==='parents.mother').sourceText,/日支本气癸/);
 });
 
-test('年干生年支时按父生母解释，年支克年干时按母强父弱解释', () => {
-  const calculator = loadCalculator();
-  const fatherSupports = calculator.analyzeParents(chart(['甲午', '丙寅', '戊戌', '癸亥']), 'male');
-  const motherDominates = calculator.analyzeParents(chart(['甲申', '丙寅', '戊戌', '癸亥']), 'male');
-
-  assert.equal(fatherSupports.evidence.palace.intraRelation, '生');
-  assert.match(fatherSupports.parentsRelationshipText, /父亲更愿意迁就、支持母亲/);
-  assert.equal(motherDominates.evidence.palace.intraRelation, '被克');
-  assert.match(motherDominates.parentsRelationshipText, /母亲在家里更强势/);
+test('年干支生克保留事实但不指定父母强弱', () => {
+  const calculator=loadCalculator();
+  const a=calculator.analyzeParents(chart(['甲午','丙寅','戊戌','癸亥']),'male');
+  const b=calculator.analyzeParents(chart(['甲申','丙寅','戊戌','癸亥']),'male');
+  assert.equal(a.evidence.palace.intraRelation,'生');
+  assert.equal(b.evidence.palace.intraRelation,'被克');
+  assert.doesNotMatch(a.parentsRelationshipText+b.parentsRelationshipText,/父亲更愿意迁就|母亲在家里更强势/);
+  assert.match(b.claims.find(c=>c.claimKey==='parents.between').blockers.join('；'),/不能据此指定/);
 });
 
-test('父母宫与月柱相冲会进入受损状态并明确说明家庭反复', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['甲申', '丙寅', '戊戌', '癸亥']), 'male');
-
-  assert.equal(result.evidence.palace.state, 'damaged');
-  assert.ok(result.evidence.palace.damageEvents.some(event => event.pair === '申寅' && event.type === '冲'));
-  assert.match(result.familyText, /家庭结构不是一直平稳/);
-  assert.match(result.parentsRelationshipText, /申寅冲/);
+test('父母宫相冲保留证据而不补造家庭反复经历', () => {
+  const result=loadCalculator().analyzeParents(chart(['甲申','丙寅','戊戌','癸亥']),'male');
+  assert.equal(result.evidence.palace.state,'damaged');
+  assert.ok(result.evidence.palace.damageEvents.some(e=>e.pair==='申寅'&&e.type==='冲'));
+  assert.match(result.claims[0].sourceText,/冲/);
+  assert.doesNotMatch(result.familyText,/至少有一类会|家庭结构不是一直平稳/);
 });
 
-test('父母宫相合先判断合出五行喜忌，不再把合直接等同家庭融洽', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['甲子', '己丑', '丙寅', '戊戌']), 'male');
-
-  assert.ok(result.evidence.palace.combinationEvents.some(event => event.pair === '子丑' && event.resultElement === '土'));
-  assert.doesNotMatch(result.parentsRelationshipText, /家庭关系比较融洽/);
-  assert.match(result.parentsRelationshipText, /相合后落到土/);
+test('父母宫六合记录趋向但不自动认定成化', () => {
+  const result=loadCalculator().analyzeParents(chart(['甲子','己丑','丙寅','戊戌']),'male');
+  const e=result.evidence.palace.combinationEvents.find(e=>e.pair==='子丑');
+  assert.equal(e.tendencyElement,'土');
+  assert.equal(e.resultElement,null);
+  assert.match(result.claims.find(c=>c.claimKey==='parents.between').blockers.join('；'),/尚未据此认定成化/);
+  assert.doesNotMatch(result.parentsRelationshipText,/相合后落到土|家庭关系比较融洽/);
 });
 
 test('父母报告提供五段候选解释并把结构证据与推断分层', () => {
@@ -77,56 +70,43 @@ test('父母报告提供五段候选解释并把结构证据与推断分层', ()
   for (const field of ['familyText', 'fatherText', 'motherText', 'parentsRelationshipText', 'childRelationshipText']) {
     assert.ok(result[field].length > 20, field);
   }
-  assert.equal(result.evidence.methodVersion, 'parents-v4-evidence-inference-split');
+  assert.equal(result.evidence.methodVersion, 'parents-v6-family');
   assert.equal(result.facts, undefined);
   assert.ok(['supportive', 'mixed', 'limited'].includes(result.inferences.family.level));
 });
 
-test('父母星跨柱出现时按透干与藏气权重判断主要落点', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['甲申', '丙寅', '戊戌', '癸亥']), 'male');
-
-  assert.match(result.fatherText, /年支中气壬、时支本气壬/);
-  assert.match(result.fatherText, /力量较实的一处在时柱/);
-  assert.match(result.fatherText, /本身有根，但根所在的位置同时受冲害/);
-  assert.doesNotMatch(result.fatherText, /主要落在年柱/);
-  assert.doesNotMatch(result.fatherText, /父亲星根气偏弱/);
+test('父母星跨柱证据与实际根气分别保留', () => {
+  const result=loadCalculator().analyzeParents(chart(['甲申','丙寅','戊戌','癸亥']),'male');
+  const star=result.evidence.parentStars.father;
+  assert.ok(star.appearances.some(a=>a.label==='年支中气壬'));
+  assert.ok(star.appearances.some(a=>a.label==='时支本气壬'));
+  assert.ok(star.rooted && star.rootEvidence.length);
+  assert.equal(star.rootPower,star.rootEvidence.reduce((n,r)=>n+r.effectivePower,0));
+  assert.doesNotMatch(result.fatherText,/工作.*反复|力量较实的一处/);
 });
 
-test('亲疏判断按父母星主要力量而非任一余气位置判定', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['甲午', '丙寅', '戊戌', '癸亥']), 'male');
-
-  assert.match(result.motherText, /力量较实的一处在年柱/);
-  assert.match(result.childRelationshipText, /正印的主要力量离日主较远/);
-  assert.doesNotMatch(result.childRelationshipText, /正印的主要力量靠近日主/);
+test('父母星位置只作为结构连接而非现实亲疏', () => {
+  const result=loadCalculator().analyzeParents(chart(['甲午','丙寅','戊戌','癸亥']),'male');
+  assert.match(result.claims.find(c=>c.claimKey==='parents.child').blockers.join('；'),/位置靠近也不等于相处亲密/);
+  assert.doesNotMatch(result.childRelationshipText,/感情表达偏含蓄|平时话不算多|从小受母亲影响更深/);
+  assert.equal(typeof result.inferences.relationship.mother.nearScore,'number');
 });
 
 test('父母星完全不现时不再误写成远隔或藏而不透', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['甲子', '己丑', '丙寅', '戊戌']), 'female');
-
-  assert.equal(result.fatherPresent, false);
-  assert.equal(result.motherPresent, false);
-  assert.match(result.childRelationshipText, /正印不现/);
-  assert.match(result.childRelationshipText, /偏财不现/);
-  assert.doesNotMatch(result.childRelationshipText, /远隔或藏而不透/);
+  const result=loadCalculator().analyzeParents(chart(['甲子','己丑','丙寅','戊戌']),'female');
+  assert.equal(result.fatherPresent,false);
+  assert.equal(result.motherPresent,false);
+  for(const key of ['father','mother'])assert.equal(result.claims.find(c=>c.claimKey==='parents.'+key).status,'insufficient');
+  assert.doesNotMatch(result.fatherText,/存在感和可调用资源偏弱|直接参与感偏弱/);
 });
 
-test('时柱透根且日支食伤生父星时不误判父子疏远', () => {
-  const calculator = loadCalculator();
-  const result = calculator.analyzeParents(chart(['癸未', '庚申', '甲寅', '戊辰']), 'male');
-  const fatherRelationship = result.inferences.relationship.father;
-
-  assert.equal(fatherRelationship.close, true);
-  assert.equal(fatherRelationship.exposedNear, true);
-  assert.ok(fatherRelationship.interestChannels.some(item => item.pos === 'day'));
-  assert.match(result.childRelationshipText, /不是疏远型关系/);
-  assert.match(result.childRelationshipText, /共同话题/);
-  assert.match(result.childRelationshipText, /理解并支持你想做的方向/);
-  assert.doesNotMatch(result.childRelationshipText, /父亲平时话不算多/);
-  assert.doesNotMatch(result.fatherText, /平时联系不算密集/);
-  assert.match(result.fatherText, /不能直接拿来判断亲子感情、沟通多少或对方是否支持你/);
+test('同柱兴趣线索需现实条件，不自动确认父亲支持', () => {
+  const result=loadCalculator().analyzeParents(chart(['癸未','庚申','甲寅','戊辰']),'male');
+  const connection=result.inferences.relationship.father;
+  assert.equal(connection.exposedNear,true);
+  assert.ok(connection.interestChannels.some(c=>c.pos==='day'));
+  assert.match(result.claims.find(c=>c.claimKey==='parents.child').blockers.join('；'),/不直接确认共同兴趣/);
+  assert.doesNotMatch(result.childRelationshipText,/不是疏远型关系|父亲通常更愿意听/);
 });
 
 test('AI 上下文完整传入父母宫星同参五段候选和可校正边界', () => {
@@ -139,7 +119,7 @@ test('AI 上下文完整传入父母宫星同参五段候选和可校正边界',
   assert.equal(parentAnalysis.userCorrectable, true);
   assert.equal(parentAnalysis.realityPriority, 'user_confirmed_experience');
   assert.match(context, /性质：规则推断，不是现实事实；可校正=是/);
-  assert.match(context, /方法版本：parents-v4-evidence-inference-split/);
+  assert.match(context, /方法版本：parents-v6-family/);
   assert.match(context, /父星结构证据：偏财/);
   assert.match(context, /母星结构证据：正印/);
   assert.match(context, /父母宫结构证据：癸未/);
