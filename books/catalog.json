@@ -1,0 +1,114 @@
+[
+  {
+    "id": "ditian",
+    "title": "滴天髓",
+    "category": "八字",
+    "author": "旧题刘基 · 陈之遴辑要 · 任铁樵阐微",
+    "edition": "辑要本与任铁樵《滴天髓阐微》分列阅读",
+    "description": "保留辑要原文，补入任氏阐微的通神论、六亲论与命例。",
+    "color": "pine",
+    "chapterCount": 114,
+    "characters": 145314,
+    "translation": {
+      "complete": false,
+      "completeChapters": 0,
+      "paragraphs": 2
+    }
+  },
+  {
+    "id": "sanming",
+    "title": "三命通会",
+    "category": "八字",
+    "author": "明 · 万民英",
+    "edition": "劝学网标点录本；另保留维基文库四库本十二卷",
+    "description": "十二卷汇集五行、干支、格局与诸家赋论，按卷查阅。",
+    "color": "ochre",
+    "chapterCount": 379,
+    "characters": 779368,
+    "translation": {
+      "complete": false,
+      "completeChapters": 0,
+      "paragraphs": 2
+    }
+  },
+  {
+    "id": "qiongtong",
+    "title": "穷通宝鉴",
+    "category": "八字",
+    "author": "清 · 余春台辑",
+    "edition": "维基文库录本，按十干与四季分节",
+    "description": "从五行总论到十干四时，阅读调候取用的原文。",
+    "color": "pine",
+    "chapterCount": 47,
+    "characters": 32502,
+    "translation": {
+      "complete": false,
+      "completeChapters": 0,
+      "paragraphs": 2
+    }
+  },
+  {
+    "id": "yuanhai",
+    "title": "渊海子平",
+    "category": "八字",
+    "author": "旧题宋 · 徐升编",
+    "edition": "劝学网分类录本，十二类篇目",
+    "description": "基础、十神、神煞、六亲、女命、赋论、格局与诗诀。",
+    "color": "indigo",
+    "chapterCount": 170,
+    "characters": 68140,
+    "translation": {
+      "complete": false,
+      "completeChapters": 0,
+      "paragraphs": 2
+    }
+  },
+  {
+    "id": "ziping",
+    "title": "子平真诠",
+    "category": "八字",
+    "author": "清 · 沈孝瞻",
+    "edition": "中华典藏四十七篇正文录本，保留录本古籍附文",
+    "description": "以月令用神为纲，讨论格局成败、救应与行运。",
+    "color": "pine",
+    "chapterCount": 47,
+    "characters": 28165,
+    "translation": {
+      "complete": true,
+      "completeChapters": 47,
+      "paragraphs": 354
+    }
+  },
+  {
+    "id": "ziwei",
+    "title": "紫微斗数全书",
+    "category": "紫微",
+    "author": "旧题陈希夷传 · 罗洪先补辑",
+    "edition": "维基文库卷一至卷三录本",
+    "description": "收录赋文、诸星问答、十二宫及行限论述。",
+    "color": "indigo",
+    "chapterCount": 149,
+    "characters": 78208,
+    "translation": {
+      "complete": false,
+      "completeChapters": 1,
+      "paragraphs": 2
+    }
+  },
+  {
+    "id": "zengshan",
+    "title": "增删卜易",
+    "category": "六爻",
+    "author": "野鹤老人著 · 李文辉增删",
+    "edition": "维基文库四卷录本，保留古序及正文",
+    "description": "从装卦、用神、生克到分类占验，按章查阅。",
+    "color": "ochre",
+    "chapterCount": 141,
+    "characters": 122534,
+    "translation": {
+      "complete": false,
+      "completeChapters": 0,
+      "paragraphs": 2
+    }
+  }
+]

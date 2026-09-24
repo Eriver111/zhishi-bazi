@@ -10,6 +10,7 @@
   var isResult = path === '/result';
 
   var pageTitles = {
+    '/library': '藏书阁',
     '/paipan': '八字排盘', '/result': '知时八字', '/ziwei': '紫微斗数',
     '/hepan': '合盘缘分', '/hepan-result': '合盘结果', '/fortune': '今日运势', '/liuyao': '六爻占卜',
     '/meihua': '梅花易数', '/face': 'AI 观面', '/palm': 'AI 观手',
@@ -140,6 +141,7 @@
         '<section><h2>命理</h2><div class="mobile-app-drawer__grid"><a href="/paipan"><b>命</b><span>八字排盘</span></a><a href="/ziwei"><b>斗</b><span>紫微斗数</span></a><a href="/hepan"><b>缘</b><span>合盘缘分</span></a><a href="/fortune"><b>运</b><span>今日运势</span></a></div></section>' +
         '<section><h2>卜筮</h2><div class="mobile-app-drawer__grid"><a href="/liuyao"><b>爻</b><span>六爻占卜</span></a><a href="/meihua"><b>梅</b><span>梅花易数</span></a></div></section>' +
         '<section><h2>观相 · 堪舆</h2><div class="mobile-app-drawer__grid"><a href="/face"><b>面</b><span>AI 观面</span></a><a href="/palm"><b>手</b><span>AI 观手</span></a><a href="/fengshui"><b>宅</b><span>八宅堪舆</span></a></div></section>' +
+        '<section><h2>阅读</h2><div class="mobile-app-drawer__list"><a href="/library">藏书阁</a></div></section>' +
         '<section><h2>账户</h2><div class="mobile-app-drawer__list"><a href="/archives">命盘档案</a><a href="/profile">个人中心</a><a href="/pricing">积分与会员</a></div></section>' +
         '<section><h2>使用与服务</h2><div class="mobile-app-drawer__list"><a href="/disclaimer">免责声明与服务说明</a><a href="/profile#profileCustomerService">联系客服与反馈</a></div></section>' +
       '</div>';

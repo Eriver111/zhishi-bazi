@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>藏书阁 · 知时</title>
+  <meta name="description" content="知时藏书阁：八字、紫微、六爻古籍阅读，按章查阅与保存阅读进度。">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/auth.css"><link rel="stylesheet" href="/css/theme-light.css?v=5">
+  <link rel="stylesheet" href="/css/mobile-app-shell.css?v=32"><link rel="stylesheet" href="/css/library.css?v=4">
+</head>
+<body class="library-page">
+  <nav class="top-nav" aria-label="网站导航"><a href="/">知 时</a><div><a href="/paipan">排盘</a><a href="/library" aria-current="page">藏书阁</a><span id="nav-user-area"></span></div></nav>
+  <main id="libraryMain">
+    <section id="shelf" aria-labelledby="shelfTitle">
+      <header class="library-hero"><img class="library-hero-art" src="/images/library/scholar-room-v1.webp" srcset="/images/library/scholar-room-small-v1.webp 720w, /images/library/scholar-room-v1.webp 1440w" sizes="(max-width:700px) 100vw, 1008px" width="1440" height="960" alt="" fetchpriority="high"><div class="library-hero-copy"><p class="eyebrow">知时 · 阅读</p><h1 id="shelfTitle">藏书阁</h1><p>翻开原典，读懂来处。</p><p class="hero-detail">八字 · 紫微 · 六爻</p></div></header>
+      <a id="continueReading" class="continue-reading" hidden></a>
+      <div class="shelf-tools"><label class="book-search"><span>找书</span><input id="bookSearch" type="search" placeholder="书名、作者或关键词" autocomplete="off"></label><div id="categories" class="categories" aria-label="书籍分类"><button data-category="全部" aria-pressed="true">全部</button><button data-category="八字" aria-pressed="false">八字</button><button data-category="紫微" aria-pressed="false">紫微</button><button data-category="六爻" aria-pressed="false">六爻</button></div></div>
+      <p id="shelfStatus" role="status">正在整理书架…</p><div id="bookGrid" class="book-grid"></div>
+      <p class="library-footnote">默认简体阅读，可切换来源原文；版本与出处见各书说明。传统论述供文化阅读与研究。</p>
+    </section>
+    <section id="reader" hidden aria-labelledby="chapterTitle">
+      <div class="reader-heading"><a href="/library" id="backToShelf">‹ 返回书架</a><span id="readingBookTitle"></span><button id="sourceButton">版本说明</button></div>
+      <div id="readingStatus" class="reading-status" role="status"></div><button id="retrySync" hidden>重试账号同步</button>
+      <div class="reading-options"><div class="reading-modes" aria-label="阅读方式"><button id="ancientMode" aria-pressed="true">古文</button><button id="parallelMode" aria-pressed="false">古文 · 白话对照</button></div><label id="editionControl" hidden>录本 <select id="editionSelect" aria-label="选择古文录本"></select></label></div>
+      <div id="translationStatus" class="translation-status" hidden></div>
+      <p id="chapterNote" class="editorial-note" hidden></p>
+      <article id="readingArticle" class="reading-article"><p id="chapterNumber" class="eyebrow"></p><p id="chapterGroup" class="eyebrow"></p><h1 id="chapterTitle" tabindex="-1"></h1><div id="chapterBody"></div><div class="chapter-pager"><button id="previousChapter">上一章</button><button id="nextChapter">下一章</button></div></article>
+      <nav class="reader-toolbar" aria-label="阅读工具"><button id="contentsButton">目录</button><button id="bookmarkButton" aria-pressed="false">收藏本章</button><button id="smallerFont" aria-label="缩小字号">字 −</button><button id="largerFont" aria-label="放大字号">字 +</button><button id="scriptButton" aria-pressed="false" aria-label="切换为来源原文">原文</button><button id="themeButton" aria-pressed="false">夜读</button></nav>
+    </section>
+    <div id="libraryError" role="alert" hidden><p></p><button id="retryLoad">重新加载</button><a href="/library">返回书架</a></div>
+  </main>
+  <dialog id="contentsDialog"><div class="dialog-heading"><h2>目录与收藏</h2><button data-close aria-label="关闭目录">关闭</button></div><div class="toc-tabs"><button id="allChapters" aria-pressed="true">全部章节</button><button id="savedChapters" aria-pressed="false">已收藏</button></div><div id="chapterList"></div></dialog>
+  <dialog id="sourceDialog"><div class="dialog-heading"><h2>版本与出处</h2><button data-close aria-label="关闭版本说明">关闭</button></div><div id="bookSource"></div></dialog>
+  <script src="/js/auth.js?v=31"></script><script src="/js/mobile-app-shell.js?v=11"></script><script src="/js/library-model.js?v=2"></script><script src="/js/library.js?v=6"></script>
+</body></html>

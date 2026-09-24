@@ -597,7 +597,7 @@ var Auth = (function () {
   var supported = [
     '/', '/index', '/paipan', '/result', '/ziwei', '/hepan', '/hepan-result', '/fortune',
     '/liuyao', '/meihua', '/face', '/palm', '/fengshui', '/archives',
-    '/profile', '/pricing'
+    '/profile', '/pricing', '/library'
   ];
   if (supported.indexOf(path) < 0) return;
 
@@ -609,7 +609,7 @@ var Auth = (function () {
   }
   if (!window.__ZHISHI_MOBILE_APP_SHELL__ && !document.querySelector('script[src*="mobile-app-shell.js"]')) {
     var script = document.createElement('script');
-    script.src = '/js/mobile-app-shell.js?v=10';
+    script.src = '/js/mobile-app-shell.js?v=11';
     (document.body || document.head).appendChild(script);
   }
 })();
@@ -631,7 +631,7 @@ if (document.readyState === 'loading') {
 
   // 注册 Service Worker（后台静默更新）
   if ('serviceWorker' in navigator) {
-    try { navigator.serviceWorker.register('/sw.js?v=13'); } catch(e) {}
+    try { navigator.serviceWorker.register('/sw.js?v=14'); } catch(e) {}
     // 检测更新并静默升级
     navigator.serviceWorker.ready.then(function(reg) { reg.update(); });
   }
