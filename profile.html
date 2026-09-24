@@ -108,7 +108,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
   </form>
 </div>
 
-<script src="js/auth.js?v=29"></script>
+<script src="js/auth.js?v=30"></script>
 <script src="js/deep-report-anchor.js?v=2"></script>
 <script>
 (function(){
@@ -370,6 +370,10 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
   }
 
   function reportUrl(report) {
+    if (report.report_type === 'hepan') {
+      return /^\/hepan-result\.html\?/.test(report.return_path || '') && !/[\r\n\\]/.test(report.return_path)
+        ? report.return_path : '/hepan';
+    }
     if (typeof DeepReportAnchor !== 'undefined' && DeepReportAnchor.paidReportHref) {
       return DeepReportAnchor.paidReportHref(report);
     }
@@ -401,11 +405,14 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
     return '/result?' + query.toString();
   }
 
+  var loginListenerAdded = false;
+  var renderVersion = 0;
   function render() {
     if (typeof Auth === 'undefined') return setTimeout(render, 300);
     // 登录成功后自动刷新
-    Auth.onLogin(function() { render(); });
+    if (!loginListenerAdded) { Auth.onLogin(function() { render(); }); loginListenerAdded = true; }
     Auth.ready(function() {
+    var version = ++renderVersion;
     if (!Auth.isLoggedIn()) {
       content.innerHTML =
         '<div class="login-prompt">' +
@@ -414,6 +421,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
         '</div>';
       return;
     }
+    var accountToken = Auth.getToken();
 
     // 先显示加载状态
     content.innerHTML = '<div style="text-align:center;padding:40px"><div class="loading-spinner"></div></div>';
@@ -425,16 +433,23 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
     var p2 = Auth.getData('saved_charts').catch(function(){ return '[]'; });
     var p3 = fetch('/api/reports', {
       headers:{ Authorization:'Bearer ' + Auth.getToken() }
-    }).then(function(r){ return r.ok ? r.json() : { reports:[] }; })
-      .catch(function(){ return { reports:[] }; });
+    }).then(function(r){ return r.ok ? r.json() : { reports:[], error:true }; })
+      .catch(function(){ return { reports:[], error:true }; });
 
     Promise.all([p1, p2, p3]).then(function(results){
+      if (version !== renderVersion || Auth.getToken() !== accountToken) return;
       var profile = results[0];
       var charts = [];
-      var reports = (results[2] && results[2].reports) || [];
+      var reports = ((results[2] && results[2].reports) || []).concat(profile.hepan_reports || []);
+      var reportLoadFailed = profile.error || (results[2] && results[2].error);
       try { charts = JSON.parse(results[1] || '[]'); } catch(e) {}
 
       var html = '';
+      var purchaseStatus = Auth.purchaseStatus ? Auth.purchaseStatus() : {};
+      if (purchaseStatus.error || purchaseStatus.pending) {
+        html += '<div class="chart-card" role="status"><p>' + esc(purchaseStatus.error || '订单已关联，支付结果仍在确认中。已付款请稍后刷新，不需要再次支付。') + '</p>'
+          + '<button class="btn" onclick="location.reload()">重试同步</button></div>';
+      }
       // 积分卡片
       if (!profile.error) {
         html += '<div class="chart-card" style="margin-bottom:16px">';
@@ -476,7 +491,7 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
             html += codeHtml;
             html += '</div>';
           });
-        } else if (!profile.error) {
+        } else if (!profile.error && !reportLoadFailed && !reports.length && !purchaseStatus.error && !purchaseStatus.pending) {
           html += '<div style="text-align:center;padding:16px;color:var(--tx3);font-size:12px">暂无购买记录</div>';
         }      }
 
@@ -493,8 +508,9 @@ textarea.profile-feedback__field{min-height:128px;resize:vertical}
       html += '<a class="chart-card" href="/archives"><div class="label">进入命盘档案库</div>' +
         '<div class="meta"><span>' + charts.length + ' 份已保存命盘</span><span>搜索 · 筛选 · 管理</span></div><span class="arrow">→</span></a>';
       html += '<h3 style="font-size:13px;color:var(--tx3);letter-spacing:2px;margin-top:16px;margin-bottom:8px">我的深度报告</h3>';
+      if (reportLoadFailed) html += '<div class="chart-card" role="status">部分购买记录暂时无法读取，请刷新重试，不需要重新购买。</div>';
       if (reports.length === 0) {
-        html += '<div class="empty-state" style="padding:30px"><p style="font-size:12px">还没有已购报告</p></div>';
+        html += '<div class="empty-state" style="padding:30px"><p style="font-size:12px">' + (reportLoadFailed || purchaseStatus.error || purchaseStatus.pending ? '购买记录确认后，已购报告会显示在这里' : '还没有已购报告') + '</p></div>';
       } else {
         reports.forEach(function(report) {
           html += '<a class="chart-card" href="' + esc(reportUrl(report)) + '">' +

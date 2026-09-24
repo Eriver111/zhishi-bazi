@@ -15,7 +15,7 @@ function profileScript() {
   return script[1];
 }
 
-async function renderProfile({ reports = [], reportStatus = 200, reportReject = false, profileReject = false, chartsReject = false }) {
+async function renderProfile({ reports = [], hepanReports = [], purchaseStatus = {}, reportStatus = 200, reportReject = false, profileReject = false, chartsReject = false }) {
   const content = { innerHTML: '' };
   const fetches = [];
   const context = {
@@ -26,6 +26,7 @@ async function renderProfile({ reports = [], reportStatus = 200, reportReject = 
       onLogin() {},
       ready(fn) { fn(); },
       isLoggedIn() { return true; },
+      purchaseStatus() { return purchaseStatus; },
       getToken() { return 'account-token'; },
       getData(key) {
         assert.equal(key, 'saved_charts');
@@ -38,7 +39,7 @@ async function renderProfile({ reports = [], reportStatus = 200, reportReject = 
       fetches.push(String(url));
       if (url === '/api/auth/profile') {
         if (profileReject) return Promise.reject(new Error('profile unavailable'));
-        return Promise.resolve({ ok: true, json: async () => ({ credits: 3, history: [] }) });
+        return Promise.resolve({ ok: true, json: async () => ({ credits: 3, history: [], hepan_reports: hepanReports }) });
       }
       if (url === '/api/reports') {
         if (reportReject) return Promise.reject(new Error('reports unavailable'));
@@ -140,6 +141,20 @@ test('a rejected report request leaves credits and the archive-library entry vis
   assert.match(html, /进入命盘档案库/);
   assert.match(html, /1 份已保存命盘/);
   assert.doesNotMatch(html, /加载失败：/);
+  assert.match(html, /购买记录暂时无法读取/);
+  assert.doesNotMatch(html, /暂无购买记录|还没有已购报告/);
+});
+
+test('pending purchase binding never looks like an empty account; hepan purchases have their own entry', async()=>{
+  const pending=await renderProfile({purchaseStatus:{pending:true}});
+  assert.match(pending.html,/支付结果仍在确认中/);
+  assert.doesNotMatch(pending.html,/暂无购买记录|还没有已购报告/);
+  const failed=await renderProfile({purchaseStatus:{error:'购买记录暂未同步'}});
+  assert.match(failed.html,/重试同步/);
+  assert.doesNotMatch(failed.html,/暂无购买记录|还没有已购报告/);
+  const ready=await renderProfile({hepanReports:[{report_type:'hepan',label:'合盘报告',return_path:'/hepan-result.html?a=fixture'}]});
+  assert.match(ready.html,/href="\/hepan-result.html\?a=fixture"/);
+  assert.doesNotMatch(ready.html,/暂无购买记录|还没有已购报告/);
 });
 
 test('logged-in personal center exposes a mobile-safe change-password entry', async () => {

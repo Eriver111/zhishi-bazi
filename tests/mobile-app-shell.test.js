@@ -32,7 +32,7 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.doesNotMatch(auth, /'\/zw-ai-chat'/);
   assert.match(auth, /mobile-app-shell\.css\?v=32/);
   assert.match(auth, /mobile-app-shell\.js\?v=10/);
-  assert.match(read('result.html'), /js\/auth\.js\?v=29/);
+  assert.match(read('result.html'), /js\/auth\.js\?v=30/);
   assert.match(css, /body\.mobile-page-result \.pp-row[\s\S]*grid-template-columns:\s*34px repeat\(6/);
   assert.match(css, /body\.mobile-page-result \.pp-dayun-col,[\s\S]*\.pp-liunian-col[\s\S]*display:\s*flex !important/);
   assert.match(css, /body\.mobile-page-result \.section-sizhu \.pp-shensha-row[\s\S]*display:\s*none !important/);

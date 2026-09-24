@@ -3315,9 +3315,9 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/hepan-person.js?v=3"></script>
 <script src="js/bazi-chain.js?v=12"></script><script src="js/lunar.js"></script>
 <script src="js/hepan-core.js?v=5"></script>
-<script src="js/payment.js?v=5"></script>
+<script src="js/payment.js?v=6"></script>
 <script src="js/hepan-paywall.js?v=6"></script>
-<script src="js/auth.js?v=29"></script>
+<script src="js/auth.js?v=30"></script>
 <script src="js/hepan-result.js?v=6"></script>
 <script src="js/chat-persistence.js?v=4"></script>
 <script src="js/ai-chat-integration.js?v=20260922b"></script>
@@ -3371,8 +3371,20 @@ function submitFeedback() {
   function iru(){var s=localStorage.getItem('hp_rpt2');if(!s)return false;try{var d=JSON.parse(s);return d.h===_hh&&d.e>Date.now()}catch(e){return false}}
   function sru(){localStorage.setItem('hp_rpt2',JSON.stringify({h:_hh,e:Date.now()+365*86400000}))}
 
+  function restoreHepanAccount(){
+    if(typeof Auth==='undefined'||!Auth.getToken())return;
+    var token=Auth.getToken(), hash=_hh;
+    Promise.resolve(Auth.syncPurchases?Auth.syncPurchases():null).then(function(){
+      return fetch('/api/reports/access?type=hepan&hash='+encodeURIComponent(hash),{headers:{Authorization:'Bearer '+token}});
+    }).then(function(r){if(!r.ok)throw new Error('access unavailable');return r.json()}).then(function(d){
+      if(Auth.getToken()===token&&_hh===hash&&d.unlocked)unlockHP();
+    }).catch(function(){});
+  }
+  if(typeof Auth!=='undefined')Auth.onLogin(restoreHepanAccount);
+
   function initHePanPay(p1,p2,t){
     _hh=hh(p1,p2,t);
+    restoreHepanAccount();
     if(iru()){unlockHP();return}
     var secs=['hp-drawer-4','hp-drawer-5','hp-drawer-6','hp-drawer-7'];
     var first=document.getElementById(secs[0]);

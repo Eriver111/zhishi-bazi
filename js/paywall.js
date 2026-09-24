@@ -108,6 +108,14 @@ function showAccountAccessGate(){
 function removeAccountAccessGate(){var gate=document.getElementById('rptAccessGate');if(gate)gate.remove()}
 function restoreAccountAccess(){
   if(!isAccountLoggedIn())return Promise.resolve(false);
+  if(typeof Auth.syncPurchases==='function')return Auth.syncPurchases().then(function(){
+    // A stale receipt must not hide a different report already saved to this account.
+    if(Auth.purchaseStatus&&Auth.purchaseStatus().error)_accountAccessFailed=true;
+    return restoreBoundAccountAccess();
+  });
+  return restoreBoundAccountAccess();
+}
+function restoreBoundAccountAccess(){
   var query=reportSearchParams(_baziPayParams);
   return new Promise(function(resolve){
     var settled=false;

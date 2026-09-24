@@ -150,8 +150,17 @@
     if (method === 'wechat' && /MicroMessenger/i.test(navigator.userAgent) && selected.in_app_supported !== true) {
       throw new Error('请点击微信右上角“…”选择“在浏览器打开”，再进行付款');
     }
-    return request('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    var created = await request('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.assign({}, body, { payment_method: method })) });
+    if (created.ok) {
+      var order = await created.clone().json();
+      if (order.purchase_receipt) {
+        // Persist before exposing a payable link. Registration must survive leaving the cashier.
+        if (typeof Auth === 'undefined' || !Auth.rememberPurchase) throw new Error('请刷新页面后重新发起支付');
+        Auth.rememberPurchase(order.purchase_receipt);
+      }
+    }
+    return created;
   }
 
   function openCashier(data) {

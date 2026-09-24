@@ -6,6 +6,7 @@ const { requireAuth } = require('../../lib/auth.js');
 const { getUserById, getUserCredits, getUserData, getSupabase } = require('../../lib/supabase.js');
 
 module.exports = async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -41,11 +42,13 @@ module.exports = async function handler(req, res) {
 
     // 购买记录
     var history = [];
+    var hepanReports = [];
     if (db) {
       var { data: creds } = await db.from('user_credits').select('code,credits,created_at').eq('user_id', user.uid).order('created_at', { ascending: false }).limit(20);
       if (creds) creds.forEach(function(c){ history.push({ type:'积分包', detail: c.credits+'次', code: c.code, date: c.created_at }); });
       var { data: subs } = await db.from('user_subscriptions').select('code,starts_at,expires_at,created_at').eq('user_id', user.uid).order('created_at', { ascending: false }).limit(5);
       if (subs) subs.forEach(function(s){ history.push({ type:'月度会员', detail: s.expires_at ? s.expires_at.slice(0,10)+'到期' : '', code: s.code, date: s.created_at }); });
+      hepanReports = await require('../../lib/payment-order-store.js').hepanReports(user.uid);
     } else {
       // Supabase 不可用：从内存/文件存储加载用户兑换码
       var totalCredits = getUserCredits(user.uid);
@@ -63,7 +66,8 @@ module.exports = async function handler(req, res) {
       is_monthly: isMonthly,
       monthly_expires: monthlyExpires,
       reports: reportCount,
-      history: history
+      history: history,
+      hepan_reports: hepanReports
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });

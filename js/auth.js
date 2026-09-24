@@ -7,6 +7,71 @@ var Auth = (function () {
   var _user = null;
   var _inited = false;
   var _loginListeners = [];
+  var _purchaseSync = null;
+  var _purchaseSyncToken = null;
+  var _purchaseError = '';
+  var _purchasePending = false;
+
+  function purchaseReceipts() {
+    try {
+      var rows = JSON.parse(localStorage.getItem('zhishi_purchase_receipts') || '[]');
+      return Array.isArray(rows) ? rows.filter(function(r) {
+        return r && /^wx_[a-f0-9]{24}$/.test(r.order_id) && typeof r.proof === 'string';
+      }) : [];
+    } catch (_) { return []; }
+  }
+
+  function rememberPurchase(receipt) {
+    var rows = purchaseReceipts().filter(function(r) { return r.order_id !== receipt.order_id; });
+    // Never silently discard an earlier purchase to make space for a new one.
+    if (rows.length >= 50) throw new Error('请先登录保存已有购买记录，再继续购买');
+    rows.push(receipt);
+    try { localStorage.setItem('zhishi_purchase_receipts', JSON.stringify(rows)); }
+    catch (_) { throw new Error('浏览器无法保存订单，请允许网站存储后重试'); }
+  }
+
+  function syncPurchases() {
+    if (!_token) return Promise.resolve({});
+    if (_purchaseSync && _purchaseSyncToken === _token) return _purchaseSync;
+    var receipts = purchaseReceipts();
+    if (!receipts.length) { _purchaseError = ''; _purchasePending = false; return Promise.resolve({}); }
+    var token = _token;
+    _purchaseSyncToken = token;
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, 10000);
+    var task = fetch('/api/auth/claim-purchases', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ receipts: receipts }), signal: controller.signal
+    }).then(function(r) {
+      return r.json().then(function(data) {
+        if (!r.ok || !Array.isArray(data.results)) throw new Error(data.error || '购买记录暂未同步，请重试');
+        return data;
+      });
+    }).then(function(data) {
+      if (_token !== token) return {};
+      var done = data.results.filter(function(r) { return r.status === 'paid'; }).map(function(r) { return r.order_id; });
+      // Merge with current storage so orders created in another tab are not lost.
+      localStorage.setItem('zhishi_purchase_receipts', JSON.stringify(purchaseReceipts().filter(function(r) {
+        return done.indexOf(r.order_id) < 0;
+      })));
+      _purchasePending = data.results.some(function(r) { return r.status === 'pending'; });
+      _purchaseError = data.results.some(function(r) { return r.status === 'unavailable' || r.status === 'invalid'; })
+        ? '部分购买记录暂未归入账号，请联系客服核对，不需要重新购买' : '';
+      return data;
+    }).catch(function() {
+      if (_token === token) _purchaseError = '购买记录暂未同步，请重试；不需要重新购买';
+      return { failed: true };
+    }).finally(function() {
+      clearTimeout(timer);
+      if (_purchaseSync === task) { _purchaseSync = null; _purchaseSyncToken = null; }
+    });
+    _purchaseSync = task;
+    return task;
+  }
+
+  function notifyLogin(user) {
+    _loginListeners.slice().forEach(function(cb) { try { cb(user); } catch (_) {} });
+  }
 
   // ============ 初始化 ============
   function init() {
@@ -25,6 +90,11 @@ var Auth = (function () {
       updateNavUI();
       if (_token) verifyAndRestore();
     });
+    window.addEventListener('focus', function() {
+      if (!_user || !purchaseReceipts().length) return;
+      var token = _token;
+      syncPurchases().then(function() { if (_token === token) notifyLogin(_user); });
+    });
   }
 
   // ============ Token/User 管理 ============
@@ -38,14 +108,26 @@ var Auth = (function () {
     _user = user;
     try { localStorage.setItem('ai_auth_token', token); } catch (e) {}
     updateNavUI();
-    // 通知所有监听登录状态的页面
-    _loginListeners.forEach(function(cb){ try { cb(user); } catch(e){} });
+    // Notify account views only after the server has bound purchased entitlements.
+    return syncPurchases().then(function(result) {
+      if (_token !== token) return result;
+      return migrate().then(function(m) {
+        if (m && m.success && _token === token) {
+          try { localStorage.setItem('ai_migrated', '1'); } catch (_) {}
+        }
+        return result;
+      }).catch(function() { return result; });
+    }).then(function(result) {
+      if (_token === token) { updateNavUI(); notifyLogin(user); }
+      return result;
+    });
   }
 
   function logout() {
     resetPageState();
     _token = null;
     _user = null;
+    _purchaseError = ''; _purchasePending = false;
     try { localStorage.removeItem('ai_auth_token'); } catch (e) {}
     updateNavUI();
   }
@@ -115,6 +197,8 @@ var Auth = (function () {
   // ============ 迁移 ============
   function migrate() {
     if (!_token) return;
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, 10000);
     var codes = [];
     try {
       var c = localStorage.getItem('ai_chat_code');
@@ -145,6 +229,7 @@ var Auth = (function () {
 
     return fetch('/api/auth/migrate', {
       method: 'POST',
+      signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token },
       body: JSON.stringify({
         codes: codes,
@@ -154,7 +239,7 @@ var Auth = (function () {
         bound_phone: phone,
         ai_chat_code: localStorage.getItem('ai_chat_code') || ''
       })
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json(); }).finally(function() { clearTimeout(timer); });
   }
 
   function checkMigration() {
@@ -165,6 +250,7 @@ var Auth = (function () {
       if (localStorage.getItem('bazi_rpt')) hasData = true;
       if (localStorage.getItem('hepan_rpt')) hasData = true;
       if (localStorage.getItem('bazi_code')) hasData = true;
+      if (purchaseReceipts().length) hasData = true;
     } catch (e) { }
     if (!hasData) return;
 
@@ -377,18 +463,18 @@ var Auth = (function () {
         btn.textContent = _currentMode === 'login' ? '登录' : '注册';
         return;
       }
-      setAuth(d.token, d.user);
+      var purchasesSaved = setAuth(d.token, d.user);
       closeModal();
 
       showToast(_currentMode === 'register' ? '注册成功！' : '登录成功！');
 
       // 自动迁移本地数据
-      migrate().then(function (m) {
-        if (m && m.success) {
-          try { localStorage.setItem('ai_migrated', '1'); } catch (e) { }
+      purchasesSaved.then(function() {
+        if (!_purchaseError) {
           var banner = document.getElementById('migrateBanner');
           if (banner) banner.style.display = 'none';
         }
+        if (_purchaseError) showToast(_purchaseError);
       }).catch(function () { });
     }).catch(function () {
       showErr(errEl, '网络错误，请稍后重试');
@@ -437,7 +523,7 @@ var Auth = (function () {
     banner.id = 'migrateBanner';
     banner.className = 'migrate-banner';
     banner.innerHTML =
-      '<span class="banner-text">你有<strong>未保存的排盘数据和兑换码</strong>，注册账户可永久保存</span>' +
+      '<span class="banner-text">注册后可将本浏览器的<strong>排盘和购买记录</strong>保存到账户</span>' +
       '<button class="banner-btn" onclick="Auth.showModal(\'register\');var b=document.getElementById(\'migrateBanner\');if(b)b.style.display=\'none\'">立即注册</button>' +
       '<button class="banner-dismiss" onclick="var b=document.getElementById(\'migrateBanner\');b.style.display=\'none\';localStorage.setItem(\'migrate_dismissed\',Date.now())">&times;</button>';
     document.body.appendChild(banner);
@@ -482,6 +568,9 @@ var Auth = (function () {
     getData: getData,
     loadData: loadData,
     migrate: migrate,
+    rememberPurchase: rememberPurchase,
+    syncPurchases: syncPurchases,
+    purchaseStatus: function() { return { error: _purchaseError, pending: _purchasePending }; },
     fetch: authFetch,
     showModal: showModal,
     closeModal: closeModal,
@@ -492,9 +581,9 @@ var Auth = (function () {
     changePassword: changePassword,
     showChangePwd: showChangePwd,
     ready: function(cb) {
-      if (_inited && (_user || !_token)) { cb(); return; }
+      if (_inited && (_user || !_token)) { syncPurchases().then(cb); return; }
       var check = function() {
-        if (_user || !_token) { cb(); return; }
+        if (_user || !_token) { syncPurchases().then(cb); return; }
         setTimeout(check, 200);
       };
       setTimeout(check, 200);
