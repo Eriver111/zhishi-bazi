@@ -268,8 +268,11 @@ test('财生官格同时检查承载、伤官破官和官杀混杂', () => {
 
   assert.equal(established.name, '财生官格');
   assert.equal(established.status, '成格');
-  assert.deepEqual(Array.from(established.establishConditions, row => row.condition), ['日主能担财官', '官星不被伤官克破', '无官杀混杂']);
-  assert.ok(established.establishConditions.every(row => row.category === 'HARD_BREAK' && row.met));
+  assert.deepEqual(Array.from(established.establishConditions, row => row.condition), ['日主能担财官', '官星不被伤官克破', '无官杀混杂', '生克通路已落实']);
+  assert.equal(established.establishConditions[0].met, false, '偏弱不能仅凭未到极弱就认定担财官');
+  assert.equal(established.establishConditions[0].category, 'QUALITY', '承载层次限制不自动否定相生结构');
+  assert.ok(established.establishConditions.slice(1,3).every(row => row.category === 'HARD_BREAK' && row.met));
+  assert.equal(established.establishConditions[3].met, true);
   assert.equal(broken.name, '财生官格');
   assert.equal(broken.status, '破格');
   assert.ok(broken.breakReasons.includes('伤官克官，财生官通路受损'));
@@ -358,8 +361,7 @@ test('冬土仅见弱火时不把调候作用写成已经完成', () => {
   assert.doesNotMatch(result.primaryReason, /寒谷回春|调候已得/);
 });
 
-// 注：下列三盘中 丁巳月、癸亥月两盘为阴干帝旺月（阴刃口径）。2026-08-23 用户裁定
-// 下一阶段改判月劫（预案见 _yinren_yuejie_ruling.md），届时这两处断言需随改。
+// 2026-09-24：阴干帝旺退出羊刃格；保留原阴干反例，阳干仍检验藏杀制刃不足。
 test('羊刃藏官杀未透时说明制刃不足而不是完全无制', () => {
   const calculator = loadCalculator();
   const cases = [
@@ -373,6 +375,12 @@ test('羊刃藏官杀未透时说明制刃不足而不是完全无制', () => {
     const pattern = calculator.getPattern(chart);
     const control = pattern.establishConditions.find(row => row.condition === '官杀制刃');
 
+    if (['丁','癸'].includes(chart.day.gan)) {
+      assert.notEqual(pattern.name, '羊刃格');
+      assert.equal(control, undefined);
+      assert.ok(!pattern.breakReasons.some(r => /刃/.test(r)));
+      continue;
+    }
     assert.equal(pattern.name, '羊刃格');
     assert.equal(pattern.status, '破格');
     assert.ok(control);

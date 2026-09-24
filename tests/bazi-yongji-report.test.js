@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260924a/, `${page} must load the auditable strength core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20260924c/, `${page} must load the auditable strength core bundle`);
   }
 });
 
@@ -104,7 +104,7 @@ test('调候五行独立标注，结构为忌时不得表述成纯忌神', () =>
   assert.equal(result.elementReasons['水'].tiaoHouRole, '调候用神');
   assert.equal(result.elementReasons['水'].dualRole, true);
   assert.match(result.elementReasons['水'].reasons.join('；'), /不能作纯忌论/);
-  assert.match(result.tiaoHouReason, /水调候润局/);
+  assert.match(result.tiaoHouReason, /水有润燥任务/);
 });
 
 test('候选对比先展示核心结构分并把调候分明确标为参考', () => {

@@ -210,7 +210,7 @@
     return { version:'3.1', nodes:nodes, edges:edges, evidenceSettlementVersion:settlement ? settlement.version : null };
   }
 
-  function deriveMechanisms(graph) {
+  function deriveMechanisms(graph, actionEvidence) {
     var defs = [
       { relation:'生', from:'食伤', to:'财', name:'食伤生财', domain:'wealth' },
       { relation:'生', from:'财', to:'官杀', name:'财生官杀', domain:'career' },
@@ -252,6 +252,20 @@
       });
     });
 
+    mechanisms.forEach(function(item) {
+      var ids = { '食伤生财':['food_wealth','hurting_wealth'], '财生官杀':['wealth_officer','wealth_kill'],
+        '官杀生印':['officer_seal','kill_seal'], '印生身':['seal_support'], '财破印':['wealth_seal'],
+        '印制食伤':['owl_food','seal_hurting'], '食神制杀':['food_kill'], '食伤制杀':['hurting_kill'] }[item.name];
+      if (!ids || !actionEvidence) return;
+      var rank = {absent:0,relation:1,blocked:2,partial:3,effective:4};
+      var actions = ids.map(function(id) { return actionEvidence.byId[id]; }).filter(Boolean);
+      actions.sort(function(a,b) { return rank[b.stage] - rank[a.stage]; });
+      var action = actions[0];
+      item.actionId = action.id; item.actionStage = action.stage; item.actionStatus = action.status;
+      item.actionSummary = action.summary;
+      item.evidence.push(action.summary);
+    });
+
     // 事实图可以完整，但给 AI 的“主导机制”必须去噪：按力量、邻近度和重复证据排序，最多保留六条。
     mechanisms.sort(function(a,b) { return b.dominanceScore - a.dominanceScore; });
     mechanisms = mechanisms.filter(function(item, index) {
@@ -264,6 +278,7 @@
     }
     function directlyContinues(first, second) {
       if (!first || !second) return false;
+      if ((first.actionStage && first.actionStage !== 'effective') || (second.actionStage && second.actionStage !== 'effective')) return false;
       return first._edges.some(function(a) {
         return second._edges.some(function(b) {
           return a.toNode.id === b.fromNode.id && Math.min(a.strength, b.strength) >= 0.55;
@@ -331,7 +346,7 @@
       '食伤制官':'自己的想法和做法会挑战现成规则，适合改进流程，但也容易与管理方式发生摩擦。',
       '伤官见官':'说话直接、做事有自己的标准，遇到不合理规定时很难装作没看见，因此容易和上级、制度或审核要求正面摩擦。'
     };
-    return mechanisms.map(function(m) {
+    return mechanisms.filter(function(m) { return !m.actionStage || m.actionStage === 'effective'; }).map(function(m) {
       var sourceRole = roleForWx(yongJi, m.sourceWx), targetRole = roleForWx(yongJi, m.targetWx);
       var sourceFavorable = sourceRole === '用神' || sourceRole === '喜神';
       var targetFavorable = targetRole === '用神' || targetRole === '喜神';
@@ -1287,7 +1302,8 @@
     finalAdjustments.forEach(function(item) { item.reason = item.reasons.join('；'); });
 
     var factGraph = buildFactGraph(bazi);
-    var derived = deriveMechanisms(factGraph);
+    var actionEvidence = BaZiCalculator.evaluateMechanismEvidence ? BaZiCalculator.evaluateMechanismEvidence(bazi) : null;
+    var derived = deriveMechanisms(factGraph, actionEvidence);
 
     return {
       adjustments: finalAdjustments,
@@ -1295,6 +1311,7 @@
       ganChain: ganChain,
       zhiChain: zhiChain,
       factGraph: factGraph,
+      mechanismEvidence:actionEvidence,
       mechanisms: derived.mechanisms,
       paths: derived.paths
     };

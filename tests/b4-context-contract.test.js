@@ -87,7 +87,8 @@ test('B4 A锁：#61 事实锁——财生杀格+机制共存，无财生官残�
   assert.ok(ctx.includes('命局格局：财生杀格'), 'AI context 格局名应为财生杀格\n' + ctx.slice(0, 600));
   assert.ok(ctx.includes('格局机制：财生杀'), 'AI context 应输出机制=财生杀');
   // GPT 硬断言 A：不得重新出现「财生官」来描述壬七杀这条关系（含旧格名残留与机制误标两种泄漏形态）
-  assert.ok(!ctx.includes('财生官'), '#61 的 AI context 不得出现「财生官」任何形态\n' + ctx.slice(0, 600));
+  assert.ok(!ctx.includes('财生官：作用成立'), '#61 不能把藏癸的官星关系当成已落实的财生官');
+  assert.ok(!ctx.includes('格局机制：财生官'), '#61 的主机制仍为财生杀');
   assert.ok(!ctx.includes('财生官格'), '#61 的 AI context 不得残留旧格名「财生官格」');
   // 白名单 ③：财→杀事实链可见（chainHints 财党杀 hint，实测文本「财星生助官杀」）
   assert.ok(ctx.includes('财星生助官杀') || ctx.includes('财党杀'), 'AI context 应包含财→杀生克链事实');

@@ -3023,7 +3023,7 @@
       ? yongEntry.natalRole === '原局未现'
         ? yong + '在原局没有直接出现，它更像后天需要等待或主动建立的关键条件。'
         : yongEntry.natalRole === '原局有功'
-          ? yong + '已经在原局发挥作用，后面遇到它通常更容易顺，但仍要看具体干支是否把这股力量接通。'
+          ? yong + '属于原局所需的力量；已有根气、已经起作用和岁运继续增加，要分别判断，不能直接当作越多越好。'
           : yongEntry.natalRole === '功过并见'
             ? yong + '在原局既有帮助也有副作用，后面遇到它不能一概论好，必须看它具体落在哪里、作用到谁。'
             : yong + '是解决原局核心问题的第一顺序，后面的行运都要先看它能不能真正发挥。'
@@ -3041,6 +3041,12 @@
     return {
       headline: '整份报告先看这一条主线',
       summary: centralTension + ' ' + yongState,
+      mechanismAccount:yongJi.mechanismSummary ? {
+        cause:yongJi.mechanismSummary.mainCause,
+        help:yongJi.mechanismSummary.help,
+        cost:yongJi.mechanismSummary.cost,
+        natalState:yongJi.mechanismSummary.natalState
+      } : null,
       direction: yong ? (yongEntry.fortuneDirection || '逢' + yong + '运优先看是否真正改善原局') : '',
       boundary: ji ? adverse + '；这只是原局给出的基础方向，具体年份仍由大运、流年与原局的实际作用复核。' : '具体年份仍由大运、流年与原局的实际作用复核。',
       focus: focus.length ? '接下来五年的现实重点更集中在' + focus.map(function (key) { return domainLabels[key] || key; }).join('和') + '，其他板块都围绕这条主线展开。' : '',

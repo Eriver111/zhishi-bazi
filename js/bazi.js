@@ -2912,13 +2912,23 @@ function getClimateState(bazi) {
   var summerGate = ['巳','午','未'].indexOf(mz) >= 0;
   var needsWarmth = (winterGate || mz === '辰') && coldIndex >= 2.5;
   var needsCooling = (summerGate || mz === '戌') && heatIndex >= 2.5;
+  // 燥湿与温度分开：成组燥土、有效火气且无显水/水支/湿土承接时，
+  // 不能用“不在夏月”或若干藏水根气直接宣布已润。此为保守结构规则，
+  // 不把申月、单个戌、缺水或身弱单独当成润燥需求，也不据此改旺衰分。
+  var drySoilUnrelieved = dryEarthCount >= 2 && effectiveFire &&
+    stemCount['水'] === 0 && branchCount['水'] === 0 && wetEarthCount === 0;
+  var needsMoisture = needsCooling || drySoilUnrelieved;
+  var moistureEvidence = drySoilUnrelieved
+    ? '燥土成组且火有力，无透干水、水支或湿土承接；' + (waterSeed ? '藏水保留水源，尚不足以据此认定润燥完成' : '原局未见水源')
+    : needsCooling ? '现有水势尚未平衡季节热势，仍需检查润燥' : '未触发持续润燥需求';
   var coldSeverity = !needsWarmth ? '' : (coldIndex >= 6.5 ? '重' : (coldIndex >= 4.5 ? '中' : '轻'));
   var heatSeverity = !needsCooling ? '' : (heatIndex >= 6.5 ? '重' : (heatIndex >= 4.5 ? '中' : '轻'));
   // 满足程度消费同一份需求终裁，不能在 2.5—3 之间同时“需要”和“已到位”。
   // 缺少火种/水源仍只描述载体，不因缺某五行就自动产生调候需求。
   var warmthStatus = !fireSeed ? '缺火' : (!effectiveFire ? '有火种但无力' : (!needsWarmth ? '暖局已到位' : '有火但暖局未足'));
-  var moistureStatus = !waterSeed ? '缺水' : (!effectiveWater ? '有水源但无力' : (!needsCooling ? '润局已到位' : '有水但润局未足'));
+  var moistureStatus = !waterSeed ? '缺水' : (!effectiveWater ? '有水源但无力' : (!needsMoisture ? '润局已到位' : '有水但润局未足'));
   var condition = needsWarmth ? '寒凝' : (needsCooling ? '炎燥' : (winterGate || summerGate ? '季节偏性已受制衡' : '寒暖无明显偏枯'));
+  if (drySoilUnrelieved && !needsCooling) condition += '，燥土润泽不足';
 
   return {
     monthBranch:mz,
@@ -2926,6 +2936,7 @@ function getClimateState(bazi) {
     winterGate:winterGate, summerGate:summerGate,
     coldIndex:coldIndex, heatIndex:heatIndex,
     needsWarmth:needsWarmth, needsCooling:needsCooling,
+    needsMoisture:needsMoisture, drySoilUnrelieved:drySoilUnrelieved, moistureEvidence:moistureEvidence,
     coldSeverity:coldSeverity, heatSeverity:heatSeverity,
     fireSeed:fireSeed, waterSeed:waterSeed,
     effectiveFire:effectiveFire, effectiveWater:effectiveWater,
@@ -3348,7 +3359,7 @@ function calcDayMasterStrength(bazi, options) {
 
   var climateState = getClimateState(bazi);
   // 这里仅保留既有旺衰体系的季节基准校准，不能据此直接生成“炎燥”结论。
-  // 是否真的需要继续用水，由 climateState.needsCooling 在喜用与展示层另行裁决。
+  // 是否真的需要继续用水，由 climateState.needsCooling/needsMoisture 分别裁决降温与润燥。
   if (isSummer && dgWx !== '水') {
     if (climateState.waterSeed) score += 5;
     else score -= 8;
@@ -5568,6 +5579,35 @@ function analyzeWealth(bazi, gender, yongJi) {
 
 
 // ==================== 大运流年运势分析 ====================
+function reviewFortuneIncrement(wx, yongJi, carrier, entry) {
+    var evidence = yongJi && yongJi.mechanismEvidence;
+    if (!evidence || !evidence.natal || !carrier || !entry) return null;
+    var natal = evidence.natal, symbol = carrier.symbol;
+    var checks = [], limits = [];
+    var guidance = entry.carrierGuidance || {};
+    var rootAlreadySufficient = guidance.requiresMainRoot ? (guidance.natalMainRoots || []).length > 0 : entry.rootPower > 0;
+    var purpose = !entry.present ? '补入原局缺项'
+        : carrier.type === 'stem' && !(entry.visible || []).length ? '藏干透出显用'
+        : carrier.type === 'branch' && !rootAlreadySufficient ? '补充原局根气' : '增加已有力量';
+    if (carrier.type === 'stem') {
+        var stemPartners = {甲:'己',己:'甲',乙:'庚',庚:'乙',丙:'辛',辛:'丙',丁:'壬',壬:'丁',戊:'癸',癸:'戊'};
+        var paired = natal.stems.filter(function(gan) { return stemPartners[gan] === symbol; });
+        if (paired.length) limits.push(symbol + '与原局' + Array.from(new Set(paired)).join('、') + '有五合关系，合绊、争合与合化另判，不按自由增补计');
+        var companionRoots = carrier.companionSymbol ? getCangGan(carrier.companionSymbol) : [];
+        var rootMet = entry.rootPower > 0 || companionRoots.some(function(gan) { return WU_XING[gan] === wx; });
+        checks.push(rootMet ? '原局或岁运同柱有根气承接' : '原局和岁运同柱均未见本五行根气，帮助不能按充分兑现计');
+        if (!rootMet) limits.push('新增天干尚缺根气承接');
+    } else if (carrier.type === 'branch') {
+        var opposing = {子:'午',午:'子',丑:'未',未:'丑',寅:'申',申:'寅',卯:'酉',酉:'卯',辰:'戌',戌:'辰',巳:'亥',亥:'巳'};
+        if (natal.branches.indexOf(opposing[symbol]) >= 0) limits.push(symbol + opposing[symbol] + '冲，同时检查旧根受损与新根补入；本项不重复扣刑冲分');
+        if (rootAlreadySufficient) checks.push('原局已有所需根气，此次不能重复记为从无到有的补根');
+        else checks.push('新增地支可提供根气，仍须由完整岁运层结算合会、冲刑后的有效力量');
+    }
+    checks.push(entry.tradeoff ? entry.tradeoff.incrementCondition : '基础喜忌与新增作用分开判断');
+    return { purpose:purpose, checks:checks, limitations:limits, capCarrierBonus:limits.length > 0 || (carrier.type === 'branch' && rootAlreadySufficient),
+        summary:purpose + '：' + checks.concat(limits).join('；') };
+}
+
 function classifyFortuneElement(wx, yongJi, sourceLabel, carrier) {
     var ledgerEntry = yongJi && yongJi.elementRoleLedger && yongJi.elementRoleLedger.entries
         ? yongJi.elementRoleLedger.entries.filter(function(item) { return item.element === wx; })[0]
@@ -5595,6 +5635,7 @@ function classifyFortuneElement(wx, yongJi, sourceLabel, carrier) {
     var carrierAdjustment = 0;
     var carrierStatus = '未复核载体';
     var carrierReason = '';
+    var incrementReview = reviewFortuneIncrement(wx, yongJi, carrier, ledgerEntry);
     if (carrierGuidance && carrier && (carrier.type === 'stem' || carrier.type === 'branch')) {
         var symbol = carrier.symbol || '';
         var companionElement = carrier.companionElement || '';
@@ -5643,6 +5684,20 @@ function classifyFortuneElement(wx, yongJi, sourceLabel, carrier) {
                 carrierReason = symbol + '透干又有根，原局所忌之' + wx + '更容易形成实际作用。';
             }
         }
+        if (carrierGuidance.requiresIntegratedReview) {
+            carrierAdjustment = 0;
+            carrierStatus = '调候与克泄并审';
+            carrierReason = (carrierGuidance.symbolReviews || {})[symbol] || carrierGuidance.summary;
+            if (carrier.companionSymbol && (carrierGuidance.symbolReviews || {})[carrier.companionSymbol]) {
+                carrierReason += '；同柱配合：' + carrierGuidance.symbolReviews[carrier.companionSymbol];
+            }
+        }
+        // 原局方向保留；撤回没有依据的“新增载体更好”奖励，不重复结算冲合吉凶。
+        if (incrementReview && incrementReview.capCarrierBonus && carrierAdjustment > 0) {
+            carrierAdjustment = 0;
+            carrierStatus = '新增作用有条件';
+            carrierReason = incrementReview.summary;
+        } else if (incrementReview) carrierReason += '；新增作用：' + incrementReview.summary;
         score += carrierAdjustment;
         if (carrierReason) detail += '载体复核：' + carrierReason;
     }
@@ -5655,6 +5710,7 @@ function classifyFortuneElement(wx, yongJi, sourceLabel, carrier) {
         carrierAdjustment:carrierAdjustment,
         carrierStatus:carrierStatus,
         carrierReason:carrierReason,
+        incrementReview:incrementReview,
         isFavorable:score > 0,
         direction:ledgerEntry && ledgerEntry.fortuneDirection ? ledgerEntry.fortuneDirection : '',
         reason:detail
@@ -6390,6 +6446,10 @@ function finalizePatternStatus(bazi, pattern) {
     var visibleCount = function(names) {
       return visibleShiShen.filter(function(name) { return names.indexOf(name) >= 0; }).length;
     };
+    var patternStrength = calcDayMasterStrength(bazi);
+    // 比劫多透只是数量事实。身弱时可帮身任财，不能同时判作比劫过重夺财。
+    var wealthPeerExcess = visibleCount(['比肩','劫财']) >= 2 &&
+      patternStrength.level.indexOf('强') >= 0 && evidenceSettlement.elementRootPower(WU_XING[bazi.day.gan]) > 0;
     var hiddenRolePositions = function(names) {
       var labels = { year:'年支', month:'月支', day:'日支', hour:'时支' };
       return ['year','month','day','hour'].filter(function(pos) {
@@ -6472,7 +6532,7 @@ function finalizePatternStatus(bazi, pattern) {
       } else if (pattern.name === '伤官格') {
         if (hasVisible('正官')) reasons.push('伤官见官');
       } else if (pattern.name === '正财格' || pattern.name === '偏财格') {
-        if (visibleCount(['比肩','劫财']) >= 2) reasons.push('比劫过重，财星受夺');
+        if (wealthPeerExcess) reasons.push('比劫过重，财星受夺');
       } else if (pattern.name === '建禄格') {
         var jianLuBreak = jianLuSupport();
         if (!jianLuBreak.met) reasons.push(jianLuBreak.reason);
@@ -6517,9 +6577,9 @@ function finalizePatternStatus(bazi, pattern) {
   if (pt !== '同柱复合') {
     conditions.push({
       condition: '日主有承载格局之力',
-      met: dmStr2.level !== '极弱' || getCongGe(bazi).isCong,
+      met: dmStr2.level.indexOf('弱') < 0 || getCongGe(bazi).isCong,
       detail: '日主' + dmStr2.level + '（' + dmStr2.score + '分），' +
-        (dmStr2.level === '极弱' && !getCongGe(bazi).isCong ? '身太弱难担格局' : '可承载格局')
+        (getCongGe(bazi).isCong ? '按从格顺势另论' : dmStr2.level === '极弱' ? '身太弱难担格局' : dmStr2.level === '偏弱' ? '承载偏弱，须结合生扶与制化，不能直接认定能担财官食伤' : '可承载格局')
     });
   }
 
@@ -6565,8 +6625,8 @@ function finalizePatternStatus(bazi, pattern) {
       var shangguanHasVisibleWealth = hasVisible('正财') || hasVisible('偏财');
       conditions.push({ condition: '有印星制伤或财星引化', met: shangguanHasVisibleSeal || shangguanHasVisibleWealth, detail: shangguanHasVisibleSeal ? '印星制伤' : shangguanHasVisibleWealth ? '财星引化' : shangguanHiddenSealPositions.length ? '印星藏于' + shangguanHiddenSealPositions.join('、') + '但未透干，制伤力量不足' : '缺印缺财，伤官无制无化' });
     } else if (pn === '正财格' || pn === '偏财格') {
-      conditions.push({ condition: '比劫不过重', met: visibleCount(['比肩','劫财']) < 2, detail: visibleCount(['比肩','劫财']) >= 2 ? '比劫重重夺财' : '✓' });
-      conditions.push({ condition: '日主能担财', met: dmStr2.level !== '极弱', detail: dmStr2.level !== '极弱' ? '✓' : '身弱不担财，富屋贫人' });
+      conditions.push({ condition: '比劫不过重', met: !wealthPeerExcess, detail: wealthPeerExcess ? '身强且比劫多透有根，财星有受夺风险' : visibleCount(['比肩','劫财']) >= 2 ? '比劫虽多透，日主未强，不据数量判夺财；先检查帮身是否有效' : '✓' });
+      conditions.push({ condition: '日主能担财', met: dmStr2.level.indexOf('弱') < 0 || getCongGe(bazi).isCong, detail: dmStr2.level === '偏弱' ? '日主偏弱，先落实承载再论财星增益' : dmStr2.level === '极弱' ? '日主极弱，难以承财' : '✓' });
     } else if (pn === '建禄格') {
       var jianLuCondition = jianLuSupport();
       conditions.push({ condition: '财官透出为用', met: jianLuCondition.met, detail: jianLuCondition.detail });
@@ -6732,8 +6792,23 @@ function finalizePatternStatus(bazi, pattern) {
     // 印格本身即以生扶日主为机制，不与财官食伤共用“身弱不能承载”的硬破口径。
     // 否则会出现正偏印格状态成格、条件却显示 HARD_BREAK 的自相矛盾。
     if (c.condition === '日主有承载格局之力' && !needsBearing) c.category = 'QUALITY';
+    // 偏弱只限制承载层次，不单独翻为硬破格；同柱财官/财杀/食伤生财也用相同口径。
+    if (dmStr2.level === '偏弱' && ['日主有承载格局之力','日主能担财','日主能担财官','日主能担财杀'].indexOf(c.condition) >= 0 && !getCongGe(bazi).isCong) {
+      c.category = 'QUALITY';
+      if (c.met) c.detail = '日主偏弱，承载仍须有效生扶或制化，不能仅凭未到极弱就认定已能担财官食伤';
+      c.met = false;
+    }
   });
 
+  var mechanismForPattern = {
+    '食神生财格':'food_wealth', '伤官生财格':'hurting_wealth', '财生官格':'wealth_officer', '财生杀格':'wealth_kill',
+    '食神制杀格':'food_kill', '伤官制杀格':'hurting_kill', '伤官配印格':'seal_hurting'
+  }[pattern.name];
+  if (mechanismForPattern) {
+    var reviewedAction = evaluateMechanismEvidence(bazi).byId[mechanismForPattern];
+    conditions.push({condition:'生克通路已落实',met:reviewedAction.established,detail:reviewedAction.summary,category:'QUALITY'});
+    if (!reviewedAction.established) pendingReasons.push(reviewedAction.summary);
+  }
   pattern.establishConditions = conditions;
   pattern.breakReasons = Array.from(new Set(reasons));
   pattern.pendingReasons = Array.from(new Set(pendingReasons));
@@ -6777,7 +6852,8 @@ function normalizeOfficerSealPatternHierarchy(bazi, pattern, elementClassificati
   var sealRole = elementClassification ? (elementClassification[sealWx] || '') : '';
   var sealIsCoreUse = sealRole === '用神';
   var baseRouteIntact = pattern.status === '成格';
-  var formationStatus = baseRouteIntact && officerRooted && sealRooted ? '成立' : '不成立';
+  var mechanismRoute = evaluateMechanismEvidence(bazi).byId[isOfficer ? 'officer_seal' : 'kill_seal'];
+  var formationStatus = baseRouteIntact && officerRooted && sealRooted && mechanismRoute.established ? '成立' : '不成立';
   var structureStatus = formationStatus !== '成立'
     ? '不成立'
     : (!elementClassification ? '待喜用裁决' : (sealIsCoreUse ? '成立' : '有通路但印非用'));
@@ -6785,6 +6861,7 @@ function normalizeOfficerSealPatternHierarchy(bazi, pattern, elementClassificati
   if (!baseRouteIntact) structureBreakReasons = structureBreakReasons.concat(pattern.breakReasons || []);
   if (!officerRooted) structureBreakReasons.push((isOfficer ? '正官' : '七杀') + '结算后无有效根气');
   if (!sealRooted) structureBreakReasons.push('印星结算后无有效根气');
+  if (!mechanismRoute.established) structureBreakReasons.push(mechanismRoute.summary);
   if (elementClassification && !sealIsCoreUse) structureBreakReasons.push('印星不是本局核心用神，只能记录相生通路，不能命名为成格结构');
 
   var normalized = Object.assign({}, pattern, {
@@ -6798,6 +6875,7 @@ function normalizeOfficerSealPatternHierarchy(bazi, pattern, elementClassificati
     structureStatus:structureStatus,
     mechanism:formationRoute,
     structureConditions:[
+      { condition:'两段生克作用均落实', met:mechanismRoute.established, detail:mechanismRoute.summary, category:'QUALITY' },
       { condition:(isOfficer ? '正官' : '七杀') + '结算后有根', met:officerRooted, detail:(isOfficer ? '正官' : '七杀') + '有效根气=' + officerRootPower, category:'HARD_BREAK' },
       { condition:'印星结算后有根', met:sealRooted, detail:'印星有效根气=' + sealRootPower, category:'HARD_BREAK' },
       { condition:'印星为核心用神', met:elementClassification ? sealIsCoreUse : null, detail:elementClassification ? ('印星五行' + sealWx + '为' + (sealRole || '未定')) : '待喜用忌结算', category:'HARD_BREAK' },
@@ -6874,10 +6952,11 @@ function getPattern(bazi) {
     }
     if (matchedSS) break;
   }
-  // v5.6: 若月支为日主临官/帝旺，直接定建禄/羊刃格
+  // 临官可取建禄；只有阳干帝旺才进入羊刃格特别判定，阴干帝旺不等于羊刃。
   // 同五行透干不可覆盖十二长生判定（否则丁巳月会被错误判定为建禄格）
   var changShengAtMonth = getChangSheng(dayGan)[mZhi];
-  var isLinGuanOrDiWang = changShengAtMonth && (changShengAtMonth.stage === '临官' || changShengAtMonth.stage === '帝旺');
+  var isYangDayGan = ['甲','丙','戊','庚','壬'].indexOf(dayGan) >= 0;
+  var isLinGuanOrDiWang = changShengAtMonth && (changShengAtMonth.stage === '临官' || (isYangDayGan && changShengAtMonth.stage === '帝旺'));
 
   // 若未匹配到符合条件的透干，不降级匹配同五行，直接取本气十神
   // 但建禄/羊刃月令时跳过同五行逻辑，避免劫财/比肩覆盖正确的十二长生判定
@@ -6983,7 +7062,7 @@ function getPattern(bazi) {
   var p = (isZaQiMonth && !matchedSS) ? null : PATTERNS[ss];
 
   // 建禄与羊刃为月令特别格，不以藏干透出为成格前提。
-  // P4-A(A1)：帝旺（羊刃）月支本气为比劫（如甲刃在卯、卯本气乙劫财）时，比劫无 PATTERNS 定义，
+  // P4-A(A1)：阳干帝旺月支本气为比劫（如甲刃在卯、卯本气乙劫财）时，比劫无 PATTERNS 定义，
   // 原 !matchedSS 守卫会让十二长生特判失效、落入下方"同五行→建禄"兜底，把羊刃位（帝旺）误判成禄位。
   // 比劫透干不得覆盖十二长生判定（v5.6 注释原意）；临官分支守卫保持原样（兜底建禄格名称正确，不扩大改动面）。
   var matchedIsBiJie = matchedSS === '比肩' || matchedSS === '劫财';
@@ -6991,7 +7070,7 @@ function getPattern(bazi) {
   if ((!matchedSS || matchedIsBiJie) && changShengAtMonth && changShengAtMonth.stage === '临官') {
     p = PATTERNS['建禄'];
     specialGrid = true;
-  } else if ((!matchedSS || matchedIsBiJie) && changShengAtMonth && changShengAtMonth.stage === '帝旺') {
+  } else if (isYangDayGan && (!matchedSS || matchedIsBiJie) && changShengAtMonth && changShengAtMonth.stage === '帝旺') {
     p = PATTERNS['羊刃'];
     specialGrid = true;
   }
@@ -7004,7 +7083,7 @@ function getPattern(bazi) {
     };
     else if (dmWx === mWx) p = {
       name: '杂格',
-      desc: '月令比劫当权，但不在日主临官或帝旺位，不作建禄、羊刃论；需结合财官食伤透藏综合判断。'
+      desc: '月令比劫当权，但不满足建禄或阳干羊刃格条件，不作建禄、羊刃论；阴干帝旺不自动立羊刃格，需结合财官食伤透藏综合判断。'
     };
     else {
       var SHENGWO = { '木':'水','火':'木','土':'火','金':'土','水':'金' };
@@ -7055,6 +7134,149 @@ function getPattern(bazi) {
  * 月令格先参与喜用忌候选计算；这里仅使用已经完成的五行分类，对跨柱结构作最终命名，
  * 不把裁决结果反向写回旺衰或候选分，避免“格局决定喜忌、喜忌又决定格局”的循环。
  */
+/**
+ * 生克作用证据：只裁关系能否落实，不裁现实事件或整格吉凶。
+ * 与取用解耦，禁止调用 getPattern/getYongJi，避免用结论反证成立条件。
+ * 透干或月令本气参与作用核验，其余藏干保留为关系线索；根气与通路分别通过。
+ */
+function evaluateMechanismEvidence(bazi) {
+  var positions = ['year','month','day','hour'];
+  var labels = { year:'年干', month:'月干', day:'日干', hour:'时干' };
+  var settlement = buildBaziEvidenceSettlement(bazi);
+  var combinations = getGanHe(bazi);
+  var climate = getClimateState(bazi);
+  var dayWx = WU_XING[bazi.day.gan];
+  var nodes = positions.map(function(pos) {
+    var gan = bazi[pos].gan;
+    var bindings = combinations.filter(function(pair) {
+      return pair.from === labels[pos].replace('干','柱') || pair.to === labels[pos].replace('干','柱');
+    });
+    return { position:pos, gan:gan, element:WU_XING[gan], role:getShiShen(bazi.day.gan, gan),
+      rootPower:settlement.elementRootPower(WU_XING[gan]), bindings:bindings };
+  });
+  var nonDay = nodes.filter(function(n) { return n.position !== 'day'; });
+  var hidden = settlement.roots.filter(function(root) { return root.effectivePower > 0; }).map(function(root) {
+    return { position:root.position, gan:root.gan, element:root.element, role:getShiShen(bazi.day.gan, root.gan), rootPower:root.effectivePower };
+  });
+  var monthRoot = settlement.rootAt('month').find(function(root) { return root.depth === '本气'; });
+  var byRole = function(roles) {
+    var visible = nonDay.filter(function(n) { return roles.indexOf(n.role) >= 0; });
+    if (!visible.length && monthRoot && monthRoot.effectivePower > 0 && roles.indexOf(getShiShen(bazi.day.gan, monthRoot.gan)) >= 0) {
+      visible.push({ position:'month', gan:monthRoot.gan, element:monthRoot.element,
+        role:getShiShen(bazi.day.gan, monthRoot.gan), rootPower:monthRoot.effectivePower, bindings:[], monthCommand:true });
+    }
+    return visible;
+  };
+  var rank = { absent:0, relation:1, blocked:2, partial:3, effective:4 };
+  var statusNames = { absent:'未形成', relation:'仅有关系', partial:'部分成立', effective:'作用成立', blocked:'作用受阻' };
+  function route(id, name, sourceRoles, targetRoles, options) {
+    options = options || {};
+    var sources = byRole(sourceRoles);
+    var targets = options.day ? nodes.filter(function(n) { return n.position === 'day'; }) : byRole(targetRoles);
+    var sourceHidden = hidden.some(function(n) { return sourceRoles.indexOf(n.role) >= 0; });
+    var targetHidden = options.day || hidden.some(function(n) { return targetRoles.indexOf(n.role) >= 0; });
+    var result = { id:id, name:name, stage:(sources.length || sourceHidden) && (targets.length || targetHidden) ? 'relation' : 'absent',
+      sourceElements:Array.from(new Set(sources.concat(hidden.filter(function(n) { return sourceRoles.indexOf(n.role) >= 0; })).map(function(n) { return n.element; }))),
+      targetElements:options.day ? [dayWx] : Array.from(new Set(targets.concat(hidden.filter(function(n) { return targetRoles.indexOf(n.role) >= 0; })).map(function(n) { return n.element; }))),
+      evidence:[], limitations:[], paths:[] };
+    sources.forEach(function(a) { targets.forEach(function(b) {
+      var limitations = [], observations = [], blocked = false;
+      if (a.rootPower <= 0 || (!options.day && b.rootPower <= 0)) limitations.push('源头或承接方缺少有效根气，透出不等于有力');
+      var low = Math.min(positions.indexOf(a.position), positions.indexOf(b.position));
+      var high = Math.max(positions.indexOf(a.position), positions.indexOf(b.position));
+      nonDay.forEach(function(n) {
+        var index = positions.indexOf(n.position), wxOrder = ['木','火','土','金','水'];
+        if (index > low && index < high && n.rootPower > 0 && !n.bindings.length &&
+            wxOrder[(wxOrder.indexOf(n.element) + 2) % 5] === a.element) {
+          limitations.push(labels[n.position] + n.gan + '位于通路之间且克制源头，连续作用不能按无阻计');
+        }
+      });
+      [a,b].forEach(function(n) {
+        (n.bindings || []).forEach(function(pair) {
+          if (pair.isTransformed && pair.huaWx !== n.element) {
+            blocked = true; limitations.push(labels[n.position] + n.gan + '参与已裁合化，不能继续按原五行完整作用');
+          } else if (pair.isAdjacent && !pair.hasContention) {
+            blocked = true; limitations.push(labels[n.position] + n.gan + '贴邻五合牵制，原生克作用不能按畅通计');
+          } else observations.push(labels[n.position] + n.gan + '有遥合或争合，但未据此确认合绊，不凭字对撤销生克作用');
+        });
+      });
+      if (a.element === '土' && b.element === '金' && climate.drySoilUnrelieved) {
+        limitations.push('燥土润泽不足，土生金的效率受限；不能把有土有金当成充分生财');
+      }
+      if (options.day && a.element !== dayWx &&
+          (getThickEarthMetalState(bazi).applies || getWaterloggedWoodState(bazi).applies)) {
+        blocked = true; limitations.push('印生身已受厚土埋金或水多木漂限制');
+      }
+      if (options.outputControl && byRole(['偏印']).some(function(n) { return n.rootPower > 0 && !n.bindings.length; })) {
+        limitations.push('有根偏印同时制食伤，不能把全部食伤力量计入制杀');
+      }
+      var stage = blocked ? 'blocked' : limitations.length ? 'partial' : 'effective';
+      var path = { source:(a.monthCommand ? '月支' + bazi.month.zhi + '本气' : labels[a.position]) + a.gan + a.role,
+        target:(b.monthCommand ? '月支' + bazi.month.zhi + '本气' : labels[b.position]) + b.gan + b.role,
+        sourcePosition:a.position, targetPosition:b.position, stage:stage, limitations:Array.from(new Set(limitations)), observations:Array.from(new Set(observations)) };
+      result.paths.push(path);
+      if (result.sourceElements.indexOf(a.element) < 0) result.sourceElements.push(a.element);
+      if (result.targetElements.indexOf(b.element) < 0) result.targetElements.push(b.element);
+      if (rank[stage] > rank[result.stage]) result.stage = stage;
+    }); });
+    var chosen = result.paths.filter(function(p) { return p.stage === result.stage; });
+    result.evidence = chosen.map(function(p) { return p.source + '→' + p.target; });
+    result.limitations = Array.from(new Set(chosen.reduce(function(all,p) { return all.concat(p.limitations); }, [])));
+    result.observations = Array.from(new Set(chosen.reduce(function(all,p) { return all.concat(p.observations || []); }, [])));
+    if (result.stage === 'relation') result.limitations.push('相关星至少一方仅在非月令本气藏支，尚不足以确认通路有效');
+    if (result.stage === 'absent') result.limitations.push('原局缺少这条关系的源头或承接方');
+    result.status = statusNames[result.stage];
+    result.established = result.stage === 'effective';
+    result.summary = name + '：' + result.status + '。' + (result.evidence.length ? result.evidence.join('；') + '。' : '')
+      + (result.limitations.length ? result.limitations.join('；') + '。' : '透干或月令本气、有效根气和已知通路障碍检查通过；作用成立不等于对日主有利。');
+    return result;
+  }
+  var items = [
+    route('peer_support','比劫帮身',['比肩','劫财'],[],{day:true}),
+    route('seal_support','印星生身',['正印','偏印'],[],{day:true}),
+    route('food_wealth','食神生财',['食神'],['正财','偏财']),
+    route('hurting_wealth','伤官生财',['伤官'],['正财','偏财']),
+    route('wealth_officer','财生官',['正财','偏财'],['正官']),
+    route('wealth_kill','财生杀',['正财','偏财'],['七杀']),
+    route('food_kill','食神制杀',['食神'],['七杀'],{outputControl:true}),
+    route('hurting_kill','伤官制杀',['伤官'],['七杀'],{outputControl:true}),
+    route('officer_seal','官印相生',['正官'],['正印','偏印']),
+    route('kill_seal','杀印相生',['七杀'],['正印','偏印']),
+    route('wealth_seal','财克印',['正财','偏财'],['正印','偏印']),
+    route('owl_food','枭神制食',['偏印'],['食神']),
+    route('seal_hurting','印星制伤',['正印','偏印'],['伤官'])
+  ];
+  var byId = {};
+  items.forEach(function(item) { byId[item.id] = item; });
+  if (byId.wealth_seal.established && byId.seal_support.established) {
+    var support = byId.seal_support;
+    var contested = support.paths.filter(function(path) { return path.stage === 'effective'; }).every(function(path) {
+      return byId.wealth_seal.paths.some(function(attack) { return attack.stage === 'effective' && attack.targetPosition === path.sourcePosition; });
+    });
+    if (contested) {
+      support.stage = 'partial'; support.status = statusNames.partial; support.established = false;
+      support.limitations.push('有效印星同时受财克，须比较生身与受损，不能只计印生身之利');
+      support.summary = support.name + '：' + support.status + '。' + support.evidence.join('；') + '。' + support.limitations.join('；');
+    }
+  }
+  // 官杀生印只是第一段；缺有效印生身，不能直接称通关完成。
+  ['officer_seal','kill_seal'].forEach(function(id) {
+    var item = byId[id];
+    if (item.established && !byId.seal_support.established) {
+      item.stage = byId.seal_support.stage === 'blocked' ? 'blocked' : 'partial';
+      item.status = statusNames[item.stage]; item.established = false;
+      item.limitations.push('后段印生身未畅通：' + byId.seal_support.limitations.join('；'));
+      item.summary = item.name + '：' + item.status + '。' + item.evidence.join('；') + '。' + item.limitations.join('；');
+    }
+  });
+  var resistance = route('peer_resist_kill','比劫抗杀',['比肩','劫财'],['七杀']);
+  resistance.summary += '比劫是帮助分担克身压力，不是食伤制杀，也不表示七杀已被消除或必然发生凶事。';
+  items.push(resistance); byId[resistance.id] = resistance;
+  return { version:'mechanism-evidence-v1', items:items, byId:byId,
+    natal:{ dayGan:bazi.day.gan, stems:positions.map(function(pos) { return bazi[pos].gan; }),
+      branches:positions.map(function(pos) { return bazi[pos].zhi; }) } };
+}
+
 function adjudicatePattern(bazi, basePattern, elementClassification) {
   var base = basePattern || getPattern(bazi);
   if (!base || base.congGe) return base;
@@ -7131,6 +7353,8 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
   };
   var outputs = [];
   var structuralMechanisms = [];
+  var actionEvidence = evaluateMechanismEvidence(bazi);
+  var actionById = actionEvidence.byId;
 
   var wealth = byRole(['正财','偏财']);
   var officer = byRole(['正官']);
@@ -7146,8 +7370,8 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
   var rootedOutput = strongest(outputStars);
   var rootedWealth = strongest(wealth);
   var rootedOfficer = strongest(officer.concat(killing));
-  var outputWealthRooted = rootedOutput && rootedWealth && rooted(rootedOutput) && rooted(rootedWealth);
-  var wealthOfficerRooted = rootedWealth && rootedOfficer && rooted(rootedWealth) && rooted(rootedOfficer);
+  var outputWealthRooted = rootedOutput && rootedWealth && actionById[rootedOutput.role === '伤官' ? 'hurting_wealth' : 'food_wealth'].established;
+  var wealthOfficerRooted = rootedWealth && rootedOfficer && actionById[rootedOfficer.role === '正官' ? 'wealth_officer' : 'wealth_kill'].established;
   if (outputWealthRooted) {
     structuralMechanisms.push({
       name:(rootedOutput.role === '伤官' ? '伤官生财' : '食神生财'),
@@ -7332,9 +7556,7 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     var shangPower = rolePower(hurting), guanPower = rolePower(officer);
     var guanWx = WU_XING[officer[0].gan], shangWx = WU_XING[hurting[0].gan];
     var shangEffective = hurting.some(rooted);
-    var wealthMediatesHurtingOfficer = wealthOfficerRooted && hurting.some(function(item) {
-      return rooted(item);
-    });
+    var wealthMediatesHurtingOfficer = actionById.hurting_wealth.established && actionById.wealth_officer.established;
     if (wealthMediatesHurtingOfficer) {
       outputs.push(candidate('伤官官星相见', '条件待定',
         '伤官与正官同透，但有根财星承接伤官并转生正官',
@@ -7360,8 +7582,14 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     var owlPower = rolePower(owl), foodPower = rolePower(food);
     var foodWx = WU_XING[food[0].gan], owlWx = WU_XING[owl[0].gan];
     var wealthWx = wealth.length ? WU_XING[wealth[0].gan] : '';
-    var foodHasTask = killing.length > 0 || (wealth.length > 0 && isHelpful(wealthWx));
-    var owlEffective = owl.some(rooted);
+    var foodKillTask = actionById.food_kill.established || actionById.food_kill.paths.some(function(path) {
+      // 被印制住的是原有制杀任务，不能因“任务受损”反说食神没有任务、枭制食有功。
+      return path.stage === 'partial' && path.limitations.length && path.limitations.every(function(reason) {
+        return reason.indexOf('有根偏印同时') === 0 || reason.indexOf('位于通路之间且克制源头') >= 0;
+      });
+    });
+    var foodHasTask = foodKillTask || (actionById.food_wealth.established && isHelpful(wealthWx));
+    var owlEffective = actionById.owl_food.established;
     if (!foodHasTask && isAdverse(foodWx) && isHelpful(owlWx) && owlEffective) {
       var owlExcessive = owlPower > foodPower * 2;
       outputs.push(candidate(owlExcessive ? '枭神制食太过格' : '枭神制食格', owlExcessive ? '破格' : '成格',
@@ -7372,11 +7600,11 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
     } else if ((isHelpful(foodWx) || foodHasTask) && owlEffective) {
       outputs.push(candidate('枭神夺食格', '破格', '偏印克食神；食神为喜用或承担制杀、生财任务', '食神承担命局需要的泄秀、制杀或生财通路，却被有根偏印克损。', [hard('食神不被偏印克夺', false, foodHasTask ? '食神承担制杀或生喜财任务' : '食神为' + cls[foodWx])], ['枭神克损有用食神']));
     } else {
-      outputs.push(candidate('枭食相战', '条件待定', '偏印与食神同时透出', '偏印克食神的事实成立，但喜忌强度、任务或根气不足以直接裁成夺食或制食。', [quality('喜忌与制约力度明确', false, '食神' + (cls[foodWx] || '未定') + '；偏印' + (cls[owlWx] || '未定'))], ['喜忌、任务或制约力度证据不足']));
+      outputs.push(candidate('枭食相战', '条件待定', '偏印与食神同时透出', actionById.owl_food.summary + '喜忌与任务另判，不直接裁成夺食或制食。', [quality('喜忌与制约力度明确', false, '食神' + (cls[foodWx] || '未定') + '；偏印' + (cls[owlWx] || '未定'))], ['喜忌、任务或制约力度证据不足']));
     }
   }
 
-  if (!outputs.length) return base;
+  if (!outputs.length) return Object.assign({}, base, { structuralMechanisms:structuralMechanisms, mechanismEvidence:actionEvidence });
   var priority = ['羊刃驾杀格','财官印相生格','伤官合杀格','去杀留官格','去官留杀格','伤官制官格','枭神制食格','伤官见官格','枭神夺食格'];
   outputs.sort(function(a, b) {
     var ai = priority.indexOf(a.name), bi = priority.indexOf(b.name);
@@ -7396,6 +7624,7 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
         pendingReasons:item.pendingReasons, establishConditions:item.establishConditions, controlEvidence:item.controlEvidence };
     });
     preservedBase.structuralMechanisms = structuralMechanisms;
+    preservedBase.mechanismEvidence = actionEvidence;
     return preservedBase;
   }
   selected.relatedPatterns = outputs.filter(function(item) { return item !== selected; }).map(function(item) {
@@ -7403,6 +7632,7 @@ function adjudicatePattern(bazi, basePattern, elementClassification) {
       pendingReasons:item.pendingReasons, establishConditions:item.establishConditions, controlEvidence:item.controlEvidence };
   });
   selected.structuralMechanisms = structuralMechanisms;
+  selected.mechanismEvidence = actionEvidence;
   return selected;
 }
 
@@ -7461,6 +7691,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   var tiaoHouElements = Array.from(new Set(((context.candidateScores && context.candidateScores.tiaoHouYongShen) || []).concat(context.tiaoHouYongShen || [])));
   var settlement = buildBaziEvidenceSettlement(bazi);
   var candidateMap = {};
+  var mechanismEvidence = context.mechanismEvidence || evaluateMechanismEvidence(bazi);
   (((context.candidateScores || {}).candidates) || []).forEach(function(candidate) {
     candidateMap[candidate.wx] = candidate;
   });
@@ -7521,6 +7752,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   var isWeakForCarrier = strengthLevelForCarrier.indexOf('弱') >= 0;
   var isStrongForCarrier = strengthLevelForCarrier.indexOf('强') >= 0;
   var causeTypeForCarrier = imbalanceCauseForLedger ? imbalanceCauseForLedger.type : '';
+  var waterForDryFire = WU_XING[bazi.day.gan] === '火' && tiaoHouElements.indexOf('水') >= 0;
   var buildCarrierGuidance = function(wx, relation, classification) {
     var map = carrierMap[wx];
     var favorable = ['用神','喜神','弱喜','条件喜神'].indexOf(classification) >= 0;
@@ -7532,6 +7764,8 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     var requiresMainRoot = false;
     var rootAlreadyEstablished = facts[wx].mainQi.length > 0 && facts[wx].rootPower >= 2;
     var stemPriority = false;
+    var integratedReview = false;
+    var symbolReviews = {};
     var stemCondition = map.stems.join('、') + '透干时须结合地支根气与生克通路复核';
     var branchCondition = map.branches.join('、') + '为本五行主要地支载体，仍须复核冲合刑害';
     var summary = !favorable && !adverse
@@ -7620,6 +7854,38 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       stemCondition = map.stems.join('、') + '透出可由原局' + facts[wx].mainQi.join('、') + '承接，优先把已藏之用显化；仍须复核合绊与生克';
       branchCondition = '原局根气已足，再见' + preferredBranches.join('、') + '不按“补根”自动论吉，须逐支复核刑冲合会与寒暖燥湿';
     }
+    if (waterForDryFire && wx === '水') {
+      // 这是具体载体的复核条件，不预先把某干/支裁成吉凶，更不虚构未来已成局。
+      integratedReview = true;
+      stemPriority = false;
+      preferredBranches = [];
+      var branches = positions.map(function(pos) { return bazi[pos].zhi; });
+      var stems = positions.map(function(pos) { return bazi[pos].gan; });
+      ['壬','癸'].forEach(function(gan) {
+        var role = getShiShen(bazi.day.gan, gan);
+        var checks = [gan + '为' + role + '，须同时比较润燥与克火，不能只凭透干判吉凶'];
+        var controls = ['戊','己'].filter(function(earth) { return stems.indexOf(earth) >= 0; });
+        if (controls.length) checks.push('原局' + controls.join('、') + '透出，须核对食伤制水的力量，不能直接定为比劫抗杀');
+        if (gan === '癸' && stems.indexOf('戊') >= 0) checks.push('有戊癸合的关系，合绊与合化另判，不能见合就当水已消失');
+        if (gan === '壬' && stems.indexOf('丁') >= 0) checks.push('有丁壬合的关系，不能直接当成化木');
+        symbolReviews[gan] = checks.join('；');
+      });
+      symbolReviews['子'] = '子以癸水为本气，润燥同时增加水根，仍会影响火的承载';
+      if (branches.indexOf('申') >= 0 && branches.indexOf('辰') >= 0) symbolReviews['子'] += '；加入后申子辰三支齐备，成局与化水仍须核对条件，不能只算少量润土';
+      else if (branches.indexOf('申') >= 0) symbolReviews['子'] += '；与原局申有申子半合水关系，不能按少量润土或自动化水处理';
+      if (branches.indexOf('午') >= 0) symbolReviews['子'] += '；子午冲须检查火根是否受损';
+      symbolReviews['亥'] = '亥藏壬甲，不能把藏甲直接当成杀印通路已成，须看木能否承水生火';
+      if (branches.indexOf('申') >= 0) symbolReviews['亥'] += '；与原局申有申亥害，关系存在不等于已发生凶事';
+      if (branches.indexOf('巳') >= 0) symbolReviews['亥'] += '；巳亥冲须检查火根与水源的变化';
+      symbolReviews['辰'] = '辰为湿土而非纯水，既可能润燥，也会增加土，不能等同壬癸或亥子';
+      if (branches.indexOf('戌') >= 0) symbolReviews['辰'] += '；辰戌冲须核对原局根气变化，不能只记润燥之利';
+      if (branches.indexOf('申') >= 0 && branches.indexOf('子') >= 0) symbolReviews['辰'] += '；加入后申子辰三支齐备，不能未经裁决就认定化水';
+      symbolReviews['丑'] = '丑为湿土而非纯水，藏癸不等于润燥已足，仍须比较增土与泄火';
+      if (branches.indexOf('未') >= 0) symbolReviews['丑'] += '；丑未冲须核对原局根气变化';
+      summary = '水可润燥，也会克火；天干与地支须分别核对，不采用“干水必忌、支水必喜”';
+      stemCondition = symbolReviews['壬'] + '；' + symbolReviews['癸'];
+      branchCondition = symbolReviews['子'] + '；' + symbolReviews['亥'] + '；' + symbolReviews['辰'] + '；' + symbolReviews['丑'];
+    }
     return {
       preferredStems:map.stems.slice(),
       preferredBranches:preferredBranches,
@@ -7630,7 +7896,9 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       stemPriority:stemPriority,
       priorityCarrier:stemPriority ? '天干透出' : (requiresMainRoot ? '地支本气根' : ''),
       additionalBranchRole:stemPriority ? '条件辅助' : '',
-      branchAutoFavorable:stemPriority ? false : null,
+      branchAutoFavorable:stemPriority || integratedReview ? false : null,
+      requiresIntegratedReview:integratedReview,
+      symbolReviews:symbolReviews,
       summary:summary,
       stemCondition:stemCondition,
       branchCondition:branchCondition,
@@ -7648,20 +7916,28 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     var present = facts[wx].present;
     if (!present) {
       uniquePush(functions, '原局未见此五行，尚未形成直接作用');
+      var missingElementCosts = {
+        '比劫':'岁运补入比劫能帮身，也会继续生食伤、参与制财；须区分补足承载与增多竞争',
+        '印星':'岁运补入印星能生身，也会制食伤；若食伤承担制杀或生财任务，补印时须兼顾这些任务',
+        '食伤':'岁运补入食伤能泄秀，也继续消耗日主；能否生财或制杀，还要有对应承接方',
+        '财星':'岁运补入财星会耗身，并可能生官杀、克印；得到财的条件与能否承担财的压力须分开',
+        '官杀':'岁运补入官杀会增加克身压力；需要有效印星化解或食伤制约，不能只把官杀当作职位和机会'
+      };
+      uniquePush(risks, missingElementCosts[relation]);
     } else if (relation === '比劫') {
-      uniquePush(functions, '扶助日主、落实承载根基');
+      uniquePush(functions, mechanismEvidence.byId.peer_support.summary);
       uniquePush(risks, '增多时会助身，并继续生旺食伤');
     } else if (relation === '印星') {
-      uniquePush(functions, '生扶日主，并制约食伤');
+      uniquePush(functions, mechanismEvidence.byId.seal_support.summary);
       uniquePush(risks, '过量时会使生扶偏重，也可能压住食伤表达');
     } else if (relation === '食伤') {
-      uniquePush(functions, '泄秀并把日主之气引向财星');
+      uniquePush(functions, '食伤为日主所生；能否继续生财、制杀，由对应通路证据分别判断');
       uniquePush(risks, '过量时持续泄身，并可能冲击官星秩序');
     } else if (relation === '财星') {
-      uniquePush(functions, '承接食伤成果，并制约印星');
+      uniquePush(functions, '财为日主所克，会消耗承载；是否承接食伤或克印，须有对应星和有效通路');
       uniquePush(risks, '过量时耗身；依赖印星的结构还会出现财破印');
     } else if (relation === '官杀') {
-      uniquePush(functions, '约束日主，并可转而生印形成通关');
+      uniquePush(functions, '官杀克身；只有官杀生印、印再生身两段都有效时，才能认定通关');
       uniquePush(risks, '过量或无制化时会形成克身压力');
     }
 
@@ -7682,6 +7958,10 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       } else if (wx === roleElements.officer) {
         uniquePush(risks, '火会继续生土，使厚土埋金进一步加重');
       }
+    }
+    if (waterForDryFire && wx === '火') {
+      uniquePush(risks, '帮身与增燥须同时核对；喜火承载不等于火越多越好');
+      uniquePush(conditions, '补足火根与继续增加燥热分开判断，不能只因身弱机械增火');
     }
 
     if (isWaterloggedWood) {
@@ -7776,6 +8056,19 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
         ? conditions.join('；')
         : '它只能在原局指定条件成立时发挥有利作用，不能按普通喜神直接判断。';
     }
+    if (waterForDryFire && wx === '水') {
+      uniquePush(functions, '承担润燥调候，但润燥不等于增强财官必然有利');
+      uniquePush(risks, '水同时克火；金生水可能把财转向官杀，不能把一路相生等同于帮助日主');
+      uniquePush(conditions, facts['木'].present
+        ? '原局虽见木，仍须核对根气与受制情况，不能直接确认水木火通路已成'
+        : '原局无木，不能虚构水生木、木生火的完整通路');
+      if (adverse) {
+        natalRole = present ? '功过并见' : '原局未现';
+        fortuneLevel = '中性双向';
+        fortuneDirection = '水有润燥之利，也有克火之弊，须按具体干支配合裁决';
+        fortuneReason = '结构上水不宜增多，但有润燥任务；地支来水也可能增杀或损根，透干水也可能有制，不能由单个五行直接判行运吉凶。';
+      }
+    }
     if (isEstablishedInjurySeal) {
       if (wx === roleElements.seal) {
         if (fortuneRole === '用神') {
@@ -7811,7 +8104,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
     var carrierGuidance = buildCarrierGuidance(wx, relation, classification);
     var branchPreference = '';
     if (fortuneRole === '用神' || classification === '条件喜神') {
-      branchPreference = carrierGuidance.stemPriority
+      branchPreference = carrierGuidance.requiresIntegratedReview ? '润燥与克身并审' : carrierGuidance.stemPriority
         ? '优先' + carrierGuidance.preferredStems.join('、') + '透干显用'
         : isColdWetEarthWood && wx === roleElements.peer
         ? '首喜寅卯'
@@ -7825,6 +8118,33 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       uniquePush(functions, '原局根气已经到位，当前关键是透干显用');
       uniquePush(conditions, '新增同类地支只作条件辅助，须逐支复核刑冲合会与寒暖燥湿，不能机械按补根论吉');
     }
+    var actionReview = mechanismEvidence.items.filter(function(item) {
+      return item.stage !== 'absent' && item.sourceElements.indexOf(wx) >= 0;
+    });
+    var effectiveActions = actionReview.filter(function(item) { return item.established; });
+    var constrainedActions = actionReview.filter(function(item) { return !item.established; });
+    if (favorable && present && !hasPatternFunction && !effectiveActions.length &&
+        ((relation === '印星' && !mechanismEvidence.byId.seal_support.established) ||
+         (relation === '比劫' && !mechanismEvidence.byId.peer_support.established))) {
+      natalRole = '作用受限';
+    }
+    var benefitByRelation = {
+      '比劫':wx + '与日主同类，能补充承载和行动力量；是否需要继续增加，仍按本局强弱与格局取舍',
+      '印星':wx + '生' + dayWx + '，能为日主提供生扶；要把这份帮助落实，仍需有效根气，并避免被财星制住',
+      '食伤':dayWx + '生' + wx + '，能疏导日主的力量；继续转成生财或制杀作用，还需承接方和通路配合',
+      '财星':wx + '可承接食伤或制约过重印星；有相应任务且日主承载足够时，才是可用的帮助',
+      '官杀':wx + '约束' + dayWx + '，可制衡过强日主；若兼任调候，还要同时比较调候收益与克身压力'
+    };
+    var tradeoff = {
+      basis:present ? '原局' + facts[wx].state : '原局未现，属于等待补入的条件',
+      benefit:fortuneRole === '用神' || fortuneRole === '喜神'
+        ? ((functionalTaskMap[wx] || []).length ? functionalTaskMap[wx][0].conclusion : benefitByRelation[relation])
+        : tiaoHouElements.indexOf(wx) >= 0 ? wx + '虽非结构喜神，仍承担调候任务' : '当前没有把' + wx + '列为优先补入的力量',
+      cost:risks.join('；') || '过量或改变通路时，须重新比较代价',
+      established:effectiveActions.map(function(item) { return item.id; }),
+      constrained:constrainedActions.map(function(item) { return item.id; }),
+      incrementCondition:'原局有作用不等于岁运越多越好；先看补根、显用还是重复增加，再查冲合和作用对象'
+    };
     return {
       element:wx,
       relation:relation,
@@ -7839,6 +8159,8 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
       functions:functions,
       risks:risks,
       conditions:conditions,
+      actionReview:actionReview,
+      tradeoff:tradeoff,
       branchPreference:branchPreference,
       carrierGuidance:carrierGuidance,
       tiaoHouRole:tiaoHouElements.indexOf(wx) >= 0 ? '调候用神' : '',
@@ -7854,6 +8176,7 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   });
   return {
     version:'element-role-ledger-v3',
+    mechanismVersion:mechanismEvidence.version,
     principle:'先由原局确定用神、喜神、忌神及行运基础方向，再区分天干透出、地支落根、燥湿与是否被冲合，最后用具体大运干支和生克链复核是否真正变顺；十神名称和同五行标签都不能直接代替吉凶裁决。',
     patternContext:pattern.name ? (pattern.displayName || pattern.name) + '·' + pattern.status : '',
     entries:entries
@@ -7884,6 +8207,7 @@ function finalizeYongJiResult(bazi, base, context) {
     return lists.jiShen.indexOf(wx) >= 0;
   });
   var pattern = context.pattern || getPattern(bazi);
+  var mechanismEvidence = pattern.mechanismEvidence || evaluateMechanismEvidence(bazi);
   var method = selectionStatus === 'undetermined' ? '取用待定'
     : context.cong && context.cong.isCong ? '从格顺势'
     : context.primaryUseTypeHint === '调候用神' ? '调候为主'
@@ -7976,6 +8300,8 @@ function finalizeYongJiResult(bazi, base, context) {
     '印星制伤护格':['伤官配印格']
   };
   var functionalTasks = ((context.candidateScores && context.candidateScores.functionalTasks) || []).filter(function(item) {
+    if (item.type === '印星制伤护格' && !mechanismEvidence.byId.seal_hurting.established) return false;
+    if (item.type === '印星化杀通关' && !mechanismEvidence.byId.kill_seal.established && !mechanismEvidence.byId.officer_seal.established) return false;
     var requiredPatterns = establishedFunctionalPatterns[item.type];
     if (item.type === '印星化杀通关' && (pattern.structureResult === '杀印相生' || pattern.structureResult === '官印相生')) {
       return pattern.formationStatus === '成立';
@@ -8091,8 +8417,19 @@ function finalizeYongJiResult(bazi, base, context) {
     bazi,
     lists,
     elementClassification,
-    Object.assign({}, context, { yongShenSource:yongShenSource, functionalTasks:functionalTasks })
+    Object.assign({}, context, { yongShenSource:yongShenSource, functionalTasks:functionalTasks, mechanismEvidence:mechanismEvidence })
   );
+  var selectedEntry = elementRoleLedger.entries.find(function(item) { return item.element === primaryYongElement; });
+  var mechanismSummary = {
+    mainCause:imbalanceCause ? imbalanceCause.conclusion : primaryReason,
+    primaryElement:primaryYongElement,
+    help:selectedEntry ? selectedEntry.tradeoff.benefit : '尚无单一取用方向，按现有候选分别比较',
+    cost:selectedEntry ? selectedEntry.tradeoff.cost : '',
+    natalState:selectedEntry ? selectedEntry.tradeoff.basis : '',
+    effective:mechanismEvidence.items.filter(function(item) { return item.established; }).map(function(item) { return item.id; }),
+    constrained:mechanismEvidence.items.filter(function(item) { return item.stage !== 'absent' && !item.established; }).map(function(item) { return item.id; }),
+    scope:'作用证据用于核对传统命理规则的内部一致性，不等于现实事件必然发生，也不回写家庭专属判断'
+  };
 
   // 生克链调整注入 elementReasons
   if (context.chain && context.chain.adjustments && context.chain.adjustments.length > 0) {
@@ -8213,6 +8550,8 @@ function finalizeYongJiResult(bazi, base, context) {
     evidence: evidence,
     elementReasons: elementReasons,
     elementRoleLedger: elementRoleLedger,
+    mechanismEvidence: mechanismEvidence,
+    mechanismSummary: mechanismSummary,
     chainHints: chainHintsOut,
     chainAdjustments: chainAdjustmentsOut,
     yongShenQuality: evaluateYongShenQuality(bazi, {
@@ -8365,6 +8704,7 @@ function reconcileImbalanceCauseWithYong(cause, yongWx, overrideReason) {
 }
 
 function calcCandidateScores(bazi, dmStr, pattern) {
+  var actionById = evaluateMechanismEvidence(bazi).byId;
   var WX = ['木','火','土','金','水'];
   var score = dmStr.score;
   var d = Math.max(-1, Math.min(1, (score - 50) / 50));
@@ -8453,7 +8793,8 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   // 食神制杀会继续泄日主：极弱一律不启用；偏弱也必须有完整根或足量印比承载。
   var canCarryFoodGodControl = dmStr.level === '偏弱'
     && (dayMasterRootPower >= 1 || peerPressure >= 1.5 || sealPressure >= 1.5);
-  var foodGodControlsKill = officerSubtype !== 'proper_officer' && foodGodEffective && canCarryFoodGodControl;
+  var foodGodControlsKill = officerSubtype !== 'proper_officer' && foodGodEffective && canCarryFoodGodControl
+    && actionById.food_kill.established;
   // “中和”即使分差略偏负也不应套用身弱病因；只有旺衰层明确落入偏弱/极弱才分型。
   var isWeakLevel = dmStr.level === '偏弱' || dmStr.level === '极弱';
   var thickEarthMetalState = getThickEarthMetalState(bazi);
@@ -8494,7 +8835,9 @@ function calcCandidateScores(bazi, dmStr, pattern) {
   var outputWealthOfficerCompound = isWeakLevel
     && hasRootedVisibleElement(WO_SHENG)
     && hasRootedVisibleElement(WO_KE)
-    && hasRootedVisibleElement(KE_WO);
+    && hasRootedVisibleElement(KE_WO)
+    && (actionById.food_wealth.established || actionById.hurting_wealth.established)
+    && (actionById.wealth_officer.established || actionById.wealth_kill.established);
 
   var weaknessCause = null;
   if (waterloggedWoodDominant) {
@@ -8800,7 +9143,7 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     // L1/L2 demand and the broken-pattern rescue candidates below stay intact.
     // F6 方向门控：身弱侧 + 官杀成势 + 印未成势 → 印加分；
     // 身强/中和偏强侧或印已成势 → 不给印加分（财/食伤的加权由 L2 身强+印成势规则承担）
-    if (pattern.formationStatus !== '成立') {
+    if (pattern.formationStatus !== '成立' || (!actionById.kill_seal.established && !actionById.officer_seal.established)) {
       l3Details.push({ wx: SHENG_WO, val: 0, note: '官杀—印通路未成立，不计原局成格加分'
         + ((pattern.structureBreakReasons || []).length ? '（' + pattern.structureBreakReasons.join('；') + '）' : '') });
     } else if (d < 0 && chengShi(KE_WO) && !chengShi(SHENG_WO)) {
@@ -8810,21 +9153,27 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     }
   } else if (pn === '伤官配印格') {
     var sealRootCondition = (pattern.establishConditions || []).find(function(item) { return item.condition === '配印之印透干有根'; });
-    if (sealRootCondition && sealRootCondition.met) addL3(SHENG_WO, 10 * factor, '伤官配印，印星制伤护身');
-    else l3Details.push({wx:SHENG_WO,val:0,note:'配印之印无有效根气，不计原局制伤加分'});
+    if (sealRootCondition && sealRootCondition.met && actionById.seal_hurting.established) addL3(SHENG_WO, 10 * factor, '伤官配印，印星制伤护身');
+    else l3Details.push({wx:SHENG_WO,val:0,note:sealRootCondition && sealRootCondition.met
+      ? '配印通路未通过作用核验，不计原局制伤加分：' + actionById.seal_hurting.summary
+      : '配印之印无有效根气，不计原局制伤加分'});
   } else if (pn === '食神制杀格' || pn === '伤官制杀格') {
     var controlCondition = (pattern.establishConditions || []).find(function(item) { return item.condition === '制神有效制杀'; });
-    if (controlCondition && controlCondition.met) addL3(WO_SHENG, 10 * factor, '食伤制杀通过有效性核验');
+    if (controlCondition && controlCondition.met && actionById[pn === '食神制杀格' ? 'food_kill' : 'hurting_kill'].established) addL3(WO_SHENG, 10 * factor, '食伤制杀通过有效性核验');
     else l3Details.push({wx:WO_SHENG,val:0,note:'制神有效性未通过，不计原局制杀加分'});
   } else if (pn === '食神生财格' || pn === '伤官生财格') {
-    addL3(WO_KE, 6 * factor, '食伤生财，财为归宿');
-    addL3(WO_SHENG, 4 * factor, '食伤生财，食伤为源头');
+    if (actionById[pn === '食神生财格' ? 'food_wealth' : 'hurting_wealth'].established) {
+      addL3(WO_KE, 6 * factor, '食伤生财，财为归宿');
+      addL3(WO_SHENG, 4 * factor, '食伤生财，食伤为源头');
+    } else l3Details.push({wx:WO_KE,val:0,note:'食伤生财通路未充分成立，不计原局流通加分'});
   } else if (pattern.mechanism === '财生官' || pattern.mechanism === '财生杀') {
     // GPT 终裁：L3 消除格名驱动评分，改 mechanism 判断（覆盖财生官格/财生杀格两个新格名）；
     // 数值不变（官杀 +6 / 财 +4），仅文案随 mechanism 分官/杀（不再把七杀泛化成官）。
     var caiShaIsSha = pattern.mechanism === '财生杀';
-    addL3(KE_WO, 6 * factor, caiShaIsSha ? '财生杀，杀为归宿' : '财生官，官为归宿');
-    addL3(WO_KE, 4 * factor, caiShaIsSha ? '财生杀，财为源头' : '财生官，财为源头');
+    if (actionById[caiShaIsSha ? 'wealth_kill' : 'wealth_officer'].established) {
+      addL3(KE_WO, 6 * factor, caiShaIsSha ? '财生杀，杀为归宿' : '财生官，官为归宿');
+      addL3(WO_KE, 4 * factor, caiShaIsSha ? '财生杀，财为源头' : '财生官，财为源头');
+    } else l3Details.push({wx:KE_WO,val:0,note:'财生官杀通路未充分成立，不计原局流通加分'});
   } else if (pn === '建禄格' || pn === '羊刃格') {
     addL3(KE_WO, 4 * factor, '建禄/羊刃喜财官制化');
   }
@@ -8933,7 +9282,14 @@ function calcCandidateScores(bazi, dmStr, pattern) {
     // 火日主本无加分（水官杀不抬升），说明无条件保留；土日主水财仅在身强时加（克泄耗侧对齐）。
     if (dmWx !== '火' && dmQiang) addL4('水', 6, '未月火土燥烈，水润局');
     addTiaoHouYongShen('水');
-    tiaoHouNote = '未月火土燥烈，需水调候润局。水虽克火，但调候之功大于克身之弊。';
+    tiaoHouNote = '未月火土燥烈，水有润燥任务；对火日主还须比较克身之弊，不能仅凭调候认定整体有利。';
+  }
+  if ((dmWx === '火' || dmWx === '土') && climateState.needsMoisture &&
+      (climateState.drySoilUnrelieved || tiaoHouYongShen.indexOf('水') < 0)) {
+    // 只登记润燥任务，不把未经裁决的净利弊转成分数或强行接管核心用神。
+    addTiaoHouYongShen('水');
+    tiaoHouNote = climateState.moistureEvidence + '。水可作润燥调候，但不据此认定增财必利；'
+      + (dmWx === '火' ? '还须比较水克火、土制水与木能否承接，不能将水一概作纯喜或纯忌。' : '还须比较水耗土与日主承财之力，不能把润燥等同于财越多越好。');
   }
   if (dmWx === '金' && ['亥','子','丑'].indexOf(mz) >= 0 && climateState.needsWarmth && dmQiang) {
     addL4('火', 6, '冬金寒冻，火暖局');
@@ -10151,6 +10507,7 @@ window.BaZiCalculator = {
     getWaterloggedWoodState: getWaterloggedWoodState,
     getColdWetEarthWoodState: getColdWetEarthWoodState,
     getClimateState: getClimateState,
+    evaluateMechanismEvidence: evaluateMechanismEvidence,
     getPattern: getPattern,
     adjudicatePattern: adjudicatePattern,
     getYongJi: getYongJi,

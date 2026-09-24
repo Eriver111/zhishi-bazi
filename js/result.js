@@ -537,6 +537,14 @@ function reportStoryline(storyline) {
     var html = '<article class="deep-report-storyline">';
     if (storyline.headline) html += '<h3>' + reportEsc(reportText(storyline.headline)) + '</h3>';
     if (storyline.summary) html += '<p class="deep-report-storyline-main">' + reportEsc(reportText(storyline.summary)) + '</p>';
+    if (storyline.mechanismAccount) {
+        var account = storyline.mechanismAccount;
+        html += '<details class="report-claim-details" data-report-mechanism><summary>为什么这样判断</summary>';
+        [['主要依据',account.cause],['帮助在哪里',account.help],['需要付出的代价',account.cost],['原局已有的条件',account.natalState]].forEach(function(row) {
+            if (row[1]) html += '<p><strong>' + row[0] + '：</strong>' + reportEsc(reportText(row[1])) + '</p>';
+        });
+        html += '</details>';
+    }
     if (storyline.direction) html += '<p><strong>行运方向：</strong>' + reportEsc(reportText(storyline.direction)) + '</p>';
     if (storyline.boundary) html += '<p><strong>不能机械判断的地方：</strong>' + reportEsc(reportText(storyline.boundary)) + '</p>';
     if (storyline.focus) html += '<p><strong>未来五年重点：</strong>' + reportEsc(reportText(storyline.focus)) + '</p>';
@@ -3081,13 +3089,25 @@ function renderElementRoleLedgerHtml(yj){
     });
     h+='</div></div></div>';
   });
-  h+='<details style="border-top:1px solid var(--bd);background:rgba(201,168,76,.025)"><summary style="padding:9px 12px;font-size:10px;color:var(--tx3);cursor:pointer">查看原局依据与具体条件</summary><div style="border-top:1px solid var(--bd)">';
+  h+='<details class="report-claim-details" style="border-top:1px solid var(--bd);background:rgba(201,168,76,.025)"><summary style="padding:9px 12px;font-size:10px;color:var(--tx3);cursor:pointer">查看原局依据与具体条件</summary><div style="border-top:1px solid var(--bd)">';
   ledger.entries.forEach(function(item,index){
     var functionText=(item.functions||[]).slice(0,2).join('；')||'暂未形成明确作用链';
     var riskText=(item.risks||[]).slice(0,1).join('；');
     var conditionText=(item.conditions||[]).slice(0,1).join('；');
     var carrierText=item.carrierGuidance&&item.carrierGuidance.summary?item.carrierGuidance.summary:'';
     h+='<div style="padding:10px 12px;'+(index?'border-top:1px solid var(--bd);':'')+'"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font-size:17px;font-weight:900;color:'+(colors[item.element]||'var(--gold-l)')+'">'+esc(item.element)+'</span><b style="font-size:10px;color:var(--tx)">'+esc(item.relation)+'</b>'+(item.useGodType?'<b style="font-size:9px;color:var(--gold-l)">'+esc(item.useGodType)+'</b>':'')+'<span style="font-size:9px;color:var(--tx3)">'+esc(item.currentState)+' · '+esc(item.natalRole)+'</span></div><div style="font-size:10px;line-height:1.55;color:var(--tx2);margin-top:5px"><b>原局作用：</b>'+esc(functionText)+'</div>'+(carrierText?'<div style="font-size:10px;line-height:1.55;color:var(--tx2);margin-top:2px"><b style="color:var(--gold-l)">干支落点：</b>'+esc(carrierText)+'</div>':'')+(riskText?'<div style="font-size:10px;line-height:1.55;color:#b77a70;margin-top:2px"><b>注意：</b>'+esc(riskText)+'</div>':'')+'<div style="font-size:10px;line-height:1.55;color:var(--tx2);margin-top:3px"><b style="color:var(--gold-l)">行运复核：</b>'+esc(item.fortuneReason)+(conditionText?' '+esc(conditionText):'')+'</div></div>';
+    var reviews=item.carrierGuidance&&item.carrierGuidance.symbolReviews;
+    if(reviews&&Object.keys(reviews).length){
+      h+='<div data-water-carrier-review style="padding:0 12px 12px;font-size:11px;line-height:1.7;color:var(--tx2)"><b>水以不同干支出现时</b>';
+      Object.keys(reviews).forEach(function(symbol){h+='<p style="margin:6px 0"><b>'+esc(symbol)+'：</b>'+esc(reviews[symbol])+'</p>'});
+      h+='</div>';
+    }
+    if(item.actionReview&&item.actionReview.length){
+      h+='<div data-mechanism-review style="padding:0 12px 12px;font-size:12px;line-height:1.75;overflow-wrap:anywhere"><b>生克作用核验</b>';
+      item.actionReview.forEach(function(action){h+='<p style="margin:6px 0">'+esc(action.summary)+'</p>'});
+      if(item.tradeoff) h+='<p><b>再遇这个五行：</b>'+esc(item.tradeoff.incrementCondition)+'</p>';
+      h+='</div>';
+    }
   });
   h+='</div></details><div style="padding:8px 12px;border-top:1px solid var(--bd);font-size:9px;line-height:1.55;color:var(--tx3)">'+esc(ledger.principle)+'</div></div>';
   return h;

@@ -119,7 +119,9 @@ test('伤官合杀须贴邻有效合绊且双方有根', () => {
 });
 
 test('羊刃驾杀必须从羊刃基础格起步且七杀透干有根', () => {
-  const pattern = resolved(['庚申', '己巳', '己丑', '乙未']);
+  // 旧己巳为阴干帝旺，不能作为羊刃驾杀正例。
+  assert.notEqual(resolved(['庚申', '己巳', '己丑', '乙未']).name, '羊刃驾杀格');
+  const pattern = resolved(['庚申', '丁卯', '甲辰', '壬申']);
   assert.equal(pattern.name, '羊刃驾杀格');
   assert.equal(pattern.status, '成格');
   assert.equal(pattern.basePattern, '羊刃格·成格');
@@ -138,15 +140,16 @@ test('官杀去留须有根且不重复使用同一救应载体', () => {
   assert.ok(pending.establishConditions.some(row => row.condition === '所留七杀有独立制化' && !row.met));
 });
 
-test('伤官克官先检查财星通关，负面机制不覆盖月令主格', () => {
+test('财星合身不能仅凭有根宣称通关，负面机制仍不覆盖月令主格', () => {
   const control = resolved(['丁未', '乙未', '庚子', '癸酉']);
   const damage = resolved(['己巳', '癸巳', '丙寅', '丁未']);
   // 子癸水已经有根，未月暑燥受制衡后，不能再靠“未月必润”把官星压成忌神。
   assert.equal(control.name, '正官格');
-  const controlRisk = control.relatedPatterns.find(row => row.name === '伤官官星相见');
-  assert.equal(controlRisk.status, '条件待定');
-  assert.match(controlRisk.source, /财星承接伤官并转生正官/);
-  assert.ok(control.structuralMechanisms.some(row => row.name === '伤官生财、财生官'));
+  const controlRisk = control.relatedPatterns.find(row => row.name === '伤官见官格');
+  assert.equal(controlRisk.status, '破格');
+  assert.equal(control.mechanismEvidence.byId.hurting_wealth.stage, 'blocked');
+  assert.equal(control.mechanismEvidence.byId.wealth_officer.stage, 'blocked');
+  assert.ok(!control.structuralMechanisms.some(row => row.name === '伤官生财、财生官'));
   assert.equal(damage.name, '建禄格');
   const damageRelation = damage.relatedPatterns.find(row => row.name === '伤官见官格');
   assert.equal(damageRelation.status, '破格');
@@ -177,10 +180,10 @@ test('偏印克食神按任务和喜忌拆成制食与夺食', () => {
   assert.equal(control.name, '枭神制食格');
   assert.equal(control.status, '成格');
   assert.match(control.source, /食神为忌，偏印为喜用/);
-  assert.equal(damage.name, '羊刃格');
-  const damageRisk = damage.relatedPatterns.find(row => row.name === '枭神夺食格');
-  assert.equal(damageRisk.status, '破格');
-  assert.match(damageRisk.source, /制杀、生财任务|食神为喜用/);
+  assert.equal(damage.name, '杂格', '乙日寅月是阴干帝旺，不能立羊刃格');
+  const damageRisk = damage.relatedPatterns.find(row => row.name === '枭食相战');
+  assert.equal(damageRisk.status, '条件待定');
+  assert.equal(damage.mechanismEvidence.byId.owl_food.stage, 'blocked', '戊癸合绊，不能按自由枭食相克裁硬破');
 });
 
 test('枭神制食的过度判定读取结算后根气', () => {
@@ -201,8 +204,9 @@ test('专业报告和喜用忌共享同一后置格局裁决', () => {
   const facts = E.getProfessionalReportFacts(bazi, 'male');
   assert.equal(yongJi.patternStatus.name, '正官格');
   assert.equal(facts.pattern.name, '正官格');
-  assert.ok(facts.pattern.relatedPatterns.some(row => row.name === '伤官官星相见' && row.status === '条件待定'));
-  assert.ok(facts.pattern.structuralMechanisms.some(row => row.name === '伤官生财、财生官'));
+  assert.ok(facts.pattern.relatedPatterns.some(row => row.name === '伤官见官格' && row.status === '破格'));
+  assert.ok(!facts.pattern.structuralMechanisms.some(row => row.name === '伤官生财、财生官'));
+  assert.deepEqual(facts.yongJi.mechanismEvidence, yongJi.mechanismEvidence);
 });
 
 test('伤官生财再生官时以完整通关链为主，不误裁成伤官见官', () => {

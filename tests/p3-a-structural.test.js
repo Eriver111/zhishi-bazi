@@ -69,6 +69,10 @@ const SCORE_CORRECTION = {
   H18:{score:'35',level:'偏弱'}, 'P15-19':{score:'54',level:'中和'}
 };
 function approvedPatternStatus(id, value) {
+  // 2026-09-24：#7 乙日寅月为阴干帝旺，撤销羊刃格及无制破格。
+  if (id === '#7') return '杂格·条件待定';
+  // 2026-09-24 作用证据：戊癸已裁合化，不能继续把戊财按自由生财通路计。
+  if (id === 'P15-15' || id === 'H01') return '食神生财格·条件待定';
   let normalized = value
     .replace(/^杀印相生格·/, '七杀格·')
     .replace(/^官印相生格·/, '正官格·');
@@ -78,6 +82,11 @@ function approvedPatternStatus(id, value) {
 }
 function approvedYongJiSummary(id, field, value) {
   const approved = {
+    // 同步撤销羊刃格为金官杀带来的 L3=1.6 奖励；火/土/金同分后按既有根气质量取火。
+    '#7': { yong:'火', xi:'火、土、金' },
+    // 撤回生财通路的火4/土6成立分；水用不变，仅忌神排序变化。
+    'P15-15': { ji:'火、土、金' },
+    'H01': { ji:'火、土、金' },
     'A2': { ji:'木、水' },
     // 2026-09-23：枭夺食已使制杀无效，撤销金的4分成格奖励；水的1.8分月令冲救应保留。
     'A3': { yong:'水', xi:'水、金、木' },
