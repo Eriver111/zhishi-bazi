@@ -64,8 +64,8 @@
           if (data && data.huangli && meta) {
             meta.textContent = data.huangli.dayGZ + '日 · ' + data.huangli.jianchu + ' · ' + data.huangli.chong;
           }
-          if (title) title.textContent = '专属今日运势';
-          show(data && data.fortune && data.fortune.tip ? data.fortune.tip : '今天没有特别强的变化信号，按原计划推进即可。');
+          if (title) title.textContent = '今日引动与提醒';
+          show(data && data.fortune && data.fortune.tip ? data.fortune.tip : (data && data.message ? data.message : '个人推演暂时未能完成，请重新排盘并保存。'));
         });
       }).catch(function () {
         show('今日运势暂时未能载入，稍后再试即可。');

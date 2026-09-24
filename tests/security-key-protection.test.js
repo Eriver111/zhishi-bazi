@@ -31,7 +31,7 @@ test('registration UI and endpoint no longer advertise or return signup bonus qu
 test('personal fortune requires authentication while public almanac remains available', () => {
   const endpoint = fs.readFileSync(path.join(root, 'api', 'fortune.js'), 'utf8');
   const home = fs.readFileSync(path.join(root, 'js', 'home-fortune.js'), 'utf8');
-  assert.match(endpoint, /if \(!dayGan\) return res\.status\(200\)/);
+  assert.match(endpoint, /if \(!query && !body\.dayGan\) return res\.status\(200\)/);
   assert.match(endpoint, /requireAuth\(req\)/);
   assert.match(home, /Authorization.*Bearer.*Auth\.getToken\(\)/);
 });

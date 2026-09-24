@@ -72,29 +72,25 @@ test('stale PM2 pro environment cannot route text AI endpoints to the pro model'
       };
     };
 
-    for (const name of ['ai-chat', 'divination', 'fortune']) {
+    for (const name of ['ai-chat', 'divination']) {
       const endpointPath = require.resolve(path.join(root, 'api', name + '.js'));
       delete require.cache[endpointPath];
       const handler = require(endpointPath);
       const res = responseRecorder();
       const body = name === 'ai-chat'
         ? { question: 'Please analyze this chart.', free_mode: true, free_id: 'model-route' }
-        : name === 'divination'
-          ? { prompt: 'A sufficiently detailed divination prompt for routing verification only.' }
-          : { dayGan: '甲', dayZhi: '子', label: 'test-chart-' + Date.now() };
+        : { prompt: 'A sufficiently detailed divination prompt for routing verification only.' };
       await handler({ method: 'POST', body, headers: {}, socket: { remoteAddress: '127.0.0.1' } }, res);
       assert.equal(res.statusCode, 200, `${name} should reach its upstream request path`);
       delete require.cache[endpointPath];
     }
 
-    assert.equal(payloads.length, 3);
+    assert.equal(payloads.length, 2);
     assert.deepEqual(payloads.map(item => item.model), [
-      'deepseek-v4-flash',
       'deepseek-v4-flash',
       'deepseek-v4-flash'
     ]);
     assert.deepEqual(payloads.map(item => item.thinking), [
-      { type: 'disabled' },
       { type: 'disabled' },
       { type: 'disabled' }
     ]);

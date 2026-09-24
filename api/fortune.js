@@ -1,23 +1,17 @@
 /**
  * /api/fortune - 今日运势
- * POST: 返回完整黄历 + AI 个性化八字运势（免费）
+ * POST: 返回公共黄历 + 由统一引擎证据生成的个人日级提醒（免费）
  */
-const crypto = require('crypto');
 const { calculator, calendar, chartFromQuery } = require('./_bazi-runtime');
-const { chinaDateParts, buildDailyFacts, fallbackCopy } = require('./_daily-fortune');
+const { METHOD_VERSION, chinaDateParts, buildDailyFacts } = require('./_daily-fortune');
 const { requireAuth } = require('../lib/auth.js');
 const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 
-const AI_API_URL = process.env.AI_API_URL || 'https://api.deepseek.com/v1/chat/completions';
-const AI_API_KEY = process.env.AI_API_KEY || '';
-// Keep billing predictable even when PM2 retains an older AI_MODEL value.
-const AI_MODEL = 'deepseek-v4-flash';
-
-const _cache = {};
+const {chartIdentity, getDailyStore} = require('../lib/daily-fortune-store');
+const {generateDailyCopy} = require('./_daily-fortune-copy');
 const TG = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 const DZ = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 const ANIMALS = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
-const WU_XING = { '甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水' };
 
 // ---- 纳音（六十甲子）----
 const NAYIN = {
@@ -159,137 +153,79 @@ function buildHuangli(y, m, d) {
   };
 }
 
-// 每小时清理超过1小时的缓存
-setInterval(function(){var now=Date.now();for(var k in _cache){if(_cache[k]._ts&&now-_cache[k]._ts>3600000)delete _cache[k];}},3600000).unref();
+function hasCompleteChartQuery(query) {
+  const params = new URLSearchParams(query);
+  if (!['male','female'].includes(params.get('gender'))) return false;
+  if (params.get('mode') === 'pillars') {
+    if (!['yg','yz','mg','mz','dg','dz','hg','hz'].every(key => params.get(key))) return false;
+    if (params.get('timing') !== 'matched') return true;
+  }
+  if (!['year','month','day','hour'].every(key => params.has(key) && params.get(key).trim() !== '')) return false;
+  const y = Number(params.get('year')), m = Number(params.get('month')), d = Number(params.get('day'));
+  const h = Number(params.get('hour'));
+  if (![y,m,d,h].every(Number.isInteger) || y < 1800 || y > 2200 || m < 1 || m > 12 || h < 0 || h > 11) return false;
+  if (d < 1 || d > new Date(Date.UTC(y,m,0)).getUTCDate()) return false;
+  for (const key of ['clock','minute']) {
+    if (!params.has(key)) continue;
+    const value = Number(params.get(key));
+    if (!Number.isFinite(value) || value < 0 || value >= (key === 'clock' ? 24 : 60)) return false;
+  }
+  return true;
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({error:'仅支持 POST 请求'});
   try {
-    var body = req.body || {};
-    var dayGan = body.dayGan, dayZhi = body.dayZhi;
-    var gender = body.gender || 'male', chartLabel = body.label || '';
-    var query = typeof body.params === 'string' ? body.params : '';
-    // 无论服务器部署在哪个时区，都按中国标准时间换日。
-    var chinaToday = chinaDateParts(new Date());
-    var nY = chinaToday.year, nM = chinaToday.month, nD = chinaToday.day;
-    var todayKey = nY + '-' + nM + '-' + nD;
-    var huangli = buildHuangli(nY, nM, nD);
+    const body = req.body || {};
+    const query = typeof body.params === 'string' ? body.params : '';
+    const today = chinaDateParts(new Date());
+    const todayKey = [today.year, String(today.month).padStart(2,'0'), String(today.day).padStart(2,'0')].join('-');
+    const huangli = buildHuangli(today.year, today.month, today.day);
+    if (!query && !body.dayGan) return res.status(200).json({huangli, fortune:null});
 
-    var chartContext = '';
-    var dailyFacts = null;
-    if (query) {
-      try {
-        var chartData = chartFromQuery(query);
-        var bazi = chartData.bazi;
-        gender = chartData.gender;
-        dayGan = bazi.day.gan;
-        dayZhi = bazi.day.zhi;
-        dailyFacts = buildDailyFacts(calculator, bazi, gender, {
-          yearNumber:nY,
-          year:calendar.getYearPillar(nY, nM, nD, 12),
-          month:calendar.getMonthPillar(nY, nM, nD, 12, 12),
-          day:calendar.getDayPillar(nY, nM, nD)
-        });
-        chartContext = [
-          '四柱：' + dailyFacts.pillars,
-          '日主：' + dayGan + '，旺衰：' + dailyFacts.strength.level + '（' + dailyFacts.strength.score + '分）',
-          '格局：' + dailyFacts.pattern.name + '·' + dailyFacts.pattern.status,
-          '用神：' + dailyFacts.yongJi.yongShen.join('、') + '；喜神：' + dailyFacts.yongJi.xiShen.join('、')
-            + (dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length ? '；调候用神：' + dailyFacts.yongJi.tiaoHouYongShen.join('、') + '（宜有度）' : '')
-            + (dailyFacts.yongJi.weaknessCause ? '；身弱病因：' + (dailyFacts.yongJi.weaknessCause.title || dailyFacts.yongJi.weaknessCause.type) : '')
-            + (dailyFacts.yongJi.strongCause ? '；身强来源：' + (dailyFacts.yongJi.strongCause.title || dailyFacts.yongJi.strongCause.type) : '')
-            + (dailyFacts.yongJi.functionalTasks && dailyFacts.yongJi.functionalTasks.length ? '；功能用神：' + dailyFacts.yongJi.functionalTasks.map(function(task){return task.title + '（' + task.element + '，' + task.condition + '）';}).join('；') : '')
-            + (((dailyFacts.yongJi.weaknessSupportingElements || []).concat(dailyFacts.yongJi.strongSupportingElements || []).length) ? '；辅助喜神：' + (dailyFacts.yongJi.weaknessSupportingElements || []).concat(dailyFacts.yongJi.strongSupportingElements || []).join('、') : '')
-            + (dailyFacts.yongJi.conditionalAuxiliaryElements && dailyFacts.yongJi.conditionalAuxiliaryElements.length ? '；条件辅助：' + dailyFacts.yongJi.conditionalAuxiliaryElements.join('、') + '（' + (dailyFacts.yongJi.conditionalAuxiliaryReason || '仅在前置条件成立时搭配，不可单用') + '）' : '')
-            + '；' + ((dailyFacts.yongJi.tiaoHouYongShen && dailyFacts.yongJi.tiaoHouYongShen.length) || (dailyFacts.yongJi.conditionalAuxiliaryElements && dailyFacts.yongJi.conditionalAuxiliaryElements.length) || (dailyFacts.yongJi.functionalDualRoleElements && dailyFacts.yongJi.functionalDualRoleElements.length) ? '结构忌神' : '忌神') + '：' + dailyFacts.yongJi.jiShen.join('、'),
-          '岁运日环境：' + dailyFacts.context.map(function(row){return row.label + row.pillar + '（干' + row.ganRole + '、支' + row.zhiRole + '）';}).join('；'),
-          '今日结论：' + dailyFacts.tendency + '；重点领域：' + (dailyFacts.focus.join('、') || '日常安排'),
-          '明确引动：' + (dailyFacts.events.length ? dailyFacts.events.map(function(event){return event.detail;}).join('；') : '无强烈刑冲合害')
-        ].join('\n');
-      } catch (chartError) {
-        console.warn('[fortune] chart context failed:', chartError.message);
-      }
-    }
-
-    if (!dayGan) return res.status(200).json({ huangli: huangli, fortune: null });
-
-    // 公共黄历无需登录；只要请求个性化推演，就必须使用真实登录身份。
-    // 过去此处未鉴权，任何人都能绕过页面无限调用付费模型。
-    var authUser = requireAuth(req);
+    // Authenticate before computing or serving cached personal output.
+    const authUser = requireAuth(req);
     if (!authUser || !authUser.uid) {
-      return res.status(401).json({ error: '请先登录查看专属今日运势', needLogin: true });
+      return res.status(401).json({error:'请先登录查看专属今日运势', needLogin:true});
     }
-
-    var cacheKey = crypto.createHash('sha256').update((query || chartLabel || (dayGan + dayZhi)) + '|' + todayKey).digest('hex');
-    for (var k in _cache) { if (!_cache[k]._date || _cache[k]._date !== todayKey) delete _cache[k]; }
-    if (_cache[cacheKey]) return res.status(200).json({ huangli: huangli, fortune: _cache[cacheKey] });
-
-    var wx = WU_XING[dayGan] || '';
-    var prompt = `你是“知时”今日运势的解释员。引擎已给出命盘事实，你不能重新计算、改判或补造关系。
-
-${chartContext || ('保存档案：' + chartLabel + '\n日主：' + dayGan + wx + '\n日支：' + dayZhi)}
-今天：${huangli.dayGZ}日。
-
-请只根据以上事实写今日推演。headline用8至14个字直接概括今天；tip用140至220字大白话说明更容易发生的具体情况。重点写“会表现成什么”，不能只写建议，不能出现“能量、磁场、消耗、纠缠、关系失衡、机遇与挑战并存、稳步推进”等套话。合不默认吉、冲不默认凶，必须服从引擎给出的喜用忌和“今日结论”。若没有明确引动，就直说“今天没有特别强的变化信号”，不要硬编。
-
-直接返回JSON：{"headline":"今日概括","tip":"大白话推演"}`;
-
-    var guard = beginAiRequest(req, { route: 'fortune', identity: authUser.uid, minuteMax: 3, hourMax: 12 });
-    if (!guard.ok) {
-      return res.status(429).json({ error: guard.reason === 'concurrent' ? '上一次运势还在生成，请稍候' : '今日运势请求过于频繁，请稍后再试' });
+    function incomplete() {
+      return res.status(200).json({huangli, fortune:null, personalStatus:'incomplete-chart',
+        message:'这份档案的完整排盘资料不足，请重新排盘并保存后查看今日提醒。'});
     }
-    var content = '';
-    try {
-      var aiResp = await fetch(AI_API_URL, {
-        method: 'POST', headers: { 'Content-Type':'application/json','Authorization':'Bearer '+AI_API_KEY },
-        body: JSON.stringify({ model:AI_MODEL, messages:[{role:'user',content:prompt}], thinking:{type:'disabled'}, max_tokens:900, temperature:0.2 })
+    if (!hasCompleteChartQuery(query)) return incomplete();
+    let chart;
+    try { chart = chartFromQuery(query); } catch (_) { return incomplete(); }
+    const clockKnown = new URLSearchParams(query).has('clock');
+    if (chart.bazi.birthDate && !clockKnown) delete chart.bazi.birthDate.clock;
+    const identity = chartIdentity(chart);
+    function factsAt(date) {
+      return buildDailyFacts(calculator, chart.bazi, chart.gender, {
+        yearNumber:date.year, monthNumber:date.month, dayNumber:date.day,
+        year:calendar.getYearPillar(date.year,date.month,date.day,12),
+        month:calendar.getMonthPillar(date.year,date.month,date.day,12,12),
+        day:calendar.getDayPillar(date.year,date.month,date.day)
       });
-      var aiData = await aiResp.json();
-      if (!aiResp.ok) throw new Error('AI error ' + aiResp.status);
-      console.log("[fortune] respModel=" + (aiData.model || "?") + " at=" + new Date().toISOString());
-      content = aiData.choices?.[0]?.message?.content || '';
-      if (!content.trim()) throw new Error('AI 返回内容为空');
-    } catch (aiError) {
-      console.warn('[fortune] AI fallback:', aiError.message);
-    } finally {
-      guard.release();
     }
-    // 去除可能的免责声明
-    content = content.replace(/以上[^。]*生成[^。]*参考[^。]*[\n。]/g, '').replace(/以上[^。]*由[^。]*生成[^。]*/g, '').replace(/(本文|此内容|以上内容)[^。]*免责[^。]*[。\n]/g, '').replace(/\n*---\n.*$/s, '').replace(/（以上[^）]*）/, '').trim();
-    var fortune = {};
-    // 安全解析：找第一个完整JSON对象（非贪婪），避免匹配到AI返回的多个JSON块
-    try {
-      var firstBrace = content.indexOf('{');
-      if (firstBrace >= 0) {
-        var depth = 0, end = -1;
-        for (var i = firstBrace; i < content.length; i++) {
-          if (content[i] === '{') depth++;
-          if (content[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
-        }
-        if (end > firstBrace) {
-          var jsonStr = content.substring(firstBrace, end + 1);
-          fortune = JSON.parse(jsonStr);
-        } else {
-          fortune = { tip: content };
-        }
-      } else {
-        fortune = { tip: content };
-      }
-    } catch(e) { fortune = { tip: content }; }
-    var tip = fortune.tip || fortune.overview || content || (dailyFacts ? fallbackCopy(dailyFacts) : '今天没有特别强的变化信号。');
-    tip = tip.replace(/以上[^。]*生成[^。]*参考[^。]*[。\n]/g, '').replace(/（以上[^）]*仅供参考[^）]*）/g, '').trim();
-    var output = {
-      headline:fortune.headline || (dailyFacts ? '今日' + dailyFacts.tendency : '今日提醒'),
-      tip:tip,
-      tendency:dailyFacts ? dailyFacts.tendency : '平稳',
-      focus:dailyFacts ? dailyFacts.focus : [],
-      basis:dailyFacts ? dailyFacts.basis.slice(0,2) : [],
-      _date:todayKey, _cached:false
-    };
-    output._ts = Date.now(); _cache[cacheKey] = output;
-    return res.status(200).json({ huangli: huangli, fortune: output });
-  } catch (e) {
-    return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
+    const edition = await getDailyStore().getOrCreate(todayKey, identity, async () => {
+      const guard = beginAiRequest(req, {route:'fortune', identity:authUser.uid, minuteMax:3, hourMax:12});
+      if (!guard.ok) {const error = new Error('daily rate limit'); error.status = 429; throw error;}
+      try {
+        const facts = factsAt(today);
+        const before = new Date(Date.UTC(today.year,today.month - 1,today.day - 1,12));
+        const previous = factsAt({year:before.getUTCFullYear(),month:before.getUTCMonth()+1,day:before.getUTCDate()});
+        if (chart.bazi.birthDate && !clockKnown) facts.notes.push('档案未保存具体钟点，大运起运按时辰中点估算');
+        const copy = await generateDailyCopy(facts, previous);
+        return {...copy, tendency:facts.tendency, focus:facts.focus,
+          basis:facts.basis, conditions:facts.conditions, notes:facts.notes, scope:facts.scope,
+          methodVersion:METHOD_VERSION, _date:todayKey, _ts:Date.now()};
+      } finally {guard.release();}
+    });
+    // Never serve a provisional edition before durable publication succeeds.
+    return res.status(200).json({huangli, fortune:{...edition.output, _cached:edition.cached}});
+  } catch (error) {
+    if (error.status === 429) return res.status(429).json({error:'今日运势请求过于频繁，请稍后再试'});
+    return res.status(503).json({error:'今日内容暂时未能保存或读取，请稍后重试'});
   }
 };

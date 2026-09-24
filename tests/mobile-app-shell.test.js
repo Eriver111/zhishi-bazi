@@ -17,7 +17,7 @@ test('home and paipan share one versioned mobile shell without touching desktop 
 
   assert.doesNotMatch(home, /class="mobile-home-dashboard"/);
   assert.match(home, /class="mobile-home-fortune"/);
-  assert.match(home, /js\/home-fortune\.js\?v=2/);
+  assert.match(home, /js\/home-fortune\.js\?v=3/);
   assert.match(paipan, /<script src="js\/main\.js\?v=\d+"><\/script>\s*<script src="js\/mobile-app-shell\.js\?v=10"><\/script>/);
 });
 
