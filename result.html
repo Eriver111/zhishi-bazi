@@ -2468,9 +2468,10 @@
 <link rel="stylesheet" href="css/theme-light.css?v=5">
 <link rel="stylesheet" href="css/theme-light-results.css?v=5">
 <link rel="stylesheet" href="/css/mobile-app-shell.css?v=32">
+<link rel="stylesheet" href="/css/result-pro-chart.css?v=4">
 <link rel="stylesheet" href="/css/app-experience.css?v=1">
 <script src="/js/app-experience.js?v=1" defer></script>
-<script src="/js/mobile-app-shell.js?v=11" defer></script>
+<script src="/js/mobile-app-shell.js?v=13" defer></script>
 
 <script src="/js/service-notice.js?v=2" defer></script>
 </head>
@@ -2520,25 +2521,6 @@
     </aside>
 
     <div class="result-container" style="position:relative;z-index:1">
-        <!-- 顶部信息栏 -->
-        <header class="result-header">
-            <a href="paipan" class="back-link">← 重新分析</a>
-            <h1 class="result-title"><a href="/">知时</a></h1>
-            <div class="birth-info">
-                <span id="genderLabel"></span>
-                <span class="info-sep">|</span>
-                <span id="birthDateText"></span>
-                <span class="info-sep">|</span>
-                <span id="birthHourText"></span>
-            </div>
-            <div class="nayin-info">
-                纳音：<span id="nayinText"></span>
-                <span class="info-sep">|</span>
-                真太阳时：<span id="solarTimeText"></span>
-            </div>
-            <button class="share-btn" onclick="shareResult()" title="复制分享链接"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg> 分享报告</button>
-            <button id="posterButton" class="share-btn poster-entry" type="button" onclick="PosterUI.open()" title="生成免费命格海报">生成命格海报</button>
-        </header>
         <nav class="desktop-report-nav" aria-label="报告目录">
             <a href="#dayunSection">基础排盘</a>
             <a href="#proSection">专业解读</a>
@@ -2563,7 +2545,6 @@
         <section id="dayunSection" class="section-dayun">
             <div class="section-header">
                 <h2>大运</h2>
-                <span class="section-sub" id="dayunDirection"></span>
             </div>
             <div class="dayun-scroll-wrapper">
                 <div class="dayun-table" id="dayunTable">
@@ -2678,27 +2659,9 @@
                     <div class="pp-col pp-day" id="zizuo-day"></div>
                     <div class="pp-col" id="zizuo-hour"></div>
                 </div>
-                <div class="pp-row pp-aux-row pp-kongwang-row">
-                    <div class="pp-label">空亡</div>
-                    <div class="pp-col pp-liunian-col" id="kongwang-liunian"></div>
-                    <div class="pp-col pp-dayun-col" id="kongwang-dayun"></div>
-                    <div class="pp-col" id="kongwang-year"></div>
-                    <div class="pp-col" id="kongwang-month"></div>
-                    <div class="pp-col pp-day" id="kongwang-day"></div>
-                    <div class="pp-col" id="kongwang-hour"></div>
-                </div>
-                <div class="pp-row pp-aux-row pp-nayin-row">
-                    <div class="pp-label">纳音</div>
-                    <div class="pp-col pp-liunian-col" id="nayin-liunian"></div>
-                    <div class="pp-col pp-dayun-col" id="nayin-dayun"></div>
-                    <div class="pp-col" id="nayin-year"></div>
-                    <div class="pp-col" id="nayin-month"></div>
-                    <div class="pp-col pp-day" id="nayin-day"></div>
-                    <div class="pp-col" id="nayin-hour"></div>
-                </div>
 
                 <!-- 神煞 -->
-                <div class="pp-row pp-shensha-row">
+                <div class="pp-row pp-shensha-row" hidden>
                     <div class="pp-label">神煞</div>
                     <div class="pp-col pp-shensha pp-liunian-col" id="shensha-liunian"></div>
                     <div class="pp-col pp-shensha pp-dayun-col" id="shensha-dayun"></div>
@@ -2709,6 +2672,24 @@
                 </div>
             </div>
         </section>
+
+        <!-- 盘面下方的基本信息 -->
+        <header class="result-header" id="basicInfoSection">
+            <h2 class="basic-info-title">基本信息</h2>
+            <div class="birth-info">
+                <span id="genderLabel"></span>
+                <span class="info-sep">|</span>
+                <span id="birthDateText"></span>
+                <span class="info-sep">|</span>
+                <span id="birthHourText"></span>
+            </div>
+            <div class="nayin-info">
+                真太阳时：<span id="solarTimeText"></span>
+            </div>
+            <div class="basic-info-timing" id="dayunDirection"></div>
+            <button class="share-btn" onclick="shareResult()" title="复制分享链接"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg> 分享报告</button>
+            <button id="posterButton" class="share-btn poster-entry" type="button" onclick="PosterUI.open()" title="生成免费命格海报">生成命格海报</button>
+        </header>
 
         <!-- ==================== 专业解读（抽屉式·默认关闭） ==================== -->
         
@@ -3011,7 +2992,7 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=4"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=53"></script>
+    <script src="js/result.js?v=56"></script>
     <script src="js/pro-analysis.js?v=20"></script>
     <script src="js/auth.js?v=31"></script>
     <script src="js/payment.js?v=6"></script>

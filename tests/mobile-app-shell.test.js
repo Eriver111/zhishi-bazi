@@ -60,7 +60,7 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(js, /syncResultSectionOrder/);
   assert.match(js, /container\.insertBefore\(sizhu, dayun\)/);
   assert.match(js, /function createResultModeTabs\(\)/);
-  for (const label of ['基础排盘', '专业解读', '白话详参']) {
+  for (const label of ['基础盘面', '专业解读', '白话详参']) {
     assert.match(js, new RegExp(label));
   }
   assert.match(css, /\.mobile-result-tabs[\s\S]*grid-template-columns:\s*repeat\(3/);
@@ -77,7 +77,7 @@ test('feature pages share the same back header and result uses a four-pillar mob
   assert.match(css, /body\.mobile-page-result \.dayun-scroll-wrapper,[\s\S]*touch-action:\s*pan-x pinch-zoom/);
   const result = read('result.html');
   assert.doesNotMatch(result, /revealPillars|排盘逐柱浮现|translateY\(20px\)/);
-  for (const row of ['pp-xingyun-row', 'pp-zizuo-row', 'pp-kongwang-row', 'pp-nayin-row']) {
+  for (const row of ['pp-xingyun-row', 'pp-zizuo-row']) {
     assert.match(result, new RegExp(row));
   }
   assert.match(css, /\.ai-fab::before,[\s\S]*content:\s*"AI"/);

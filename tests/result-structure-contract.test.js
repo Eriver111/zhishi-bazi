@@ -39,7 +39,7 @@ test('mobile timing strips show both stem and branch-main ten gods with unambigu
   assert.match(source, /function getBranchMainShiShen\(dayGan, zhi\)/);
   assert.match(source, /renderTimingGanZhi\('dayun', dayGan, dy\.gan, dy\.zhi\)/);
   assert.match(source, /renderTimingGanZhi\('liunian', dayGan, ln\.gan, ln\.zhi\)/);
-  assert.equal((source.match(/\$\{gan\}\$\{wx\}<\/span>/g) || []).length, 3);
+  assert.match(source, /class="chart-hidden-element"/);
 });
 
 test('bazi result loads direct-pillar parsing before result initialization', () => {
@@ -65,7 +65,7 @@ test('hepan result keeps its existing result and AI integration hooks', () => {
 test('result-capable pages load the result skin after report styles and before mobile experience overrides', () => {
   for (const page of ['result.html', 'hepan-result.html', 'ziwei.html', 'liuren.html']) {
     const hrefs = stylesheetHrefs(read(page));
-    const reportStyles = hrefs.filter(href => !/^\/?css\/(?:mobile-app-shell|app-experience|chart-experience)\.css\?v=\d+$/.test(href));
+    const reportStyles = hrefs.filter(href => !/^\/?css\/(?:mobile-app-shell|app-experience|chart-experience|result-pro-chart)\.css\?v=\d+$/.test(href));
     assert.match(reportStyles.at(-1), /^css\/theme-light-results\.css\?v=\d+$/, `${page} must load the result skin after report styles`);
     const skinIndex = hrefs.indexOf(reportStyles.at(-1));
     for (const href of hrefs.filter(href => !reportStyles.includes(href))) {

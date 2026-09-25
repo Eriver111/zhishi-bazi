@@ -129,6 +129,8 @@ function applyTimingAvailability(hasTiming) {
     if (dayunSection) dayunSection.style.display = hasTiming ? '' : 'none';
     if (liunianSection) liunianSection.style.display = hasTiming ? '' : 'none';
     if (notice) notice.style.display = hasTiming ? 'none' : 'block';
+    var timingInfo = document.getElementById('dayunDirection');
+    if (timingInfo) timingInfo.hidden = !hasTiming;
 }
 
 // ==================== 全局状态 ====================
@@ -284,7 +286,6 @@ function render(data) {
             : ' <span style="font-size:10px;color:var(--text-dim)">（县级经度已校正）</span>';
     }
     document.getElementById('birthHourText').innerHTML = hourText;
-    document.getElementById('nayinText').textContent = bazi.naYin;
 
     if (hasTiming) {
         // 大运
@@ -965,12 +966,12 @@ function renderDaYun(daYunData, dayGan, currentYear) {
         const isPast = currentYear > dy.endYear;
         const cls = isCurrent ? 'current' : (isPast ? 'past' : '');
         html += `
-        <div class="dayun-col ${cls}" data-index="${i}"
+        <button type="button" class="dayun-col ${cls}" data-index="${i}" aria-pressed="false" aria-label="${dy.startYear}年起 ${dy.gan}${dy.zhi}大运"
              onclick="showLiuNian(${i})">
             <div class="dayun-start-year">${dy.startYear}</div>
             <div class="dayun-age">${dy.displayAge}岁</div>
             ${renderTimingGanZhi('dayun', dayGan, dy.gan, dy.zhi)}
-        </div>`;
+        </button>`;
     });
     table.innerHTML = html;
 
@@ -979,6 +980,7 @@ function renderDaYun(daYunData, dayGan, currentYear) {
         const currentCol = table.querySelector('[data-index="' + _currentDaYunIndex + '"]');
         if (currentCol) {
             currentCol.classList.add('active');
+            currentCol.setAttribute('aria-pressed', 'true');
             centerTimingColumn(table, currentCol);
         }
     });
@@ -988,11 +990,13 @@ function renderDaYun(daYunData, dayGan, currentYear) {
 function showLiuNian(daYunIndex) {
     if (!_daYunData || !_dayGan) return;
     const dy = _daYunData.list[daYunIndex];
+    if (!dy) return;
     const currentYear = new Date().getFullYear();
 
     // 高亮选中的大运
     document.querySelectorAll('.dayun-col').forEach((col, i) => {
         col.classList.toggle('active', i === daYunIndex);
+        col.setAttribute('aria-pressed', String(i === daYunIndex));
     });
 
     _currentDaYunIndex = daYunIndex;
@@ -1001,8 +1005,7 @@ function showLiuNian(daYunIndex) {
     // 更新表格中的大运列
     updateDayunColumn(daYunIndex);
 
-    // 清空流年列（等待用户点击流年）
-    clearLiuNianColumn();
+    // 同一次更新直接选今年或首年，避免新大运对应空白流年。
     renderLiuNian(dy, _dayGan, currentYear);
 }
 
@@ -1020,17 +1023,18 @@ function renderLiuNian(daYunItem, dayGan, currentYear) {
         const cls = isCurrent ? 'current-year' : (isPast ? 'past-year' : '');
 
         html += `
-        <div class="liunian-col ${cls}" data-index="${i}"
+        <button type="button" class="liunian-col ${cls}" data-index="${i}" aria-pressed="false" aria-label="${ln.year}年 ${ln.gan}${ln.zhi}"
              onclick="selectLiuNian(${i})">
             <div class="liunian-year-label">${ln.year}年</div>
             ${renderTimingGanZhi('liunian', dayGan, ln.gan, ln.zhi)}
-        </div>`;
+        </button>`;
     });
     table.innerHTML = html;
 
     // 滚动到当前年份
     const cur = table.querySelector('.current-year');
-    if (cur) selectLiuNian(parseInt(cur.getAttribute('data-index')));
+    if (liuNianList.length) selectLiuNian(cur ? Number(cur.getAttribute('data-index')) : 0);
+    else clearLiuNianColumn();
     requestAnimationFrame(() => {
         const selected = table.querySelector('.active-ln');
         if (selected) centerTimingColumn(table, selected);
@@ -1048,6 +1052,7 @@ function selectLiuNian(liuNianIndex) {
     // 高亮选中的流年
     document.querySelectorAll('.liunian-col').forEach((col, i) => {
         col.classList.toggle('active-ln', i === liuNianIndex);
+        col.setAttribute('aria-pressed', String(i === liuNianIndex));
     });
 
     // 更新表格中的流年列
@@ -1055,6 +1060,12 @@ function selectLiuNian(liuNianIndex) {
 }
 
 // ==================== 四柱主盘渲染 ====================
+function renderChartHiddenStem(gan, dayGan) {
+    const wx = window.BaZiCalculator.WU_XING[gan];
+    const god = window.BaZiCalculator.getShiShen(dayGan, gan);
+    return `<span class="chart-hidden-stem"><span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}<span class="chart-hidden-element">${wx}</span></span><span class="chart-hidden-god">${god}</span></span>`;
+}
+
 function renderSiZhu(bazi, dayGan) {
     const positions = ['year', 'month', 'day', 'hour'];
 
@@ -1076,12 +1087,9 @@ function renderSiZhu(bazi, dayGan) {
             document.getElementById(`ss-${pos}-gan`).textContent = pillar.shiShen.gan;
         }
 
-        // 藏干与副星分行展示，二者按相同顺序逐项对应。
+        // 专业盘把藏干与十神逐项配对，桌面旧副星行保留。
         const cangEl = document.getElementById(`cang-${pos}`);
-        const cangItems = pillar.cangGan.map(gan => {
-            const wx = window.BaZiCalculator.WU_XING[gan];
-            return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}${wx}</span>`;
-        });
+        const cangItems = pillar.cangGan.map(gan => renderChartHiddenStem(gan, dayGan));
         cangEl.innerHTML = cangItems.join('');
 
         const fuXingEl = document.getElementById(`ss-${pos}-zhi`);
@@ -1229,10 +1237,7 @@ function updateDayunColumn(daYunIndex) {
         .join('');
 
     const cangEl = document.getElementById('cang-dayun');
-    const cangItems = cangGan.map(gan => {
-        const wx = window.BaZiCalculator.WU_XING[gan];
-        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}${wx}</span>`;
-    });
+    const cangItems = cangGan.map(gan => renderChartHiddenStem(gan, _dayGan));
     cangEl.innerHTML = cangItems.join('');
 
     renderProfessionalAuxColumn('dayun', dy, _dayGan);
@@ -1279,10 +1284,7 @@ function updateLiuNianColumn(daYunItem, liuNianIndex) {
         .join('');
 
     const cangEl = document.getElementById('cang-liunian');
-    const cangItems = cangGan.map(gan => {
-        const wx = window.BaZiCalculator.WU_XING[gan];
-        return `<span class="cang-gan-char" style="color:${WX_COLORS[wx]}">${gan}${wx}</span>`;
-    });
+    const cangItems = cangGan.map(gan => renderChartHiddenStem(gan, _dayGan));
     cangEl.innerHTML = cangItems.join('');
 
     renderProfessionalAuxColumn('liunian', ln, _dayGan);
@@ -2318,6 +2320,7 @@ function buildReportHTML() {
         { id: 'sizhuSection', title: '四柱解析', html: '', pageBreak: false },
         { id: 'dayunSection', title: '大运走势', html: '', pageBreak: false },
         { id: 'liunianSection', title: '流年运势', html: '', pageBreak: false },
+        { id: 'basicInfoSection', title: '基本信息', html: '', pageBreak: false },
         { id: 'proSection', title: '专业命理分析', html: '', pageBreak: true },
         { id: 'characterSection', title: '性格特征', html: '', pageBreak: false },
         { id: 'parentsSection', title: '父母关系', html: '', pageBreak: false },
@@ -2348,6 +2351,14 @@ function buildReportHTML() {
         // 移除所有遮罩和交互元素
         clone.querySelectorAll('.paywall-overlay,#rptPaywall,[id*="paywall"]').forEach(function(o) { o.remove(); });
         clone.querySelectorAll('.drawer-arrow,.toggle-icon').forEach(function(a) { a.remove(); });
+        // 岁运现在是可键盘操作的按钮；导出时保留文字，转换成静态格。
+        clone.querySelectorAll('button.dayun-col,button.liunian-col').forEach(function(button) {
+            var cell = document.createElement('div');
+            cell.className = button.className;
+            cell.innerHTML = button.innerHTML;
+            button.replaceWith(cell);
+        });
+        clone.querySelectorAll('.chart-hidden-god').forEach(function(god) { god.remove(); });
         clone.querySelectorAll('button,.share-btn,.download-btn,.dl-btn').forEach(function(b) { b.remove(); });
         clone.querySelectorAll('.section-drawer').forEach(function(s) { s.classList.add('drawer-open'); });
         clone.querySelectorAll('details.report-claim-details').forEach(function(s) { s.setAttribute('open', ''); });

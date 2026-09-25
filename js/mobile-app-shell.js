@@ -184,9 +184,9 @@
     if (!container || document.querySelector('.mobile-result-tabs')) return;
 
     var panelGroups = {
-      basic: ['.result-header', '#timingLimitNotice', '#downloadBanner', '#sizhuSection', '#dayunSection', '#liunianSection'],
+      basic: ['#basicInfoSection', '#timingLimitNotice', '#sizhuSection', '#dayunSection', '#liunianSection'],
       professional: ['#proSection'],
-      reading: ['#characterSection', '#parentsSection', '#thisYearSection', '#marriageSection', '#wealthSection', '#studySection', '#fortuneSection']
+      reading: ['#downloadBanner', '#characterSection', '#parentsSection', '#thisYearSection', '#marriageSection', '#wealthSection', '#studySection', '#fortuneSection']
     };
 
     Object.keys(panelGroups).forEach(function (key) {
@@ -208,7 +208,7 @@
     tabs.setAttribute('aria-label', '命盘内容');
     tabs.setAttribute('role', 'tablist');
     var items = [
-      { key: 'basic', label: '基础排盘' },
+      { key: 'basic', label: '基础盘面' },
       { key: 'professional', label: '专业解读' },
       { key: 'reading', label: '白话详参' }
     ];
@@ -217,6 +217,7 @@
     var state = window.ZhishiPageState;
     var stateKey = state && state.pageKey('result-view');
     var savedView = state && state.get(stateKey);
+    if (savedView && savedView.tab === 'info') savedView = { tab: 'basic', positions: {} };
 
     function activate(item, button, restoreScroll) {
       var previous = items[activeIndex];

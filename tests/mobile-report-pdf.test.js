@@ -201,6 +201,7 @@ test('real report builder resolves every configured result.html section in expor
     'sizhuSection',
     'dayunSection',
     'liunianSection',
+    'basicInfoSection',
     'proSection',
     'characterSection',
     'parentsSection',
@@ -266,7 +267,7 @@ test('result page loads local PDF dependencies in order and exposes one accessib
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
     '/js/report-pdf.js?v=4',
-    'js/result.js?v=53',
+    'js/result.js?v=56',
   ];
   const indexes = scripts.map((src) => html.indexOf(`src="${src}`));
 
@@ -657,7 +658,7 @@ test('desktop export retains the existing new-tab print-to-PDF route', () => {
 
 test('service worker rolls the cache without competing with navigation for PDF downloads', () => {
   const source = read('sw.js');
-  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v61'/g) || []).length, 1);
+  assert.equal((source.match(/var CACHE_NAME\s*=\s*'zhishi-v62'/g) || []).length, 1);
   assert.equal((source.match(/var CACHE_NAME\s*=/g) || []).length, 1);
   for (const asset of [
     '/js/vendor/html2canvas.min.js?v=2',
