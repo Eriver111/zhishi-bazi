@@ -66,7 +66,13 @@ const APPROVED_PATTERN_STATUS = new Set(['#10', 'A5', 'H11', 'P15-09', 'H15', 'S
 const SCORE_CORRECTION = {
   A2:{score:'27',level:'极弱'}, wetearth:{score:'26',level:'极弱'},
   'P15-16':{score:'29',level:'极弱'}, H15:{score:'37',level:'偏弱'},
-  H18:{score:'35',level:'偏弱'}, 'P15-19':{score:'54',level:'中和'}
+  H18:{score:'35',level:'偏弱'}, 'P15-19':{score:'54',level:'中和'},
+  // 2026-09-26 通关路径分层：不修改历史CSV，仅登记阶段已核对的差异。
+  // A5/H11 戌印受冲不再连坐独立巳印；SY3 遥合不作贴身强合绊。
+  // P15-03/P15-20 只有藏印，撤回最高档；SY4 唯一申印根被寅冲，透印承接受限。
+  A5:{score:'51',level:'中和'}, H11:{score:'51',level:'中和'},
+  'P15-03':{score:'43',level:'中和'}, 'P15-20':{score:'1',level:'极弱'},
+  SY3:{score:'76',level:'偏强'}, SY4:{score:'56',level:'中和'}
 };
 function approvedPatternStatus(id, value) {
   // 2026-09-24：#7 乙日寅月为阴干帝旺，撤销羊刃格及无制破格。
@@ -90,6 +96,9 @@ function approvedYongJiSummary(id, field, value) {
     'A2': { ji:'木、水' },
     // 2026-09-23：枭夺食已使制杀无效，撤销金的4分成格奖励；水的1.8分月令冲救应保留。
     'A3': { yong:'水', xi:'水、金、木' },
+    'A5': { yong:'水', xi:'水、金、木', ji:'火、土' },
+    'H11': { yong:'水', xi:'水、金、木', ji:'火、土' },
+    'P15-03': { yong:'火', xi:'火、土', ji:'木、金、水' },
     'A6': { ji:'木、水' },
     'P15-14': { yong:'火', xi:'火、土', ji:'木、水' },
     'H03': { xi:'金、木、水', ji:'火、土' },
@@ -212,7 +221,7 @@ test('B1：relationEvents 53 盘与 _p3_a1_relation_events.csv 逐项一致（�
   assert.deepEqual(freshTypes, frozenTypes, '事件类型分布与冻结一致（八类 + 半合/半会全枚举）');
 });
 
-test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全等）', function () {
+test('B2：structuralRisks 53 盘与历史CSV仅含已归因差异，其余17列逐项一致', function () {
   const riskByChart = {};
   riskRows.forEach(function (r) {
     const k = r[0] + '|' + r[1];
@@ -227,7 +236,16 @@ test('B2：structuralRisks 53 盘与 _p3_a2_risks.csv 逐项一致（17 列全�
         r.type, r.severity, r.parties, r.why, r.mitigations, r.triggerHint, r.evidence, r.partyEvidence
       ].join('');
     }).sort();
-    const frozen = (riskByChart[c.set + '|' + c.id] || []).map(function (r) {
+    const frozen = (riskByChart[c.set + '|' + c.id] || []).filter(function(r) {
+      // A5/H11 首用随旺衰由土转水，辰戌不再因“用神同五行”成为关键用神节点。
+      // 六冲事实和财破印风险仍由上面的事件层及其余风险逐项锁定。
+      if ((c.id === 'A5' || c.id === 'H11') && r[9] === '关键用神/格局节点受冲') {
+        assert.equal(d.yj.yongShen.join(''), '水');
+        assert.equal(r[11], '年柱辰（用神同五行） ↔ 日柱戌（用神同五行）');
+        return false;
+      }
+      return true;
+    }).map(function (r) {
       const copy = r.slice();
       if (SCORE_CORRECTION[c.id]) {
         copy[3] = SCORE_CORRECTION[c.id].score;
@@ -420,7 +438,7 @@ test('九：全 53 盘 triggerHint 禁确定性语言、severity 仅两档、par
       assert.ok(r.partyEvidence, c.id + ' ' + r.type + ' partyEvidence 非空');
     });
   });
-  assert.equal(riskTotal, 58, '全 53 盘风险总数 === 冻结 58');
+  assert.equal(riskTotal, 56, '历史58项减去A5/H11不再成立的土用神节点风险，关系事实未删');
 });
 
 test('九：官杀混杂双透口径（冻结样本逐条核对）', function () {

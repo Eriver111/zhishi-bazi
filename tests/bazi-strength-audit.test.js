@@ -83,13 +83,23 @@ test('三会牵走的根不再被旧审计层误报为完整强根', () => {
 
 test('28到29分的极弱盘确有完整强根与生扶时仍进入临界复核', () => {
   const E = loadCalculator();
-  const chart = chartOf(E, ['庚辰','乙卯','戊寅','己丑']);
+  // 原夹具寅中丙印未透，旧13分通关信用撤回后不再处于28分边界。
+  // 此处用另一实际日期盘（1980-06-21卯时）继续覆盖边界告警，而不锁死旧误加分。
+  const chart = chartOf(E, ['庚申','壬午','乙丑','己卯']);
   const audit = E.auditDayMasterStrength(chart);
 
   assert.equal(audit.result.score, 28);
   assert.equal(audit.result.level, '极弱');
   assert.equal(audit.status, 'review');
   assert.ok(audit.warnings.some(item => item.code === 'EXTREME_WEAK_BOUNDARY_SUPPORT'));
+});
+
+test('寅中杂藏印不因存在禄根取得13分透印信用，离开边界后不再报边界告警', () => {
+  const E = loadCalculator();
+  const audit = E.auditDayMasterStrength(chartOf(E, ['庚辰','乙卯','戊寅','己丑']));
+  assert.equal(audit.result.score, 18);
+  assert.equal(audit.scoreTrace.find(s => s.id === 'sha-seal-mediation').delta, 3);
+  assert.ok(!audit.warnings.some(item => item.code === 'EXTREME_WEAK_BOUNDARY_SUPPORT'));
 });
 
 test('低分无强根的真极弱盘不触发临界误报，仍严格判为不能承载', () => {

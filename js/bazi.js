@@ -2619,6 +2619,25 @@ function buildBaziEvidenceSettlement(bazi) {
     };
   });
   visibleStems.forEach(function(stem) { stem.effectivePower = Number((stem.basePower + stem.rootPower).toFixed(3)); stem.rooted = stem.rootPower > 0; });
+  // 同柱克泄描述根气的使用条件，不把“被克/生出”直接等同于拔根。
+  // 克泄已在天干阶段计分，这里不再扣根分；仅限制得令、有根克泄干之下的
+  // 本气根取得“无争议双强根”的额外补偿。失令或浮透之干不触发此限制。
+  roots.forEach(function(root) {
+    root.supportConstraints = [];
+    if (root.depth !== '本气') return;
+    var stem = visibleStems.filter(function(item) { return item.position === root.position; })[0];
+    if (!stem) return;
+    var role = getShiShen(root.gan, stem.gan);
+    var kind = role === '正官' || role === '七杀' ? 'control'
+      : (role === '食神' || role === '伤官' ? 'drain' : '');
+    if (!kind) return;
+    root.supportConstraints.push({
+      kind:kind, stemId:stem.id, gan:stem.gan, rooted:stem.rooted,
+      inSeason:DI_ZHI_WU_XING[bazi.month.zhi] === stem.element,
+      limitsClusterBonus:stem.rooted && DI_ZHI_WU_XING[bazi.month.zhi] === stem.element,
+      scoreStage:'visible-stems', adjustment:0
+    });
+  });
   var result = {
     version:'bazi-evidence-settlement-v1', chartKey:positions.map(function(pos) { return bazi[pos].gan + bazi[pos].zhi; }).join('-'),
     roots:roots, visibleStems:visibleStems, relationSettlements:relationSettlements, groupSettlements:groupSettlements,
@@ -3182,8 +3201,10 @@ function calcDayMasterStrength(bazi, options) {
   // 这会漏判“失令但两处禄旺夹扶”的命局。这里采用窄门控：
   //   1) 日主必须失令；2) 非日支至少两处未被冲破、也未被异类合局牵走的临官/帝旺强根；
   //   3) 全部原局规则结算后的基准分仍低于50，避免已足够中和偏强的命局再次拔高；
+  //   4) 根上同柱有得令且有根的克泄干时，保留基本通根，不列为无争议强根补偿候选。
   // 普通单根盘不触发，避免全局抬分。藏干根、半合与有根之印只在门控成立后加权。
   var _externalStrongRoots = [];
+  var _constrainedStrongRoots = [];
   var _rootClusterPendingAdj = 0;
   var _rootClashMap = { '子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳' };
   var _rootHarmMap = { '子':'未','未':'子','丑':'午','午':'丑','寅':'巳','巳':'寅','卯':'辰','辰':'卯','申':'亥','亥':'申','酉':'戌','戌':'酉' };
@@ -3230,7 +3251,14 @@ function calcDayMasterStrength(bazi, options) {
     })[0];
     var _rootIntact = _mainSettledRoot && _mainSettledRoot.effectiveCoefficient >= 1;
     if (benQiSame && _rootIntact && cs && (cs.stage === '临官' || cs.stage === '帝旺')) {
-      _externalStrongRoots.push({ pos:pos, zhi:zhi, stage:cs.stage, rootId:_mainSettledRoot.id });
+      var rootRecord = { pos:pos, zhi:zhi, stage:cs.stage, rootId:_mainSettledRoot.id };
+      var constraints = _mainSettledRoot.supportConstraints.filter(function(item) { return item.limitsClusterBonus; });
+      if (constraints.length) {
+        rootRecord.constraints = constraints;
+        _constrainedStrongRoots.push(rootRecord);
+      } else {
+        _externalStrongRoots.push(rootRecord);
+      }
     }
   });
 
@@ -3297,7 +3325,7 @@ function calcDayMasterStrength(bazi, options) {
     _rootClusterPendingAdj = _rootClusterAdj;
   }
 
-  _auditMark('root-cluster-gate', '多重强根门控', { roots:_externalStrongRoots.slice(), pendingAdjustment:_rootClusterPendingAdj });
+  _auditMark('root-cluster-gate', '多重强根门控', { roots:_externalStrongRoots.slice(), constrainedRoots:_constrainedStrongRoots.slice(), pendingAdjustment:_rootClusterPendingAdj });
 
   // ---------- ⑤ 五行过耗修正（日主克月令时，月令五行过旺则日主被反耗） ----------
   // 统计月令五行在盘面中的出现次数（天干+地支）
@@ -3740,85 +3768,75 @@ function calcDayMasterStrength(bazi, options) {
     dayBranchTransformation:{ pairs:dayHePairs, adjustment:dayBranchAdj }
   });
 
-  // ---------- ⑧½ 杀印相生结构修正 ----------
-  // 官杀当令克身（死令），但天干有印星贴身通关，日主有长生/禄位根
-  // 子平法："杀印相生，化杀为权"——杀不攻身反生印，印再生身，是贵格结构
-  // 不应按普通扶抑法将 +印星 与 -死令 孤立相加，需给结构的整体价值补偿
+  // ---------- ⑧½ 官杀印通关承载 ----------
+  // 使用原有13/6/3/0档位，区分透印和藏印；它们是工程权重，不是古籍定量结论。
+  // 日支本气印有承接路径，但不能仅凭藏印取得“贴身透印”的最高档。
+  // 同一条通关路径只取最高有效档，不将多个印星的结构补偿相加。
+  var _sealMediation = { eligible:false, carrierRoots:[], paths:[], adjustment:0, selectedPath:null };
   if (KEWO[dgWx] === mwx) {
-    var _yinAdjacent = false;
-    // 月干或时干有印星贴身透出（紧邻日主，可直接生扶）
-    if (SHENGWO[dgWx] === WU_XING[bazi.month.gan]) _yinAdjacent = true;
-    if (!_yinAdjacent && SHENGWO[dgWx] === WU_XING[bazi.hour.gan]) _yinAdjacent = true;
-    // 日支藏印（坐杀之地，杀转生印，贴身通关）
-    if (!_yinAdjacent) {
-      var _dcg2 = getCangGan(bazi.day.zhi);
-      for (var _dci = 0; _dci < _dcg2.length; _dci++) {
-        if (WU_XING[_dcg2[_dci]] === SHENGWO[dgWx]) { _yinAdjacent = true; break; }
-      }
-    }
-    // 日主有长生根或禄根（有自存之地，不被连根拔起）
     var _CHANG_SHENG = {'甲':'亥','乙':'午','丙':'寅','丁':'酉','戊':'寅','己':'酉','庚':'巳','辛':'子','壬':'申','癸':'卯'};
     var _LU = {'甲':'寅','乙':'卯','丙':'巳','丁':'午','戊':'巳','己':'午','庚':'申','辛':'酉','壬':'亥','癸':'子'};
-    var _hasCSL = ['year','month','day','hour'].some(function(_pos) {
-      if (bazi[_pos].zhi !== _CHANG_SHENG[dg] && bazi[_pos].zhi !== _LU[dg]) return false;
-      return _settledEvidence.rootAt(_pos).some(function(_root) {
-        return _root.element === dgWx && _root.effectivePower > 0;
+    ['year','month','day','hour'].forEach(function(pos) {
+      if (bazi[pos].zhi !== _CHANG_SHENG[dg] && bazi[pos].zhi !== _LU[dg]) return;
+      _settledEvidence.rootAt(pos).forEach(function(root) {
+        if (root.element === dgWx && root.effectivePower > 0) _sealMediation.carrierRoots.push(root.id);
       });
     });
-    if (_hasCSL) {
-      // P2.3 四档分级：结构补偿按介入有效性分档，不再二元（旧规则：贴身印+CSL 一律 +13）
-      // A +13：贴身印且无明显受破（强介入，化杀为权成立）
-      // B +6 ：年干印有根或得生（有效年干印，遥通关）
-      // C +3 ：年干弱印，或贴身印受破（合绊/坐地受冲，介入明显削弱）
-      // D 0  ：无有效印
-      var _SHENG_CYCLE = {'木':'火','火':'土','土':'金','金':'水','水':'木'};
-      var _CHONG_PAIR = {'子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳'};
+    _sealMediation.eligible = _sealMediation.carrierRoots.length > 0;
+    if (_sealMediation.eligible) {
       var _yinWx = SHENGWO[dgWx];
-      var _hePo = false, _chongPo = false;
-      // 受破A：贴身印干被天干五合合绊（合日主除外——印来合身是加强不是破）
-      var _HE_PAIRS = [['甲','己'],['乙','庚'],['丙','辛'],['丁','壬'],['戊','癸']];
-      ['month','hour'].forEach(function(_pos) {
-        var _g = bazi[_pos].gan;
-        if (WU_XING[_g] !== _yinWx) return;
-        _HE_PAIRS.forEach(function(_hp) {
-          var _other = null;
-          if (_hp[0] === _g) _other = _hp[1];
-          else if (_hp[1] === _g) _other = _hp[0];
-          if (_other && _other !== dg) {
-            ['year','month','day','hour'].forEach(function(_p2) {
-              if (bazi[_p2].gan === _other) _hePo = true;
-            });
-          }
+      var _sealRoots = _settledEvidence.roots.filter(function(root) { return root.element === _yinWx && root.effectivePower > 0; });
+      var _sealRootIntact = _sealRoots.some(function(root) { return root.effectiveCoefficient >= 1; });
+      // 原有日支六冲限制改为按印根路径核查：没有另一未受冲印根才限制透印。
+      // 刑害与合会已有根气系数，不在这里一律当作六冲再次降档。
+      var _allSealRootsClashed = _sealRoots.length > 0 && _sealRoots.every(function(root) {
+        return root.adjustments.some(function(adjustment) { return adjustment.type === 'disturbance' && adjustment.relation === '六冲'; });
+      });
+      var _sealFedByCommand = {'木':'火','火':'土','土':'金','金':'水','水':'木'}[mwx] === _yinWx;
+      ['month','hour','year'].forEach(function(pos) {
+        if (WU_XING[bazi[pos].gan] !== _yinWx) return;
+        // 读取统一五合裁决；日主合印沿用原有承接规则，其余相邻合绊限制通关。
+        var bindings = _ganHeDecisions.filter(function(relation) {
+          return relation.isAdjacent && !relation.dayInvolved
+            && (relation.from === _stemNames[pos] || relation.to === _stemNames[pos]);
+        });
+        var transformedAway = bindings.some(function(relation) { return relation.isTransformed && relation.huaWx !== _yinWx; });
+        var supported = _sealRootIntact || _sealFedByCommand;
+        var limited = bindings.length > 0 || _allSealRootsClashed || !supported;
+        var value = transformedAway ? 0 : (limited ? 3 : (pos === 'year' ? 6 : 13));
+        _sealMediation.paths.push({
+          type:pos === 'year' ? 'year-visible' : 'adjacent-visible', position:pos,
+          gan:bazi[pos].gan, rootIds:_sealRoots.map(function(root) { return root.id; }),
+          intactRoot:_sealRootIntact, fedByCommand:_sealFedByCommand,
+          allRootsClashed:_allSealRootsClashed,
+          bound:bindings.length > 0, transformedAway:transformedAway,
+          adjustment:value, reason:transformedAway ? '印干合化为异类，不能再按原印通关'
+            : (bindings.length ? '印干受合牵制，只保留有限通关'
+              : (_allSealRootsClashed ? '印根均受六冲，缺少独立未受冲根气，通关受限'
+                : (!supported ? '透印缺少根气与生源，只保留有限通关'
+                  : (pos === 'year' ? '年干印有根或得生，遥接通关' : '贴身透印有根或得月令生源，沿用透印承载档'))))
         });
       });
-      // 受破B：日支藏印路径时日支被六冲（印之坐地受冲，通关被破）
-      var _opp = _CHONG_PAIR[bazi.day.zhi];
-      if (_opp) {
-        ['year','month','hour'].forEach(function(_p3) {
-          if (bazi[_p3].zhi === _opp) _chongPo = true;
+      _settledEvidence.rootAt('day').forEach(function(root) {
+        if (root.element !== _yinWx || root.effectivePower <= 0) return;
+        var intactMainSeal = root.depth === '本气' && root.effectiveCoefficient >= 1;
+        _sealMediation.paths.push({
+          type:'day-hidden', position:'day', gan:root.gan, rootIds:[root.id],
+          depth:root.depth, effectiveCoefficient:root.effectiveCoefficient,
+          adjustment:intactMainSeal ? 6 : 3,
+          reason:intactMainSeal ? '日支本气印贴身承接，未透干不取最高档' : '日支杂藏或受扰之印，仅保留有限承接'
         });
-      }
-      var _dayYin = false;
-      var _dcgYin = getCangGan(bazi.day.zhi);
-      for (var _di2 = 0; _di2 < _dcgYin.length; _di2++) {
-        if (WU_XING[_dcgYin[_di2]] === _yinWx) _dayYin = true;
-      }
-      var _po = (_hePo || (_dayYin && _chongPo));
-      if (_yinAdjacent && !_po) {
-        score += 13; // A 档：强介入贴身印，无明显受破
-      } else {
-        var _yGanYin = (WU_XING[bazi.year.gan] === _yinWx);
-        var _yinRoot = _settledEvidence.elementRootPower(_yinWx) > 0;
-        if (_yGanYin && (_yinRoot || _SHENG_CYCLE[mwx] === _yinWx)) {
-          score += 6; // B 档：年干有效印
-        } else if (_yGanYin || (_yinAdjacent && _po)) {
-          score += 3; // C 档：年干弱印，或贴身印受破
+      });
+      _sealMediation.paths.forEach(function(path) {
+        if (path.adjustment > _sealMediation.adjustment) {
+          _sealMediation.adjustment = path.adjustment;
+          _sealMediation.selectedPath = path;
         }
-      }
+      });
     }
   }
-
-  _auditMark('sha-seal-mediation', '杀印相生制化', null);
+  score += _sealMediation.adjustment;
+  _auditMark('sha-seal-mediation', '官杀印通关承载', _sealMediation);
 
   // ---------- ⑧⅝ 伤官配印承载修正 ----------
   // 伤官当令时，若只把“泄身”与“印生身”拆开计分，会出现格局层已判“伤官配印成格”，
@@ -3971,7 +3989,8 @@ function calcDayMasterStrength(bazi, options) {
   if (level === '极强' || level === '偏强') {
     detail = '综合评定身' + level + '（' + score + '分）。命局中帮扶力量较强，日主底气充足。';
   } else if (level === '中和') {
-    detail = '综合评定中和（' + score + '分）。命局五行相对均衡，日主不偏不倚。';
+    detail = '综合评定中和（' + score + '分）。生扶与克泄耗较接近'
+      + (score < 50 ? '，克泄耗略占上风。' : (score > 50 ? '，生扶略占上风。' : '。'));
   } else if (_thickEarthMetalState.applies) {
     detail = '综合评定身' + level + '（' + score + '分）。湿库厚土成势，印星由生扶转为埋金，不能再按普通得令身强论；金根承载受到厚土制约。';
   } else if (_waterloggedWoodState.applies) {
@@ -4253,6 +4272,7 @@ function buildBaziEventLedger(bazi, scoreStages) {
     root.finalValue = settled.effectivePower;
     root.state = settled.state;
     root.data.settlementRootId = settled.id;
+    root.data.supportConstraints = settled.supportConstraints;
     settled.adjustments.forEach(function(adjustment) {
       root.adjustments.push(Object.assign({ type:'state-change', delta:null }, adjustment));
     });
@@ -4356,6 +4376,8 @@ function auditDayMasterStrength(bazi) {
         basePower:settled ? settled.basePower : (index === 0 ? 2 : (index === 1 ? 1 : 0.5)),
         effectiveCoefficient:settled ? settled.effectiveCoefficient : 1,
         effectivePower:settled ? settled.effectivePower : (index === 0 ? 2 : (index === 1 ? 1 : 0.5)),
+        supportConstraints:settled ? settled.supportConstraints : [],
+        supportNote:settled && settled.supportConstraints.length ? '根气仍在；同柱克泄已在天干计分，得令且有根时限制双强根额外补偿' : '',
         status:settled && settled.effectiveCoefficient < 1 ? '受损根' : '完整根'
       });
     });
