@@ -21,11 +21,18 @@
   async function loadBook(id) {
     if (!catalog.some(function (b) { return b.id === id && b.availability !== 'reference'; })) throw new Error('这本书暂未开放正文，请返回书架查看书目说明。');
     if (!books[id]) {
-      var value = await json('/books/' + id + '.json?v=6');
+      var value = await json(id === 'sanming' ? '/books/reader/sanming/index.json?v=9' : '/books/' + id + '.json?v=9');
       if (value.id !== id || !Array.isArray(value.chapters) || !value.chapters.length) throw new Error('书籍正文暂时无法读取。');
       books[id] = value;
     }
     return books[id];
+  }
+  async function loadChapter(book, chapter) {
+    if (Array.isArray(chapter.blocks)) return;
+    if (book.readerFormat !== 1 || !/^c-[a-f0-9]+$/.test(chapter.id)) throw new Error('章节目录暂时无法读取。');
+    var value = await json('/books/reader/' + book.id + '/' + chapter.id + '.json?v=' + encodeURIComponent(chapter.revision), null, 30000);
+    if (value.book !== book.id || value.id !== chapter.id || !Array.isArray(value.blocks) || value.blocks.length !== chapter.blockCount) throw new Error('章节内容与目录不一致，请刷新后重试。');
+    chapter.blocks = value.blocks;
   }
   async function sync(book) {
     var capturedEpoch = identityEpoch, capturedOwner = owner, capturedToken = token;
@@ -74,7 +81,8 @@
       link.append(cover, element('h2', book.title), element('p', book.author), element('p', book.description));
       var meta = element('div', undefined, 'book-meta'); meta.append(element('span', book.category + (reference ? ' · 书目' : ' · 古籍')), element('span', reference ? '正文待授权' : book.chapterCount + ' 节'));
       link.append(meta);
-      if (book.translation && book.translation.complete) link.append(element('p', book.translation.completeChapters + ' 篇白话对照 · 译稿', 'book-translation'));
+      if (book.editorialWarning) link.append(element('p', book.editorialWarning, 'book-warning'));
+      if (book.translation && book.translation.completeChapters) link.append(element('p', book.translation.completeChapters + ' 篇白话对照 · ' + (book.translation.complete ? '全书译稿' : '持续更新'), 'book-translation'));
       link.append(element('span', reference ? '查看出版书目 ↗' : '翻开阅读 →', 'book-action')); grid.append(link);
     });
     var readable = shown.filter(function (b) { return b.availability !== 'reference'; }).length;
@@ -100,6 +108,8 @@
     $('chapterTitle').textContent = title;
     $('chapterGroup').textContent = readingText(chapter.group, chapter.groupSimplified) || '';
     $('chapterBody').replaceChildren();
+    var warning = $('bookEditorialNotice'); warning.replaceChildren(); warning.hidden = !current.editorialWarning;
+    if (current.editorialWarning) warning.append(element('strong', current.editorialWarning.title), element('p', current.editorialWarning.text), element('p', current.editorialWarning.scope));
     chapter.blocks.forEach(function (block, index) {
       var el = element(block.type === 'pre' ? 'pre' : block.isHeading ? 'h2' : 'p', readingText(block.text, block.textSimplified));
       var node = el;
@@ -108,6 +118,12 @@
         var modern = element('div', undefined, 'vernacular');
         modern.append(element('span', '白话', 'passage-label'), element('p', block.translation));
         node.append(element('span', '古文', 'passage-label'), el, modern);
+      }
+      if (block.proofreadingNote) {
+        if (node === el) { node = element('section', undefined, 'reading-passage'); node.append(el); }
+        var note = element('aside', undefined, 'proofreading-note');
+        note.setAttribute('aria-label', '原文校对说明');
+        note.append(element('strong', '校对说明'), element('p', block.proofreadingNote)); node.append(note);
       }
       node.dataset.block = index; $('chapterBody').append(node);
     });
@@ -144,6 +160,7 @@
   function renderSource() {
     var box = $('bookSource'); box.replaceChildren();
     box.append(element('h3', current.title), element('p', current.author), element('p', '收录版本：' + current.edition), element('p', current.note));
+    if (current.editorialWarning) box.append(element('p', current.editorialWarning.text), element('p', current.editorialWarning.scope));
     box.append(element('p', '默认简体阅读；工具栏中的“原文”可切回来源字形。来源可能为繁体、简体或混排；转换只调整字形，不是白话翻译。'));
     if (current.translation) box.append(element('p', current.translation.label + '：已收录 ' + current.translation.paragraphs + ' 段。' + current.translation.method + '。' + current.translation.note));
     current.sources.forEach(function (source) { var p = element('p', source.title + ' · '); var a = element('a', (source.publisher || '维基文库') + (source.revision ? '来源及修订记录' : '来源原文')); a.href = source.permanentUrl; a.target = '_blank'; a.rel = 'noopener noreferrer'; p.append(a); box.append(p); });
@@ -152,14 +169,14 @@
   }
   async function route() {
     var epoch = ++routeEpoch, accountEpoch = identityEpoch, params = new URLSearchParams(location.search), id = params.get('book');
-    current = null; restoring = true; $('libraryError').hidden = true; $('reader').hidden = true; $('shelf').hidden = false;
+    current = null; restoring = true; $('libraryLoading').hidden = !id; $('libraryError').hidden = true; $('reader').hidden = true; $('shelf').hidden = false;
     document.body.classList.remove('library-reading', 'library-night'); document.title = '藏书阁 · 知时';
     if (!id) { renderShelf(); restoring = false; window.scrollTo({ top: 0, behavior: 'instant' }); return; }
     $('shelf').hidden = true; $('shelfStatus').textContent = '正在打开书籍…';
     try {
       var book = await loadBook(id);
       if (epoch !== routeEpoch || accountEpoch !== identityEpoch) return;
-      current = book; state(book); $('reader').hidden = false; $('chapterBody').replaceChildren(); $('chapterTitle').textContent = '正在打开…'; status('正在恢复阅读记录…'); $('retrySync').hidden = true;
+      current = book; state(book); $('chapterBody').replaceChildren(); $('chapterTitle').textContent = '正在打开…'; status('正在恢复阅读记录…'); $('retrySync').hidden = true;
       if (!hydrated[id]) { await sync(book); if (accountEpoch === identityEpoch) hydrated[id] = true; }
       else status(localMessage());
       if (epoch !== routeEpoch || accountEpoch !== identityEpoch) return;
@@ -169,6 +186,10 @@
       if (requested && chapterIndex < 0) throw new Error('这个章节链接已失效，请从书架重新进入。');
       if (chapterIndex < 0) chapterIndex = 0;
       var chapter = book.chapters[chapterIndex];
+      await loadChapter(book, chapter);
+      if (epoch !== routeEpoch || accountEpoch !== identityEpoch) return;
+      $('libraryLoading').hidden = true;
+      $('reader').hidden = false;
       var edition = editionChapters(), editionIndex = edition.indexOf(chapter);
       $('readingBookTitle').textContent = book.title; $('chapterNumber').textContent = (editionIndex + 1) + ' / ' + edition.length + ' 篇'; paintChapter();
       $('editionControl').hidden = !book.editions;
@@ -178,6 +199,8 @@
       $('previousChapter').disabled = editionIndex === 0; $('nextChapter').disabled = editionIndex === edition.length - 1;
       document.body.classList.add('library-reading'); applyPreferences(); updateBookmark();
       var block = progress && progress.chapter === chapter.id ? progress.block : 0;
+      var requestedBlock = params.get('block');
+      if (requested && /^\d+$/.test(requestedBlock || '') && Number(requestedBlock) < chapter.blocks.length) block = Number(requestedBlock);
       window.scrollTo({ top: 0, behavior: 'instant' });
       if (block > 0 && $('chapterBody').children[block]) window.scrollTo({ top: window.scrollY + $('chapterBody').children[block].getBoundingClientRect().top - 100, behavior: 'instant' });
       $('chapterTitle').focus({ preventScroll: true });
@@ -186,6 +209,7 @@
       setTimeout(function () { if (epoch === routeEpoch && accountEpoch === identityEpoch) { restoring = false; remember(block); } }, 180);
     } catch (error) {
       if (epoch !== routeEpoch || accountEpoch !== identityEpoch) return;
+      $('libraryLoading').hidden = true;
       current = null; $('reader').hidden = true; $('libraryError').hidden = false; $('libraryError').querySelector('p').textContent = error.message === '请求未成功' ? '书籍加载失败，请检查网络后重试。' : error.name === 'AbortError' ? '加载超时，请重试。' : error.message; restoring = false;
     }
   }
@@ -247,7 +271,7 @@
   window.addEventListener('storage', function (event) { if (!current || event.key !== storageKey(current.id)) return; states[current.id] = model.merge(state(current), read(event.key), current); updateBookmark(); });
   async function init() {
     $('libraryError').hidden = true;
-    try { catalog = await json('/books/catalog.json?v=6'); renderShelf(); changeIdentity(); await route(); }
+    try { catalog = await json('/books/catalog.json?v=9'); renderShelf(); changeIdentity(); await route(); }
     catch (_) { $('libraryError').hidden = false; $('libraryError').querySelector('p').textContent = '书架加载失败，请检查网络后重试。'; $('shelfStatus').textContent = ''; }
   }
   applyPreferences(); init();

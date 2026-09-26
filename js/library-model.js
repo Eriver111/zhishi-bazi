@@ -19,7 +19,8 @@
       var chapter = book.chapters.find(function (c) { return c.id === chapterId; });
       if (!chapter || !item || !Number.isSafeInteger(item.at) || item.at < 1 || item.at > Date.now() + 300000) return null;
       if (bookmark) return { at: item.at, deleted: item.deleted === true };
-      return { chapter: chapterId, block: Math.min(chapter.blocks.length - 1, block), at: item.at };
+      var count = Array.isArray(chapter.blocks) ? chapter.blocks.length : chapter.blockCount;
+      return { chapter: chapterId, block: Math.min(Math.max(0, count - 1), block), at: item.at };
     }
     if (value.progress) result.progress = entry(value.progress, value.progress.chapter, false);
     if (value.bookmarks && typeof value.bookmarks === 'object') Object.keys(value.bookmarks).forEach(function (id) {

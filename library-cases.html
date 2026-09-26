@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>古籍案例库 · 知时藏书阁</title>
+  <meta name="description" content="对照古籍四柱、原断与白话解读，阅读取用、制化、格局和行运的命例。">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/auth.css"><link rel="stylesheet" href="/css/theme-light.css?v=5">
+  <link rel="stylesheet" href="/css/mobile-app-shell.css?v=32"><link rel="stylesheet" href="/css/library.css?v=6"><link rel="stylesheet" href="/css/library-cases.css?v=1">
+</head>
+<body class="library-page library-cases-page">
+  <nav class="top-nav" aria-label="网站导航"><a href="/">知 时</a><div><a href="/library">藏书阁</a><span id="nav-user-area"></span></div></nav>
+  <main id="libraryMain">
+    <section id="caseShelf" aria-labelledby="caseShelfTitle">
+      <header class="cases-heading"><a href="/library">‹ 返回藏书阁</a><p class="eyebrow">知时 · 古籍命例</p><h1 id="caseShelfTitle">案例库</h1><p>同样一个字，放在不同的盘里，为什么说法不同？<br>从原书的具体命例，看清每一步论证。</p></header>
+      <p id="caseCollectionNote" class="case-collection-note"></p>
+      <form id="caseFilters" class="case-filters" role="search">
+        <label>找案例<input id="caseSearch" type="search" placeholder="四柱、主题或关键词" autocomplete="off"></label>
+        <label>出处<select id="caseBook"><option value="">全部书籍</option></select></label>
+        <label>主题<select id="caseTag"><option value="">全部主题</option></select></label>
+        <button id="caseReset" type="button">清除筛选</button>
+      </form>
+      <p id="caseStatus" role="status">正在整理案例…</p><div id="caseGrid" class="case-grid"></div>
+    </section>
+    <section id="caseDetail" hidden aria-labelledby="caseTitle"></section>
+    <div id="caseLoadError" role="alert" hidden><p>案例暂时未能加载，请检查网络后重试。</p><button id="caseRetry">重新加载</button></div>
+  </main>
+  <script src="/js/auth.js?v=31"></script><script src="/js/mobile-app-shell.js?v=12"></script><script src="/js/library-cases.js?v=1"></script>
+</body>
+</html>

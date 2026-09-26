@@ -132,17 +132,31 @@ test('old positions migrate across splits once and aliases merge bookmark deleti
 test('vernacular samples and full chapters are bound to exact original paragraphs', () => {
   const manifest=require('../scripts/library-translations.json');
   const full=require('../scripts/translations/ziping.json');
+  const manuscripts=fs.readdirSync(path.join(__dirname,'../scripts/translations')).filter(f=>f.endsWith('.json')).map(f=>require('../scripts/translations/'+f));
   const crypto=require('node:crypto');
   assert.equal(manifest.entries.length,14);
   for(const sample of manifest.entries){
     const value=books.find(b=>b.id===sample.book),c=value.chapters.find(c=>c.id===sample.chapter),block=c.blocks[sample.block];
     assert.equal(crypto.createHash('sha256').update(block.text).digest('hex'),sample.sourceHash);
-    const replacement=sample.book===full.book && full.chapters.find(c=>c.id===sample.chapter);
+    const manuscript=manuscripts.find(f=>f.book===sample.book);
+    const replacement=manuscript && manuscript.chapters.find(c=>c.id===sample.chapter);
     assert.equal(block.translation,replacement ? replacement.paragraphs[sample.block] : sample.text);
     assert.ok(block.translation.length>15);
     if(!value.translation.complete)assert.match(value.translation.note,/尚未提供全书/);
   }
   for(const value of books)assert.equal(value.chapters.flatMap(c=>c.blocks).filter(b=>b.translation).length,value.translation.paragraphs);
+  for(const draft of manuscripts){
+    const value=books.find(b=>b.id===draft.book);
+    for(const entry of draft.chapters){
+      const chapter=value.chapters.find(c=>c.id===entry.id);
+      assert.equal(entry.title,chapter.title);
+      assert.equal(entry.paragraphs.length,chapter.blocks.length);
+      chapter.blocks.forEach((block,i)=>{
+        assert.equal(crypto.createHash('sha256').update(block.text).digest('hex'),entry.sourceHashes[i]);
+        assert.equal(block.translation,entry.paragraphs[i]);
+      });
+    }
+  }
   const value=books.find(b=>b.id===full.book);
   assert.equal(full.chapters.length,value.chapters.length);
   assert.equal(value.translation.complete,true);

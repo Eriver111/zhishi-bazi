@@ -38,3 +38,9 @@
   .book-cover strong{font-size:18px;line-height:1.35;padding:9px 6px;letter-spacing:2px}
   .book-cover:after{left:19px;bottom:12px;font-size:9px;letter-spacing:2px}
 }
+.book-warning{color:var(--lib-red);font-size:12px;line-height:1.7}
+.book-editorial-notice{max-width:700px;margin:20px auto;padding:16px 18px;border:1px solid var(--lib-line);border-left:3px solid var(--lib-red);border-radius:8px;background:#a9896010;font-size:13px;line-height:1.9;color:var(--lib-ink)}
+.book-editorial-notice[hidden]{display:none}.book-editorial-notice p{margin:8px 0 0}.book-editorial-notice p:last-child{color:var(--lib-muted)}
+#chapterBody .reading-passage{margin:0 0 32px}#chapterBody .proofreading-note{margin:12px 0 24px;padding:12px 16px;border-left:2px solid var(--lib-line);background:#a9896010;font:13px/1.9 -apple-system,"Microsoft YaHei",sans-serif;color:var(--lib-muted)}
+#chapterBody .proofreading-note p{margin:6px 0 0;font:inherit;letter-spacing:normal}
+.library-cases-entry{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 22px;margin:22px 0;border:1px solid var(--lib-line);border-radius:12px;line-height:1.8;color:var(--lib-red)}.library-cases-entry strong{font:600 20px/1.8 "Songti SC","SimSun",serif}.library-cases-entry small{display:block;color:var(--lib-muted);font-size:12px}.library-cases-entry>span:last-child{flex-shrink:0;font-size:13px}

@@ -11,8 +11,8 @@
     "characters": 145314,
     "translation": {
       "complete": false,
-      "completeChapters": 0,
-      "paragraphs": 2
+      "completeChapters": 57,
+      "paragraphs": 401
     }
   },
   {
@@ -42,9 +42,9 @@
     "chapterCount": 47,
     "characters": 32502,
     "translation": {
-      "complete": false,
-      "completeChapters": 0,
-      "paragraphs": 2
+      "complete": true,
+      "completeChapters": 47,
+      "paragraphs": 605
     }
   },
   {
@@ -61,7 +61,8 @@
       "complete": false,
       "completeChapters": 0,
       "paragraphs": 2
-    }
+    },
+    "editorialWarning": "文字与论法多处存疑 · 不作知时算法依据"
   },
   {
     "id": "ziping",

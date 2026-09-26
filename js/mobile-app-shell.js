@@ -11,6 +11,7 @@
 
   var pageTitles = {
     '/library': '藏书阁',
+    '/library-cases': '古籍案例库',
     '/paipan': '八字排盘', '/result': '知时八字', '/ziwei': '紫微斗数',
     '/hepan': '合盘缘分', '/hepan-result': '合盘结果', '/fortune': '今日运势', '/liuyao': '六爻占卜',
     '/meihua': '梅花易数', '/face': 'AI 观面', '/palm': 'AI 观手',

@@ -1,0 +1,379 @@
+{
+  "version": "2026-09-26.1",
+  "cases": [
+    {
+      "id": "dt-zhiming-dong",
+      "book": "ditian",
+      "chapter": "c-6bb2ecb85136",
+      "start": 15,
+      "end": 26,
+      "commentary": 26,
+      "title": "辰月戊土：月令属土，也要看泄身",
+      "tags": [
+        "旺衰",
+        "湿土",
+        "用印"
+      ],
+      "summary": "作者为什么不把辰月戊土直接判为旺，而取午火生扶？",
+      "note": "书中称“董中堂”，未提供可独立核实的完整身份与生卒资料。寿数与官位仅按原书记述。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "9df3c716d885f8f78defa6835dae76c6283d009f09148cedae34f9baa5577d69",
+        "1a761a442aadb2085d8eaa5200727a51965a8781a6cb255ac2ba3cecd60a0928",
+        "96a96d44cbcb0934cc0e266f64ebd1da72d4739fb493ae021d4486a7e53397fa",
+        "6ce2915878e519816339289127f0156e8d009c8ff9a8445bf1ca30b3f211d155",
+        "35f64cb57e8ff3f772e8e4af1294484175c71c33b736144b6aef566f85549ab9",
+        "197512d0e46497ce6402abc3065b8293fdf6e692c033886fb02c38f53d71fa14",
+        "1bf230e36244b31f8023067e22ef872b3e4d70d99aae6675af21b3456a9b7d54",
+        "43a3e5ccd0d13965442de1b6aed5848d20b81035e893519422b3538321ac9caa",
+        "6c78da5408c28113367224008a4b6655824f66d67c35522a85762d0b056e5d55",
+        "3dac1638d0db954ab32ddefa955bc6f4845a1f8c19c0b4cc435dd03328897e46",
+        "cc07ea41c6f0f256900f28bd5c94f1fbb8a439001c75a2f4141f220b9153fa9e",
+        "538d49c4a1ffe92042a64e7afec55ed119e0272c1d5cf588993b8ea1c7d7bf00"
+      ],
+      "related": [
+        "dt-zhiming-hantu"
+      ]
+    },
+    {
+      "id": "dt-zhiming-hantu",
+      "book": "ditian",
+      "chapter": "c-6bb2ecb85136",
+      "start": 27,
+      "end": 38,
+      "commentary": 38,
+      "title": "寒湿己土：丙火为什么需要寅根",
+      "tags": [
+        "调候",
+        "根气",
+        "用印"
+      ],
+      "summary": "同是取火，看看丑月寒土、辛金泄气和寅中火根怎样一起进入论证。",
+      "note": "本段带有底本“新增”标记，末尾是对未来的判断，未附后来应验记录。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "0d7a5f7766e332b4fc324f5e056d655ef3601cbe1c989299c00ca613f13e7cdf",
+        "c88cda56e48a9e9a1255491bb52c0af25e121bec23d1f7342f0b100cdbcef4b7",
+        "31deab05513f9d84819b4221693c632061df7418d3b5d7fc40aaf22e9b3a60aa",
+        "a6975bef9938e120d5bf1deecea808274c3bf1366099509b8cc2652d66c32dba",
+        "cd91f9cac1e30f2707c771c544dc35e00a9cb30ce008d00c854e9f81f8dc4715",
+        "e775a3be8ca03c691b7a988ed6e7bb0e7863dc622beb3964740d335381ed3161",
+        "94d7c63e8f2408524f41d808f300f1c3e2617653bb118cfa704860c65a11ed02",
+        "7570bf664e6af719065c5facbe16f954b8ebf61904b5dff84175ab87ba73e9bf",
+        "c99efa15a21ed6928dbacd3b30ea2e11c24c066a861d23a71b172412ad554deb",
+        "b737309ed62139f450fa8194da64ec5bd8fb06fed7345258159d6b3c48d1f13a",
+        "31deab05513f9d84819b4221693c632061df7418d3b5d7fc40aaf22e9b3a60aa",
+        "c6f837989ba81e2499ee7971a21bf0323e04c47cd41ffd3d7f52cb21ad3f47bd"
+      ],
+      "related": [
+        "dt-zhiming-dong"
+      ]
+    },
+    {
+      "id": "dt-zhiming-wang",
+      "book": "ditian",
+      "chapter": "c-6bb2ecb85136",
+      "start": 39,
+      "end": 50,
+      "commentary": 50,
+      "title": "旺木遇弱金：为什么改取午火",
+      "tags": [
+        "旺衰",
+        "顺势",
+        "取用"
+      ],
+      "summary": "原书将强行用庚制木与用午火泄木作对比，并记述命主转向经营的经过。",
+      "note": "“十余万”未载币种和折算依据，不转换为现代财富量级；不得据此直接替读者作择业判断。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "2e35af31bd445395be761ab96508973ed745aaf7849ff0504e4dcd163aa2c8c2",
+        "bdde52765f74ca71fa3863deb163317229a73b63bd6e8af56d9219f8cb7077aa",
+        "341e7614826219ec22d438b0d5d25db1c3fe3ab221f819bb0149e45c50d2915a",
+        "f4ee724235ff7511645a2177e60a0c677b0133b90f2c9c4cbd78be5199042fba",
+        "e775a3be8ca03c691b7a988ed6e7bb0e7863dc622beb3964740d335381ed3161",
+        "94d7c63e8f2408524f41d808f300f1c3e2617653bb118cfa704860c65a11ed02",
+        "7570bf664e6af719065c5facbe16f954b8ebf61904b5dff84175ab87ba73e9bf",
+        "c99efa15a21ed6928dbacd3b30ea2e11c24c066a861d23a71b172412ad554deb",
+        "b737309ed62139f450fa8194da64ec5bd8fb06fed7345258159d6b3c48d1f13a",
+        "31deab05513f9d84819b4221693c632061df7418d3b5d7fc40aaf22e9b3a60aa",
+        "4c28cc01856fc081796f49800cdc65a4c1db2fa01d06d09bfbbd1ece9a4c6481",
+        "5446a2c74239c8772e497e8031cc069b59b8d6c954d331a3c9832bfff5c0a97e"
+      ]
+    },
+    {
+      "id": "dt-zhiming-shui",
+      "book": "ditian",
+      "chapter": "c-6bb2ecb85136",
+      "start": 51,
+      "end": 62,
+      "commentary": 62,
+      "title": "金水已旺：为什么仍主张顺势",
+      "tags": [
+        "顺势",
+        "行运",
+        "取用"
+      ],
+      "summary": "一点甲木不足以泄水时，任氏怎样解释取金水而不取火土？",
+      "note": "书中没有清楚分开已发生经历与后续推断；紧随其后的另一组四柱没有评语，未并入本例。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "e7018276509deaff91391efe9a0563419b99d7663a962f20b14740f726ac7a32",
+        "fdb214573bb6878f602a5cb8dc4da6715a323445b0e27b3984212aeabcb470c2",
+        "c51183379d1f248eea263bf3de7264d5fdb7a11270d90cac857c4dca354b043a",
+        "c90ae2c7e0e50cff69ee860476b838039722b27520dd8f89fa81eca3e6ae66a0",
+        "dfb451be892305d7e6f069e1dd735cab7eea4ab46454be4ac1c5620b147fea3a",
+        "0d7a5f7766e332b4fc324f5e056d655ef3601cbe1c989299c00ca613f13e7cdf",
+        "9df3c716d885f8f78defa6835dae76c6283d009f09148cedae34f9baa5577d69",
+        "4602147dc57de681bac8eec038ebefbb22c0296e64beaeaf96801fec51cca3a6",
+        "1b6505fb7c258cd1af07e468dfc1e35d539e62c78b72fc3830b46f641247df3b",
+        "be43f1f201927e7574512ecc7e1fb4f070388ff0873af549e14675745190c418",
+        "5872ce94de259ac56d287974faf912116cedc66e8ac40af249ebe5aa85e2d3cc",
+        "3ba6e80121f61c95e26493199dfbfd02fab475c88a24159a3e866252590de034"
+      ]
+    },
+    {
+      "id": "dt-liqi-jinqi",
+      "book": "ditian",
+      "chapter": "c-a9128e66ab1f",
+      "start": 3,
+      "end": 14,
+      "commentary": 14,
+      "title": "甲木戌月：进气与一生一制",
+      "tags": [
+        "进退",
+        "七杀",
+        "根气"
+      ],
+      "summary": "看似杀重身轻，作者为何同时考察壬水生甲、丁火制庚与辰戌差别？",
+      "note": "原录“通根身库”措辞存疑。此例应与同章“甲木辰月”对读，不能只记成甲木总喜火。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "3dac1638d0db954ab32ddefa955bc6f4845a1f8c19c0b4cc435dd03328897e46",
+        "4c28cc01856fc081796f49800cdc65a4c1db2fa01d06d09bfbbd1ece9a4c6481",
+        "e775a3be8ca03c691b7a988ed6e7bb0e7863dc622beb3964740d335381ed3161",
+        "41186b709da4da80c133864679b88511bf3a15455cec5cb10a45458b6f8acc81",
+        "b737309ed62139f450fa8194da64ec5bd8fb06fed7345258159d6b3c48d1f13a",
+        "c99efa15a21ed6928dbacd3b30ea2e11c24c066a861d23a71b172412ad554deb",
+        "7570bf664e6af719065c5facbe16f954b8ebf61904b5dff84175ab87ba73e9bf",
+        "94d7c63e8f2408524f41d808f300f1c3e2617653bb118cfa704860c65a11ed02",
+        "e775a3be8ca03c691b7a988ed6e7bb0e7863dc622beb3964740d335381ed3161",
+        "cd91f9cac1e30f2707c771c544dc35e00a9cb30ce008d00c854e9f81f8dc4715",
+        "bdde52765f74ca71fa3863deb163317229a73b63bd6e8af56d9219f8cb7077aa",
+        "1dbafba576c85d532cd59cc053f64baec1672da1def93a73cff29dc1cba9372e"
+      ],
+      "related": [
+        "dt-liqi-tuiqi"
+      ]
+    },
+    {
+      "id": "dt-liqi-tuiqi",
+      "book": "ditian",
+      "chapter": "c-a9128e66ab1f",
+      "start": 15,
+      "end": 26,
+      "commentary": 26,
+      "title": "甲木辰月：相合未必解除压力",
+      "tags": [
+        "进退",
+        "干合",
+        "燥湿"
+      ],
+      "summary": "与上一例相比，年干、月令与日支变化，怎样改变了作者的判断？",
+      "note": "乙庚合化金是作者对本例的主张，不表示乙庚相见必化；“寒袷”是书中的简略评述，未载完整生平。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "7f7441025e9c2ca27656aa6aa5db7239bc4e3704ed35bd4550789fcf6a37a690",
+        "1a761a442aadb2085d8eaa5200727a51965a8781a6cb255ac2ba3cecd60a0928",
+        "af7223e9af8428d452b425a65a0fb82cc14f69b6be493faade4ce90c50e093e5",
+        "e8195679b9e9c98dc778b655cbd8b951acb893db46bbbb07ab0fb5d1057c743a",
+        "05bc995ae308b55a685d4b27a3cf0851baeb78e95d4462976428ef8b0b5151d5",
+        "8e75caf8c7325f67b879516ee1d8dd78c1bc3b6173b54a49134bad218c3d6d87",
+        "cf02ad0a7fc30289988b72f3c915d396074772ce18dd714b35b14f94f043e0e1",
+        "7f7441025e9c2ca27656aa6aa5db7239bc4e3704ed35bd4550789fcf6a37a690",
+        "af7223e9af8428d452b425a65a0fb82cc14f69b6be493faade4ce90c50e093e5",
+        "e7018276509deaff91391efe9a0563419b99d7663a962f20b14740f726ac7a32",
+        "5950de696d39a7f00cd805b838a115c497668b307832f055ec89bbb6f56529ff",
+        "2044aff6f33712763b273fc6dd268ed43c000a978fa555baaf447a8cf783cceb"
+      ],
+      "related": [
+        "dt-liqi-jinqi"
+      ]
+    },
+    {
+      "id": "dt-peihe-mingmu",
+      "book": "ditian",
+      "chapter": "c-f03306a7e147",
+      "start": 3,
+      "end": 14,
+      "commentary": 14,
+      "title": "格名漂亮：实际取用却难落实",
+      "tags": [
+        "格局",
+        "取用",
+        "食神"
+      ],
+      "summary": "原书依次检查午火、壬水、甲木，说明“三奇拱贵”的名目为何不能代替实际配合。",
+      "note": "书中关于家业与家人的断述未经独立核实，只作作者论证材料呈现。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "fdb214573bb6878f602a5cb8dc4da6715a323445b0e27b3984212aeabcb470c2",
+        "96a96d44cbcb0934cc0e266f64ebd1da72d4739fb493ae021d4486a7e53397fa",
+        "9df3c716d885f8f78defa6835dae76c6283d009f09148cedae34f9baa5577d69",
+        "cdcb6ad5e37af94bc6758b0ac637c72f239e70ced568fa6d625f7161f3e4cc4f",
+        "a5846bd873e419a98c09c408f0ad9034ab56f13bb8c716feeb1354870465a9fd",
+        "3cdcc3764a88c4ae4e34c63b5667409e590596bbf134c11917e724a0161d50cf",
+        "5950de696d39a7f00cd805b838a115c497668b307832f055ec89bbb6f56529ff",
+        "e7018276509deaff91391efe9a0563419b99d7663a962f20b14740f726ac7a32",
+        "af7223e9af8428d452b425a65a0fb82cc14f69b6be493faade4ce90c50e093e5",
+        "7f7441025e9c2ca27656aa6aa5db7239bc4e3704ed35bd4550789fcf6a37a690",
+        "cf02ad0a7fc30289988b72f3c915d396074772ce18dd714b35b14f94f043e0e1",
+        "b25bb5b88a68eea7cfb55744f2bd99875526e0fc7c6d1558da090293b8274944"
+      ],
+      "related": [
+        "dt-peihe-jiuhuo"
+      ]
+    },
+    {
+      "id": "dt-peihe-jiuhuo",
+      "book": "ditian",
+      "chapter": "c-f03306a7e147",
+      "start": 15,
+      "end": 26,
+      "commentary": 26,
+      "title": "水旺火弱：己土怎样护住丙火",
+      "tags": [
+        "调候",
+        "制化",
+        "伤官"
+      ],
+      "summary": "壬丙相见、子午相冲之外，再看位置、己土根气及木火进气的作用。",
+      "note": "此处保留原书“伤官秀气”的取用解释，不自动等同于网站的主格命名。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "cf02ad0a7fc30289988b72f3c915d396074772ce18dd714b35b14f94f043e0e1",
+        "254882618a1725eefd366b4e254b762375a02eac70163fe363e252fe999744b0",
+        "2dc3418cb9b6586072511e1bf23dc83482da32df74f72365d9e5e192e4e179cc",
+        "2fe612d114bc5086a6cdbdb63af45a69d31fbaf4c8eb695b7aa3681f44e7c588",
+        "c88cda56e48a9e9a1255491bb52c0af25e121bec23d1f7342f0b100cdbcef4b7",
+        "bdde52765f74ca71fa3863deb163317229a73b63bd6e8af56d9219f8cb7077aa",
+        "cd91f9cac1e30f2707c771c544dc35e00a9cb30ce008d00c854e9f81f8dc4715",
+        "e775a3be8ca03c691b7a988ed6e7bb0e7863dc622beb3964740d335381ed3161",
+        "94d7c63e8f2408524f41d808f300f1c3e2617653bb118cfa704860c65a11ed02",
+        "7570bf664e6af719065c5facbe16f954b8ebf61904b5dff84175ab87ba73e9bf",
+        "c99efa15a21ed6928dbacd3b30ea2e11c24c066a861d23a71b172412ad554deb",
+        "b98ba4e270290ae54f2469be0d084e0512a6c342e11db6d06cc548140ac32582"
+      ],
+      "related": [
+        "dt-peihe-mingmu"
+      ]
+    },
+    {
+      "id": "zp-gewei-he",
+      "book": "ziping",
+      "chapter": "c-9d997979a223",
+      "start": 5,
+      "end": 5,
+      "commentary": 5,
+      "title": "两个乙合一个庚：隔位如何讨论",
+      "tags": [
+        "干合",
+        "官杀",
+        "位置"
+      ],
+      "summary": "原书用两乙隔甲的例子，解释争合不能仅按天干数量判断。",
+      "note": "“高太尉”身份及生平未独立核实；原段婚配比喻仅是古人的术语说明。",
+      "chart": {
+        "kind": "inline",
+        "text": "庚午、乙酉、甲子、乙亥"
+      },
+      "sourceHashes": [
+        "8dd72e2748971775fe0260179f8a6d611c8cb5662f8b68082437063706fcd498"
+      ]
+    },
+    {
+      "id": "zp-hour-error",
+      "book": "ziping",
+      "chapter": "c-f9023d1b58cc",
+      "start": 2,
+      "end": 2,
+      "commentary": 2,
+      "title": "时柱记错：正官变成七杀",
+      "tags": [
+        "校勘",
+        "官杀",
+        "格局"
+      ],
+      "summary": "原书指出甲戌误作乙亥，会改变格局解释；不能知道人物显贵就倒推一个贵格。",
+      "note": "四柱按本段主张的甲戌时记录；乙亥是作者批评的异录，不作为第二个真实命例。",
+      "chart": {
+        "kind": "inline",
+        "text": "壬申、癸丑、己丑、甲戌"
+      },
+      "sourceHashes": [
+        "d92df7459c93e5043c103855cbf6c96f6908e936782adb801b8f7095c20292f6"
+      ]
+    },
+    {
+      "id": "zp-shishen-cai",
+      "book": "ziping",
+      "chapter": "c-f9023d1b58cc",
+      "start": 3,
+      "end": 3,
+      "commentary": 3,
+      "title": "已有食神生财：何必另求合禄",
+      "tags": [
+        "食神",
+        "格局",
+        "取用"
+      ],
+      "summary": "月令与原局已有财食，作者为何反对另借局外之官解释？",
+      "note": "此例是论法辨析，原段没有人物经历与行运记录；不补写“应验故事”。",
+      "chart": {
+        "kind": "inline",
+        "text": "己未、壬申、戊子、庚申"
+      },
+      "sourceHashes": [
+        "728f9427d880ce5391e616841cdbfa88bdce100e8a0f886a697f458d01e7922f"
+      ]
+    },
+    {
+      "id": "zp-caipo-yin",
+      "book": "ziping",
+      "chapter": "c-242c9d286239",
+      "start": 4,
+      "end": 4,
+      "commentary": 4,
+      "title": "见财就破印？先看两个印的分工",
+      "tags": [
+        "财印",
+        "干合",
+        "制化"
+      ],
+      "summary": "原书以丁合壬、丙留下制伤解释：不能一见财星就判断破印。",
+      "note": "原例仅见巳丑，无酉，不补成完整三合；“范太傅”的人物经历在本段没有展开。",
+      "chart": {
+        "kind": "inline",
+        "text": "丁丑、壬寅、己巳、丙寅"
+      },
+      "sourceHashes": [
+        "cb7d038b48fc0012e3d86fddd615f60dee460b60bced714241c1193288e82cfb"
+      ]
+    }
+  ]
+}

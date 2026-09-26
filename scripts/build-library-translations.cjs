@@ -33,11 +33,11 @@ function buildTranslatedBook(source, manifest, full) {
   const completeChapters = book.chapters.filter(c => c.blocks.length && c.blocks.every(b => b.translation)).map(c => c.id);
   const complete = completeChapters.length === book.chapters.length;
   book.translation = {
-    label: complete ? '知时白话译稿' : '知时白话试读',
+    label: complete ? '知时白话译稿' : full ? '知时白话译稿（部分）' : '知时白话试读',
     method: 'AI辅助整理，未经古籍专家逐句审校', version: full?.version || manifest.version,
     paragraphs, totalParagraphs: blocks.length, totalChapters: book.chapters.length, completeChapters, complete,
     chapters: book.chapters.filter(c => c.blocks.some(b => b.translation)).map(c => c.id),
-    note: (complete ? '当前收录的 ' + book.chapters.length + ' 篇均已逐段配译，包含本底本所附古文；不代表覆盖其他版本。' : '尚未提供全书白话译本。') + '译文与整理说明供对照阅读；疑难字句、残缺命例保留核对提示，不暗改原文。'
+    note: (complete ? '当前收录的 ' + book.chapters.length + ' 篇均已逐段配译，包含本底本所附古文；不代表覆盖其他版本。' : (full && full.scope ? full.scope + '。' : '') + '尚未提供全书白话译本。') + '译文与整理说明供对照阅读；疑难字句、残缺命例保留核对提示，不暗改原文。'
   };
   book.license.changes = book.license.changes.replace(/未添加白话译文|不添加白话译文|白话试读单独标注，与古文分开显示/g, '白话译稿单独标注，与古文分开显示');
   return book;
@@ -52,12 +52,17 @@ function main() {
     const file = path.join(root, entry.id + '.json');
     const fullFile = path.join(__dirname, 'translations', entry.id + '.json');
     const full = fs.existsSync(fullFile) ? JSON.parse(fs.readFileSync(fullFile, 'utf8')) : null;
-    const book = buildTranslatedBook(JSON.parse(fs.readFileSync(file, 'utf8')), manifest, full);
+    const source = require('./build-library-proofreading.cjs').applyProofreading(JSON.parse(fs.readFileSync(file, 'utf8')), require('./library-proofreading.json'));
+    const book = buildTranslatedBook(source, manifest, full);
+    if (book.editorialWarning) entry.editorialWarning = book.editorialWarning.short;
     entry.translation = { complete: book.translation.complete, completeChapters: book.translation.completeChapters.length, paragraphs: book.translation.paragraphs };
     return { file, book };
   });
+  const cases = require('./build-library-cases.cjs').buildCases(Object.fromEntries(outputs.map(({book}) => [book.id, book])), require('./library-cases.json'));
   for (const { file, book } of outputs) fs.writeFileSync(file, JSON.stringify(book, null, 2) + '\n');
+  fs.writeFileSync(path.join(root, 'cases.json'), JSON.stringify(cases, null, 2) + '\n');
   fs.writeFileSync(catalogFile, JSON.stringify(catalog, null, 2) + '\n');
+  require('./build-library-reader.cjs').main();
   console.log(outputs.map(({ book }) => book.id + ': ' + book.translation.completeChapters.length + '/' + book.chapters.length + ' full chapters, ' + book.translation.paragraphs + ' paragraphs').join('\n'));
 }
 if (require.main === module) main();
