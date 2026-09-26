@@ -3315,13 +3315,13 @@ body.has-mobile-nav{padding-bottom:60px}
 <script src="js/hepan-person.js?v=3"></script>
 <script src="js/bazi-chain.js?v=13"></script><script src="js/lunar.js"></script>
 <script src="js/hepan-core.js?v=5"></script>
-<script src="js/payment.js?v=6"></script>
-<script src="js/hepan-paywall.js?v=6"></script>
+<script src="js/payment.js?v=7"></script>
+<script src="js/hepan-paywall.js?v=7"></script>
 <script src="js/auth.js?v=31"></script>
 <script src="js/hepan-result.js?v=6"></script>
 <script src="js/chat-persistence.js?v=4"></script>
 <script src="js/chat-resume.js?v=1"></script>
-<script src="js/ai-chat-integration.js?v=20260926"></script>
+<script src="js/ai-chat-integration.js?v=20260926a"></script>
 
 <script>
 // ============================================
@@ -3387,6 +3387,7 @@ function submitFeedback() {
     _hh=hh(p1,p2,t);
     restoreHepanAccount();
     if(iru()){unlockHP();return}
+    try{var pending=JSON.parse(localStorage.getItem('hpo2')||'null');if(pending&&pending.oid&&pending.k&&pending.h===_hh)pollHP(pending);}catch(e){}
     var secs=['hp-drawer-4','hp-drawer-5','hp-drawer-6','hp-drawer-7'];
     var first=document.getElementById(secs[0]);
     if(!first||document.getElementById('hpUnified'))return;
@@ -3402,7 +3403,7 @@ function submitFeedback() {
     wrap.appendChild(pw);
   }
   
-  var hpCreating=false;
+  var hpCreating=false, hpWatcher=null;
   function startHPay(){
     if(hpCreating)return;
     hpCreating=true;
@@ -3412,12 +3413,20 @@ function submitFeedback() {
       if(d.error)throw new Error(d.error);
       var pending={oid:d.out_trade_no,h:_hh,k:d.report_key};localStorage.setItem('hpo2',JSON.stringify(pending));
       pollHP(pending);
-      PaymentFlow.openCashier(d);
+      PaymentFlow.openCashier(d,hpWatcher);
     }).catch(function(e){alert(e.name==='AbortError'?'连接超时，请重试':e.message||'网络错误，请重试')})
       .finally(function(){hpCreating=false;});
   }
 
-  function pollHP(pending){if(!pending||pending.h!==_hh)return;var n=0;var t=setInterval(function(){n++;if(n>120){clearInterval(t);return};fetch('/api/check-order?expected_type=hepan&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){if(d.status==='paid'&&d.report_type==='hepan'&&d.report_key===pending.k){clearInterval(t);localStorage.removeItem('hpo2');unlockHP()}}).catch(function(){})},2000)}
+  function pollHP(pending){
+    if(!pending||pending.h!==_hh)return;
+    if(hpWatcher)hpWatcher.stop();
+    hpWatcher=PaymentFlow.watchOrder({
+      orderId:pending.oid,expectedType:'hepan',
+      isPaid:function(d){return pending.h===_hh&&d.status==='paid'&&d.report_type==='hepan'&&d.report_key===pending.k;},
+      onPaid:function(){localStorage.removeItem('hpo2');unlockHP();}
+    });
+  }
   
   function unlockHP(){
     sru();

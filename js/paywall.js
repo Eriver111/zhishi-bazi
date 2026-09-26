@@ -220,7 +220,7 @@ function injectQRModal(){
   if(document.getElementById('qrModal'))return;
   var m=document.createElement('div');m.id='qrModal';
   m.style.cssText='display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><a id="qrMobileBtn" href="#" target="_self" style="display:none;margin:0 auto 12px;padding:12px 20px;background:#1677FF;color:#fff;font-size:15px;font-weight:600;letter-spacing:2px;border-radius:6px;text-decoration:none;max-width:260px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-2 13h.01"/></svg> 打开支付 ¥9.9</a><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后自动解锁，请勿关闭页面</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付过款，点此解锁</button></div>';
+  m.innerHTML='<div style="background:var(--card,rgba(24,22,18,.95));border:1px solid var(--bd,rgba(180,160,140,.1));border-radius:16px;padding:28px 24px;text-align:center;max-width:360px;width:90%;position:relative;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)"><button onclick="document.getElementById(\'qrModal\').style.display=\'none\'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer">&times;</button><h3 style="color:var(--gold-l);margin-bottom:8px;letter-spacing:2px">扫码支付 ¥9.9</h3><a id="qrMobileBtn" href="#" target="_self" style="display:none;margin:0 auto 12px;padding:12px 20px;background:#1677FF;color:#fff;font-size:15px;font-weight:600;letter-spacing:2px;border-radius:6px;text-decoration:none;max-width:260px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-2 13h.01"/></svg> 打开支付 ¥9.9</a><div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div><p style="color:var(--tx2);font-size:12px;margin:8px 0">付款后返回此页自动确认，请勿重复支付</p><p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p><button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px" onclick="startRP()">重新支付</button><button class="submit-btn" style="max-width:260px;margin-top:6px;background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--bd)" onclick="manualUnlock()">我已付款，刷新状态</button></div>';
   document.body.appendChild(m);
 }
 
@@ -231,7 +231,7 @@ function isMobile(){return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.user
 function startRP(){
   if(_qrCreating)return;
   _qrCreating=true;
-  if(_qrTimer)clearInterval(_qrTimer);
+  if(_qrTimer)_qrTimer.stop();
   var modal=document.getElementById('qrModal');if(modal)modal.style.display='flex';
   var status=document.getElementById('qrStatus');if(status)status.textContent='正在连接支付...';
   var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='none';
@@ -294,25 +294,18 @@ function startRP(){
 
 function startQRPoll(pending){
   if(!pending||pending.h!==_baziHash)return;
-  if(_qrTimer)clearInterval(_qrTimer);
-  var n=0;var status=document.getElementById('qrStatus');
-  _qrTimer=setInterval(function(){
-    n++;if(n>120){clearInterval(_qrTimer);if(status)status.textContent='支付超时，请点击"重新支付"';var retry=document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';return}
-    if(status&&n%5===0)status.textContent='等待支付... ('+Math.floor(n/2)+'s)';
-    fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
-      if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);clearBaziPending(pending);
-        var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
-    }).catch(function(){});
-  },2000);
+  if(_qrTimer)_qrTimer.stop();
+  _qrTimer=PaymentFlow.watchOrder({
+    orderId:pending.oid,expectedType:'bazi',
+    isPaid:function(d){return pending.h===_baziHash&&((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k));},
+    onState:function(message){var status=document.getElementById('qrStatus');if(status)status.textContent=message;},
+    onPaid:function(){clearBaziPending(pending);var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
+  });
 }
 
 function manualUnlock(){
   var pending=getBaziPending();if(!pending||pending.h!==_baziHash)return;
-  fetch('/api/check-order?expected_type=bazi&out_trade_no='+encodeURIComponent(pending.oid)).then(function(r){return r.json()}).then(function(d){
-    if((pending.legacy&&d.paid)||(d.status==='paid'&&d.report_type==='bazi'&&d.report_key===pending.k)){clearInterval(_qrTimer);clearBaziPending(pending);
-      var modal=document.getElementById('qrModal');if(modal)modal.style.display='none';unlock();}
-    else{alert('尚未检测到支付，请确认已付款后重试')}
-  }).catch(function(){alert('网络错误，请稍后重试')});
+  startQRPoll(pending);
 }
 
 function unlock(options){

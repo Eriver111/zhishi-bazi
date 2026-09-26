@@ -163,7 +163,100 @@
     return created;
   }
 
-  function openCashier(data) {
+  // Query only the server-confirmed order. Returning from a payment app is not proof of payment.
+  function watchOrder(options) {
+    var stopped = false, interval = null, active = null, deadline = 0;
+    var win = typeof window !== 'undefined' ? window : null;
+    var doc = typeof document !== 'undefined' ? document : null;
+    var url = '/api/check-order?out_trade_no=' + encodeURIComponent(options.orderId);
+    if (options.expectedType) url += '&expected_type=' + encodeURIComponent(options.expectedType);
+    function visible() { return !doc || doc.visibilityState !== 'hidden'; }
+    function state(message) {
+      if (options.onState) options.onState(message);
+      var dialog = doc && doc.getElementById('paymentCashier');
+      if (dialog && dialog._paymentOrderId === options.orderId && dialog._paymentNote) dialog._paymentNote.textContent = message;
+    }
+    function pause() {
+      if (interval !== null) clearInterval(interval);
+      interval = null;
+      if (active) {
+        var previous = active; active = null;
+        clearTimeout(previous.timeout); previous.controller.abort();
+      }
+    }
+    function listen(target, event, handler, remove) {
+      var method = remove ? 'removeEventListener' : 'addEventListener';
+      if (target && target[method]) target[method](event, handler);
+    }
+    function events(remove) {
+      listen(doc, 'visibilitychange', visibility, remove);
+      ['focus', 'pageshow', 'online'].forEach(function(event) { listen(win, event, resume, remove); });
+      listen(win, 'pagehide', pause, remove);
+    }
+    function stop() { stopped = true; pause(); events(true); }
+    function query() {
+      if (stopped || !visible()) return Promise.resolve(null);
+      if (active) return active.promise;
+      var current = { controller: new AbortController(), timeout: null, promise: null };
+      active = current;
+      current.timeout = setTimeout(function() {
+        if (active !== current) return;
+        active = null; current.controller.abort();
+        state('查询暂未成功，请检查网络后刷新状态；已付款请勿重复支付');
+      }, 15000);
+      current.promise = Promise.resolve().then(function() {
+        if (stopped || active !== current) return null;
+        return fetch(url, { cache: 'no-store', signal: current.controller.signal });
+      }).then(function(response) {
+        if (!response) return null;
+        if (!response.ok) throw new Error('Order query unavailable');
+        return response.json();
+      }).then(function(data) {
+        if (stopped || active !== current || !data) return null;
+        if (options.isPaid(data)) {
+          stop();
+          closeCashier(options.orderId);
+          options.onPaid(data);
+        } else {
+          state('正在确认付款结果，已付款请勿重复支付');
+        }
+        return data;
+      }).catch(function() {
+        if (!stopped && active === current) state('查询暂未成功，请检查网络后刷新状态；已付款请勿重复支付');
+        return null;
+      }).finally(function() {
+        clearTimeout(current.timeout);
+        if (active === current) active = null;
+      });
+      return current.promise;
+    }
+    function resume() {
+      if (stopped || !visible()) return Promise.resolve(null);
+      deadline = Date.now() + 6 * 60 * 1000;
+      if (interval === null) interval = setInterval(function() {
+        if (!visible()) { pause(); return; }
+        if (Date.now() >= deadline) {
+          pause();
+          state('暂未确认到账，请点“我已付款，刷新状态”查询原订单，勿重复支付');
+          return;
+        }
+        query();
+      }, 2000);
+      return query();
+    }
+    function visibility() { if (visible()) resume(); else pause(); }
+    events(false);
+    // Defer the first check until the caller has saved its watcher and rendered the cashier.
+    Promise.resolve().then(resume);
+    return { check: resume, stop: stop };
+  }
+
+  function closeCashier(orderId) {
+    var dialog = document.getElementById('paymentCashier');
+    if (dialog && dialog._paymentOrderId === orderId) dialog.remove();
+  }
+
+  function openCashier(data, watcher) {
     var payment = resolvePayment(data);
     if (/Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) && payment.payUrl) {
       window.location.href = payment.payUrl; return;
@@ -171,6 +264,7 @@
     if (!payment.qrImageUrl) throw new Error('支付服务未返回可用二维码，请稍后重试');
     var old = document.getElementById('paymentCashier'); if (old) old.remove();
     var dialog = document.createElement('dialog'); dialog.id = 'paymentCashier';
+    dialog._paymentOrderId = data.out_trade_no;
     dialog.setAttribute('aria-label', '扫码支付');
     dialog.style.cssText = 'position:fixed;inset:0;margin:auto;padding:24px;border:1px solid var(--bd,#ddd);border-radius:16px;background:var(--zh-paper,#fffaf1);color:var(--tx,#342c24);text-align:center';
     var title = document.createElement('p'); title.textContent = '请用' + methodLabel(data) + '扫码支付 ¥' + data.amount;
@@ -178,6 +272,14 @@
     var qr = document.createElement('div'); qr.style.cssText = 'width:200px;margin:16px auto'; dialog.appendChild(qr);
     renderQr(qr, data);
     var note = document.createElement('p'); note.textContent = '支付后自动到账'; dialog.appendChild(note);
+    dialog._paymentNote = note;
+    if (watcher) {
+      var refresh = document.createElement('button'); refresh.type = 'button';
+      refresh.textContent = '我已付款，刷新状态';
+      refresh.style.cssText = 'display:block;margin:12px auto;padding:12px 18px;color:inherit;background:none;border:1px solid var(--bd,#ddd);border-radius:8px';
+      refresh.addEventListener('click', function() { note.textContent = '正在查询原订单...'; watcher.check(); });
+      dialog.appendChild(refresh);
+    }
     var close = document.createElement('button'); close.textContent = '关闭'; close.type = 'button';
     close.style.cssText = 'padding:10px 26px;background:none;color:inherit;border:1px solid var(--bd,#ddd);border-radius:8px';
     close.addEventListener('click', function() { dialog.close(); }); dialog.appendChild(close);
@@ -187,6 +289,7 @@
   return {
     createOrder: createOrder,
     openCashier: openCashier,
+    watchOrder: watchOrder,
     methodLabel: methodLabel,
     isGatewayApiUrl: isGatewayApiUrl,
     renderQr: renderQr,

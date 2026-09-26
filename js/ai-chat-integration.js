@@ -353,32 +353,27 @@
       localStorage.setItem('ai_pending_order', data.out_trade_no);
       localStorage.setItem('ai_pending_mode', mode);
       startPolling(data.out_trade_no, mode);
-      PaymentFlow.openCashier(data);
+      PaymentFlow.openCashier(data, paymentWatcher);
     }).catch(function(e) { alert(e.name === 'AbortError' ? '支付连接超时，请重试' : e.message || '支付连接失败，请重试'); })
       .finally(function() { paymentCreating = false; });
   }
 
+  var paymentWatcher = null;
   function startPolling(outTradeNo, mode) {
-    var attempts = 0, maxAttempts = 120;
-    var poll = setInterval(function() {
-      attempts++;
-      if (attempts > maxAttempts) { clearInterval(poll); return; }
-      fetch('/api/check-order?out_trade_no=' + outTradeNo)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.paid) {
-            var cashier = document.getElementById('paymentCashier'); if (cashier) cashier.remove();
-            clearInterval(poll);
-            localStorage.removeItem('ai_pending_order');
-            localStorage.removeItem('ai_pending_mode');
-            if (data._type === 'monthly' || mode === 'monthly') {
-              handleMonthlySuccess(data.code, '30天后');
-            } else {
-              handlePaymentSuccess(data.code, data.credits || 10);
-            }
-          }
-        }).catch(function() {});
-    }, 2000);
+    if (paymentWatcher) paymentWatcher.stop();
+    paymentWatcher = PaymentFlow.watchOrder({
+      orderId: outTradeNo,
+      isPaid: function(data) { return data.paid === true && !!data.code; },
+      onPaid: function(data) {
+        localStorage.removeItem('ai_pending_order');
+        localStorage.removeItem('ai_pending_mode');
+        if (data._type === 'monthly' || mode === 'monthly') {
+          handleMonthlySuccess(data.code, '30天后');
+        } else {
+          handlePaymentSuccess(data.code, data.credits || 10);
+        }
+      }
+    });
   }
 
   function handlePaymentSuccess(code, credits) {

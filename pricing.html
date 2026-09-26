@@ -122,7 +122,7 @@
 </div>
 
 <script src="js/auth.js?v=31"></script>
-<script src="js/payment.js?v=6"></script>
+<script src="js/payment.js?v=7"></script>
 
 <!-- 支付逻辑：与 paywall.js 统一 -->
 <script>
@@ -145,7 +145,7 @@ function injectQrModal() {
     + '<div id="qrContainer" style="margin:12px auto;width:200px;height:200px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#333">生成二维码中...</div>'
     + '<p style="color:var(--tx2);font-size:12px;margin:8px 0">支付后将自动发放积分，请勿关闭页面</p>'
     + '<p id="qrStatus" style="color:var(--tx3);font-size:11px">等待支付...</p>'
-    + '<button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px;background:rgba(200,190,170,.05);color:var(--tx);border:1px solid var(--bd)" onclick="checkManualPayment()">我已付过款，刷新状态</button>'
+    + '<button id="qrRetryBtn" class="submit-btn" style="max-width:260px;display:none;margin-top:8px;background:rgba(200,190,170,.05);color:var(--tx);border:1px solid var(--bd)" onclick="checkManualPayment()">我已付款，刷新状态</button>'
     + '</div>';
   document.body.appendChild(m);
 }
@@ -156,7 +156,7 @@ function closeQrModal() {
 }
 
 function stopPolling() {
-  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+  if (_pollTimer) { _pollTimer.stop(); _pollTimer = null; }
 }
 
 function buyCredits(mode, amount, name) {
@@ -206,9 +206,11 @@ function buyCredits(mode, amount, name) {
 
     if (isMobile() && payment.payUrl) {
       if (status) status.textContent = '正在打开' + PaymentFlow.methodLabel(d) + '收银台...';
-      // 手机端跳转后通过 URL ?paid=xxx 恢复，无需轮询
+      var mobileContainer=document.getElementById('qrContainer');if(mobileContainer)mobileContainer.textContent='请在收银台完成付款，返回后自动确认';
+      // 浏览器返回可能恢复旧页面，须在跳转前注册订单查询与前台恢复。
+      startPolling(d.out_trade_no);
       window.location.href = payment.payUrl;
-      return; // 不启动轮询，也不显示二维码
+      return;
     } else {
       var container = document.getElementById('qrContainer');
       if (window.PaymentFlow) {
@@ -236,28 +238,14 @@ function buyCredits(mode, amount, name) {
 
 function startPolling(orderId) {
   stopPolling();
-  var n = 0;
-  var status = document.getElementById('qrStatus');
-  _pollTimer = setInterval(function() {
-    n++;
-    if (n > 180) {
-      stopPolling();
-      if (status) status.textContent = '支付超时，请点击下方按钮刷新';
-      var retry = document.getElementById('qrRetryBtn');
-      if (retry) retry.style.display = 'block';
-      return;
-    }
-    if (status && n % 5 === 0) status.textContent = '等待支付... (' + Math.floor(n * 2) + 's)';
-
-    fetch('/api/check-order?out_trade_no=' + encodeURIComponent(orderId))
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.paid || d.status === 'paid') {
-          onPaySuccess(d);
-        }
-      })
-      .catch(function() {});
-  }, 2000);
+  _currentOrderId = orderId;
+  var retry = document.getElementById('qrRetryBtn');if(retry)retry.style.display='block';
+  _pollTimer = PaymentFlow.watchOrder({
+    orderId: orderId,
+    isPaid: function(d) { return _currentOrderId===orderId && d.paid===true && !!d.code; },
+    onState: function(message) { var status=document.getElementById('qrStatus');if(status)status.textContent=message; },
+    onPaid: onPaySuccess
+  });
 }
 
 function onPaySuccess(data) {
@@ -271,6 +259,7 @@ function onPaySuccess(data) {
   stopPolling();
   _currentOrderId = null;
   localStorage.removeItem('credit_ord');
+  localStorage.removeItem('credit_ord_ts');
   var allBtns = document.querySelectorAll('.pricing-btn');
   allBtns.forEach(function(b) { b.disabled = false; });
   var modal = document.getElementById('creditQrModal');
@@ -321,52 +310,20 @@ function checkManualPayment() {
   }
   var status = document.getElementById('qrStatus');
   if (status) status.textContent = '正在查询支付状态...';
-  fetch('/api/check-order?out_trade_no=' + encodeURIComponent(oid))
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.paid || d.status === 'paid') {
-        onPaySuccess(d);
-      } else {
-        if (status) status.textContent = '暂未查到支付记录，请确认已付款';
-      }
-    })
-    .catch(function() {
-      if (status) status.textContent = '网络错误，请重试';
-    });
+  if (_pollTimer) _pollTimer.check(); else startPolling(oid);
 }
 
-// ---- 页面恢复：从 URL 参数或 localStorage 恢复支付结果 —— 先查后弹，不刷二维码 ----
+// ---- 页面恢复：继续查询原订单，不创建新订单或重新生成付款二维码 ----
 (function() {
-  function recoverOrder(oid, isUrlRecovery) {
-    _currentOrderId = oid;
-    // 先查是否已支付，不弹窗
-    fetch("/api/check-order?out_trade_no=" + encodeURIComponent(oid))
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.paid || d.status === "paid") {
-          // 已付 → 直接显示成功弹窗
-          if (isUrlRecovery) {
-            localStorage.removeItem("credit_ord");
-            localStorage.removeItem("credit_ord_ts");
-          }
-          onPaySuccess(d);
-        } else {
-          // 未付 → 才显示轮询弹窗
-          injectQrModal();
-          var modal = document.getElementById("creditQrModal");
-          if (modal) modal.style.display = "flex";
-          var status = document.getElementById("qrStatus");
-          if (status) status.textContent = isUrlRecovery ? "支付确认中..." : "等待支付...";
-          startPolling(oid);
-        }
-      })
-      .catch(function() {
-        // 网络错误 → 也显示弹窗轮询
-        injectQrModal();
-        var modal2 = document.getElementById("creditQrModal");
-        if (modal2) modal2.style.display = "flex";
-        startPolling(oid);
-      });
+  function recoverOrder(oid) {
+    // Keep the pending order across full reloads as well as browser-back restores.
+    localStorage.setItem('credit_ord', oid);
+    if (!localStorage.getItem('credit_ord_ts')) localStorage.setItem('credit_ord_ts', String(Date.now()));
+    injectQrModal();
+    var modal = document.getElementById('creditQrModal');if(modal)modal.style.display='flex';
+    var status = document.getElementById('qrStatus');if(status)status.textContent='正在查询原订单...';
+    var container=document.getElementById('qrContainer');if(container)container.textContent='正在查询原订单，请勿重复支付';
+    startPolling(oid);
   }
 
   // 1. 优先从 URL ?paid=xxx 恢复（支付宝支付后跳回）
@@ -376,7 +333,7 @@ function checkManualPayment() {
     if (window.history && window.history.replaceState) {
       window.history.replaceState({}, "", "/pricing");
     }
-    recoverOrder(paidOid, true);
+    recoverOrder(paidOid);
     return;
   }
 
@@ -385,8 +342,8 @@ function checkManualPayment() {
   var ts = localStorage.getItem("credit_ord_ts");
   if (oid && ts) {
     var elapsed = Date.now() - parseInt(ts);
-    if (elapsed < 30 * 60 * 1000) {
-      recoverOrder(oid, false);
+    if (elapsed >= 0 && elapsed < 24 * 60 * 60 * 1000) {
+      recoverOrder(oid);
     } else {
       localStorage.removeItem("credit_ord");
       localStorage.removeItem("credit_ord_ts");

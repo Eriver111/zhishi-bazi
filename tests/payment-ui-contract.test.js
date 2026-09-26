@@ -157,6 +157,7 @@ test('desktop report payment renders the gateway QR image instead of treating QR
     },
     fetch: async (_url, options) => {
       if (_url === '/api/payment-methods') return { ok: true, json: async () => ({methods:[{id:'alipay'}]}) };
+      if (_url.startsWith('/api/check-order?')) return { ok: true, json: async () => ({status:'pending'}) };
       orderBody = JSON.parse(options.body);
       return { async json() {
         return {
@@ -171,7 +172,7 @@ test('desktop report payment renders the gateway QR image instead of treating QR
     },
     setInterval() { return 1; },
     clearInterval() {},
-    setTimeout(fn) { fn(); return 1; },
+    setTimeout() { return 1; },
     clearTimeout() {}
   };
   context.window = context;
@@ -187,7 +188,7 @@ test('desktop report payment renders the gateway QR image instead of treating QR
   assert.equal(nodes.qrContainer.children.length, 1);
   assert.equal(nodes.qrContainer.children[0].tagName, 'IMG');
   assert.equal(nodes.qrContainer.children[0].src, 'https://zpayz.cn/qrcode/example.jpg');
-  assert.equal(nodes.qrStatus.textContent, '请用支付宝扫码支付 ¥9.9（支付后自动解锁）');
+  assert.equal(nodes.qrStatus.textContent, '正在确认付款结果，已付款请勿重复支付');
   assert.deepEqual(orderBody, {
     report_params: { year: 1990, month: 6, day: 15, hour: 8, gender: 'female' },
     token: '',
@@ -642,13 +643,13 @@ test('each deep-report paywall polls and unlocks only its own report type', () =
   const bazi = fs.readFileSync(path.join(root, 'js', 'paywall.js'), 'utf8');
   const hepan = fs.readFileSync(path.join(root, 'js', 'hepan-paywall.js'), 'utf8');
 
-  assert.match(bazi, /expected_type=bazi/);
+  assert.match(bazi, /expectedType:'bazi'/);
   assert.match(bazi, /d\.report_type==='bazi'/);
   assert.match(bazi, /d\.report_key===pending\.k/);
   assert.match(bazi, /pending\.h===_baziHash/);
   assert.match(bazi, /startsWith\('credit_'\)/);
   assert.match(bazi, /pending\.legacy&&d\.paid/);
-  assert.match(hepan, /expected_type=hepan/);
+  assert.match(hepan, /expectedType:'hepan'/);
   assert.match(hepan, /d\.report_type==='hepan'/);
   assert.match(hepan, /d\.report_key===pending\.k/);
   assert.match(hepan, /pending\.h===_hepanHash/);
