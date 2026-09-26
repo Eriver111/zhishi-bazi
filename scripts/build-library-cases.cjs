@@ -29,6 +29,7 @@ function buildCases(books, manifest) {
     if(!Array.isArray(entry.tags)||!entry.tags.length||entry.tags.some(t=>typeof t!=='string'||!t.trim())) throw Error('Invalid case tags');
     const source=book.sources[chapter.sourceIndex || 0];
     return {id:entry.id,title:entry.title,summary:entry.summary,tags:entry.tags,note:entry.note,pillars,luck,
+      chart:require('./library-chart-data.cjs').buildChart(pillars,luck),
       book:book.id,bookTitle:book.title,chapter:chapter.id,chapterTitle:chapter.titleSimplified||chapter.title,
       group:chapter.groupSimplified||chapter.group,sourceUrl:source.permanentUrl,edition:book.edition,
       sourceStart:entry.start,sourceEnd:entry.end,sourceHashes:entry.sourceHashes,

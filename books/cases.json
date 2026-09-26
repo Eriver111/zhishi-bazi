@@ -28,6 +28,289 @@
         "丁亥",
         "戊子"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "庚",
+            "zhi": "申",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "食神"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              }
+            ],
+            "star": "病",
+            "seat": "临官"
+          },
+          {
+            "gan": "庚",
+            "zhi": "辰",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "正官"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正财"
+              }
+            ],
+            "star": "冠带",
+            "seat": "养"
+          },
+          {
+            "gan": "戊",
+            "zhi": "辰",
+            "ganElement": "土",
+            "zhiElement": "土",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "正官"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正财"
+              }
+            ],
+            "star": "冠带",
+            "seat": "冠带"
+          },
+          {
+            "gan": "戊",
+            "zhi": "午",
+            "ganElement": "土",
+            "zhiElement": "火",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "帝旺"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "辛",
+            "zhi": "巳",
+            "ganElement": "金",
+            "zhiElement": "火",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "偏印"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              }
+            ],
+            "star": "临官",
+            "seat": "死"
+          },
+          {
+            "gan": "壬",
+            "zhi": "午",
+            "ganElement": "水",
+            "zhiElement": "火",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "胎"
+          },
+          {
+            "gan": "癸",
+            "zhi": "未",
+            "ganElement": "水",
+            "zhiElement": "土",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "劫财"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "正官"
+              }
+            ],
+            "star": "衰",
+            "seat": "墓"
+          },
+          {
+            "gan": "甲",
+            "zhi": "申",
+            "ganElement": "木",
+            "zhiElement": "金",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "食神"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              }
+            ],
+            "star": "病",
+            "seat": "绝"
+          },
+          {
+            "gan": "乙",
+            "zhi": "酉",
+            "ganElement": "木",
+            "zhiElement": "金",
+            "god": "正官",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "伤官"
+              }
+            ],
+            "star": "死",
+            "seat": "绝"
+          },
+          {
+            "gan": "丙",
+            "zhi": "戌",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "伤官"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正印"
+              }
+            ],
+            "star": "墓",
+            "seat": "墓"
+          },
+          {
+            "gan": "丁",
+            "zhi": "亥",
+            "ganElement": "火",
+            "zhiElement": "水",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "七杀"
+              }
+            ],
+            "star": "绝",
+            "seat": "胎"
+          },
+          {
+            "gan": "戊",
+            "zhi": "子",
+            "ganElement": "土",
+            "zhiElement": "水",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正财"
+              }
+            ],
+            "star": "胎",
+            "seat": "胎"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-6bb2ecb85136",
@@ -87,6 +370,279 @@
         "戊申",
         "己酉"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "辛",
+            "zhi": "酉",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "长生",
+            "seat": "临官"
+          },
+          {
+            "gan": "辛",
+            "zhi": "丑",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "墓",
+            "seat": "养"
+          },
+          {
+            "gan": "己",
+            "zhi": "酉",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "长生",
+            "seat": "长生"
+          },
+          {
+            "gan": "丙",
+            "zhi": "寅",
+            "ganElement": "火",
+            "zhiElement": "木",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "正官"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "死",
+            "seat": "长生"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "壬",
+            "zhi": "寅",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "正官"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "死",
+            "seat": "病"
+          },
+          {
+            "gan": "癸",
+            "zhi": "卯",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "七杀"
+              }
+            ],
+            "star": "病",
+            "seat": "长生"
+          },
+          {
+            "gan": "甲",
+            "zhi": "辰",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "正官",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "七杀"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏财"
+              }
+            ],
+            "star": "衰",
+            "seat": "衰"
+          },
+          {
+            "gan": "乙",
+            "zhi": "巳",
+            "ganElement": "木",
+            "zhiElement": "火",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "伤官"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "丙",
+            "zhi": "午",
+            "ganElement": "火",
+            "zhiElement": "火",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "偏印"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "比肩"
+              }
+            ],
+            "star": "临官",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "丁",
+            "zhi": "未",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "偏印"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "七杀"
+              }
+            ],
+            "star": "冠带",
+            "seat": "冠带"
+          },
+          {
+            "gan": "戊",
+            "zhi": "申",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "伤官"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "正财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "病"
+          },
+          {
+            "gan": "己",
+            "zhi": "酉",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "长生",
+            "seat": "长生"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-6bb2ecb85136",
@@ -146,6 +702,294 @@
         "己酉",
         "庚戌"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "壬",
+            "zhi": "辰",
+            "ganElement": "水",
+            "zhiElement": "土",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "衰",
+            "seat": "墓"
+          },
+          {
+            "gan": "壬",
+            "zhi": "寅",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "临官",
+            "seat": "病"
+          },
+          {
+            "gan": "甲",
+            "zhi": "寅",
+            "ganElement": "木",
+            "zhiElement": "木",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "临官",
+            "seat": "临官"
+          },
+          {
+            "gan": "庚",
+            "zhi": "午",
+            "ganElement": "金",
+            "zhiElement": "火",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              }
+            ],
+            "star": "死",
+            "seat": "沐浴"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "癸",
+            "zhi": "卯",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "长生"
+          },
+          {
+            "gan": "甲",
+            "zhi": "辰",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "衰",
+            "seat": "衰"
+          },
+          {
+            "gan": "乙",
+            "zhi": "巳",
+            "ganElement": "木",
+            "zhiElement": "火",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "病",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "丙",
+            "zhi": "午",
+            "ganElement": "火",
+            "zhiElement": "火",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              }
+            ],
+            "star": "死",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "丁",
+            "zhi": "未",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              }
+            ],
+            "star": "墓",
+            "seat": "冠带"
+          },
+          {
+            "gan": "戊",
+            "zhi": "申",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "绝",
+            "seat": "病"
+          },
+          {
+            "gan": "己",
+            "zhi": "酉",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              }
+            ],
+            "star": "胎",
+            "seat": "长生"
+          },
+          {
+            "gan": "庚",
+            "zhi": "戌",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              }
+            ],
+            "star": "养",
+            "seat": "衰"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-6bb2ecb85136",
@@ -200,6 +1044,269 @@
         "丁巳",
         "丙辰"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "癸",
+            "zhi": "酉",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "偏印"
+              }
+            ],
+            "star": "病",
+            "seat": "病"
+          },
+          {
+            "gan": "甲",
+            "zhi": "子",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "比肩"
+              }
+            ],
+            "star": "临官",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "癸",
+            "zhi": "亥",
+            "ganElement": "水",
+            "zhiElement": "水",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "劫财"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "伤官"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "辛",
+            "zhi": "酉",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "偏印"
+              }
+            ],
+            "star": "病",
+            "seat": "临官"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "癸",
+            "zhi": "亥",
+            "ganElement": "水",
+            "zhiElement": "水",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "劫财"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "伤官"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "壬",
+            "zhi": "戌",
+            "ganElement": "水",
+            "zhiElement": "土",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正官"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "偏印"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "偏财"
+              }
+            ],
+            "star": "衰",
+            "seat": "冠带"
+          },
+          {
+            "gan": "辛",
+            "zhi": "酉",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "偏印"
+              }
+            ],
+            "star": "病",
+            "seat": "临官"
+          },
+          {
+            "gan": "庚",
+            "zhi": "申",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "正印"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "劫财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正官"
+              }
+            ],
+            "star": "死",
+            "seat": "临官"
+          },
+          {
+            "gan": "己",
+            "zhi": "未",
+            "ganElement": "土",
+            "zhiElement": "土",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "七杀"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "偏财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "食神"
+              }
+            ],
+            "star": "墓",
+            "seat": "冠带"
+          },
+          {
+            "gan": "戊",
+            "zhi": "午",
+            "ganElement": "土",
+            "zhiElement": "火",
+            "god": "正官",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "偏财"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "七杀"
+              }
+            ],
+            "star": "绝",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "丁",
+            "zhi": "巳",
+            "ganElement": "火",
+            "zhiElement": "火",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正财"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "正印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正官"
+              }
+            ],
+            "star": "胎",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "丙",
+            "zhi": "辰",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正官"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "食神"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "比肩"
+              }
+            ],
+            "star": "养",
+            "seat": "冠带"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-6bb2ecb85136",
@@ -254,6 +1361,294 @@
         "癸卯",
         "壬寅"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "丁",
+            "zhi": "亥",
+            "ganElement": "火",
+            "zhiElement": "水",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              }
+            ],
+            "star": "长生",
+            "seat": "胎"
+          },
+          {
+            "gan": "庚",
+            "zhi": "戌",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              }
+            ],
+            "star": "养",
+            "seat": "衰"
+          },
+          {
+            "gan": "甲",
+            "zhi": "辰",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "衰",
+            "seat": "衰"
+          },
+          {
+            "gan": "壬",
+            "zhi": "申",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "绝",
+            "seat": "长生"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "己",
+            "zhi": "酉",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              }
+            ],
+            "star": "胎",
+            "seat": "长生"
+          },
+          {
+            "gan": "戊",
+            "zhi": "申",
+            "ganElement": "土",
+            "zhiElement": "金",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "绝",
+            "seat": "病"
+          },
+          {
+            "gan": "丁",
+            "zhi": "未",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              }
+            ],
+            "star": "墓",
+            "seat": "冠带"
+          },
+          {
+            "gan": "丙",
+            "zhi": "午",
+            "ganElement": "火",
+            "zhiElement": "火",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              }
+            ],
+            "star": "死",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "乙",
+            "zhi": "巳",
+            "ganElement": "木",
+            "zhiElement": "火",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "病",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "甲",
+            "zhi": "辰",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "衰",
+            "seat": "衰"
+          },
+          {
+            "gan": "癸",
+            "zhi": "卯",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "长生"
+          },
+          {
+            "gan": "壬",
+            "zhi": "寅",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "临官",
+            "seat": "病"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-a9128e66ab1f",
@@ -313,6 +1708,284 @@
         "癸酉",
         "壬申"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "乙",
+            "zhi": "亥",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              }
+            ],
+            "star": "长生",
+            "seat": "死"
+          },
+          {
+            "gan": "庚",
+            "zhi": "辰",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "衰",
+            "seat": "养"
+          },
+          {
+            "gan": "甲",
+            "zhi": "戌",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              }
+            ],
+            "star": "养",
+            "seat": "养"
+          },
+          {
+            "gan": "壬",
+            "zhi": "申",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "绝",
+            "seat": "长生"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "己",
+            "zhi": "卯",
+            "ganElement": "土",
+            "zhiElement": "木",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "病"
+          },
+          {
+            "gan": "戊",
+            "zhi": "寅",
+            "ganElement": "土",
+            "zhiElement": "木",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "临官",
+            "seat": "长生"
+          },
+          {
+            "gan": "丁",
+            "zhi": "丑",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              }
+            ],
+            "star": "冠带",
+            "seat": "墓"
+          },
+          {
+            "gan": "丙",
+            "zhi": "子",
+            "ganElement": "火",
+            "zhiElement": "水",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "胎"
+          },
+          {
+            "gan": "乙",
+            "zhi": "亥",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              }
+            ],
+            "star": "长生",
+            "seat": "死"
+          },
+          {
+            "gan": "甲",
+            "zhi": "戌",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              }
+            ],
+            "star": "养",
+            "seat": "养"
+          },
+          {
+            "gan": "癸",
+            "zhi": "酉",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              }
+            ],
+            "star": "胎",
+            "seat": "病"
+          },
+          {
+            "gan": "壬",
+            "zhi": "申",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "七杀"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "绝",
+            "seat": "长生"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-a9128e66ab1f",
@@ -372,6 +2045,279 @@
         "乙亥",
         "丙子"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "甲",
+            "zhi": "子",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "伤官"
+              }
+            ],
+            "star": "死",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "戊",
+            "zhi": "辰",
+            "ganElement": "土",
+            "zhiElement": "土",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏印"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "正财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "伤官"
+              }
+            ],
+            "star": "养",
+            "seat": "冠带"
+          },
+          {
+            "gan": "庚",
+            "zhi": "申",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "比肩"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏印"
+              }
+            ],
+            "star": "临官",
+            "seat": "临官"
+          },
+          {
+            "gan": "壬",
+            "zhi": "午",
+            "ganElement": "水",
+            "zhiElement": "火",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正官"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正印"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "胎"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "己",
+            "zhi": "巳",
+            "ganElement": "土",
+            "zhiElement": "火",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "七杀"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "比肩"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏印"
+              }
+            ],
+            "star": "长生",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "庚",
+            "zhi": "午",
+            "ganElement": "金",
+            "zhiElement": "火",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正官"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正印"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "辛",
+            "zhi": "未",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正印"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正官"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "正财"
+              }
+            ],
+            "star": "冠带",
+            "seat": "衰"
+          },
+          {
+            "gan": "壬",
+            "zhi": "申",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "比肩"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "食神"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏印"
+              }
+            ],
+            "star": "临官",
+            "seat": "长生"
+          },
+          {
+            "gan": "癸",
+            "zhi": "酉",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "病"
+          },
+          {
+            "gan": "甲",
+            "zhi": "戌",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "偏印"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "劫财"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正官"
+              }
+            ],
+            "star": "衰",
+            "seat": "养"
+          },
+          {
+            "gan": "乙",
+            "zhi": "亥",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "食神"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "偏财"
+              }
+            ],
+            "star": "病",
+            "seat": "死"
+          },
+          {
+            "gan": "丙",
+            "zhi": "子",
+            "ganElement": "火",
+            "zhiElement": "水",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "伤官"
+              }
+            ],
+            "star": "死",
+            "seat": "胎"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-f03306a7e147",
@@ -431,6 +2377,279 @@
         "丙午",
         "丁未"
       ],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "丙",
+            "zhi": "子",
+            "ganElement": "火",
+            "zhiElement": "水",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏印"
+              }
+            ],
+            "star": "病",
+            "seat": "胎"
+          },
+          {
+            "gan": "己",
+            "zhi": "亥",
+            "ganElement": "土",
+            "zhiElement": "水",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "正印"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "劫财"
+              }
+            ],
+            "star": "死",
+            "seat": "胎"
+          },
+          {
+            "gan": "乙",
+            "zhi": "丑",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "七杀"
+              }
+            ],
+            "star": "衰",
+            "seat": "衰"
+          },
+          {
+            "gan": "壬",
+            "zhi": "午",
+            "ganElement": "水",
+            "zhiElement": "火",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "长生",
+            "seat": "胎"
+          }
+        ],
+        "luck": [
+          {
+            "gan": "庚",
+            "zhi": "子",
+            "ganElement": "金",
+            "zhiElement": "水",
+            "god": "正官",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏印"
+              }
+            ],
+            "star": "病",
+            "seat": "死"
+          },
+          {
+            "gan": "辛",
+            "zhi": "丑",
+            "ganElement": "金",
+            "zhiElement": "土",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "七杀"
+              }
+            ],
+            "star": "衰",
+            "seat": "养"
+          },
+          {
+            "gan": "壬",
+            "zhi": "寅",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "劫财"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "病"
+          },
+          {
+            "gan": "癸",
+            "zhi": "卯",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "比肩"
+              }
+            ],
+            "star": "临官",
+            "seat": "长生"
+          },
+          {
+            "gan": "甲",
+            "zhi": "辰",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正财"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "比肩"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏印"
+              }
+            ],
+            "star": "冠带",
+            "seat": "衰"
+          },
+          {
+            "gan": "乙",
+            "zhi": "巳",
+            "ganElement": "木",
+            "zhiElement": "火",
+            "god": "比肩",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "正官"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "正财"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "丙",
+            "zhi": "午",
+            "ganElement": "火",
+            "zhiElement": "火",
+            "god": "伤官",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "偏财"
+              }
+            ],
+            "star": "长生",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "丁",
+            "zhi": "未",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "偏财"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "食神"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "比肩"
+              }
+            ],
+            "star": "养",
+            "seat": "冠带"
+          }
+        ]
+      },
       "book": "ditian",
       "bookTitle": "滴天髓",
       "chapter": "c-f03306a7e147",
@@ -481,6 +2700,85 @@
         "乙亥"
       ],
       "luck": [],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "庚",
+            "zhi": "午",
+            "ganElement": "金",
+            "zhiElement": "火",
+            "god": "七杀",
+            "hidden": [
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "伤官"
+              },
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "正财"
+              }
+            ],
+            "star": "死",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "乙",
+            "zhi": "酉",
+            "ganElement": "木",
+            "zhiElement": "金",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "正官"
+              }
+            ],
+            "star": "胎",
+            "seat": "绝"
+          },
+          {
+            "gan": "甲",
+            "zhi": "子",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正印"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "沐浴"
+          },
+          {
+            "gan": "乙",
+            "zhi": "亥",
+            "ganElement": "木",
+            "zhiElement": "水",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏印"
+              },
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "比肩"
+              }
+            ],
+            "star": "长生",
+            "seat": "死"
+          }
+        ],
+        "luck": []
+      },
       "book": "ziping",
       "bookTitle": "子平真诠",
       "chapter": "c-9d997979a223",
@@ -515,6 +2813,115 @@
         "甲戌"
       ],
       "luck": [],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "壬",
+            "zhi": "申",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "伤官"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "正财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "沐浴",
+            "seat": "长生"
+          },
+          {
+            "gan": "癸",
+            "zhi": "丑",
+            "ganElement": "水",
+            "zhiElement": "土",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "墓",
+            "seat": "冠带"
+          },
+          {
+            "gan": "己",
+            "zhi": "丑",
+            "ganElement": "土",
+            "zhiElement": "土",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "墓",
+            "seat": "墓"
+          },
+          {
+            "gan": "甲",
+            "zhi": "戌",
+            "ganElement": "木",
+            "zhiElement": "土",
+            "god": "正官",
+            "hidden": [
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "偏印"
+              }
+            ],
+            "star": "养",
+            "seat": "养"
+          }
+        ],
+        "luck": []
+      },
       "book": "ziping",
       "bookTitle": "子平真诠",
       "chapter": "c-f9023d1b58cc",
@@ -549,6 +2956,105 @@
         "庚申"
       ],
       "luck": [],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "己",
+            "zhi": "未",
+            "ganElement": "土",
+            "zhiElement": "土",
+            "god": "劫财",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "劫财"
+              },
+              {
+                "gan": "丁",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "乙",
+                "element": "木",
+                "god": "正官"
+              }
+            ],
+            "star": "衰",
+            "seat": "冠带"
+          },
+          {
+            "gan": "壬",
+            "zhi": "申",
+            "ganElement": "水",
+            "zhiElement": "金",
+            "god": "偏财",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "食神"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              }
+            ],
+            "star": "病",
+            "seat": "长生"
+          },
+          {
+            "gan": "戊",
+            "zhi": "子",
+            "ganElement": "土",
+            "zhiElement": "水",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "正财"
+              }
+            ],
+            "star": "胎",
+            "seat": "胎"
+          },
+          {
+            "gan": "庚",
+            "zhi": "申",
+            "ganElement": "金",
+            "zhiElement": "金",
+            "god": "食神",
+            "hidden": [
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "食神"
+              },
+              {
+                "gan": "壬",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "比肩"
+              }
+            ],
+            "star": "病",
+            "seat": "临官"
+          }
+        ],
+        "luck": []
+      },
       "book": "ziping",
       "bookTitle": "子平真诠",
       "chapter": "c-f9023d1b58cc",
@@ -583,6 +3089,115 @@
         "丙寅"
       ],
       "luck": [],
+      "chart": {
+        "pillars": [
+          {
+            "gan": "丁",
+            "zhi": "丑",
+            "ganElement": "火",
+            "zhiElement": "土",
+            "god": "偏印",
+            "hidden": [
+              {
+                "gan": "己",
+                "element": "土",
+                "god": "比肩"
+              },
+              {
+                "gan": "癸",
+                "element": "水",
+                "god": "偏财"
+              },
+              {
+                "gan": "辛",
+                "element": "金",
+                "god": "食神"
+              }
+            ],
+            "star": "墓",
+            "seat": "墓"
+          },
+          {
+            "gan": "壬",
+            "zhi": "寅",
+            "ganElement": "水",
+            "zhiElement": "木",
+            "god": "正财",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "正官"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "死",
+            "seat": "病"
+          },
+          {
+            "gan": "己",
+            "zhi": "巳",
+            "ganElement": "土",
+            "zhiElement": "火",
+            "god": "日主",
+            "hidden": [
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "庚",
+                "element": "金",
+                "god": "伤官"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "帝旺",
+            "seat": "帝旺"
+          },
+          {
+            "gan": "丙",
+            "zhi": "寅",
+            "ganElement": "火",
+            "zhiElement": "木",
+            "god": "正印",
+            "hidden": [
+              {
+                "gan": "甲",
+                "element": "木",
+                "god": "正官"
+              },
+              {
+                "gan": "丙",
+                "element": "火",
+                "god": "正印"
+              },
+              {
+                "gan": "戊",
+                "element": "土",
+                "god": "劫财"
+              }
+            ],
+            "star": "死",
+            "seat": "长生"
+          }
+        ],
+        "luck": []
+      },
       "book": "ziping",
       "bookTitle": "子平真诠",
       "chapter": "c-242c9d286239",

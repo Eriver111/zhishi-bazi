@@ -2,6 +2,22 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {buildCases}=require('../scripts/build-library-cases.cjs');
 const manifest=require('../scripts/library-cases.json');
 const books={ditian:require('../books/ditian.json'),ziping:require('../books/ziping.json')};
+test('case chart facts use the normal chart engine, preserving day-master and hidden-stem semantics',()=>{
+  const {buildChart}=require('../scripts/library-chart-data.cjs');
+  const chart=buildChart(['丁亥','庚戌','甲辰','壬申'],['己酉','戊申']);
+  assert.deepEqual(chart.pillars.map(p=>p.god),['伤官','七杀','日主','偏印']);
+  assert.deepEqual(chart.pillars[1].hidden,[{gan:'戊',element:'土',god:'偏财'},{gan:'辛',element:'金',god:'正官'},{gan:'丁',element:'火',god:'伤官'}]);
+  assert.equal(chart.pillars[3].star,'绝');assert.equal(chart.pillars[3].seat,'长生');
+  assert.equal(chart.luck[0].god,'正财');assert.equal(chart.luck[0].star,'胎');
+  assert.deepEqual(buildChart(['壬申','癸丑','己丑','甲戌'],[]).luck,[]);
+  assert.throws(()=>buildChart(['壬申','癸丑','己丑','甲丑'],[]),/Invalid/);
+  for(const item of buildCases(books,manifest).cases){
+    assert.deepEqual(item.chart.pillars.map(p=>p.gan+p.zhi),item.pillars);
+    assert.deepEqual(item.chart.luck.map(p=>p.gan+p.zhi),item.luck);
+    assert.equal(item.chart.pillars[2].god,'日主');
+    assert.deepEqual(Object.keys(item.chart).sort(),['luck','pillars']);
+  }
+});
 test('all twelve published cases retain exact sources, current translations, editions and stable source links',()=>{
   const result=buildCases(books,manifest);
   assert.deepEqual(result,require('../books/cases.json'));
