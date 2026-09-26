@@ -93,7 +93,8 @@ body{position:fixed;inset:0;width:100%}
 
 <script src="js/chat-viewport.js?v=2"></script>
 <script src="js/chat-persistence.js?v=4"></script>
-<script src="js/chat-experience.js?v=1"></script>
+<script src="js/chat-resume.js?v=1"></script>
+<script src="js/chat-experience.js?v=2"></script>
 <script>
 var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:'',conversationId:'',chartKey:'',historyLoaded:false};
 
@@ -150,14 +151,17 @@ function syncUserCredits(){
     });
   });
 }
-function currentLiurenChart(){if(window.ChatExperience&&ChatExperience.hasContext())return ChatExperience.context().data;try{var raw=localStorage.getItem('ai_liuren_data');return raw?JSON.parse(raw):null}catch(e){return null}}
+function currentLiurenChart(){if(window.ChatExperience&&ChatExperience.hasContext())return ChatExperience.context().data;if(window.ChatResume&&ChatResume.requestId()){var resumed=ChatResume.resolve();return resumed?resumed.data:null;}try{var raw=localStorage.getItem('ai_liuren_data');return raw?JSON.parse(raw):null}catch(e){return null}}
 function setHistoryButton(text,saved){var b=document.getElementById('historyBtn');if(!b)return;b.textContent=text;b.classList.toggle('saved',!!saved)}
 function restoreChatHistory(force){
   if(!window.ChatPersistence)return;if(AI.historyLoaded&&!force)return;
+  if(!currentLiurenChart())return;
   ChatPersistence.load('liuren',currentLiurenChart()).then(function(data){
     AI.chartKey=data.chart_key||'';if(!data.logged_in){setHistoryButton('登录保存',false);return}
     AI.conversationId=data.conversation_id||'';AI.historyLoaded=true;setHistoryButton(data.storage_ready===false?'待启用':'已保存',data.storage_ready!==false);
-    if(force||AI.resumePending||AI.messages.length===0){document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];AI.resumePending=false;(data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)})}
+    if((data.messages||[]).length&&(force||AI.resumePending||AI.messages.length===0)){
+      if(window.ChatResume) ChatResume.remember({type:'liuren',data:currentLiurenChart()},data.messages,AI.mode,AI.conversationId,ChatResume.scope());
+document.querySelectorAll('#messages .msg').forEach(function(el){el.remove()});AI.messages=[];AI.resumePending=false;(data.messages||[]).forEach(function(m){addMsg(m.role==='user'?'user':'ai',m.content)})}
   }).catch(function(){setHistoryButton('记录异常',false)});
 }
 

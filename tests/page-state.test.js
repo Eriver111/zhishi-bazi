@@ -55,7 +55,7 @@ test('all three standalone chats load recovery dependencies before the send hand
     const html=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
     const state=html.indexOf('src="/js/page-state.js?v=1"');
     const history=html.indexOf('src="js/chat-persistence.js?v=4"');
-    const recovery=html.indexOf('src="js/chat-experience.js?v=1"');
+    const recovery=html.indexOf('src="js/chat-experience.js?v=2"');
     assert.ok(state>=0 && history>state && recovery>history && recovery<html.indexOf('function send(){'),file);
     assert.match(html,/!event.isComposing/);
   }

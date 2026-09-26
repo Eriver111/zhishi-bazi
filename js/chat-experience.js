@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var input, messages, store, key, latest, status, chartContext, pending = '', controller, timer, ready = false;
+  var input, messages, store, key, latest, status, chartContext, pending = '', controller, timer, ready = false, resumeScope = null;
   function context() {
     if (typeof currentChatContext === 'function') return currentChatContext();
     if (typeof currentZiweiChart === 'function') return { type: 'ziwei', data: currentZiweiChart() };
@@ -23,6 +23,7 @@
     if (!store || !input || !messages || typeof AI === 'undefined') return;
     ready = true;
     var ctx = chartContext = context();
+    resumeScope = window.ChatResume && ChatResume.scope();
     // Include the birth descriptor as well as the existing conversation key.
     key = ctx.data ? 'chat:' + ChatPersistence.chartIdentity(ctx.type, ctx.data) + ':' + JSON.stringify({
       birth: ctx.data.birthInfo || {},
@@ -35,6 +36,15 @@
     latest.onclick = function () { messages.scrollTop = messages.scrollHeight; latest.hidden = true; };
     input.closest('.bottombar').prepend(latest);
     var saved = key && store.get(key);
+    var resumed = window.ChatResume && ChatResume.requestId() && ChatResume.resolve();
+    if (resumed) {
+      AI.conversationId = resumed.conversationId || '';
+      if (!saved || !saved.pending) saved = { messages: resumed.messages, mode: resumed.mode, top: 999999 };
+    }
+    if (window.ChatResume && ChatResume.requestId() && !resumed) {
+      status.textContent = '这段对话在当前浏览器或账号下已不可用，请返回首页重新选择。'; status.hidden = false;
+      input.disabled = true; document.getElementById('sendBtn').disabled = true;
+    }
     if (saved) {
       AI.resumePending = !!saved.pending;
       input.value = saved.draft || saved.pending || '';
@@ -60,7 +70,9 @@
       var empty = document.getElementById('emptyState'); if (empty) empty.style.display = '';
       status.hidden = true; latest.hidden = true; resizeInput();
       // A stale chart held by this page must not be carried into a new account.
-      key = null;
+      key = null; chartContext = {type: ctx.type, data: null}; resumeScope = null;
+      input.disabled = true; document.getElementById('sendBtn').disabled = true;
+      status.textContent = '账号已切换，请返回首页重新打开对话。'; status.hidden = false;
     });
   }
   function connection() {
@@ -77,10 +89,11 @@
       if (follow) { messages.scrollTop = messages.scrollHeight; if (latest) latest.hidden = true; }
       else if (latest) latest.hidden = false;
     },
-    start: function (text) { init(); pending = text; if (status) status.hidden = true; resizeInput(); save(); },
+    start: function (text) { init(); resumeScope = window.ChatResume && ChatResume.scope(); pending = text; if (status) status.hidden = true; resizeInput(); save(); },
     finish: function (failed) {
       if (failed && input && !input.value) input.value = pending;
       pending = ''; resizeInput(); save();
+      if (!failed && key && window.ChatResume) ChatResume.remember(chartContext, AI.messages, AI.mode, AI.conversationId, resumeScope);
     },
     request: function (url, options) {
       init(); var generation = store.epoch(); controller = new AbortController();
@@ -101,5 +114,8 @@
     },
     escape: function (text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   };
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.ChatResume && ChatResume.requestId() && window.Auth) Auth.ready(init);
+    else init();
+  });
 })();

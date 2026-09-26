@@ -294,6 +294,7 @@
     // 却扣分+保存，用户误以为失败而重试 → 双扣。改为 300s 与 Vercel 服务端上限对齐。
     var ctrl=new AbortController();
     var timer=setTimeout(function(){ctrl.abort();hideTyping();addMessage('ai','AI 响应超时（5 分钟），请稍后重试。');AI.isWaiting=false;updateSendBtn()},300000);
+    var resumeScope = window.ChatResume && ChatResume.scope();
     var requestHeaders = { 'Content-Type': 'application/json' };
     if (window.Auth && window.Auth.isLoggedIn && window.Auth.isLoggedIn()) requestHeaders.Authorization = 'Bearer ' + window.Auth.getToken();
     fetch('/api/ai-chat', {
@@ -305,6 +306,7 @@
     .then(function(r) { return r.json(); })
     .then(function(data) {
       clearTimeout(timer);hideTyping();
+      if (window.ChatResume && ChatResume.scope() !== resumeScope) { AI.messages = []; AI.isWaiting = false; updateSendBtn(); return; }
       if (data.error) {
         if (data.free_exhausted) {
           useFreeCredit(); // 确保本地也归零
@@ -314,6 +316,7 @@
         addMessage('ai', '抱歉，' + data.error);
       } else {
         addMessage('ai', data.reply);
+        if (window.ChatResume && body.chat_type) ChatResume.remember({type:body.chat_type,data:chartData},AI.messages,AI.mode,data.conversation_id,resumeScope);
         if (data.is_free) {
           useFreeCredit();
           updateFreeDisplay();

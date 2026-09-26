@@ -589,6 +589,7 @@ body::before{
 
 <script src="/js/service-notice.js?v=2" defer></script>
 <link rel="stylesheet" href="/css/editorial-art.css?v=2">
+<link rel="stylesheet" href="/css/home-chat-resume.css?v=1">
 </head>
 <body>
 <!-- ====== 墨色山水背景 v3 · 古画真迹 ====== -->
@@ -649,6 +650,11 @@ body::before{
       <a href="/library" class="hero-cta cta-library">藏书阁</a>
       <a href="/fortune" class="hero-cta cta-fortune">今日运势</a>
     </div>
+    <a id="homeChatResume" class="home-chat-resume" hidden aria-label="继续问 AI，恢复上次对话">
+      <span><strong>继续问 AI</strong><small data-chat-kind></small></span>
+      <p data-chat-preview></p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </a>
     <section class="mobile-home-fortune" id="mobileHomeFortune" aria-live="polite">
       <div class="mobile-home-fortune__head"><span data-home-fortune-title>今日黄历</span><a href="/fortune">查看完整内容</a></div>
       <div class="mobile-home-fortune__meta" data-home-fortune-meta>正在读取今日干支与宜忌…</div>
@@ -793,6 +799,9 @@ body::before{
 <script src="js/effects.js"></script>
 <script src="js/auth.js?v=31"></script>
 <script src="js/home-fortune.js?v=3"></script>
+<script src="js/chat-persistence.js?v=4"></script>
+<script src="js/chat-resume.js?v=1"></script>
+<script src="js/home-chat-resume.js?v=1"></script>
 <script>
 // 古籍书名滚动
 (function(){
