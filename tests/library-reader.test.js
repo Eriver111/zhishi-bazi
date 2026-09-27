@@ -27,11 +27,11 @@ test('unloaded chapter metadata preserves bookmark and progress normalization ac
  }
 });
 
-test('Ditian has 51 Jiyao plus six Chanwei chapters with 401 source-bound paragraphs; whole Chanwei remains incomplete',()=>{
+test('the collected Ditian edition has all 114 chapters and 5944 source-bound paragraphs translated',()=>{
  const book=read('books/ditian.json'),draft=read('scripts/translations/ditian.json');
- assert.equal(draft.chapters.length,57);assert.equal(book.translation.complete,false);
- assert.equal(book.translation.paragraphs,401);assert.equal(book.translation.completeChapters.length,57);
- assert.match(book.translation.note,/阐微其余57篇尚未整章配译/);
+ assert.equal(draft.chapters.length,114);assert.equal(book.translation.complete,true);
+ assert.equal(book.translation.paragraphs,5944);assert.equal(book.translation.totalParagraphs,5944);assert.equal(book.translation.completeChapters.length,114);
+ assert.match(book.translation.note,/114 篇均已逐段配译/);assert.match(book.translation.note,/不代表覆盖其他版本/);
  draft.chapters.forEach((entry,i)=>{
   const c=book.chapters[i];assert.equal(entry.id,c.id);assert.equal(entry.title,c.title);assert.equal(entry.paragraphs.length,c.blocks.length);
   c.blocks.forEach((block,j)=>{
@@ -40,8 +40,37 @@ test('Ditian has 51 Jiyao plus six Chanwei chapters with 401 source-bound paragr
    assert.notEqual(block.translation,block.textSimplified||block.text);
   });
  });
- assert.ok(book.chapters.slice(57).every(c=>c.blocks.every(b=>!b.translation)));
- const card=read('books/catalog.json').find(b=>b.id==='ditian');assert.equal(card.translation.completeChapters,57);assert.equal(card.translation.complete,false);
+ assert.ok(book.chapters.every(c=>c.blocks.every(b=>b.translation)));
+ const card=read('books/catalog.json').find(b=>b.id==='ditian');assert.deepEqual(card.translation,{complete:true,completeChapters:114,paragraphs:5944});
+});
+
+test('late-book merged chart rows remain source-bound without shifting year, hour or luck positions',()=>{
+ const book=read('books/ditian.json');
+ const officials=book.chapters[105],temperament=book.chapters[108],rank=book.chapters[111];
+ assert.equal(officials.blocks[33].text,'甲寅丙子');assert.match(officials.blocks[33].translation,/年柱甲寅；月柱丙子/);
+ assert.equal(officials.blocks[35].text,'己巳丁丑');assert.match(officials.blocks[35].translation,/时柱：己巳；原录第一步大运：丁丑/);
+ assert.equal(temperament.blocks[19].text,'癸亥壬戌');assert.match(temperament.blocks[19].translation,/第四步癸亥；第五步壬戌/);
+ assert.match(temperament.blocks[20].translation,/第六步大运：辛酉/);
+ assert.equal(temperament.blocks[308].text,'壬辰乙未丙申');assert.match(temperament.blocks[308].translation,/时柱壬辰；第一步大运乙未；第二步大运丙申/);
+ assert.match(temperament.blocks[309].translation,/第三步大运：丁酉/);
+ assert.equal(rank.blocks[6].translation,'时柱：戊午。');assert.ok(!rank.blocks[6].translation.includes('大运'));
+});
+
+test('whole-book drafts preserve mismatched commentaries, invalid source pillars and competing blade conventions',()=>{
+ const book=read('books/ditian.json'),cases=read('books/cases.json');
+ const mixed=book.chapters[103];
+ for(const i of [52,62])assert.match(mixed.blocks[i].translation,/错配|错置/);
+ const invalid=book.chapters[109];assert.equal(invalid.blocks[84].text,'午辰庚戌');
+ assert.match(invalid.blocks[90].translation,/首字不是天干/);
+ assert.ok(!cases.cases.some(c=>c.chapter===mixed.id&&[43,53].includes(c.sourceStart)));
+ assert.ok(!cases.cases.some(c=>c.chapter===invalid.id&&c.sourceStart===81));
+ assert.match(book.chapters[111].blocks[25].translation,/阴干也论刃/);
+ assert.match(book.chapters[111].blocks[25].translation,/不据此自动更改网站规则/);
+ const {buildTranslatedBook}=require('../scripts/build-library-translations.cjs'),manifest=read('scripts/library-translations.json'),draft=read('scripts/translations/ditian.json');
+ const changed=structuredClone(book);changed.chapters[113].blocks[2].text+='变';
+ assert.throws(()=>buildTranslatedBook(changed,manifest,draft),/source changed/);
+ const missing=structuredClone(draft);missing.chapters[113].paragraphs.pop();
+ assert.throws(()=>buildTranslatedBook(book,manifest,missing),/count changed/);
 });
 
 test('changing a translated source fails; stale paragraph substitutions cannot silently survive',()=>{
@@ -52,6 +81,36 @@ test('changing a translated source fails; stale paragraph substitutions cannot s
  const missing=structuredClone(draft);missing.chapters[50].paragraphs.pop();
  assert.throws(()=>buildTranslatedBook(source,manifest,missing),/count changed/);
  assert.deepEqual(buildTranslatedBook(source,manifest,draft),source);
+});
+
+test('Gan-Zhi and Forms drafts retain all 51 chart tables, source order and anomalous recorded luck',()=>{
+ const book=read('books/ditian.json');let tables=0,rows=0;
+ for(const chapter of book.chapters.slice(59,61)){
+  for(let i=0;i<chapter.blocks.length;i++){
+   const hour=chapter.blocks[i];
+   if(!/^(?:[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]){2}$/.test(hour.text))continue;
+   tables++;
+   for(let offset=0;offset<3;offset++){
+    const b=chapter.blocks[i-3+offset];
+    assert.equal(b.translation,['年柱','月柱','日柱'][offset]+'：'+b.text+'。');rows++;
+   }
+   assert.ok(hour.translation.startsWith('时柱：'+hour.text.slice(0,2)+'；原录第一步大运：'+hour.text.slice(2)+'。'));rows++;
+   let end=i+1;
+   while(end<chapter.blocks.length&&/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/.test(chapter.blocks[end].text)){
+    const b=chapter.blocks[end];assert.ok(b.translation.startsWith('原录第'+(end-i+1)+'步大运：'+b.text+'。'));rows++;end++;
+   }
+   assert.ok(chapter.blocks[end].translation.length>30,'each table retains its own full commentary');
+  }
+ }
+ assert.equal(tables,51);assert.equal(rows,468);
+ const general=book.chapters[59],forms=book.chapters[60];
+ for(const [index,pillar] of [[107,'己酉'],[166,'己巳'],[184,'乙巳']]){
+  assert.ok(general.blocks[index].translation.includes('原录“'+pillar+'”'));
+  assert.match(general.blocks[index].translation,/不顺接/);
+ }
+ assert.match(general.blocks[98].translation,/原局并无子/);
+ assert.match(forms.blocks[119].translation,/盘表未、丑、子、未不合/);
+ assert.match(forms.blocks[127].translation,/原录“乙亥”/);
 });
 
 test('Qiongtong draft covers the collected edition and preserves the source order of all example tables',()=>{

@@ -4,6 +4,8 @@ const stems='甲乙丙丁戊己庚辛壬癸', branches='子丑寅卯辰巳午未
 const validPillar = p => typeof p === 'string' && p.length === 2 && stems.includes(p[0]) && branches.includes(p[1]) && stems.indexOf(p[0]) % 2 === branches.indexOf(p[1]) % 2;
 function buildCases(books, manifest) {
   const ids = new Set();
+  const categories=manifest.categories;
+  if(!Array.isArray(categories)||!categories.length||new Set(categories.map(c=>c.id)).size!==categories.length||categories.some(c=>! /^[a-z0-9-]+$/.test(c.id)||!c.title?.trim()||!c.description?.trim())) throw Error('Invalid case categories');
   const cases = manifest.cases.map(entry => {
     if (entry.book === 'yuanhai') throw Error('Yuanhai is excluded from the case collection');
     if (!/^[a-z0-9-]+$/.test(entry.id) || ids.has(entry.id)) throw Error('Invalid or duplicate case id');
@@ -17,9 +19,11 @@ function buildCases(books, manifest) {
     if (!comment.translation) throw Error('Case translation missing: '+entry.id);
     let pillars, luck=[];
     if(entry.chart.kind==='lines') {
-      if(blocks.length!==12 || blocks.slice(0,3).some(b=>!validPillar(b.text)) || blocks[3].text.length!==4) throw Error('Invalid chart layout: '+entry.id);
+      // The source may list different numbers of luck pillars. End at this
+      // case's commentary, never absorb the next example or invent missing luck.
+      if(blocks.length<5 || entry.commentary!==entry.end || blocks.slice(0,3).some(b=>!validPillar(b.text)) || blocks[3].text.length!==4) throw Error('Invalid chart layout: '+entry.id);
       pillars=blocks.slice(0,3).map(b=>b.text).concat(blocks[3].text.slice(0,2));
-      luck=[blocks[3].text.slice(2)].concat(blocks.slice(4,11).map(b=>b.text));
+      luck=[blocks[3].text.slice(2)].concat(blocks.slice(4,-1).map(b=>b.text));
     } else if(entry.chart.kind==='inline') {
       if(!comment.text.includes(entry.chart.text)) throw Error('Missing chart excerpt: '+entry.id);
       pillars=entry.chart.text.split('、');
@@ -27,8 +31,9 @@ function buildCases(books, manifest) {
     if(pillars.length!==4 || !pillars.every(validPillar) || !luck.every(validPillar)) throw Error('Invalid case pillars: '+entry.id);
     for(const key of ['title','summary','note']) if(typeof entry[key]!=='string'||!entry[key].trim()) throw Error('Missing case '+key);
     if(!Array.isArray(entry.tags)||!entry.tags.length||entry.tags.some(t=>typeof t!=='string'||!t.trim())) throw Error('Invalid case tags');
+    if(!categories.some(c=>c.id===entry.category)) throw Error('Invalid case category: '+entry.id);
     const source=book.sources[chapter.sourceIndex || 0];
-    return {id:entry.id,title:entry.title,summary:entry.summary,tags:entry.tags,note:entry.note,pillars,luck,
+    return {id:entry.id,title:entry.title,summary:entry.summary,category:entry.category,tags:entry.tags,note:entry.note,pillars,luck,
       chart:require('./library-chart-data.cjs').buildChart(pillars,luck),
       book:book.id,bookTitle:book.title,chapter:chapter.id,chapterTitle:chapter.titleSimplified||chapter.title,
       group:chapter.groupSimplified||chapter.group,sourceUrl:source.permanentUrl,edition:book.edition,
@@ -43,7 +48,7 @@ function buildCases(books, manifest) {
       return {id:other.id,title:other.title};
     });
   });
-  return {version:manifest.version,note:'古籍命例按原书记述整理，未经独立史料核验。白话解读为知时整理稿，保留作者观点与录文疑点，供文化阅读与方法对照。',cases};
+  return {version:manifest.version,note:'古籍命例按原书记述整理，未经独立史料核验。白话解读为知时整理稿，保留作者观点与录文疑点，供文化阅读与方法对照。',categories:categories.map(c=>({...c,count:cases.filter(item=>item.category===c.id).length})),cases};
 }
 function main(){
   const root=path.resolve(__dirname,'..'),manifest=require('./library-cases.json'),books={};

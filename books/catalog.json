@@ -10,9 +10,9 @@
     "chapterCount": 114,
     "characters": 145314,
     "translation": {
-      "complete": false,
-      "completeChapters": 57,
-      "paragraphs": 401
+      "complete": true,
+      "completeChapters": 114,
+      "paragraphs": 5944
     }
   },
   {
@@ -58,9 +58,9 @@
     "chapterCount": 170,
     "characters": 68140,
     "translation": {
-      "complete": false,
-      "completeChapters": 0,
-      "paragraphs": 2
+      "complete": true,
+      "completeChapters": 170,
+      "paragraphs": 2675
     },
     "editorialWarning": "文字与论法多处存疑 · 不作知时算法依据"
   },

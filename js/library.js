@@ -21,7 +21,7 @@
   async function loadBook(id) {
     if (!catalog.some(function (b) { return b.id === id && b.availability !== 'reference'; })) throw new Error('这本书暂未开放正文，请返回书架查看书目说明。');
     if (!books[id]) {
-      var value = await json(id === 'sanming' ? '/books/reader/sanming/index.json?v=9' : '/books/' + id + '.json?v=9');
+      var value = await json(id === 'sanming' ? '/books/reader/sanming/index.json?v=16' : '/books/' + id + '.json?v=16');
       if (value.id !== id || !Array.isArray(value.chapters) || !value.chapters.length) throw new Error('书籍正文暂时无法读取。');
       books[id] = value;
     }
@@ -271,7 +271,7 @@
   window.addEventListener('storage', function (event) { if (!current || event.key !== storageKey(current.id)) return; states[current.id] = model.merge(state(current), read(event.key), current); updateBookmark(); });
   async function init() {
     $('libraryError').hidden = true;
-    try { catalog = await json('/books/catalog.json?v=9'); renderShelf(); changeIdentity(); await route(); }
+    try { catalog = await json('/books/catalog.json?v=16'); renderShelf(); changeIdentity(); await route(); }
     catch (_) { $('libraryError').hidden = false; $('libraryError').querySelector('p').textContent = '书架加载失败，请检查网络后重试。'; $('shelfStatus').textContent = ''; }
   }
   applyPreferences(); init();

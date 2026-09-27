@@ -7,13 +7,13 @@ function withoutNotes(book) {
   for (const c of value.chapters) for (const b of c.blocks) delete b.proofreadingNote;
   return value;
 }
-test('proofreading is additive, repeatable and preserves all source paragraphs and existing samples', () => {
+test('proofreading is additive, repeatable and preserves all source paragraphs and translations', () => {
   const raw = withoutNotes(source), result = applyProofreading(raw, manifest);
   assert.deepEqual(withoutNotes(result), raw);
   assert.deepEqual(result, source);
   assert.deepEqual(applyProofreading(result, manifest), result);
   assert.equal(result.chapters.flatMap(c => c.blocks).filter(b => b.proofreadingNote).length, 11);
-  assert.equal(result.translation.paragraphs, 2);
+  assert.equal(result.translation.paragraphs, 2675);
   assert.match(result.editorialWarning.text, /不将本书纳入网站算法规则/);
   assert.equal(require('../books/catalog.json').find(b => b.id === 'yuanhai').editorialWarning, manifest.warning.short);
   const other = require('../books/qiongtong.json');
