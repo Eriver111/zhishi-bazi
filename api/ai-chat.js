@@ -14,6 +14,9 @@ const { buildZiweiContext } = require('../lib/ziwei-context.js');
 const { hepanReplyScopes } = require('../lib/hepan-reply-scopes.js');
 
 function sendAiFailure(res, error) {
+  if (error && error.code === 'TIMING_VALIDATION_FAILED') {
+    return res.status(502).json({error:'这次解读未能完成，请重试一次（未扣次数）。',code:error.code,retryable:true,charged:false});
+  }
   if (error && error.code === 'YONGJI_VALIDATION_FAILED') {
     return res.status(502).json({ error:'这次解读未能保持已核对的取用结论，请重试一次（未扣次数）。', code:error.code, retryable:true, charged:false });
   }
@@ -348,6 +351,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
+  res.setHeader('X-Zhishi-AI-Policy', '20261001c');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -783,6 +787,9 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     if (lock2.length>10) {lock2+='。以上字段不另行重算；pattern.name 是本站唯一主格名，不得按月令本气、模型知识或其他流派改判，组合机制不得替代主格；破格不得写成已成格；旺衰档位、格局名、格局状态、risk severity 均为冻结标签，禁止改名或近义词换级。';messages.push({role:'system',content:lock2});}
   }
 
+  if (chartData && requestedYear !== null) {
+    messages.push({role:'system',content:'本轮最终依据（优先于历史回答；旧回答不构成事实）：\n'+buildTimingAdjudicationBrief(question,chartData)+'\n直接说明所问事情的主要影响。不要输出“方向待核、落点待核、待复核、条件性候选”等内部标签；用具体影响和必要条件说明含义。已有年度依据时，禁止照抄历史回答中的“该年数据未提供”。不要另写反证与边界栏目，也不要虚构已发生事件。'});
+  }
   messages.push({ role: 'user', content: question });
 
   // 模拟模式
@@ -856,6 +863,10 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
       selectionError.code = 'YONGJI_VALIDATION_FAILED';
       throw selectionError;
     }
+  }
+  if (validationWarnings.some(function(w){return w.indexOf('E9-')===0;})) {
+    var timingError=new Error('Reply ignored available timing evidence');
+    timingError.code='TIMING_VALIDATION_FAILED';throw timingError;
   }
   var expertScorecard = buildExpertReplyScorecard(question, chartData, reply, validationWarnings);
   console.log('[ai-expert-score] total=' + expertScorecard.total + ' grade=' + expertScorecard.grade +
@@ -970,6 +981,10 @@ function runReplyValidation(chartData, reply, question) {
     ? timingSelectionForQuestion(question, chartData) : null;
   if (timingSelection && timingSelection.year !== null && timingSelection.record) {
     var timingRecord = timingSelection.record;
+    var plainTimingText=String(reply).replace(/[*#]/g,'');
+    if (/(?:没有|缺少|未提供)[^。；\n]{0,24}(?:该年|这一年|流年裁决|单年.{0,4}结论)|(?:流年裁决|单年.{0,4}结论)[^。；\n]{0,24}(?:没有|未提供)|(?:方向|落点)待核/.test(plainTimingText)) {
+      warnings.push('E9-忽略已有年度依据：本轮已提供'+timingSelection.year+'年'+timingRecord.label+'的有效裁决；须用对应结构和具体影响回答，不能声称没有该年数据或以方向待核结尾。不得为消除待核标签而编造具体事故事实。');
+    }
     var domainTerms = {
       study:/学业|学习|考试|升学|录取|证照|资格/,
       career:/事业|工作|职场|职位|岗位|项目|领导|规则|职责/,
@@ -987,7 +1002,8 @@ function runReplyValidation(chartData, reply, question) {
     } else {
       var domainOpening = domainSentences.slice(0, 3).join('；');
       var saysPositive = /偏有利|有利为主|方向(?:是|为)?有利|向好|利大于弊|更容易推进/.test(domainOpening);
-      var saysNegative = /偏不利|不利为主|方向(?:是|为)?不利|受阻|压力|风险|弊大于利/.test(domainOpening);
+      // A concrete cost or pressure is not a claim that the entire domain is adverse.
+      var saysNegative = /偏不利|不利为主|方向(?:是|为)?不利|弊大于利|整体(?:会)?受阻/.test(domainOpening);
       var saysConditional = /条件性|双向|吉凶并见|有利[^。；]{0,18}(?:但|同时)[^。；]{0,18}(?:压力|风险|受阻)|不能单定|不宜单定/.test(domainOpening);
       if (timingRecord.direction === '偏不利' && saysPositive && !saysNegative) {
         warnings.push('E8-应期方向冲突：' + timingSelection.year + '年「' + timingRecord.label + '」冻结方向为偏不利，回答却明确写成偏有利');
