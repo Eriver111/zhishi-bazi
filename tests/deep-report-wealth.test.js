@@ -403,7 +403,8 @@ test('strong exposed output feeding rooted wealth and an activated wealth storag
   assert.equal(wealthStorage.activated, true);
   assert.equal(wealthStorage.wealthConnection, true);
   assert.equal(facts.wealth.narrative.grade, 'A10');
-  assert.match(facts.wealth.narrative.headline + facts.wealth.narrative.painPoint, /挣钱|财富|漏财|投资/);
+  assert.match(facts.wealth.narrative.headline, /钱|挣钱|财富|漏财|投资/);
+  assert.ok(facts.wealth.narrative.verdicts[0].sourceRefs.includes('WEALTH_OCCURRENCE:显现'));
 });
 
 test('month-command output feeding deeply rooted hidden wealth through a wealth combine can reach A10', () => {
@@ -427,7 +428,10 @@ test('a large adverse wealth field is graded for scale but remains below A10 whe
   assert.ok(facts.wealth.pathways.some((row) => row.type === '合会引财'));
   assert.equal(facts.wealth.narrative.grade, 'A9');
   assert.match(facts.wealth.narrative.verdicts[1].outcomeText, /技能|产品|项目|内容|客户/);
-  assert.match(facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText, /不能单独确认现金留存/);
+  const retention=facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下');
+  assert.match(retention.outcomeText, /分钱|继续花在|不会全部落到自己/);
+  assert.match(retention.sourceText, /比劫分流|财破印/);
+  assert.doesNotMatch(retention.outcomeText, /一定存得下|收入.*全部.*留下|必然.*富/);
 });
 
 test('extremely weak charts do not gain wealth rank from adverse wealth-to-officer flow', () => {
@@ -463,11 +467,14 @@ test('peer competition names shared profit while adverse wealth-to-officer flow 
 
 test('wealth hidden inside a non-wealth storage is not described as a wealth storage', () => {
   const facts = buildRealWealthFacts('丙寅 己亥 庚申 庚辰');
-  const retention = facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下').outcomeText;
+  const retentionRow = facts.wealth.narrative.verdicts.find((row) => row.title === '钱能不能留下');
+  const retention = retentionRow.outcomeText;
 
   assert.ok(facts.wealth.storage.storages.some((row) => row.storageRoleKey === 'output'));
   assert.ok(!facts.wealth.storage.storages.some((row) => row.storageRoleKey === 'wealth'));
-  assert.match(retention, /没有形成财库/);
+  assert.match(retentionRow.sourceText, /辰为食伤库/);
+  assert.ok(retentionRow.sourceRefs.includes('WEALTH_STORAGE:absent'));
+  assert.doesNotMatch(retentionRow.sourceText, /辰为财库/);
   assert.doesNotMatch(retention, /虽然能看到财星或财库/);
 });
 
@@ -503,7 +510,9 @@ test('hidden wealth without a source chain or connected storage stays in a poor 
   assert.equal(facts.wealth.pathways.filter((row) => row && row.scalePotential !== false).length, 0);
   assert.ok(facts.wealth.storage.storages.filter((row) => row.storageRoleKey === 'wealth').every((row) => row.wealthConnection === false));
   assert.equal(level, 6, facts.wealth.narrative.grade);
-  assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /藏在地支|没有接成|不等于/);
+  assert.match(facts.wealth.narrative.verdicts[0].sourceText, /藏于地支/);
+  assert.match(facts.wealth.narrative.verdicts[0].outcomeText, /持续扩大收入的条件不突出|收入线索较分散/);
+  assert.ok(facts.wealth.narrative.verdicts[0].requiredConditions.some(c=>c.key==='wealthPath'&&!c.met));
 });
 
 test('an extremely weak body cannot become rich from adverse wealth scale alone', () => {

@@ -52,12 +52,14 @@ function favorableFacts() {
 }
 
 function customerVisibleCopy(section) {
-  const visible = [section.headline, section.painPoint, section.note];
+  // Default reading surface: professional sources and detail-only rows remain
+  // available on expansion, but must not be counted as everyday body copy.
+  const visible = [section.headline, section.painPoint, ...(section.paragraphs || [])];
   for (const verdict of section.verdicts || []) {
-    visible.push(verdict.title, verdict.sourceText, verdict.outcomeText || verdict.text);
+    if (!verdict.detailOnly) visible.push(verdict.displayTitle || verdict.title, verdict.outcomeText || verdict.text);
   }
   for (const year of section.years || []) {
-    visible.push(year.year, year.pillar, year.daYunLabel, year.directionLabel, year.sourceText, year.summary);
+    if (!year.isCurrentYear) visible.push(year.year, year.lifeStage, year.primaryEventLabel, year.summary);
   }
   return visible.filter(Boolean).join('\n');
 }
@@ -78,6 +80,21 @@ test('narrative turns wealth facts into a stable A6-A10 public magnitude without
   assert.doesNotMatch(JSON.stringify(first.wealth), /relationEvents|structuralRisks|confidence|evidence|月令与季节|关系质量/);
 });
 
+test('adult exam preparation does not imply the person has yet to earn independently', () => {
+  const adultExam = favorableFacts();
+  adultExam.lifeContext = { status: 'exam', age: 30 };
+  const student = favorableFacts();
+  student.lifeContext = { status: 'student', age: 16 };
+  const examNarrative = DeepReport.buildNarratives(adultExam).wealth;
+  const studentNarrative = DeepReport.buildNarratives(student).wealth;
+
+  assert.doesNotMatch(customerVisibleCopy(examNarrative), /以后独立挣钱时|日后独立挣钱|在读期间|学业之后/);
+  assert.match(customerVisibleCopy(studentNarrative), /以后独立挣钱时|日后独立挣钱/);
+  assert.equal(examNarrative.grade, studentNarrative.grade, 'life context changes wording, not the wealth grade');
+  assert.deepEqual(adultExam.core, student.core);
+  assert.deepEqual(adultExam.wealth, student.wealth);
+});
+
 test('domain timing reports only independently triggered years and keeps age-stage context', () => {
   const facts = favorableFacts();
   facts.fiveYear.years[2].eventAdjudication = {
@@ -93,9 +110,11 @@ test('domain timing reports only independently triggered years and keeps age-sta
       evidence: ['流年与原局形成财星通路'],
     }],
   };
-  const verdict = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '接下来几年更容易见到钱的年份');
-  assert.match(verdict.outcomeText, /2028年（32岁·事业家庭发展阶段）为偏有利/);
-  assert.match(verdict.outcomeText, /客户回款.*资源落地/);
+  const verdict = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '接下来几年钱款变化重点');
+  assert.match(verdict.outcomeText, /2028年（32岁·事业家庭发展阶段）/);
+  assert.doesNotMatch(verdict.outcomeText, /为偏有利/);
+  assert.match(verdict.outcomeText, /结清的钱.*收到/);
+  assert.match(verdict.sourceText, /2028年.*财星通路/);
   assert.doesNotMatch(verdict.outcomeText, /2026年|2027年|2029年|2030年/);
 });
 
@@ -127,8 +146,9 @@ test('current year names one age-filtered event only when an independent trigger
     secondaryEvent: null,
   };
   const verdict = DeepReport.buildNarratives(facts).currentYear.verdicts.find(row => row.title === '今年最可能应在哪件事');
-  assert.match(verdict.outcomeText, /考试.*录取.*更容易推进/);
-  assert.match(verdict.sourceText, /升学与起步阶段/);
+  assert.match(verdict.outcomeText, /考试.*录取.*推进/);
+  assert.match(verdict.sourceText, /流年冲动月柱并形成有利方向/);
+  assert.equal(DeepReport.buildNarratives(facts).currentYear.painPoint, '');
 });
 
 test('family disruption details survive school and elderly scene rendering', () => {
@@ -177,18 +197,20 @@ test('cross-section dedupe keeps a shared reason once while retaining every outc
   assert.equal(narratives.wealth.verdicts[0].outcomeText, '回款随后变化。');
 });
 
-test('age-stage scenario selection narrows a broad career theme without claiming certainty', () => {
+test('explicit work status narrows career scenes while age alone never assumes a job', () => {
   const launch = DeepReport.__test.selectTimingScenario(
     { domain: 'career', direction: '偏有利', scenarioCandidates: ['事业事项推进'] },
-    { lifeStage: { key: 'launch' } }
+    { lifeStage: { key: 'launch' }, lifeContext:{status:'transition',age:25} }
   );
   const mature = DeepReport.__test.selectTimingScenario(
     { domain: 'career', direction: '偏不利', scenarioCandidates: ['事业事项受阻'] },
-    { lifeStage: { key: 'mature' } }
+    { lifeStage: { key: 'mature' }, lifeContext:{status:'working',age:48} }
   );
-  assert.match(launch, /求职|转岗|重要项目/);
-  assert.match(mature, /职位调整|项目交付|考核|上下级/);
+  assert.match(launch, /申请|求职|面试|岗位/);
+  assert.match(mature, /负责人|工作|考核|任务/);
   assert.doesNotMatch(launch + mature, /必然|一定/);
+  const unknown = DeepReport.__test.selectTimingScenario({domain:'career',direction:'偏有利'}, {lifeStage:{key:'mature'}});
+  assert.doesNotMatch(unknown, /领导|客户|职位|上级|工作平台/);
 });
 
 test('age-stage scenario selection never gives a child an adult romance or salary event', () => {
@@ -200,7 +222,7 @@ test('age-stage scenario selection never gives a child an adult romance or salar
     { domain: 'wealth', direction: '偏不利' },
     { lifeStage: { key: 'child' } }
   );
-  assert.match(childRelationship, /父母|老师|同伴/);
+  assert.match(childRelationship, /父母|老师|同伴|同学|朋友/);
   assert.doesNotMatch(childRelationship, /婚嫁|同居|伴侣/);
   assert.match(childWealth, /学习|照护|家庭/);
   assert.doesNotMatch(childWealth, /客户|回款|工资|收入机会/);
@@ -252,8 +274,9 @@ test('money retention keeps authoritative strength separate from carrying capaci
   for(const [level,score,state] of [['偏强',78,'可承接'],['中和',52.5,'可承接'],['极弱',28,'承压']]){
     const facts=favorableFacts(); facts.core.strength={level,score}; facts.wealth.capacity={state,elementRole:'喜神'};
     const row=DeepReport.buildNarratives(facts).wealth.verdicts.find(v=>v.title==='钱能不能留下');
-    assert.ok(row.outcomeText.includes('旺衰为'+level));
-    assert.ok(row.outcomeText.includes('承接状态为'+state));
+    assert.ok(row.sourceText.includes('旺衰为'+level));
+    assert.ok(row.sourceText.includes('承接状态为'+state));
+    assert.doesNotMatch(row.outcomeText,/旺衰|承接状态/);
     assert.doesNotMatch(row.outcomeText,/富屋贫人|日主偏强，担得住财/);
   }
 });
@@ -264,9 +287,9 @@ test('wealth overview keeps peer sharing and wealth-breaks-seal consequences in 
     risks: [{ type: '比劫分流' }, { type: '财破印' }],
   };
   const wealth = DeepReport.buildNarratives(facts).wealth;
-  const copy = wealth.headline + wealth.painPoint;
-  assert.match(copy, /有挣钱能力|具备赚钱条件/);
-  assert.match(copy, /合伙.*破财|合伙.*分钱/);
+  const copy = customerVisibleCopy(wealth);
+  assert.doesNotMatch(wealth.headline + wealth.painPoint, /有挣钱能力|具备赚钱条件/);
+  assert.match(copy, /合作.*分钱|合伙.*分钱/);
   assert.match(copy, /学习|资格|稳定支持|原有保障|准备|转型/);
   assert.doesNotMatch(copy, /投资.*失败|投资.*判断失误/);
   assert.doesNotMatch(copy, /最大的财富漏洞|长期投入或责任支出迅速带走/);
@@ -302,9 +325,9 @@ test('customer study copy uses the low public band without junior-college or exc
   assert.doesNotMatch(customerVisibleCopy(n),/低学历|只能读|考不上|本科需要/);
 });
 
-test('all five paid narratives use plain Chinese conclusions and contain no raw internal field names', () => {
+test('all paid narratives use plain Chinese conclusions and contain no raw internal field names', () => {
   const narratives = DeepReport.buildNarratives(favorableFacts());
-  assert.deepEqual(Object.keys(narratives), ['currentYear', 'relationship', 'wealth', 'study', 'fiveYear']);
+  assert.deepEqual(Object.keys(narratives), ['currentYear', 'relationship', 'wealth', 'career', 'study', 'fiveYear']);
   for (const section of Object.values(narratives)) {
     const copy = JSON.stringify(section);
     assert.doesNotMatch(copy, /relationEvents|structuralRisks|overallTriggers|confidence|evidence|elementRole|sourcePillar|targetPillar/);
@@ -322,25 +345,32 @@ test('all five paid narratives use plain Chinese conclusions and contain no raw 
     assert.equal(Object.prototype.hasOwnProperty.call(section, 'actions'), false);
     assert.ok(Array.isArray(section.verdicts) && section.verdicts.length > 0);
     for (const verdict of section.verdicts) {
-      assert.ok(verdict.title && verdict.text);
+      assert.ok(verdict.title);
+      assert.ok(verdict.detailOnly ? verdict.sourceText : verdict.text);
       assert.ok(Array.isArray(verdict.basis) && verdict.basis.length > 0);
     }
   }
 });
 
-test('relationship narrative derives a rich spouse portrait from palace element, hidden roles and spouse-star placement', () => {
+test('relationship body explains friction while weak spouse portraits remain in expandable sources', () => {
   const relationship = DeepReport.buildNarratives(favorableFacts()).relationship;
-  const copy = relationship.verdicts.map(row => `${row.title}：${row.text}`).join('\n');
+  const copy = relationship.verdicts.map(row => `${row.title}：${row.sourceText} ${row.text}`).join('\n');
   for (const title of ['夫妻主导关系', '配偶性格', '婚后作用', '认识渠道', '年龄倾向', '外形气质']) {
     assert.match(copy, new RegExp(title));
   }
-  assert.match(copy, /主见|果断|强势|主导/);
+  assert.match(customerVisibleCopy(relationship), /分担|催得越紧|争谁说了算/);
   assert.match(copy, /清爽利落/);
   assert.doesNotMatch(copy, /骨架舒展|眉形清晰/);
   assert.match(copy, /工作|学习|同事|同学|熟人/);
   assert.match(copy, /年龄线索未集中/);
-  assert.match(copy, /帮助|助力|资源|秩序/);
-  assert.match(copy, /压力|约束|管束|要求/);
+  assert.match(copy, /帮助|支持|分担/);
+  assert.match(copy, /负担|要求|催/);
+  for (const title of ['认识渠道','年龄倾向','外形气质','婚后作用']) {
+    const row=relationship.verdicts.find(v=>v.title===title);
+    assert.equal(row.detailOnly,true);
+    assert.equal(row.outcomeText,'');
+  }
+  assert.doesNotMatch(customerVisibleCopy(relationship),/清爽利落|年龄线索未集中|配偶星|夫妻宫/);
 });
 
 test('relationship narrative hides scoring and keeps only evidence-backed plain conclusions', () => {
@@ -350,7 +380,7 @@ test('relationship narrative hides scoring and keeps only evidence-backed plain 
   assert.equal(Object.prototype.hasOwnProperty.call(relationship, 'grade'), false);
   assert.equal(Object.prototype.hasOwnProperty.call(relationship, 'level'), false);
   assert.equal(Object.prototype.hasOwnProperty.call(relationship, 'difficulty'), false);
-  assert.match(relationship.headline + relationship.painPoint, /另一半|关系|生活|你/);
+  assert.match(relationship.headline + relationship.painPoint, /感情|两个人|关系|生活/);
 });
 
 test('half-combination retains facts without inventing formed direction or emotions', () => {
@@ -359,7 +389,8 @@ test('half-combination retains facts without inventing formed direction or emoti
   facts.relationship.palace.dayInvolvingEvents=[{type:'半合',pillars:['year','day'],source:'年柱午',target:'日柱寅',elements:['午寅','合火']}];
   const row=DeepReport.buildNarratives(facts).relationship.verdicts.find(v=>v.title==='关系线索·半合');
   assert.match(row.sourceText,/午寅.*合火/);
-  assert.match(row.outcomeText,/是否成化/);
+  assert.match(row.sourceText,/是否成化/);
+  assert.match(row.outcomeText,/一起做.*不等于没有矛盾/);
   assert.doesNotMatch(row.outcomeText,/怀疑对方|偏不利：它会让/);
 });
 
@@ -436,12 +467,13 @@ test('study narrative uses the evidence-gated profile and education band without
   assert.equal(narrative.level, '深造支持较集中');
   assert.doesNotMatch(JSON.stringify(narrative), /硕士层级有较强潜力/);
   assert.ok(narrative.verdicts.some(row => row.sourceText === '杀印相生链成立，印星为本命用神。'));
-  assert.ok(narrative.verdicts.some(row => /不怕重复、肯下功夫/.test(row.outcomeText)));
+  assert.ok(narrative.verdicts.some(row => /找方法、问懂的人.*明确顺序/.test(row.outcomeText)));
   assert.ok(narrative.verdicts.some(row => /食伤过旺且没有制化/.test(row.sourceText)));
   const visible = [narrative.headline, narrative.painPoint, narrative.note]
     .concat(narrative.verdicts.flatMap(row => [row.title, row.sourceText, row.outcomeText || row.text]))
     .filter(Boolean).join('\n');
-  assert.doesNotMatch(visible, /建议|应该|应当|优先|最好|宜|需注意|需要做到/);
+  assert.doesNotMatch(customerVisibleCopy(narrative), /建议|应该|应当|优先|最好|宜|需注意|需要做到|食伤|印星/);
+  assert.match(visible, /食伤过旺且没有制化/);
 });
 
 test('cached study labels and outcomes are regenerated from rank before public rendering', () => {
@@ -463,7 +495,10 @@ test('cached study labels and outcomes are regenerated from rank before public r
     const narrative = DeepReport.buildNarratives(facts).study;
     const visible = customerVisibleCopy(narrative);
     assert.equal(narrative.level, label);
-    assert.match(visible, outcome);
+    const bandRow=narrative.verdicts.find(v=>v.title==='学习与深造潜力');
+    assert.equal(bandRow.detailOnly,true);
+    assert.match(bandRow.outcomeText, outcome);
+    assert.match(bandRow.sourceText, new RegExp(label));
     assert.doesNotMatch(visible, /旧缓存|大专|考不上|只能|硕士标签/);
   }
 });
@@ -592,7 +627,8 @@ test('a generic annual wealth sentence does not override the no-storage steady-a
   facts.wealth.storage = { present: false, activated: false, candidates: [], storages: [] };
   facts.currentYear.wealth = { conclusion: '财富条件被激活。', evidence: ['普通年度说明'], timing: { activation: [] } };
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
-  assert.match(retention.outcomeText, /一点点积累/);
+  assert.match(retention.outcomeText, /分次积累/);
+  assert.doesNotMatch(retention.outcomeText,/财库|财富条件被激活|突然.*大笔/);
 });
 
 test('an activated Ji wealth storage under pressure never becomes a money-retention promise', () => {
@@ -611,7 +647,8 @@ test('an activated Ji wealth storage under pressure never becomes a money-retent
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
   assert.doesNotMatch(retention.outcomeText, /更容易沉淀成存款|赚钱以后有地方可存/);
   assert.doesNotMatch(retention.outcomeText, /相对更容易留住|更容易留住/);
-  assert.match(retention.outcomeText, /垫的钱|责任|支出/);
+  assert.match(retention.outcomeText, /追加投入|共同开支|款项占住/);
+  assert.match(retention.sourceText, /财库.*忌神/);
 });
 
 test('five storage roles enter the wealth source and retention conclusions with different plain results', () => {
@@ -636,7 +673,9 @@ test('strong partial wealth prevents a no-storage chart from being reduced to on
   facts.wealth.partialWealth = { strong: true, exposedCount: 2, hiddenCount: 0, evidence: ['年干偏财', '月干偏财'] };
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
   assert.doesNotMatch(retention.outcomeText, /一点点做大/);
-  assert.match(retention.outcomeText, /偏财|机会/);
+  assert.match(retention.outcomeText, /一次性合作|短期报酬/);
+  assert.match(retention.sourceText, /偏财机会性较强.*显现数量2/);
+  assert.doesNotMatch(retention.outcomeText, /只能.*积累|偏财|财库/);
 });
 
 test('wealth timing names the exact year relation and a concrete money outcome', () => {
@@ -781,11 +820,12 @@ test('all customer-visible paid narratives translate abstract pressure into conc
   const text = Object.values(narratives).map(customerVisibleCopy).join('\n');
 
   assert.doesNotMatch(text, /消耗|纠缠|失衡|结构张力|资源分流|承载不足|关系波动/);
-  assert.match(text, /共同计划|关系参与/);
+  assert.match(text, /一起做的事|一起商量|各自决定/);
   assert.doesNotMatch(text, /怀疑对方到底靠不靠谱/);
-  assert.match(text, /现金留存|真正留下/);
+  assert.match(text, /账面收入.*落到自己手里|真正留下/);
   assert.match(text, /客户|项目/);
-  assert.match(text, /本科/);
+  assert.doesNotMatch(text, /本科|研究生/);
+  assert.match(narratives.study.verdicts.find(v=>v.title==='学习与深造潜力').outcomeText,/不能据此确定本科/);
 });
 
 test('annual risk copy names the triggered fact instead of a generic structure label', () => {
@@ -847,6 +887,7 @@ test('every frozen structural risk has a safe factual source and concrete annual
   const narratives = DeepReport.buildNarratives(facts);
   const current = customerVisibleCopy(narratives.currentYear);
   const fiveYear = narratives.fiveYear.years[0];
+  const currentSources = narratives.currentYear.verdicts.map(row=>row.sourceText).join('\n');
   const cases = [
     ['伤官见官', /伤官与正官同时出现/, /和上级、规则或流程顶起来/],
     ['财破印', /财星克印星/, /打断学习、考证或原来的准备/],
@@ -859,7 +900,7 @@ test('every frozen structural risk has a safe factual source and concrete annual
   ];
 
   for (const [, source, outcome] of cases) {
-    assert.match(current, source);
+    assert.match(currentSources, source);
     assert.match(current, outcome);
     assert.match(fiveYear.sourceText, source);
     assert.match(fiveYear.summary, outcome);
@@ -917,8 +958,9 @@ test('neutral wealth storage under overall pressure does not invent storage debt
   };
   const retention = DeepReport.buildNarratives(facts).wealth.verdicts.find(row => row.title === '钱能不能留下');
   assert.doesNotMatch(retention.sourceText, /垫资|债务/);
-  assert.match(retention.outcomeText, /旺衰为偏强/);
-  assert.match(retention.outcomeText, /不能单独确认现金留存/);
+  assert.match(retention.sourceText, /旺衰为偏强/);
+  assert.match(retention.sourceText, /不等同于现实现金留存/);
+  assert.doesNotMatch(retention.outcomeText, /垫资|债务|追加投入|更容易存下来/);
 });
 
 test('negative wealth chains appear only in retention risk and never in income source', () => {

@@ -57,12 +57,15 @@ test('buildFacts consumes each authoritative source once and is deterministic', 
   assert.equal(JSON.stringify(first), JSON.stringify(second));
   assert.deepEqual(Object.keys(first), [
     'schemaVersion', 'anchorYear', 'chartIdentity', 'core',
-    'wealth', 'relationship', 'study', 'currentYear', 'fiveYear', 'storyline',
+    'wealth', 'relationship', 'study', 'currentYear', 'fiveYear', 'storyline', 'career',
   ]);
   assert.equal(Object.isFrozen(first.core), true);
-  assert.match(first.storyline.headline, /整份报告/);
-  assert.match(first.storyline.summary, /关键|核心|承载|力量/);
+  assert.match(first.storyline.headline, /报告.*重点/);
+  assert.match(first.storyline.summary, /收入|感情|工作选择/);
+  assert.doesNotMatch(first.storyline.summary, /承载|用神|旺衰|逢.*运总体偏顺/);
+  assert.equal(first.storyline.direction, '');
   assert.ok(Array.isArray(first.storyline.technicalBasis));
+  assert.match(first.storyline.technicalBasis.join('；'), /中和.*杀印相生.*用神.*木/);
 });
 
 test('deep report source does not contain independent strength or pattern scoring', () => {

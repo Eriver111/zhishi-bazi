@@ -258,7 +258,7 @@ function buildReportReview(events, candidates, options) {
     if(!Number.isInteger(year)||year<cutoff)return;
     const key=year+':'+c.domain+':'+c.mechanism_key+':'+c.manifestation;
     if(seen.has(key))return;seen.add(key);
-    supportedCandidates.push({...c,year,hasIndependentAnnualTrigger:true,reportBaseline:safeText(candidate.reportBaseline,320),reportLabel:safeText(candidate.reportLabel,80)});
+    supportedCandidates.push({...c,year,hasIndependentAnnualTrigger:true,reportBaseline:safeText(candidate.reportBaseline,320),reportLabel:safeText(candidate.reportLabel,80),reportEventType:safeText(candidate.reportEventType,80),meaningKey:safeText(candidate.meaningKey,160),scene:safeText(candidate.scene,40)});
     const repeated=supportProfile.patterns.find(p=>p.domain===c.domain&&p.mechanismKey===c.mechanism_key&&p.manifestation===c.manifestation);
     const once=supportProfile.tentativePatterns.find(p=>p.domain===c.domain&&p.mechanismKey===c.mechanism_key&&p.manifestation===c.manifestation);
     const denied=profile.deniedPatterns.find(p=>p.domain===c.domain&&p.mechanismKey===c.mechanism_key&&p.manifestation===c.manifestation);

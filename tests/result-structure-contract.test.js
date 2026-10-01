@@ -13,8 +13,8 @@ test('bazi result retains the complete ordered long-report structure', () => {
   const html = read('result.html');
   const markers = [
     'section-dayun', 'section-liunian', 'section-sizhu',
-    '>专业解读<', '>日主性格<', '>父母关系<', '>今年运势<',
-    '>婚姻感情<', '>财运分析<', '>学业分析<', '>近5年流年运势<',
+    '>专业解读<', '>日主性格<', '>父母关系<', '>今年概览<',
+    '>财富与收入<', '>婚姻感情<', '>事业与发展选择<', '>学习与进修<', '>未来五年<',
   ];
   let previous = -1;
   for (const marker of markers) {

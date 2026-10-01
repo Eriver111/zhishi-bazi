@@ -20,7 +20,8 @@ test('denied primary is withdrawn; next independent event replaces it everywhere
  for(const row of f.fiveYear.years){assert.equal(row.eventAdjudication.primaryEvent.domain,'career');assert.equal(row.eventAdjudication.secondaryEvent,null);assert.equal(row.dynamic.eventAdjudication,row.eventAdjudication);}
  assert.doesNotMatch(publicText(f.currentYear.narrative)+publicText(f.fiveYear.narrative)+publicText(f.wealth.narrative),/wealth合成独立场景|不得复活旧财富解释/);
  assert.match(publicText(f.currentYear.narrative),/career合成独立场景/);
- assert.match(f.storyline.focus,/事业工作/);assert.doesNotMatch(f.storyline.focus,/收入资金/);
+ assert.equal(f.currentYear.narrative.verdicts[0].detailOnly,true);assert.match(f.currentYear.narrative.headline,/补充依据/);assert.doesNotMatch(f.currentYear.narrative.headline,/收入资金|钱款/);
+ assert.doesNotMatch(f.storyline.focus,/收入资金/);
  assert.equal(JSON.stringify(f.currentYear.interactions),raw);assert.equal(JSON.stringify(f.core),core);assert.equal(f.wealth.narrative.grade,grade);
  assert.equal(f.currentYear.reportOriginalAdjudication.primaryEvent.domain,'wealth');
 });
@@ -28,7 +29,9 @@ test('all rejected or mixed candidates leave no fabricated opposite, fallback or
  const f=build();ledger(f,[record('wealth',10),record('career',9),record('relationship',8,false)]);
  Report.applyReportReview(f,{adjustments:f.fiveYear.years.flatMap(row=>[feedback('wealth','deprioritized',row.year),feedback('career','mixed',row.year)])});
  for(const row of f.fiveYear.years){assert.equal(row.eventAdjudication.primaryEvent,null);assert.equal(row.eventAdjudication.secondaryEvent,null);}
- assert.match(f.currentYear.narrative.headline,/没有足够依据指定替代/);
+ assert.match(f.currentYear.narrative.headline,/原先的重点解释已撤下/);
+ assert.equal(f.currentYear.narrative.verdicts.filter(v=>!v.detailOnly).length,0);
+ assert.ok(f.currentYear.narrative.verdicts.every(v=>v.detailOnly&&v.sourceText));
  assert.doesNotMatch(publicText(f.currentYear.narrative)+publicText(f.fiveYear.narrative),/合成独立场景|没有发现.*强引动/);
  assert.equal(f.storyline.focus,'');
 });
@@ -81,7 +84,9 @@ test('rejecting wealth-breaks-seal loss retains peer-loss as a separate supporte
  assert.equal(review.adjustments.length,5);
  Report.applyReportReview(f,review);
  for(const row of f.fiveYear.years){assert.equal(row.eventAdjudication.primaryEvent.reportMechanismKey,'rule:peer-takes-wealth');assert.equal(row.eventAdjudication.domainRecords.find(r=>r.reportMechanismKey==='rule:wealth-breaks-seal').reportExcluded,true);}
- assert.match(publicText(f.wealth.narrative),/借钱或代垫费用/);
+ assert.match(publicText(f.wealth.narrative),/借出、代垫/);
+ assert.match(publicText(f.wealth.narrative),/分账/);
+ assert.doesNotMatch(publicText(f.wealth.narrative),/适用前提|不算损失|本年可核对的具体表现/);
  assert.doesNotMatch(publicText(f.currentYear.narrative)+publicText(f.fiveYear.narrative),/正常消费、储蓄转投资/);
  assert.equal(JSON.stringify(calc.analyzeParents(bazi,'male')),family);
 });

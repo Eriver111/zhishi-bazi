@@ -2057,6 +2057,12 @@
 .feedback-submit:disabled { opacity:.4;cursor:not-allowed }
 .feedback-result { text-align:center;margin-top:14px;font-size:13px;color:#8a8;min-height:20px }
     .report-life-select {display:block;width:100%;max-width:100%;box-sizing:border-box;margin:12px 0;padding:14px;border:1px solid var(--border-color,#d7cdb9);border-radius:12px;background:var(--bg-card,#fffaf0);color:inherit;font:inherit;}
+    .report-context-form {margin:0 0 18px;padding:14px;border:1px solid var(--border-color,#d7cdb9);border-radius:12px;font-size:14px;line-height:1.7;}
+    .report-context-form summary {min-height:44px;display:list-item;cursor:pointer;line-height:44px;}
+    .report-context-form label {display:block;margin-top:12px;}
+    .report-context-form button {min-height:44px;padding:10px 16px;border:0;border-radius:8px;background:var(--accent,#8f402b);color:#fff;font:inherit;cursor:pointer;}
+    .report-context-form [role=status]:empty {display:none;}
+    @media print {.report-context-form,.report-city-compare__form {display:none!important;}}
     #calibrationReportSkip {display:block;margin:16px auto;min-height:44px;}
 </style>
 <style>
@@ -2471,7 +2477,7 @@
 <link rel="stylesheet" href="/css/result-pro-chart.css?v=4">
 <link rel="stylesheet" href="/css/app-experience.css?v=1">
 <script src="/js/app-experience.js?v=1" defer></script>
-<script src="/js/mobile-app-shell.js?v=13" defer></script>
+<script src="/js/mobile-app-shell.js?v=14" defer></script>
 
 <script src="/js/service-notice.js?v=2" defer></script>
 </head>
@@ -2734,14 +2740,25 @@
         <section class="section-drawer section-thisyear" id="thisYearSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('thisYearSection')">
                 <span class="drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
-                <h2>今年运势</h2>
+                <h2>今年概览</h2>
             </div>
             <div class="drawer-body">
                 <div class="thisyear-content" id="thisYearContent"></div>
             </div>
         </section>
 
-        <!-- ==================== 婚姻感情（夫妻宫+配偶年龄合并） ==================== -->
+        <!-- ==================== 财富与收入 ==================== -->
+        <section class="section-drawer section-wealth" id="wealthSection">
+            <div class="section-header drawer-toggle" onclick="toggleDrawer('wealthSection')">
+                <span class="drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
+                <h2>财富与收入</h2>
+            </div>
+            <div class="drawer-body">
+                <div class="wealth-content" id="wealthContent"></div>
+            </div>
+        </section>
+
+        <!-- ==================== 婚姻感情 ==================== -->
         <section class="section-drawer section-marriage" id="marriageSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('marriageSection')">
                 <span class="drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
@@ -2752,14 +2769,14 @@
             </div>
         </section>
 
-        <!-- ==================== 财运分析 ==================== -->
-        <section class="section-drawer section-wealth" id="wealthSection">
-            <div class="section-header drawer-toggle" onclick="toggleDrawer('wealthSection')">
+        <!-- ==================== 事业与发展选择 ==================== -->
+        <section class="section-drawer section-career" id="careerSection" style="display:none">
+            <div class="section-header drawer-toggle" onclick="toggleDrawer('careerSection')">
                 <span class="drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
-                <h2>财运分析</h2>
+                <h2>事业与发展选择</h2>
             </div>
             <div class="drawer-body">
-                <div class="wealth-content" id="wealthContent"></div>
+                <div class="career-content" id="careerContent"></div>
             </div>
         </section>
 
@@ -2767,7 +2784,7 @@
         <section class="section-drawer section-study" id="studySection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('studySection')">
                 <span class="drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
-                <h2>学业分析</h2>
+                <h2>学习与进修</h2>
             </div>
             <div class="drawer-body">
                 <div class="study-content" id="studyContent"></div>
@@ -2778,7 +2795,7 @@
         <section class="section-drawer section-fortune" id="fortuneSection">
             <div class="section-header drawer-toggle" onclick="toggleDrawer('fortuneSection')">
                 <span class="drawer-arrow"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></span>
-                <h2>近5年流年运势</h2>
+                <h2>未来五年</h2>
             </div>
             <div class="drawer-body">
                 <div class="fortune-content" id="fortuneContent"></div>
@@ -2856,7 +2873,7 @@
     <script src="js/bazi.js?v=20261001-live-qa"></script>
     <script src="js/structural.js?v=1"></script>
     <script src="js/bazi-chain.js?v=15"></script>
-    <script src="js/deep-report.js?v=34"></script>
+    <script src="js/deep-report.js?v=38"></script>
     <script src="js/mo-xing-he.js?v=1781962250"></script>
 <script>/**
  * 知时 — 五行环形图
@@ -2992,17 +3009,18 @@
     <script src="/js/vendor/jspdf.umd.min.js?v=2"></script>
     <script src="/js/report-pdf.js?v=4"></script>
     <script src="js/deep-report-anchor.js?v=2"></script>
-    <script src="js/result.js?v=59"></script>
+    <script src="js/report-city-compare.js?v=2"></script>
+    <script src="js/result.js?v=62"></script>
     <script src="js/pro-analysis.js?v=20"></script>
     <script src="js/auth.js?v=31"></script>
     <script src="js/payment.js?v=7"></script>
-    <script src="js/paywall.js?v=16"></script>
+    <script src="js/paywall.js?v=17"></script>
 <script src="js/chat-persistence.js?v=4"></script>
 <script src="js/chat-resume.js?v=1"></script>
 <script src="js/ai-chat-integration.js?v=20261001a"></script>
-<script src="js/report-imagery.js?v=6"></script>
-<script src="js/calibration-model.js?v=5"></script>
-<script src="js/chart-calibration.js?v=22"></script>
+<script src="js/report-imagery.js?v=9"></script>
+<script src="js/calibration-model.js?v=7"></script>
+<script src="js/chart-calibration.js?v=23"></script>
 <script src="js/desktop-result-workspace.js?v=1"></script>
     <script>
         MoXingHe.start('mxhCanvas', false);

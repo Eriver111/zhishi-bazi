@@ -2,7 +2,7 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
-  var CANDIDATE_VERSION = 'bazi-cal-v12';
+  var CANDIDATE_VERSION = 'bazi-cal-v13';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
@@ -163,7 +163,7 @@
         : (good ? '这一年父亲的工作和收入是否出现过明显机会，或者他给家庭的实际支持比之前更多？' : '这一年父亲的工作、收入或他在家中的角色是否发生过明显变化？');
       if (parentContext && parentContext.target === 'mother') return bad
         ? '这一年母亲承担的家事是否明显增多，或家里有一件事主要由她承担，让你明显为她操心？'
-        : (good ? '这一年母亲的生活状态是否更稳定，或者她在住房、学习、工作等现实事情上给过你明显帮助？' : '这一年母亲的生活、身体状态或她在家中的责任是否发生过明显变化？');
+        : (good ? '这一年母亲的生活状态是否更稳定，或者她在住房、学习、工作等现实事情上给过你明显帮助？' : '这一年母亲的生活或她在家中的责任是否发生过明显变化？');
       if (yearHit && /六冲|天克地冲/.test(yearHit.type || '')) return yearDirection === 'good'
         ? '这一年家里是否经历过搬迁、父母工作变化或家庭关系调整，变化之后整体状态反而有所改善？'
         : '这一年家里是否发生过搬迁、父母工作变化、争执增多，或某位长辈的事情让全家明显操心？';
@@ -540,7 +540,7 @@
         var parentContext = parentYearContext(parentAnalysis, analysis, tenGod, dy, liuNian, age);
         var scores = annualDomainScores(analysis, liuNian, age);
         if (parentContext) scores.family += Math.min(parentContext.activationScore, 4);
-        var rankedDomains = Object.keys(scores).filter(function(name){return scores[name] >= 0}).sort(function(a,b){return scores[b]-scores[a]});
+        var rankedDomains = Object.keys(scores).filter(function(name){return name !== 'health' && scores[name] >= 0}).sort(function(a,b){return scores[b]-scores[a]});
         var domain = rankedDomains[0] || annualDomain(analysis, liuNian, age);
         var optionDomains = dedupeOptionDomains(rankedDomains, scores, parentContext);
         if (analysis.eventAdjudication && Array.isArray(analysis.eventAdjudication.domainRecords)) {
@@ -645,14 +645,14 @@
           (option.followup_options||[]).forEach(function(detail) {
             html += '<button type="button" data-detail="'+escapeAttr(detail.key)+'" class="'+(event.selected_detail===detail.key?'is-selected':'')+'">'+escapeHtml(detail.label)+'</button>';
           });
-          html += '</div><div class="calibration-match"><span>符合程度</span><button type="button" data-match="exact" class="'+((event.match_level||'exact')==='exact'?'is-selected':'')+'">很符合</button><button type="button" data-match="partial" class="'+(event.match_level==='partial'?'is-selected':'')+'">大致符合</button></div><div class="calibration-note-row"><label>实际年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><input maxlength="240" placeholder="可选：补充真实情况" value="'+escapeAttr(event.note||'')+'"><button type="button" data-save-note="1">保存补充</button></div></div>';
+          html += '</div><div class="calibration-match"><span>符合程度</span><button type="button" data-match="exact" class="'+((event.match_level||'exact')==='exact'?'is-selected':'')+'">很符合</button><button type="button" data-match="partial" class="'+(event.match_level==='partial'?'is-selected':'')+'">大致符合</button></div><div class="calibration-note-row"><label>实际年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><button type="button" data-save-note="1">保存年份</button></div></div>';
         });
       } else {
-        html += '<div class="calibration-answers"><button data-answer="yes" class="' + (answer==='yes'?'is-selected':'') + '">有</button><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">没有</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div><div class="calibration-followup ' + (answer==='yes'?'is-visible':'') + '"><label>实际发生年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><input maxlength="240" placeholder="可选：补充发生了什么" value="'+escapeAttr(event.note||'')+'"><button data-save-note="1">保存补充</button></div>';
+        html += '<div class="calibration-answers"><button data-answer="yes" class="' + (answer==='yes'?'is-selected':'') + '">有</button><button data-answer="no" class="' + (answer==='no'?'is-selected':'') + '">没有</button><button data-answer="unsure" class="' + (answer==='unsure'?'is-selected':'') + '">记不清</button></div><div class="calibration-followup ' + (answer==='yes'?'is-visible':'') + '"><label>实际发生年份 <select><option value="'+(event.event_year-1)+'" '+(event.actual_year===event.event_year-1?'selected':'')+'>'+ (event.event_year-1) +'年</option><option value="'+event.event_year+'" '+(!event.actual_year||event.actual_year===event.event_year?'selected':'')+'>'+event.event_year+'年</option><option value="'+(event.event_year+1)+'" '+(event.actual_year===event.event_year+1?'selected':'')+'>'+ (event.event_year+1) +'年</option></select></label><button data-save-note="1">保存年份</button></div>';
       }
       html += '</div></article>';
     });
-    html += '</div><div class="calibration-footer"><div id="calibrationConsistency" class="calibration-consistency">不同年份可以有不同经历；不符合请如实选择。</div><button type="button" class="calibration-primary" id="calibrationFinish">' + escapeHtml(originalToggle && originalToggle.finishLabel || '完成校对，进入 AI') + '</button><p>命理分析仅供传统文化研究与参考。</p></div>';
+    html += '</div><div class="calibration-footer"><div id="calibrationConsistency" class="calibration-consistency">不同年份可以有不同经历；不符合请如实选择。只选事件与年份，不需要填写金额或身体细节。</div><button type="button" class="calibration-primary" id="calibrationFinish">' + escapeHtml(originalToggle && originalToggle.finishLabel || '完成校对，进入 AI') + '</button><p>命理分析仅供传统文化研究与参考。</p></div>';
     openHtml(html);
     attachReportSkip();
     document.querySelectorAll('.calibration-event').forEach(function(card) {
@@ -710,7 +710,7 @@
       followup.classList.toggle('is-visible', answer === 'yes');
     }
     var year = answer === 'yes' && followup ? Number(followup.querySelector('select').value) : null;
-    var note = answer === 'yes' && followup ? followup.querySelector('input').value : '';
+    var note = ''; // Only structured events and years are collected; do not request private narratives.
     var payload={action:'answer',chart_key:key,event_key:card.getAttribute('data-event'),answer:answer,actual_year:year,note:note,
       selected_option:structured?(card.getAttribute('data-selected-option')||null):null,
       selected_detail:structured?(card.getAttribute('data-selected-detail')||null):null,
@@ -720,7 +720,7 @@
       localEvents.forEach(function(event){if(event.event_key===eventKey){Object.assign(event,payload);delete event.action;delete event.chart_key}});
       if(!writeLocalEvents(key,localEvents)){saveErrors[key+':'+eventKey]=true;alert('当前设备无法保存，请允许本地存储后重新作答');return;}
       delete saveErrors[key+':'+eventKey]; updateProgress();
-      if(withNote&&followup){var localSave=followup.querySelector('[data-save-note]');localSave.textContent='已保存';setTimeout(function(){localSave.textContent='保存补充'},1200)}
+      if(withNote&&followup){var localSave=followup.querySelector('[data-save-note]');localSave.textContent='已保存';setTimeout(function(){localSave.textContent='保存年份'},1200)}
       return;
     }
     var queueKey=key+':'+payload.event_key;
@@ -774,7 +774,20 @@
     setTimeout(function(){clearInterval(wait)},10000);
   }
 
-  var reportSessions = Object.create(null), reportDismiss = null, reportSkip = null;
+  var reportSessions = Object.create(null), reportDismiss = null, reportSkip = null, activeReportSession = null;
+  var reportLifeChoices=[['unknown','暂不填写，按年龄范围展开'],['student','目前在读'],['exam','正在备考或进修'],['working','已结束学业，目前工作中'],['transition','已结束学业，求职或调整中'],['home','以居家事务或照料安排为主'],['retired','已经退休']];
+  var reportPriorityChoices=[['wealth','财富'],['relationship','感情'],['career','工作'],['study','学业'],['family','家庭']];
+  function normalizeReportContext(input) {
+    input=input && typeof input==='object' ? input : {};
+    var statuses=reportLifeChoices.map(function(item){return item[0];});
+    var allowedPriorities=reportPriorityChoices.map(function(item){return item[0];});
+    var priorities=[];
+    (Array.isArray(input.priorities)?input.priorities:[]).forEach(function(value){
+      if(allowedPriorities.indexOf(value)>=0 && priorities.indexOf(value)<0 && priorities.length<2)priorities.push(value);
+    });
+    return {status:statuses.indexOf(input.status)>=0?input.status:'unknown',priorities:priorities,
+      relationshipStatus:['unknown','single','dating','married','other'].indexOf(input.relationshipStatus)>=0?input.relationshipStatus:'unknown'};
+  }
   function reportScope() {
     var data = chartData(), key = chartKey(data);
     var user = root.Auth && root.Auth.getUser ? root.Auth.getUser() : null;
@@ -784,7 +797,22 @@
   }
   function lifeStorageKey(scope) { return 'zhishi_report_life_v1:' + scope; }
   function readLifeContext(scope) {
-    try { return JSON.parse(localStorage.getItem(lifeStorageKey(scope)) || '{}') || {}; } catch(e) { return {}; }
+    var status='unknown';
+    if(scope){try { var saved=JSON.parse(localStorage.getItem(lifeStorageKey(scope)) || '{}');status=saved && saved.status; } catch(e) {}}
+    // Only the pre-existing life status is persistent. Never restore optional
+    // report preferences or relationship state from legacy/local storage.
+    return normalizeReportContext({status:status});
+  }
+  function updateReportContext(patch) {
+    var scope=reportScope(),session=scope && reportSessions[scope];
+    if(!session || !patch || typeof patch!=='object' || Array.isArray(patch))return false;
+    var context=normalizeReportContext(session.context),changed=false;
+    ['priorities','relationshipStatus'].forEach(function(key){
+      if(Object.prototype.hasOwnProperty.call(patch,key)){context[key]=patch[key];changed=true;}
+    });
+    if(!changed)return false;
+    session.context=normalizeReportContext(context);
+    return true;
   }
   function attachReportSkip() {
     if (!reportSkip) return;
@@ -795,41 +823,54 @@
   }
   function calibrationUnavailable(message, done) {
     openHtml('<div class="calibration-error" role="alert">'+escapeHtml(message)+'</div><button type="button" class="calibration-primary" id="calibrationContinue">'+escapeHtml(done && done.finishLabel || '继续')+'</button>');
-    document.getElementById('calibrationContinue').onclick=function(){close();if(done)done();};
+    document.getElementById('calibrationContinue').onclick=function(){if(done && done.isActive && !done.isActive())return;close();if(done)done();};
   }
   // Called only after the existing payment entitlement check. Duplicate unlock callbacks share one gate.
   function beforeReport(onReady, force) {
     var scope=reportScope();
+    if(activeReportSession && activeReportSession.scope!==scope){
+      // The shared modal belongs to only one account/chart at a time. Keep the
+      // old scope's context but suspend its request and allow it to reopen later.
+      activeReportSession.session.pending=false;
+      activeReportSession=null;reportDismiss=null;reportSkip=null;close();
+    }
     if(!scope) return true; // Missing chart/account context must never trap a paid user.
     var session=reportSessions[scope];
     if(!session && !force){try{if(sessionStorage.getItem('zhishi_report_ready_v1:'+scope)==='1')session=reportSessions[scope]={done:true,pending:false,context:readLifeContext(scope)};}catch(e){}}
     if(session && session.done && !force) return true;
-    if(session && session.pending) return false;
-    session={pending:true,done:false,context:readLifeContext(scope)};
+    if(session && session.pending && activeReportSession && activeReportSession.session===session) return false;
+    session={pending:true,done:false,context:session?normalizeReportContext(session.context):readLifeContext(scope)};
     reportSessions[scope]=session;
+    activeReportSession={scope:scope,session:session};
+    var isActive=function(){return scope===reportScope() && reportSessions[scope]===session && session.pending && activeReportSession && activeReportSession.session===session;};
     var finish=function(){
-      if(scope!==reportScope() || reportSessions[scope]!==session)return;
-      session.pending=false;session.done=true;reportDismiss=null;reportSkip=null;
+      if(!isActive())return;
+      session.pending=false;session.done=true;reportDismiss=null;reportSkip=null;activeReportSession=null;
       try{sessionStorage.setItem('zhishi_report_ready_v1:'+scope,'1');}catch(e){}
       close();if(onReady)onReady();
     };
-    reportDismiss=function(){session.pending=false;reportDismiss=null;reportSkip=null;};
+    finish.isActive=isActive;
+    reportDismiss=function(){if(!isActive())return;session.pending=false;reportDismiss=null;reportSkip=null;activeReportSession=null;};
     reportSkip=finish;
     var birth=chartData().birthInfo||{},birthYear=Number(birth.year||String(birth.standardTime||'').slice(0,4));
     if(!birthYear)birthYear=Number(new URLSearchParams(location.search).get('year'));
     var life=root.DeepReport && root.DeepReport.resolveLifeContext ? root.DeepReport.resolveLifeContext(session.context,birthYear,new Date().getFullYear()) : {};
-    var choices=[['unknown','暂不填写，按年龄范围展开'],['student','目前在读'],['exam','正在备考或进修'],['working','已结束学业，目前工作中'],['transition','已结束学业，求职或调整中'],['home','以居家事务或照料安排为主'],['retired','已经退休']];
-    openHtml('<header class="calibration-head"><span>报告已解锁 · 第一步</span><h2 id="calibrationTitle">先核对经历，再看报告</h2><p>先确认当前状态，再回答几道往事问题。报告会据此选择适合你现阶段的内容。</p>'+(life.age==null?'':'<p>当前年龄约 '+life.age+' 岁，实际状态以你的选择为准。</p>')+'</header><div class="calibration-list"><label for="reportLifeStatus">你现在处于哪种状态？</label><select id="reportLifeStatus" class="report-life-select">'+choices.map(function(item){return '<option value="'+item[0]+'" '+((session.context.status||'unknown')===item[0]?'selected':'')+'>'+item[1]+'</option>';}).join('')+'</select>'+'<p>学业已结束时，后续不再展开升学考试预测。过去的升学经历仍可用于复核。</p><p>当前状态仅保存在此设备的当前账号与命盘下；可随时修改。</p></div><div class="calibration-actions"><button type="button" class="calibration-primary" id="reportLifeNext">下一步：核对往事</button><button type="button" class="calibration-secondary" id="reportLifeSkip">暂时跳过，查看报告</button></div>');
+    var priorityInputs=[0,1].map(function(index){return '<label for="reportPriority'+index+'">'+(index?'第二关注点（可选）':'第一关注点（可选）')+'</label><select id="reportPriority'+index+'" class="report-life-select">'+[['','暂不选择']].concat(reportPriorityChoices).map(function(item){return '<option value="'+item[0]+'" '+((session.context.priorities[index]||'')===item[0]?'selected':'')+'>'+item[1]+'</option>';}).join('')+'</select>';}).join('');
+    openHtml('<header class="calibration-head"><span>报告已解锁 · 第一步</span><h2 id="calibrationTitle">先核对经历，再看报告</h2><p>先确认当前状态，再回答几道往事问题。报告会据此选择适合你现阶段的内容。</p>'+(life.age==null?'':'<p>当前年龄约 '+life.age+' 岁，实际状态以你的选择为准。</p>')+'</header><div class="calibration-list"><label for="reportLifeStatus">你现在处于哪种状态？</label><select id="reportLifeStatus" class="report-life-select">'+reportLifeChoices.map(function(item){return '<option value="'+item[0]+'" '+((session.context.status||'unknown')===item[0]?'selected':'')+'>'+item[1]+'</option>';}).join('')+'</select>'+'<p>学业已结束时，后续不再展开升学考试预测。过去的升学经历仍可用于复核。</p><p>当前状态仅保存在此设备的当前账号与命盘下；可随时修改。</p><h3>你希望报告优先讲什么？最多两项</h3>'+priorityInputs+'<p>只影响阅读顺序和讲解重点，完整报告内容不减少。两项都可以不选；关注点只在当前页面的账号与命盘下临时使用。</p></div><div class="calibration-actions"><button type="button" class="calibration-primary" id="reportLifeNext">下一步：核对往事</button><button type="button" class="calibration-secondary" id="reportLifeSkip">暂时跳过，查看报告</button></div>');
     var capture=function(){
-      session.context={status:document.getElementById('reportLifeStatus').value};
-      try{localStorage.setItem(lifeStorageKey(scope),JSON.stringify(session.context));}catch(e){}
+      if(!isActive())return false;
+      var statusNode=document.getElementById('reportLifeStatus'),priority0=document.getElementById('reportPriority0'),priority1=document.getElementById('reportPriority1');
+      session.context=normalizeReportContext({status:statusNode?statusNode.value:session.context.status,
+        priorities:priority0&&priority1?[priority0.value,priority1.value]:session.context.priorities,relationshipStatus:session.context.relationshipStatus});
+      try{localStorage.setItem(lifeStorageKey(scope),JSON.stringify({status:session.context.status}));}catch(e){}
+      return true;
     };
-    document.getElementById('reportLifeSkip').onclick=function(){capture();finish();};
+    document.getElementById('reportLifeSkip').onclick=function(){if(capture())finish();};
     document.getElementById('reportLifeNext').onclick=function(){
-      capture();this.disabled=true;
+      if(!capture())return;this.disabled=true;
       root.ZhishiCalibration.open({finishLabel:'完成复核，生成报告',onComplete:finish,
-        isActive:function(){return reportSessions[scope]===session && session.pending && scope===reportScope();},
-        onError:function(message){calibrationUnavailable(message,finish);}});
+        isActive:isActive,
+        onError:function(message){if(isActive())calibrationUnavailable(message,finish);}});
     };
     return false;
   }
@@ -837,7 +878,8 @@
   root.ZhishiCalibration = root.ZhishiCalibration || {};
   root.ZhishiCalibration.beforeReport = beforeReport;
   root.ZhishiCalibration.reportPending = function(){var scope=reportScope();return !!(scope && reportSessions[scope] && !reportSessions[scope].done);};
-  root.ZhishiCalibration.reportContext = function(){var scope=reportScope();return scope && reportSessions[scope] ? reportSessions[scope].context : readLifeContext(scope);};
+  root.ZhishiCalibration.reportContext = function(){var scope=reportScope();return scope && reportSessions[scope] ? normalizeReportContext(reportSessions[scope].context) : readLifeContext(scope);};
+  root.ZhishiCalibration.updateReportContext = updateReportContext;
   root.ZhishiCalibration.beforeAI = inspectFirstClick;
   root.ZhishiCalibration.summary = function(data) {
     var key=chartKey(data||chartData()), events=key?readLocalEvents(key):[];

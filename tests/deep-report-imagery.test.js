@@ -109,6 +109,7 @@ function report(){const b=calculator.calculate(1986,6,15,6,'male',12);const f=Re
  const r={domain:'career',label:'事业',activationScore:8,hasIndependentAnnualTrigger:true,direction:'条件性',evidence:['合成年度独立触发']};
  const a={domainRecords:[r],primaryEvent:r,lifeStage:{key:'development'}};f.currentYear.eventAdjudication=a;f.currentYear.dynamic.eventAdjudication=a;return f;}
 const peerOptions=()=>Imagery.candidates('career',peers()).filter(c=>c.mechanism_key==='rule:peer-resists-kill').map(c=>({...c,year:2026,hasIndependentAnnualTrigger:true}));
+const reportBody=f=>[f.currentYear.narrative.painPoint,...(f.currentYear.narrative.verdicts||[]).map(v=>v.outcomeText||v.text||'')].filter(Boolean).join(' ');
 
 function inScene(id,status,domain){const a=fixtures[id]();a.reportLifeContext={status,age:25};return Imagery.candidates(domain,a).filter(c=>c.mechanism_key==='rule:'+id);}
 function confirmed(option,year=2024,extra={}){return {event_key:'confirmed-'+year,event_year:year,answer:'yes',selected_option:option.key,match_level:'exact',options:[option],...extra};}
@@ -128,7 +129,10 @@ test('authority friction links school and work at common-process level without v
  assert.equal(r.adjustments.length,0);assert.equal(r.processReferences.length,1);assert.match(r.processReferences[0].commonProcess,/自主表达与权威要求/);
  assert.equal(r.processReferences[0].scope,'common_process_only');assert.equal(r.processReferences[0].sources[0].scene,'student');assert.equal(r.processReferences[0].futureConfirmed,false);
  const f=report(),core=JSON.stringify(f.core),score=f.currentYear.eventAdjudication.primaryEvent.activationScore;
- Report.applyReportReview(f,r);assert.match(f.currentYear.narrative.painPoint,/往事可参考的共同作用方式/);assert.equal(f.currentYear.reportReconciliation.changes.length,0);
+ Report.applyReportReview(f,r);
+ assert.match(f.currentYear.narrative.verdicts.map(v=>v.sourceText).join(' '),/自主表达与权威要求/);
+ assert.match(reportBody(f),/负责人|意见|配合/);assert.doesNotMatch(reportBody(f),/往事可参考的共同作用方式|反驳老师/);
+ assert.equal(f.currentYear.reportReconciliation.changes.length,0);
  assert.equal(f.currentYear.eventAdjudication.primaryEvent.activationScore,score);assert.equal(JSON.stringify(f.core),core);
 });
 
@@ -172,8 +176,8 @@ test('common processes never transfer between different rules or fabricate speci
  const past=inScene('peer-resists-kill','student','study')[0],target=futureOptions(inScene('peer-resists-kill','working','career'));
  const r=Model.buildReportReview([confirmed(past)],target,{currentYear:2026}),f=report();Report.applyReportReview(f,r);
  assert.equal(r.adjustments.length,0);assert.equal(r.processReferences.length,2);assert.equal(f.currentYear.eventAdjudication.secondaryEvent,null);
- assert.doesNotMatch(f.currentYear.narrative.painPoint,/最终完成了|主要目标仍未完成/);
- Report.applyReportReview(f,Model.buildReportReview([],target,{currentYear:2026}));assert.doesNotMatch(f.currentYear.narrative.painPoint,/往事可参考/);
+ assert.doesNotMatch(reportBody(f),/最终完成了|主要目标仍未完成/);
+ Report.applyReportReview(f,Model.buildReportReview([],target,{currentYear:2026}));assert.doesNotMatch(reportBody(f),/往事可参考/);
 });
 
 test('all 31 rules have non-employment scenes with stable normalized identifiers',()=>{
@@ -242,7 +246,8 @@ test('actual annual report candidates adapt across seven states without changing
 });
 test('without answers the report uses mechanism process text, not both contradictory outcomes',()=>{
  const f=report();Report.applyReportReview(f,Model.buildReportReview([],peerOptions(),{currentYear:2026}));
- assert.match(f.currentYear.narrative.painPoint,/过程较为耗力/);
+ assert.match(reportBody(f),/负担|承担/);
+ assert.doesNotMatch(reportBody(f),/最终完成了|最终仍超过|可核对的具体表现|适用前提|不算/);
  assert.doesNotMatch(f.currentYear.narrative.headline,/结合往事反馈/);
  assert.equal(f.currentYear.eventAdjudication.secondaryEvent,null);
  assert.equal(f.currentYear.reportReconciliation.changes.length,0);
@@ -251,7 +256,7 @@ test('denying costly completion does not automatically assert failure; another s
  const opts=peerOptions(),f=report(),event={event_key:'past',event_year:2024,answer:'no',options:[opts[0]]};
  Report.applyReportReview(f,Model.buildReportReview([event],opts,{currentYear:2026}));
  assert.equal(f.currentYear.eventAdjudication.primaryEvent,null);
- assert.doesNotMatch(f.currentYear.narrative.painPoint,/仍未完成/);
+ assert.doesNotMatch(reportBody(f),/仍未完成/);
 });
 test('confirming high effort with stalled outcome never validates the completed-goal interpretation',()=>{
  const opts=peerOptions(),event={event_key:'past',event_year:2024,answer:'yes',selected_option:opts[1].key,match_level:'exact',options:opts};
@@ -263,7 +268,7 @@ test('partial agreement with effort does not validate completed-goal claims even
  const opts=peerOptions(),events=[2021,2024].map(year=>({event_key:'partial-'+year,event_year:year,answer:'yes',selected_option:opts[0].key,match_level:'partial',options:opts}));
  const review=Model.buildReportReview(events,opts,{currentYear:2026});
  assert.equal(review.adjustments.length,0);assert.equal(review.history.length,2);assert.ok(review.history.every(h=>h.matchLevel==='partial'));
- const f=report();Report.applyReportReview(f,review);assert.doesNotMatch(f.currentYear.narrative.painPoint,/最终完成了/);
+ const f=report();Report.applyReportReview(f,review);assert.doesNotMatch(reportBody(f),/最终完成了/);
 });
 
 test('64 generated charts exercise the registry through real annual evidence without changing core or parents',()=>{

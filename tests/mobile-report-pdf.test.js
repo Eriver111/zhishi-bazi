@@ -196,6 +196,13 @@ function extractBuildReportHTML() {
   return match[0];
 }
 
+function extractReportReadingOrder() {
+  const source = read('js/result.js');
+  const match = source.match(/function reportReadingOrder\(\) \{[\s\S]*?\r?\n\}/);
+  assert.ok(match, 'result.js must retain the real report reading-order helper');
+  return match[0];
+}
+
 test('real report builder resolves every configured result.html section in export order', () => {
   const expectedOrder = [
     'sizhuSection',
@@ -206,8 +213,9 @@ test('real report builder resolves every configured result.html section in expor
     'characterSection',
     'parentsSection',
     'thisYearSection',
-    'marriageSection',
     'wealthSection',
+    'marriageSection',
+    'careerSection',
     'studySection',
     'fortuneSection',
   ];
@@ -236,6 +244,8 @@ test('real report builder resolves every configured result.html section in expor
   };
   const context = {
     document,
+    DeepReport: require('../js/deep-report.js'),
+    _deepReportFacts: null,
     _isPaywallActive: () => false,
     _params: {
       gender: 'male',
@@ -248,9 +258,10 @@ test('real report builder resolves every configured result.html section in expor
     },
     SHI_CHEN_NAMES: ['子时'],
   };
+  context.window = context;
 
   vm.createContext(context);
-  vm.runInContext(`${extractBuildReportHTML()}; this.__report = buildReportHTML();`, context);
+  vm.runInContext(`${extractReportReadingOrder()}; ${extractBuildReportHTML()}; this.__report = buildReportHTML();`, context);
 
   assert.deepEqual(requestedIds, expectedOrder);
   assert.deepEqual(missingIds, []);
@@ -267,7 +278,7 @@ test('result page loads local PDF dependencies in order and exposes one accessib
     '/js/vendor/html2canvas.min.js?v=2',
     '/js/vendor/jspdf.umd.min.js?v=2',
     '/js/report-pdf.js?v=4',
-    'js/result.js?v=56',
+    'js/result.js?v=',
   ];
   const indexes = scripts.map((src) => html.indexOf(`src="${src}`));
 

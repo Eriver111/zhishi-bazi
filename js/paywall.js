@@ -159,7 +159,7 @@ function initPaywall(bp){
 }
 
 function renderPaywall(skipLayout,prepareOnly){
-  var secs=['thisYearSection','marriageSection','wealthSection','studySection','fortuneSection'];
+  var secs=['thisYearSection','wealthSection','marriageSection','careerSection','studySection','fortuneSection'];
   var wrap;
   if(!skipLayout){
     var first=document.getElementById(secs[0]);
@@ -192,7 +192,7 @@ function renderPaywall(skipLayout,prepareOnly){
   pw.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">'
     +'<div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-bottom:24px"></div>'
     +'<h3 style="color:var(--gold-l);font-size:20px;letter-spacing:4px;margin-bottom:12px">深度命理分析报告</h3>'
-    +'<p style="color:var(--tx2);font-size:13px;text-align:center;line-height:2">今年运势 · 婚姻感情 · 财运分析<br>学业分析 · 近5年流年运势</p>'
+    +'<p style="color:var(--tx2);font-size:13px;text-align:center;line-height:2">今年概览 · 财富与收入 · 婚姻感情<br>事业与发展选择 · 学习进修 · 未来五年</p>'
     +'<div style="font-size:36px;font-weight:900;color:var(--gold-l);margin:16px 0">¥9.9</div>'
     +'<button class="submit-btn" onclick="startRP()" style="max-width:280px;width:100%;padding:14px 32px;font-size:16px;letter-spacing:3px">支付 ¥9.9 单独解锁报告</button>'
     +'<p style="color:var(--tx3);font-size:11px;margin:8px 0 0">深度报告为单独商品，不使用 AI 提问积分。</p>'

@@ -187,7 +187,7 @@
     var panelGroups = {
       basic: ['#basicInfoSection', '#timingLimitNotice', '#sizhuSection', '#dayunSection', '#liunianSection'],
       professional: ['#proSection'],
-      reading: ['#downloadBanner', '#characterSection', '#parentsSection', '#thisYearSection', '#marriageSection', '#wealthSection', '#studySection', '#fortuneSection']
+      reading: ['#downloadBanner', '#characterSection', '#parentsSection', '#thisYearSection', '#wealthSection', '#marriageSection', '#careerSection', '#studySection', '#fortuneSection']
     };
 
     Object.keys(panelGroups).forEach(function (key) {

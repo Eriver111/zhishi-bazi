@@ -60,7 +60,7 @@ test('64 synthetic charts preserve years, evidence, stages and a maximum of one 
   for(const q of questions){
    assert.ok(q.year<new Date().getFullYear() && q.year>=year+6);assert.ok(q.options.length>=1 && q.options.length<=3);
    domains[q.domain]=(domains[q.domain]||0)+1;assert.ok(domains[q.domain]<=2);
-   for(const o of q.options){assert.ok(o.evidence.length);const key=context.__meaning(o);if(seen.has(key))duplicated++;seen.set(key,true);}
+   for(const o of q.options){assert.notEqual(o.domain,'health');assert.ok(o.evidence.length);const key=context.__meaning(o);if(seen.has(key))duplicated++;seen.set(key,true);}
   }
   assert.ok(duplicated<=1);if(duplicated)assert.equal(repeats.length,1);
  }
@@ -70,6 +70,6 @@ test('guest upgrade preserves original answered records and safely replaces only
  const data=chart(1990,5,'female'),original=context.__generate(data),saved={...original[0],event_year:original[0].year,answer:'no',note:'synthetic original'},old={...original[1],event_year:original[1].year,answer:null};
  const storage=new Map([['zhishi_calibration_data:test',JSON.stringify([saved,old])]]);context.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};
  const result=context.__local('test',data),retained=result.find(r=>r.event_key===saved.event_key);
- assert.equal(JSON.stringify(retained),JSON.stringify(saved));assert.ok(result.length<=5);assert.equal(storage.get('zhishi_calibration_version:test'),'bazi-cal-v12');
+ assert.equal(JSON.stringify(retained),JSON.stringify(saved));assert.ok(result.length<=5);assert.equal(storage.get('zhishi_calibration_version:test'),'bazi-cal-v13');
  const stored=storage.get('zhishi_calibration_data:test');context.__local('test',data);assert.equal(storage.get('zhishi_calibration_data:test'),stored);
 });

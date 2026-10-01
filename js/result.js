@@ -149,6 +149,7 @@ let _reportAnchorYear = 0;
 let _reportPaidAt = '';
 let _accountReportAccessResolved = false;
 let _deepReportFacts = null;
+let _reportCityCompareController = null;
 
 function restoreTimingView() {
     var store = window.ZhishiPageState;
@@ -386,35 +387,33 @@ function reportEsc(value) {
 
 function reportText(value) {
     if (value == null) return '';
-    if (typeof value === 'string' || typeof value === 'number') {
-      return String(value)
-            .replace(/事业\/家庭根基动摇/g, '事业或家庭安排可能调整')
-            .replace(/根基动摇/g, '相关安排可能调整')
-            .replace(/大凶/g, '高强度条件性波动')
-            .replace(/谨防口舌官非、?工作变动、?与上级冲突/g, '沟通、工作节奏或上下级关系需留有调整空间')
-            .replace(/变动冲突分离之象/g, '变动或边界议题')
-            .replace(/暗中不利貌合神离/g, '隐性摩擦议题')
-            .replace(/旧运已断新运未稳/g, '运势切换阶段')
-            .replace(/必然|必定|一定会|肯定会/g, '在相关条件下可能')
-            .replace(/灾祸|灾难/g, '高强度变化')
-            .replace(/诉讼|官司|官非/g, '规则或沟通争议')
-            .replace(/重病|患病|疾病/g, '身心状态需关注')
-            .replace(/离婚|分手/g, '关系边界可能调整')
-            .replace(/破财|亏损|损失/g, '资源波动')
-            .replace(/死亡/g, '身心安全需关注');
-    }
+    // Formatting must not rewrite the meaning of evidence-backed report copy.
+    // In particular, preserve negative outcomes and negated guarantees verbatim.
+    if (typeof value === 'string' || typeof value === 'number') return String(value);
     if (Array.isArray(value)) return value.map(reportText).filter(Boolean).join('；');
     return reportText(value.text || value.conclusion || value.detail || value.label || value.name || '');
+}
+
+function reportLegacyEvidenceText(value) {
+    var text = reportText(value);
+    // Legacy fallback cards can still contain old absolute disaster labels. Omit
+    // those claims explicitly instead of inventing a softened replacement event.
+    // New narrative text never passes through this legacy-only compatibility guard.
+    var absoluteClaim = /(?:^|[。！？；])\s*(?:必然|必定|肯定会|一定会)(?:发生)?(?:灾祸|灾难|重病|患病|死亡|离婚)/.test(text)
+        || /(?:属于|就是|判定为)大凶/.test(text);
+    var quotedLimit = /(?:不能|不要|不应|不是|并非|不等于|不代表)[^。！？；]*?(?:必然|必定|肯定会|一定会|大凶)/.test(text);
+    if (absoluteClaim && !quotedLimit) return '旧版绝对化断语已隐藏，不作为这份报告的结论。';
+    return text;
 }
 
 function reportRows(rows) {
     return (Array.isArray(rows) ? rows : []).map(function(row) {
         if (typeof row === 'string' || typeof row === 'number') {
-            return '<li><strong>依据</strong>：' + reportEsc(reportText(row)) + '</li>';
+            return '<li><strong>依据</strong>：' + reportEsc(reportLegacyEvidenceText(row)) + '</li>';
         }
         var label = row && (row.label || row.type || row.field || row.name) || '依据';
         var text = row && (row.text || row.conclusion || row.detail || row.evidence || row.why || row.parties || row.triggerHint) || '';
-        return '<li><strong>' + reportEsc(reportText(label)) + '</strong>：' + reportEsc(reportText(text)) + '</li>';
+        return '<li><strong>' + reportEsc(reportText(label)) + '</strong>：' + reportEsc(reportLegacyEvidenceText(text)) + '</li>';
     }).join('');
 }
 
@@ -432,25 +431,49 @@ function reportEvidence(value) {
 
 function reportCard(title, fact) {
     if (!fact) return '';
-    var titleHtml = '<h3>' + reportEsc(reportText(title)) + '</h3>';
     var state = fact.state ? '<span class="deep-report-state">' + reportEsc(reportText(fact.state)) + '</span>' : '';
     var confidence = fact.confidence ? '<span class="deep-report-confidence">可信度：' + reportEsc(reportText(fact.confidence)) + '</span>' : '';
-    var conclusion = fact.conclusion ? '<p>' + reportEsc(reportText(fact.conclusion)) + '</p>' : '';
-    return '<article class="deep-report-card">' + titleHtml + state + confidence + conclusion + reportEvidence(fact.evidence) + reportConditions(fact.conditions) + '</article>';
+    var conclusion = fact.conclusion ? '<p>' + reportEsc(reportLegacyEvidenceText(fact.conclusion)) + '</p>' : '';
+    var details = reportDetailBlock('依据与条件', state + confidence + reportEvidence(fact.evidence) + reportConditions(fact.conditions));
+    if (!conclusion && !details) return '';
+    return '<article class="deep-report-card"><h3>' + reportEsc(reportText(title)) + '</h3>' + conclusion + details + '</article>';
 }
 
 function reportNarrativeFingerprint(value) {
     return reportText(value).replace(/[\s，。；、：！？,.!?;:“”‘’"']/g, '').trim();
 }
 
-function reportClaimDetails(claim) {
-    if (!claim || !claim.claimKey) return '';
-    var labels = { symbolic:'传统线索', conditional:'条件性推断', insufficient:'依据待补充' };
+function reportDetailBlock(title, body, extraClass) {
+    if (!body) return '';
+    return '<details class="report-claim-details' + (extraClass ? ' ' + extraClass : '') + '"><summary>'
+        + reportEsc(title) + '</summary>' + body + '</details>';
+}
+
+function reportClaimBody(claim) {
+    if (!claim) return '';
     var source = reportText(claim.sourceText);
-    var conditions = (claim.conditions || []).concat(claim.blockers || []);
-    return '<details class="report-claim-details"><summary>依据与条件 · ' + reportEsc(labels[claim.status] || '推断参考') + '</summary>'
-        + (source ? '<p class="deep-report-verdict-source">' + reportEsc(source) + '</p>' : '')
-        + conditions.map(function(row) { return '<p>' + reportEsc(reportText(row)) + '</p>'; }).join('') + '</details>';
+    var seen = {};
+    var conditions = [].concat(claim.conditions || [], claim.blockers || []).map(reportText).filter(function(value) {
+        var key = reportNarrativeFingerprint(value);
+        if (!key || seen[key]) return false;
+        seen[key] = true;
+        return true;
+    });
+    var body = (source ? '<p class="deep-report-verdict-source">' + reportEsc(source) + '</p>' : '')
+        + conditions.map(function(row) { return '<p>' + reportEsc(row) + '</p>'; }).join('');
+    return body;
+}
+
+function reportClaimDetails(claim) {
+    return reportDetailBlock('依据与条件', reportClaimBody(claim));
+}
+
+function reportTechnicalDetails(terms) {
+    terms = (Array.isArray(terms) ? terms : []).map(reportText).filter(Boolean);
+    if (!terms.length) return '';
+    return reportDetailBlock('核心命理依据', '<div class="deep-report-technical-terms">' + terms.map(function(term) {
+        return '<span>' + reportEsc(term) + '</span>';
+    }).join('') + '</div>', 'deep-report-technical-basis');
 }
 
 function reportRevisionDetails(revisions) {
@@ -461,100 +484,119 @@ function reportRevisionDetails(revisions) {
     }).join('') + '</details>';
 }
 
+function reportMeaningKey(value) {
+    if (!value || typeof value !== 'object') return '';
+    var key = value.semanticKey || value.meaningKey;
+    // A shared mechanism can have distinct effects. Only an explicit meaning key is
+    // deduplicated; claimKey / ruleId are evidence identities, not equivalent events.
+    return key ? String(key) + (value.effectKey ? ':' + value.effectKey : '') : '';
+}
+
 function reportNarrative(narrative) {
     if (!narrative) return '';
     var grade = reportText(narrative.grade);
     var level = reportText(narrative.level);
     var difficulty = reportText(narrative.difficulty);
-    var html = '';
-    if (!narrative.hideScore) {
-        html += '<div class="deep-report-overview deep-report-verdict">';
-        if (grade) html += '<strong class="deep-report-grade">' + reportEsc(grade) + '</strong>';
-        if (level) html += '<span class="deep-report-level">' + reportEsc(level) + '</span>';
-        if (difficulty) html += '<span class="deep-report-difficulty">' + reportEsc(difficulty) + '</span>';
-        html += '</div>';
+    var overview = '';
+    if (!narrative.hideScore && (grade || level || difficulty)) {
+        overview = '<div class="deep-report-overview deep-report-verdict">';
+        if (grade) overview += '<strong class="deep-report-grade">' + reportEsc(grade) + '</strong>';
+        if (level) overview += '<span class="deep-report-level">' + reportEsc(level) + '</span>';
+        if (difficulty) overview += '<span class="deep-report-difficulty">' + reportEsc(difficulty) + '</span>';
+        overview += '</div>';
     }
-    html += '<article class="deep-report-card deep-report-narrative">';
-    if (narrative.headline) html += '<h3>' + reportEsc(reportText(narrative.headline)) + '</h3>';
-    if (narrative.painPoint && reportNarrativeFingerprint(narrative.painPoint) !== reportNarrativeFingerprint(narrative.headline)) html += '<p class="deep-report-pain-point">' + reportEsc(reportText(narrative.painPoint)) + '</p>';
-    if (Array.isArray(narrative.technicalBasis) && narrative.technicalBasis.length) {
-        html += '<div class="deep-report-technical-basis"><span class="deep-report-technical-label">核心命理依据</span><div class="deep-report-technical-terms">' + narrative.technicalBasis.map(function(term) {
-            return '<span>' + reportEsc(reportText(term)) + '</span>';
-        }).join('') + '</div></div>';
+    var html = '', seenText = {}, seenMeaning = {}, evidenceOnly = [];
+    function firstOccurrence(value, text) {
+        var fingerprint = reportNarrativeFingerprint(text);
+        var meaning = reportMeaningKey(value);
+        if (!fingerprint) return false;
+        var duplicate = seenText[fingerprint] || (meaning && seenMeaning[meaning]);
+        seenText[fingerprint] = true;
+        if (meaning) seenMeaning[meaning] = true;
+        return !duplicate;
     }
-    if (Array.isArray(narrative.verdicts) && narrative.verdicts.length) {
-        var seenOutcomes = {};
-        [narrative.headline, narrative.painPoint].forEach(function(text) {
-            var key = reportNarrativeFingerprint(text);
-            if (key) seenOutcomes[key] = true;
-        });
-        html += '<div class="deep-report-verdict-list">' + narrative.verdicts.map(function(verdict) {
-            var sourceText = reportText(verdict.sourceText);
-            var outcomeText = reportText(verdict.outcomeText || verdict.text);
-            var outcomeKey = reportNarrativeFingerprint(outcomeText);
-            if (outcomeKey && seenOutcomes[outcomeKey]) outcomeText = '';
-            else if (outcomeKey) seenOutcomes[outcomeKey] = true;
-            var body = '';
-            if (outcomeText) body += '<p class="deep-report-verdict-outcome">' + reportEsc(outcomeText) + '</p>';
-            if (verdict.claimKey) body += reportClaimDetails(verdict);
-            else if (sourceText) body += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(sourceText) + '</p>';
-            if (!body) return '';
-            // The conclusion already appears above; retain its audit details without another empty verdict heading.
-            if (!outcomeText && verdict.claimKey) return body;
-            return '<section class="deep-report-verdict-item"><h4>' + reportEsc(reportText(verdict.title)) + '</h4>' + body + '</section>';
-        }).join('') + '</div>';
-    }
-    var paragraphSeen = seenOutcomes || {};
-    [narrative.headline,narrative.painPoint].forEach(function(value){paragraphSeen[reportNarrativeFingerprint(value)]=true;});
+    var headline = reportText(narrative.headline);
+    var painPoint = reportText(narrative.painPoint);
+    if (firstOccurrence(narrative.headline, headline)) html += '<h3>' + reportEsc(headline) + '</h3>';
+    if (firstOccurrence(narrative.painPoint, painPoint)) html += '<p class="deep-report-pain-point">' + reportEsc(painPoint) + '</p>';
+    var verdicts = (Array.isArray(narrative.verdicts) ? narrative.verdicts : []).map(function(verdict) {
+        var outcomeText = reportText(verdict.outcomeText || verdict.text);
+        var details = reportClaimDetails(verdict);
+        if (verdict.detailOnly || !firstOccurrence(verdict, outcomeText)) {
+            if (details || verdict.detailOnly && outcomeText) evidenceOnly.push('<section>' + (verdict.detailOnly ? '<strong>' + reportEsc(reportText(verdict.displayTitle || verdict.title)) + '</strong>' + (outcomeText ? '<p>' + reportEsc(outcomeText) + '</p>' : '') : '') + reportClaimBody(verdict) + '</section>');
+            return '';
+        }
+        var title = reportText(verdict.displayTitle || verdict.title);
+        return '<section class="deep-report-verdict-item">' + (title ? '<h4>' + reportEsc(title) + '</h4>' : '')
+            + '<p class="deep-report-verdict-outcome">' + reportEsc(outcomeText) + '</p>' + details + '</section>';
+    }).join('');
+    if (verdicts) html += '<div class="deep-report-verdict-list">' + verdicts + '</div>';
     (Array.isArray(narrative.paragraphs) ? narrative.paragraphs : []).forEach(function(paragraph) {
-        var key=reportNarrativeFingerprint(paragraph);
-        if (key && !paragraphSeen[key]) { html += '<p>' + reportEsc(reportText(paragraph)) + '</p>'; paragraphSeen[key]=true; }
+        var text = reportText(paragraph);
+        var details = typeof paragraph === 'object' ? reportClaimDetails(paragraph) : '';
+        if (firstOccurrence(paragraph, text)) html += '<p>' + reportEsc(text) + '</p>' + details;
+        else if (details) evidenceOnly.push(reportClaimBody(paragraph));
     });
     if (Array.isArray(narrative.years) && narrative.years.length) {
-        html += '<div class="deep-report-year-verdicts">' + narrative.years.map(function(year) {
-            var title = reportText(year.year) + '年' + (year.pillar ? ' · ' + reportText(year.pillar) : '');
-            var meta = [year.daYunLabel, year.directionLabel, year.lifeStage,
-                year.primaryEventLabel ? '现实重点：' + year.primaryEventLabel : '']
-                .map(reportText).filter(Boolean).join(' · ');
+        var years = narrative.years.map(function(year) {
+            var title = reportText(year.year) + '年';
             var outcome = year.isCurrentYear
-                ? '本年详细判断已放在“今年运势”，这里不重复展开。'
+                ? '本年详细判断已放在“今年概览”，这里不重复展开。'
                 : reportText(year.summary);
-            var source = year.isCurrentYear ? '' : reportText(year.sourceText);
-            var card = '<section class="deep-report-year"><h3>' + reportEsc(title) + '</h3>';
-            if (meta) card += '<p class="deep-report-year-meta">' + reportEsc(meta) + '</p>';
-            if (outcome) card += '<p class="deep-report-verdict-outcome">' + reportEsc(outcome) + '</p>';
-            if (source) card += '<p class="deep-report-verdict-source">推断依据：' + reportEsc(source) + '</p>';
-            if (!year.isCurrentYear) card += reportRevisionDetails(year.revisions);
-            return card + '</section>';
-        }).join('') + '</div>';
+            var visibleMeta = [year.lifeStage, year.primaryEventLabel].map(reportText).filter(Boolean).join(' · ');
+            var professionalMeta = [year.pillar, year.daYunLabel, year.directionLabel].map(reportText).filter(Boolean).join(' · ');
+            var body = outcome ? '<p class="deep-report-verdict-outcome">' + reportEsc(outcome) + '</p>' : '';
+            if (visibleMeta && !year.isCurrentYear) body = '<p class="deep-report-year-meta">' + reportEsc(visibleMeta) + '</p>' + body;
+            if (!year.isCurrentYear) {
+                var source = reportText(year.sourceText);
+                body += reportDetailBlock('这一年的判断依据', (professionalMeta ? '<p>' + reportEsc(professionalMeta) + '</p>' : '')
+                    + (source ? '<p class="deep-report-verdict-source">' + reportEsc(source) + '</p>' : '')
+                    + [].concat(year.conditions || [], year.blockers || []).map(function(row) { return '<p>' + reportEsc(reportText(row)) + '</p>'; }).join(''));
+                body += reportRevisionDetails(year.revisions);
+            }
+            var processDetails = (Array.isArray(year.processDetails) ? year.processDetails : []).map(function(row) {
+                var label = typeof row === 'object' && row ? reportText(row.label || row.title) : '';
+                var text = typeof row === 'object' && row ? reportText(row.scenario || row.outcomeText || row.text) : reportText(row);
+                var source = typeof row === 'object' && row ? reportText(row.sourceText) : '';
+                return text || source ? '<section>' + (label ? '<strong>' + reportEsc(label) + '</strong>' : '')
+                    + (text ? '<p>' + reportEsc(text) + '</p>' : '') + (source ? '<p>' + reportEsc(source) + '</p>' : '') + '</section>' : '';
+            }).join('');
+            if (processDetails) body += reportDetailBlock('事情推进中的具体表现', processDetails);
+            if (body && year.detailOnly) return '<details class="report-claim-details deep-report-year"><summary>' + reportEsc(title) + ' · 查看本年细节</summary>' + body + '</details>';
+            return body ? '<section class="deep-report-year"><h3>' + reportEsc(title) + '</h3>' + body + '</section>' : '';
+        }).join('');
+        if (years) html += '<div class="deep-report-year-verdicts">' + years + '</div>';
     }
+    // Keep all audit evidence, including sources attached to a merged conclusion.
+    html += reportDetailBlock('补充依据', evidenceOnly.join('')) + reportTechnicalDetails(narrative.technicalBasis);
     html += reportRevisionDetails(narrative.revisions);
-    if (narrative.note) html += '<p class="deep-report-note">' + reportEsc(reportText(narrative.note)) + '</p>';
-    return html + '</article>';
+    if (narrative.note) html += reportDetailBlock('解读范围与限制', '<p class="deep-report-note">' + reportEsc(reportText(narrative.note)) + '</p>');
+    return overview + (html ? '<article class="deep-report-card deep-report-narrative">' + html + '</article>' : '');
 }
 
 function reportStoryline(storyline) {
     if (!storyline) return '';
-    var html = '<article class="deep-report-storyline">';
-    if (storyline.headline) html += '<h3>' + reportEsc(reportText(storyline.headline)) + '</h3>';
-    if (storyline.summary) html += '<p class="deep-report-storyline-main">' + reportEsc(reportText(storyline.summary)) + '</p>';
-    if (storyline.mechanismAccount) {
-        var account = storyline.mechanismAccount;
-        html += '<details class="report-claim-details" data-report-mechanism><summary>为什么这样判断</summary>';
-        [['主要依据',account.cause],['帮助在哪里',account.help],['需要付出的代价',account.cost],['原局已有的条件',account.natalState]].forEach(function(row) {
-            if (row[1]) html += '<p><strong>' + row[0] + '：</strong>' + reportEsc(reportText(row[1])) + '</p>';
-        });
-        html += '</details>';
+    var html = '', seen = {};
+    function uniqueText(value) {
+        var key = reportNarrativeFingerprint(value);
+        if (!key || seen[key]) return '';
+        seen[key] = true;
+        return reportText(value);
     }
-    if (storyline.direction) html += '<p><strong>行运方向：</strong>' + reportEsc(reportText(storyline.direction)) + '</p>';
-    if (storyline.boundary) html += '<p><strong>不能机械判断的地方：</strong>' + reportEsc(reportText(storyline.boundary)) + '</p>';
-    if (storyline.focus) html += '<p><strong>未来五年重点：</strong>' + reportEsc(reportText(storyline.focus)) + '</p>';
-    if (Array.isArray(storyline.technicalBasis) && storyline.technicalBasis.length) {
-        html += '<div class="deep-report-storyline-basis">' + storyline.technicalBasis.map(function(term) {
-            return '<span>' + reportEsc(reportText(term)) + '</span>';
-        }).join('') + '</div>';
-    }
-    return html + '</article>';
+    var headline = uniqueText(storyline.headline), summary = uniqueText(storyline.summary), focus = uniqueText(storyline.focus);
+    if (headline) html += '<h3>' + reportEsc(headline) + '</h3>';
+    if (summary) html += '<p class="deep-report-storyline-main">' + reportEsc(summary) + '</p>';
+    if (focus) html += '<p>' + reportEsc(focus) + '</p>';
+    var account = storyline.mechanismAccount || {}, basis = '';
+    [['主要依据',account.cause],['帮助在哪里',account.help],['需要付出的代价',account.cost],['原局已有的条件',account.natalState],
+        ['行运方向',storyline.direction],['适用条件',storyline.boundary]].forEach(function(row) {
+        var value = uniqueText(row[1]);
+        if (value) basis += '<p><strong>' + row[0] + '：</strong>' + reportEsc(value) + '</p>';
+    });
+    var terms = (Array.isArray(storyline.technicalBasis) ? storyline.technicalBasis : []).map(reportText).filter(Boolean);
+    if (terms.length) basis += '<div class="deep-report-storyline-basis">' + terms.map(function(term) { return '<span>' + reportEsc(term) + '</span>'; }).join('') + '</div>';
+    if (basis) html += '<details class="report-claim-details" data-report-mechanism><summary>为什么这样判断</summary>' + basis + '</details>';
+    return html ? '<article class="deep-report-storyline">' + html + '</article>' : '';
 }
 
 function reportTriggerKeys(row) {
@@ -636,12 +678,13 @@ function openPaidSection(id) {
 }
 
 function renderDeepReportError(message) {
+    destroyReportCityCompare();
     var html = '<div class="deep-report-error"><strong>专业报告暂时无法生成</strong><p>' + reportEsc(message || '请稍后重试。') + '</p><button type="button" onclick="renderPaidContent()">重试</button></div>';
-    ['thisYearContent', 'marriageContent', 'wealthContent', 'studyContent', 'fortuneContent'].forEach(function(id) {
+    ['thisYearContent', 'wealthContent', 'marriageContent', 'careerContent', 'studyContent', 'fortuneContent'].forEach(function(id) {
         var node = document.getElementById(id);
         if (node) node.innerHTML = html;
     });
-    ['thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'].forEach(openPaidSection);
+    ['thisYearSection', 'wealthSection', 'marriageSection', 'careerSection', 'studySection', 'fortuneSection'].forEach(openPaidSection);
 }
 
 function resolveDeepReportAnchor(params) {
@@ -672,7 +715,7 @@ function renderDeepCurrentYear(facts, storyline) {
     var node = document.getElementById('thisYearContent');
     if (!node) return;
     if (facts && facts.narrative) {
-        node.innerHTML = reportStoryline(storyline) + reportNarrative(facts.narrative);
+        node.innerHTML = '<p class="deep-report-note" data-report-reading-note>以下是传统命理的解释，不是已发生事实；现实经历以你的反馈为准。</p>' + reportStoryline(storyline) + reportNarrative(facts.narrative);
         openPaidSection('thisYearSection');
         return;
     }
@@ -690,11 +733,55 @@ function renderDeepCurrentYear(facts, storyline) {
     openPaidSection('thisYearSection');
 }
 
-function renderDeepRelationship(facts) {
+function reportReadingAccount() {
+    var user = window.Auth && window.Auth.getUser ? window.Auth.getUser() : typeof Auth !== 'undefined' && Auth.getUser ? Auth.getUser() : null;
+    return user && user.id ? String(user.id) : 'guest';
+}
+
+function renderReportRelationshipQuestion(node, keepOpen) {
+    var report = _deepReportFacts, api = window.ZhishiCalibration;
+    var life = report && report.lifeContext || {};
+    if (!report || !api || !api.updateReportContext || (life.age != null && Number(life.age) < 18)) return;
+    var choices = [['unknown','暂不填写'],['single','单身'],['dating','交往中'],['married','已婚'],['other','其他／不愿回答']];
+    var selected = life.relationshipStatus || 'unknown';
+    var html = '<details class="report-context-form"'+(keepOpen?' open':'')+'><summary>按当前感情状态查看（可跳过）</summary><label for="reportRelationshipStatus">目前的感情状态（可选）</label><select id="reportRelationshipStatus" class="report-life-select">';
+    html += choices.map(function(item){return '<option value="'+item[0]+'"'+(selected===item[0]?' selected':'')+'>'+item[1]+'</option>';}).join('');
+    html += '</select><p>只用于本页的感情解读，不追问经历，也不改变其他章节。</p><button type="button" id="reportRelationshipApply">更新感情解读</button><p id="reportRelationshipNotice" role="status" aria-live="polite"></p></details>';
+    node.innerHTML = html + node.innerHTML;
+    var button = document.getElementById('reportRelationshipApply'), account = reportReadingAccount(), chart = _bazi;
+    if (!button) return;
+    button.onclick = function() {
+        if (report !== _deepReportFacts || account !== reportReadingAccount() || chart !== _bazi) return;
+        var input = document.getElementById('reportRelationshipStatus');
+        if (!input || !api.updateReportContext({relationshipStatus:input.value})) return;
+        try {
+            var refreshed = window.DeepReport.buildFacts(_bazi, _params.gender, {anchorYear:resolveDeepReportAnchor(_params), lifeContext:api.reportContext()});
+            if (window.DeepReport.applyReportReview && report.reportReview) window.DeepReport.applyReportReview(refreshed, report.reportReview);
+            refreshed.reportReview=report.reportReview;refreshed.reviewLoaded=report.reviewLoaded;refreshed.reviewError=report.reviewError;
+            _deepReportFacts=refreshed;
+            // Only relationship-dependent sections change; keep city inputs and other reading positions intact.
+            renderDeepRelationship(refreshed.relationship, true);
+            renderDeepCurrentYear(refreshed.currentYear, refreshed.storyline);
+            renderDeepFiveYear(refreshed.fiveYear);
+            renderReportReviewPanel();
+            var notice=document.getElementById('reportRelationshipNotice');
+            if(notice)notice.textContent='已按所选状态更新感情解读，其他章节仍然保留。';
+        } catch(error) {
+            api.updateReportContext({relationshipStatus:selected});
+            var notice=document.getElementById('reportRelationshipNotice');
+            if(notice)notice.textContent='本次未能更新，原报告仍保留，请稍后重试。';
+        }
+    };
+}
+
+function renderDeepRelationship(facts, keepQuestionOpen) {
     var node = document.getElementById('marriageContent');
     if (!node) return;
     if (facts && facts.narrative) {
+        var sectionTitle = document.querySelector('#marriageSection .section-header h2');
+        if (sectionTitle) sectionTitle.textContent = facts.narrative.sectionTitle || '婚姻感情';
         node.innerHTML = reportNarrative(facts.narrative);
+        renderReportRelationshipQuestion(node, keepQuestionOpen);
         openPaidSection('marriageSection');
         return;
     }
@@ -739,7 +826,7 @@ function renderDeepWealth(facts) {
     if (!node) return;
     if (facts && facts.narrative) {
         var wealthNarrative = Object.assign({}, facts.narrative, { level: '', difficulty: '' });
-        node.innerHTML = reportNarrative(wealthNarrative) + reportWealthCalibration();
+        node.innerHTML = reportNarrative(wealthNarrative);
         openPaidSection('wealthSection');
         return;
     }
@@ -753,6 +840,31 @@ function renderDeepWealth(facts) {
     html += reportEvidence(facts && facts.evidence);
     node.innerHTML = html;
     openPaidSection('wealthSection');
+}
+
+function destroyReportCityCompare() {
+    if (_reportCityCompareController && typeof _reportCityCompareController.destroy === 'function') {
+        _reportCityCompareController.destroy();
+    }
+    _reportCityCompareController = null;
+}
+
+function renderDeepCareer(facts) {
+    destroyReportCityCompare();
+    var node = document.getElementById('careerContent');
+    if (!node) return;
+    if (!facts || !facts.narrative || facts.relevant === false) {
+        node.innerHTML = '';
+        var section = document.getElementById('careerSection');
+        if (section) section.style.display = 'none';
+        return;
+    }
+    node.innerHTML = reportNarrative(facts.narrative) + '<div id="reportCityCompare"></div>';
+    var cityCompare = document.getElementById('reportCityCompare');
+    if (cityCompare && window.ReportCityCompare && typeof window.ReportCityCompare.mount === 'function') {
+        _reportCityCompareController = window.ReportCityCompare.mount(cityCompare);
+    }
+    openPaidSection('careerSection');
 }
 
 function renderDeepStudy(facts) {
@@ -817,6 +929,32 @@ function renderDeepFiveYear(facts) {
     openPaidSection('fortuneSection');
 }
 
+function reportReadingOrder() {
+    var fallback=['thisYearSection','wealthSection','marriageSection','careerSection','studySection','fortuneSection'];
+    return window.DeepReport && window.DeepReport.reportSectionOrder
+        ? window.DeepReport.reportSectionOrder(_deepReportFacts && _deepReportFacts.lifeContext || {}) : fallback;
+}
+
+function applyReportReadingOrder() {
+    var nodes=reportReadingOrder().map(function(id){return document.getElementById(id);}).filter(Boolean);
+    if(!nodes.length || !nodes[0].parentNode) return;
+    var parent=nodes[0].parentNode;
+    if(!parent.insertBefore || nodes.some(function(node){return node.parentNode!==parent;}))return;
+    // Reorder only the paid section slots, leaving the paywall, free content and footer in place.
+    var actual=Array.prototype.filter.call(parent.children,function(node){return nodes.indexOf(node)>=0;});
+    if(actual.every(function(node,index){return node===nodes[index];}))return;
+    var anchor=actual[actual.length-1].nextSibling;
+    nodes.forEach(function(node){parent.insertBefore(node,anchor);});
+}
+
+function renderReportReviewPanel() {
+    if (window.ZhishiCalibration && window.ZhishiCalibration.getReportReview) {
+        var currentNode=document.getElementById('thisYearContent');
+        if(currentNode) currentNode.innerHTML += '<section id="reportReviewPanel" class="report-review" aria-live="polite"></section>';
+        refreshReportReview();
+    }
+}
+
 function renderPaidContent() {
     if (!_bazi || !_params) {
         renderDeepReportError('请刷新页面后重试。');
@@ -825,8 +963,9 @@ function renderPaidContent() {
     if (typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn() && !_accountReportAccessResolved) return;
     if (window.ZhishiCalibration && window.ZhishiCalibration.beforeReport &&
         !window.ZhishiCalibration.beforeReport(function(){_deepReportFacts=null;renderPaidContent();})) {
-        ['thisYearContent','marriageContent','wealthContent','studyContent','fortuneContent'].forEach(function(id){var node=document.getElementById(id);if(node)node.innerHTML='';});
-        ['marriageSection','wealthSection','studySection','fortuneSection'].forEach(function(id){var node=document.getElementById(id);if(node)node.style.display='none';});
+        destroyReportCityCompare();
+        ['thisYearContent','wealthContent','marriageContent','careerContent','studyContent','fortuneContent'].forEach(function(id){var node=document.getElementById(id);if(node)node.innerHTML='';});
+        ['wealthSection','marriageSection','careerSection','studySection','fortuneSection'].forEach(function(id){var node=document.getElementById(id);if(node)node.style.display='none';});
         var pending=document.getElementById('thisYearContent');
         if(pending)pending.innerHTML='<div class="report-review"><h3>报告已解锁</h3><p>先确认当前状态并核对往事，完成或选择跳过后查看报告。</p><button type="button" onclick="renderPaidContent()">继续填写</button></div>';
         openPaidSection('thisYearSection');return;
@@ -851,15 +990,13 @@ function renderPaidContent() {
             return;
         }
         renderDeepCurrentYear(_deepReportFacts.currentYear, _deepReportFacts.storyline);
-        renderDeepRelationship(_deepReportFacts.relationship);
         renderDeepWealth(_deepReportFacts.wealth);
+        renderDeepRelationship(_deepReportFacts.relationship);
+        renderDeepCareer(_deepReportFacts.career);
         renderDeepStudy(_deepReportFacts.study);
         renderDeepFiveYear(_deepReportFacts.fiveYear);
-        if (window.ZhishiCalibration && window.ZhishiCalibration.getReportReview) {
-            var currentNode=document.getElementById('thisYearContent');
-            if(currentNode) currentNode.innerHTML += '<section id="reportReviewPanel" class="report-review" aria-live="polite"></section>';
-            refreshReportReview();
-        }
+        applyReportReadingOrder();
+        renderReportReviewPanel();
     } catch (error) {
         console.error('[deep-report]', error);
         _deepReportFacts = null;
@@ -1099,46 +1236,6 @@ function renderSiZhu(bazi, dayGan) {
 
         renderProfessionalAuxColumn(pos, pillar, dayGan);
     });
-}
-
-function reportWealthGradeOptions() {
-    var html = '';
-    for (var i = 1; i <= 10; i += 1) html += '<option value="' + i + '">A' + i + '</option>';
-    return html;
-}
-
-function reportWealthCalibration() {
-    return '<article class="wealth-calibration" id="wealthCalibration">' +
-        '<button class="wealth-calibration__toggle" type="button" onclick="toggleWealthCalibration()">校对现实财富基准（可选）</button>' +
-        '<div class="wealth-calibration__body" id="wealthCalibrationBody" hidden>' +
-        '<p>用当前真实情况复核“已经兑现到哪一档”。复核不会改动原局模型A等级。</p>' +
-        '<div class="wealth-calibration__grid">' +
-        '<label>当前状态<select id="wealthOccupation"><option>在读/未就业</option><option>职员/专业人士</option><option>自由职业/个体</option><option>经营者/企业主</option><option>退休/资产管理</option></select></label>' +
-        '<label>当前年收入等级<select id="wealthIncomeLevel">' + reportWealthGradeOptions() + '</select></label>' +
-        '<label>当前净资产等级<select id="wealthAssetLevel">' + reportWealthGradeOptions() + '</select></label>' +
-        '<label>负债情况<select id="wealthDebt"><option>无或很轻</option><option>正常可控</option><option>较重</option></select></label>' +
-        '<label>家庭资本支持<select id="wealthFamilySupport"><option>基本没有</option><option>有一定支持</option><option>有明显支持或继承</option></select></label>' +
-        '</div><button class="wealth-calibration__submit" type="button" onclick="runWealthCalibration()">生成复核结果</button>' +
-        '<div class="wealth-calibration__result" id="wealthCalibrationResult" aria-live="polite"></div>' +
-        '</div></article>';
-}
-
-function toggleWealthCalibration() {
-    var body = document.getElementById('wealthCalibrationBody');
-    if (body) body.hidden = !body.hidden;
-}
-
-function runWealthCalibration() {
-    var result = document.getElementById('wealthCalibrationResult');
-    if (!result || !_deepReportFacts || !window.DeepReport || typeof window.DeepReport.calibrateWealthReality !== 'function') return;
-    var calibrated = window.DeepReport.calibrateWealthReality(_deepReportFacts.wealth, {
-        occupation: document.getElementById('wealthOccupation').value,
-        incomeLevel: document.getElementById('wealthIncomeLevel').value,
-        assetLevel: document.getElementById('wealthAssetLevel').value,
-        debt: document.getElementById('wealthDebt').value,
-        familySupport: document.getElementById('wealthFamilySupport').value,
-    });
-    result.innerHTML = '<strong>' + reportEsc(calibrated.summary) + '</strong><p>' + reportEsc(calibrated.carrier) + '</p>';
 }
 
 function getPillarIndexes(pillar) {
@@ -1908,15 +2005,6 @@ function renderWealth(bazi, gender) {
         return '<p style="margin:0 0 8px">' + l + '</p>';
     }).join('');
 
-    // 有利城市
-    var goodCityTags = (wl.goodCities || []).map(function(c) {
-        return '<span style="display:inline-block;padding:3px 10px;margin:2px;border:1px solid rgba(76,175,80,.3);border-radius:2px;font-size:12px;color:#81C784">' + c + '</span>';
-    }).join('');
-    // 不利城市
-    var badCityTags = (wl.badCities || []).map(function(c) {
-        return '<span style="display:inline-block;padding:3px 10px;margin:2px;border:1px solid rgba(244,67,54,.3);border-radius:2px;font-size:12px;color:#E57373">' + c + '</span>';
-    }).join('');
-
     el.innerHTML = ''
         // ==== 顶部概览 ====
         + '<div style="text-align:center;margin-bottom:18px">'
@@ -1939,23 +2027,19 @@ function renderWealth(bazi, gender) {
         +   levelHtml
         + '</div>'
 
-        // ==== 方位与城市 ====
+        // ==== 传统方位参考 ====
         + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
         // 有利方位
         +   '<div style="flex:1;min-width:140px;padding:14px 16px;background:rgba(76,175,80,.04);border:1px solid rgba(76,175,80,.12);border-radius:3px">'
-        +     '<div style="font-size:13px;color:#81C784;font-weight:700;letter-spacing:2px;margin-bottom:8px"> 旺财方位</div>'
+        +     '<div style="font-size:13px;color:#81C784;font-weight:700;letter-spacing:2px;margin-bottom:8px"> 喜用对应方位</div>'
         +     '<div style="font-size:18px;font-weight:700;color:#81C784;margin-bottom:6px;letter-spacing:2px">' + wl.goodDirection + '方' + '</div>'
-        +     '<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">往这个方向发展的城市，更容易遇到贵人、打开财路。出差、旅行、甚至定居都可以多往这边靠。</div>'
-        +     '<div style="margin-bottom:4px;font-size:11px;color:var(--text-secondary);letter-spacing:1px">利好城市</div>'
-        +     '<div>' + goodCityTags + '</div>'
+        +     '<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">这是喜用五行对应的传统方位，不代表某座城市更赚钱。选择发展地还要比较工作机会、日常节奏和往返便利。</div>'
         +   '</div>'
         // 不利方位
         +   '<div style="flex:1;min-width:140px;padding:14px 16px;background:rgba(244,67,54,.04);border:1px solid rgba(244,67,54,.12);border-radius:3px">'
-        +     '<div style="font-size:13px;color:#E57373;font-weight:700;letter-spacing:2px;margin-bottom:8px"> 求财慎往</div>'
+        +     '<div style="font-size:13px;color:#E57373;font-weight:700;letter-spacing:2px;margin-bottom:8px"> 忌神对应方位</div>'
         +     '<div style="font-size:18px;font-weight:700;color:#E57373;margin-bottom:6px;letter-spacing:2px">' + wl.badDirection + '方' + '</div>'
-        +     '<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">去这些地方发展可能会比较吃力，赚钱比别人费劲一些。不是不能去，但要有心理准备。</div>'
-        +     '<div style="margin-bottom:4px;font-size:11px;color:var(--text-secondary);letter-spacing:1px">需谨慎的城市</div>'
-        +     '<div>' + badCityTags + '</div>'
+        +     '<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">这一方位只保留传统对应关系，不据此排除城市或断定工作、收入会受损。</div>'
         +   '</div>'
         + '</div>'
 
@@ -2264,7 +2348,7 @@ function _isPaywallActive() {
 }
 
 // 付费内容 section ID 列表
-var PAYWALLED_SECTIONS = ['thisYearSection', 'marriageSection', 'wealthSection', 'studySection', 'fortuneSection'];
+var PAYWALLED_SECTIONS = ['thisYearSection', 'wealthSection', 'marriageSection', 'careerSection', 'studySection', 'fortuneSection'];
 
 function buildReportHTML() {
     var paywallActive = _isPaywallActive();
@@ -2289,16 +2373,23 @@ function buildReportHTML() {
         { id: 'proSection', title: '专业命理分析', html: '', pageBreak: true },
         { id: 'characterSection', title: '性格特征', html: '', pageBreak: false },
         { id: 'parentsSection', title: '父母关系', html: '', pageBreak: false },
-        { id: 'thisYearSection', title: '今年运势参考', html: '', pageBreak: true, paywalled: true },
+        { id: 'thisYearSection', title: '今年概览', html: '', pageBreak: true, paywalled: true },
+        { id: 'wealthSection', title: '财富与收入', html: '', pageBreak: false, paywalled: true },
         { id: 'marriageSection', title: '感情婚姻参考', html: '', pageBreak: false, paywalled: true },
-        { id: 'wealthSection', title: '财运分析参考', html: '', pageBreak: false, paywalled: true },
-        { id: 'studySection', title: '学业发展参考', html: '', pageBreak: false, paywalled: true },
-        { id: 'fortuneSection', title: '五年流年详批', html: '', pageBreak: false, paywalled: true }
+        { id: 'careerSection', title: '事业与发展选择', html: '', pageBreak: false, paywalled: true },
+        { id: 'studySection', title: '学习与进修', html: '', pageBreak: false, paywalled: true },
+        { id: 'fortuneSection', title: '未来五年', html: '', pageBreak: false, paywalled: true }
     ];
 
+    var readingOrder=reportReadingOrder();
+    var paidSections=sections.filter(function(sec){return sec.paywalled;}).sort(function(a,b){return readingOrder.indexOf(a.id)-readingOrder.indexOf(b.id);});
+    var paidIndex=0;
+    sections=sections.map(function(sec){return sec.paywalled?paidSections[paidIndex++]:sec;});
+    paidSections.forEach(function(sec,index){sec.pageBreak=index===0;});
     sections.forEach(function(sec) {
         var el = document.getElementById(sec.id);
         if (!el) return;
+        if(sec.id==='careerSection' && !paywallActive && typeof _deepReportFacts !== 'undefined' && _deepReportFacts && (!_deepReportFacts.career || !_deepReportFacts.career.narrative || _deepReportFacts.career.relevant===false))return;
         if(sec.id==='studySection' && typeof _deepReportFacts !== 'undefined' && _deepReportFacts && _deepReportFacts.study && _deepReportFacts.study.relevant===false)return;
 
         // 付费内容且未解锁 → 占位提示
@@ -2316,6 +2407,8 @@ function buildReportHTML() {
         // 移除所有遮罩和交互元素
         clone.querySelectorAll('.paywall-overlay,#rptPaywall,[id*="paywall"]').forEach(function(o) { o.remove(); });
         clone.querySelectorAll('.drawer-arrow,.toggle-icon').forEach(function(a) { a.remove(); });
+        clone.querySelectorAll('.report-city-compare__form').forEach(function(form) { form.remove(); });
+        clone.querySelectorAll('.report-context-form').forEach(function(form) { form.remove(); });
         // 岁运现在是可键盘操作的按钮；导出时保留文字，转换成静态格。
         clone.querySelectorAll('button.dayun-col,button.liunian-col').forEach(function(button) {
             var cell = document.createElement('div');

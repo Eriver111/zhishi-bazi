@@ -52,13 +52,15 @@ test('exposed and hidden spouse evidence takes the exposed-rooted path, not the 
   const f=facts('乙卯 癸未 辛未 戊戌');
   const n=item(f.relationship.narrative,'缘分是否容易落地');
   assert.equal(f.relationship.spouseStar.quality.visibility,'透藏并见');
-  assert.match(n.outcomeText,/透出且有根/);
+  assert.match(n.sourceText,/透藏并见.*配偶星有根/);
+  assert.match(n.outcomeText,/明确的关系|认真相处|稳定下来/);
   assert.ok(n.requiredConditions.every(c=>c.met));
   const changed=structuredClone(f);
   changed.relationship.spouseStar.exposed=[];
   changed.relationship.spouseStar.quality.visibility='藏干潜藏';
   const later=item(DeepReport.buildNarratives(changed).relationship,'缘分是否容易落地');
-  assert.match(later.outcomeText,/藏干线索/);
+  assert.match(later.sourceText,/藏干潜藏/);
+  assert.notEqual(later.outcomeText,n.outcomeText);
   assert.ok(later.blockers.includes('配偶星显现条件未完整'));
 });
 
@@ -67,7 +69,9 @@ test('unclear spouse age remains insufficient rather than defaulting to similar 
   assert.equal(f.relationship.age.tendency,'unclear');
   const row=item(f.relationship.narrative,'年龄倾向');
   assert.equal(row.status,'insufficient');
-  assert.match(row.outcomeText,/年龄线索未集中/);
+  assert.match(row.sourceText,/年龄线索未集中/);
+  assert.equal(row.detailOnly,true);
+  assert.equal(row.outcomeText,'');
   assert.doesNotMatch(row.outcomeText,/以与命主相仿为主/);
 });
 
@@ -86,17 +90,22 @@ test('authoritative neutral strength is preserved for every carrying state',()=>
   assert.equal(f.core.strength.level,'中和');
   for(const state of ['可承接','承压','有缓解']) {
     f.wealth.capacity.state=state;
-    const row=item(DeepReport.buildNarratives(f).wealth,'钱能不能留下');
-    assert.match(row.outcomeText,/旺衰为中和/);
-    assert.doesNotMatch(row.outcomeText,/日主偏强|日主偏弱/);
+    const narrative=DeepReport.buildNarratives(f).wealth;
+    const row=item(narrative,'钱能不能留下');
+    assert.equal(f.core.strength.level,'中和');
+    assert.ok(f.storyline.technicalBasis.includes('中和'));
+    assert.ok(row.sourceRefs.length&&row.sourceText);
+    assert.doesNotMatch(visible(narrative),/日主偏强|日主偏弱/);
   }
 });
 
 test('following report storyline does not reuse the ordinary weak-person remedy',()=>{
   const f=facts('己未 庚午 甲戌 戊辰');
   assert.equal(f.core.yongJi.method,'从格顺势');
-  assert.match(f.storyline.summary,/顺势取用/);
-  assert.doesNotMatch(f.storyline.summary,/真正要解决的是承载不足/);
+  assert.match(f.storyline.mechanismAccount.cause,/顺势/);
+  assert.ok(f.storyline.technicalBasis.includes('从财格'));
+  assert.equal(f.wealth.capacity.state,'顺势');
+  assert.doesNotMatch(f.storyline.summary+visible(f.wealth.narrative),/真正要解决的是承载不足|必须.*补印比/);
 });
 
 test('missing domain facts cannot produce an A grade, degree claim or spouse age',()=>{

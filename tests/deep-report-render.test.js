@@ -123,11 +123,19 @@ function createInitFixture({ search, storage, now, facts = fixtureFacts(), authe
   const nodes = {};
   const rootNode = { id: 'root', children: [], appendChild(node) { node.parentNode = this; this.children.push(node); if (node.id) nodes[node.id] = node; return node; }, insertBefore(node) { return this.appendChild(node); } };
   function makeNode(id) {
-    return { id, innerHTML: '', textContent: '', style: {}, offsetHeight: 160,
+    return { id, innerHTML: '', textContent: '', style: {}, offsetHeight: 160, children: [],
       classList: { add() {}, remove() {} }, parentNode: rootNode,
       addEventListener() {}, setAttribute() {}, removeAttribute() {},
-      appendChild(node) { node.parentNode = this; if (node.id) nodes[node.id] = node; return node; },
-      insertBefore(node) { return this.appendChild(node); },
+      appendChild(node) { return this.insertBefore(node, null); },
+      insertBefore(node, anchor) {
+        if (node.parentNode && node.parentNode.children) node.parentNode.children = node.parentNode.children.filter(child => child !== node);
+        const index = this.children.indexOf(anchor);
+        node.parentNode = this;
+        if (index < 0) this.children.push(node); else this.children.splice(index, 0, node);
+        if (node.id) nodes[node.id] = node;
+        return node;
+      },
+      get nextSibling() { return this.parentNode && this.parentNode.children[this.parentNode.children.indexOf(this) + 1] || null; },
       remove() { if (this.parentNode && this.parentNode.children) this.parentNode.children = this.parentNode.children.filter(child => child !== this); },
       querySelectorAll() { return []; } };
   }
@@ -325,8 +333,8 @@ test('customer narrative hides internal evidence cards while keeping decisive Ch
   const page = rendered.nodes.wealthContent.innerHTML;
 
   assert.match(page, /A7/);
-  assert.match(page, /校对现实财富基准（可选）/);
-  assert.match(page, /复核不会改动原局模型A等级/);
+  assert.doesNotMatch(page, /校对现实财富基准（可选）|wealthIncomeLevel|wealthAssetLevel/);
+  assert.doesNotMatch(page, /wealthFamilySupport|wealthDebt|生成复核结果/);
   assert.doesNotMatch(page, /百万元级|元级|万元级|亿元级/);
   assert.match(page, /真正的问题/);
   assert.doesNotMatch(rendered.pdfHtml, /百万元级|元级|万元级|亿元级/);
@@ -456,7 +464,7 @@ test('the paid report opens with one shared plain-language storyline', () => {
   assert.match(page, /整份报告先看这一条主线/);
   assert.match(page, /先解决承载不足/);
   assert.match(page, /行运方向/);
-  assert.match(page, /不能机械判断的地方/);
+  assert.match(page, /适用条件/);
   assert.match(page, /日主偏弱|火为用神/);
   assert.match(rendered.pdfHtml, /整份报告先看这一条主线/);
 });
@@ -517,7 +525,7 @@ test('current-year summary is referenced once inside the five-year section inste
     note: '',
   };
   const page = renderFixture({ facts }).nodes.fortuneContent.innerHTML;
-  assert.match(page, /本年详细判断已放在“今年运势”/);
+  assert.match(page, /本年详细判断已放在“今年概览”/);
   assert.doesNotMatch(page, /这一大段依据|这一大段今年结论/);
 });
 
@@ -562,7 +570,7 @@ test('study rendering exposes each chain evidence, blockers and confidence', () 
   assert.doesNotMatch(rendered.nodes.studyContent.innerHTML, /必然录取|必得学历/);
 });
 
-test('paid rendering neutralizes deterministic legacy risk wording', () => {
+test('legacy absolute risk claims are explicitly withheld instead of rewritten as softened events', () => {
   const facts = fixtureFacts();
   facts.currentYear.triggeredRisks = [{
     type: '旧风险判词',
@@ -570,7 +578,8 @@ test('paid rendering neutralizes deterministic legacy risk wording', () => {
   }];
   const rendered = renderFixture({ facts });
   assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /根基动摇|大凶|谨防口舌官非/);
-  assert.match(rendered.nodes.thisYearContent.innerHTML, /可能调整|条件性波动|沟通/);
+  assert.match(rendered.nodes.thisYearContent.innerHTML, /旧版绝对化断语已隐藏/);
+  assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /相关安排可能调整|高强度条件性波动/);
 });
 
 test('current-year and five-year sections render each non-domain overall trigger once after dedupe', () => {
@@ -610,7 +619,7 @@ test('direct-pillar original-chart annual relation is visible without inventing 
   assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /大运/);
 });
 
-test('overall trigger output neutralizes disaster lawsuit illness divorce loss and certainty wording', () => {
+test('legacy absolute disaster predictions are withheld without euphemistic substitute claims', () => {
   const facts = fixtureFacts();
   facts.currentYear.overallTriggers = [{
     type: '旧判词',
@@ -619,7 +628,8 @@ test('overall trigger output neutralizes disaster lawsuit illness divorce loss a
   const rendered = renderFixture({ facts });
   assert.match(rendered.nodes.thisYearContent.innerHTML, /综合变化/);
   assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /必然|灾祸|诉讼|疾病|离婚|损失/);
-  assert.match(rendered.nodes.thisYearContent.innerHTML, /相关条件下可能.*高强度变化.*规则或沟通争议.*身心状态.*关系边界.*资源波动/);
+  assert.match(rendered.nodes.thisYearContent.innerHTML, /旧版绝对化断语已隐藏/);
+  assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /高强度变化|资源波动|关系边界可能调整/);
 });
 
 test('wealth quality evidence is escaped in the live section and copied into PDF HTML', () => {
@@ -705,4 +715,119 @@ test('missing chart or params renders one explicit error card in every paid sect
     assert.match(nodes[id].innerHTML, /专业报告暂时无法生成/);
     assert.match(nodes[id].innerHTML, /重试/);
   }
+});
+
+
+function reportVisibleBody(html) {
+  return html.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g, '').replace(/<[^>]+>/g, ' ');
+}
+
+test('plain report body keeps technical terms, sources and limits closed while preserving every audit field', () => {
+  const facts = fixtureFacts();
+  facts.currentYear.narrative = {
+    hideScore: true, headline: '已做好的作业，容易因为临时改要求又做一遍。',
+    technicalBasis: ['财破印', '偏弱', '丙午流年'],
+    verdicts: [{ title: '作业返工', outcomeText: '返工会挤掉原来留给复习的时间。', sourceText: '财星制印并在本年引动。',
+      conditions: ['只适用于仍在学习的阶段。'], blockers: ['仅一次作业调整不能证明全年变化。'] }],
+    note: '不能据此确认真实成绩。',
+  };
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.thisYearContent.innerHTML;
+  const visible = reportVisibleBody(page);
+  assert.match(visible, /作业返工|复习的时间/);
+  assert.doesNotMatch(visible, /财破印|偏弱|流年|财星|适用于|证明全年|确认真实成绩/);
+  assert.doesNotMatch(page, /<details[^>]*\bopen\b/);
+  for (const audit of ['财破印','财星制印','只适用于','证明全年','确认真实成绩']) {
+    assert.ok(page.includes(audit), audit);
+    assert.ok(rendered.pdfHtml.includes(audit), audit + ' is retained for export');
+  }
+});
+
+test('same semantic event appears once while distinct effects and all source evidence remain available', () => {
+  const facts = fixtureFacts();
+  facts.study.narrative = {
+    hideScore: true, headline: '学习安排',
+    verdicts: [
+      { title: '临时改要求', semanticKey: 'study:requirement-change', effectKey: 'rework', outcomeText: '老师改了要求，作业要重新做。', sourceText: '第一条返工依据。' },
+      { title: '同一事情的另一说法', meaningKey: 'study:requirement-change', effectKey: 'rework', outcomeText: '因为标准调整，已交的材料还要重写。', sourceText: '第二条返工依据。' },
+      { title: '影响复习', semanticKey: 'study:requirement-change', effectKey: 'revision-time', outcomeText: '来回改作业会占用原来的复习时间。', sourceText: '复习时间依据。' },
+    ],
+    paragraphs: [
+      { semanticKey: 'study:requirement-change', effectKey: 'rework', text: '提交后又被要求改版。', sourceText: '补充返工依据。' },
+      { semanticKey: 'study:authority-conflict', text: '对评分方式不服，容易当场与老师争起来。' },
+    ],
+  };
+  const rendered = renderFixture({ facts });
+  const page = rendered.nodes.studyContent.innerHTML, visible = reportVisibleBody(page);
+  assert.match(visible, /老师改了要求/);
+  assert.doesNotMatch(visible, /已交的材料|提交后又被要求|同一事情的另一说法/);
+  assert.match(visible, /占用原来的复习时间|与老师争起来/);
+  for (const source of ['第一条返工依据','第二条返工依据','复习时间依据','补充返工依据']) {
+    assert.ok(page.includes(source));
+    assert.ok(rendered.pdfHtml.includes(source));
+  }
+});
+
+test('storyline does not repeat professional directions or limits in the default body', () => {
+  const facts = fixtureFacts();
+  facts.storyline = { headline: '先看最容易卡住的地方', summary: '工作接得多，但结款容易拖。', focus: '工作接得多，但结款容易拖。',
+    direction: '原局水为用神，金为喜神。', boundary: '喜用增分不能保证收入增加。', technicalBasis: ['印比扶身'],
+    mechanismAccount: { cause: '财星受阻', cost: '收款拖延会占用手头的钱。' } };
+  facts.currentYear.narrative = { hideScore: true, headline: '今年先盯住收款时间。' };
+  const page = renderFixture({facts}).nodes.thisYearContent.innerHTML, visible = reportVisibleBody(page);
+  assert.equal((visible.match(/工作接得多，但结款容易拖/g) || []).length, 1);
+  assert.doesNotMatch(visible, /用神|喜神|喜用|印比|财星/);
+  assert.match(page, /收款拖延会占用手头的钱/);
+  assert.equal((page.match(/data-report-reading-note/g) || []).length, 1);
+});
+
+test('empty narratives and empty evidence cards do not create empty report cards or headings', () => {
+  const facts = fixtureFacts();
+  facts.wealth.narrative = { verdicts: [{ title: '没有内容的卡', sourceText: '', conditions: [] }], paragraphs: [], technicalBasis: [] };
+  facts.study.narrative = {};
+  const rendered = renderFixture({facts});
+  assert.doesNotMatch(rendered.nodes.wealthContent.innerHTML, /没有内容的卡|deep-report-narrative|deep-report-overview/);
+  assert.equal(rendered.nodes.studyContent.innerHTML, '');
+  assert.doesNotMatch(rendered.nodes.thisYearContent.innerHTML, /<h3>实际触发风险<\/h3>/);
+});
+
+
+test('weak auxiliary claims stay in one named disclosure, and reader titles do not change claim metadata', () => {
+  const facts = fixtureFacts();
+  facts.relationship.narrative = {hideScore:true, headline:'感情里，先看怎样做决定。', verdicts:[
+    {title:'夫妻主导关系', displayTitle:'谁来做决定', outcomeText:'你先把计划定下，容易让对方觉得没有商量的余地。', sourceText:'日主克夫妻宫。'},
+    {title:'年龄倾向', displayTitle:'年龄的原始线索', detailOnly:true, outcomeText:'年龄线索分散，不指定年长年幼。', sourceText:'年时位置均见配偶星。', conditions:['位置不能确定真实年龄。']},
+    {title:'认识渠道', detailOnly:true, sourceText:'仅有位置弱线索。'}
+  ]};
+  const original = JSON.stringify(facts.relationship.narrative);
+  const rendered = renderFixture({facts}), page = rendered.nodes.marriageContent.innerHTML, visible = reportVisibleBody(page);
+  assert.match(visible, /谁来做决定|没有商量的余地/);
+  assert.doesNotMatch(visible, /夫妻主导关系|年龄|认识渠道|配偶星|弱线索/);
+  assert.equal((page.match(/<summary>补充依据<\/summary>/g) || []).length, 1);
+  assert.match(page, /年龄的原始线索|位置不能确定真实年龄/);
+  assert.equal(JSON.stringify(facts.relationship.narrative), original);
+  assert.match(rendered.pdfHtml, /仅有位置弱线索/);
+});
+
+
+test('specific negative consequences and negated guarantees retain their original meaning in page and export', () => {
+  const facts=fixtureFacts();
+  const direct='合伙账目不清时，可能破财、亏损，甚至要自己承担损失。';
+  const denied='这不是必然到账，也不代表一定会赚钱；不能据此断定分手、离婚或官司。';
+  facts.wealth.narrative={grade:'A6',headline:'钱能进来，也可能留不住。',verdicts:[{title:'钱款风险',outcomeText:direct,sourceText:denied,conditions:['支出增加不是必然破财。']}]};
+  const rendered=renderFixture({facts});
+  for(const html of [rendered.nodes.wealthContent.innerHTML,rendered.pdfHtml]) {
+    assert.ok(html.includes(direct));
+    assert.ok(html.includes(denied));
+    assert.ok(html.includes('不是必然破财'));
+    assert.doesNotMatch(html,/资源波动|关系边界可能调整|规则或沟通争议|不是在相关条件下可能/);
+  }
+});
+
+test('plain relationship risks remain direct without asserting that a separation has already happened', () => {
+  const facts=fixtureFacts();
+  facts.relationship.narrative={hideScore:true,headline:'长期不见面，感情容易变淡。',verdicts:[{title:'分开以后怎么相处',outcomeText:'如果已经分居，联系又越来越少，关系可能走向分手；这不等于一定会离婚。'}]};
+  const page=renderFixture({facts}).nodes.marriageContent.innerHTML;
+  assert.match(reportVisibleBody(page),/可能走向分手；这不等于一定会离婚/);
+  assert.doesNotMatch(page,/关系边界可能调整|在相关条件下可能/);
 });
