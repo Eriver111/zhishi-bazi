@@ -67,6 +67,6 @@ test('AI and report share the same locked question renderer, with event detail v
  assert.match(source,/root\.ZhishiCalibration\.beforeAI = inspectFirstClick/);assert.match(source,/root\.ZhishiCalibration\.beforeReport = beforeReport/);
  assert.match(source,/<strong>'\+escapeHtml\(option.label\)\+'<\/strong><small>'\+escapeHtml\(option.detail\)/);
  assert.doesNotMatch(source,/option\.detail=scenario/);
- const ai=fs.readFileSync(path.join(root,'api/ai-chat.js'),'utf8');assert.match(ai,/每题指定年份、具体对象、可观察行为与结果/);assert.match(ai,/不知道当年在读还是工作时先问当年身份/);
+ const ai=fs.readFileSync(path.join(root,'api/ai-chat.js'),'utf8');assert.match(ai,/只有额外信息会改变当前答案才问1个具体问题，指定年份、对象、行为与结果/);assert.match(ai,/不重复索要已提供年龄或身份/);assert.match(ai,/年龄只筛选合理场景/);
  const server=fs.readFileSync(path.join(root,'lib/supabase.js'),'utf8');assert.match(server,/picked\.eventText\|\|picked\.label/);assert.match(server,/旧版宽泛题反馈/);
 });
