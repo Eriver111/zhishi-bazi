@@ -105,7 +105,7 @@
     $('caseLoadError').hidden=true;$('caseStatus').textContent='正在整理案例…';
     var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},12000);
     try{
-      var response=await fetch('/books/cases.json?v=7',{signal:controller.signal});if(!response.ok)throw Error('load');
+      var response=await fetch('/books/cases.json?v=8',{signal:controller.signal});if(!response.ok)throw Error('load');
       var value=await response.json();if(!Array.isArray(value.cases)||!Array.isArray(value.categories))throw Error('format');collection=value;
       $('caseCollectionNote').textContent=value.note;
       $('caseBook').replaceChildren(new Option('全部书籍',''));$('caseTag').replaceChildren(new Option('全部主题',''));

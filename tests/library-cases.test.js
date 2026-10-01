@@ -34,10 +34,10 @@ test('case chart facts use the normal chart engine, preserving day-master and hi
     assert.deepEqual(Object.keys(item.chart).sort(),['luck','pillars']);
   }
 });
-test('all eighty-five collected cases retain exact sources, current translations, editions and stable source links',()=>{
+test('all eighty-seven collected cases retain exact sources, current translations, editions and stable source links',()=>{
   const result=buildCases(books,manifest);
   assert.deepEqual(result,require('../books/cases.json'));
-  assert.equal(result.cases.length,85);assert.equal(new Set(result.cases.map(c=>c.id)).size,85);
+  assert.equal(result.cases.length,87);assert.equal(new Set(result.cases.map(c=>c.id)).size,87);
   assert.deepEqual(new Set(result.cases.map(c=>c.book)),new Set(['ditian','ziping']));
   result.cases.forEach((c,i)=>{
     const entry=manifest.cases[i],chapter=books[c.book].chapters.find(ch=>ch.id===c.chapter);
@@ -80,7 +80,7 @@ test('case page is publicly routed while editorial source manifests stay private
 test('editorial categories cover every case once without removing cross-topic tags or source pairing',()=>{
   const result=buildCases(books,manifest);
   assert.equal(result.categories.length,6);
-  assert.equal(result.categories.reduce((sum,c)=>sum+c.count,0),85);
+  assert.equal(result.categories.reduce((sum,c)=>sum+c.count,0),87);
   for(const group of result.categories){
     assert.ok(group.count>0);assert.equal(group.count,result.cases.filter(c=>c.category===group.id).length);
   }

@@ -1,6 +1,76 @@
 {
-  "version": "2026-09-27.5",
+  "version": "2026-09-28.1",
   "cases": [
+    {
+      "id": "dt-yuanliu-seal-end",
+      "book": "ditian",
+      "chapter": "c-eaa56e761b56",
+      "start": 3,
+      "end": 12,
+      "commentary": 12,
+      "title": "金水旺气流向木印，丙火如何接得住",
+      "category": "climate",
+      "tags": [
+        "源流",
+        "财官印流通",
+        "行运疑录"
+      ],
+      "summary": "沿金生水、水生木、木生火看归宿，同时保留寅印与巳根的承接条件。",
+      "note": "原录首运乙亥、次运戊戌不连贯，照录而不猜改；词林、通政及一生平稳是原书记述，未经独立史料核验。对照例四柱均不同，不是单变量验证。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "0d7a5f7766e332b4fc324f5e056d655ef3601cbe1c989299c00ca613f13e7cdf",
+        "6f6d6496ede0e3169aa73c127b9edae77f77323bcaf9cc7c15f83480eca70673",
+        "fddf7004e2e6211dce1c833af41b8c052f67afd78837ca1599188e818a485575",
+        "9aaf65bdb018978dfd704e81fecdac34af1f82ae91062f9bd2f6c45aa600644e",
+        "268303c3bb7a26bfce84415bafa50a8ad814b53d2951b1e13f5af0cbf028a5ca",
+        "ad4a9e11ba898128f158860b3ec7ce00bbaab9d58d7d74fa946739af1dd9aa05",
+        "96d830b47e0bfc905a0a6318bc0b417e672cfb5f352aa049326aaa12cc854bb9",
+        "92674dede22ac3befa32348c912e15640fd74962be970215c078b8bcf5cf799c",
+        "2a70347522cee91ce6645a1a7ba8afd5f50e62ae961e3acbea4710fda6431a7c",
+        "1ef20a110d3248e5ace46f4404d160767c9c98882439c031f1c363ffe363c4dd"
+      ],
+      "related": [
+        "dt-yuanliu-wealth-end"
+      ]
+    },
+    {
+      "id": "dt-yuanliu-wealth-end",
+      "book": "ditian",
+      "chapter": "c-eaa56e761b56",
+      "start": 13,
+      "end": 22,
+      "commentary": 22,
+      "title": "同看源流，为什么火土之气要落到水财",
+      "category": "structure",
+      "tags": [
+        "源流",
+        "食伤生财",
+        "归局"
+      ],
+      "summary": "原书以火为源，循土、金流到水财，强调起点旺气与最终可用处不能混为一谈。",
+      "note": "原书“富有百万、贵至一品”仅作文献记述，不折算现代财富、不补人物身份与年份；与丙火例对读只比较流通方法，不能把不同四柱当成单一因素实验。",
+      "chart": {
+        "kind": "lines"
+      },
+      "sourceHashes": [
+        "c88cda56e48a9e9a1255491bb52c0af25e121bec23d1f7342f0b100cdbcef4b7",
+        "080242e6fd29ec54fba4f23c2a936ce333ccc1cf4365594afcce4aefbb9c235d",
+        "b737309ed62139f450fa8194da64ec5bd8fb06fed7345258159d6b3c48d1f13a",
+        "038d5775376a6bb38ef4b391713d58cc410bb7189de3deca3ea30f48ded667ae",
+        "b85c7959123bb04cdad047ad8d273f888d18bbc423c0009e37a46b52a6d33cb8",
+        "f522fcf9618f30ac7180b92b2b8660858b2ded7fd08f5a101ded263a795be923",
+        "8bb21d32540ffc65f7532c0d905f178c89637fe275fbb8b41eb62c03f377806a",
+        "cc07ea41c6f0f256900f28bd5c94f1fbb8a439001c75a2f4141f220b9153fa9e",
+        "3dac1638d0db954ab32ddefa955bc6f4845a1f8c19c0b4cc435dd03328897e46",
+        "d378a16dd05ef08b2fe9eef706a43ee846881f0240941c268f9fefcb4379875d"
+      ],
+      "related": [
+        "dt-yuanliu-seal-end"
+      ]
+    },
     {
       "id": "dt-zhiming-dong",
       "book": "ditian",
