@@ -26,7 +26,7 @@ test('requested year never invents birth age, decade, or non-bazi facts',()=>{
 
 test('favorable structure cannot be used as an unsupported real-life safety net',()=>{
  const ai=require('../api/ai-chat')._test;
- for(const text of ['壬子大运本身是喜用，所以这十年的底子是有人能帮、有资源可用。','方向不算坏到底。','走喜运意味着有人搭手。']) {
+ for(const text of ['壬子大运本身是喜用，所以这十年的底子是有人能帮、有资源可用。','方向不算坏到底。','走喜运意味着有人搭手。','大运是帮身的运，所以不是"家里出事"的格局。']) {
   assert.ok(ai.runReplyValidation(null,text,'').some(w=>w.startsWith('E6-')),text);
  }
  for(const text of ['喜用不说明有人能帮，家里仍可能有额外开支。','家人已经明确答应提供资金，这份帮助来自你提供的事实。','喜运只表示扶抑关系，不能据此保证现实顺利。']) {
