@@ -23,6 +23,16 @@ test('requested year never invents birth age, decade, or non-bazi facts',()=>{
  for(const type of ['hepan','ziwei','liuren']){const x={...data,type};assert.equal(enrichRequestedYear(x,2020),x);}
  const bad={...data,daYun:{cycles:[...data.daYun.cycles,...data.daYun.cycles]}};assert.equal(enrichRequestedYear(bad,2020),bad);
 });
+
+test('favorable structure cannot be used as an unsupported real-life safety net',()=>{
+ const ai=require('../api/ai-chat')._test;
+ for(const text of ['壬子大运本身是喜用，所以这十年的底子是有人能帮、有资源可用。','方向不算坏到底。','走喜运意味着有人搭手。']) {
+  assert.ok(ai.runReplyValidation(null,text,'').some(w=>w.startsWith('E6-')),text);
+ }
+ for(const text of ['喜用不说明有人能帮，家里仍可能有额外开支。','家人已经明确答应提供资金，这份帮助来自你提供的事实。','喜运只表示扶抑关系，不能据此保证现实顺利。']) {
+  assert.equal(ai.runReplyValidation(null,text,'').some(w=>w.startsWith('E6-')),false,text);
+ }
+});
 test('historical year lookup spans multiple charts and preserves frozen natal inputs',()=>{
  for(const pair of ['甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉']){
   const x={...data,fourPillars:{...data.fourPillars,day:{gan:pair[0],zhi:pair[1]}}};

@@ -1731,11 +1731,11 @@ function renderCharacter(bazi) {
         var main = topSSDetail[0];
         ssAdvice = '从命局来看，你的「' + main.name + '」特质比较突出';
         if (main.count > 1) ssAdvice += '（出现了' + main.count + '次）';
-        ssAdvice += '，' + main.trait;
+        ssAdvice += '，' + String(main.trait || '').replace(/[。]+$/,'');
 
         if (topSSDetail.length >= 2) {
             var second = topSSDetail[1];
-            ssAdvice += '。同时身上也有不少「' + second.name + '」的影子——' + second.trait;
+            ssAdvice += '。同时身上也有不少「' + second.name + '」的影子——' + String(second.trait || '').replace(/[。]+$/,'');
         }
         ssAdvice += '。出现次数只用于展示分布，不代表这个十神最有力。';
     }

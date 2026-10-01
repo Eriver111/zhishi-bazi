@@ -263,7 +263,7 @@
   function refresh(){
     var mode=activeMode(),time='请选择出生时间';
     if(mode==='solar'){
-      var solar=[valueText('sYear'),valueText('sMonth'),valueText('sDay')].filter(Boolean).join('');var solarHour=valueText('sHour'),solarMinute=valueText('sMinute');if(solar)time=solar+(solarHour?' · '+solarHour:'')+(solarMinute?' '+solarMinute+'分':'');
+      var solar=[valueText('sYear'),valueText('sMonth'),valueText('sDay')].filter(Boolean).join('');var solarHour=valueText('sHour'),solarMinute=valueText('sMinute').replace(/分$/,'');if(solar)time=solar+(solarHour?' · '+solarHour:'')+(solarMinute?' '+solarMinute+'分':'');
     }else if(mode==='lunar'){
       var lunar=[valueText('lYear'),valueText('lMonth'),valueText('lDay')].filter(Boolean).join('');var lunarHour=valueText('lHour');if(lunar)time='农历 '+lunar+(lunarHour?' · '+lunarHour:'');
     }else{

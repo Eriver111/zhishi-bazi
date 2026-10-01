@@ -351,7 +351,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261001d');
+  res.setHeader('X-Zhishi-AI-Policy', '20261001e');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -769,7 +769,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
       // "year missing" answer after the server has computed that exact year.
       if (h && h.role === 'assistant' && requestedYear !== null &&
           String(h.content || '').includes(String(requestedYear)) &&
-          runReplyValidation(chartData,String(h.content || ''),question).some(function(w){return w.indexOf('E9-')===0;})) return false;
+          runReplyValidation(chartData,String(h.content || ''),question).some(function(w){return /^E[69]-/.test(w);} )) return false;
       // The former failure fact table was saved as an assistant answer. Do not
       // feed that operational notice back to the model as relationship advice.
       if (chartData && chartData.type === 'hepan' && h && h.role === 'assistant' &&
@@ -869,7 +869,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
       throw selectionError;
     }
   }
-  if (validationWarnings.some(function(w){return w.indexOf('E9-')===0;})) {
+  if (validationWarnings.some(function(w){return /^E[69]-/.test(w);} )) {
     var timingError=new Error('Reply ignored available timing evidence');
     timingError.code='TIMING_VALIDATION_FAILED';throw timingError;
   }
@@ -949,6 +949,11 @@ function runReplyValidation(chartData, reply, question) {
   var glossMatch;
   while ((glossMatch = adverseGlossRe.exec(text)) !== null) {
     warnings.push('E6-不利结论被圆回正向：回复出现「' + glossMatch[0] + '」；须保留不利方向，积极面另凭独立证据说明');
+  }
+  var structuralGuaranteeRe = /(?:大运|喜运|喜用|用神)[^。；\n]{0,70}(?<!不)(?:所以|因此|意味着|说明)[^。；\n]{0,35}(?:有人能帮|有人搭手|有人会帮|有资源可用|求资源.{0,8}顺|十年.{0,8}顺)|(?:方向|结果|结局)[^。；\n]{0,8}(?:不算坏到底|不会太坏)/g;
+  var structuralMatch;
+  while ((structuralMatch = structuralGuaranteeRe.exec(text.replace(/[*#]/g,''))) !== null) {
+    warnings.push('E6-结构喜忌被偷换为现实兜底：回复出现「'+structuralMatch[0]+'」；喜用只表示扶抑关系，不证明有人帮助、资源到位或坏事有上限。删除这种安慰性结论，保留有依据的具体影响，不反向编造灾祸。');
   }
 
   if (!chartData) return warnings;
@@ -1500,6 +1505,7 @@ function buildTimingAdjudicationBrief(question, chartData) {
       lines.push('本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');
     }
     lines.push('本轮回答必须遵守“' + exactRecord.label + '·' + exactRecord.direction + '”的含义，但不要把内部方向、置信度或“条件性候选”标签抄给用户。用实际影响解释：哪项安排被打断、谁要分担、钱或时间花在哪里；只取有支持的前1至2项。条件性表示支持与代价并存，不等于没有内容可说。不能因缺少具体事故事实就断言“压力不在有人出事”，也不能反过来断言有人必定出事。若全年综合与所问领域不同，只解释与问题有关的差别，禁止全年分数覆盖领域裁决。');
+    lines.push('不要给坏事加没有证据的上限：禁止“方向不算坏到底、不会太坏”等兜底。喜用运只表示扶抑层面的帮助，不证明十年现实顺利、有人搭手、有资源可用或事情最终能解决。现实积极面必须有独立的事件依据，否则不必强凑好坏平衡。推断始终是传统取象，不能用“这一年的事实是”将它写成已验证经历。');
   } else if (exact && exact.year !== null && !exact.record) {
     lines.push('用户指定了' + exact.year + '年，但数据中没有该年或所问领域的有效裁决；必须承认无法确认，不得改用其他年份或只凭十神补断。');
     if (isClosedOutcomeQuestion(question)) lines.push('【封闭问题直接裁决】第一句话回答“目前不能确认”，然后只说明缺少哪项关键数据。');

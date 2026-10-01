@@ -9,7 +9,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 test('mobile paipan loads the dedicated bottom-sheet interaction after the base flow', () => {
   const html = read('paipan.html');
   assert.match(html, /css\/mobile-paipan-sheet\.css\?v=8/);
-  assert.match(html, /js\/input-flow\.js\?v=8[\s\S]*js\/mobile-paipan-sheet\.js\?v=11/);
+  assert.match(html, /js\/input-flow\.js\?v=8[\s\S]*js\/mobile-paipan-sheet\.js\?v=12/);
 });
 
 test('mobile paipan summarizes the main form and moves editors into an accessible sheet', () => {
