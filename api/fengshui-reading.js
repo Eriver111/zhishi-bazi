@@ -32,7 +32,7 @@ const FENGSHUI_SYSTEM = (function() {
   } catch(e) {
     return '你是精通《八宅明镜》的风水师。根据用户提供的坐向和方位信息，运用八宅法进行吉凶分析。';
   }
-})();
+})() + require('../lib/reading-output-policy.js').common;
 
 /**
  * 调用 Vision AI（单次请求，支持图片或纯文本）

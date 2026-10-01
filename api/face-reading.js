@@ -26,7 +26,7 @@ const FACE_SYSTEM = (function() {
   } catch(e) {
     return '你是精通《麻衣神相》的面相师。按十二宫逐宫分析，引用原文，给出综合断语。';
   }
-})();
+})() + require('../lib/reading-output-policy.js').common + require('../lib/reading-output-policy.js').appearance;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: FACE_SYSTEM },
           { role: 'user', content: [
             { type: 'image_url', image_url: { url: image } },
-            { type: 'text', text: "请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后给一段总结和一首短诗。" }
+            { type: 'text', text: "请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后简要归纳可见特征，不根据相貌推断现实性格、健康或命运。" }
           ]}
         ],
         max_tokens: 2000,
@@ -97,7 +97,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: FACE_SYSTEM },
           { role: 'user', content: [
             { image: image },
-            { type: 'text', text: "请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后给一段总结和一首短诗。" }
+            { type: 'text', text: "请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后简要归纳可见特征，不根据相貌推断现实性格、健康或命运。" }
           ]}
         ]},
         parameters: { max_tokens: 2000, temperature: 0.3 }
@@ -139,7 +139,7 @@ module.exports = async function handler(req, res) {
             body: JSON.stringify({ model: FALLBACK_MODEL,
               input: { messages: [
                 { role: 'system', content: FACE_SYSTEM },
-                { role: 'user', content: [{ image: image }, { type: 'text', text: '请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后给一段总结和一首短诗。' }] }
+                { role: 'user', content: [{ image: image }, { type: 'text', text: '请分析这张面相。好的要说，不好的也要客观指出。只分析清晰可见的部位，看不清的如实标注。注意观察面部痣、疤痕等特征。语气像朋友聊天。最后简要归纳可见特征，不根据相貌推断现实性格、健康或命运。' }] }
               ]},
               parameters: { max_tokens: 2000, temperature: 0.3 }
             })

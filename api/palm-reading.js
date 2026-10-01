@@ -24,7 +24,7 @@ const PALM_SYSTEM = (function() {
   } catch(e) {
     return '你是精通《神相全编》的手相师。按掌纹八大纹逐宫分析，引用原文，给出综合断语。';
   }
-})();
+})() + require('../lib/reading-output-policy.js').common + require('../lib/reading-output-policy.js').appearance;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -83,7 +83,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: PALM_SYSTEM },
           { role: 'user', content: [
             { type: 'image_url', image_url: { url: image } },
-            { type: 'text', text: "请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。" }
+            { type: 'text', text: "请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后简要归纳看得见的特征与传统术语，不写祝福或保证。" }
           ]}
         ],
         max_tokens: 2000,
@@ -95,7 +95,7 @@ module.exports = async function handler(req, res) {
           { role: 'system', content: PALM_SYSTEM },
           { role: 'user', content: [
             { image: image },
-            { type: 'text', text: "请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。" }
+            { type: 'text', text: "请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后简要归纳看得见的特征与传统术语，不写祝福或保证。" }
           ]}
         ]},
         parameters: { max_tokens: 2000, temperature: 0.3 }
@@ -134,7 +134,7 @@ module.exports = async function handler(req, res) {
             body: JSON.stringify({ model: FALLBACK_MODEL,
               input: { messages: [
                 { role: 'system', content: PALM_SYSTEM },
-                { role: 'user', content: [{ image: image }, { type: 'text', text: '请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后给段温暖总结，诗可选不强制。' }] }
+                { role: 'user', content: [{ image: image }, { type: 'text', text: '请分析这张手相。先概括手型，再挑掌心最明显的几条主线解读（看不清的别硬编）。注意观察老茧、痣、肤色等生活痕迹。语气像朋友聊天别教条。好的说坏的也客观说。最后简要归纳看得见的特征与传统术语，不写祝福或保证。' }] }
               ]},
               parameters: { max_tokens: 2000, temperature: 0.3 }
             })

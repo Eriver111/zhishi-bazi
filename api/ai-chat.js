@@ -351,7 +351,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261001c');
+  res.setHeader('X-Zhishi-AI-Policy', '20261001d');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -765,6 +765,11 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
 
   if (history && Array.isArray(history)) {
     history.filter(function(h, index, list) {
+      // Keep the user's feedback, but do not teach the model a known obsolete
+      // "year missing" answer after the server has computed that exact year.
+      if (h && h.role === 'assistant' && requestedYear !== null &&
+          String(h.content || '').includes(String(requestedYear)) &&
+          runReplyValidation(chartData,String(h.content || ''),question).some(function(w){return w.indexOf('E9-')===0;})) return false;
       // The former failure fact table was saved as an assistant answer. Do not
       // feed that operational notice back to the model as relationship advice.
       if (chartData && chartData.type === 'hepan' && h && h.role === 'assistant' &&
@@ -982,7 +987,7 @@ function runReplyValidation(chartData, reply, question) {
   if (timingSelection && timingSelection.year !== null && timingSelection.record) {
     var timingRecord = timingSelection.record;
     var plainTimingText=String(reply).replace(/[*#]/g,'');
-    if (/(?:没有|缺少|未提供)[^。；\n]{0,24}(?:该年|这一年|流年裁决|单年.{0,4}结论)|(?:流年裁决|单年.{0,4}结论)[^。；\n]{0,24}(?:没有|未提供)|(?:方向|落点)待核/.test(plainTimingText)) {
+    if (/(?:没有|缺少|未提供)[^。；\n]{0,18}(?:流年裁决|单年.{0,4}结论|(?:该年|这一年|\d{4}年)[^。；\n]{0,8}(?:数据|字段|结论))|(?:流年裁决|单年.{0,4}结论)[^。；\n]{0,24}(?:没有|未提供)|(?:方向|落点)待核/.test(plainTimingText)) {
       warnings.push('E9-忽略已有年度依据：本轮已提供'+timingSelection.year+'年'+timingRecord.label+'的有效裁决；须用对应结构和具体影响回答，不能声称没有该年数据或以方向待核结尾。不得为消除待核标签而编造具体事故事实。');
     }
     var domainTerms = {
