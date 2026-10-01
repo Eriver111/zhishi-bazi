@@ -18,11 +18,20 @@ test('老师傅式裁决层按问题选择旺衰、格局、喜用和现实反�
   assert.match(instruction, /不得把“见某五行”直接等同“一定变顺”/);
 });
 
-test('裁决层在岁运字段不足时要求承认不能确认并提出区分问题', () => {
+test('裁决层缺输入时指出缺项，有依据时不用待核标签代替答案', () => {
   const instruction = ai.buildExpertAdjudicationInstruction('我哪一步大运事业会变好？', {}, 'pro');
   assert.match(instruction, /当前缺少：对应岁运字段/);
-  assert.match(instruction, /目前不能确认/);
-  assert.match(instruction, /1至3个校对问题/);
+  assert.match(instruction, /关键输入时明确点出缺哪项，不编造/);
+  assert.match(instruction, /才问1个具体问题/);
+  assert.match(instruction, /不以“待复核”“方向待核”“目前不能确认”作为结论/);
+  assert.match(instruction, /不将中性信号改成灾难/);
+});
+
+test('explicit historical year activates timing evidence even without 大运 or 流年 wording',()=>{
+ const instruction=ai.buildExpertAdjudicationInstruction('2020年家庭方面怎么回事？',{daYun:{cycles:[{gan:'壬',zhi:'子'}]}},'simple');
+ assert.match(instruction,/本轮任务：岁运应事/);
+ assert.match(instruction,/最强反证在内部核对/);
+ assert.match(instruction,/算法判出的格局旺衰不是现实生活的已证实事实/);
 });
 
 test('岁运问答只注入所问领域的应期候选并强调主次裁决', () => {
