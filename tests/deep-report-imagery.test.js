@@ -4,6 +4,18 @@ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const m=(name,extra={})=>({name,sourcePillar:'month',targetPillar:'day',sourceWx:'木',targetWx:'火',sourceShiShen:'食神',targetShiShen:'七杀',evidence:['合成实际边'],dominanceScore:2,...extra});
 function context(mechanisms=[],extra={}){return {triggers:[{type:'六冲',target:'month',detail:'合成流年引动月柱'}],reportMechanismContext:{chain:{mechanisms,paths:[],factGraph:{nodes:[],edges:[]}},yongJi:{xiShen:['木'],jiShen:['火']},...extra}};}
 const ctx=a=>a.reportMechanismContext;
+test('minor calibration excludes adult debt and liability, while adult study has its own outcome',()=>{
+ const adultFinance=['output-generates-wealth','wealth-generates-officer','wealth-feeds-kill','officer-protects-wealth','peer-takes-wealth','peer-carries-wealth'];
+ for(const age of [6,8,15,17])for(const id of adultFinance){
+  const rule=Imagery.rules.find(r=>r.id===id);
+  for(const domain of ['study','career','wealth'])assert.equal(Imagery.sceneOutcomes(rule,domain,{status:'unknown',age,historical:true}).length,0,id+' '+age);
+ }
+ const rule=Imagery.rules.find(r=>r.id==='wealth-feeds-kill');
+ const student=Imagery.sceneOutcomes(rule,'study',{status:'unknown',age:22,historical:true});
+ assert.ok(student.length);assert.match(student[0].detail,/交费.*新增|临时增加/);assert.doesNotMatch(student[0].detail,/违约责任|为一项合作/);
+ const work=Imagery.sceneOutcomes(rule,'career',{status:'working',age:30});
+ assert.match(work[0].detail,/违约责任/);
+});
 function route(first='七杀',full=false){const a=context([m('官杀生印',{sourceShiShen:first}),m('印生身',{sourceWx:'火',targetWx:'土'})]);ctx(a).yongJi={xiShen:['火']};ctx(a).chain.paths=[{name:full?'财官印身连续流通':'官杀经印通关',steps:['官杀生印','印生身']}];return a;}
 function peers(){const a=context([m('官杀克身',{sourceShiShen:'七杀'})]);ctx(a).yongJi={xiShen:['土'],jiShen:['木'],weaknessCause:{type:'七杀攻身',peerElement:'土'}};ctx(a).chain.factGraph.nodes=[{family:'比劫',wx:'土',depth:'本气',weight:1,effectiveCoefficient:1}];return a;}
 function pattern(name){const a=context([m('食伤制杀',{targetShiShen:'七杀'})]);ctx(a).pattern={status:'条件待定',relatedPatterns:[{name:name+'格',status:'成格'}]};return a;}

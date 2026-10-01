@@ -669,6 +669,10 @@ module.exports = async function handler(req, res) {
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
 async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary, calibrationSummary) {
+  var requestedYear = detectTimingQuestionYear(question, chartData);
+  if (mode !== 'ziwei' && mode !== 'liuren' && requestedYear !== null) {
+    chartData = require('../lib/ai-requested-year.js').enrichRequestedYear(chartData, requestedYear);
+  }
   var sysPrompt = (mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT) + MEDICAL_BOUNDARY;
   const messages = [{ role: 'system', content: sysPrompt }];
 

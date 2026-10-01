@@ -12,10 +12,10 @@ const { requireAuth } = require('../lib/auth.js');
 const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 const { deductCredit, deductCreditByUser, isMonthlyActive, isMonthlyActiveByUserId, getUserCredits, trackFreeUsageByUser, bumpFreeUsageByUser, saveUserChatHistory } = require('../lib/supabase.js');
 
-const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦。用户来问卦是求结果、求时间、求方向——不是来听学术报告的。你必须直接回答"能不能""什么时候""该怎么办"。
+const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦。按用户实际问题回答；问分工就说责任、交接和阻力，不强行改成问成败或应期。
 
 ## 核心原则
-1. **先给结论**：第一段就直说——能成还是不能成？大概什么时候？是好是坏？
+1. **先给结论**：第一段直接说最主要的倾向或问题，依据支持哪里就说到哪里，不以“待复核”“无法确定”代替分析，也不保证现实结果。
 2. **排盘不可改写**：用户消息里的“排盘专业数据”具有最高优先级。卦名、卦宫、世应、六亲、纳甲、月建、日辰、旬空、月破、伏神和动变关系必须逐字采用，禁止凭模型记忆自行改卦或重新装卦
 3. **必须回答用户的问题**：用户问事业就锁定官鬼爻和世爻关系，问感情就锁定妻财/官鬼和应爻，问财运就看妻财爻和世爻生克——不要跑题讲别的
 4. **时间必须有依据**：可以给时间窗口，但必须依据值、冲、合、出空、填实、月破填实或动爻变化；依据不足时说明是宽窗口，不得只把地支机械转成月份
@@ -24,22 +24,22 @@ const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦
 ## 六爻断事框架
 
 ### 用神对应（绝对核心——必须根据用户问题锁定用神）
-- 问财运→妻财爻就是你的钱，妻财旺+生世爻=有钱赚，妻财伏藏被克=没钱
-- 问事业/工作/官司→官鬼爻就是你的工作和对手，官鬼旺+生世爻=有贵人提携，官鬼克世爻=压力大或被压榨
-- 问感情/婚姻→男看妻财爻 女看官鬼爻，同时看应爻（对方），世应相生=两情相悦，相克=貌合神离
-- 问合作/交易→看应爻（对方），应爻生世爻=对方真心，应爻克世爻=对方有诈
-- 问健康→看子孙爻（医药）+官鬼爻（病痛），子孙旺=药到病除，官鬼旺=病来如山
-- 问考试→看父母爻（成绩/文书）+官鬼爻（名次），父母旺=考得好
+- 问财运→看妻财、世爻、兄弟及动变；区分收入机会、支出和竞争，不把妻财旺直接说成赚钱。
+- 问事业/工作→看官鬼、父母和世爻；区分任务压力、考核要求与资源，不能断定有人提携或陷害。
+- 问感情/婚姻→结合所问关系看用神与世应；相生相克不是双方真实感情或品行的证明。
+- 问合作/课程分工→看世应、父母文书、兄弟协作；说明责任不清、交接反复等具体卡点，不虚构成员身份、性格和付出。
+- 问身体状况→只允许概括状况变化对日常安排的影响，不提供医疗判断或建议。
+- 问考试→看父母、官鬼、世爻与动变，不能把父母旺直接写成考得好。
 
 ### 世应定主客
 - 世爻=你自己，应爻=对方/那件事
-- 世应相生=事易成，世应相克=有阻力
+- 世应相生相克只作配合或牵制线索，不能证明事情必成或对方品行
 - 世爻旺（得月建生/得动爻生）=你有主动权，世爻衰（被月建克/旬空）=你处于被动
 
 ### 动爻是转机
 - 动爻是事情变化的开关，必须分析动爻对世爻和用神的影响
 - 变爻生本爻才叫化回头生，变爻克本爻才叫化回头克；本爻生变爻为化泄气，本爻克变爻为化出所克，比和则力量延续
-- 动爻生世爻=有人帮你，动爻克世爻=有人害你
+- 动爻生世爻看支持条件，克世爻看负担与约束，不能据此断言有人帮助或加害
 
 ### 月建日辰定时间
 - 月建=当月的大环境，日辰=当天的力量
@@ -62,10 +62,10 @@ const DIVINATION_SYSTEM = `你是"知时先生"，精通周易六爻实战断卦
 - **结论格式**：先说是什么大类（金属/木质/食物/文书等），再说具体可能是什么（3个候选），最后说材质/颜色/状态
 
 ## 回答格式要求
-1. 开头：**核心结论**（2-3句话，直接回答"能不能/什么时候"）
+1. 开头：核心判断（2-3句话，回答用户实际所问，给出有依据的主要倾向）
 2. 中段：**卦象解读**——用具体爻数据说话（"世爻兄弟寅木得月建子水生"这种），每段不超4行
-3. 关键部分：**时间窗口**——用农历月份说清楚（"农历七月申月是转机""农历四月五月要小心"）
-4. 结尾：**行动建议**——3-4条具体可操作的建议，每条带依据
+3. 关键部分：时间与安排——仅在问题需要且数据支持时分析应期；短期问题按其时间范围回答，不强制农历月份，不把已经过去的月份当作未来
+4. 结尾：行动建议——2-3条对应实际卡点的安排；执行建议不是卦象预言的事实
 5. 全篇600-800字，纯文本，不要markdown不要JSON`;
 
 const MEIHUA_SYSTEM = `你是“知时先生”，精通梅花易数体用、互卦和动变推演。用户消息中的“梅花易数排盘事实”是程序已经算定的唯一课盘，必须逐字采用本卦、动爻、互卦、变卦、体卦、用卦及其五行，禁止自行重算或改卦。
@@ -79,11 +79,22 @@ const MEIHUA_SYSTEM = `你是“知时先生”，精通梅花易数体用、互
 
 输出依次为“核心结论、当下局面、事情如何变化、最终走向”。纯文本，约400—600字，不要JSON，不要Markdown标题符号。占卜仅作传统文化参考。`;
 
+const OUTPUT_BOUNDARY = `
+共同输出边界（优先于旧客户端的格式要求）：
+按问题所问的生活场景回答。具体说哪件事、什么环节、什么代价；不要迎合用户的预设，不用天赋、贵人、化险为夷美化不利线索。不能把传统卦象解释当成已证实的现实事实或预言。
+不出现“待复核”“数据不足无法判断”式占位段落；省略没有支撑的分支，直接写有依据的主要判断和理由，但不得编造确定性。
+不得提供医疗建议，不提医院、检查、治疗、用药、疾病名称、身体部位或具体伤害；只能概括身体状况变化及日常安排受到影响。
+不要把假设写成已发生；禁止“验收没问题”“肯定能成”“最终能交差”等结果保证，禁止单凭卦象认定他人欺诈或恶意。
+先识别所问日期范围；问下周就聚焦下周，不强行推荐农历月份。没有公历映射就不猜具体日期，不将地支月等同于农历月。安排建议可使用“提交前、分工时、合并文档时”等任务节点。
+纯文本，不使用星号或Markdown标题。`;
+const { cleanReading, readingIssue } = require('../lib/divination-quality.js');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: '仅支持 POST' });
 
+  var guard;
   try {
     var prompt = (req.body && req.body.prompt) || '';
     var divType = (req.body && req.body.divType) || 'liuyao';
@@ -96,6 +107,10 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: '请先登录', needLogin: true });
     }
     var userId = authUser.uid;
+
+    // 同一账号只允许一个占卜请求在途，避免并发请求穿透次数检查。
+    guard = beginAiRequest(req, { route: 'divination', identity: userId, minuteMax: 4, hourMax: 24 });
+    if (!guard.ok) return res.status(429).json({ error: guard.reason === 'concurrent' ? '上一次解读还在生成，请稍候' : '请求过于频繁，请稍后再试' });
 
     // 积分检查：月度会员 → 免费次数（3次）→ 付费积分
     var monthlyActive = await isMonthlyActiveByUserId(userId);
@@ -125,6 +140,28 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // 先生成并校验，再扣次数；失败与并发拦截不消耗额度。
+    var messages = [
+      { role: 'system', content: (divType === 'meihua' ? MEIHUA_SYSTEM : DIVINATION_SYSTEM) + OUTPUT_BOUNDARY + '\n当前北京时间日期：' + new Date(Date.now()+8*3600000).toISOString().slice(0,10) },
+      { role: 'user', content: prompt }
+    ];
+    var reading = '', issue = '';
+    for (var attempt=0; attempt<2; attempt++) {
+      var aiResp = await fetch(AI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
+        body: JSON.stringify({model:AI_MODEL,messages:messages,thinking:{type:'disabled'},max_tokens:1500,temperature:0.3}),
+        signal: AbortSignal.timeout(45000)
+      });
+      if (!aiResp.ok) throw new Error('AI upstream failed');
+      var aiData = await aiResp.json();
+      reading = cleanReading(aiData.choices?.[0]?.message?.content || '');
+      issue = readingIssue(reading);
+      if (!issue) break;
+      messages.push({role:'assistant',content:reading},{role:'user',content:'上一稿未通过输出校验：'+issue+'。请保留有数据支持的分析，删除越界内容，直接重写完整解读，不要解释校验过程。'});
+    }
+    if (issue) return res.status(502).json({error:'本次解读未生成成功，未扣次数，请重试'});
+
     // 扣减：月度会员不扣 → 免费次数 → 付费积分
     if (monthlyActive) {
       freeUsed = false; // 月度会员不限次
@@ -144,56 +181,6 @@ module.exports = async function handler(req, res) {
       if (!deducted) {
         return res.status(403).json({ error: '积分扣减失败，请刷新页面重试', creditExhausted: true });
       }
-    }
-
-    // 同一账号只允许一个占卜请求在途，避免并发请求穿透次数检查。
-    var guard = beginAiRequest(req, { route: 'divination', identity: userId, minuteMax: 4, hourMax: 24 });
-    if (!guard.ok) return res.status(429).json({ error: guard.reason === 'concurrent' ? '上一次解读还在生成，请稍候' : '请求过于频繁，请稍后再试' });
-
-    // 调用 AI
-    var aiResp;
-    try { aiResp = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_API_KEY },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: 'system', content: divType === 'meihua' ? MEIHUA_SYSTEM : DIVINATION_SYSTEM },
-          { role: 'user', content: prompt }
-        ],
-        thinking: { type: 'disabled' },
-        max_tokens: 1500,
-        temperature: 0.3
-      })
-    }); } finally { guard.release(); }
-
-    if (!aiResp.ok) {
-      var errText = '';
-      try { errText = await aiResp.text(); } catch (_) {}
-      console.error('AI响应异常 status=' + aiResp.status + (errText ? ' ' + errText.slice(0,200) : '')); throw new Error('AI 服务暂时不可用，请稍后重试');
-    }
-
-    var aiData = await aiResp.json();
-    console.log("[divination] respModel=" + (aiData.model || "?") + " at=" + new Date().toISOString());
-    var reading = aiData.choices?.[0]?.message?.content || '';
-
-    // 清理常见免责尾巴和 JSON 包裹
-    reading = reading.replace(/```json[\s\S]*?```/g, '').replace(/```[\s\S]*?```/g, '');
-    reading = reading.replace(/（以上[^）]*）/g, '').replace(/\(以上[^)]*\)/g, '');
-    reading = reading.replace(/温馨提示[^。\n]*[。\n]/g, '');
-    reading = reading.replace(/---[\s\S]*$/g, '').trim();
-
-    // 尝试解析 JSON 格式
-    var jsonMatch = reading.match(/\{[\s\S]*"reading"[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        var parsed = JSON.parse(jsonMatch[0]);
-        reading = parsed.reading || reading;
-      } catch (_) {}
-    }
-
-    if (!reading || reading.length < 10) {
-      reading = '卦象已显，静心体悟。请稍后重试。';
     }
 
     // 保存解读记录（异步，不阻塞响应）
@@ -217,5 +204,7 @@ module.exports = async function handler(req, res) {
 
   } catch (e) {
     return res.status(500).json({ error: '服务器内部错误，请稍后重试' });
+  } finally {
+    if (guard && guard.ok) guard.release();
   }
 };

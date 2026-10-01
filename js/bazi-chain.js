@@ -447,7 +447,7 @@
     var buckets = {};
 
     function bucket(domain) {
-      if (!buckets[domain]) buckets[domain] = { domain:domain, activation:0, directionPoints:0, directionWeight:0, directDirectional:0, evidence:[], sources:[] };
+      if (!buckets[domain]) buckets[domain] = { domain:domain, activation:0, directionPoints:0, directionWeight:0, directDirectional:0, unresolvedDisruptions:0, evidence:[], sources:[] };
       return buckets[domain];
     }
     function addEvidence(row, text, source) {
@@ -472,8 +472,10 @@
       domains.forEach(function(domain) {
         var row = bucket(domain);
         row.activation += 2.2;
-        if (item.isGood === true) { row.directionPoints += 4.4; row.directionWeight += 2.2; row.directDirectional++; }
-        else if (item.isGood === false) { row.directionPoints -= 4.4; row.directionWeight += 2.2; row.directDirectional++; }
+        var eventDirection = annualEventDirection(item);
+        if (isDisruptiveAnnualTrigger(item) && eventDirection === null) row.unresolvedDisruptions++;
+        if (eventDirection === true) { row.directionPoints += 4.4; row.directionWeight += 2.2; row.directDirectional++; }
+        else if (eventDirection === false) { row.directionPoints -= 4.4; row.directionWeight += 2.2; row.directDirectional++; }
         addEvidence(row, item.text, '大运与原局互动');
       });
     });
@@ -483,6 +485,7 @@
       // 中性冲合只提高“该领域会被引动”的置信度，不稀释已有的喜忌方向。
       var normalized = row.directionWeight ? row.directionPoints / row.directionWeight : 0;
       var direction = normalized >= 0.55 ? '偏有利' : (normalized <= -0.55 ? '偏不利' : '条件性');
+      if (row.unresolvedDisruptions && direction === '偏有利') direction = '条件性';
       var conclusion = direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional);
       // 人生阶段只负责排序现实重心，不参与吉凶方向计算。
       // 权重需要足够明显，避免早年账本被与月/时柱的普通互动挤成“事业优先”。
@@ -1491,7 +1494,7 @@
           if (type === '六冲' && (pos === 'month' || pos === 'day')) return; // 上方已有高优先级说明
           var isGood = null, note = '只表示该位置被引动';
           if (type === '六冲' && natalRole === '忌神' && (zhiRole === '用神' || zhiRole === '喜神')) {
-            isGood = true; note = '有利力量冲动原局忌神，可能先变后改善';
+            isGood = true; note = '扶抑层面有利，但被冲位置仍有变动成本，不能据此判断相关人事先变后好';
           } else if (type === '六冲' && (natalRole === '用神' || natalRole === '喜神')) {
             isGood = false; note = '原局有利位置被冲，稳定性下降';
           } else if (type !== '六合') {

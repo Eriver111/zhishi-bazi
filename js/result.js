@@ -1716,47 +1716,12 @@ function renderCharacter(bazi) {
     var pos = ch.nature.positive, neg = ch.nature.negative, xi = ch.nature.xingxiang;
 
     // 五行底色简介（口语化）
-    var wxIntro = {
-        '木': dayGan + '五行属木。命带木气的人，骨子里有股不服输的劲儿，做人做事像树一样——愿意慢慢扎根、一点点往上长。不太喜欢拐弯抹角，但也不轻易跟人撕破脸。',
-        '火': dayGan + '五行属火。你这个人热情是真的，不是装出来的。走到哪里都自带温度，别人跟你待着会觉得很舒服、很放松。不过有时候性子一上来，话赶话就容易说出让人误会的话。',
-        '土': dayGan + '五行属土。你给人的第一印象往往是稳。不慌不忙、不急不躁，什么事到你手里都变得有条理了。朋友有事第一个想到的就是你——因为知道你不会掉链子。',
-        '金': dayGan + '五行属金。你这人有个特点：脑子清楚、做事利索。不喜欢磨叽，更讨厌拖泥带水。一旦认定了什么，就会咬着不放，执行力在朋友圈里数一数二。',
-        '水': dayGan + '五行属水。你聪明、反应快，适应力强得让人羡慕。换个环境、换个圈子，你总是第一个融入的。唯一的问题可能是——什么都想做，什么都想试试，结果有些事就只开了个头。'
-    };
+    var wxIntro = {}; // 单一五行不能证明聪明、可靠或赚钱能力。
 
-    var intro = wxIntro[wuXing] || (dayGan + '五行属' + wuXing + '。' + xi);
+    var intro = dayGan + '五行属' + wuXing + '。' + xi + '以下列出传统取象对应的做事方式与代价，不据日干判断智力、品德或赚钱能力。';
 
-    // 优点润色（把连续逗号拆开，加连接词，加感叹）
-    var posArr = pos.replace(/、/g, '，').split('，').filter(function(s) { return s.length > 2; });
-    var posText = '';
-    if (posArr.length > 0) {
-        // 选前3-4条核心的
-        var core = posArr.slice(0, 4);
-        if (core.length === 1) {
-            posText = '最突出的一点就是' + core[0] + '。';
-        } else {
-            // 用"一方面…另一方面…还有就是…"的自然结构
-            posText = '具体来说：' + core[0] + '，而且' + core[1];
-            if (core[2]) posText += '。另外' + core[2];
-            if (core[3]) posText += '，' + core[3];
-            posText += '。';
-        }
-    }
-
-    // 缺点润色（同样的处理）
-    var negArr = neg.replace(/、/g, '，').split('，').filter(function(s) { return s.length > 2; });
-    var negText = '';
-    if (negArr.length > 0) {
-        var coreNeg = negArr.slice(0, 4);
-        if (coreNeg.length === 1) {
-            negText = '要说需要注意的地方，就是有时候会' + coreNeg[0] + '。';
-        } else {
-            negText = '不过话说回来，有时候也会' + coreNeg[0] + '，或者' + coreNeg[1];
-            if (coreNeg[2]) negText += '。身边人偶尔会觉得你' + coreNeg[2];
-            if (coreNeg[3]) negText += '，' + coreNeg[3];
-            negText += '。这些都是小节，自己心里有数就行。';
-        }
-    }
+    var posText = pos + '。';
+    var negText = neg + '。';
 
     // 综合画像（把后端composite拆开重说）
     var topSS = ch.topSS || [];
@@ -1772,7 +1737,7 @@ function renderCharacter(bazi) {
             var second = topSSDetail[1];
             ssAdvice += '。同时身上也有不少「' + second.name + '」的影子——' + second.trait;
         }
-        ssAdvice += '。所以整体来说，你这个人给人的感觉相当立体，不是一个标签能概括的。';
+        ssAdvice += '。出现次数只用于展示分布，不代表这个十神最有力。';
     }
 
     // 组装
@@ -1796,7 +1761,7 @@ function renderCharacter(bazi) {
             h += '<div style="margin-bottom:12px;border:1px solid rgba(201,168,76,.15);border-radius:10px;overflow:hidden">';
             h += '<div style="background:rgba(201,168,76,.08);padding:10px 16px;display:flex;align-items:center;gap:10px">';
             h += '<span style="font-size:18px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span>';
-            h += '<div><span style="color:var(--gold-l);font-size:14px;font-weight:700;letter-spacing:2px">外在气质</span>';
+            h += '<div><span style="color:var(--gold-l);font-size:14px;font-weight:700;letter-spacing:2px">时干取象</span>';
             h += '<span style="color:var(--tx3);font-size:10px;margin-left:8px">时柱 ' + hy.hour.gan + ' → ' + hy.hour.shiShen + '</span></div>';
             h += '</div>';
             if (hd) {
@@ -1808,13 +1773,13 @@ function renderCharacter(bazi) {
             h += '</div>';
             // 分隔或表里如一标注
             if (hy.isSame) {
-                h += '<div style="text-align:center;padding:6px 0;font-size:11px;color:var(--gold-l);letter-spacing:2px;opacity:.7">表里如一 · 内外一致</div>';
+                h += '<div style="text-align:center;padding:6px 0;font-size:11px;color:var(--gold-l);letter-spacing:2px;opacity:.7">年干与时干十神相同</div>';
             }
             // 内在驱动力卡片
             h += '<div style="margin-bottom:12px;border:1px solid rgba(91,127,165,.15);border-radius:10px;overflow:hidden">';
             h += '<div style="background:rgba(91,127,165,.08);padding:10px 16px;display:flex;align-items:center;gap:10px">';
             h += '<span style="font-size:18px"><svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3L2 8l10 5 10-5zM2 12l10 5 10-5M2 16l10 5 10-5"/></svg></span>';
-            h += '<div><span style="color:#8ab0d0;font-size:14px;font-weight:700;letter-spacing:2px">内在驱动力</span>';
+            h += '<div><span style="color:#8ab0d0;font-size:14px;font-weight:700;letter-spacing:2px">年干取象</span>';
             h += '<span style="color:var(--tx3);font-size:10px;margin-left:8px">年柱 ' + hy.year.gan + ' → ' + hy.year.shiShen + '</span></div>';
             h += '</div>';
             if (yd) {
@@ -1829,12 +1794,12 @@ function renderCharacter(bazi) {
 
         // 优点
         + '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:14px 16px;background:rgba(20,25,40,.4);border:1px solid rgba(212,175,55,.06);border-radius:2px;margin-bottom:12px">'
-        +   '<p style="margin:0"><b>长处</b>' + posText + '</p>'
+        +   '<p style="margin:0"><b>做事倾向</b> ' + posText + '</p>'
         + '</div>'
 
         // 缺点
         + '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:14px 16px;background:rgba(20,25,40,.4);border:1px solid rgba(212,175,55,.06);border-radius:2px;margin-bottom:12px">'
-        +   '<p style="margin:0"><b>小毛病</b>' + negText + '</p>'
+        +   '<p style="margin:0"><b>容易付出的代价</b> ' + negText + '</p>'
         + '</div>'
 
         // 十神综合

@@ -234,15 +234,15 @@ function simpleHash(str) {
 // =====================================================
 
 var GAN_HE_DESCS = {
-  '甲己': '甲己合，像大树离不开厚土，树根越扎越深，土也因树而有了活力。你们天生互补，一个向上生长，一个稳重承载，是最相配的组合之一。',
-  '乙庚': '乙庚合，像藤蔓缠绕金属栏杆，柔韧与刚硬看似矛盾却完美结合。你的温柔刚好能软化对方的倔强，在一起有种奇妙的平衡感。',
-  '丙辛': '丙辛合，像阳光融进清晨的露水里，火热遇清凉，互相降温也互相温暖。你们的性格有反差感，但这种反差反而让彼此着迷。',
-  '丁壬': '丁壬合，像一盏灯映照在江面上，灯光虽弱却能让整条江水泛出温柔的光泽。你们在一起有种说不清的默契，眼神交流就能懂对方。',
-  '戊癸': '戊癸合，像大地拥抱春天的细雨，看起来一个硬朗一个柔软，合在一起却孕育万物。你们能激发彼此最好的一面，是能同甘共苦的组合。'
+  "甲己": "甲己属于天干五合，记录的是干支连接。相处中可以观察双方是否共同作决定，以及有人改变计划时是否需要另一方配合；五合本身不保证默契或忠诚。",
+  "乙庚": "乙庚属于天干五合，记录的是干支连接。相处中可以观察双方是否共同作决定，以及有人改变计划时是否需要另一方配合；五合本身不保证默契或忠诚。",
+  "丙辛": "丙辛属于天干五合，记录的是干支连接。相处中可以观察双方是否共同作决定，以及有人改变计划时是否需要另一方配合；五合本身不保证默契或忠诚。",
+  "丁壬": "丁壬属于天干五合，记录的是干支连接。相处中可以观察双方是否共同作决定，以及有人改变计划时是否需要另一方配合；五合本身不保证默契或忠诚。",
+  "戊癸": "戊癸属于天干五合，记录的是干支连接。相处中可以观察双方是否共同作决定，以及有人改变计划时是否需要另一方配合；五合本身不保证默契或忠诚。"
 };
 
 var ZHI_REL_DESCS = {
-  '六合': '日支六合是地支里最好的缘分配合，你们的夫妻宫（内心深处）天然契合，日常相处轻松自在，不容易起大矛盾，有一种「回到家就安心」的感觉。',
+  '六合': '日支六合表示两支有合的关系。传统取象关注共同安排和相互牵制：一起作决定，也会因一方改变计划而影响另一方。',
   '半合': '两人的日支属于同一三合组，且包含中神，可记为半合。这里只有两支，不能据此认定完整三合局、合化成功或现实关系一定融洽。',
   '拱合': '两人的日支属于同一三合组，但缺少中神，仅记为拱合线索。不能当成完整三合局，关系如何仍需双方完整原局和实际相处验证。',
   '六冲': '日支六冲是比较考验感情的配置，就像水火相遇，一开始激情满满，但久了容易为小事起争执。需要学会互相让步，不然矛盾会越积越多。',
@@ -250,10 +250,10 @@ var ZHI_REL_DESCS = {
   '相刑': '日支相刑容易产生互不理解的情况，两个人各自坚持自己的方式，谁也不服谁。长期这样会很累，需要有一方先学会低头。',
   '生': '日支相生表示五行作用由一方流向另一方，现实中可能表现为支持，也可能表现为单向付出；最终如何兑现要结合双方真实相处。',
   '被生': '日支被生表示对方一侧的五行作用流向你，可能形成支持，也可能形成依赖；不能仅凭相生直接认定现实关系好坏。',
-  '比': '日支五行相同，你们在价值观和性格底色上很像，有天然的亲近感。好处是能互相理解，坏处是太像了偶尔也会针锋相对。',
+  '比': '日支五行相同是盘面事实，不能据此认定价值观相同。相处中具体看：同一笔开支怎么分、共同时间怎么安排、意见不同时由谁决定。',
   '克': '日支相克表示一方在关系中习惯主导，另一方容易感到压力。这不是不能相处，而是需要被克制的一方学会表达自己的需要。',
   '被克': '你的日支被对方克制，在关系中你容易迁就对方多一些。要注意保护自己的边界，别让迁就变成习惯。',
-  '无': '日支之间没有明显的互动关系，日常相处比较平淡稳定，不容易擦出太大的火花但也少有大矛盾，属于细水长流的类型。'
+  '无': '日支之间未命中本模块列出的合冲刑害关系。这里没有新增关系证据，不据此给感情好坏加分。'
 };
 
 function analyzeDailyRelation(p1, p2) {
@@ -273,15 +273,15 @@ function analyzeDailyRelation(p1, p2) {
       ganScore = 40;
       break;
     case '生':
-      ganDesc = '你的日干' + HP_GWX[dg1] + '在生对方的日干' + HP_GWX[dg2] + '，你的能量在滋养对方。在关系里你更愿意付出，对方也能感受到你的好。这是一种温暖的连接。';
+      ganDesc = '你的日干' + HP_GWX[dg1] + '在生对方的日干' + HP_GWX[dg2] + '，这是五行相生的方向。现实付出要看谁承担时间、费用和家务，不能由相生代替这些事实。';
       ganScore = 30;
       break;
     case '被生':
-      ganDesc = '对方的日干' + HP_GWX[dg2] + '在生你的日干' + HP_GWX[dg1] + '，对方的能量在支持着你。你在关系中是被照顾的一方，要记得珍惜和回馈。';
+      ganDesc = '对方的日干' + HP_GWX[dg2] + '在生你的日干' + HP_GWX[dg1] + '，这是五行相生的方向。是否得到照顾，要看对方实际承担了哪些事，而不是仅看一个生字。';
       ganScore = 30;
       break;
     case '比':
-      ganDesc = '你俩的日干都是' + HP_GWX[dg1] + '行，五行相同说明你们骨子里很像。懂得彼此的想法和感受，有天然的亲近感，但太像了有时候也会暗自较劲。';
+      ganDesc = '你俩的日干都是' + HP_GWX[dg1] + '行。这里只确认五行相同，不把它换成性格相同或天然默契。';
       ganScore = 25;
       break;
     case '克':
@@ -459,16 +459,8 @@ function analyzeDayGanStrength(p1, p2) {
   var whoStronger = '';
   var detail = '';
 
-  if (s1.level === s2.level) {
-    whoStronger = '你们俩的日主旺衰程度差不多';
-    detail = p1.name + '日主' + s1.label + '，' + p2.name + '日主' + s2.label + '。两个人都属于' + s1.label + '的类型，势均力敌，关系中不会出现一方强势压过另一方的情况，沟通起来相对平等。';
-  } else if (s1.score > s2.score) {
-    whoStronger = p1.name + '的元气更强一些';
-    detail = p1.name + '日主' + s1.label + '（得分' + s1.score + '），' + p2.name + '日主' + s2.label + '（得分' + s2.score + '）。在关系中，' + p1.name + '的自我意识和能量会强一些，' + p2.name + '相对柔和。这不一定是坏事，关键看强势的一方能不能照顾到对方的感受。';
-  } else {
-    whoStronger = p2.name + '的元气更强一些';
-    detail = p1.name + '日主' + s1.label + '（得分' + s1.score + '），' + p2.name + '日主' + s2.label + '（得分' + s2.score + '）。在关系中，' + p2.name + '的内在力量更强，' + p1.name + '相对柔软一些。强弱互补如果能搭配好，反而是一种稳定的结构。';
-  }
+  whoStronger = s1.level === s2.level ? '双方日主旺衰处于同一档位' : '双方日主旺衰档位不同';
+  detail = p1.name + '日主' + s1.label + '（' + s1.score + '分），' + p2.name + '日主' + s2.label + '（' + s2.score + '分）。旺衰分数衡量各自原局的生扶与克泄耗，不代表谁在关系中更强势、谁应当听谁。';
 
   return {
     p1Strength: { level: s1.level, label: s1.label, score: s1.score },
@@ -572,14 +564,14 @@ function analyzeXiyong(p1, p2) {
   if (x1.selectionStatus === 'undetermined' || x2.selectionStatus === 'undetermined' || !x1.xiShen.length || !x2.xiShen.length) {
     detail = '至少一方的喜用方向尚未形成明确依据，暂不能据此判断喜用互补；未定不等于方向相反，应结合已经确定的关系事实观察。';
   } else if (p1XiMatch && p2XiMatch) {
-    detail = '你们俩的喜用神互相支持，这是非常好的信号！' + p1.name + '偏向' + x1Text + '来平衡，' + p2.name + '偏向' + x2Text + '。两人的有利五行存在交集，相处时更容易找到彼此都舒服的节奏。';
+    detail = '双方喜用方向存在交集。' + p1.name + '偏向' + x1Text + '来平衡，' + p2.name + '偏向' + x2Text + '。同喜某五行不等于双方能互补，也不能直接证明相处舒服。';
   } else if (p1XiMatch || p2XiMatch) {
     detail = '你们俩的喜用神有一部分是互补的。';
     if (p1XiMatch) detail += p1.name + '的喜神' + x1Text + '与' + p2.name + '的有利五行存在交集。';
     if (p2XiMatch) detail += p2.name + '的喜神' + x2Text + '与' + p1.name + '的有利五行存在交集。';
-    detail += ' 虽然不是完全互补，但也能在一定程度上帮到对方。';
+    detail += ' 这里仅记录喜用交集，不把交集当作现实帮助。';
   } else {
-    detail = '你们俩的喜用神方向不太一致，' + p1.name + '偏向' + x1Text + '，而' + p2.name + '偏向' + x2Text + '。这说明你们各自适合的环境和方式不太一样，在日常生活中需要注意协调彼此的节奏，找到都能舒服的中间地带。';
+    detail = '你们俩的喜用神方向不太一致，' + p1.name + '偏向' + x1Text + '，而' + p2.name + '偏向' + x2Text + '。各自取用方向不同，不直接等于生活习惯冲突。';
   }
 
   return {
@@ -650,7 +642,7 @@ function analyzeCrossPillars(p1, p2) {
             type: '合',
             pillar1: p1.name + '的' + PILLAR_NAMES[i] + '(' + p1p.gan + p1p.zhi + ')',
             pillar2: p2.name + '的' + PILLAR_NAMES[j] + '(' + p2p.gan + p2p.zhi + ')',
-            detail: p1.name + '的' + PILLAR_NAMES[i] + '地支' + p1p.zhi + '和' + p2.name + '的' + PILLAR_NAMES[j] + '地支' + p2p.zhi + '六合。地支合说明底层的能量在互相吸引，你们在很多事情上不用多说就能理解对方，是很好的缘分信号。'
+            detail: p1.name + '的' + PILLAR_NAMES[i] + '地支' + p1p.zhi + '和' + p2.name + '的' + PILLAR_NAMES[j] + '地支' + p2p.zhi + '六合。这条记录对应双方这两柱的合关系，不能直接推出不用沟通就能理解对方。'
           });
           break;
         case '半合':
@@ -683,7 +675,7 @@ function analyzeCrossPillars(p1, p2) {
             type: '生',
             pillar1: p1.name + '的' + PILLAR_NAMES[i] + '(' + p1p.gan + p1p.zhi + ')',
             pillar2: p2.name + '的' + PILLAR_NAMES[j] + '(' + p2p.gan + p2p.zhi + ')',
-            detail: p1.name + '的' + PILLAR_NAMES[i] + '在生' + p2.name + '的' + PILLAR_NAMES[j] + '，这种相生的关系说明在对应的方面，一方愿意为另一方付出。'
+            detail: p1.name + '的' + PILLAR_NAMES[i] + '在生' + p2.name + '的' + PILLAR_NAMES[j] + '，记录的是两柱五行相生；谁愿意付出、付出多少，要看实际行动。'
           });
           break;
         case '被生':
@@ -691,7 +683,7 @@ function analyzeCrossPillars(p1, p2) {
             type: '生',
             pillar1: p1.name + '的' + PILLAR_NAMES[i] + '(' + p1p.gan + p1p.zhi + ')',
             pillar2: p2.name + '的' + PILLAR_NAMES[j] + '(' + p2p.gan + p2p.zhi + ')',
-            detail: p2.name + '的' + PILLAR_NAMES[j] + '在生' + p1.name + '的' + PILLAR_NAMES[i] + '，对方在对应方面更愿意支持和滋养你。'
+            detail: p2.name + '的' + PILLAR_NAMES[j] + '在生' + p1.name + '的' + PILLAR_NAMES[i] + '，记录的是两柱五行相生，不等于对方现实中已经提供支持。'
           });
           break;
       }
@@ -734,15 +726,15 @@ function analyzeCoreMode(p1, p2, relationType) {
     } else if (zr === '六害' || zr === '相刑') {
       ziPart = '你们俩的夫妻宫（日支）有' + (zr === '六害' ? '穿害' : '相刑') + '关系，这提示你们在婚姻中要特别注意沟通方式。不是不能过，而是比一般夫妻更需要学习怎么表达自己的真实感受，别把不满压在心里。';
     } else {
-      ziPart = '你们俩的夫妻宫（日支）没有特别强或特别冲的关系，这意味着婚姻的基础比较中性，好坏更多取决于你们后天的相处和经营。这种组合其实也有好处——不会因命理上的冲突而产生太多的先天障碍。';
+      ziPart = '两人的日支没有命中这里列出的合冲刑害关系。这一项没有新增证据，不用它给婚姻作正面保证。';
     }
 
     // 财官分析
     var caiGuanPart = '';
     if (p1.gender === 'male' && p2.gender === 'female') {
-      caiGuanPart = '从传统的财官角度看，男命以财为妻，女命以官为夫。虽然现代社会不讲究这些，但八字里的财官关系仍然能反映出两个人在家庭角色上的默契度。';
+      caiGuanPart = '传统财官取象以男命财星、女命官星观察伴侣主题，不据此安排谁赚钱、谁照顾家庭。';
     } else if (p1.gender === 'female' && p2.gender === 'male') {
-      caiGuanPart = '从传统的财官角度看，女命以官为夫，男命以财为妻。财官如果协调，说明两个人在家庭分工和生活规划上容易达成一致。';
+      caiGuanPart = '传统财官取象以女命官星、男命财星观察伴侣主题，不据此认定家庭分工已经协调。';
     } else {
       caiGuanPart = '';
     }
@@ -753,7 +745,7 @@ function analyzeCoreMode(p1, p2, relationType) {
     if (mangPaiIssues.length > 0) {
       stabilityPart = '从盲派的角度，你们的合盘有' + mangPaiIssues.length + '个需要留意的地方：' + mangPaiIssues.join('；') + '。这些不是不可逾越的问题，但提醒你们在婚姻中要有意识地去调整和经营。';
     } else {
-      stabilityPart = '从稳定性来看，你们的合盘没有明显的婚姻障碍信号，这是一个不错的起点。但婚姻说到底还是靠两个人一起维护的，八字再好也需要日常的用心和付出。';
+      stabilityPart = '本模块未命中所列婚姻专项规则；这不抵消上面已经列出的跨柱冲、刑、害。';
     }
 
     detail = combo + ' ' + ziPart + ' ' + caiGuanPart + ' ' + stabilityPart;
@@ -765,13 +757,13 @@ function analyzeCoreMode(p1, p2, relationType) {
     var gr = ganRelationType(p1.dayGan, p2.dayGan);
     var attractPart = '';
     if (gr === '合') {
-      attractPart = '你们的日干天干五合，是情侣间最强的吸引力信号！天干五合就像天然磁铁，见面就容易来电，相处时总有种说不清的默契和舒适感。这是谈恋爱最需要的那种「化学效应」。';
+      attractPart = '日干五合，传统取象关注彼此牵连。具体看共同承诺是否兑现，一方改变安排时另一方是否被迫跟着调整。';
     } else if (gr === '生' || gr === '被生') {
-      attractPart = '你们的日干相生，一方在滋养另一方。这种关系在恋爱中很常见——总有一方更主动、更愿意付出，另一方享受被照顾的感觉。只要被照顾的一方懂得回应，这种模式可以很甜蜜。';
+      attractPart = '日干相生，传统取象关注支持与付出的方向。具体要分清谁出钱、谁花时间、谁承担收尾，以及双方是否接受这种分配。';
     } else if (gr === '比') {
-      attractPart = '你们的日干五行相同，像遇到世界上另一个自己。聊得来、笑点一致、兴趣相投，恋爱初期很容易产生「知己」的感觉。但时间久了可能会少了点新鲜感，需要刻意制造惊喜。';
+      attractPart = '日干五行相同。传统取象关注双方都想保留决定权；遇到意见不同时，要看能否谈妥分工，而不是各自坚持后不了了之。';
     } else {
-      attractPart = '你们的日干相克，在恋爱中可能是一对「欢喜冤家」。好的时候很有张力和激情，吵起来也真的上头。如果你们享受这种「吵架和好」的循环，那也不失为一种独特的恋爱方式。';
+      attractPart = '日干相克，传统取象关注要求与限制。具体看一方提出要求时，另一方能否拒绝、能否提出自己的条件；不能把反复争执包装成感情好。';
     }
 
     // 五行互补 - 情侣更看重互补的新鲜感
@@ -781,7 +773,7 @@ function analyzeCoreMode(p1, p2, relationType) {
     var taohuaPart = '';
     var p1Th = getTaohuaZhi(p1), p2Th = getTaohuaZhi(p2);
     if (p1Th && p2Th && p1Th === p2Th) {
-      taohuaPart = '有意思的是你们俩的桃花星是同一个地支，代表你们在异性缘分上有相似的磁场，能互相吸引也能互相理解对方的魅力点。';
+      taohuaPart = '两人桃花星的地支相同，这只是规则位置相同，不增加现实吸引力的判断。';
     } else {
       taohuaPart = '';
     }
@@ -795,13 +787,13 @@ function analyzeCoreMode(p1, p2, relationType) {
     var gr = ganRelationType(p1.dayGan, p2.dayGan);
     var biJiePart = '';
     if (gr === '比' || (isSameWuxing(p1.dayGan, p2.dayGan))) {
-      biJiePart = '你们日干五行相同，这在朋友关系里是最好的信号之一。同五行的人思维方式和价值观接近，在一起不用解释太多就能get到对方的点。这种朋友最难得——可以一起疯一起拼，伤心时一个眼神就够了。';
+      biJiePart = '日干五行相同。传统取象关注平等与各自作主；合作时看分工能否说清，意见冲突后能否继续把事情做完。';
     } else if (gr === '生' || gr === '被生') {
-      biJiePart = '你们的日干相生，朋友关系里有明显的互补——一方喜欢照顾人，一方习惯被照顾。或者一个出主意一个去执行。这种「一个主外一个主内」的朋友搭档模式，做事特别有效率。';
+      biJiePart = '日干相生。传统取象关注相互支持的方向；现实中看提出建议、实际执行和承担费用是否总集中在同一个人身上。';
     } else if (gr === '合') {
-      biJiePart = '你们的日干天干五合，这在朋友关系里也是很好的缘分。虽然不如夫妻/情侣那样有强烈的吸引力，但意味着你们有种天然的默契，合作做事很顺手，是可以长久信任的伙伴。';
+      biJiePart = '日干五合。传统取象关注共同安排与牵连；信任要看约定能否兑现，不能从五合直接推出。';
     } else {
-      biJiePart = '你们的日干相克，朋友关系中可能偶尔会有观点上的碰撞。但这种碰撞不一定是坏事——好朋友之间有时候恰恰是因为敢于说真话、敢于争论，才显得珍贵。关键是要学会「吵完就忘」。';
+      biJiePart = '日干相克。传统取象关注要求与反对；争论后问题是否解决、双方的边界是否得到尊重，比争论本身更能说明关系。';
     }
 
     // 五行平衡 - 朋友更看重平衡和稳定
@@ -811,7 +803,7 @@ function analyzeCoreMode(p1, p2, relationType) {
     var zhiQuPart = '';
     var dz1 = HP_ZWX[p1.dayZhi], dz2 = HP_ZWX[p2.dayZhi];
     if (dz1 === dz2) {
-      zhiQuPart = '你们的日支五行也相同，说明在更深层次的价值观和处事风格上也很一致。这是能做「一辈子朋友」的配置。';
+      zhiQuPart = '日支五行也相同；这条事实不证明价值观一致，更不保证友谊持续多久。';
     } else if (HP_WXS[dz1] === dz2 || HP_WXS[dz2] === dz1) {
       zhiQuPart = '你们的日支五行相生，说明在行事风格上虽然有差异但能互相配合，一个人快的时候另一个人能跟得上。';
     }
@@ -1036,10 +1028,10 @@ function generateDosAndDonts(p1, p2, relationType) {
     // 财官 — 男看财星女看官星
     if(p1.gender==='male'){
       var caiWx=HP_WXK[HP_GWX[p1.dayGan]]||'土';
-      dontsM.push('在经济决策上多听听'+p2.name+'的意见，命盘看你的财星需要辅助，单打独斗容易判断失误');
+      dontsM.push('共同开支先列明金额、承担人和付款时间；不要凭命盘替任何一方决定谁掌管钱');
     }
     if(p2.gender==='female'){
-      dontsM.push(p2.name+'不要在工作中过度消耗自己，命盘看需要平衡事业和家庭的精力分配');
+      dontsM.push('家庭分工要明确到由谁做、何时做，不把某一方的工作和照顾责任视为理所当然');
     }
   } else if(relationType==='情侣'){
     dosM.push('保持适度的个人空间和朋友圈子，再亲密的关系也需要两个完整的人而不是两个半个人拼在一起');
@@ -1160,12 +1152,12 @@ function calculateOverallScore(dailyRelation, wuxingComplement, crossPillars, da
 
   // 确定等级标签
   var label = '';
-  if (total >= 90) label = '天作之合';
-  else if (total >= 80) label = '上等缘分';
-  else if (total >= 65) label = '良好缘分';
-  else if (total >= 50) label = '中等缘分';
-  else if (total >= 35) label = '普通缘分';
-  else label = '缘分较浅';
+  if (total >= 90) label = '结构合分高';
+  else if (total >= 80) label = '结构合分较高';
+  else if (total >= 65) label = '结构合分偏高';
+  else if (total >= 50) label = '结构合分居中';
+  else if (total >= 35) label = '结构合分偏低';
+  else label = '结构合分低';
 
   return { total: total, label: label };
 }

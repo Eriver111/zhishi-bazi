@@ -1137,7 +1137,7 @@ function selectRelation(card) {
 function initPersonSelects(pid) {
   // 公历年份
   var sY = document.getElementById('sYear-' + pid);
-  for (var y = 2025; y >= 1900; y--) {
+  for (var y = new Date().getFullYear(); y >= 1900; y--) {
     var o = document.createElement('option'); o.value = y; o.textContent = y + '年'; sY.appendChild(o);
   }
   // 公历月份
@@ -1147,7 +1147,7 @@ function initPersonSelects(pid) {
   }
   // 农历年份
   var lY = document.getElementById('lYear-' + pid);
-  for (var y = 2025; y >= 1900; y--) {
+  for (var y = new Date().getFullYear(); y >= 1900; y--) {
     var o = document.createElement('option'); o.value = y;
     o.textContent = y + '年（' + LunarCalendar.ANIMALS[(y - 4) % 12] + '年）';
     lY.appendChild(o);

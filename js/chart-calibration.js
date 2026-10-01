@@ -2,7 +2,7 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
-  var CANDIDATE_VERSION = 'bazi-cal-v11';
+  var CANDIDATE_VERSION = 'bazi-cal-v12';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
@@ -154,7 +154,9 @@
       return prompts.relationship;
     }
     if (domain === 'family') {
-      if (hasFamilyDisruption(analysis)) return '这一年家中是否发生过一件事，让你实际请假照顾家人、承担计划外开支或改变住处？请按真实经历选择，也可以回答没有';
+      if (hasFamilyDisruption(analysis)) return age != null && age < 18
+        ? '这一年家中是否发生过一件事，让照顾你的人、同住家人、住处或原定上学安排发生变化？请按真实经历选择，也可以回答没有'
+        : '这一年家中是否发生过一件事，让你实际请假照顾家人、承担计划外开支或改变住处？请按真实经历选择，也可以回答没有';
       if (parentContext) { good = parentContext.direction === 'good'; bad = parentContext.direction === 'bad'; }
       if (parentContext && parentContext.target === 'father') return bad
         ? '这一年父亲的工作、收入或生活安排是否出现过明显波动，需要家里替他操心、出钱或调整安排？'
@@ -380,6 +382,7 @@
       health:['作息或精力问题导致取消既定安排','因持续睡不好或疲惫，实际请假、取消或延期了一项已约定的学习、工作或出行安排；普通晚睡、偶尔疲劳但安排照常不算，不据此判断疾病'],
       change:['实际搬离原住处并长期居住','离开原来长期居住的住处，在新住处连续生活；短期旅游、探亲或仅计划搬家不算']
     };
+    if(domain==='health'&&life&&life.age!=null&&Number(life.age)<18)return ['作息或精力问题导致缺课或取消活动','因持续睡不好或疲惫，实际缺课、请假或取消已约定的学校活动、出行；普通晚睡而安排照常不算，不据此判断疾病'];
     return rows[domain]||rows.change;
   }
 
@@ -401,7 +404,7 @@
         followup_prompt:'如果确实发生，具体是哪一类？没有发生就不要选。',
         followup_options:[
           {key:'family_condition',label:'家人身体状况有变化，实际影响原定家庭安排'},
-          {key:'family_responsibility',label:'临时承担家中事务，实际请假或中断原有安排'},
+          {key:'family_responsibility',label:age!=null&&age<18?'照顾我的家人临时无法照顾，改由其他人接送或同住':'临时承担家中事务，实际请假或中断原有安排'},
           {key:'family_extra_cost',label:'家中出现计划外开支，导致其他付款延期或取消'},
           {key:'family_income_interruption',label:'家里一项收入中断，导致缩减开支或推迟付款'},
           {key:'family_relocation',label:'实际搬家或改变同住安排'}

@@ -408,6 +408,10 @@
   }
 
   // ===== 状态显示 =====
+  function updateEmptyDescription() {
+    var emptyDesc = document.getElementById('aiEmptyDesc');
+    if (emptyDesc) emptyDesc.textContent = AI.isMonthly ? '会员权益已生效，可以继续提问' : AI.credits > 0 ? '可使用剩余额度继续提问' : AI.freeRemaining > 0 ? '免费体验还剩 ' + AI.freeRemaining + ' 次' : '免费体验次数已用完，登录已有账号或补充额度后继续';
+  }
   function updateFreeDisplay() {
     if ($badge) {
       if (AI.freeRemaining > 0) {
@@ -426,6 +430,11 @@
     if ($statusLine && AI.freeRemaining > 0) {
       $statusLine.textContent = '免费体验中 · 还剩 ' + AI.freeRemaining + ' 次';
     }
+    updateEmptyDescription();
+    if (AI.freeRemaining <= 0 && AI.credits <= 0 && !AI.isMonthly) {
+      if ($creditsLabel) $creditsLabel.textContent = '次数已用完';
+      if ($statusLine) $statusLine.textContent = '次数已用完 · 登录已有账号或补充额度后继续';
+    }
     // 输入框始终可用（免费模式不需要先购买）
     if ($inputWrap) $inputWrap.style.display = 'flex';
     if ($input) $input.disabled = false;
@@ -435,6 +444,8 @@
 
   function updateCreditsDisplay(count) {
     AI.credits = count;
+    updateEmptyDescription();
+    if ($statusLine && count > 0) $statusLine.textContent = '可继续提问 · 剩余 ' + count + ' 次';
     if ($badge) {
       if (count > 0) { $badge.textContent = count; $badge.style.display = 'flex'; $badge.style.background = ''; }
       else { $badge.style.display = 'none'; }
@@ -448,6 +459,8 @@
   }
 
   function updateMonthlyDisplay() {
+    updateEmptyDescription();
+    if ($statusLine) $statusLine.textContent = '会员有效 · 可继续提问';
     if ($badge) { $badge.textContent = '∞'; $badge.style.display = 'flex'; $badge.style.background = '#8a6d28'; }
     if ($creditsLabel) $creditsLabel.innerHTML = '<svg class="ui-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12l4 4L19 6"/></svg> <strong>会员</strong> · 无限次';
     if ($inputWrap) $inputWrap.style.display = 'flex';
@@ -1024,6 +1037,7 @@
     }
     // 恢复免费状态
     updateFreeDisplay();
+    showBuyBar();
   }
 
   // ===== 老用户迁移 =====

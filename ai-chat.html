@@ -192,6 +192,8 @@ function restoreChatHistory(force){
 function updateCreditsUI(){
   var el=document.getElementById('creditsLabel');
   var quota=document.getElementById('quotaBar');
+  var emptyDesc=document.getElementById('emptyDesc');
+  if(emptyDesc)emptyDesc.textContent=AI.isMonthly?'会员权益已生效，可以继续提问':AI.credits>0?'可使用剩余额度继续提问':AI.freeRemaining>0?'免费体验还剩 '+AI.freeRemaining+' 次':'免费体验次数已用完，登录已有账号或补充额度后继续';
   if(quota)quota.style.display=(!AI.isMonthly&&AI.freeRemaining<=0&&AI.credits<=0)?'flex':'none';
   if(AI.isMonthly){el.innerHTML='<strong>∞</strong> 会员';return}
   if(AI.freeRemaining>0){el.innerHTML='免费<strong>'+AI.freeRemaining+'</strong>次';return}

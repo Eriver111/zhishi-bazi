@@ -218,7 +218,7 @@
   <div id="aiReading"></div>
 </div>
 
-<script src="js/bazi.js?v=20261001-event-direction"></script>
+<script src="js/bazi.js?v=20261001-live-qa"></script>
 <script src="js/liuyao-core.js?v=8"></script>
 <script src="js/yijing-db.js?v=7"></script>
 <script src="js/auth.js?v=31"></script>
@@ -477,10 +477,10 @@ window.doAIReading=function(){
   prompt+='【必读经典原文】\n'+dbAnchor+'\n';
   prompt+='【排盘专业数据——必须逐项引用，不得自行改盘】\n'+professionalFacts+'\n';
   prompt+='用户问："'+userQuestion+'"——请直接回答。格式：\n';
-  prompt+='1. 结论：能不能成？好还是坏？什么时候？（2-3句，不许含糊）\n';
+  prompt+='1. 主要判断：直接回答用户实际所问，先讲核心阻力或支持条件，不保证现实结果。\n';
   prompt+='2. 卦象分析：锁定用神（问财看妻财、问事业看官鬼、问感情看妻财/官鬼+应爻），用具体爻数据说明。\n';
-  prompt+='3. 时间窗口：农历月份。指出有利和不利的月份。\n';
-  prompt+='4. 行动建议：2-3条具体建议，每条有时限和卦象依据。\n';
+  prompt+='3. 时间与安排：按用户所问的时间范围；没有完整日期依据不猜月份，用具体任务节点说明安排。\n';
+  prompt+='4. 行动建议：2-3条具体建议，回应前文卡点，区分建议与卦象事实，不虚构成员性格。\n';
   prompt+='总字数300-400字。纯文本。';
 
   var token=Auth.getToken();
@@ -493,7 +493,7 @@ window.doAIReading=function(){
   .then(function(r){return r.json();}).then(function(d){
     if(d.error){
       if(d.needLogin){ Auth.showModal('login'); readingDiv.innerHTML=''; if(btnArea) btnArea.style.display=''; return; }
-      if(d.creditExhausted){ readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:12px">积分不足</p><p style="font-size:13px;color:var(--tx2);margin-bottom:16px">免费3次已用完，请购买次数包继续使用</p><button class="btn-submit" onclick="location.href=\'/pricing\'" style="margin:0 auto">去购买积分</button></div>'; return; }
+      if(d.creditExhausted){ readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:12px">积分不足</p><p style="font-size:13px;color:var(--tx2);margin-bottom:16px">可用次数已用完，请购买次数包继续使用</p><button class="btn-submit" onclick="location.href=\'/pricing\'" style="margin:0 auto">去购买积分</button></div>'; return; }
       readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:8px">解读失败</p><p style="font-size:12px;color:var(--tx3);margin-bottom:16px">'+d.error+'</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>'; return;
     }
     if(!d.reading||d.reading.length<10){ readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:var(--tx3);margin-bottom:12px">解读超时</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>'; return; }
@@ -501,7 +501,7 @@ window.doAIReading=function(){
     if(d.isMonthly) creditTip='<p style="text-align:center;font-size:11px;color:var(--gold-l);margin-top:12px">月度会员 · 无限解读</p>';
     else if(d.freeUsed) creditTip='<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:12px">本次使用免费次数</p>';
     else if(d.creditsLeft>=0) creditTip='<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:12px">剩余积分：'+d.creditsLeft+' 次</p>';
-    readingDiv.innerHTML='<div class="card" style="padding:20px 24px"><h3 style="font-size:14px;color:var(--gold-l);letter-spacing:2px;margin-bottom:12px;text-align:center">知时先生解读</h3><div class="result-text">'+(d.reading||'').replace(/\n/g,'<br>')+'</div>'+creditTip+'</div>';
+    readingDiv.innerHTML='<div class="card" style="padding:20px 24px"><h3 style="font-size:14px;color:var(--gold-l);letter-spacing:2px;margin-bottom:12px;text-align:center">知时先生解读</h3><div class="result-text">'+(d.reading||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')+'</div>'+creditTip+'</div>';
   }).catch(function(e){
     if(e.name==='AbortError') readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e8a040;margin-bottom:12px">解读超时</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>';
     else readingDiv.innerHTML='<div class="card" style="text-align:center;padding:24px"><p style="color:#e07050;margin-bottom:8px">网络异常</p><button class="btn-submit" onclick="doAIReading()" style="margin:0 auto;font-size:14px;padding:10px 28px">重新解读</button></div>';

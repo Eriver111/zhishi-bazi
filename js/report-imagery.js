@@ -190,8 +190,15 @@ const concreteEvents={
 };
 function concreteOutcomes(rule,rows,scene,suffix,life,historicalStudy){
  const s=eventScenes[scene],spec=concreteEvents[rule.id];
- return rows.filter(o=>!(rule.id==='output-generates-wealth'&&life&&life.age!=null&&Number(life.age)<18)).map(o=>{
+ const minor=life&&life.age!=null&&Number(life.age)<18;
+ // Adult payment, debt and contractual authority cannot be inferred for children.
+ const adultFinance=['output-generates-wealth','wealth-generates-officer','wealth-feeds-kill','officer-protects-wealth','peer-takes-wealth','peer-carries-wealth'];
+ return rows.filter(o=>!(minor&&adultFinance.includes(rule.id))).map(o=>{
   let label=spec[0],detail=spec[1].replace(/\{(\w+)\}/g,(_,k)=>s[k]);
+  if(rule.id==='wealth-feeds-kill'&&['student','exam'].includes(scene)){
+   label='交费报名后，新增考核要求导致延期';
+   detail='已交费参加课程、培训或考试，随后临时增加必须完成的作业、证明或考核，导致原定结课或报考延期；原先已说明的要求、只有费用增加不算';
+  }
   if(rule.id==='wealth-breaks-seal'&&o.domain==='wealth'){
    label='课程或资格办理中止，已缴费用未退';detail='已缴费的课程、培训或资格办理被取消或中止，按约应退的费用到期仍未退回，造成可支配费用减少；正常购买资料、正常消费或转存不算损失';
   }

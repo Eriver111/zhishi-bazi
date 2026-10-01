@@ -17,7 +17,31 @@ function runtime() {
   return c;
 }
 const c = runtime();
+test('family disruption changes agency for children without rewriting adult events',()=>{
+ for(const age of [6,8,15,17]){
+  const row=c.testOptions('family',annual(),age,'偏印',null)[0];
+  assert.match(row.detail,/照顾你的人/);assert.doesNotMatch(row.detail,/让你实际请假照顾|承担计划外开支/);
+  assert.match(row.followup_options.find(o=>o.key==='family_responsibility').label,/接送或同住/);
+ }
+ for(const age of [null,18,32])assert.match(c.testOptions('family',annual(),age,'偏印',null)[0].detail,/实际请假照顾家人/);
+});
 const chart = {year:{gan:'壬',zhi:'午'},month:{gan:'庚',zhi:'戌'},day:{gan:'壬',zhi:'申'},hour:{gan:'丙',zhi:'午'}};
+test('decade favorable clashes cannot guarantee favorable family events',()=>{
+ const dy={gan:'壬',zhi:'子',startYear:2015,endYear:2024,displayAge:'14-23'};
+ const result=c.BaZiChain.analyzeFortune(chart,[dy],c.BaZiCalculator.getYongJi(chart)).periods[0];
+ assert.equal(result.verdict,'喜运');
+ const family=result.eventLedger.domainRecords.find(r=>r.domain==='family');
+ assert.notEqual(family.direction,'偏有利');
+ assert.doesNotMatch(JSON.stringify(result.interactions),/可能先变后改善/);
+});
+test('all ten day masters avoid ability guarantees and preserve actual character counts',()=>{
+ for(const stem of '甲乙丙丁戊己庚辛壬癸'){
+  const row=c.BaZiCalculator.analyzeCharacter({...chart,day:{gan:stem,zhi:'申'}});
+  assert.doesNotMatch(JSON.stringify(row),/天生聪明|知道自己有能力赚回来|最靠得住|最旺（出现|第一个想到|一流|小毛病|都是小节/);
+  assert.ok(row.topSSDetail.every(x=>x.count>0));
+  assert.ok(row.strengths&&row.weaknesses);
+ }
+});
 function annual(b = chart, year = {gan:'庚',zhi:'子',year:2020}, dy = {gan:'壬',zhi:'子'}, options = {}) {
   return c.BaZiChain.analyzeLiuNian(b, dy, year, c.BaZiCalculator.getYongJi(b), options);
 }
