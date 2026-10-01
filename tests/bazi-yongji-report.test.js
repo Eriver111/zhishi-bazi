@@ -19,7 +19,7 @@ function pillars(values) {
 test('所有八字入口加载同一版核心取用脚本', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html', 'ziwei.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
-    assert.match(html, /js\/bazi\.js\?v=20260926-root-seal/, `${page} must load the auditable strength core bundle`);
+    assert.match(html, /js\/bazi\.js\?v=20261001-event-direction/, `${page} must load the auditable strength core bundle`);
   }
 });
 
@@ -202,7 +202,7 @@ test('专业报告包含岁运与喜用忌的联动结论', () => {
   assert.match(facts.fortuneInteraction.yearPillar, /^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]$/);
   assert.ok(['用神', '喜神', '忌神', '中性'].includes(facts.fortuneInteraction.triggeredRole));
   assert.ok(['用神', '喜神', '忌神', '中性'].includes(facts.fortuneInteraction.branchTriggeredRole));
-  assert.ok(['大吉', '偏吉', '中性', '偏凶', '大凶', '待复核'].includes(facts.fortuneInteraction.verificationVerdict));
+  assert.ok(['大吉', '偏吉', '变动明显', '中性', '偏凶', '大凶', '待复核'].includes(facts.fortuneInteraction.verificationVerdict));
   assert.match(facts.fortuneInteraction.verificationBasis, /原局喜用忌方向/);
   assert.ok(facts.fortuneInteraction.triggeredReason.length >= 8);
 });

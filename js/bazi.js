@@ -5840,7 +5840,7 @@ function analyzeFortune(bazi, gender, yongJi) {
             ? annualVerification.verifiedScore
             : trigger.score * 0.45 + branchTrigger.score * 0.55 - Math.max(0, riskLevel) * 0.55;
         var verifiedFavorable = annualVerification
-            ? (annualVerification.verdict === '中性' ? null : (annualVerification.verdict === '大吉' || annualVerification.verdict === '偏吉'))
+            ? (['中性', '变动明显'].includes(annualVerification.verdict) ? null : (annualVerification.verdict === '大吉' || annualVerification.verdict === '偏吉'))
             : null;
         isFavorable = annualVerification ? verifiedFavorable : isFavorable;
         if (annualVerification && (annualVerification.verdict === '偏凶' || annualVerification.verdict === '大凶')) {
@@ -5849,6 +5849,9 @@ function analyzeFortune(bazi, gender, yongJi) {
         } else if (!annualVerification) {
             overallLabel = '待复核';
             overallColor = '#a29bfe';
+        } else if (annualVerification.verdict === '变动明显') {
+            overallLabel = '变动';
+            overallColor = '#feca57';
         } else if (annualVerification.verdict === '中性') {
             overallLabel = '平稳';
             overallColor = '#a29bfe';
@@ -6047,7 +6050,7 @@ function analyzeThisYear(bazi, gender, yongJi) {
         }
     } catch(e) {}
     var verifiedFavorable = annualVerification
-        ? (annualVerification.verdict === '中性' ? null : (annualVerification.verdict === '大吉' || annualVerification.verdict === '偏吉'))
+        ? (['中性', '变动明显'].includes(annualVerification.verdict) ? null : (annualVerification.verdict === '大吉' || annualVerification.verdict === '偏吉'))
         : null;
     if (annualVerification) isFavorable = verifiedFavorable;
 
@@ -6060,6 +6063,8 @@ function analyzeThisYear(bazi, gender, yongJi) {
         } else {
             opportunities.push('事业上可以主动争取，但先从确定性高、资源已经具备的事项开始。');
         }
+    } else if (annualVerification && annualVerification.verdict === '变动明显') {
+        opportunities.push(annualVerification.summary);
     } else if (annualVerification && annualVerification.verdict === '中性') {
         opportunities.push('本年基础方向与具体干支互动互有抵消，适合边做边验证，不宜只因某个十神听起来吉利就盲目扩张。');
     } else {

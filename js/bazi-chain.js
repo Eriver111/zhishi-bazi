@@ -1688,6 +1688,17 @@
     return domains;
   }
 
+  // isGood records the balance/element judgement, not a confirmed event outcome.
+  function isDisruptiveAnnualTrigger(trigger) {
+    return /天克地冲|六冲|地冲月提|三刑|自刑|^刑$|六害|六破/.test(String(trigger && trigger.type || ''));
+  }
+
+  function annualEventDirection(trigger) {
+    if (!trigger) return null;
+    if (isDisruptiveAnnualTrigger(trigger) && trigger.isGood === true) return null;
+    return trigger.isGood === true ? true : (trigger.isGood === false ? false : null);
+  }
+
   function annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger) {
     var positive = direction === '偏有利', negative = direction === '偏不利';
     var map = {
@@ -1746,8 +1757,9 @@
         scores[hit.domain] += hit.weight;
         annualScores[hit.domain] += hit.weight;
         annualTriggerCounts[hit.domain] += 1;
-        if (trigger.isGood === true) { directional[hit.domain] += hit.weight; polarity[hit.domain].positive = true; }
-        else if (trigger.isGood === false) { directional[hit.domain] -= hit.weight; polarity[hit.domain].negative = true; }
+        var eventDirection = annualEventDirection(trigger);
+        if (eventDirection === true) { directional[hit.domain] += hit.weight; polarity[hit.domain].positive = true; }
+        else if (eventDirection === false) { directional[hit.domain] -= hit.weight; polarity[hit.domain].negative = true; }
         if (evidence[hit.domain].length < 4 && trigger.detail && evidence[hit.domain].indexOf(trigger.detail) < 0) evidence[hit.domain].push(trigger.detail);
       });
     });
@@ -1792,12 +1804,17 @@
     if (age !== null && age < 14) { scores.family += Math.max(scores.relationship, 0); scores.relationship = -1; }
     stage.focus.forEach(function(domain) { if (scores[domain] >= 0) scores[domain] += 1.5; });
 
-    var globalDirection = Number(analysis.verifiedScore || 0);
     var ranked = Object.keys(scores).filter(function(domain) { return scores[domain] >= 0; }).map(function(domain) {
       var d = directional[domain];
       var opposed = polarity[domain].positive && polarity[domain].negative;
+      var unresolvedDisruptions = (analysis.triggers || []).filter(function(trigger) {
+        return isDisruptiveAnnualTrigger(trigger) && annualEventDirection(trigger) === null
+          && triggerAnnualDomains(trigger, age, bazi).some(function(hit) { return hit.domain === domain; });
+      });
       var direction = opposed && Math.abs(d) <= 2 ? '条件性'
-        : (d > 0.5 ? '偏有利' : (d < -0.5 ? '偏不利' : (globalDirection >= 0.65 ? '偏有利' : (globalDirection <= -0.65 ? '偏不利' : '条件性'))));
+        : (d > 0.5 ? '偏有利' : (d < -0.5 ? '偏不利' : '条件性'));
+      // A favorable decade/theme cannot erase an unresolved disruption this year.
+      if (unresolvedDisruptions.length && direction === '偏有利') direction = '条件性';
       var meta = ANNUAL_DOMAIN_META[domain];
       var activation = Number(scores[domain].toFixed(2));
       var confidence = activation >= 9 && evidence[domain].length >= 2 ? '高' : (activation >= 5 ? '中高' : '中');
@@ -1807,8 +1824,11 @@
         annualActivationScore:Number(annualScores[domain].toFixed(2)),
         annualStructuralTriggerCount:annualTriggerCounts[domain],
         hasIndependentAnnualTrigger:hasStructuralTrigger,
+        unresolvedDisruptionCount:unresolvedDisruptions.length,
         eventCandidate:direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional),
-        scenarioCandidates:annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger),
+        scenarioCandidates:unresolvedDisruptions.length && domain === 'family'
+          ? ['家人身体状况可能出现变化，家庭收入或开支也可能有波动；需核对是否实际打乱原定安排，不能当作已发生的结论', '即使扶抑方向有利，也不能据此说家人状态改善或支持增加']
+          : annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger),
         evidence:evidence[domain].slice(0, 3),
         lifeStageMatched:stage.focus.indexOf(domain) >= 0,
         decisionBasis:'流年触发位置 + 岁运局关系方向 + 当年十神事项 + 实际年龄阶段'
@@ -1816,7 +1836,7 @@
     }).sort(function(a,b) { return b.activationScore - a.activationScore || b.evidence.length - a.evidence.length || a.domain.localeCompare(b.domain); });
 
     return {
-      version:'1.0', analysisType:'timing_hypothesis', frozen:false, userCorrectable:true,
+      version:'1.1', analysisType:'timing_hypothesis', frozen:false, userCorrectable:true,
       year:isFinite(year) ? year : null, age:age, lifeStage:stage, annualShiShen:annualShiShen,
       primaryEvent:ranked[0] || null, secondaryEvent:ranked[1] || null, domainRecords:ranked,
       triggerStrength:Number((Number(analysis.dangerScore || 0) + Number(analysis.opportunityScore || 0) + Math.min((analysis.triggers || []).length, 5)).toFixed(2)),
@@ -1879,7 +1899,7 @@
         return { isGood:null, movingRole:movingRole, targetRole:targetRole, note:'合会只表示牵引，须按所成五行另判' };
       }
       if (relationType === '六冲' && targetRole === '忌神' && isFavorableRole(movingRole)) {
-        return { isGood:true, movingRole:movingRole, targetRole:targetRole, note:'有利力量冲动原局忌神，可能先变后改善' };
+        return { isGood:true, movingRole:movingRole, targetRole:targetRole, note:'扶抑层面有减轻原局失衡的可能；被冲位置仍有变动，涉及的人事、成本和结果须另行核对，不能据此认定先变后好' };
       }
       if (relationType === '六冲' && isFavorableRole(targetRole)) {
         return { isGood:false, movingRole:movingRole, targetRole:targetRole, note:'原局有利位置被冲，稳定性下降' };
@@ -1891,7 +1911,7 @@
       var movingStemRole = roleForWx(yongJi, lnGanWx);
       var targetStemRole = roleForWx(yongJi, targetStemWx);
       if (branch.isGood === true && movingStemRole !== '忌神') {
-        return { isGood:true, note:'有利流年支冲动原局忌神，且流年干未形成新的忌神压力，属于先变后改善的候选引动' };
+        return { isGood:true, note:'流年支在扶抑层面有利且流年干未形成新的忌神压力；天克地冲仍有变动成本，不能由此认定相关人事先变后好' };
       }
       if (branch.isGood === false || (movingStemRole === '忌神' && isFavorableRole(targetStemRole))) {
         return { isGood:false, note:'原局有利位置受冲克，稳定性下降' };
@@ -2206,6 +2226,18 @@
       summary = '流年结构信号相对平稳，暂不据此承诺具体事件结果。';
     }
 
+    var unresolvedDisruptions = triggers.filter(function(trigger) {
+      return isDisruptiveAnnualTrigger(trigger) && annualEventDirection(trigger) === null;
+    });
+    triggers.forEach(function(trigger) {
+      trigger.eventIsGood = annualEventDirection(trigger);
+      trigger.disruptive = isDisruptiveAnnualTrigger(trigger);
+    });
+    if (unresolvedDisruptions.length && (verdict === '大吉' || verdict === '偏吉')) {
+      verdict = '变动明显';
+      summary = '扶抑层面有有利条件，但本年同时冲动或扰动原局位置。家人、关系、资金或生活安排须按实际落点分别核对，变化可能伴随损失、照顾负担或计划中断；不能由喜用加分推成全年顺利，也不能只凭冲刑认定疾病或事故。';
+    }
+
     var result = {
       analysisType:'structural_forecast',
       userCorrectable:true,
@@ -2223,6 +2255,8 @@
       natalDirectionScore:Math.round(natalDirectionScore * 100) / 100,
       interactionAdjustment:Math.round(interactionAdjustment * 100) / 100,
       verifiedScore:Math.round(verifiedScore * 100) / 100,
+      scoreScope:'五行扶抑与结构作用参考，不是各领域事件结果或亲属平安的评分',
+      unresolvedDisruptionCount:unresolvedDisruptions.length,
       verificationBasis:'原局喜用忌方向 + 流年、大运、原局三方的实际干支互动；十神名称仅作事项解释',
       verdict: verdict,
       summary: summary
@@ -2241,6 +2275,7 @@
     analyzeFortune: analyzeFortuneImpact,
     analyzeLiuNian: analyzeLiuNianImpact,
     buildAnnualEventAdjudication: buildAnnualEventAdjudication,
+    annualEventDirection: annualEventDirection,
     rankTimingCandidates: rankTimingCandidates,
     CHANG_SHENG: CHANG_SHENG,
     LIN_GUAN: LIN_GUAN,

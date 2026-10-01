@@ -269,7 +269,8 @@ function collectSignals(analysis){
  triggers.forEach(t=>{
   const emitTiming=type=>signals.push({...t,type,origin:'annual-relation',detail:t.detail||t.type});
   if(['六冲','天克地冲','地冲月提'].includes(t.type)){
-   if(t.isGood===true&&t.targetRole==='忌神')emitTiming('冲动忌神');
+   // A favorable balance score alone does not prove that a disruptive event ended well.
+   if(t.eventIsGood===true&&t.targetRole==='忌神')emitTiming('冲动忌神');
    if(t.isGood===false&&good(t.targetRole))emitTiming('冲动喜用');
   }
   if((t.target==='day'&&['六合','半合','三合局'].includes(t.type))||t.type==='流年合日支')emitTiming('合的牵引');

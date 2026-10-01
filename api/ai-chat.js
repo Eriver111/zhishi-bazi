@@ -45,6 +45,8 @@ function sanitizeGuestCalibrationSummary(value) {
 const now2 = new Date();
 const currentYear2 = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(now2));
 const currentGZ2 = (function(y){var g=`甲乙丙丁戊己庚辛壬癸`,z=`子丑寅卯辰巳午未申酉戌亥`;return g[(y-4)%10]+z[(y-4)%12]})(currentYear2);
+const MEDICAL_BOUNDARY = '\n【身体状况表达边界】仅可在有相应结构线索时，将本人或家人身体状况可能出现变化、影响原定安排作为待核对的概括性候选。禁止据命盘推断具体疾病、器官、身体部位或伤害程度；不提供任何医疗建议，不提出医院、检查、治疗、用药等提示。不得把可能说成已经发生；用户主动提供的具体经历只作为其自述，不扩写或反推医学结论。';
+
 const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学的 AI 命理师。你深研子平八字（格局法）与盲派命理（象法）两大体系，融合《滴天髓》《三命通会》《耕寸集》（子平真诠原本·王相山精解）《穷通宝鉴》《渊海子平》等古典命籍，为用户提供专业、客观、有深度的命理分析。【重要】现在是${currentYear2}年。分析流年运势时必须优先使用 chartData 中的 currentLiuNian，禁止使用训练数据中的旧年份或按公历年直接猜立春前的流年干支。
 
 ## 你的知识体系
@@ -98,7 +100,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **大运喜忌联动**：原局喜用忌是静态剖面，大运介入后元素角色动态变化——原忌可能因运化凶为吉（如忌金→走水运→金生水→水生身），原喜可能在忌运中无用武之地。
 - 婚姻感情：男命看财星及日支，女命看官杀及日支。配偶宫逢冲多感情波折。
 - 事业财运：官杀主事业地位，财星主财富。食伤生财者技艺致富，官印相生者仕途稳进。
-- 健康分析：五行偏枯只能作为传统取象线索，不能据此诊断疾病或声称某器官必然出问题。应使用“可能需要留意”的条件表达，并建议以医学检查为准。
+- 身体状况：只允许概括性的状态变化候选，不推断疾病、器官或受伤部位，不给出医院、检查、治疗或用药提示。
 - 流年运势：结合大运看流年。岁运并临，吉凶加倍；天克地冲，多有变动。
 
 ## 回答准则
@@ -131,6 +133,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **yongJi**（喜用忌神）：结构取用只允许使用“用神、喜神、忌神”三类；用神是喜神中的核心取用。必须读取 **yongShenSource**，明确它是扶抑用神、格局用神、格局救应用神、调候用神还是顺势用神；secondaryTypes 只表示兼调候、兼格局或兼通关，不得把兼任作用冒充第一取用来源。yongShen/xiShen/jiShen 是兼容旧功能的摘要字段，不是每个五行现实作用的全部结论。另有 **climateState（寒暖燥湿终裁）**、**tiaoHouYongShen（调候用神）**、**weaknessCause（身弱病因）**、**strongCause（身强来源）**、对应的 **weaknessSupportingElements/strongSupportingElements（辅助喜神）**、**conditionalAuxiliaryElements（条件辅助）** 和 **functionalTasks（功能用神任务）** 等解释轴。亥子丑或巳午未只构成季节候选，必须分别读取 climateState.needsWarmth（需暖）、needsCooling（需降温）、needsMoisture（需润燥，旧数据回退 needsCooling）；三者均为 false 时，禁止仅凭月份再说金寒水冷、火炎土燥或要求继续补火补水。降温需求与润燥需求不可混用；不得把藏水有根自动解释为润燥完成，不得把“干水必忌、支水必喜”或“比劫抗杀必凶”当规则。调候用于寒暖燥湿；身弱病因区分食伤泄身、财多耗身、正官压身、七杀攻身、官杀混杂压身、财官压身、失令少根或复合耗泄克。正官压身默认取印化官、比劫辅助任官，食伤只能在正官确已过量成病且不破可用官格时称“食伤节官”，禁止称“食神制杀”；七杀攻身中，只有 weaknessCause.foodGodControlsKill=true 才可说食神制杀成立，并且直接制杀的优先级高于比劫抗杀，但日主极弱或食神无力时必须以印化杀为先；官杀混杂时食神最多处理七杀一侧，不能宣称已化解全部官杀。身强来源区分比劫成势、印旺生身、印比并旺、得令多根或复合生扶。辅助喜神须服从第一取用，条件辅助则只有满足 conditionalAuxiliaryReason 的前置条件才可搭配。functionalTasks 只记录某五行在原局承担化杀、制伤护格等任务，必须同时引用 conclusion 与 condition；它不能自行改写 elementRoleLedger 已冻结的 fortuneRole，也不能单凭“原局有功”推断某步岁运吉凶。禁止把所有身弱机械说成“喜印比”，也禁止把所有身强机械说成“喜财官食伤”。
 - **yongJi.elementRoleLedger**（原局五行角色账本）：这是解释每个五行时的优先事实源。fortuneRole/fortuneLevel/fortuneDirection 是从原局裁决出的行运基础方向；currentState、natalRole、functions、risks 说明该五行在原局正在做什么。carrierGuidance 是干支载体裁决：必须区分天干透出、地支本气根、浮透、燥湿及同柱承接，不能把同属一个五行的甲乙与寅卯、戊己与辰戌丑未视为完全等效。用神必须解释为“该五行进入岁运时通常更有利”，不能因为原局已经有力就反说成不宜再遇；但分析某一步具体大运时，还必须结合该步干支、刑冲合害、成局与生克链复核，可以把基础方向升降级。禁止只凭正官、正印等十神名称判吉，也禁止把所有同五行大运写成完全相同。
 - **professionalFacts.fortuneInteraction / 岁运验证字段**：verificationVerdict、verificationScore、verificationSummary 是在原局喜用方向之上，结合具体大运、流年和原局互动得到的本步结果；回答“这步运是否顺”时优先引用这些字段。triggeredRole/triggeredLevel 只是原局基础方向，shiShen 只说明事项落点，均不得越过 verificationVerdict 单独下吉凶结论。
+- **扶抑方向与事件结果分开**：verificationScore 为正、喜用冲忌，均不证明家人平安、家庭支持增加或变动后必然改善。若结论为“变动明显”，须说明实际被引动的位置和可能付出的代价，不得改写成全年大吉；没有该领域的独立证据，不借用全年分数断该领域顺利或受灾。家人身体状况变化、家庭收入中断等只能作为待核对的概括性候选；用户只认可“家里出过事”，不得记录为重大疾病、事故、死亡或某位亲属已经应验。
 - **yongJi.selectionStatus / neutralElements**（取用是否确定）：上面的用、喜、忌三类仅容纳已确定的方向，不要求塞满五行。selectionStatus=undetermined 时必须明确“核心用神尚未确定”，引用 selectionReason；空 yongShen 是冻结的未定结论，不能补成某个五行，也不能把候选根气排序或固定顺序当作确定首用。neutralElements 表示无明确方向或正负作用相抵，不等于忌神、双方不合或行运不利。独立成立的调候任务仍可说明，但不能冒充已定核心用神。
 - **yongJi.evidence 候选对比**（五行候选评分对比）：解释已定取用的依据或为何尚不能确定；是解释性证据，**不得当作重新判定用神/喜神/忌神的依据**，不得用"未取"候选元素改写喜忌结论。
 - **dayMasterStrength**（日主旺衰）：是系统按得令、得地、得势、调候及合冲修正后的结构化评估。引用 level、score 和 reasoning/detail，不另行编造分数或换用另一套强弱等级。月令印旺不等于日主自动身强；当审计已作“印令承载折减”时，必须说明印有生源但日主缺少可靠根气承接，禁止再以“印当令”把偏弱说回中和。
@@ -568,7 +571,7 @@ module.exports = async function handler(req, res) {
     if (userId) await saveUserChatHistory(userId, 'user', question, conversationMeta);
 
     // ---- 构建 AI 请求 ----
-    var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
+    var sysPrompt = (mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT) + MEDICAL_BOUNDARY;
     const messages = [{ role: 'system', content: sysPrompt }];
 
     // 优先使用完整排盘数据，回退到简版八字信息
@@ -666,7 +669,7 @@ module.exports = async function handler(req, res) {
  * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
  */
 async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary, calibrationSummary) {
-  var sysPrompt = mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT;
+  var sysPrompt = (mode === 'ziwei' ? ZIWEI_SYSTEM_PROMPT : mode === 'liuren' ? LIUREN_SYSTEM_PROMPT : SYSTEM_PROMPT) + MEDICAL_BOUNDARY;
   const messages = [{ role: 'system', content: sysPrompt }];
 
   // 当前时间锚定（含流年流月干支）
@@ -2521,7 +2524,7 @@ function generateMockReply(question, chartData, bazi, mode) {
     r += `你的日主为**${dayGan}**（${dayWX}），${dmStrength ? '命局' + dmStrength + '。' : ''}\n\n`;
   }
   r += '八字命理是古人总结的智慧结晶。《三命通会》云："命理之道，贵在明理。"\n\n';
-  r += '你可以问的问题包括：\n• 八字五行分析与喜用神判断\n• 大运流年走势预测\n• 婚姻感情与配偶特征\n• 事业财运与职业方向\n• 健康隐患与养生建议\n• 起名改名与五行补益\n\n※ 命理分析仅供参考，命运掌握在自己手中';
+  r += '你可以问的问题包括：\n• 八字五行分析与喜用神判断\n• 大运流年走势预测\n• 婚姻感情与配偶特征\n• 事业财运与职业方向\n• 生活节奏与现实安排\n• 起名改名与五行补益\n\n※ 命理分析仅供参考，命运掌握在自己手中';
   return r;
 }
 

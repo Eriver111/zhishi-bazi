@@ -90,6 +90,8 @@ function normalizeCalibrationResponse(event, input) {
       if (!allowedDetail) return { error: '补充选项与主选项不一致' };
     }
     if (matchLevel !== 'partial') matchLevel = 'exact';
+    // Agreement with a family-change theme does not confirm any listed illness/injury.
+    if (option && option.mechanism_key === 'family-disruption-review' && !selectedDetail) matchLevel = 'partial';
     const eventYear = Number(event && event.event_year);
     if (actualYear !== null && (!Number.isInteger(actualYear) || Math.abs(actualYear - eventYear) > 1)) {
       return { error: '实际年份只能在推断年份前后一年内调整' };

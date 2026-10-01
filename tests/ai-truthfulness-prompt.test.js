@@ -19,6 +19,14 @@ test('现实经历只校正事件取象，不反向篡改命盘硬事实', () =>
   assert.match(source, /不得用单次经历反向篡改四柱、十神、旺衰、格局、喜用忌或大运顺序/);
 });
 
+test('general condition changes are allowed but medical advice and body-part predictions are prohibited', () => {
+  assert.match(source, /本人或家人身体状况可能出现变化/);
+  assert.match(source, /不提供任何医疗建议，不提出医院、检查、治疗、用药等提示/);
+  assert.match(source, /禁止据命盘推断具体疾病、器官、身体部位或伤害程度/);
+  assert.equal((source.match(/\+ MEDICAL_BOUNDARY;/g) || []).length, 2);
+  assert.doesNotMatch(source, /建议以医学检查为准|健康隐患与养生建议/);
+});
+
 test('八字 AI 不把不利结论强行圆成转机或先苦后甜', () => {
   assert.match(source, /结构偏不利就直接说“偏不利\/阻力增加”及其依据/);
   assert.match(source, /不得自动改写成“成长机会”“先苦后甜”“熬过去就会更好”/);

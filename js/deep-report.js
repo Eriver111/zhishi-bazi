@@ -2899,6 +2899,9 @@
     var processText=reference?' 往事可参考的共同作用方式：'+reference.commonProcess+'。'+(reference.state==='mixed-reference'?'同类解释也收到过不符合反馈，需要保留不同表现。':'')+'这条线索用于核对当前场景，不表示相同事件或结果会重演。':'';
     if (record.reportFeedback) return (record.reportScenario || record.reportFeedback.original || record.reportFeedback.label || '')+'。'+record.reportFeedback.outcome+processText;
     if (record.reportScenario) return record.reportScenario+processText;
+    if (record.domain === 'family' && record.unresolvedDisruptionCount > 0 && list(record.scenarioCandidates).length) {
+      return textOf(record.scenarioCandidates[0]);
+    }
     var contextual=contextScenario(record.domain,record.direction,adjudication.lifeContext);
     if(contextual)return contextual;
     var stageKey = adjudication.lifeStage && adjudication.lifeStage.key || '';
@@ -2941,7 +2944,7 @@
       if (stageKey === 'education') return favorable ? '奖学金、兼职收入、实习报酬或家庭支持更容易到位'
         : adverse ? '学费、培训、租住或求职准备带来的支出更容易增加' : '学习投入、兼职收入与家庭支持会同时变化';
       if (stageKey === 'late') return favorable ? '退休收入、资产安排、回款或家庭资源配置更容易落实'
-        : adverse ? '医疗照护、家庭支出、回款延迟或资产占用更容易增加' : '退休收入、家庭支出与资产安排会同时变化';
+        : adverse ? '家庭支出、回款延迟或资产占用更容易增加' : '退休收入、家庭支出与资产安排会同时变化';
       return favorable ? '收入、客户回款、项目结算或资源兑现更容易落地'
         : adverse ? '支出、垫款、回款延迟或资金占用更容易增加'
           : '收入机会和资金安排会同时增多，最终能否留下仍需核对';

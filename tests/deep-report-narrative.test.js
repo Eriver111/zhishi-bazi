@@ -131,6 +131,20 @@ test('current year names one age-filtered event only when an independent trigger
   assert.match(verdict.sourceText, /升学与起步阶段/);
 });
 
+test('family disruption details survive school and elderly scene rendering', () => {
+  for (const age of [18, 78]) {
+    const facts = favorableFacts();
+    facts.currentYear.eventAdjudication = {age, primaryEvent:{
+      domain:'family', label:'家庭', direction:'条件性', hasIndependentAnnualTrigger:true,
+      unresolvedDisruptionCount:1, scenarioCandidates:['核对临时承担家事是否实际打乱原定安排；不是已发生的结论'],
+      evidence:['合成年度家庭位置受冲'], decisionBasis:'独立触发'
+    }, secondaryEvent:null};
+    const row=DeepReport.buildNarratives(facts).currentYear.verdicts.find(v=>v.title==='今年最可能应在哪件事');
+    assert.match(row.outcomeText,/临时承担家事.*打乱原定安排/);
+    assert.doesNotMatch(row.outcomeText,/更容易落实|家庭支持增加/);
+  }
+});
+
 test('current year keeps one primary and one secondary event without reopening every domain', () => {
   const facts = favorableFacts();
   facts.currentYear.eventAdjudication = {

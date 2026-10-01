@@ -50,10 +50,10 @@ test('五年分析跨交运时逐年选大运，不沿用当前大运',()=>{
 
 test('复核结论能覆盖原局基础方向，正负中性分别保留',()=>{
  const {E,box}=load();const b=E.calculate(1990,6,15,3,'male',6),j=E.getYongJi(b);
- for(const verdict of ['偏吉','偏凶','中性']){
+ for(const verdict of ['偏吉','偏凶','中性','变动明显']){
   box.window.BaZiChain={analyzeLiuNian(){return {verdict,verifiedScore:verdict==='偏吉'?2:verdict==='偏凶'?-2:0};}};
   const fortune=E.analyzeFortune(b,'male',j),annual=E.analyzeThisYear(b,'male',j);
-  const expected=verdict==='中性'?null:verdict==='偏吉';
+  const expected=['中性','变动明显'].includes(verdict)?null:verdict==='偏吉';
   assert.equal(fortune.years[0].isFavorable,expected);assert.equal(annual.isFavorable,expected);
   assert.equal(fortune.years[0].verificationVerdict,annual.verificationVerdict);
  }

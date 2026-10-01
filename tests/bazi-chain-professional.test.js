@@ -272,7 +272,7 @@ test('core analysis degrades safely but reports chain failures for diagnosis', (
 test('all chain entry pages request the repaired script version', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.match(html, /js\/bazi-chain\.js\?v=13/, page);
+    assert.match(html, /js\/bazi-chain\.js\?v=14/, page);
   }
 });
 
@@ -501,7 +501,7 @@ test('DaYun stem combinations are recorded without crashing the full interaction
   assert.match(combine.text, /己合.*甲.*候选化土/);
 });
 
-test('a favorable annual branch clashing a Ji target can be judged as change-before-improvement', () => {
+test('a favorable balance clash does not establish event improvement', () => {
   const context = loadBrowserRuntime();
   const base = chart('庚', '辰', '丙', '寅', '甲', '午', '丁', '卯');
   const result = context.BaZiChain.analyzeLiuNian(
@@ -514,7 +514,8 @@ test('a favorable annual branch clashing a Ji target can be judged as change-bef
   const dayClash = result.triggers.find(item => item.type === '六冲' && item.target === 'day');
   assert.ok(dayClash);
   assert.equal(dayClash.isGood, true);
-  assert.match(dayClash.detail, /先变后改善/);
+  assert.equal(dayClash.eventIsGood, null);
+  assert.match(dayClash.detail, /扶抑层面/);
 });
 
 test('XiangFa output is derived from mechanism evidence and yongji instead of free calculation', () => {

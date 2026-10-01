@@ -2,14 +2,14 @@
   'use strict';
 
   var domainNames = { study:'学业', career:'事业', wealth:'财务', relationship:'感情', family:'家庭', health:'身心状态', change:'生活变化' };
-  var CANDIDATE_VERSION = 'bazi-cal-v10';
+  var CANDIDATE_VERSION = 'bazi-cal-v11';
   var prompts = {
     study:'这一年是否出现过升学、考试、转专业，或学习状态明显变化？',
     career:'这一年是否出现过入职、离职、换岗位、实习，或工作责任明显变化？',
     wealth:'这一年是否出现过收入、花钱、家庭经济，或较大金额进出明显变化？',
     relationship:'这一年是否出现过恋爱、分合、关系确定，或重要人际关系明显变化？',
     family:'这一年父母、家庭关系、住处，或家中重要事情是否有明显变化？',
-    health:'这一年身体状态、作息、情绪压力，或治疗检查是否有明显变化？',
+    health:'这一年是否因生活安排变化而取消或延期既定计划？',
     change:'这一年是否发生过搬迁、换环境、身份变化，或人生节奏明显改变？'
   };
 
@@ -18,11 +18,11 @@
   }
 
   function directionOf(trigger, analysis) {
-    if (trigger && trigger.isGood === true) return 'good';
-    if (trigger && trigger.isGood === false) return 'bad';
-    if (Number(analysis.opportunityScore || 0) > Number(analysis.dangerScore || 0)) return 'good';
-    if (Number(analysis.dangerScore || 0) > Number(analysis.opportunityScore || 0)) return 'bad';
-    return 'neutral';
+    if (!trigger) return 'neutral';
+    var value = root.BaZiChain && root.BaZiChain.annualEventDirection
+      ? root.BaZiChain.annualEventDirection(trigger)
+      : (trigger.disruptive && trigger.isGood === true ? null : trigger.isGood);
+    return value === true ? 'good' : (value === false ? 'bad' : 'neutral');
   }
 
   function domainTriggers(domain, analysis) {
@@ -39,13 +39,15 @@
   }
 
   function domainDirection(domain, analysis) {
-    var relevant = domainTriggers(domain, analysis), good = 0, bad = 0;
+    var relevant = domainTriggers(domain, analysis), good = 0, bad = 0, unresolved = false;
     relevant.forEach(function(t) {
       var weight = t.severity === 'high' ? 3 : (t.severity === 'medium' ? 2 : 1);
-      if (t.isGood === true) good += weight;
-      else if (t.isGood === false) bad += weight;
+      var direction = directionOf(t, analysis);
+      if (direction === 'good') good += weight;
+      else if (direction === 'bad') bad += weight;
+      else if (/天克地冲|六冲|地冲月提|三刑|自刑|^刑$|六害|六破/.test(t.type || '')) unresolved = true;
     });
-    return good > bad ? 'good' : (bad > good ? 'bad' : 'neutral');
+    return good > bad && !unresolved ? 'good' : (bad > good ? 'bad' : 'neutral');
   }
 
   function parentYearContext(parentAnalysis, analysis, tenGod, dy, liuNian, age) {
@@ -72,16 +74,16 @@
     var relevantHits = target === 'palace' ? yearHits : yearHits.filter(function(t) {
       return (star.appearances || []).some(function(a){ return t.target === a.pos; });
     });
-    var good = relevantHits.filter(function(t){return t.isGood === true}).length;
-    var bad = relevantHits.filter(function(t){return t.isGood === false}).length;
+    var good = relevantHits.filter(function(t){return directionOf(t, analysis) === 'good'}).length;
+    var bad = relevantHits.filter(function(t){return directionOf(t, analysis) === 'bad'}).length;
     var direction = good > bad ? 'good' : (bad > good ? 'bad' : domainDirection('family', analysis));
     var palaceGood = facts.palace.state === 'stable';
     var starGood = star ? star.state === 'strong' : (facts.parentStars.father.state !== 'weak' && facts.parentStars.mother.state !== 'weak');
     var quadrant = palaceGood ? (starGood ? 'palace-good-star-good' : 'palace-good-star-weak') : (starGood ? 'palace-damaged-star-good' : 'palace-damaged-star-weak');
     var consequences = target === 'father'
-      ? [{key:'father_work',label:'父亲换工作、收入起伏或事业安排改变'},{key:'family_money',label:'家里收入、支出或经济压力随之变化'},{key:'father_health',label:'父亲检查、治疗或身体状态反复'}]
+      ? [{key:'father_work',label:'父亲换工作、收入起伏或事业安排改变'},{key:'family_money',label:'家里收入、支出或经济压力随之变化'},{key:'father_arrangement',label:'父亲的生活安排改变，实际影响家庭分工'}]
       : (target === 'mother'
-        ? [{key:'mother_role',label:'母亲承担的家事、工作或照顾责任改变'},{key:'mother_health',label:'母亲检查、治疗或身体状态反复'},{key:'home_support',label:'住房、学习或生活安排受到母亲影响'}]
+        ? [{key:'mother_role',label:'母亲承担的家事、工作或照顾责任改变'},{key:'mother_arrangement',label:'母亲的生活安排改变，实际影响家庭分工'},{key:'home_support',label:'住房、学习或生活安排受到母亲影响'}]
         : [{key:'parent_relation',label:'父母争执、冷淡或相处方式改变'},{key:'home_move',label:'搬家、住房或共同生活安排改变'},{key:'family_money',label:'家庭经济和生活条件随之变化'}]);
     if (age <= 23) consequences.push({key:'study_impact',label:'家庭变化进一步影响转学、升学或学习状态'});
     else consequences.push({key:'work_impact',label:'家庭变化进一步影响你的工作、城市或生活计划'});
@@ -152,12 +154,13 @@
       return prompts.relationship;
     }
     if (domain === 'family') {
+      if (hasFamilyDisruption(analysis)) return '这一年家中是否发生过一件事，让你实际请假照顾家人、承担计划外开支或改变住处？请按真实经历选择，也可以回答没有';
       if (parentContext) { good = parentContext.direction === 'good'; bad = parentContext.direction === 'bad'; }
       if (parentContext && parentContext.target === 'father') return bad
-        ? '这一年父亲的工作、收入或身体状态是否出现过明显波动，需要家里替他操心、出钱或调整安排？'
-        : (good ? '这一年父亲的工作和收入是否出现过明显机会，或者他给家庭的实际支持比之前更多？' : '这一年父亲的工作、收入、身体状态或他在家中的角色是否发生过明显变化？');
+        ? '这一年父亲的工作、收入或生活安排是否出现过明显波动，需要家里替他操心、出钱或调整安排？'
+        : (good ? '这一年父亲的工作和收入是否出现过明显机会，或者他给家庭的实际支持比之前更多？' : '这一年父亲的工作、收入或他在家中的角色是否发生过明显变化？');
       if (parentContext && parentContext.target === 'mother') return bad
-        ? '这一年母亲是否更劳累、身体状态反复，或家里有一件事主要由她承担，让你明显为她操心？'
+        ? '这一年母亲承担的家事是否明显增多，或家里有一件事主要由她承担，让你明显为她操心？'
         : (good ? '这一年母亲的生活状态是否更稳定，或者她在住房、学习、工作等现实事情上给过你明显帮助？' : '这一年母亲的生活、身体状态或她在家中的责任是否发生过明显变化？');
       if (yearHit && /六冲|天克地冲/.test(yearHit.type || '')) return yearDirection === 'good'
         ? '这一年家里是否经历过搬迁、父母工作变化或家庭关系调整，变化之后整体状态反而有所改善？'
@@ -172,9 +175,9 @@
       return prompts.family;
     }
     if (domain === 'health') {
-      if (strongChange && bad) return '这一年是否明显睡不好、容易疲惫或压力顶到身体上，曾经做过检查、治疗，或因磕碰扭伤影响正常生活？';
+      if (strongChange && bad) return '这一年是否明显睡不好、容易疲惫或压力顶到身体上，实际取消或延期了原定安排？';
       if (/官|杀/.test(tenGod || '') && bad) return '这一年是否长期处在紧张和赶进度的状态，睡眠、胃口、情绪或体力有一项明显变差？';
-      if (/印/.test(tenGod || '') && good) return '这一年身体和作息是否比之前稳定，原有的小毛病得到休养、检查或治疗后明显缓解？';
+      if (/印/.test(tenGod || '') && good) return '这一年身体和作息是否比之前稳定，原定安排恢复正常？';
       return prompts.health;
     }
     if (domain === 'change' && age < 18) return '这一年是否换过学校、班级、住处或主要生活环境，整个人的生活节奏随之改变？';
@@ -276,10 +279,10 @@
     ],
     family: [
       {key:'parent_work_money',label:'父母工作或家庭经济变化'}, {key:'home_move',label:'搬家、住房或居住安排变化'},
-      {key:'family_relation',label:'父母关系或家庭争执变化'}, {key:'elder_health',label:'长辈身体、治疗或需要照顾'}
+      {key:'family_relation',label:'父母关系或家庭争执变化'}, {key:'elder_affairs',label:'长辈事务需要你额外投入时间或承担开支'}
     ],
     health: [
-      {key:'sleep_energy',label:'睡眠、精力或长期疲惫'}, {key:'check_treatment',label:'检查、治疗或旧问题复发'},
+      {key:'sleep_energy',label:'睡眠、精力或长期疲惫'}, {key:'schedule_interruption',label:'因生活安排变化而中断既定计划'},
       {key:'injury_recovery',label:'磕碰、扭伤或恢复期'}, {key:'stress_body',label:'压力大到影响胃口、情绪或身体状态'}
     ],
     change: [
@@ -315,7 +318,7 @@
   function conciseLabel(domain, analysis, tenGod, parentContext) {
     var labels = {study:'升学考试或学习状态',career:'工作岗位或责任变化',wealth:'收入、支出或资金变化',relationship:'感情关系出现转折',family:'父母、住房或家庭变化',health:'身体、睡眠或压力变化',change:'生活环境或人生计划变化'};
     if (domain === 'wealth' && /比肩|劫财/.test(tenGod || '')) return domainDirection(domain, analysis)==='good'?'朋友团队带来赚钱机会':'合伙、人情或竞争带来损失';
-    if (domain === 'family' && parentContext) return parentContext.target === 'father' ? '父亲的工作、钱或身体状态变化' : (parentContext.target === 'mother' ? '母亲的生活、身体或家庭角色变化' : '父母关系或家庭根基发生变化');
+    if (domain === 'family' && parentContext) return parentContext.target === 'father' ? '父亲的工作、收入或生活安排变化' : (parentContext.target === 'mother' ? '母亲的生活安排或家庭角色变化' : '父母关系或家庭根基发生变化');
     if (domain === 'career' && /(伤官见官|官逢伤官)/.test((analysis.triggers || []).map(function(t){return t.type||''}).join('|'))) return '与领导、制度或审核发生冲突';
     return labels[domain] || labels.change;
   }
@@ -380,8 +383,31 @@
     return rows[domain]||rows.change;
   }
 
+  function hasFamilyDisruption(analysis) {
+    return domainTriggers('family', analysis).some(function(t) {
+      return /天克地冲|六冲|地冲月提|三刑|自刑|^刑$|六害|六破/.test(t.type || '');
+    });
+  }
+
   function competingOptions(domain, analysis, age, tenGod, parentContext) {
     var base=competingOption(domain,analysis,age,tenGod,parentContext);
+    if (domain === 'family' && hasFamilyDisruption(analysis)) {
+      // Ask what happened; do not diagnose a relative or assert a disaster from a clash.
+      return [Object.assign(base, {
+        key:'family:disruption-cost', manifestation:'family-disruption-cost',
+        label:'家中变故影响照顾、开支或住处',
+        detail:predictedPrompt(domain,analysis,age,tenGod,parentContext),
+        mechanism_key:'family-disruption-review',
+        followup_prompt:'如果确实发生，具体是哪一类？没有发生就不要选。',
+        followup_options:[
+          {key:'family_condition',label:'家人身体状况有变化，实际影响原定家庭安排'},
+          {key:'family_responsibility',label:'临时承担家中事务，实际请假或中断原有安排'},
+          {key:'family_extra_cost',label:'家中出现计划外开支，导致其他付款延期或取消'},
+          {key:'family_income_interruption',label:'家里一项收入中断，导致缩减开支或推迟付款'},
+          {key:'family_relocation',label:'实际搬家或改变同住安排'}
+        ]
+      })];
+    }
     var candidates=root.ZhishiCalibrationModel&&root.ZhishiCalibrationModel.professionalCandidates
       ? root.ZhishiCalibrationModel.professionalCandidates(domain,analysis):[];
     return candidates.length?candidates.map(function(c){return Object.assign({},base,c);}):[base];

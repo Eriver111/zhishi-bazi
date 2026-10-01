@@ -1853,7 +1853,7 @@ function renderThisYear(bazi, gender) {
     var labelColor = ty.isFavorable ? '#81C784' : '#feca57';
 
     // 吉/凶标签
-    var overallTag = ({'大吉':'利好','偏吉':'较好','中性':'平稳','偏凶':'偏紧','大凶':'注意'})[ty.verificationVerdict] || '待复核';
+    var overallTag = ({'大吉':'利好','偏吉':'较好','变动明显':'变动明显','中性':'平稳','偏凶':'偏紧','大凶':'注意'})[ty.verificationVerdict] || '待复核';
     var overallColor = ty.verificationVerdict === '大吉' || ty.verificationVerdict === '偏吉' ? '#81C784' : '#feca57';
 
     // 冲合警告
