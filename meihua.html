@@ -161,15 +161,15 @@ function doGua(){
   var chgDB=findGua(g.change.name);
   var anchor='';
   if(origDB){
-    anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；'+origDB.meaning;
+    anchor+='本卦《'+origDB.name+'》：卦辞曰"'+origDB.judgment+'"；大象：'+origDB.xiang;
     if(origDB.lines&&origDB.lines[g.line-1]) anchor+=' 动爻爻辞："'+origDB.lines[g.line-1]+'"';
   }
-  if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.meaning;
+  if(chgDB) anchor+=' 变卦《'+chgDB.name+'》：'+chgDB.judgment+'；大象：'+chgDB.xiang;
   res._g=g; res._anchor=anchor; res._origDB=origDB;
   showGuaReveal(g.orig.name,g.orig.yao,function(){
   res.innerHTML=
     '<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upImage+'／'+g.orig.upWX+'）下'+g.orig.dn+'（'+g.orig.dnImage+'／'+g.orig.dnWX+'）</div><div class="gua-desc">体卦 '+g.body.name+'（'+g.body.wx+'） · 用卦 '+g.use.name+'（'+g.use.wx+'） · '+tiYongRelation(g)+'<br>互卦「'+g.mutual.name+'」</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
-    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【解读】'+origDB.meaning+'</div>':'')+
+    (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'<br>【大象】'+origDB.xiang+'</div>':'')+
     '<button class="btn-submit" onclick="window.unlockReading()" style="margin-top:16px">积分解锁 AI 解读</button>'+
     '<p style="text-align:center;font-size:11px;color:var(--tx3);margin-top:8px">排卦免费 · AI解读消耗1次积分</p></div>';
   });
@@ -186,9 +186,9 @@ window.unlockReading=function(){
   var token=null,code='';try{token=localStorage.getItem('ai_auth_token');code=localStorage.getItem('ai_auth_code')||'';}catch(e){}
   fetch('/api/divination',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:JSON.stringify({prompt:prompt,code:code,divType:'meihua'})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.error){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:#e07050;margin-top:12px">'+d.error+'</div></div>';return;}
-    var r=d.reading||'';
-    var html='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upElem+'）下'+g.orig.dn+'（'+g.orig.dnElem+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
+    if(d.error){res.innerHTML='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div></div><div class="result" style="text-align:center;color:#e07050;margin-top:12px">'+String(d.error).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div></div>';return;}
+    var r=String(d.reading||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var html='<div class="card"><div class="hexagram"><div class="gua-name">'+g.orig.name+'</div><div class="gua-yao">'+yaoStr(g.orig.yao)+'</div><div class="gua-desc">上'+g.orig.up+'（'+g.orig.upImage+'／'+g.orig.upWX+'）下'+g.orig.dn+'（'+g.orig.dnImage+'／'+g.orig.dnWX+'）</div><div class="arrow">↓ 第'+g.line+'爻动 ↓</div><div class="gua-name" style="font-size:20px">'+g.change.name+'</div><div class="gua-yao">'+yaoStr(g.change.yao)+'</div></div>'+
     (origDB?'<div class="gua-desc" style="margin-top:8px;font-size:12px;line-height:1.8">【卦辞】'+origDB.judgment+'</div>':'');
     if(r){ html+='<div class="result" style="margin-top:16px;font-size:14px;line-height:2.2;color:var(--tx)">'+r.replace(/\n/g,'<br>')+'</div>'; }
     html+='<div style="text-align:center;margin-top:12px;font-size:10px;color:var(--tx3)">'+(d.freeUsed?'本次消耗免费次数':'消耗1次积分')+'</div>';

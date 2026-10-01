@@ -46,3 +46,16 @@ test('Meihua client explicitly selects its own AI rules', () => {
   assert.match(html, /体卦为.*用卦为.*体用关系/);
   assert.doesNotMatch(html, /返回JSON：/);
 });
+
+test('AI result retains valid trigram labels and escapes generated markup', async () => {
+  const core=loadCore(),g=core.getGua(1,1,1),result={_g:g,_anchor:'',_origDB:{judgment:'元亨利贞。'}};
+  const sandbox={window:{},document:{getElementById:id=>id==='result'?result:{value:'合成课程问题'}},Auth:{isLoggedIn:()=>true},localStorage:{getItem:()=>null},yaoStr:core.yaoStr,tiYongRelation:core.tiYongRelation,
+    fetch:async()=>({json:async()=>({reading:'<img src=x onerror=alert(1)>\n先确定交接标准。'})})};
+  const start=html.indexOf('window.unlockReading=function');
+  vm.runInNewContext(html.slice(start,html.indexOf('window.doGua=',start)),sandbox);
+  sandbox.window.unlockReading();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(result.innerHTML,/上乾（天／金）下乾（天／金）/);
+  assert.doesNotMatch(result.innerHTML,/undefined|<img/);
+  assert.match(result.innerHTML,/&lt;img/);
+});

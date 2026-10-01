@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {cleanReading,readingIssue}=require('../lib/divination-quality');
 test('divination rejects medical specifics and guarantees, preserves concrete adverse readings',()=>{
- for(const s of ['建议去医院检查。','本年可能有肺部问题。','项目验收没问题，最终能交差。','待复核后再分析'])assert.ok(readingIssue(s));
+ for(const s of ['建议去医院检查。','本年可能有肺部问题。','项目验收没问题，最终能交差。','待复核后再分析','体用比和，说明大家实力不差、地位也平等。'])assert.ok(readingIssue(s));
  assert.equal(readingIssue('家人身体状况变化可能打乱日常安排。先明确由谁接送，再安排原有任务。'),'');
  assert.equal(readingIssue('这次分工的阻力主要在交接反复：父母爻受克，文档标准容易来回修改。'),'');
  assert.equal(cleanReading('```json\n{"reading":"**核心判断**\\n先明确分工"}\n```'),'核心判断\n先明确分工');
