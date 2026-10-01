@@ -351,7 +351,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261001f');
+  res.setHeader('X-Zhishi-AI-Policy', '20261001g');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -1509,6 +1509,7 @@ function buildTimingAdjudicationBrief(question, chartData) {
     }
     lines.push('本轮回答必须遵守“' + exactRecord.label + '·' + exactRecord.direction + '”的含义，但不要把内部方向、置信度或“条件性候选”标签抄给用户。用实际影响解释：哪项安排被打断、谁要分担、钱或时间花在哪里；只取有支持的前1至2项。条件性表示支持与代价并存，不等于没有内容可说。不能因缺少具体事故事实就断言“压力不在有人出事”，也不能反过来断言有人必定出事。若全年综合与所问领域不同，只解释与问题有关的差别，禁止全年分数覆盖领域裁决。');
     lines.push('不要给坏事加没有证据的上限：禁止“方向不算坏到底、不会太坏”等兜底。喜用运只表示扶抑层面的帮助，不证明十年现实顺利、有人搭手、有资源可用或事情最终能解决，更不能据此说“所以不是家里出事的格局”。没有事实反馈时，不能确认也不能排除家人出事。现实积极面必须有独立的事件依据，否则不必强凑好坏平衡。推断始终是传统取象，不能用“这一年的事实是”将它写成已验证经历。');
+    lines.push('用词检查：若依据只有喜用或帮身，写“扶抑层面有利”，不要缩写成“你个人顺、你自身状态得到补充、那十年顺”。这是结构关系，不是个人现实处境的事实。年龄只筛选合理场景，18岁不自动等于参加高考或刚进大学；用户没说在读时应写“若当时在读，可能影响学费或上学安排”。');
   } else if (exact && exact.year !== null && !exact.record) {
     lines.push('用户指定了' + exact.year + '年，但数据中没有该年或所问领域的有效裁决；必须承认无法确认，不得改用其他年份或只凭十神补断。');
     if (isClosedOutcomeQuestion(question)) lines.push('【封闭问题直接裁决】第一句话回答“目前不能确认”，然后只说明缺少哪项关键数据。');
