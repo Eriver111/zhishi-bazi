@@ -108,24 +108,39 @@ test('流年分析自动附带应事裁决且不改写原有方向分数', () =>
   assert.ok(result.eventAdjudication.primaryEvent);
 });
 
-test('流年同领域裁决继承大运趋势，不把别的领域方向借过来', () => {
+test('大运同领域和跨领域趋势只作背景，不替代年度独立触发', () => {
   const C = runtime();
+  const analysis = { verifiedScore:2, dangerScore:0, opportunityScore:2, triggers:[] };
+  const background = { domainRecords:[
+    { domain:'career', label:'事业与职责', activationScore:5, direction:'偏不利', conclusion:'工作平台与责任更容易形成压力' },
+    { domain:'family', label:'家庭与长辈', activationScore:5, direction:'偏有利', conclusion:'家庭支持更容易兑现' }
+  ] };
+  const baseline = C.BaZiChain.buildAnnualEventAdjudication(
+    chart(), { gan:'甲', zhi:'子' }, { year:2035, gan:'乙', zhi:'卯' }, analysis, { age:35 }
+  );
   const adjudication = C.BaZiChain.buildAnnualEventAdjudication(
     chart(),
     { gan:'甲', zhi:'子' },
     { year:2035, gan:'乙', zhi:'卯' },
-    { verifiedScore:2, dangerScore:0, opportunityScore:2, triggers:[] },
-    {
-      age:35,
-      daYunEventLedger:{ domainRecords:[
-        { domain:'career', label:'事业与职责', activationScore:5, direction:'偏不利', conclusion:'工作平台与责任更容易形成压力' },
-        { domain:'family', label:'家庭与长辈', activationScore:5, direction:'偏有利', conclusion:'家庭支持更容易兑现' }
-      ] }
-    }
+    analysis,
+    { age:35, daYunEventLedger:background }
   );
   const career = adjudication.domainRecords.find(item => item.domain === 'career');
-  assert.equal(career.direction, '偏不利');
-  assert.match(career.evidence.join('；'), /本步大运.*事业与职责.*偏不利/);
+  assert.equal(career.direction, '条件性');
+  assert.equal(career.hasIndependentAnnualTrigger, false);
+  assert.deepEqual(adjudication.domainRecords, baseline.domainRecords, '十年背景不能改变年度排名、分数、方向或证据');
+  assert.equal(adjudication.daYunBackground.domainRecords.find(item=>item.domain==='career').direction,'偏不利');
+  assert.equal(adjudication.daYunBackground.domainRecords.find(item=>item.domain==='family').direction,'偏有利');
+  assert.doesNotMatch(career.evidence.join('；'), /本步大运/);
+  assert.equal(C.BaZiChain.rankTimingCandidates([{eventAdjudication:adjudication}],'career').length,0);
+
+  const triggered = C.BaZiChain.buildAnnualEventAdjudication(
+    chart(), { gan:'甲', zhi:'子' }, { year:2035, gan:'乙', zhi:'卯' },
+    { ...analysis, triggers:[{type:'天克地冲',target:'month',isGood:false,detail:'合成当年月柱独立不利触发'}] },
+    { age:35, daYunEventLedger:{domainRecords:[{domain:'career',direction:'偏有利',activationScore:99,conclusion:'十年事业背景有利'}]} }
+  );
+  assert.equal(triggered.domainRecords.find(item=>item.domain==='career').direction,'偏不利');
+  assert.equal(C.BaZiChain.rankTimingCandidates([{eventAdjudication:triggered}],'career').length,1);
 });
 
 test('未知出生年不会被 null 年龄误当成零岁', () => {
@@ -153,9 +168,17 @@ test('只有大运背景和流年十神时只定主题，不冒充重点应期',
     ] } }
   );
   const career = adjudication.domainRecords.find(item => item.domain === 'career');
-  assert.equal(career.direction, '条件性');
+  const withoutBackground = C.BaZiChain.buildAnnualEventAdjudication(
+    bazi, { gan:'丙', zhi:'寅' }, { year:2026, gan:'丙', zhi:'午' },
+    { stemRole:'喜神', verifiedScore:2, dangerScore:0, opportunityScore:2, triggers:[] }, {age:28}
+  );
+  assert.deepEqual(adjudication.domainRecords,withoutBackground.domainRecords);
+  assert.equal(career.direction, '偏有利', '喜十神只是主题方向，十年不利背景不能反向抵消成另一个年度结论');
   assert.equal(career.hasIndependentAnnualTrigger, false);
+  assert.equal(career.concreteOutcomeEstablished, false);
+  assert.equal(career.annualStructuralTriggerCount,0);
   assert.match(career.evidence.join('；'), /仅凭十神只能定主题/);
+  assert.equal(adjudication.daYunBackground.domainRecords[0].direction,'偏不利');
   assert.equal(C.BaZiChain.rankTimingCandidates([{ eventAdjudication:adjudication }], 'career').length, 0);
 });
 

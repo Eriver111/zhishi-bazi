@@ -84,7 +84,11 @@ test('unknown status advances age per future year instead of freezing the school
  const f=build(2010,'unknown');
  assert.equal(f.currentYear.lifeContext.age,16);assert.equal(f.currentYear.lifeContext.studyRelevant,true);
  const last=f.fiveYear.years[4];assert.equal(last.lifeContext.age,20);assert.equal(last.lifeContext.studyRelevant,false);
- assert.ok(!last.eventAdjudication.domainRecords.some(r=>r.domain==='study'));
+ // Adult unknown status is not proof that schooling ended. Only independently
+ // triggered study evidence remains, and its reading stays conditional.
+ const study=last.eventAdjudication.domainRecords.filter(r=>r.domain==='study');
+ assert.ok(study.every(r=>r.hasIndependentAnnualTrigger));
+ study.forEach(r=>assert.match(Report.__test.describeTimingEvent(r,last.eventAdjudication,last.lifeContext,last).scenario,/若当时在读或备考/));
 });
 test('completed preflight is remembered within this browser session, scoped to chart and account',()=>{
  const {box,node,storage}=client();box.sessionStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};

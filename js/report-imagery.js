@@ -562,14 +562,74 @@ function getReportScenario(ruleOrId,domain,life,context){
 const arr=x=>Array.isArray(x)?x:[];
 function role(y,wx){const e=arr(y&&y.elementRoleLedger&&y.elementRoleLedger.entries).find(e=>e.element===wx);return e&&e.fortuneRole||(arr(y&&y.yongShen).includes(wx)?'用神':arr(y&&y.xiShen).includes(wx)?'喜神':arr(y&&y.jiShen).includes(wx)?'忌神':'未定');}
 const good=r=>r==='用神'||r==='喜神';
-function collectSignals(analysis){
+function collectSignals(analysis,activationAudit){
  analysis=analysis||{};
+ // Temporal paths are inspectable structural evidence, not new episode
+ // signals. In particular connected / contested must never become effective
+ // merely because a path resembles a named imagery rule.
+ if(Array.isArray(activationAudit))auditAnnualStructure(analysis).forEach(row=>activationAudit.push(row));
  const signals=arr(analysis.triggers).filter(s=>s&&s.source!=='大运').concat(arr(analysis.reportTriggeredRisks)).filter(s=>s&&s.active!==false&&s.strengthensRisk!==false).map(s=>({...s,origin:'annual'}));
  const context=analysis.reportMechanismContext||{},chain=context.chain||{},y=context.yongJi||{},cause=y.weaknessCause||{};
- const ms=arr(chain.mechanisms),triggers=arr(analysis.triggers).filter(t=>t.source!=='大运');
+ const ms=Array.isArray(chain.fullMechanisms)?chain.fullMechanisms:arr(chain.mechanisms),triggers=arr(analysis.triggers).filter(t=>t.source!=='大运');
+ const nodes=arr(chain.factGraph&&chain.factGraph.nodes),edges=arr(chain.factGraph&&chain.factGraph.edges);
+ const moving=triggers.concat(arr(analysis.annualStemInteractions)).filter(t=>t&&t.source!=='大运'&&t.active!==false);
  const follows=context.congGe===true||!!(context.congGe&&context.congGe.isCong)||!!(context.pattern&&context.pattern.congGe);
- const hits=m=>triggers.filter(t=>/六冲|天克地冲|地冲月提|六合|半合|三合|三会|刑|六害|六破|伏吟/.test(t.type||'')&&t.target&&(t.target===m.sourcePillar||t.target===m.targetPillar));
- const emit=(type,m,evidence)=>{const hit=hits(m);if(hit.length)signals.push({type,origin:'activated-natal',detail:arr(evidence||m.evidence).concat(hit.map(t=>t.detail||t.type)).join('；'),strength:m.dominanceScore||1});};
+ const node=id=>nodes.find(n=>n.id===id);
+ const liveEdge=m=>edges.filter(e=>arr(m.edgeIds).includes(e.id)&&e.fromNode&&e.toNode&&Number(e.strength)>=0.55);
+ const usable=m=>{if(!m||(m.actionStage&&m.actionStage!=='effective'))return false;const es=liveEdge(m),ids=arr(m.nodeIds);
+  return es.length>0&&es.length===arr(m.edgeIds).length&&ids.length>1&&ids.every(id=>!!node(id))
+   &&es.every(e=>ids.includes(e.fromNode.id)&&ids.includes(e.toNode.id));};
+ function touched(t,n){
+  if(!n)return false;
+  const stem=t.targetLayer==='stem'||t.targetLayer==='gan'||t.layer==='天干';
+  if(stem){
+   if(t.targetNodeId)return n.layer==='gan'&&t.targetNodeId===n.id;
+   return n.layer==='gan'&&t.target===n.pillar&&!!(t.targetStem||t.targetGan)&&String(t.targetStem||t.targetGan)===n.char;
+  }
+  if(!/六冲|天克地冲|地冲月提|六合|半合|三合|三会|刑|六害|六破|伏吟/.test(t.type||''))return false;
+  const positions=arr(t.targetPositions).concat(t.target||[]);
+  if(!positions.includes(n.pillar))return false;
+  const branch=t.targetBranch||t.targetZhi;
+  if(n.layer==='zhi')return !branch||branch===n.char;
+  if(n.layer==='hidden')return (!branch||branch===n.branch)&&Number(n.effectiveCoefficient==null?1:n.effectiveCoefficient)>=0.5;
+  // A branch at the same pillar is not automatically a root of the exposed
+  // stem. It can activate that stem only through an actual surviving root.
+  if(n.layer==='gan')return nodes.some(root=>root.pillar===n.pillar&&root.layer==='hidden'&&root.wx===n.wx
+   &&(!branch||root.branch===branch)&&Number(root.weight)>0&&Number(root.effectiveCoefficient==null?1:root.effectiveCoefficient)>=0.5);
+  return false;
+ }
+ const hits=m=>usable(m)?moving.filter(t=>arr(m.nodeIds).some(id=>touched(t,node(id)))):[];
+ function nodeEffect(t,n){
+  if(t.targetLayer==='stem'||t.targetLayer==='gan'||t.layer==='天干'){
+   if(arr(t.competingTargetNodeIds).length||t.transformationEstablished===true)return {effect:'disrupts',reason:'binding-or-transformation-needs-reassessment'};
+   if(t.relation==='克'&&t.fromNodeId==='annual.gan'&&t.toNodeId===n.id)return {effect:'disrupts',reason:'annual-stem-controls-node'};
+   if(t.relation==='生'&&t.fromNodeId==='annual.gan'&&t.toNodeId===n.id)return {effect:'reinforces',reason:'annual-stem-generates-node'};
+   if(t.relation==='同气'&&t.targetNodeId===n.id)return {effect:'reinforces',reason:'annual-stem-same-element'};
+   return {effect:'touches',reason:'relation-does-not-prove-reinforcement'};
+  }
+  if(['六冲','天克地冲','地冲月提','六害','六破','刑','自刑','三刑俱全'].includes(t.type))return {effect:'disrupts',reason:n.layer==='gan'?'supporting-root-disturbed':'branch-node-disturbed'};
+  return {effect:'touches',reason:'branch-contact-without-proven-reinforcement'};
+ }
+ function effectsFor(m,hit){
+  const es=liveEdge(m),effects=[];
+  hit.forEach(t=>arr(m.nodeIds).forEach(id=>{const n=node(id);if(!touched(t,n))return;
+   const effect=nodeEffect(t,n),outgoing=es.some(e=>e.fromNode.id===id),incoming=es.filter(e=>e.toNode.id===id);
+   // Supporting the object of a controlling edge does not strengthen the
+   // controller. Likewise another actor damaging that object is not proof that
+   // this original controlling route became effective.
+   const controlledOnly=!outgoing&&incoming.length&&incoming.every(e=>e.type==='克');
+   effects.push({triggerId:t.id||[t.source,t.type,t.target||t.targetNodeId].join(':'),nodeId:id,
+    nodeEffect:effect.effect,effect:controlledOnly?'touches':effect.effect,
+    reason:controlledOnly?'controlled-object-change-is-not-controller-reinforcement':effect.reason});
+  }));return effects;
+ }
+ const emit=(type,m,evidence)=>{const hit=hits(m),effects=effectsFor(m,hit);
+  const activated=effects.some(e=>e.effect==='reinforces')&&!effects.some(e=>e.effect==='disrupts');
+  if(Array.isArray(activationAudit))activationAudit.push({type,mechanismId:m.id,actionStage:m.actionStage||'edge-supported',activated,
+   activationEffects:effects,reason:!usable(m)?'mechanism-not-effective-or-no-bound-nodes':!hit.length?'no-matching-annual-node':activated?'reinforced-without-detected-interruption':'reinforcement-not-established-or-counteracted'});
+  if(activated)signals.push({type,origin:'activated-natal',mechanismId:m.id,
+   nodeIds:arr(m.nodeIds),edgeIds:arr(m.edgeIds),actionStage:m.actionStage||'edge-supported',activationEffects:effects,
+   detail:arr(evidence||m.evidence).concat(hit.map(t=>t.detail||t.type)).join('；'),strength:m.dominanceScore||1});};
  ms.forEach(m=>{
   const sr=role(y,m.sourceWx),tr=role(y,m.targetWx);
   if(m.name==='财破印'){if(good(tr))emit('财破印',m);else if(tr==='忌神'&&good(sr))emit('财制印',m);}
@@ -593,11 +653,15 @@ function collectSignals(analysis){
  });
  // Continuous paths are already proved by common graph nodes in bazi-chain; mere cooccurrence is insufficient.
  arr(chain.paths).forEach(path=>{
-  const first=ms.find(m=>m.name==='官杀生印'),last=ms.find(m=>m.name==='印生身');
-  if(path.name==='官杀经印通关'&&first&&last&&good(role(y,last.sourceWx)))emit(first.sourceShiShen==='七杀'?'杀印相生':'官印相生',first,path.steps);
-  if(path.name==='财官印身连续流通'&&first&&last&&good(role(y,last.sourceWx)))emit('财官印连续流通',first,path.steps);
+  const route=arr(path.mechanismIds).map(id=>ms.find(m=>m.id===id));
+  if(path.actionStage!=='effective'||!route.length||route.some(m=>!usable(m)||m.actionStage!=='effective')
+   ||route.some((m,i)=>i>0&&route[i-1].targetNodeId!==m.sourceNodeId))return;
+  const first=route.find(m=>m.name==='官杀生印'),last=route[route.length-1];
+  if(!first||last.name!=='印生身'||!good(role(y,last.sourceWx)))return;
+  const pathMechanism={id:path.id,nodeIds:route.flatMap(m=>arr(m.nodeIds)),edgeIds:route.flatMap(m=>arr(m.edgeIds)),actionStage:'effective',evidence:path.steps};
+  if(path.name==='官杀经印通关')emit(first.sourceShiShen==='七杀'?'杀印相生':'官印相生',pathMechanism,path.steps);
+  if(path.name==='财官印身连续流通')emit('财官印连续流通',pathMechanism,path.steps);
  });
- const nodes=arr(chain.factGraph&&chain.factGraph.nodes),edges=arr(chain.factGraph&&chain.factGraph.edges);
  const effective=n=>n&&['本气','地支本气'].includes(n.depth)&&Number(n.weight)>0&&Number(n.effectiveCoefficient==null?1:n.effectiveCoefficient)>=0.5;
  const peers=nodes.filter(n=>n.family==='比劫'&&effective(n));
  if(!follows&&['七杀攻身','官杀混杂压身'].includes(cause.type)&&good(role(y,cause.peerElement))&&peers.length){
@@ -606,19 +670,25 @@ function collectSignals(analysis){
  }
  edges.forEach(e=>{
   const a=e.fromNode,b=e.toNode;if(!a||!b||e.type!=='生'||Number(e.strength)<0.55)return;
-  const m={sourcePillar:a.pillar,targetPillar:b.pillar,evidence:[e.evidence]};
+  const m={id:'edge:'+e.id,edgeIds:[e.id],nodeIds:[a.id,b.id],sourcePillar:a.pillar,targetPillar:b.pillar,evidence:[e.evidence]};
   if(a.family==='比劫'&&b.family==='食伤'&&good(role(y,b.wx)))emit('比劫生食伤',m);
   if((a.family==='日主'||a.family==='比劫')&&b.family==='食伤'&&cause.type==='食伤泄身'&&!follows)emit('食伤泄身过度',m);
  });
  edges.filter(e=>e.type==='克'&&Number(e.strength)>=0.55&&e.fromNode&&e.toNode&&e.fromNode.family==='官杀'&&e.toNode.family==='比劫').forEach(e=>{
   const next=edges.find(f=>f.type==='克'&&Number(f.strength)>=0.55&&f.fromNode&&f.toNode&&f.fromNode.id===e.toNode.id&&f.toNode.family==='财');
-  if(next&&good(role(y,e.fromNode.wx))&&good(role(y,next.toNode.wx)))emit('官护财',{sourcePillar:e.fromNode.pillar,targetPillar:e.toNode.pillar,evidence:[e.evidence,next.evidence]});
+  if(next&&good(role(y,e.fromNode.wx))&&good(role(y,next.toNode.wx)))emit('官护财',{id:'path:'+e.id+'>'+next.id,
+   edgeIds:[e.id,next.id],nodeIds:[e.fromNode.id,e.toNode.id,next.toNode.id],sourcePillar:e.fromNode.pillar,targetPillar:e.toNode.pillar,evidence:[e.evidence,next.evidence]});
  });
  const primaryPattern=context.pattern||{};
  [primaryPattern].concat(arr(primaryPattern.relatedPatterns)).forEach(p=>{if(p.status==='成格'){
   const name=String(p.name||p.legacyName||'').replace(/格$/,'');
-  if(['伤官合杀','羊刃驾杀','伤官配印','官护财'].includes(name)){
-   const matching=ms.filter(m=>name==='伤官配印'?m.name==='印制食伤':m.sourceShiShen==='七杀'||m.targetShiShen==='七杀');
+  // A whole-chart pattern verdict cannot rename every edge involving 七杀.
+  // 伤官合杀 and 羊刃驾杀 do not yet expose their adjudicated node-bound
+  // action paths here; keep those natal facts, but do not invent annual events.
+  // 官护财 is handled above by its actual two controlling edges.
+  if(name==='伤官配印'){
+   const matching=ms.filter(m=>m.name==='印制食伤'&&['正印','偏印'].includes(m.sourceShiShen)
+    &&m.targetShiShen==='伤官'&&good(role(y,m.sourceWx)));
    matching.forEach(m=>emit(name,m,['现有格局裁决：'+p.name].concat(arr(m.evidence))));
   }
  }});
@@ -639,11 +709,13 @@ function candidates(domain,analysis){
  const signals=collectSignals(analysis);
  const life=analysis&&(analysis.reportLifeContext||analysis.eventAdjudication&&analysis.eventAdjudication.lifeContext);
  return rules.flatMap(rule=>{
-  const riskRules=['wealth-breaks-seal','peer-takes-wealth','output-controls-officer','seal-restrains-output','officer-pressure','wealth-feeds-kill'];
-  const matches=signals.filter(s=>rule.names.includes(s.type)&&(s.origin!=='annual'||riskRules.includes(rule.id)));if(!matches.length)return [];
+  // A raw risk label remains visible in collectSignals for audit, but it is not
+  // a node-bound, effective annual mechanism. It must not bypass emit's stage
+  // and directional activation checks to manufacture a specific episode.
+  const matches=signals.filter(s=>rule.names.includes(s.type)&&s.origin!=='annual');if(!matches.length)return [];
   // Incompatible beneficial/adverse readings of the same mechanism require resolution first.
   const opposites={'wealth-breaks-seal':'财制印','wealth-regulates-seal':'财破印','peer-takes-wealth':'比劫担财','peer-carries-wealth':'比劫夺财'};
-  if(opposites[rule.id]&&signals.some(s=>s.type===opposites[rule.id]))return [];
+  if(opposites[rule.id]&&signals.some(s=>s.type===opposites[rule.id]&&s.origin!=='annual'))return [];
   const report=getReportScenario(rule,domain,life,{signals:matches});
   return sceneOutcomes(rule,domain,life).map(o=>({key:domain+':'+rule.id+':'+o.manifestation.replace('@',':'),domain,mechanism_key:'rule:'+rule.id,manifestation:o.manifestation.replace('@',':'),label:o.label,detail:o.detail,
    ...report,
@@ -653,5 +725,13 @@ function candidates(domain,analysis){
   }));
  }).sort((a,b)=>b._priority-a._priority);
 }
-return {version:'imagery-v6',rules,candidates,collectSignals,resolveScene,sceneOutcomes,describeOption,getReportScenario};
+function auditActivations(analysis){const audit=[];collectSignals(analysis,audit);return audit;}
+function auditAnnualStructure(analysis){
+ const graph=analysis&&analysis.annualMechanismGraph;if(!graph||graph.scope!=='temporal-structure-audit')return [];
+ return arr(graph.paths).concat(arr(graph.counteractions)).map(p=>({type:p.name,mechanismId:p.id,
+  origin:'annual-structure-audit',actionStage:p.stage,temporalStatus:p.temporalStatus,
+  nodeIds:arr(p.nodeIds),edgeIds:arr(p.edgeIds),activated:false,eventEstablished:false,
+  reason:'temporal-structure-is-not-adjudicated-event-evidence'}));
+}
+return {version:'imagery-v8',rules,candidates,collectSignals,auditActivations,auditAnnualStructure,resolveScene,sceneOutcomes,describeOption,getReportScenario};
 });

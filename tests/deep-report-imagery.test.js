@@ -1,8 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const Imagery=require('../js/report-imagery.js'),Model=require('../js/calibration-model.js'),Report=require('../js/deep-report.js');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const m=(name,extra={})=>({name,sourcePillar:'month',targetPillar:'day',sourceWx:'木',targetWx:'火',sourceShiShen:'食神',targetShiShen:'七杀',evidence:['合成实际边'],dominanceScore:2,...extra});
-function context(mechanisms=[],extra={}){return {triggers:[{type:'六冲',target:'month',detail:'合成流年引动月柱'}],reportMechanismContext:{chain:{mechanisms,paths:[],factGraph:{nodes:[],edges:[]}},yongJi:{xiShen:['木'],jiShen:['火']},...extra}};}
+const mechanismFixture=require('./helpers/imagery-mechanism-fixture');
+const m=(name,extra={})=>{const row={name,sourcePillar:'month',targetPillar:'day',sourceWx:'木',targetWx:'火',sourceShiShen:'食神',targetShiShen:'七杀',evidence:['合成实际边'],dominanceScore:2,actionStage:'effective',...extra};
+ row.sourceNodeId=row.sourcePillar+'.gan.'+row.sourceWx;row.targetNodeId=row.targetPillar+'.gan.'+row.targetWx;
+ row.id=name+':'+row.sourceNodeId+'>'+row.targetNodeId;row.edgeIds=['edge:'+row.id];row.nodeIds=[row.sourceNodeId,row.targetNodeId];return row;};
+function graph(mechanisms){const nodes=[],edges=[];for(const row of mechanisms){const ns=['source','target'].map(side=>({id:row[side+'NodeId'],pillar:row[side+'Pillar'],wx:row[side+'Wx'],layer:'gan',depth:'透干',weight:1,effectiveCoefficient:1}));for(const n of ns)if(!nodes.some(x=>x.id===n.id))nodes.push(n);edges.push({id:row.edgeIds[0],from:ns[0].id,to:ns[1].id,fromNode:ns[0],toNode:ns[1],strength:1,type:/制|克|破|见官/.test(row.name)?'克':'生'});}return {nodes,edges};}
+function reinforcing(id){return {id:'synthetic-support',type:'天干生',relation:'生',source:'流年',targetLayer:'stem',targetNodeId:id,fromNodeId:'annual.gan',toNodeId:id,detail:'合成流年生扶实际源头节点'};}
+function context(mechanisms=[],extra={}){return {triggers:[reinforcing(mechanisms[0]?.sourceNodeId||'month.gan')],reportMechanismContext:{chain:{mechanisms,paths:[],factGraph:graph(mechanisms)},yongJi:{xiShen:['木'],jiShen:['火']},...extra}};}
 const ctx=a=>a.reportMechanismContext;
 test('minor calibration excludes adult debt and liability, while adult study has its own outcome',()=>{
  const adultFinance=['output-generates-wealth','wealth-generates-officer','wealth-feeds-kill','officer-protects-wealth','peer-takes-wealth','peer-carries-wealth'];
@@ -16,18 +21,18 @@ test('minor calibration excludes adult debt and liability, while adult study has
  const work=Imagery.sceneOutcomes(rule,'career',{status:'working',age:30});
  assert.match(work[0].detail,/违约责任/);
 });
-function route(first='七杀',full=false){const a=context([m('官杀生印',{sourceShiShen:first}),m('印生身',{sourceWx:'火',targetWx:'土'})]);ctx(a).yongJi={xiShen:['火']};ctx(a).chain.paths=[{name:full?'财官印身连续流通':'官杀经印通关',steps:['官杀生印','印生身']}];return a;}
-function peers(){const a=context([m('官杀克身',{sourceShiShen:'七杀'})]);ctx(a).yongJi={xiShen:['土'],jiShen:['木'],weaknessCause:{type:'七杀攻身',peerElement:'土'}};ctx(a).chain.factGraph.nodes=[{family:'比劫',wx:'土',depth:'本气',weight:1,effectiveCoefficient:1}];return a;}
+function route(first='七杀',full=false){const rows=[m('官杀生印',{sourceShiShen:first}),m('印生身',{sourcePillar:'day',targetPillar:'hour',sourceWx:'火',targetWx:'土'})];if(full)rows.unshift(m('财生官杀',{sourcePillar:'year',targetPillar:'month',sourceWx:'水',targetWx:'木'}));const a=context(rows);ctx(a).yongJi={xiShen:['火']};ctx(a).chain.paths=[{id:'synthetic-path',name:full?'财官印身连续流通':'官杀经印通关',steps:rows.map(r=>r.name),mechanismIds:rows.map(r=>r.id),nodeIds:[rows[0].sourceNodeId,...rows.map(r=>r.targetNodeId)],edgeIds:rows.flatMap(r=>r.edgeIds),actionStage:'effective'}];return a;}
+function peers(){const a=context([m('官杀克身',{sourceShiShen:'七杀'})]);ctx(a).yongJi={xiShen:['土'],jiShen:['木'],weaknessCause:{type:'七杀攻身',peerElement:'土'}};ctx(a).chain.factGraph.nodes.unshift({id:'peer-root',family:'比劫',wx:'土',depth:'本气',weight:1,effectiveCoefficient:1});return a;}
 function pattern(name){const a=context([m('食伤制杀',{targetShiShen:'七杀'})]);ctx(a).pattern={status:'条件待定',relatedPatterns:[{name:name+'格',status:'成格'}]};return a;}
-function edge(fromFamily,toFamily){const a=context();ctx(a).chain.factGraph.edges=[{type:'生',strength:1,evidence:'合成连续生边',fromNode:{family:fromFamily,pillar:'month'},toNode:{family:toFamily,pillar:'day',wx:'木'}}];return a;}
+function edge(fromFamily,toFamily){const a=context();const nodes=[{id:'month.gan',family:fromFamily,pillar:'month',layer:'gan',depth:'透干',weight:1},{id:'day.gan',family:toFamily,pillar:'day',wx:'木',layer:'gan',depth:'透干',weight:1}];ctx(a).chain.factGraph={nodes,edges:[{id:'synthetic-edge',type:'生',strength:1,evidence:'合成连续生边',fromNode:nodes[0],toNode:nodes[1]}]};return a;}
 function sealOutput(){const a=context([m('印制食伤',{sourceShiShen:'正印',targetShiShen:'伤官'})]);ctx(a).yongJi.functionalTasks=[{type:'印星制伤护格'}];return a;}
 const explicit=name=>({triggers:[{type:name,detail:'合成明确年度触发'}]});
 const fixtures={
- 'wealth-breaks-seal':()=>explicit('财破印'),
- 'peer-takes-wealth':()=>explicit('比劫夺财'),
- 'output-controls-officer':()=>explicit('伤官见官'),
- 'seal-restrains-output':()=>explicit('枭夺食'),
- 'officer-pressure':()=>explicit('官杀混杂'),
+ 'wealth-breaks-seal':()=>mechanismFixture('财破印'),
+ 'peer-takes-wealth':()=>mechanismFixture('比劫夺财'),
+ 'output-controls-officer':()=>mechanismFixture('伤官见官'),
+ 'seal-restrains-output':()=>mechanismFixture('枭夺食'),
+ 'officer-pressure':()=>mechanismFixture('官杀混杂'),
  'peer-resists-kill':peers,
  'peer-carries-wealth':()=>{const a=context([m('比劫制财')]);ctx(a).yongJi.weaknessCause={type:'财多耗身'};return a;},
  'seal-transforms-kill':()=>route(),
@@ -40,7 +45,7 @@ const fixtures={
  'output-generates-wealth':()=>{const a=context([m('食伤生财')]);ctx(a).yongJi={xiShen:['木','火']};return a;},
  'wealth-generates-officer':()=>{const a=context([m('财生官杀',{targetShiShen:'正官'})]);ctx(a).yongJi={xiShen:['木','火']};return a;},
  'wealth-feeds-kill':()=>context([m('财生官杀',{targetShiShen:'七杀'})]),
- 'officer-protects-wealth':()=>{const a=context();ctx(a).yongJi={xiShen:['木','金']};ctx(a).chain.factGraph.edges=[{type:'克',strength:1,evidence:'官制比劫',fromNode:{id:'o',family:'官杀',wx:'木',pillar:'month'},toNode:{id:'p',family:'比劫',pillar:'day'}},{type:'克',strength:1,evidence:'比劫争财',fromNode:{id:'p',family:'比劫',pillar:'day'},toNode:{id:'w',family:'财',wx:'金',pillar:'hour'}}];return a;},
+ 'officer-protects-wealth':()=>{const a=context();ctx(a).yongJi={xiShen:['木','金']};const nodes=[{id:'o',family:'官杀',wx:'木',pillar:'month',layer:'gan',depth:'透干',weight:1},{id:'p',family:'比劫',pillar:'day',layer:'gan',depth:'透干',weight:1},{id:'w',family:'财',wx:'金',pillar:'hour',layer:'gan',depth:'透干',weight:1}];a.triggers=[reinforcing('o')];ctx(a).chain.factGraph={nodes,edges:[{id:'o>p',type:'克',strength:1,evidence:'官制比劫',fromNode:nodes[0],toNode:nodes[1]},{id:'p>w',type:'克',strength:1,evidence:'比劫争财',fromNode:nodes[1],toNode:nodes[2]}]};return a;},
  'wealth-regulates-seal':()=>context([m('财破印')]),
  'seal-supports-self':()=>context([m('印生身')]),
  'seal-overrestricts-output':()=>{const a=context([m('印制食伤')]);ctx(a).yongJi={xiShen:['火'],jiShen:['木']};return a;},
@@ -60,7 +65,10 @@ for(const rule of Imagery.rules)test('imagery pathway: '+rule.name+' requires it
  const a=fixtures[rule.id](),before=JSON.stringify(a);
  for(const domain of new Set(rule.outcomes.map(o=>o.domain))){
   const found=Imagery.candidates(domain,a).filter(c=>c.mechanism_key==='rule:'+rule.id);
-  assert.equal(found.length,rule.outcomes.filter(o=>o.domain===domain).length,rule.id);
+  // These pattern verdicts currently lack an adjudicated, node-bound action
+  // path. A 七杀 edge in this fixture is deliberately not proof of 合杀/刃杀.
+  const lacksBoundPatternPath=['hurt-combines-kill','blade-joins-kill'].includes(rule.id);
+  assert.equal(found.length,lacksBoundPatternPath?0:rule.outcomes.filter(o=>o.domain===domain).length,rule.id);
   assert.ok(found.every(c=>c.evidence.length===3&&c.reportBaseline));
  }
  assert.equal(JSON.stringify(a),before);
@@ -138,8 +146,15 @@ test('authority friction links school and work at common-process level without v
 
 test('all 31 common processes support cross-setting references, rather than only the authority example',()=>{
  for(const rule of Imagery.rules){const domain=rule.outcomes.find(o=>o.domain!=='study')?.domain||'study';
-  const source=inScene(rule.id,domain==='study'?'student':'home',domain)[0];
-  const target=futureOptions(inScene(rule.id,domain==='study'?'exam':'retired',domain));
+  // This is a dictionary / reconciliation contract, independent of whether
+  // the current engine can prove this rule's annual activation. Production
+  // eligibility is tested separately above, including unsupported patterns.
+  const dictionaryScene=status=>Imagery.sceneOutcomes(rule,domain,{status,age:25}).map(o=>({
+   key:domain+':'+rule.id+':'+o.manifestation.replace('@',':'),domain,
+   mechanism_key:'rule:'+rule.id,manifestation:o.manifestation.replace('@',':'),label:o.label,detail:o.detail,
+   ...Imagery.getReportScenario(rule,domain,{status,age:25})}));
+  const source=dictionaryScene(domain==='study'?'student':'home')[0];
+  const target=futureOptions(dictionaryScene(domain==='study'?'exam':'retired'));
   assert.ok(source&&target.length,rule.id);const r=Model.buildReportReview([confirmed(source)],target,{currentYear:2026});
   assert.ok(r.processReferences.length,rule.id);assert.equal(r.adjustments.length,0,rule.id);
  }
@@ -220,9 +235,12 @@ test('minors are not given earned-income imagery and school finance is actual di
 });
 test('generic report timing also follows non-working context before old job scenarios',()=>{
  const record={domain:'career',direction:'偏有利',scenarioCandidates:['职位晋升、客户认可']};
- for(const status of ['student','exam','transition','home','retired','unknown']){
+ for(const status of ['student','exam','transition','home','retired']){
   const s=Report.__test.selectTimingScenario(record,{lifeContext:{status,age:24},lifeStage:{key:'development'}});assert.doesNotMatch(s,/职位|客户|晋升/);assert.ok(s.length>10);
  }
+ const unknown={lifeContext:{status:'unknown',age:24},lifeStage:{key:'development'}};
+ assert.equal(Report.__test.selectTimingScenario(record,unknown),'职位晋升、客户认可');
+ assert.match(Report.__test.describeTimingEvent(record,unknown).scenario,/^若当时在工作或求职/);
  assert.equal(Report.resolveLifeContext({status:'home'},1986,2026).studyRelevant,false);
 });
 
@@ -239,7 +257,9 @@ test('actual annual report candidates adapt across seven states without changing
    Report.applyReportReview(f,Model.buildReportReview([],candidates,{currentYear:2026}));
    assert.equal(JSON.stringify(f.core),core);assert.equal(f.wealth.narrative.grade,grade);assert.equal(JSON.stringify(calculator.analyzeParents(b,'male')),parent);
    for(const row of f.fiveYear.years)for(const r of row.eventAdjudication.domainRecords.filter(r=>r.domain!=='family')){
-    if(status!=='working')assert.doesNotMatch(Report.__test.selectTimingScenario(r,row.eventAdjudication),/领导|客户|订单|晋升|项目交付/);
+    const scene=Report.__test.selectTimingScenario(r,row.eventAdjudication);
+    if(status!=='working' && (status!=='unknown' || row.lifeContext.age<18))assert.doesNotMatch(scene,/领导|客户|订单|晋升|项目交付/);
+    if(status==='unknown' && row.lifeContext.age>=18 && r.domain==='career' && /领导|客户|订单|晋升|项目交付/.test(scene))assert.match(Report.__test.describeTimingEvent(r,row.eventAdjudication).scenario,/^若当时在工作或求职/);
    }
   }
  }
@@ -269,6 +289,38 @@ test('partial agreement with effort does not validate completed-goal claims even
  const review=Model.buildReportReview(events,opts,{currentYear:2026});
  assert.equal(review.adjustments.length,0);assert.equal(review.history.length,2);assert.ok(review.history.every(h=>h.matchLevel==='partial'));
  const f=report();Report.applyReportReview(f,review);assert.doesNotMatch(reportBody(f),/最终完成了/);
+});
+
+test('one mechanism across work and money remains one unconfirmed report event',()=>{
+ const f=report(),r=f.currentYear.eventAdjudication.domainRecords[0];
+ const wealth={...r,domain:'wealth',label:'财务',activationScore:7};
+ const a={domainRecords:[r,wealth],primaryEvent:r,secondaryEvent:wealth,lifeStage:{key:'development'}};
+ f.currentYear.eventAdjudication=a;f.currentYear.dynamic.eventAdjudication=a;
+ const ctx=fixtures['wealth-feeds-kill']();ctx.reportLifeContext={status:'working',age:40};
+ const candidates=['career','wealth'].flatMap(domain=>Imagery.candidates(domain,ctx))
+  .filter(c=>c.mechanism_key==='rule:wealth-feeds-kill').map(c=>({...c,year:2026,hasIndependentAnnualTrigger:true}));
+ assert.ok(new Set(candidates.map(c=>c.domain)).size===2,'fixture must cover both domains');
+ Report.applyReportReview(f,Model.buildReportReview([],candidates,{currentYear:2026}));
+ const records=f.currentYear.eventAdjudication.domainRecords;
+ assert.equal(records.filter(r=>r.reportMechanismKey==='rule:wealth-feeds-kill'&&!r.reportVariantSuppressed).length,1);
+ assert.ok(records.some(r=>r.reportSuppressionReason==='same-mechanism-cross-domain-alternative'));
+ assert.equal(f.currentYear.eventAdjudication.secondaryEvent,null);
+ assert.equal(f.currentYear.reportReconciliation.futureConfirmed,false);
+});
+
+test('a matched past manifestation displaces its unsupported cross-domain alternative',()=>{
+ const f=report(),r=f.currentYear.eventAdjudication.domainRecords[0];
+ const wealth={...r,domain:'wealth',label:'财务',activationScore:7};
+ const a={domainRecords:[r,wealth],primaryEvent:r,secondaryEvent:wealth,lifeStage:{key:'development'}};
+ f.currentYear.eventAdjudication=a;f.currentYear.dynamic.eventAdjudication=a;
+ const ctx=fixtures['wealth-feeds-kill']();ctx.reportLifeContext={status:'working',age:40};
+ const candidates=['career','wealth'].flatMap(domain=>Imagery.candidates(domain,ctx))
+  .filter(c=>c.mechanism_key==='rule:wealth-feeds-kill').map(c=>({...c,year:2026,hasIndependentAnnualTrigger:true}));
+ const money=candidates.find(c=>c.domain==='wealth');
+ Report.applyReportReview(f,Model.buildReportReview([confirmed(money)],candidates,{currentYear:2026}));
+ assert.equal(f.currentYear.eventAdjudication.primaryEvent.domain,'wealth');
+ assert.equal(f.currentYear.eventAdjudication.secondaryEvent,null);
+ assert.equal(f.currentYear.reportReconciliation.futureConfirmed,false);
 });
 
 test('64 generated charts exercise the registry through real annual evidence without changing core or parents',()=>{

@@ -12,8 +12,14 @@ const { requireAuth } = require('../lib/auth.js');
 const { beginAiRequest } = require('../lib/ai-abuse-guard.js');
 const { buildZiweiContext } = require('../lib/ziwei-context.js');
 const { hepanReplyScopes } = require('../lib/hepan-reply-scopes.js');
+const { buildConversationEvidence, validateRootMeaning } = require('../lib/ai-conversation-evidence.js');
+const { chartEvidenceContext, validateChartEvidence } = require('../lib/ai-chart-evidence.js');
+const { annualMechanismContext } = require('../lib/ai-annual-mechanisms.js');
 
 function sendAiFailure(res, error) {
+  if (error && error.code === 'REPLY_EVIDENCE_VALIDATION_FAILED') {
+    return res.status(502).json({ error: '这次解读的依据出现错误，请重试一次（未扣次数）。', code: error.code, retryable: true, charged: false });
+  }
   if (error && error.code === 'TIMING_VALIDATION_FAILED') {
     return res.status(502).json({error:'这次解读未能完成，请重试一次（未扣次数）。',code:error.code,retryable:true,charged:false});
   }
@@ -351,7 +357,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261001g');
+  res.setHeader('X-Zhishi-AI-Policy', '20261006a');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -407,7 +413,7 @@ module.exports = async function handler(req, res) {
         conversationMeta = { conversationId: conversation.id, mode: conversation.mode, chartKey: conversation.chart_key };
         memorySummary = conversation.memory_summary || '';
         var storedHistory = typeof getConversationMessages === 'function'
-          ? await getConversationMessages(userId, conversation.id, 12)
+          ? await getConversationMessages(userId, conversation.id, 36)
           : [];
         // 登录状态只采用数据库中这条“当前命盘会话”的历史。即便新会话为空，
         // 也不能退回浏览器随请求带来的旧合盘消息。
@@ -752,7 +758,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (chartData) {
     messages.push({
       role: 'system',
-      content: buildExpertAdjudicationInstruction(question, chartData, mode)
+      content: buildExpertAdjudicationInstruction(question, chartData, mode, { omitTimingBrief: requestedYear !== null })
     });
   }
 
@@ -795,6 +801,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (chartData && requestedYear !== null) {
     messages.push({role:'system',content:'本轮最终依据（优先于历史回答；旧回答不构成事实）：\n'+buildTimingAdjudicationBrief(question,chartData)+'\n直接说明所问事情的主要影响。不要输出“方向待核、落点待核、待复核、条件性候选”等内部标签；用具体影响和必要条件说明含义。已有年度依据时，禁止照抄历史回答中的“该年数据未提供”。不要另写反证与边界栏目，也不要虚构已发生事件。'});
   }
+  messages.push({ role: 'system', content: buildConversationEvidence(question, history, mode) + chartEvidenceContext(chartData) });
   messages.push({ role: 'user', content: question });
 
   // 模拟模式
@@ -873,6 +880,11 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
     var timingError=new Error('Reply ignored available timing evidence');
     timingError.code='TIMING_VALIDATION_FAILED';throw timingError;
   }
+  if (validationWarnings.some(function(w) { return w.indexOf('E10-') === 0; })) {
+    var evidenceError = new Error('Reply misinterpreted structural evidence');
+    evidenceError.code = 'REPLY_EVIDENCE_VALIDATION_FAILED';
+    throw evidenceError;
+  }
   var expertScorecard = buildExpertReplyScorecard(question, chartData, reply, validationWarnings);
   console.log('[ai-expert-score] total=' + expertScorecard.total + ' grade=' + expertScorecard.grade +
     ' hard=' + expertScorecard.hardWarningCount + ' at=' + new Date().toISOString());
@@ -935,6 +947,8 @@ function runReplyValidation(chartData, reply, question) {
   // ---------- 通用：无证据安慰与正向粉饰（E6，触发一次定向重写） ----------
   // 这里只拦截含义明确的保证式话术，不拦截“建议保守、仍有条件”等正常风险管理表达。
   var text = String(reply);
+  warnings.push(...validateRootMeaning(text));
+  warnings.push(...validateChartEvidence(chartData, text, question));
   var cannedComfortRe = /别灰心|不要灰心|不用担心|不要担心|给(?:他|她|对方|自己)一点时间|一切都会好起来|(?:以后|后面|往后)(?:一定)?会?越来越顺|熬过去[^。；\n]{0,12}(?:一定|肯定)?(?:会)?(?:好|顺|越来越顺|越来越好)|这(?:些)?(?:其实|反而)?(?:都)?是(?:一次)?成长的?机会/g;
   var comfortMatch;
   while ((comfortMatch = cannedComfortRe.exec(text)) !== null) {
@@ -994,6 +1008,13 @@ function runReplyValidation(chartData, reply, question) {
     ? timingSelectionForQuestion(question, chartData) : null;
   if (timingSelection && timingSelection.year !== null && timingSelection.record) {
     var timingRecord = timingSelection.record;
+    var requestedTimingDomain = detectTimingQuestionDomain(question);
+    var relationshipOutcome = timingRecord.domain === 'relationship' ? detectRelationshipOutcomeEvent(question) : null;
+    // An open past-event question may receive a marriage-event candidate.
+    // Relationship quality is not evidence that marriage did or did not occur.
+    // Keep this reply-derived distinction local to E8; it is not a user request.
+    var relationshipOccurrenceReply = relationshipOutcome || (!requestedTimingDomain && timingRecord.domain === 'relationship'
+      ? detectRelationshipOutcomeEvent(String(reply).slice(0, 180)) : null);
     var plainTimingText=String(reply).replace(/[*#]/g,'');
     if (/(?:没有|缺少|未提供)[^。；\n]{0,18}(?:流年裁决|单年.{0,4}结论|(?:该年|这一年|\d{4}年)[^。；\n]{0,8}(?:数据|字段|结论))|(?:流年裁决|单年.{0,4}结论)[^。；\n]{0,24}(?:没有|未提供)|(?:方向|落点)待核/.test(plainTimingText)) {
       warnings.push('E9-忽略已有年度依据：本轮已提供'+timingSelection.year+'年'+timingRecord.label+'的有效裁决；须用对应结构和具体影响回答，不能声称没有该年数据或以方向待核结尾。不得为消除待核标签而编造具体事故事实。');
@@ -1002,7 +1023,7 @@ function runReplyValidation(chartData, reply, question) {
       study:/学业|学习|考试|升学|录取|证照|资格/,
       career:/事业|工作|职场|职位|岗位|项目|领导|规则|职责/,
       wealth:/财富|财运|收入|资金|回款|客户|求财|赚钱/,
-      relationship:/婚恋|感情|婚姻|恋爱|夫妻|对象|合作|关系/,
+      relationship:/婚恋|感情|婚姻|恋爱|夫妻|对象|合作|关系|结婚|成婚|领证|登记|婚礼|婚宴|订婚|同居|离婚|分居|分手|复合/,
       family:/家庭|家里|父母|长辈|居住|住房/,
       health:/健康|身体|身心|安全|受伤|事故|手术|住院|精力/,
       change:/变动|变化|调整|迁移|异地|换环境|转折/
@@ -1010,9 +1031,9 @@ function runReplyValidation(chartData, reply, question) {
     var domainRe = domainTerms[timingRecord.domain] || new RegExp(String(timingRecord.label || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     var opening = String(reply).slice(0, 700);
     var domainSentences = opening.split(/[。；\n]/).filter(function(line) { return domainRe.test(line); });
-    if (!domainSentences.length) {
+    if (!domainSentences.length && requestedTimingDomain) {
       warnings.push('E8-缺少应期领域锚点：用户询问' + timingSelection.year + '年，回答必须先落到「' + timingRecord.label + '」而不是改答其他领域');
-    } else {
+    } else if (domainSentences.length && !relationshipOccurrenceReply) {
       var domainOpening = domainSentences.slice(0, 3).join('；');
       var saysPositive = /偏有利|有利为主|方向(?:是|为)?有利|向好|利大于弊|更容易推进/.test(domainOpening);
       // A concrete cost or pressure is not a claim that the entire domain is adverse.
@@ -1026,13 +1047,17 @@ function runReplyValidation(chartData, reply, question) {
         warnings.push('E8-应期方向冲突：' + timingSelection.year + '年「' + timingRecord.label + '」为条件性，回答却单向定成' + (saysPositive ? '有利' : '不利'));
       }
     }
-    if (timingRecord.hasIndependentAnnualTrigger === false && !/不是强应期|不构成强应期|没有[^。；\n]{0,18}(?:独立|集中)(?:结构)?触发|只能[^。；\n]{0,18}主题|不能[^。；\n]{0,18}具体事件/.test(opening)) {
+    if ((requestedTimingDomain || domainSentences.length) && !relationshipOccurrenceReply && timingRecord.hasIndependentAnnualTrigger === false && !/不是强应期|不构成强应期|没有[^。；\n]{0,18}(?:独立|集中)(?:结构)?触发|只能[^。；\n]{0,18}主题|不能[^。；\n]{0,18}具体事件/.test(opening)) {
       warnings.push('E8-把大运背景冒充流年应期：该领域没有当年独立结构触发，回答必须明确只能定主题、不能断具体事件');
     }
     if (isClosedOutcomeQuestion(question)) {
       var directOpening = String(reply).slice(0, 180);
       var expectedClosed = closedOutcomeVerdict(timingRecord, question);
-      if (!closedVerdictPattern(expectedClosed).test(directOpening)) {
+      if (relationshipOutcome) {
+        if (!relationshipOutcome.events.every(function(event) { return event.answerTerms.test(directOpening); })) {
+          warnings.push('E9-婚恋事项答非所问：第一段须直接回答“' + relationshipOutcome.key + '”各自的判断；不能用恋爱、同居、登记、婚礼或分居相互替代。不要按领域吉凶强行改成能或不能。');
+        }
+      } else if (!closedVerdictPattern(expectedClosed).test(directOpening)) {
         warnings.push('E9-封闭问题未直接裁决：第一段必须先回答“' + expectedClosed + '”，不得用术语或可能性列表回避');
       }
     }
@@ -1372,7 +1397,7 @@ function isHardWarning(w) {
 function detectTimingQuestionDomain(question) {
   var q = String(question || '');
   if (/高考|中考|考试|升学|录取|学业|学习|考证|证书|资格/.test(q)) return 'study';
-  if (/结婚|离婚|恋爱|感情|婚姻|对象|夫妻|复合|分手|合作/.test(q)) return 'relationship';
+  if (detectRelationshipOutcomeEvent(q) || /感情|婚姻|对象|夫妻|合作/.test(q)) return 'relationship';
   if (/父母|父亲|母亲|长辈|家庭|家里|搬家|住房/.test(q)) return 'family';
   if (/车祸|事故|健康|身体|疾病|手术|受伤|睡眠|住院/.test(q)) return 'health';
   if (/财运|收入|赚钱|破财|回款|投资|资金|生意/.test(q)) return 'wealth';
@@ -1403,14 +1428,42 @@ function isClosedOutcomeQuestion(question) {
   return /能不能|能否|可不可以|会不会|是否会|会[^？?。]{0,12}吗|能[^？?。]{0,12}吗|考不考得上|能考上|能录取|能通过|有没有希望|有没有可能|成不成|能成功/.test(String(question || ''));
 }
 
+// These are distinct real-world outcomes, not opposite signs of relationship quality.
+// No completion model is implied by domain direction, activationScore or a palace relation.
+function detectRelationshipOutcomeEvent(question) {
+  var q = String(question || '');
+  // A completed background event is not another outcome the reply must predict.
+  var askedClauses = q.split(/[，,。；;\n]/).filter(function(clause) {
+    return /能不能|能否|会不会|是否|可不可以|何时|什么时候|哪一?年|几年|吗[？?]?|么[？?]?/.test(clause)
+      && /恋爱|交往|同居|订婚|领证|登记结婚|婚姻登记|婚礼|婚宴|办酒|结婚|成婚|离婚|分居|分手|感情破裂|复合/.test(clause);
+  });
+  if (askedClauses.length) q = askedClauses.join('；');
+  var definitions = [
+    { key:'恋爱或确定交往关系', test:/恋爱|确定关系|开始交往/, answerTerms:/恋爱|交往|确定关系/ },
+    { key:'同居', test:/同居/, answerTerms:/同居|共同居住|住在一起/ },
+    { key:'订婚', test:/订婚/, answerTerms:/订婚|婚约/ },
+    { key:'登记领证', test:/领证|登记结婚|婚姻登记/, answerTerms:/领证|登记/ },
+    { key:'举办婚礼', test:/婚礼|婚宴|办酒/, answerTerms:/婚礼|婚宴|办酒/ },
+    { key:'结婚完成', test:/结婚|成婚/, answerTerms:/结婚|成婚|领证|登记|婚礼|婚宴/ },
+    { key:'离婚', test:/离婚/, answerTerms:/离婚|解除婚姻/ },
+    { key:'分居', test:/分居/, answerTerms:/分居|分开居住|分开住/ },
+    { key:'分手', test:/分手|感情破裂/, answerTerms:/分手|感情破裂|结束.{0,4}(?:恋爱|交往|关系)/ },
+    { key:'复合', test:/复合/, answerTerms:/复合|重新在一起|恢复.{0,4}(?:恋爱|交往|关系)/ }
+  ];
+  var events = definitions.filter(function(event) {
+    return event.test.test(event.key === '结婚完成' ? q.replace(/登记结婚/g, '') : q);
+  });
+  return events.length ? { key:events.map(function(event) { return event.key; }).join('、'), polarity:'relationship-occurrence', events:events } : null;
+}
+
 function detectOutcomeEvent(question) {
   var q = String(question || '');
   if (/高考|中考|考试|考证|录取|升学|通过/.test(q)) return { key:'考试或录取', polarity:'positive', high:'把握较大', low:'比较困难', mixed:'有机会，但不稳' };
-  if (/离婚|分手|分居|感情破裂/.test(q)) return { key:'离婚或分手', polarity:'adverse', high:'关系破裂风险较高', low:'关系破裂风险较低', mixed:'存在关系风险，但信号不集中' };
+  var relationshipEvent = detectRelationshipOutcomeEvent(q);
+  if (relationshipEvent) return relationshipEvent;
   if (/车祸|事故|受伤|住院|手术/.test(q)) return { key:'事故、受伤或医疗事件', polarity:'adverse', high:'风险较高', low:'风险较低', mixed:'存在风险，但信号不集中' };
   if (/破财|亏损|被骗|资金损失/.test(q)) return { key:'破财或资金损失', polarity:'adverse', high:'破财风险较高', low:'破财风险较低', mixed:'存在资金风险，但信号不集中' };
   if (/失业|被辞|被裁|丢工作/.test(q)) return { key:'失业或岗位中断', polarity:'adverse', high:'岗位中断风险较高', low:'岗位中断风险较低', mixed:'存在岗位变动风险，但信号不集中' };
-  if (/结婚|领证|订婚|复合|确定关系/.test(q)) return { key:'关系确认或结婚', polarity:'positive', high:'推进把握较大', low:'推进比较困难', mixed:'有推进机会，但不稳定' };
   if (/升职|晋升|上岸|找到工作|入职|转正/.test(q)) return { key:'升职、录用或转正', polarity:'positive', high:'推进把握较大', low:'推进比较困难', mixed:'有推进机会，但不稳定' };
   if (/赚钱|盈利|发财|回款|生意成功|创业成功/.test(q)) return { key:'收入、盈利或回款', polarity:'positive', high:'兑现把握较大', low:'兑现比较困难', mixed:'存在机会，但兑现不稳定' };
   if (/离职|跳槽|换工作|搬家|迁移|出国|换环境/.test(q)) return { key:'主动变动', polarity:'occurrence', high:'变动倾向较强', low:'变动信号较弱', mixed:'存在变动可能，但信号不集中' };
@@ -1420,6 +1473,7 @@ function detectOutcomeEvent(question) {
 function closedOutcomeVerdict(record, question) {
   if (!record) return '目前不能确认';
   var event = detectOutcomeEvent(question);
+  if (event.polarity === 'relationship-occurrence') return null;
   if (event.polarity === 'occurrence') {
     return record.hasIndependentAnnualTrigger && Number(record.activationScore || 0) >= 5 ? event.high : event.low;
   }
@@ -1487,27 +1541,72 @@ function buildTimingAdjudicationBrief(question, chartData) {
   var domain = detectTimingQuestionDomain(question);
   var domainLabels = { study:'学业考试', career:'事业工作', wealth:'收入资金', relationship:'婚恋合作', family:'家庭长辈', health:'身心安全', change:'环境变动' };
   var exact = timingSelectionForQuestion(question, chartData);
+  var relationshipQuestion = domain === 'relationship' ? detectRelationshipOutcomeEvent(question) : null;
   var lines = ['【岁运应事裁决数据】所问领域=' + (domainLabels[domain] || '综合') + '。'];
+  if (relationshipQuestion) {
+    lines.push('【婚恋事件与关系质量分开】本轮具体事项=' + relationshipQuestion.key + '。恋爱、同居、订婚、登记领证、办婚礼、离婚、分居、分手、复合分别判断，不能换词当成同一件事。direction描述相处压力或支持，不裁决是否完成这些事项；有冲刑也可能结婚，有合也可能未婚。');
+    lines.push('【内部模型缺口】当前账本没有经过案例验证的婚事完成分类器，领域排名、置信度、独立触发标记都不是成婚/不婚结论。可以结合本盘真实的配偶星参与、宫位及岁运具体作用，提出一个可证伪的所问事项候选，交代年份与实际结果；区分原局/大运背景和当年新增或重复作用，同一关系不重复算证据。单凭日宫合冲或领域好坏不能断成婚、不婚、离婚或分居。不要伪称系统已有婚事完成字段，也不把内部缺口改成给用户的长篇拒绝。');
+  }
+  var stemFacts = exact && exact.bundle && exact.bundle.annualStemInteractions;
+  var annualGraph = exact && exact.bundle && exact.bundle.annualMechanismGraph;
+  if (annualGraph) lines.push(annualMechanismContext(annualGraph));
+  if (Array.isArray(stemFacts) && stemFacts.length) {
+    lines.push('本年天干作用事实（与地支作用分层，不是事件标签）：' + stemFacts.map(function(row) { return row.detail; }).filter(Boolean).join('；'));
+    lines.push('必须区分流年作用原局天干与作用大运天干；同柱地支被冲，不等于该柱天干也被冲掉。五合不自动作合化或合走，多处合不能只保留有利于结论的一处。收入、投资损益、购置资产、借贷周转分别判断，不能用一个财运吉凶概括全部；没有对应证据就不补写该类事件。');
+  }
+  function appendEventScope(record) {
+    var scopeLabels = { marriage:'婚恋', cooperation:'同辈合作', personal:'亲近关系（不能按成人婚姻解释）' };
+    if (record.domain === 'relationship' && Array.isArray(record.relationshipScopes) && record.relationshipScopes.length) {
+      lines.push('关系触发范围=' + record.relationshipScopes.map(function(scope) { return scopeLabels[scope] || scope; }).join('、')
+        + '。只在列明范围内选事件；合伙、同学矛盾不能算分手，日支引动也不能直接算结婚或离婚。');
+    }
+    if (record.concreteOutcomeEstablished === false) {
+      lines.push('候选排序只确定优先检查的领域和触发，尚未证明具体结果。只有相应事件的独立依据足够时才提出该件事；不能把领域第一名自动改写为入职、失业、结婚、离婚或某种已发生经历。');
+    }
+  }
   if (exact && exact.year !== null && exact.record) {
     var exactRecord = exact.record;
+    appendEventScope(exactRecord);
+    var decadeBackground = exact.adjudication && exact.adjudication.daYunBackground;
+    var sameDomainBackground = decadeBackground && (decadeBackground.domainRecords || []).filter(function(record) {
+      return record.domain === exactRecord.domain;
+    })[0];
+    if (sameDomainBackground) lines.push('对应十年背景（与当年分开）=' + sameDomainBackground.label + '·' + sameDomainBackground.direction + '；' + sameDomainBackground.conclusion
+      + '。这是十年层面的概括，不是本年新增证据，不给年度方向或应期重复加分。年度与大运的具体干支作用已在当年依据中计算，不能再用“这步运好/坏”覆盖该年结果。');
     var exactAge = exact.adjudication && exact.adjudication.age;
     var overallVerdict = exact.bundle && exact.bundle.overallVerdict;
     lines.push('【本轮年份强制锚点】' + exact.year + '年，年龄' + (exactAge === null || exactAge === undefined ? '待核' : exactAge + '岁')
       + (overallVerdict ? '；全年综合方向=' + overallVerdict : '')
-      + '；首要回答领域=' + exactRecord.label + '；该领域方向=' + exactRecord.direction + '；置信度=' + exactRecord.confidence
+      + (domain ? '；首要回答领域=' : '；内部排序首位（供核对）=') + exactRecord.label + '；该领域方向=' + exactRecord.direction + '；置信度=' + exactRecord.confidence
       + '；候选落点=' + exactRecord.eventCandidate + '；依据=' + (exactRecord.evidence || []).join('；'));
     if (exactRecord.scenarioCandidates && exactRecord.scenarioCandidates.length) {
-      lines.push('最可能的现实落点（按强弱取前1至2项回答，不要全部罗列）=' + exactRecord.scenarioCandidates.join('；'));
+      lines.push((domain ? '本领域取象参考' : '排序首位的取象参考') + '（不是已发生结果，不要求复述）=' + exactRecord.scenarioCandidates.join('；'));
+    }
+    if (!domain) {
+      lines.push('用户没有限定领域，首位领域不是必须回答的答案。综合比较同年的实际证据，再选少量可核对事件；若首位只有泛化过程，不要为服从排名而舍弃其他领域的具体依据。没有被列为首位也不等于没有该类事件。不能把任意关系动作直接升级为结婚、离婚或失业。');
+      (exact.adjudication && exact.adjudication.domainRecords || []).filter(function(record) {
+        return record && record !== exactRecord && record.domain !== exactRecord.domain && record.hasIndependentAnnualTrigger;
+      }).forEach(function(record) {
+        lines.push('同年其他领域依据：' + record.label + '；局部方向=' + record.direction + '；依据=' + (record.evidence || []).join('；'));
+        appendEventScope(record);
+      });
     }
     if (isClosedOutcomeQuestion(question)) {
       var eventQuestion = detectOutcomeEvent(question);
-      lines.push('【事件级直接裁决】用户问的是“' + eventQuestion.key + '”；第一句话必须直接回答“' + closedOutcomeVerdict(exactRecord, question)
-        + '”。不得先讲术语，不得用“都有可能”“综合来看”回避。注意：不利领域会提高离婚、事故、破财、失业等负面事件风险，却会降低结婚、升职、录取等正面事件把握，二者不可判反。该裁决表示趋势强弱，不是保证现实结果。');
+      if (relationshipQuestion) {
+        lines.push('【婚恋事项直接回答】用户问的是“' + eventQuestion.key + '”；第一段直接给这件事的首选判断与年份，再用真实星宫岁运依据说明。若只能支持相处变化，就用一句话说明尚未锁定哪项完成条件，不能拿恋爱、同居、订婚或争吵替代所问结果，不强制按direction回答能或不能。没有依据时不编具体结果，也不罗列一串备选让用户对号。');
+      } else {
+        lines.push('【事件级直接裁决】用户问的是“' + eventQuestion.key + '”；第一句话必须直接回答“' + closedOutcomeVerdict(exactRecord, question)
+          + '”。不得先讲术语，不得用“都有可能”“综合来看”回避。注意：不利领域会提高事故、破财、失业等负面事件风险，却会降低升职、录取等正面事件把握，二者不可判反。该裁决表示趋势强弱，不是保证现实结果。');
+      }
     }
     if (exactRecord.hasIndependentAnnualTrigger === false) {
-      lines.push('本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');
+      lines.push(relationshipQuestion
+        ? '本领域记录没有列出独立年度触发；这不是婚事完成模型的否决。须回到已提供的天干、藏星载体、宫位和岁运原始事实核对，确无所问事项依据时不硬断结果，不能只靠十神名称补出婚事。'
+        : '本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');
     }
-    lines.push('本轮回答必须遵守“' + exactRecord.label + '·' + exactRecord.direction + '”的含义，但不要把内部方向、置信度或“条件性候选”标签抄给用户。用实际影响解释：哪项安排被打断、谁要分担、钱或时间花在哪里；只取有支持的前1至2项。条件性表示支持与代价并存，不等于没有内容可说。不能因缺少具体事故事实就断言“压力不在有人出事”，也不能反过来断言有人必定出事。若全年综合与所问领域不同，只解释与问题有关的差别，禁止全年分数覆盖领域裁决。');
+    lines.push('本轮回答须保留“' + exactRecord.label + '·' + exactRecord.direction + '”的结构依据，但不要把内部方向、置信度或“条件性候选”标签抄给用户。只取有支持的前1至2项事件；不把不同领域都改写成“安排被打断、重新调整、多花钱和时间”。这些只是过程或成本，不能代替一次可核对的事情，也不能把同一件事的成本算成第二次命中。根据各事件自己的证据区分收入增加、投资损失、购置资产，以及主动换工作、被辞退、录用等不同结果；不能因为它们都涉及钱或变动而互相替代。没有该事件依据时省略该项，不列多个场景让用户挑。条件性表示支持与代价并存，不等于没有内容可说。不能因缺少具体事故事实就断言“压力不在有人出事”，也不能反过来断言有人必定出事。若全年综合与所问领域不同，只解释与问题有关的差别，禁止全年分数覆盖领域裁决。');
+    if (exactRecord.domain === 'relationship') lines.push('关系领域的方向描述相处支持或压力，不裁决婚事是否完成。关系有矛盾与当年结婚可以同时存在，不能仅因方向偏不利否决婚事，也不能因方向偏有利宣布已经结婚。区分婚事年份与婚后相处质量。');
     lines.push('不要给坏事加没有证据的上限：禁止“方向不算坏到底、不会太坏”等兜底。喜用运只表示扶抑层面的帮助，不证明十年现实顺利、有人搭手、有资源可用或事情最终能解决，更不能据此说“所以不是家里出事的格局”。没有事实反馈时，不能确认也不能排除家人出事。现实积极面必须有独立的事件依据，否则不必强凑好坏平衡。推断始终是传统取象，不能用“这一年的事实是”将它写成已验证经历。');
     lines.push('用词检查：若依据只有喜用或帮身，写“扶抑层面有利”，不要缩写成“你个人顺、你自身状态得到补充、那十年顺”。这是结构关系，不是个人现实处境的事实。年龄只筛选合理场景，18岁不自动等于参加高考或刚进大学；用户没说在读时应写“若当时在读，可能影响学费或上学安排”。');
   } else if (exact && exact.year !== null && !exact.record) {
@@ -1517,13 +1616,16 @@ function buildTimingAdjudicationBrief(question, chartData) {
   var candidates = domain && timing.byDomain ? timing.byDomain[domain] : timing.overall;
   if (candidates && candidates.length && (!exact || exact.year === null)) {
     candidates.slice(0, 3).forEach(function(row, index) {
+      appendEventScope(row);
       lines.push('候选' + (index + 1) + '：' + row.year + '年（约' + (row.age === null ? '年龄待核' : row.age + '岁') + '，'
         + row.daYunGan + row.daYunZhi + '运/' + row.liuNianGan + row.liuNianZhi + '年）'
         + row.label + '，' + row.direction + '，置信度' + row.confidence + '；最可能落点=' + row.eventCandidate
         + '；依据=' + (row.evidence || []).join('；'));
     });
   }
-  lines.push('使用要求：这是按原局方向、大运趋势、流年触发和实际年龄筛出的主次候选。未指定年份时先选最强的一年，必要时再给一个次选；回答时先给“能/难/不稳/不能确认”的直接裁决，再说最可能发生在哪个现实方面，最后最多给3条依据；不能把所有可能都罗列一遍，也不能把候选写成已发生事实。用户真实经历不符时，立即校正落点，不得嘴硬。');
+  lines.push(relationshipQuestion
+    ? '使用要求：先回答所问婚恋事项的首选判断与年份，必要时一句话说明不能据此确定哪项结果，再给最多3条实际依据。关系质量与事件完成分开；候选不是已发生事实，用户真实经历不符时承认未命中，不能把领证改解释成同居、把离婚改解释成争吵。'
+    : '使用要求：这是按原局方向、大运趋势、流年触发和实际年龄筛出的主次候选。未指定年份时先选最强的一年，必要时再给一个次选；回答时先给“能/难/不稳/不能确认”的直接裁决，再说最可能发生在哪个现实方面，最后最多给3条依据；不能把所有可能都罗列一遍，也不能把候选写成已发生事实。用户真实经历不符时，立即校正落点，不得嘴硬。');
   return lines.join('\n');
 }
 
@@ -1531,7 +1633,7 @@ function buildTimingAdjudicationBrief(question, chartData) {
  * 老师傅式裁决层：不增加一次模型调用，而是把本轮问题转成可验收的裁决任务。
  * 模型可以保留内部推演，但对用户只展示结论、可核对证据与边界，避免口诀堆砌。
  */
-function buildExpertAdjudicationInstruction(question, chartData, mode) {
+function buildExpertAdjudicationInstruction(question, chartData, mode, options) {
   var q = String(question || '');
   var asksFullReport = /完整|全面|详细|展开|报告|逐项|所有方面/.test(q);
   var tasks = [];
@@ -1550,7 +1652,9 @@ function buildExpertAdjudicationInstruction(question, chartData, mode) {
   if (tasks.indexOf('岁运应事') >= 0 && !(chartData && ((chartData.daYun && chartData.daYun.cycles && chartData.daYun.cycles.length) || chartData.currentDaYun || chartData.currentLiuNian))) missing.push('对应岁运字段');
   if (tasks.indexOf('合盘身份与互动') >= 0 && !(chartData && chartData.person1 && chartData.person2)) missing.push('合盘双方完整字段');
 
-  var timingBrief = tasks.indexOf('岁运应事') >= 0 ? buildTimingAdjudicationBrief(question, chartData) : '';
+  // A requested year's full evidence is appended after chat history below.
+  // Keep it there once, instead of duplicating the same graph in both messages.
+  var timingBrief = tasks.indexOf('岁运应事') >= 0 && !(options && options.omitTimingBrief) ? buildTimingAdjudicationBrief(question, chartData) : '';
   return '【老师傅式裁决协议】\n' +
     '本轮任务：' + tasks.join('、') + '。' + (missing.length ? '当前缺少：' + missing.join('、') + '。' : '本轮关键冻结字段已提供。') + '\n' +
     '请在内部先完成“主结论—最强支持证据—最强反证—为何仍取主结论—什么条件会改变判断”的核对；不要展示冗长思维过程，只向用户给出可核对的依据。\n' +
@@ -1875,7 +1979,7 @@ function buildSingleChart(data) {
   // 五行统计
   if (data.wuXingCount) {
     const wx = data.wuXingCount;
-    ctx += `五行分布：金${wx['金'] || 0} 木${wx['木'] || 0} 水${wx['水'] || 0} 火${wx['火'] || 0} 土${wx['土'] || 0}\n`;
+    ctx += `五行加权参考值：金${wx['金'] || 0} 木${wx['木'] || 0} 水${wx['水'] || 0} 火${wx['火'] || 0} 土${wx['土'] || 0}。包含天干、地支、月令加权及藏干累计，不是八字字数；不得写成“有几个火/土”，也不能据此直接断强弱、学历或现实事件。\n`;
   }
 
   // v3.1: 日主旺衰（结构化）
@@ -2010,11 +2114,15 @@ function buildSingleChart(data) {
     if (data.chainAnalysis) {
       const chain = data.chainAnalysis;
       ctx += `\n【完整生克事实链与取象候选 v${chain.version || ''}】\n`;
-      if (chain.mechanisms && chain.mechanisms.length) {
-        ctx += `  生克机制与作用程度（有关系不等于已落实）：\n`;
-        chain.mechanisms.forEach((m) => {
-          ctx += `    - ${m.name}（${m.strength || '未定'}${m.actionStatus ? '；' + m.actionStatus : ''}）：${(m.evidence || []).join('；')}\n`;
+      const mechanismFacts = Array.isArray(chain.fullMechanisms) ? chain.fullMechanisms : chain.mechanisms;
+      if (mechanismFacts && mechanismFacts.length) {
+        ctx += `  生克机制与作用程度（全量节点依据，不受展示前六条限制；有关系不等于已落实）：\n`;
+        mechanismFacts.forEach((m) => {
+          const boundNodes = m.sourceNodeId && m.targetNodeId ? `；节点${m.sourceNodeId}→${m.targetNodeId}` : '';
+          const stage = m.actionStage ? `；阶段${m.actionStage}` : '；仅关系证据，未作有效制化裁决';
+          ctx += `    - ${m.name}（${m.strength || '未定'}${m.actionStatus ? '；' + m.actionStatus : ''}${boundNodes}${stage}）：${(m.evidence || []).join('；')}\n`;
         });
+        ctx += `    effective只表示原局机制按本口径有效，不证明本年事件；blocked、partial、relation不能当作有效机制。年度是否增强、破坏或解除限制须另看实际岁运节点，格局名称不能借用另一条机制的证据。\n`;
       }
       if (chain.paths && chain.paths.length) {
         ctx += `  连续通路：\n`;
@@ -2155,7 +2263,7 @@ function buildSingleChart(data) {
     ctx += '\n日支（夫妻宫）结构证据与婚姻推断候选：\n';
     ctx += '  性质：结构事实与解释推断分离；可校正=' + (dba.userCorrectable === true ? '是' : '未标注') + '\n';
     ctx += '  日支' + dba.branch + '（' + dba.wuXing + '），' + dba.mainShiShen + '——' + (dba.ssDesc || '') + '\n';
-    ctx += '  日主根气：' + dba.rootType + '（根气分' + dba.rootScore + '）\n';
+    ctx += '  日主在此日支的根气：' + dba.rootType + '（根气分' + dba.rootScore + '）。此字段只描述日主在日支通根，不代表全局有根或无根；不是感情地基、配偶的根气或关系基础，既不能据此断感情不稳，也不能据此断感情稳定。全局通根必须查看四支藏干，其他支有根不能被本字段覆盖。\n';
     if (dba.interactions && dba.interactions.length) {
       ctx += '  日支互动：\n';
       dba.interactions.forEach(function(ix) {

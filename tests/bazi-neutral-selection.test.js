@@ -194,6 +194,7 @@ function loadAI(replies = []) {
       if (name === '../lib/ai-abuse-guard.js') return {beginAiRequest:() => ({ok:true,release:() => events.push('release')})};
       if (name === '../lib/ziwei-context.js') return {buildZiweiContext:() => ''};
       if (name === '../lib/hepan-reply-scopes.js') return scopeModule.exports;
+      if (name === '../lib/ai-conversation-evidence.js' || name === '../lib/ai-chart-evidence.js' || name === '../lib/ai-annual-mechanisms.js') return require(name);
       if (name === 'crypto') return require('node:crypto');
       throw new Error('unexpected dependency: ' + name);
     }, async fetch(_, options) {

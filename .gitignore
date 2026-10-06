@@ -22,3 +22,7 @@ zhishi-demo/
 兑换码-备用.txt
 .data-store.json
 .admin-key
+
+# Internal real-case research and raw model audit outputs (retained locally).
+/audits/real-cases/
+/docs/research/

@@ -131,8 +131,9 @@ test('domain timing omits a year card rather than inventing timing from theme-on
   assert.equal(verdict, undefined);
 });
 
-test('current year names one age-filtered event only when an independent trigger exists', () => {
+test('current year presents an independently triggered study domain without claiming an exam was passed', () => {
   const facts = favorableFacts();
+  facts.currentYear.lifeContext = {status:'student',age:18,studyRelevant:true};
   facts.currentYear.eventAdjudication = {
     age: 18,
     lifeStage: { label: '升学与起步阶段' },
@@ -145,10 +146,18 @@ test('current year names one age-filtered event only when an independent trigger
     },
     secondaryEvent: null,
   };
-  const verdict = DeepReport.buildNarratives(facts).currentYear.verdicts.find(row => row.title === '今年最可能应在哪件事');
+  const verdict = DeepReport.buildNarratives(facts).currentYear.verdicts.find(row => row.eventType === 'study-opportunity-domain');
+  assert.ok(verdict);
+  assert.equal(verdict.title,'今年更突出的方面');
+  assert.equal(verdict.supportLevel,'domain');
+  assert.equal(verdict.outcomeScope,'domain');
+  assert.equal(verdict.detailOnly,false);
   assert.match(verdict.outcomeText, /考试.*录取.*推进/);
+  assert.doesNotMatch(verdict.outcomeText, /已经通过|已被录取|肯定考上/);
   assert.match(verdict.sourceText, /流年冲动月柱并形成有利方向/);
   assert.equal(DeepReport.buildNarratives(facts).currentYear.painPoint, '');
+  facts.currentYear.eventAdjudication.primaryEvent.hasIndependentAnnualTrigger=false;
+  assert.equal(DeepReport.buildNarratives(facts).currentYear.verdicts.length,0);
 });
 
 test('family disruption details survive school and elderly scene rendering', () => {
@@ -313,15 +322,15 @@ test('wealth direction follows Yong first and Xi second even without a validated
 test('study narrative retains potential without asserting actual degree attainment', () => {
   const n=DeepReport.buildNarratives(favorableFacts()).study;
   assert.match(n.level,/深造|学习/);
-  assert.ok(n.verdicts.some(v=>v.title==='学习与深造潜力'));
+  assert.ok(n.verdicts.some(v=>v.title==='学业结论的依据与范围'));
   assert.doesNotMatch(customerVisibleCopy(n),/本科相对轻松|本科阶段通常可达|低学历：/);
   assert.ok(n.verdicts.every(v=>v.conditions.length&&v.realityConfirmed===false));
 });
 
-test('customer study copy uses the low public band without junior-college or exclusion wording', () => {
+test('customer study copy ignores a low cached rank instead of implying low qualifications', () => {
   const facts=favorableFacts();facts.study.educationBand={rank:2};
   const n=DeepReport.buildNarratives(facts).study;
-  assert.equal(n.level,'学习支持需补充');
+  assert.equal(n.level,'学习结构参考');
   assert.doesNotMatch(customerVisibleCopy(n),/低学历|只能读|考不上|本科需要/);
 });
 
@@ -448,58 +457,32 @@ test('five-year narrative names the relationship direction in the exact activate
   assert.match(year.summary, /喜用|稳定基础|偏不利/);
 });
 
-test('study narrative uses the evidence-gated profile and education band without advice language', () => {
+test('study narrative keeps the strongest concrete conflicts and does not reassert old personality copy', () => {
   const facts = favorableFacts();
-  facts.study.profile = {
-    key: 'persistent_sha_yin', rank: 100,
-    sourceText: '杀印相生链成立，印星为本命用神。',
-    outcomeText: '你属于不怕重复、肯下功夫的长期投入型，准备周期越长越容易显出优势。',
-    basis: ['PROFILE:SHA_YIN'],
-  };
-  facts.study.educationBand = { key: 'L8', label: '硕士层级有较强潜力', rank: 8, basis: ['STUDY_BAND:L8'] };
-  facts.study.limitations = [{
-    key: 'uncontrolled_output', severity: 'medium',
-    sourceText: '食伤过旺且没有制化。',
-    outcomeText: '你思路多、反应快，但容易厌烦重复训练，成绩会低于真实聪明程度。',
-    basis: ['STUDY_LIMIT:uncontrolled_output'],
-  }];
+  facts.study.profile = { key:'persistent_sha_yin',rank:100,sourceText:'杀印相生链成立，印星为本命用神。',
+    outcomeText:'你属于不怕重复、肯下功夫的长期投入型，准备周期越长越容易显出优势。',basis:['PROFILE:SHA_YIN'] };
+  facts.study.educationBand = {rank:8,label:'硕士层级有较强潜力'};
+  facts.study.limitations = [{ key:'uncontrolled_output',severity:'medium',sourceText:'食伤过旺且没有制化。',
+    outcomeText:'你思路多、反应快，成绩低于真实聪明程度。',basis:['STUDY_LIMIT:uncontrolled_output'] }];
   const narrative = DeepReport.buildNarratives(facts).study;
-  assert.equal(narrative.level, '深造支持较集中');
-  assert.doesNotMatch(JSON.stringify(narrative), /硕士层级有较强潜力/);
-  assert.ok(narrative.verdicts.some(row => row.sourceText === '杀印相生链成立，印星为本命用神。'));
-  assert.ok(narrative.verdicts.some(row => /找方法、问懂的人.*明确顺序/.test(row.outcomeText)));
-  assert.ok(narrative.verdicts.some(row => /食伤过旺且没有制化/.test(row.sourceText)));
-  const visible = [narrative.headline, narrative.painPoint, narrative.note]
-    .concat(narrative.verdicts.flatMap(row => [row.title, row.sourceText, row.outcomeText || row.text]))
-    .filter(Boolean).join('\n');
-  assert.doesNotMatch(customerVisibleCopy(narrative), /建议|应该|应当|优先|最好|宜|需注意|需要做到|食伤|印星/);
-  assert.match(visible, /食伤过旺且没有制化/);
+  const visible = customerVisibleCopy(narrative);
+  assert.equal(narrative.level,'学习结构参考');
+  assert.ok(narrative.verdicts.filter(row=>!row.detailOnly).length<=2);
+  assert.match(visible,/步骤分|题目|练习/);
+  assert.ok(narrative.verdicts.some(row=>/食伤过旺/.test(row.sourceText)));
+  assert.doesNotMatch(visible,/硕士层级|不怕重复|真实聪明程度|天生/);
 });
 
-test('cached study labels and outcomes are regenerated from rank before public rendering', () => {
-  const cases = [
-    [8, '深造支持较集中', /支持条件较集中/],
-    [6, '学习条件有待配合', /有一定承接条件/],
-    [2, '学习支持需补充', /支持条件较少/],
-  ];
-  for (const [rank, label, outcome] of cases) {
-    const facts = favorableFacts();
-    facts.study.educationBand = {
-      key: `L${rank}`,
-      rank,
-      label: '旧缓存硕士标签',
-      publicLabel: '旧缓存大专标签',
-      outcomeText: '旧缓存结论：考不上，只能读大专。',
-      basis: [`STUDY_BAND:L${rank}`],
-    };
-    const narrative = DeepReport.buildNarratives(facts).study;
-    const visible = customerVisibleCopy(narrative);
-    assert.equal(narrative.level, label);
-    const bandRow=narrative.verdicts.find(v=>v.title==='学习与深造潜力');
-    assert.equal(bandRow.detailOnly,true);
-    assert.match(bandRow.outcomeText, outcome);
-    assert.match(bandRow.sourceText, new RegExp(label));
-    assert.doesNotMatch(visible, /旧缓存|大专|考不上|只能|硕士标签/);
+test('cached education labels and rank do not return through the rendered narrative', () => {
+  for(const rank of [2,6,8]) {
+    const facts=favorableFacts();
+    facts.study.educationBand={key:'L'+rank,rank,label:'旧缓存硕士标签',publicLabel:'旧缓存大专标签',outcomeText:'旧缓存结论：考不上，只能读大专。'};
+    const narrative=DeepReport.buildNarratives(facts).study;
+    assert.equal(narrative.level,'学习结构参考');
+    const scope=narrative.verdicts.find(row=>row.title==='学业结论的依据与范围');
+    assert.equal(scope.detailOnly,true);
+    assert.match(scope.outcomeText,/实际反馈|不由印星数量/);
+    assert.doesNotMatch(customerVisibleCopy(narrative),/旧缓存|大专|考不上|只能|硕士标签/);
   }
 });
 
@@ -552,10 +535,14 @@ test('five-year overview groups the same conclusion across years instead of repe
       targetPillar: 'month', direction: 'favorable', domains: ['wealth'], sourceText: `${year.year}年财星被引动。`,
     }];
   });
-  const five = DeepReport.buildNarratives(facts).fiveYear;
-  const sentence = '这一年更容易看到实际进账';
-  assert.equal((five.headline.match(new RegExp(sentence, 'g')) || []).length, 0);
-  assert.equal((five.painPoint.match(new RegExp(sentence, 'g')) || []).length, 1);
+  facts.currentYear = facts.fiveYear.years[0];
+  const rendered = DeepReport.buildNarratives(facts);
+  const five = rendered.fiveYear;
+  const sentence = rendered.currentYear.verdicts.find(row => row.title === '钱和收入会怎么变').outcomeText;
+  assert.ok(sentence);
+  assert.equal(five.headline.includes(sentence), false);
+  assert.equal(five.painPoint.split(sentence).length - 1, 1);
+  assert.match(five.painPoint, /2026、2027、2028年/);
   assert.ok(five.headline.length < 100);
 });
 
@@ -596,7 +583,7 @@ test('one multi-domain relation produces separate plain outcomes for work money 
   const study = verdicts.find((row) => row.title === '学习和考试会怎么变');
   assert.ok(career && wealth && study);
   assert.match(career.outcomeText, /工作|岗位|项目/);
-  assert.match(wealth.outcomeText, /进账|回款|收入/);
+  assert.match(wealth.outcomeText, /进账|回款|收入|钱款|到账/);
   assert.match(study.outcomeText, /考试|成绩|学习/);
   assert.notEqual(career.outcomeText, wealth.outcomeText);
   assert.notEqual(wealth.outcomeText, study.outcomeText);
@@ -793,9 +780,9 @@ test('out-of-range current-year copy states that DaYun is not included in the ju
 test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {
   const years = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts())).fiveYear.years;
   assert.match(years[0].summary, /争吵|分开住|聚少离多|重新考虑/);
-  assert.match(years[1].summary, /打破|改善|原来.*压力/);
+  assert.match(years[1].fullSummary || years[1].summary, /打破|改善|原来.*压力/);
   assert.match(years[2].summary, /靠近|稳定|推进|落实/);
-  assert.match(years[3].summary, /误会|怀疑|不信任|冷淡/);
+  assert.match(years[3].fullSummary || years[3].summary, /误会|怀疑|不信任|冷淡/);
   assert.match(years[4].summary, /不能据此确认/);
 });
 
@@ -825,7 +812,7 @@ test('all customer-visible paid narratives translate abstract pressure into conc
   assert.match(text, /账面收入.*落到自己手里|真正留下/);
   assert.match(text, /客户|项目/);
   assert.doesNotMatch(text, /本科|研究生/);
-  assert.match(narratives.study.verdicts.find(v=>v.title==='学习与深造潜力').outcomeText,/不能据此确定本科/);
+  assert.match(narratives.study.verdicts.find(v=>v.title==='学业结论的依据与范围').outcomeText,/实际反馈|不由印星数量/);
 });
 
 test('annual risk copy names the triggered fact instead of a generic structure label', () => {
@@ -1015,7 +1002,7 @@ test('one high-priority spouse-palace clash outweighs several low-priority favor
 
   const narratives = DeepReport.buildNarratives(facts);
   assert.match(narratives.currentYear.headline, /不利/);
-  assert.match(narratives.currentYear.painPoint, /争吵|分开住|重新考虑/);
+  assert.match(customerVisibleCopy(narratives.currentYear), /争吵|分开住|重新考虑/);
   assert.doesNotMatch(narratives.currentYear.headline + narratives.currentYear.painPoint, /不利力量更多|工作|钱上/);
   assert.equal(narratives.fiveYear.years[0].directionLabel, '偏不利');
   assert.match(narratives.fiveYear.headline, /偏不利/);
@@ -1242,7 +1229,7 @@ test('low-priority adverse years never become the main pain point over a higher-
   assert.doesNotMatch(fiveYear.painPoint, /岗位|返工|事业不利|2027年/);
 });
 
-test('current-year same-priority favorable plus unknown uses the full set in an order-independent pain point', () => {
+test('current-year same-priority favorable plus unknown keeps both domain outcomes without a duplicated pain point', () => {
   function build(rows) {
     const facts = favorableFacts();
     facts.currentYear.interactions = rows;
@@ -1256,8 +1243,9 @@ test('current-year same-priority favorable plus unknown uses the full set in an 
   const forward = build(rows);
   const reverse = build(rows.slice().reverse());
   assert.deepEqual({ headline: forward.headline, painPoint: forward.painPoint }, { headline: reverse.headline, painPoint: reverse.painPoint });
-  assert.match(forward.headline + forward.painPoint, /好坏暂不能定/);
-  assert.match(forward.painPoint, /收入|财富|明显变化|拉扯/);
+  assert.match(forward.headline, /好坏暂(?:时)?不能定/);
+  assert.equal(forward.painPoint, '');
+  assert.match(customerVisibleCopy(forward), /收入|财富|明显变化|拉扯/);
 });
 
 test('non-decisive risks never replace a highest-priority favorable five-year pain point', async (t) => {
@@ -1272,7 +1260,7 @@ test('non-decisive risks never replace a highest-priority favorable five-year pa
       facts.fiveYear.years[1].triggeredRisks = riskPlacement === 'lower-year' ? [{ type: '财破印' }] : [];
       const fiveYear = DeepReport.buildNarratives(facts).fiveYear;
       assert.match(fiveYear.headline, /偏有利/);
-      assert.match(fiveYear.painPoint, /收入|财富|回款|资产/);
+      assert.match(fiveYear.painPoint, /收入|财富|回款|资产|钱款|到账/);
       assert.doesNotMatch(fiveYear.painPoint, /风险信号|学习.*打断|计划临时改掉/);
     });
   }

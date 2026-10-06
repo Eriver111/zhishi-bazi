@@ -689,7 +689,7 @@ test('service worker rolls the cache and precaches only the lightweight shared s
   events.install({ waitUntil(promise) { installPromise = promise; } });
   await installPromise;
 
-  assert.equal(openedCache, 'zhishi-v62');
+  assert.equal(openedCache, 'zhishi-v63');
   assert.ok(cachedAssets.includes('/js/mobile-app-shell.js?v=11'));
   assert.ok(cachedAssets.includes('/css/mobile-app-shell.css?v=32'));
   assert.ok(cachedAssets.includes('/js/app-experience.js?v=1'));

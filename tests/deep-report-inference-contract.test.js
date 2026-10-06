@@ -132,12 +132,19 @@ test('removing a wealth pathway removes its confirmation and keeps a visible lim
   assert.doesNotMatch(b.outcomeText,/主要还是.*正经收入|不是靠.*横财/);
 });
 
-test('adult timing consumes supported scenario candidates and does not erase their distinction',()=>{
-  const a=DeepReport.__test.selectTimingScenario({domain:'career',direction:'偏有利',scenarioCandidates:['合同续约']},{lifeStage:{key:'development'}});
-  const b=DeepReport.__test.selectTimingScenario({domain:'career',direction:'偏有利',scenarioCandidates:['项目验收']},{lifeStage:{key:'development'}});
+test('known adult work timing preserves supplied distinct scenarios while absent age or a child context does not assume a job',()=>{
+  const adult={age:35,lifeStage:{key:'development'},lifeContext:{status:'working',age:35}};
+  const record={domain:'career',direction:'偏有利',hasIndependentAnnualTrigger:true,evidence:['合成年度职业触发']};
+  const a=DeepReport.__test.selectTimingScenario({...record,scenarioCandidates:['合同续约']},adult);
+  const b=DeepReport.__test.selectTimingScenario({...record,scenarioCandidates:['项目验收']},adult);
   assert.equal(a,'合同续约'); assert.equal(b,'项目验收'); assert.notEqual(a,b);
-  const child=DeepReport.__test.selectTimingScenario({domain:'career',direction:'偏有利',scenarioCandidates:['合同续约']},{lifeStage:{key:'child'}});
+  const child=DeepReport.__test.selectTimingScenario({...record,scenarioCandidates:['合同续约']},{age:12,lifeStage:{key:'child'},lifeContext:{status:'student',age:12}});
   assert.doesNotMatch(child,/合同续约/);
+  const unknown=DeepReport.__test.selectTimingScenario({...record,scenarioCandidates:['合同续约']},{lifeStage:{key:'development'}});
+  assert.doesNotMatch(unknown,/合同续约|项目验收/,'单独一个阶段标签不能补造年龄或职业');
+  const untriggered={...record,hasIndependentAnnualTrigger:false,scenarioCandidates:['合同续约']};
+  const year={year:2026,lifeContext:adult.lifeContext,eventAdjudication:{...adult,primaryEvent:untriggered,domainRecords:[untriggered]}};
+  assert.equal(DeepReport.buildNarratives({currentYear:year,fiveYear:{years:[year]}}).currentYear.verdicts.length,0,'有场景和工作身份但无年度独立触发也不生成年度事件');
 });
 
 test('A grades keep existing differentiated selling points on representative charts',()=>{

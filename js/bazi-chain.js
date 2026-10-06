@@ -266,39 +266,85 @@
       item.evidence.push(action.summary);
     });
 
-    // 事实图可以完整，但给 AI 的“主导机制”必须去噪：按力量、邻近度和重复证据排序，最多保留六条。
+    // Keep inference facts separate from the six rows shown in the UI. Each
+    // instance retains its actual endpoints; a stronger officer edge must not
+    // rename a different kill edge, or lend it an effective action verdict.
+    function edgeName(defName, edge) {
+      if (!/^食神制杀|^伤官见官|^食伤制/.test(defName)) return defName;
+      if (edge.fromNode.shiShen === '食神' && edge.toNode.shiShen === '七杀') return '食神制杀';
+      if (edge.fromNode.shiShen === '伤官' && edge.toNode.shiShen === '正官') return '伤官见官';
+      return edge.toNode.shiShen === '正官' ? '食伤制官' : '食伤制杀';
+    }
+    function actionForEdge(name, edge) {
+      var source = edge.fromNode.shiShen, target = edge.toNode.shiShen;
+      var id = name === '食伤生财' ? (source === '食神' ? 'food_wealth' : 'hurting_wealth')
+        : name === '财生官杀' ? (target === '正官' ? 'wealth_officer' : 'wealth_kill')
+        : name === '官杀生印' ? (source === '正官' ? 'officer_seal' : 'kill_seal')
+        : name === '印生身' ? 'seal_support' : name === '财破印' ? 'wealth_seal'
+        : name === '印制食伤' ? (source === '偏印' && target === '食神' ? 'owl_food' : target === '伤官' ? 'seal_hurting' : '')
+        : name === '食神制杀' ? 'food_kill' : name === '食伤制杀' ? 'hurting_kill' : '';
+      var action = id && actionEvidence && actionEvidence.byId[id];
+      if (!action) return {};
+      function matches(node, label, pos) {
+        if (pos !== node.pillar) return false;
+        if (node.layer === 'zhi') return node.pillar === 'month'
+          && String(label).indexOf('月支' + node.char + '本气') >= 0 && String(label).indexOf(node.shiShen) >= 0;
+        if (String(label).indexOf(node.char + node.shiShen) < 0) return false;
+        return node.layer === 'gan' ? String(label).indexOf('干') >= 0
+          : node.pillar === 'month' && /本气/.test(node.depth) && String(label).indexOf('月支') >= 0;
+      }
+      var path = (action.paths || []).filter(function(p) {
+        return matches(edge.fromNode, p.source, p.sourcePosition) && matches(edge.toNode, p.target, p.targetPosition);
+      })[0];
+      // The global action may have been downgraded by a broken downstream link.
+      var stage = action.stage !== 'effective' ? action.stage : (path ? path.stage : 'relation');
+      return { actionId:id, actionStage:stage, actionStatus:action.status, actionSummary:action.summary };
+    }
+    var fullMechanisms = [];
+    mechanisms.forEach(function(m) {
+      m._edges.forEach(function(edge) {
+        var name = edgeName(m.name, edge);
+        fullMechanisms.push(Object.assign({
+          id:'mechanism:' + name + ':' + edge.id, name:name, relation:m.relation,
+          fromFamily:m.fromFamily, toFamily:m.toFamily, domain:m.domain,
+          strength:edge.strength >= 0.85 ? '强' : edge.strength >= 0.55 ? '中' : '弱',
+          dominanceScore:edge.strength, edgeIds:[edge.id], nodeIds:[edge.from,edge.to],
+          sourceNodeId:edge.from, targetNodeId:edge.to,
+          sourceWx:edge.fromNode.wx, targetWx:edge.toNode.wx,
+          sourcePillar:edge.fromNode.pillar, targetPillar:edge.toNode.pillar,
+          sourceShiShen:edge.fromNode.shiShen, targetShiShen:edge.toNode.shiShen,
+          evidence:[edge.evidence], relationStage:'connected',
+          sourceLayer:edge.fromNode.layer, targetLayer:edge.toNode.layer
+        }, actionForEdge(name,edge)));
+      });
+    });
+    // 展示仍保留六条；全量事实与路径不按展示名额截断。
     mechanisms.sort(function(a,b) { return b.dominanceScore - a.dominanceScore; });
     mechanisms = mechanisms.filter(function(item, index) {
       return index < 6 && (item.strength !== '弱' || index < 3);
     });
 
-    function has(name) { return mechanisms.some(function(m) { return m.name === name || (name === '食伤制官杀' && /^食神制杀|^伤官见官|^食伤制/.test(m.name)); }); }
-    function mechanism(name) {
-      return mechanisms.filter(function(m) { return m.name === name || (name === '食伤制官杀' && /^食神制杀|^伤官见官|^食伤制/.test(m.name)); })[0];
-    }
-    function directlyContinues(first, second) {
-      if (!first || !second) return false;
-      if ((first.actionStage && first.actionStage !== 'effective') || (second.actionStage && second.actionStage !== 'effective')) return false;
-      return first._edges.some(function(a) {
-        return second._edges.some(function(b) {
-          return a.toNode.id === b.fromNode.id && Math.min(a.strength, b.strength) >= 0.55;
-        });
-      });
-    }
     var paths = [];
-    var wealthOfficer = mechanism('财生官杀'), officerSeal = mechanism('官杀生印'), sealBody = mechanism('印生身');
-    var outputWealth = mechanism('食伤生财'), officerBody = mechanism('官杀克身');
-    if (directlyContinues(wealthOfficer, officerSeal) && directlyContinues(officerSeal, sealBody)) {
-      paths.push({ name:'财官印身连续流通', steps:['财生官杀','官杀生印','印生身'] });
+    function addPaths(name, names) {
+      function walk(index, route) {
+        if (index === names.length) {
+          paths.push({ id:'path:' + route.map(function(m){return m.id;}).join('>'), name:name, steps:names.slice(),
+            mechanismIds:route.map(function(m){return m.id;}), edgeIds:route.map(function(m){return m.edgeIds[0];}),
+            nodeIds:[route[0].sourceNodeId].concat(route.map(function(m){return m.targetNodeId;})), actionStage:'effective' });
+          return;
+        }
+        fullMechanisms.filter(function(m) {
+          return m.name === names[index] && m.actionStage === 'effective' && m.dominanceScore >= 0.55
+            && (!route.length || route[route.length - 1].targetNodeId === m.sourceNodeId);
+        }).forEach(function(m){walk(index+1,route.concat(m));});
+      }
+      walk(0,[]);
     }
-    if (directlyContinues(outputWealth, wealthOfficer)) {
-      paths.push({ name:'才华资源责任连续流通', steps:['食伤生财','财生官杀'] });
-    }
-    if (officerBody && directlyContinues(officerSeal, sealBody)) {
-      paths.push({ name:'官杀经印通关', steps:['官杀克身','官杀生印','印生身'] });
-    }
+    addPaths('财官印身连续流通',['财生官杀','官杀生印','印生身']);
+    addPaths('才华资源责任连续流通',['食伤生财','财生官杀']);
+    addPaths('官杀经印通关',['官杀生印','印生身']);
     mechanisms.forEach(function(item) { delete item._edges; });
-    return { mechanisms:mechanisms, paths:paths };
+    return { mechanisms:mechanisms, fullMechanisms:fullMechanisms, paths:paths };
   }
 
   function roleForWx(yongJi, wx) {
@@ -1316,6 +1362,7 @@
       factGraph: factGraph,
       mechanismEvidence:actionEvidence,
       mechanisms: derived.mechanisms,
+      fullMechanisms: derived.fullMechanisms,
       paths: derived.paths
     };
   }
@@ -1326,6 +1373,7 @@
       version:'3.0',
       factGraph:analyzed.factGraph,
       mechanisms:analyzed.mechanisms,
+      fullMechanisms:analyzed.fullMechanisms,
       paths:analyzed.paths,
       // imagery 是有证据和限制条件的“候选取象”，供 AI 综合，不是最终断语。
       imagery:buildImagery(bazi, analyzed.mechanisms, analyzed.paths, yongJi),
@@ -1656,8 +1704,9 @@
     if (trigger.target === 'hour' || /时柱|时支/.test(detail)) { add('career', 2); add('family', 1); }
     if (/天克地冲|六冲|刑|六害|六破|伏吟|驿马/.test(type)) add('change', 2);
     if ((trigger.target === 'day' || trigger.target === 'hour') && /天克地冲|六冲|刑|自刑|六害|伏吟|驿马/.test(type)) add('health', 2);
-    if (/伤官见官|官逢伤官/.test(type)) add('career', 6);
-    if (/流年合日支/.test(type)) add('relationship', 3);
+    if (/伤官见官|官逢伤官/.test(type)) add(ageKnown && Number(age) <= 23 ? 'study' : 'career', 6);
+    // “流年合日支”已经由日支位置计入婚恋，不能因为命名不同再加一遍。
+    if (/流年合日支/.test(type) && !domains.some(function(item) { return item.domain === 'relationship'; })) add('relationship', 4);
     if (/驿马逢日支受扰/.test(type)) { add('health', 5); add('change', 3); }
     // 三合、三会等补局既是当年的独立结构触发，也必须按“所成五行在本命中的功能”
     // 落到现实领域。旧逻辑只记录了结构事实，没有 target，导致明明补成三合却被误报为无触发。
@@ -1700,6 +1749,25 @@
     if (!trigger) return null;
     if (isDisruptiveAnnualTrigger(trigger) && trigger.isGood === true) return null;
     return trigger.isGood === true ? true : (trigger.isGood === false ? false : null);
+  }
+
+  // 同一流年支作用同一位置，可能同时有“六冲/天克地冲”或“刑/害”的说明。
+  // 这些是同一输入的不同解释，不能把它们当成多次独立应事证据。
+  function annualTriggerGroupKey(trigger, index) {
+    var type = String(trigger.type || ''), detail = String(trigger.detail || '');
+    var target = trigger.target;
+    if (!target) {
+      if (/日柱|日支|夫妻/.test(detail)) target = 'day';
+      else if (/月柱|月支|提纲/.test(detail)) target = 'month';
+      else if (/年柱/.test(detail)) target = 'year';
+      else if (/时柱|时支/.test(detail)) target = 'hour';
+      else if (/岁运/.test(type)) target = 'dayun';
+    }
+    if (target && /天克地冲|地冲月提|六冲|^刑$|自刑|六害|六破|六合|流年合日支|驿马逢日支受扰/.test(type)) {
+      return 'annual-branch:' + target;
+    }
+    return type + ':' + (target || (trigger.targetPositions || []).join(',')) + ':'
+      + (trigger.formedWx || '') + ':' + (detail || index);
   }
 
   function annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger) {
@@ -1755,15 +1823,48 @@
     var annualShiShen = '';
     try { annualShiShen = BaZiCalculator.getShiShen(bazi.day.gan, liuNian.gan) || ''; } catch (e) {}
 
-    (analysis.triggers || []).forEach(function(trigger) {
+    var annualGroups = {}, relationshipContexts = {}, independentTriggerGroups = {};
+    (analysis.triggers || []).forEach(function(trigger, triggerIndex) {
+      var groupKey = annualTriggerGroupKey(trigger, triggerIndex);
+      // 跨年排序的触发数量也用同一份独立证据分组，不能把复合说明重新加回。
+      // 原有 danger/opportunity 是上游综合分，此处只修正说明条数，不重算它们。
+      if (trigger.type !== '地支重复') independentTriggerGroups[groupKey] = true;
       triggerAnnualDomains(trigger, age, bazi).forEach(function(hit) {
-        scores[hit.domain] += hit.weight;
-        annualScores[hit.domain] += hit.weight;
-        annualTriggerCounts[hit.domain] += 1;
+        var key = hit.domain + '|' + groupKey;
+        var group = annualGroups[key] || (annualGroups[key] = { domain:hit.domain, weight:0, directions:[], evidence:[], unresolved:false, independent:false });
+        // 同支重临只是放大既有主题，不新增关系；不能冒充刑冲合害的独立应期。
+        if (trigger.type !== '地支重复') group.independent = true;
+        group.weight = Math.max(group.weight, hit.weight);
         var eventDirection = annualEventDirection(trigger);
-        if (eventDirection === true) { directional[hit.domain] += hit.weight; polarity[hit.domain].positive = true; }
-        else if (eventDirection === false) { directional[hit.domain] -= hit.weight; polarity[hit.domain].negative = true; }
-        if (evidence[hit.domain].length < 4 && trigger.detail && evidence[hit.domain].indexOf(trigger.detail) < 0) evidence[hit.domain].push(trigger.detail);
+        if (isDisruptiveAnnualTrigger(trigger) && eventDirection === null) group.unresolved = true;
+        if (group.directions.indexOf(eventDirection) < 0) group.directions.push(eventDirection);
+        if (trigger.detail && group.evidence.indexOf(trigger.detail) < 0) group.evidence.push(trigger.detail);
+        if (hit.domain === 'relationship') {
+          var dayTriggered = trigger.target === 'day' || /日柱|日支|夫妻/.test(String(trigger.detail || ''))
+            || (trigger.targetPositions || []).indexOf('day') >= 0;
+          if (dayTriggered) relationshipContexts[age !== null && age >= 18 ? 'marriage' : 'personal'] = true;
+          if (trigger.functionalFamily === '比劫') relationshipContexts.cooperation = true;
+        }
+      });
+    });
+    Object.keys(annualGroups).forEach(function(key) {
+      var group = annualGroups[key], domain = group.domain;
+      // “变动”是冲刑害的共同描述，不是把家庭、工作、婚恋的分数再汇总一次。
+      // 保留全部事实，但其显著度只取最强的一条，避免泛化主题抢占具体领域。
+      if (domain === 'change') {
+        annualScores.change = Math.max(annualScores.change, group.weight);
+        scores.change = 1 + annualScores.change;
+      } else {
+        scores[domain] += group.weight;
+        annualScores[domain] += group.weight;
+      }
+      if (group.independent) annualTriggerCounts[domain] += 1;
+      var eventDirection = group.unresolved ? null : (group.directions.indexOf(false) >= 0 ? false
+        : (group.directions.indexOf(true) >= 0 ? true : null));
+      if (eventDirection === true) { directional[domain] += group.weight; polarity[domain].positive = true; }
+      else if (eventDirection === false) { directional[domain] -= group.weight; polarity[domain].negative = true; }
+      group.evidence.forEach(function(detail) {
+        if (evidence[domain].length < 4 && evidence[domain].indexOf(detail) < 0) evidence[domain].push(detail);
       });
     });
 
@@ -1775,8 +1876,9 @@
       else if (role === '忌神') { directional[domain] -= weight; polarity[domain].negative = true; }
       if (evidence[domain].length < 4) evidence[domain].push('流年天干' + liuNian.gan + '为' + annualShiShen + '，主要引动' + theme + '；仅凭十神只能定主题，不能单独断定事件发生。');
     }
-    if (/财/.test(annualShiShen)) addAnnualTheme('wealth', 4, '收入、资源与资金安排');
-    if (/官|杀/.test(annualShiShen)) addAnnualTheme('career', 4, '职位、规则与责任');
+    if (/^(正财|偏财)$/.test(annualShiShen)) addAnnualTheme('wealth', 4, '收入、资源与资金安排');
+    if (/^(正官|七杀|偏官)$/.test(annualShiShen)) addAnnualTheme(age !== null && age <= 23 ? 'study' : 'career', 4,
+      age !== null && age <= 23 ? '考试、规则与师长要求' : '职位、规则与责任');
     if (/印/.test(annualShiShen)) {
       if (age === null) { addAnnualTheme('study', 2, '学习资质'); addAnnualTheme('family', 2, '家庭支持'); }
       else addAnnualTheme(age <= 24 ? 'study' : 'family', 4, age <= 24 ? '学习、考试与资质' : '家庭、长辈与支持系统');
@@ -1785,19 +1887,20 @@
       if (age === null) { addAnnualTheme('study', 1, '学习与表达'); addAnnualTheme('career', 1, '技能与成果输出'); }
       else addAnnualTheme(age <= 23 ? 'study' : 'career', 2, age <= 23 ? '学习、表达与考试发挥' : '技能、表达与成果输出');
     }
-    if (/比肩|劫财/.test(annualShiShen)) { addAnnualTheme('wealth', 2, '竞争、分配与资金占用'); addAnnualTheme('relationship', 1, '同辈、合作与边界'); }
+    if (/比肩|劫财/.test(annualShiShen)) {
+      addAnnualTheme('wealth', 2, '竞争、分配与资金占用'); addAnnualTheme('relationship', 1, '同辈、合作与边界');
+      relationshipContexts.cooperation = true;
+    }
 
-    // 大运先定十年趋势：只把同一领域的大运账本带入，不能借用别的领域方向。
+    // 实际的岁运节点作用已在当年触发中计算。十年领域账本只作背景，
+    // 不能再加到年度分数，把条件性/不利的年度作用覆盖成有利，或凭空升高某领域排名。
     var daYunLedger = options.daYunEventLedger || (options.daYunPeriod && options.daYunPeriod.eventLedger) || null;
+    var daYunBackground = [];
     if (daYunLedger && daYunLedger.domainRecords) {
       daYunLedger.domainRecords.forEach(function(record) {
         if (!Object.prototype.hasOwnProperty.call(scores, record.domain)) return;
-        scores[record.domain] += Math.min(Number(record.activationScore || 0) * 0.35, 2.5);
-        if (record.direction === '偏有利') { directional[record.domain] += 2; polarity[record.domain].positive = true; }
-        else if (record.direction === '偏不利') { directional[record.domain] -= 2; polarity[record.domain].negative = true; }
-        if (record.conclusion && evidence[record.domain].length < 4) {
-          evidence[record.domain].push('本步大运在“' + record.label + '”领域为' + record.direction + '：' + record.conclusion);
-        }
+        daYunBackground.push({domain:record.domain,label:record.label,direction:record.direction,
+          activationScore:Number(record.activationScore || 0),conclusion:record.conclusion || ''});
       });
     }
 
@@ -1820,30 +1923,66 @@
       if (unresolvedDisruptions.length && direction === '偏有利') direction = '条件性';
       var meta = ANNUAL_DOMAIN_META[domain];
       var activation = Number(scores[domain].toFixed(2));
-      var confidence = activation >= 9 && evidence[domain].length >= 2 ? '高' : (activation >= 5 ? '中高' : '中');
       var hasStructuralTrigger = annualTriggerCounts[domain] > 0;
+      var confidence = activation >= 9 && annualTriggerCounts[domain] >= 2 ? '高'
+        : (activation >= 5 && hasStructuralTrigger ? '中高' : '中');
+      var relationshipScopes = domain === 'relationship' ? Object.keys(relationshipContexts) : [];
+      var marriageOnly = relationshipScopes.length === 1 && relationshipScopes[0] === 'marriage';
+      var cooperationOnly = relationshipScopes.length === 1 && relationshipScopes[0] === 'cooperation';
+      var personalOnly = relationshipScopes.length === 1 && relationshipScopes[0] === 'personal';
+      var candidate = direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional);
+      var scenarios = annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger);
+      if (marriageOnly) {
+        candidate = direction === '偏有利' ? '恋爱关系确认、修复或婚姻安排更容易推进'
+          : direction === '偏不利' ? '伴侣之间容易争执、疏远，或重新考虑是否继续这段关系'
+            : '恋爱或婚姻安排被引动，关系确认与相处分歧需要分别看';
+        scenarios = [candidate];
+      } else if (cooperationOnly) {
+        candidate = direction === '偏有利' ? '同辈协作、合伙分工更容易达成一致'
+          : direction === '偏不利' ? '合伙分工、利益分配或朋友之间的承诺容易起争执'
+            : '同辈协作与利益分配被引动，不据此推断恋爱或婚期';
+        scenarios = [candidate];
+      } else if (personalOnly) {
+        candidate = direction === '偏不利' ? '与亲近的人容易发生争执、疏远，或改变日常相处安排'
+          : '与亲近的人的相处和日常安排被引动；年龄或关系状态不足时不套用结婚、离婚场景';
+        scenarios = [candidate];
+      } else if (domain === 'relationship' && relationshipScopes.length > 1) {
+        candidate = '亲密关系与同辈合作分别有线索，不能把其中一类的证据当成另一类的结果';
+        scenarios = [];
+        if (relationshipContexts.marriage) scenarios.push('婚恋线索来自日支被引动；具体是否恋爱、结婚或分开，不能用合伙争执来替代验证');
+        if (relationshipContexts.personal) scenarios.push('亲近关系线索来自日支被引动，未据此指定婚姻状态');
+        if (relationshipContexts.cooperation) scenarios.push('合作线索来自比劫，同辈分工或利益分配的变化不能算作感情事件命中');
+      }
       return {
-        domain:domain, label:meta.label, activationScore:activation, direction:direction, confidence:confidence,
+        domain:domain, label:marriageOnly ? '感情婚恋' : (cooperationOnly ? '同辈合作' : (personalOnly ? '亲近关系' : meta.label)), activationScore:activation, direction:direction, confidence:confidence,
         annualActivationScore:Number(annualScores[domain].toFixed(2)),
         annualStructuralTriggerCount:annualTriggerCounts[domain],
         hasIndependentAnnualTrigger:hasStructuralTrigger,
         unresolvedDisruptionCount:unresolvedDisruptions.length,
-        eventCandidate:direction === '偏有利' ? meta.favorable : (direction === '偏不利' ? meta.adverse : meta.conditional),
+        eventCandidate:candidate,
+        relationshipScopes:relationshipScopes,
+        concreteOutcomeEstablished:false,
         scenarioCandidates:unresolvedDisruptions.length && domain === 'family'
           ? ['家人身体状况可能出现变化，家庭收入或开支也可能有波动；需核对是否实际打乱原定安排，不能当作已发生的结论', '即使扶抑方向有利，也不能据此说家人状态改善或支持增加']
-          : annualScenarioCandidates(domain, direction, annualShiShen, hasStructuralTrigger),
+          : scenarios,
         evidence:evidence[domain].slice(0, 3),
         lifeStageMatched:stage.focus.indexOf(domain) >= 0,
         decisionBasis:'流年触发位置 + 岁运局关系方向 + 当年十神事项 + 实际年龄阶段'
       };
-    }).sort(function(a,b) { return b.activationScore - a.activationScore || b.evidence.length - a.evidence.length || a.domain.localeCompare(b.domain); });
+    }).sort(function(a,b) {
+      // 没有独立当年触发的十神/大运背景，不能压过已经触发的具体领域。
+      return Number(b.hasIndependentAnnualTrigger) - Number(a.hasIndependentAnnualTrigger)
+        || b.activationScore - a.activationScore || b.evidence.length - a.evidence.length || a.domain.localeCompare(b.domain);
+    });
 
     return {
-      version:'1.1', analysisType:'timing_hypothesis', frozen:false, userCorrectable:true,
+      version:'1.2', analysisType:'timing_hypothesis', frozen:false, userCorrectable:true,
       year:isFinite(year) ? year : null, age:age, lifeStage:stage, annualShiShen:annualShiShen,
       primaryEvent:ranked[0] || null, secondaryEvent:ranked[1] || null, domainRecords:ranked,
-      triggerStrength:Number((Number(analysis.dangerScore || 0) + Number(analysis.opportunityScore || 0) + Math.min((analysis.triggers || []).length, 5)).toFixed(2)),
+      daYunBackground:{domainRecords:daYunBackground,scope:'十年领域背景；不重复加入年度激活分、方向或证据。年度与大运的具体节点作用仍在当年触发中计算。'},
+      triggerStrength:Number((Number(analysis.dangerScore || 0) + Number(analysis.opportunityScore || 0) + Math.min(Object.keys(independentTriggerGroups).length, 5)).toFixed(2)),
       selectionRule:'先由大运定十年趋势，再由流年与岁运局触发定应期；年龄阶段只筛现实场景，十神名称不单独决定事件。',
+      evidenceCountingRule:'同一流年支作用同一位置的复合说明只计一次；环境变动取最强触发，不汇总所有具体领域；婚恋与同辈合作分开标记。',
       constraint:'主次事件均为最可能兑现的候选，不是既成事实；用户提供真实经历后必须以经历校正，禁止为维护推断而嘴硬。'
     };
   }
@@ -1866,12 +2005,241 @@
         domain:record.domain, label:record.label, direction:record.direction, confidence:record.confidence,
         annualActivationScore:record.annualActivationScore,
         hasIndependentAnnualTrigger:record.hasIndependentAnnualTrigger,
+        relationshipScopes:(record.relationshipScopes || []).slice(),
+        concreteOutcomeEstablished:record.concreteOutcomeEstablished === true,
         eventCandidate:record.eventCandidate, evidence:record.evidence,
         score:Number(record.activationScore || 0) + Number(adjudication.triggerStrength || 0) * 0.45,
         constraint:adjudication.constraint
       };
     }).filter(Boolean).sort(function(a,b) { return b.score - a.score || Number(a.year || 0) - Number(b.year || 0); });
     return rows.slice(0, 3).map(function(row) { row.score = Number(row.score.toFixed(2)); return row; });
+  }
+
+  // Annual stem facts are separate from event scores: existence of a relation
+  // does not establish its effectiveness, transformation, or a real-life event.
+  function collectAnnualStemInteractions(bazi, daYun, liuNian, yongJi) {
+    if (!bazi || !bazi.day || !liuNian || !window.WU_XING[liuNian.gan]) return [];
+    var movingGan = liuNian.gan, movingWx = window.WU_XING[movingGan], rows = [];
+    var targets = POSITIONS.map(function(pos) { return {pos:pos, pillar:bazi[pos], scope:'natal'}; });
+    if (daYun && daYun.gan) targets.push({pos:'dayun',pillar:daYun,scope:'dayun'});
+    targets.forEach(function(item) {
+      if (!item.pillar || !window.WU_XING[item.pillar.gan]) return;
+      var targetGan = item.pillar.gan, targetWx = window.WU_XING[targetGan];
+      var targetLabel = item.pos === 'dayun' ? '大运' : POS_NAMES[item.pos];
+      var base = { source:item.scope === 'dayun' ? '岁运' : '流年', target:item.pos, targetScope:item.scope,
+        targetLayer:'stem', movingStem:movingGan, targetStem:targetGan,
+        movingNodeId:'annual.gan', sourceNodeId:'annual.gan', targetNodeId:item.pos + '.gan',
+        nodeIds:['annual.gan', item.pos + '.gan'], movingWx:movingWx, targetWx:targetWx,
+        movingShiShen:BaZiCalculator.getShiShen(bazi.day.gan,movingGan),
+        targetShiShen:BaZiCalculator.getShiShen(bazi.day.gan,targetGan),
+        movingRole:roleForWx(yongJi,movingWx), targetRole:roleForWx(yongJi,targetWx),
+        isGood:null, stage:'relation', eventEstablished:false };
+      if (GAN_HE_PAIR[movingGan] === targetGan) {
+        rows.push(Object.assign({},base,{id:'annual-stem:combine:' + item.pos,type:'天干五合',
+          formedWx:GAN_HE_WX[movingGan+targetGan], transformationEstablished:false,
+          fromNodeId:'annual.gan',toNodeId:item.pos + '.gan',
+          detail:'流年' + movingGan + '与' + targetLabel + targetGan + '五合；只记录合的牵引，不认定合化、合走或具体事件。'}));
+      }
+      var relation = relationDirection(movingWx,targetWx);
+      if (!relation) return;
+      var from = relation.fromFirst ? '流年'+movingGan : targetLabel+targetGan;
+      var to = relation.fromFirst ? targetLabel+targetGan : '流年'+movingGan;
+      rows.push(Object.assign({},base,{id:'annual-stem:' + relation.type + ':' + item.pos,
+        type:'天干'+relation.type, relation:relation.type, movingActsOnTarget:relation.fromFirst,
+        fromNodeId:relation.fromFirst ? 'annual.gan' : item.pos+'.gan',
+        toNodeId:relation.fromFirst ? item.pos+'.gan' : 'annual.gan',
+        detail:from + (relation.type === '同气' ? '与'+to+'同气' : relation.type+to)
+          + '；生克关系不等于已经发挥作用，须结合承载、合绊和原局作用链。'}));
+    });
+    var combines = rows.filter(function(row) { return row.type === '天干五合'; });
+    combines.forEach(function(row) {
+      row.competingTargetNodeIds = combines.filter(function(other) { return other.id !== row.id; }).map(function(other) { return other.targetNodeId; });
+      if (row.competingTargetNodeIds.length) row.detail += '同时另有合的对象，不能任取一处当成独占作用。';
+    });
+    return rows;
+  }
+
+  /**
+   * Temporal structure audit, not an event or strength adjudicator. Preserve
+   * the natal chart and add dated carriers instead of replacing its pillars.
+   * A connected sequence records direction and participants, never success.
+   */
+  function buildAnnualMechanismGraph(bazi, daYun, liuNian) {
+    var natal = buildFactGraph(bazi);
+    var action = BaZiCalculator.evaluateMechanismEvidence ? BaZiCalculator.evaluateMechanismEvidence(bazi) : null;
+    var derived = deriveMechanisms(natal, action);
+    var nodes = natal.nodes.map(function(n) { return Object.assign({}, n, {scope:'natal'}); });
+    var dg = bazi.day.gan, edges = [], seen = {};
+    function addPillar(scope, pillar) {
+      if (!pillar || !window.WU_XING[pillar.gan] || !window.DI_ZHI_WU_XING[pillar.zhi]) return;
+      var hidden = window.getCangGan(pillar.zhi);
+      nodes.push({id:scope+'.gan',scope:scope,pillar:scope,layer:'gan',char:pillar.gan,
+        wx:window.WU_XING[pillar.gan],shiShen:BaZiCalculator.getShiShen(dg,pillar.gan),
+        family:roleFamily(BaZiCalculator.getShiShen(dg,pillar.gan)),visibility:'exposed',depth:'透干'});
+      nodes.push({id:scope+'.zhi',scope:scope,pillar:scope,layer:'zhi',char:pillar.zhi,
+        wx:window.DI_ZHI_WU_XING[pillar.zhi],shiShen:BaZiCalculator.getShiShen(dg,hidden[0]),
+        family:roleFamily(BaZiCalculator.getShiShen(dg,hidden[0])),visibility:'branch',depth:'地支本气',
+        carrierAliasOf:scope+'.hidden.0'});
+      hidden.forEach(function(gan,i) {
+        nodes.push({id:scope+'.hidden.'+i,scope:scope,pillar:scope,layer:'hidden',char:gan,branch:pillar.zhi,
+          wx:window.WU_XING[gan],shiShen:BaZiCalculator.getShiShen(dg,gan),family:roleFamily(BaZiCalculator.getShiShen(dg,gan)),
+          visibility:'hidden',depth:i===0?'本气':i===1?'中气':'余气',literalCarrier:true});
+      });
+    }
+    addPillar('dayun',daYun); addPillar('annual',liuNian);
+    var nodeById = {}; nodes.forEach(function(n) {
+      if (n.layer==='zhi') n.carrierAliasOf=n.pillar+'.hidden.0';
+      nodeById[n.id]=n;
+    });
+    function label(n) {
+      var prefix=n.scope==='annual'?'流年':n.scope==='dayun'?'大运':POS_NAMES[n.pillar];
+      return prefix+(n.layer==='hidden'?'支'+n.branch+'藏':'')+n.char+'（'+(n.shiShen||n.family)+'）';
+    }
+    function addEdge(type,from,to,extra) {
+      var id='temporal:'+type+':'+from.id+'>'+to.id;
+      if(seen[id])return seen[id];
+      var row=Object.assign({id:id,type:type,fromNodeId:from.id,toNodeId:to.id,
+        scope:from.scope==='annual'||to.scope==='annual'?'annual':from.scope==='dayun'||to.scope==='dayun'?'dayun':'natal',
+        stage:'relation',effectEstablished:false,evidence:label(from)+(type==='同气'?'与':type)+label(to)},extra||{});
+      edges.push(row);seen[id]=row;return row;
+    }
+    // Each branch's main qi appears once as hidden.0, not again as zhi.
+    // Other hidden stems remain root evidence; they are not promoted to a
+    // functioning output/seal merely because their element is present.
+    var actors=nodes.filter(function(n){return n.layer==='gan'||n.layer==='hidden'&&n.depth==='本气';});
+    for(var i=0;i<actors.length;i++)for(var j=i+1;j<actors.length;j++) {
+      var a=actors[i],b=actors[j],rel=relationDirection(a.wx,b.wx);
+      if(rel) addEdge(rel.type,rel.fromFirst?a:b,rel.fromFirst?b:a);
+      if(a.layer==='gan'&&b.layer==='gan'&&GAN_HE_PAIR[a.char]===b.char)
+        addEdge('天干五合',a,b,{transformationEstablished:false});
+    }
+    var branches=nodes.filter(function(n){return n.layer==='zhi';});
+    for(var bi=0;bi<branches.length;bi++)for(var bj=bi+1;bj<branches.length;bj++) {
+      var ba=branches[bi],bb=branches[bj],pair=ba.char+bb.char;
+      if(ba.scope==='natal'&&bb.scope==='natal')continue;
+      if(CHONG[ba.char]===bb.char)addEdge('六冲',ba,bb);
+      if(HAI[ba.char]===bb.char)addEdge('六害',ba,bb);
+      if(XING_PAIRS[pair])addEdge('刑',ba,bb);
+      if(ZHI_PO[pair])addEdge('六破',ba,bb,{schoolRule:true});
+      if(ZHI_HE[pair])addEdge('六合',ba,bb,{transformationEstablished:false});
+    }
+    function rootsFor(n,includeAnnual) {
+      var roots=nodes.filter(function(r){
+        return r.layer==='hidden'&&(includeAnnual||r.scope!=='annual')&&r.wx===n.wx
+          &&(n.layer!=='hidden'||r.id===n.id);
+      });
+      return {nodeId:n.id,rootIds:roots.map(function(r){return r.id;}),
+        usableNatalRootIds:roots.filter(function(r){return r.scope==='natal'&&Number(r.effectiveCoefficient)>=0.5&&Number(r.weight)>0;}).map(function(r){return r.id;}),
+        temporalRootIds:roots.filter(function(r){return r.scope!=='natal';}).map(function(r){return r.id;}),
+        rootPowerSummed:false,temporalRootEffectEstablished:false};
+    }
+    function edgeFor(a,b,type){return seen['temporal:'+type+':'+a.id+'>'+b.id];}
+    // 正/偏 variants retain their node identity and 十神, but do not make an
+    // already present family/element channel look newly created every year.
+    function routeKey(kind,route){return kind+':'+route.map(function(n){return n.family+':'+n.wx;}).join('>');}
+    function annualContacts(route,carriers) {
+      var ids=route.map(function(n){return n.id;}),rootBranches=[];
+      carriers.forEach(function(c){c.rootIds.forEach(function(id){var n=nodeById[id];if(n&&rootBranches.indexOf(n.pillar+'.zhi')<0)rootBranches.push(n.pillar+'.zhi');});});
+      return edges.filter(function(e){return e.scope==='annual'&&(ids.indexOf(e.fromNodeId)>=0||ids.indexOf(e.toNodeId)>=0
+        ||rootBranches.indexOf(e.fromNodeId)>=0||rootBranches.indexOf(e.toNodeId)>=0);}).map(function(e){return e.id;});
+    }
+    function constraintsFor(route,carriers) {
+      var ids=route.map(function(n){return n.id;}),constraints=[];
+      edges.forEach(function(e){
+        if(e.type==='天干五合'&&(ids.indexOf(e.fromNodeId)>=0||ids.indexOf(e.toNodeId)>=0))
+          constraints.push({type:'stem-binding-contact',edgeId:e.id,effectEstablished:false});
+        if(e.type==='克'&&e.scope!=='natal'&&ids.indexOf(e.toNodeId)>=0&&ids.indexOf(e.fromNodeId)<0)
+          constraints.push({type:'incoming-control-contact',edgeId:e.id,effectEstablished:false});
+        if(e.type==='克'&&ids.indexOf(e.fromNodeId)>=0&&ids.indexOf(e.toNodeId)>=0)
+          constraints.push({type:'intra-path-control-contact',edgeId:e.id,effectEstablished:false});
+        if(['六冲','六害','六破','刑'].indexOf(e.type)>=0) {
+          var affected=[];
+          carriers.forEach(function(c){c.rootIds.forEach(function(id){var r=nodeById[id];if(r&&(r.pillar+'.zhi'===e.fromNodeId||r.pillar+'.zhi'===e.toNodeId)&&affected.indexOf(id)<0)affected.push(id);});});
+          if(affected.length)constraints.push({type:'root-branch-contact',edgeId:e.id,rootIds:affected,effectEstablished:false});
+        }
+      });
+      carriers.forEach(function(c){if(!c.rootIds.length)constraints.push({type:'no-literal-root',nodeId:c.nodeId});});
+      return constraints;
+    }
+    var allRoutes=[];
+    function addRoute(kind,name,route) {
+      var links=[];
+      for(var k=0;k<route.length-1;k++){var e=edgeFor(route[k],route[k+1],'生');if(!e)return;links.push(e);}
+      var includesAnnual=route.some(function(n){return n.scope==='annual';});
+      var carriers=route.filter(function(n){return n.id!=='day.gan';}).map(function(n){return rootsFor(n,includesAnnual);});
+      var constraints=constraintsFor(route,carriers);
+      // connected only confirms actual directions and literal carriers. It
+      // never says the route is effective, beneficial or an event occurred.
+      var stage=constraints.some(function(c){return c.type==='no-literal-root';})?'relation':constraints.length?'contested':'connected';
+      allRoutes.push({id:'temporal-path:'+kind+':'+route.map(function(n){return n.id;}).join('>'),kind:kind,name:name,
+        nodeIds:route.map(function(n){return n.id;}),edgeIds:links.map(function(e){return e.id;}),
+        participantScopes:route.map(function(n){return n.scope;}),comparisonKey:routeKey(kind,route),stage:stage,
+        effectEstablished:false,eventEstablished:false,carrierEvidence:carriers,constraints:constraints,
+        annualContactEdgeIds:annualContacts(route,carriers),evidence:links.map(function(e){return e.evidence;})});
+    }
+    actors.filter(function(n){return n.family==='官杀';}).forEach(function(officer){
+      actors.filter(function(n){return n.family==='印';}).forEach(function(seal){
+        addRoute('officer-seal-self','官杀→印→日主',[officer,seal,nodeById['day.gan']]);
+        actors.filter(function(n){return n.family==='财';}).forEach(function(wealth){
+          addRoute('wealth-officer-seal-self','财→官杀→印→日主',[wealth,officer,seal,nodeById['day.gan']]);
+        });
+      });
+    });
+    actors.filter(function(n){return n.family==='食伤';}).forEach(function(output){
+      actors.filter(function(n){return n.family==='财';}).forEach(function(wealth){
+        addRoute('output-wealth','食伤→财',[output,wealth]);
+      });
+    });
+    var paths=allRoutes.filter(function(p){return p.participantScopes.some(function(scope){return scope!=='natal';});});
+    paths.forEach(function(p){
+      var hasAnnual=p.participantScopes.indexOf('annual')>=0;
+      var prior=allRoutes.filter(function(other){return other.comparisonKey===p.comparisonKey&&other.participantScopes.indexOf('annual')<0;});
+      p.temporalStatus=!hasAnnual?'decade-background':prior.length?'annual-additional-carrier':'annual-new-route';
+      p.preAnnualEquivalentPathIds=hasAnnual?prior.map(function(other){return other.id;}):[];
+    });
+    paths.forEach(function(p){delete p.comparisonKey;});
+    var counteractions=[];
+    derived.fullMechanisms.filter(function(m){return m.relation==='克';}).forEach(function(m){
+      var source=nodeById[m.sourceNodeId],target=nodeById[m.targetNodeId];
+      if(!source||!target)return;
+      ['dayun.gan','annual.gan'].forEach(function(id){
+        var controller=nodeById[id];if(!controller)return;
+        var contact=edgeFor(controller,source,'克');if(!contact)return;
+        var original=edgeFor(source,target,'克');if(!original)return;
+        var carriers=[controller,source,target].map(function(n){return rootsFor(n,controller.scope==='annual');});
+        var priorContacts=edges.filter(function(e){var from=nodeById[e.fromNodeId];return e.type==='克'&&e.toNodeId===source.id
+          &&from&&from.scope!=='annual'&&from.wx===controller.wx&&from.shiShen===controller.shiShen;});
+        counteractions.push({id:'counteraction:'+controller.id+'>'+m.id,name:'对原局控制源的新增制约',
+          mechanismId:m.id,mechanismName:m.name,originalActionStage:m.actionStage||'edge-supported',
+          nodeIds:[controller.id,source.id,target.id],edgeIds:[contact.id,original.id],
+          temporalStatus:controller.scope!=='annual'?'decade-background':priorContacts.length?'annual-additional-counteractor':'annual-counteraction-contact',
+          preAnnualEquivalentEdgeIds:controller.scope==='annual'?priorContacts.map(function(e){return e.id;}):[],
+          stage:'counteraction-contact',effectEstablished:false,eventEstablished:false,
+          carrierEvidence:carriers,constraints:constraintsFor([controller,source,target],carriers),
+          evidence:[contact.evidence,original.evidence,'新增克制关系不证明原作用已解除，也不证明事情转好。']});
+      });
+    });
+    // Shared ledgers keep repeated routes from copying the same root arrays,
+    // constraint objects and edge text into every annual record.
+    var carrierEvidenceById={},constraintsById={},carrierKeys={},constraintKeys={};
+    function intern(value,ledger,keys,prefix) {
+      var key=JSON.stringify(value);
+      if(!keys[key]){var id=prefix+(Object.keys(ledger).length+1);keys[key]=id;ledger[id]=value;}
+      return keys[key];
+    }
+    paths.concat(counteractions).forEach(function(p){
+      p.carrierEvidenceIds=p.carrierEvidence.map(function(value){return intern(value,carrierEvidenceById,carrierKeys,'carrier-');});
+      p.constraintIds=p.constraints.map(function(value){return intern(value,constraintsById,constraintKeys,'constraint-');});
+      delete p.carrierEvidence;delete p.constraints;delete p.evidence;
+    });
+    return {version:'1.0',scope:'temporal-structure-audit',year:liuNian&&liuNian.year||null,
+      nodes:nodes,edges:edges,paths:paths,carrierEvidenceById:carrierEvidenceById,constraintsById:constraintsById,
+      preAnnualPaths:allRoutes.filter(function(p){return p.participantScopes.indexOf('annual')<0;}).map(function(p){
+        return {id:p.id,kind:p.kind,nodeIds:p.nodeIds,edgeIds:p.edgeIds,participantScopes:p.participantScopes};
+      }),counteractions:counteractions,scoreImpact:0,
+      effectEstablished:false,eventEstablished:false,
+      comparisonBasis:'same-family-and-element-sequence-before-annual',
+      boundary:'新载体和连续关系不等于有效制化；阶段仅描述结构证据，不能据此断升职、发财、成婚、灾病或解除。原局旺衰喜用不变，根载体不重复求和。'};
   }
 
   function analyzeLiuNianImpact(bazi, daYun, liuNian, yongJi, options) {
@@ -2034,7 +2402,7 @@
       if (HAI[lnZhi] === targetZhi) relationTypes.push('六害');
       if (XING_PAIRS[pair]) relationTypes.push('刑');
       if (lnZhi === targetZhi && SELF_XING[lnZhi]) relationTypes.push('自刑');
-      if (ZHI_HE[pair]) relationTypes.push('六合');
+      if (ZHI_HE[lnZhi] === targetZhi) relationTypes.push('六合');
       if (ZHI_PO[pair]) relationTypes.push('六破');
       var hasSoftCompound = relationTypes.indexOf('六害') >= 0 && relationTypes.indexOf('刑') >= 0;
       var softCompoundScored = false;
@@ -2075,7 +2443,7 @@
     if (HAI[lnZhi] === dyZhi) annualDaYunRelations.push('六害');
     if (XING_PAIRS[annualDaYunPair]) annualDaYunRelations.push('刑');
     if (lnZhi === dyZhi && SELF_XING[lnZhi]) annualDaYunRelations.push('自刑');
-    if (ZHI_HE[annualDaYunPair]) annualDaYunRelations.push('六合');
+    if (ZHI_HE[lnZhi] === dyZhi) annualDaYunRelations.push('六合');
     if (ZHI_PO[annualDaYunPair]) annualDaYunRelations.push('六破');
     var daYunSoftCompound = annualDaYunRelations.indexOf('六害') >= 0 && annualDaYunRelations.indexOf('刑') >= 0;
     var daYunSoftScored = false;
@@ -2249,6 +2617,7 @@
       liuNianGan: lnGan, liuNianZhi: lnZhi,
       daYunGan: dyGan, daYunZhi: dyZhi,
       triggers: triggers,
+      annualStemInteractions:collectAnnualStemInteractions(bazi,daYun,liuNian,yongJi),
       dangerScore: dangerScore,
       opportunityScore: opportunityScore,
       stemRole: stemRole,
@@ -2265,6 +2634,16 @@
       summary: summary
     };
     result.eventAdjudication = buildAnnualEventAdjudication(bazi, daYun, liuNian, result, options || {});
+    // Full audit graphs are opt-in runtime evidence. They must not multiply
+    // saved report / browser / request payloads for every year in every decade.
+    // Snapshot literal inputs so a later caller mutation cannot change this
+    // year's lazy audit. Explicit consumers may serialize the graph itself.
+    var graphInput={};POSITIONS.forEach(function(pos){graphInput[pos]={gan:bazi[pos].gan,zhi:bazi[pos].zhi};});
+    var graphDecade={gan:dyGan,zhi:dyZhi},graphAnnual={gan:lnGan,zhi:lnZhi,year:liuNian.year},cachedGraph;
+    Object.defineProperty(result,'annualMechanismGraph',{enumerable:false,get:function(){
+      if(!cachedGraph)cachedGraph=buildAnnualMechanismGraph(graphInput,graphDecade,graphAnnual);
+      return cachedGraph;
+    }});
     return result;
   }
 
@@ -2277,6 +2656,8 @@
     interpret: interpretChains,
     analyzeFortune: analyzeFortuneImpact,
     analyzeLiuNian: analyzeLiuNianImpact,
+    collectAnnualStemInteractions:collectAnnualStemInteractions,
+    buildAnnualMechanismGraph:buildAnnualMechanismGraph,
     buildAnnualEventAdjudication: buildAnnualEventAdjudication,
     annualEventDirection: annualEventDirection,
     rankTimingCandidates: rankTimingCandidates,

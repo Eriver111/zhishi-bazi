@@ -2101,40 +2101,18 @@ function renderFortune(bazi, gender) {
 
 // ==================== 学业分析渲染 ====================
 function renderStudy(bazi) {
-    const st = window.BaZiCalculator.analyzeStudy(bazi);
     const el = document.getElementById('studyContent');
     if (!el) return;
-    const wxColors = { '木':'#4CAF50','火':'#F44336','土':'#CD853F','金':'#FFD700','水':'#2196F3' };
-    const yinPct = Math.min(100, Math.max(5, Math.round(st.yinScore / 6 * 100)));
-
-    // 大白话等级说明
-    const levelStories = {
-        '学业优秀': '你的学习能力很强——天生有很好的吸收和理解能力，读书考试对你来说不是难事。如果能找到自己真正感兴趣的领域，潜力非常大。',
-        '学业良好': '你的学习底子不错，虽然不是天才型但胜在踏实。只要愿意下功夫，考试升学都有很好的机会。找到一个好老师或者好的学习环境会让你事半功倍。',
-        '学业中等': '书本学习可能不是你最强的武器，但这不代表你不行。你可能更适合动手操作、和人打交道或者搞创意——有很多职业不需要高分也能做得很好。',
-        '学业需努力': '读书考试确实需要比别人多花力气，但这往往意味着你的天赋在别处。建议多尝试不同的学习方式，动手做比光看书效果好，找到适合自己的路比硬拼更重要。'
-    };
-
-    // 学习建议扩展
-    const fullAdvice = '建议你选择最适合自己的学习方式，把长处发挥到极致。' + st.adviceText;
-
-    el.innerHTML = ''
-        + '<div style="text-align:center;margin-bottom:14px">'
-        +   '<span style="display:inline-block;padding:6px 24px;border:1px solid;border-radius:2px;font-size:16px;font-weight:700;letter-spacing:3px;background:' + (wxColors[st.wuXing] || '#b8a878') + '22;border-color:' + (wxColors[st.wuXing] || '#b8a878') + ';color:' + (wxColors[st.wuXing] || '#b8a878') + '">' + st.levelLabel + '</span>'
-        + '</div>'
-        + '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">'
-        +   '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text-secondary);flex:0 0 40px;letter-spacing:1px">学习力</span><div style="flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:1px;overflow:hidden"><div style="height:100%;width:' + yinPct + '%;background:' + (wxColors[st.wuXing] || '#b8a878') + ';border-radius:1px;transition:width .6s"></div></div><span style="font-size:12px;color:var(--text-secondary)">' + st.yinScore.toFixed(1) + '</span></div>'
-        +   '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text-secondary);flex:0 0 40px;letter-spacing:1px">创造力</span><div style="flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:1px;overflow:hidden"><div style="height:100%;width:' + Math.min(100,Math.round(st.shiShangScore/6*100)) + '%;background:#ff9f43;border-radius:1px;transition:width .6s"></div></div><span style="font-size:12px;color:var(--text-secondary)">' + st.shiShangScore.toFixed(1) + '</span></div>'
-        +   '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text-secondary);flex:0 0 40px;letter-spacing:1px">自律力</span><div style="flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:1px;overflow:hidden"><div style="height:100%;width:' + Math.min(100,Math.round(st.guanScore/4*100)) + '%;background:#4dadff;border-radius:1px;transition:width .6s"></div></div><span style="font-size:12px;color:var(--text-secondary)">' + st.guanScore.toFixed(1) + '</span></div>'
-        + '</div>'
-        + '<div style="font-size:13px;color:var(--text-primary);line-height:2;padding:14px 16px;background:rgba(20,25,40,.4);border:1px solid rgba(212,175,55,.06);border-radius:2px;margin-bottom:12px">'
-        +   '<p>' + (levelStories[st.levelLabel] || st.levelText) + '</p>'
-        + '</div>'
-        +   (st.hasWenChang ? '<div style="font-size:13px;color:#81C784;line-height:2;padding:10px 14px;background:rgba(76,175,80,.04);border:1px solid rgba(212,175,55,.08);border-radius:2px;margin-bottom:10px"><p> 自带文昌贵人，考试运不错，关键时刻容易发挥出超常水平。</p></div>' : '')
-        +   (st.hasXueTang ? '<div style="font-size:13px;color:#81C784;line-height:2;padding:10px 14px;background:rgba(76,175,80,.04);border:1px solid rgba(212,175,55,.08);border-radius:2px;margin-bottom:10px"><p> 命带学堂，天生对知识有好奇心，适合持续学习的环境。</p></div>' : '')
-        + '<div style="font-size:13px;color:var(--text-secondary);line-height:2;padding:14px 16px;background:rgba(212,175,55,.03);border:1px solid rgba(212,175,55,.1);border-radius:2px">'
-        +   '<p><b> 建议：</b>' + fullAdvice + '</p>'
-        + '</div>';
+    const st = window.BaZiCalculator.analyzeStudy(bazi);
+    const escape = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+    const rows = (st.evidenceRows || []).map(row =>
+        '<p><b>' + escape(row.label) + '：</b>' + escape(row.detail) + '</p>').join('');
+    el.innerHTML = '<div class="study-reading" style="font-size:14px;line-height:1.9;color:var(--text-primary)">'
+        + '<h3 style="font-size:17px;margin:0 0 12px">' + escape(st.levelLabel) + '</h3>'
+        + '<p>' + escape(st.levelText) + '</p>'
+        + '<p><b>具体怎么用：</b>' + escape(st.adviceText) + '</p>'
+        + '<details style="margin-top:12px;color:var(--text-secondary)"><summary>查看传统结构依据</summary>' + rows + '</details>'
+        + '<p style="font-size:12px;color:var(--text-secondary);margin-top:12px">' + escape(st.scopeText) + '</p></div>';
 }
 
 // ==================== 真太阳时 ====================

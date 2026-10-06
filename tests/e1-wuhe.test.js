@@ -6,6 +6,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
+const { validateRootMeaning } = require('../lib/ai-conversation-evidence');
+const { validateChartEvidence } = require('../lib/ai-chart-evidence');
 
 const root = path.join(__dirname, '..');
 const apiSource = fs.readFileSync(path.join(root, 'api', 'ai-chat.js'), 'utf8');
@@ -15,7 +17,7 @@ const m = apiSource.match(/function runReplyValidation\(chartData, reply, questi
 assert.ok(m, 'runReplyValidation 提取失败——api/ai-chat.js 结构变化，需人工复核');
 const selectionHelper = apiSource.slice(apiSource.indexOf('function validateFrozenYongSelection('), apiSource.indexOf('function runReplyValidation('));
 assert.ok(selectionHelper.startsWith('function validateFrozenYongSelection('), '冻结取用校验依赖提取失败');
-const runReplyValidation = new Function('chartData', 'reply', 'question', selectionHelper + '\n' + m[1].replace(/^  /gm, ''));
+const runReplyValidation = new Function('validateRootMeaning', 'validateChartEvidence', 'chartData', 'reply', 'question', selectionHelper + '\n' + m[1].replace(/^  /gm, '')).bind(null, validateRootMeaning, validateChartEvidence);
 
 function wuheWarns(text) {
   return runReplyValidation({ type: 'bazi' }, text)

@@ -208,10 +208,10 @@
     var evidenceRows = studyOccurrenceEvidence(seals);
     var patternText = studyActionText(core);
     if (!seals.length) {
-      return evidence('待建立', '原局未见明确印星承接证据，吸收理解更依赖兴趣、方法和外部支持，需要把输入拆成可复习的步骤。', 'limited', ['印星未显'], role);
+      return evidence('印星未见', '原局未见印星，只记录十神分布；不能据此推定理解力差、低学历或没有深造经历。学习基础以实际课程和作答表现为准。', 'limited', ['印星未显'], role);
     }
     if (role === '忌神') {
-      return evidence('需转化', '印星数量或存在感不等于天然学业好；印为忌时容易停在思虑、囤积资料或过度依赖理解，需用行动、练习和输出把知识转化。', 'strong', evidenceRows.concat(['印星被核心喜忌标为忌神']), role);
+      return evidence('需转化', '印被核心喜忌标为忌，不以印多断学业好。可具体检查资料准备与独立练习是否失衡；有这种表现时，用完整作答检验理解。', 'medium', evidenceRows.concat(['印星被核心喜忌标为忌神']), role);
     }
     if (/枭神夺食/.test(patternText)) {
       return evidence('输入与输出拉扯', '印星承接与食伤输出之间有拉扯，理解阶段宜设置明确的复述、练习和交付节点。', 'medium', evidenceRows.concat(['已见枭神夺食结构提示']), role);
@@ -226,7 +226,7 @@
     var hasWound = outputs.some(function (item) { return item.role === '伤官'; });
     var patternText = studyActionText(core);
     if (!outputs.length) {
-      return evidence('待建立', '表达输出证据较少，建议用写作、讲解、题后复盘或作品交付把理解外化。', 'limited', ['食伤未显'], role);
+      return evidence('食伤未见', '原局未见食伤，不据此断表达差或没有创造力；完整作答、讲解和作品才是实际输出证据。', 'limited', ['食伤未显'], role);
     }
     if (/伤官见官/.test(patternText) && hasWound) {
       return evidence('创新输出', '伤官提供质疑、拆解和创新表达；在标准化考试或规则环境中需校准表达方式，不把结构摩擦直接等同于考试能力不足。', 'medium', evidenceRows.concat(['已见伤官见官结构提示']), role);
@@ -252,9 +252,9 @@
       return evidence('规则切换', '官杀信号并见或规则要求较多，纪律与应试状态容易受环境切换影响，宜减少并行目标并明确优先级。', 'medium', evidenceRows.concat(['官杀混杂或混合规则提示']), role);
     }
     if (!officers.length) {
-      return evidence('需外部节奏', '原局官杀纪律证据较少，长期学习更适合借助固定作息、截止时间、同伴监督或可见进度来维持执行。', 'limited', ['官杀未显'], role);
+      return evidence('官杀未见', '原局未见官杀，不据此断缺乏自律或学习断续；考试日期、复习完成情况和实际作答单独记录。', 'limited', ['官杀未显'], role);
     }
-    return evidence('有规则承接', '官杀提供一定的规则意识与长期执行线索，适合用固定计划和阶段检查维持应试节奏。', 'medium', evidenceRows, role);
+    return evidence('有规则承接', '官杀出现，传统取象可讨论考试标准与期限；固定计划有没有执行、成绩是否稳定，须看实际记录。', 'medium', evidenceRows, role);
   }
 
   function buildApplicationFacts(tenGods, core) {
@@ -308,16 +308,32 @@
     return studyAuthoritativeRecords(core).join(' ');
   }
 
+  function studyAffirms(text, expression) {
+    // A warning about a rule, a rejected candidate, or "无财破印" is not an
+    // active obstruction. Test each occurrence locally instead of concatenating
+    // positive and negative mentions into a new causal conclusion.
+    return String(text || '').split(/[。；;\n]/).some(function (clause) {
+      var pattern = new RegExp(expression.source, 'g'), match;
+      while ((match = pattern.exec(clause))) {
+        var before = clause.slice(Math.max(0, match.index - 14), match.index);
+        var after = clause.slice(match.index + match[0].length, match.index + match[0].length + 8);
+        if (!/(?:无|未见|没有|不构成|未构成|尚不构成|避免|排除|缺少)(?:(?:明显|有效|实际|明确|严重|相应)的?)?\s*$/.test(before) &&
+            !/^(?:不成立|未成立|尚未成立|不存在|已解除)/.test(after)) return true;
+      }
+      return false;
+    });
+  }
+
   function studyStructuralBlockers(core, names) {
     var wanted = list(names);
     var blockers = list(core && core.structuralRisks).concat(list(core && core.relationEvents)).map(function (risk) {
       var text = studyRiskText(risk);
-      var match = wanted.filter(function (name) { return text.indexOf(name) >= 0; })[0];
+      var match = wanted.filter(function (name) { return studyAffirms(text, new RegExp(name)); })[0];
       return match ? '结构风险：' + match : '';
     }).filter(Boolean);
     var authoritative = studyAuthoritativeText(core);
     wanted.forEach(function (name) {
-      if (authoritative.indexOf(name) >= 0) blockers.push('结构证据：' + name);
+      if (studyAffirms(authoritative, new RegExp(name))) blockers.push('结构证据：' + name);
     });
     return blockers.filter(function (item, index, rows) { return rows.indexOf(item) === index; });
   }
@@ -432,14 +448,17 @@
   function buildLearningPressureChain(officers, seals, core) {
     var level = textOf(core && core.strength && core.strength.level);
     var weak = /弱/.test(level) && !core.congGe;
-    var present = weak && officers.length > 0 && seals.length === 0;
+    var pressureText = studyAuthoritativeText(core) + ' ' + studyPatternText(core);
+    var hasHeavySha = officers.some(function (item) { return item.role === '七杀'; }) && studyAffirms(pressureText, /杀旺|杀重/);
+    var relieved = studyAffirms(studyPatternText(core), /食神制杀|杀印相生/) && studyPatternEffective(core);
+    var present = weak && hasHeavySha && seals.length === 0 && !relieved;
     return studyChainFact('learning_pressure', present,
       studyOccurrenceEvidence(officers),
       { strength: level || '未定', officerRole: studyElementRole(officers, core), sealRole: '未见' },
-      present ? ['身弱/极弱且官杀见、无印'] : [],
+      present ? ['身弱/极弱、七杀见且有杀旺或杀重依据、无印，未见成立的制化格局'] : [],
       ['只描述学习承载与规则压力的条件性议题，不涉及健康或教育结果。'],
-      present ? '身弱或极弱、官杀出现而印未见时，学习中的规则压力与承载度需要分段安排和外部支持；这是条件性压力提示。'
-        : '未满足身弱、官杀见且无印的联合门槛，不单独生成学习压力判断。', present ? 'limited' : 'limited');
+      present ? '身弱、杀重且无印的联合条件成立，可对应考试要求超过当前准备量的压力；不据此推定既往成绩下降或辍学。'
+        : '未满足身弱、杀重无印且缺少有效制化的联合门槛，不生成学习压力判断。', 'limited');
   }
 
   function buildStudyChains(tenGods, core) {
@@ -470,56 +489,16 @@
   };
 
   var STUDY_PROFILE_COPY = {
-    persistent_sha_yin: {
-      sourceText: '杀印相生链成立，印星为本命用神或喜神。',
-      outcomeText: '你属于不怕重复、肯下功夫的长期投入型；目标越难、准备周期越长，越容易把压力变成成绩。',
-      educationFloor: 8,
-    },
-    disciplined_guan_yin: {
-      sourceText: '官印相生链成立，印星为本命用神或喜神。',
-      outcomeText: '你对课程体系、考试规则和长期计划的适应力较强，按标准持续积累时，成绩更容易稳定兑现。',
-      educationFloor: 7,
-    },
-    inspired_breakthrough: {
-      sourceText: '日主旺极、印星成势，羊刃同时得到有效食伤吐秀。',
-      outcomeText: '你属于灵感和突破力很强的类型，面对竞赛、创作、复杂难题或高强度任务时，往往比常规课堂更容易显出聪明。',
-      educationFloor: 9,
-    },
-    smart_and_hardworking_food_sha: {
-      sourceText: '食神制杀链成立，食神能够制约七杀。',
-      outcomeText: '你既能扛住压力，也能把压力转成解题和专业能力，属于聪明且愿意下功夫的类型。',
-      educationFloor: 8,
-    },
-    smart_and_hardworking_wound_sha: {
-      sourceText: '伤官合杀链成立，伤官与七杀形成有效转化。',
-      outcomeText: '你的反应、拆解和临场调整能力较强，越是需要独立思考和解决难题的学习，越容易拉开差距。',
-      educationFloor: 7,
-    },
-    smart_and_hardworking_food_officer: {
-      sourceText: '食神克官链有实际十神和权威结构支持。',
-      outcomeText: '你能用自己的理解消化规则，但对僵硬标准容易产生抵触；能力型考试通常好于纯服从型环境。',
-      educationFloor: 7,
-    },
-    smart_action_regulation: {
-      sourceText: '印星成势且为忌，喜用财星形成财制印，没有财坏印证据。',
-      outcomeText: '你不是只会想而不会做；一旦目标和现实结果明确，思考会很快转成行动，聪明程度更容易通过成果体现。',
-      educationFloor: 7,
-    },
-    metal_water_clarity: {
-      sourceText: '金水实际相生，且没有金寒水冷、燥土埋金等阻断。',
-      outcomeText: '你的逻辑、归纳和信息处理能力较突出，数理、金融、法律、技术分析一类学习更容易形成优势。',
-      educationFloor: 7,
-    },
-    wood_fire_clarity: {
-      sourceText: '木火实际相生，且没有火炎木焚、木火偏枯等阻断。',
-      outcomeText: '你的理解、表达和联想能力较突出，文学、艺术、教育、传播或需要形成观点的学习更容易显出优势。',
-      educationFloor: 7,
-    },
-    composite: {
-      sourceText: '命局未形成单一高权重学习结构，按吸收、输出、纪律和应用四项综合判断。',
-      outcomeText: '你的学习表现更依赖各环节是否接得上，不属于只靠某一种天赋就能稳定出成绩的类型。',
-      educationFloor: 0,
-    },
+    persistent_sha_yin: { sourceText: '杀印相生链成立，印星为本命用神或喜神。', outcomeText: '遇到要求多、准备周期长的考试，可以先找教材或老师把问题讲清，再按章节练习；如果只是不断加任务，方法没有跟上，投入时间不等于拿到分数。' },
+    disciplined_guan_yin: { sourceText: '官印相生链成立，印星为本命用神或喜神。', outcomeText: '可把考纲当作复习目录，每个知识点配一道独立完成的题。考试范围和评分要求越清楚，越方便检查自己学到了哪一步。' },
+    inspired_breakthrough: { sourceText: '日主旺极、印星成势，羊刃同时得到有效食伤吐秀。', outcomeText: '可以用一道综合题或一份作品检验所学，再回头补卡住的知识点。难题做得出时，也要单独查基础题的步骤和细节，不能以灵感代替完整准备。' },
+    smart_and_hardworking_food_sha: { sourceText: '食神制杀链成立，食神能够制约七杀。', outcomeText: '面对限时考试，可以把压力落到具体训练：题目拆步骤、错题分原因、整卷计时完成。能否扛住考试，要看实际练习表现，不由这条结构替你下结论。' },
+    smart_and_hardworking_wound_sha: { sourceText: '伤官合杀链成立，伤官与七杀形成有效转化。', outcomeText: '同一道题可以比较不同解法，但正式作答时仍要写全得分点。新方法若能独立复现、能解释每一步，才算真正掌握。' },
+    smart_and_hardworking_food_officer: { sourceText: '食神克官链有实际十神和权威结构支持。', outcomeText: '对评分要求有疑问时，先拿自己的答案逐项对照标准。方法正确但步骤缺失，与题目本身理解错了，是两种不同的失分原因。' },
+    smart_action_regulation: { sourceText: '印星成势且为忌，喜用财星形成财制印，没有财坏印证据。', outcomeText: '如果资料已经够用却迟迟没有开始练习，可以用一份要交的答案或作品结束准备阶段。目标写成具体产出，才看得见是否学会。' },
+    metal_water_clarity: { sourceText: '金水实际相生，且没有金寒水冷、燥土埋金等阻断。', outcomeText: '可试着把相近概念放在一起比较，再用一道新题检验区别。这个方法适用于需要分类和推理的内容，不据此指定专业或断定数理天赋。' },
+    wood_fire_clarity: { sourceText: '木火实际相生，且没有火炎木焚、木火偏枯等阻断。', outcomeText: '可试着用自己的话讲清一段内容，再回到原文核对漏掉的条件。讲得顺和讲得准确要分开检查，不据此断定文学或艺术天赋。' },
+    composite: { sourceText: '未形成可单独采用的学习结构，分别核对输入、作答、考核与应用。', outcomeText: '先用最近一次作业或考试区分问题：知识没记住、题意理解错了、步骤没写全，还是时间不够；问题不同，复习方法也不同。' },
   };
 
   function studyProfileRecord(key, basis) {
@@ -529,7 +508,6 @@
       rank: STUDY_PROFILE_RANK[key] || 0,
       sourceText: copy.sourceText,
       outcomeText: copy.outcomeText,
-      educationFloor: copy.educationFloor,
       basis: list(basis).filter(Boolean),
     };
   }
@@ -629,41 +607,31 @@
       limitations.push({ key: key, severity: severity, sourceText: sourceText, outcomeText: outcomeText, basis: ['STUDY_LIMIT:' + key] });
     }
     if (studyElementRole(seals, core) === '忌神' && /印星成势|印成势|印旺|印重|印多/.test(authoritative)) {
-      add('excessive_ji_seal', 'medium', '印星为忌且有旺、重或成势的权威证据。', '你容易反复思考、囤积资料或依赖熟悉方法，理解不少，但形成成绩和成果的速度偏慢。');
+      add('excessive_ji_seal', 'medium', '印星为忌且有旺、重或成势的权威证据。', '若收集资料挤占了独立练习，难题可能一直没有实际做过；这是要观察的学习方式，不是已经确认的习惯。');
     }
-    if (/食伤过旺无制/.test(authoritative)) {
-      add('uncontrolled_output', 'medium', '食伤过旺且没有制化。', '你思路多、反应快，但容易厌烦重复训练和固定规则，成绩会明显低于真实聪明程度。');
+    if (studyAffirms(authoritative, /食伤过旺无制/)) {
+      add('uncontrolled_output', 'medium', '食伤过旺且没有制化。', '若作答随意跳步或偏离题目要求，会损失步骤分；不据此推定智力水平或既往成绩。');
     }
-    if (/财破印|财坏印/.test(authoritative)) {
-      add('wealth_breaks_seal', 'severe', '命局有财破印或财坏印的有效证据。', '赚钱、感情或现实事务更容易在关键阶段打断学习，长期学业连续性会受到明显影响。');
+    if (studyAffirms(authoritative, /财破印|财坏印/)) {
+      add('wealth_breaks_seal', 'severe', '命局有财破印或财坏印的有效证据。', '若学费安排、挣钱与学习时间实际冲突，可出现缺课、复习被打断或延后考试；原局结构不等于已经辍学。');
     }
-    if (/身弱杀旺无印/.test(authoritative) || list(chains).some(function (chain) { return chain && chain.id === 'learning_pressure' && chain.present; })) {
-      add('weak_body_strong_killers_no_seal', 'severe', '身弱、官杀压力重且缺少印星承接。', '面对高压考试和长期竞争时容易越学越累，成绩可能在关键阶段突然下滑或中断。');
+    if (list(chains).some(function (chain) { return chain && chain.id === 'learning_pressure' && chain.present; })) {
+      add('weak_body_strong_killers_no_seal', 'severe', '身弱、官杀压力重且缺少印星承接。', '当考试要求超过目前的准备量，要区分任务过量和知识卡点；不凭身弱无印断成绩下滑或中断学业。');
     }
-    if (/用神无力|用神[^。；，,]*空亡/.test(authoritative)) {
-      add('weak_or_void_useful_god', 'severe', '核心用神被权威事实标为无力或空亡。', '关键阶段的助力不稳定，能力可以达到，但兑现为学历或考试结果会多走弯路。');
+    if (studyAffirms(authoritative, /用神无力|用神[^。；，,]*空亡/)) {
+      add('weak_or_void_useful_god', 'severe', '核心用神被权威事实标为无力或空亡。', '学习所依靠的课程、讲解或安排若实际中断，需补上原来卡住的知识点；不据此推定失学经历。');
     }
     return limitations;
   }
 
-  function deriveEducationBand(profile, dimensions, limitations) {
-    var points = 1 + studySignalScore(dimensions.absorption) + studySignalScore(dimensions.expression) +
-      studySignalScore(dimensions.discipline) + studySignalScore(dimensions.application);
-    var rank = clampNumber(Math.round(points), 1, 10);
-    if (profile && profile.educationFloor) rank = Math.max(rank, profile.educationFloor);
-    list(limitations).forEach(function (limitation) {
-      rank -= limitation.severity === 'severe' ? 2 : 1;
-    });
-    rank = clampNumber(rank, 1, 10);
-    var publicBand = publicStudyBand(rank);
+  function deriveEducationBand() {
+    // Keep the field for saved-report/API compatibility, but do not convert
+    // traditional structure weights into an observed or predicted qualification.
     return {
-      key: 'L' + rank,
-      label: publicBand.label,
-      rank: rank,
-      publicKey: publicBand.key,
-      publicLabel: publicBand.label,
-      outcomeText: studyLevelText(rank),
-      basis: ['STUDY_BAND:L' + rank],
+      key: 'not-estimated', label: '学习结构参考', rank: null,
+      publicKey: 'not-estimated', publicLabel: '学习结构参考',
+      outcomeText: '学历、录取和辍学属于实际经历，不能由印星数量或结构积分代替判断。',
+      basis: ['STUDY_SCOPE:STRUCTURE_NOT_EDUCATION'],
     };
   }
 
@@ -2981,13 +2949,15 @@
 
   function timingOutcomeScope(record, event) {
     var type = event.eventType || '';
+    if (type === 'career-opportunity-domain' || type === 'study-opportunity-domain') return 'domain';
     if (type === 'family-condition-change') return 'family';
     if (/^relationship-(?:bond|stability)/.test(type)) return 'relationship';
     if (['payment-delay','cost-increase','money-loss-or-payment-impaired','shared-payment-delayed','additional-payment-required','delivery-paid','disputed-payment-settled','cost-shared'].indexOf(type) >= 0) return 'money';
     if (type === 'responsibility-assigned' && record.domain === 'career') return 'career';
     if (type === 'formal-eligibility-reviewed' && ['career','study'].indexOf(record.domain) >= 0) return record.domain;
-    if (record.domain === 'wealth') return 'money';
-    if (record.domain === 'family') return 'family';
+    // A broad domain is not a concrete outcome. Generic household arrangements
+    // or resource pressure must not outrank a more strongly supported event just
+    // because the record was filed under family/wealth.
     // These are process descriptions even when a professional mechanism supports
     // them. Do not promote rework to dismissal or moving about to relocation.
     return 'process';
@@ -3061,6 +3031,30 @@
       supportLevel: dedicated && /^rule:/.test(record.reportMechanismKey || '') ? 'mechanism' : recognized ? (movement && recognized === movement ? 'process' : 'scenario') : 'domain',
       scenario: scene
     };
+    // An omitted occupation is not evidence of unemployment or household work.
+    // Preserve a supplied career signal as a domain, without inventing a job offer.
+    if (!dedicated && !recognized && supplied && record.domain === 'career' && record.hasIndependentAnnualTrigger
+        && /工作|求职|岗位|职位|录用|任职|项目交付|客户认可/.test(scene)) {
+      event.eventType = 'career-opportunity-domain';
+      event.label = record.direction === '偏有利' ? '工作机会与岗位进展'
+        : record.direction === '偏不利' ? '工作与求职的阻力' : '工作与求职的变化';
+    }
+    if (!dedicated && !recognized && supplied && record.domain === 'study' && record.hasIndependentAnnualTrigger
+        && /学习|复习|作答|临场|成绩|考试|录取|升学|考证|进修|资质|证照/.test(scene)) {
+      event.eventType = 'study-opportunity-domain';
+      event.label = record.direction === '偏有利' ? '考试与录取机会'
+        : record.direction === '偏不利' ? '考试与录取的阻力' : '考试与录取的变数';
+    }
+    if (record.domain === 'career' && life.status === 'unknown' && Number(life.age) >= 18
+        && /工作|求职|岗位|职位|录用|任职|项目|客户|负责人|方案/.test(event.scenario)
+        && !/^若/.test(event.scenario)) {
+      event.scenario = '若当时在工作或求职，' + event.scenario;
+      event.contextCondition = 'working-or-seeking-work';
+    }
+    if (record.domain === 'study' && life.status === 'unknown' && Number(life.age) >= 18 && !/^若/.test(event.scenario)) {
+      event.scenario = '若当时在读或备考，' + event.scenario;
+      event.contextCondition = 'studying-or-taking-exams';
+    }
     event.outcomeScope = timingOutcomeScope(record,event);
     var moneyLabels = {'money-loss-or-payment-impaired':'破财与应收款受损','shared-payment-delayed':'合作分账与回款延迟',
       'additional-payment-required':'追加投入挤占手头的钱','delivery-paid':'收入兑现的机会','disputed-payment-settled':'争议钱款有望结清','cost-shared':'投入有人分担'};
@@ -3090,7 +3084,7 @@
     if (life.age == null && adjudication.age != null) life.age = Number(adjudication.age);
     if (!life.status && adjudication.lifeStage && /child|education/.test(adjudication.lifeStage.key)) life.status = 'student';
     var school = life.status === 'student' || life.status === 'exam' || life.age != null && life.age < 18;
-    var needsNonWorkScene = school || ['home', 'retired', 'transition', 'unknown'].indexOf(life.status) >= 0;
+    var needsNonWorkScene = school || ['home', 'retired', 'transition'].indexOf(life.status) >= 0 || life.age == null;
     var applicable = concrete.filter(function (scene) {
       if (/这一年是否|请选择|可回答|利弊取决|结果尚不单一|身心状态|症状|需要优先管理|更值得留意|会被明显牵动|边界、争执|资源落地|成果输出会明显|学习资质|更容易形成压力|更值得防范|资金压力可能同时增加/.test(scene)) return false;
       if (needsNonWorkScene && /领导|客户|职位|岗位|升职|工作|项目|公司|考核|合同|续约|垫资|债务|婚嫁|结婚/.test(scene)) return false;
@@ -3596,142 +3590,78 @@
     })];
   }
 
-  function studySignalScore(fact) {
-    if (!fact) return 0;
-    var points = ({ strong: 1.25, medium: 0.75, limited: 0.25 })[fact.confidence] || 0.5;
-    if (/待建立|拉扯|需转化|规则切换|吃力|不足/.test(textOf(fact.state))) points -= 0.5;
-    return Math.max(0, points);
-  }
-
-  function publicStudyBand(level) {
-    if (level >= 8) return { key: 'high', label: '高学历' };
-    if (level >= 4) return { key: 'ordinary', label: '普通学历' };
-    return { key: 'low', label: '低学历' };
-  }
-
-  function studyLevelText(level) {
-    return level >= 8 ? '学习结构中的支持条件较集中，可重点观察系统学习与持续深造的适配性。'
-      : level >= 6 ? '学习结构有一定承接条件，长期投入、输出练习与现实基础需要配合。'
-      : level >= 4 ? '学习支持与限制并见，可优先识别最影响持续投入的环节。'
-      : '当前学习结构中的支持条件较少，适合进一步核对环境、兴趣与练习方式；不能由此认定学习能力低。';
+  function publicStudyBand() {
+    return { key: 'not-estimated', label: '学习结构参考' };
   }
 
   function buildStudyNarrative(facts) {
-    var study = facts && facts.study || {};
-    var band = study.educationBand || {};
-    var level = Number(band.rank);
-    if (!Number.isFinite(level)) {
-      var points = 1 + studySignalScore(study.absorption) + studySignalScore(study.expression) +
-        studySignalScore(study.discipline) + studySignalScore(study.application);
-      list(study.chains).forEach(function (chain) {
-        if (!chain || !chain.present) return;
-        points += chain.id === 'learning_pressure' ? -1.25 : (chain.confidence === 'strong' ? 1.5 : 0.75);
-      });
-      points -= Math.min(2, list(study.obstacles).length) * 0.5;
-      level = clampNumber(Math.round(points), 1, 10);
+    var study = facts && facts.study || {}, profile = study.profile || {};
+    var profileCopy = STUDY_PROFILE_COPY[profile.key] || STUDY_PROFILE_COPY.composite;
+    var candidates = [];
+    function add(key, title, outcome, source, basis, weight) {
+      if (!outcome || candidates.some(function (row) { return row.key === key; })) return;
+      candidates.push({key:key,title:title,outcome:outcome,source:source,basis:list(basis),weight:weight});
     }
-    var publicBand = publicStudyBand(level);
-    // Cached reports can retain the former L1–L10 label strings.  The public
-    // label must always be recalculated from the retained internal rank.
-    var levelLabel = level >= 8 ? '深造支持较集中' : level >= 4 ? '学习条件有待配合' : '学习支持需补充';
-    var levelOutcome = studyLevelText(level);
-    var profile = study.profile || studyProfileRecord('composite', ['PROFILE:LEGACY_COMPOSITE']);
-    var limitations = list(study.limitations);
-    var disciplineText = textOf(study.discipline);
-    var absorptionText = textOf(study.absorption);
-    var expressionText = textOf(study.expression);
-    var painPoint = limitations.length ? textOf(limitations[0].outcomeText) : /待建立|需外部节奏|规则切换/.test(disciplineText)
-      ? '最容易拖累你的不是理解能力，而是长期执行、应试节奏和对重复训练的耐心。'
-      : /待建立|需转化|拉扯/.test(absorptionText)
-        ? '学习最吃力的环节在于把零散信息真正消化，资料越多反而越容易失去重点。'
-        : /待建立|拉扯/.test(expressionText)
-          ? '你容易出现“听懂了但写不出来、做不出来”的问题，输出训练决定最终成绩。'
-          : '真正的问题不是聪明程度，而是能否把优势稳定维持到长期考试和成果交付，这也是最容易低估的短板。';
-    var headline = limitations.length ? '学习里更突出的是：哪些事会让你学不下去，或明明准备了却没拿到分。' : '把学习拆成听懂、写出来、坚持做和实际使用，分别看卡在哪里。';
-    function studyStateText(kind, fact) {
-      var state = textOf(fact && fact.state);
-      var maps = {
-        absorption: {
-          '有承接': '学习更偏向先弄懂前后关系，再记具体内容。知识按顺序讲清楚，比一次塞进很多零散结论更容易记住。',
-          '需转化': '容易一直找资料、听讲解，真正动手做题却往后拖。看到答案觉得懂了，合上书再做时才发现步骤接不上。',
-          '输入与输出拉扯': '容易出现听讲时能跟上，自己写答案却漏步骤、说不清重点的落差。看过一遍和独立做出来，是这里最明显的区别。',
-          '待建立': '学习容易挑内容：感兴趣时愿意追着看，遇到枯燥章节就想跳过。前面的基础没补齐，后面遇到综合题更容易卡住。',
-        },
-        expression: {
-          '稳定输出': '表达更偏向按步骤展开，做熟一类题后容易沿用自己的方法。遇到题目换了问法时，仍要区分哪些步骤能照用、哪些需要重想。',
-          '创新输出': '答题容易按自己的思路展开，愿意换一种说法或做法。开放题能发挥，按要点给分的题却可能因为漏写关键词而失分。',
-          '复合输出': '表达时既会用熟悉步骤，也会临时加入新想法。写作、讲解时能展开，限时答题时则容易写得多，却没先回答题目最核心的一问。',
-          '待建立': '把想法写成完整答案是这里更容易卡住的一步。脑中觉得有印象，落笔却只写出零碎要点，成绩会被漏答和表达不清拉低。',
-        },
-        discipline: {
-          '可借规则转化': '有明确考试日期、范围和练习要求时，更容易坚持按计划学。方向明确以后，压力更容易变成每天要完成的任务。',
-          '有规则承接': '学习状态更容易跟着明确目标走。有作业、测验或期限时能往前推，完全自己安排时则容易把开始时间往后挪。',
-          '规则切换': '同时准备几件事、临时换复习范围，容易把原有节奏打乱。今天追这一项、明天补另一项，最后每项都碰过，却没有一项练熟。',
-          '需外部节奏': '没有考试、期限或监督时，学习容易断断续续。开始时安排得很满，过几天漏掉一次，就容易把后面的计划也搁下。',
-        },
-        application: {
-          '学以致用': '学到的内容更容易在实际使用时串起来，例如把一道题讲清楚、完成一份作品。能独立做完一件事，比单纯看完多少页更能体现掌握程度。',
-          '实践转化': '纯看讲解容易觉得抽象，遇到一道具体题、一个实际任务时，才知道前面学的内容该怎么用。卡住的地方也更容易在动手后暴露出来。',
-          '待建立': '学过的内容换个场景就不会用，是这里容易出现的问题。熟悉例题能照做，一旦换了条件，就需要重新理清为什么这样做。',
-        },
-      };
-      return maps[kind] && maps[kind][state] || textOf(fact && fact.conclusion) || '该项学习特征没有形成集中表现。';
-    }
-    function dimensionVerdict(title, key, fact) {
-      var state = textOf(fact && fact.state) || '未形成集中表现';
-      var role = textOf(fact && fact.elementRole);
-      return narrativeVerdict(title, '', ['STUDY_' + key.toUpperCase() + ':' + state], {
-        sourceText: title + '在命局中呈现“' + state + '”' + (role && role !== '中性' ? '，对应五行为本命' + role : '') + '。',
-        outcomeText: studyStateText(key, fact), meaningKey: 'study:'+key,
-      });
-    }
-    var verdicts = [
-      narrativeVerdict('学习与深造潜力', '', list(band.basis).length ? band.basis : ['STUDY_BAND:L' + level], {
-        sourceText: '综合学习结构、四项条件与已确认阻断后，结构参考为“' + levelLabel + '”。',
-        outcomeText: levelLabel + '：' + levelOutcome + '这属于结构参考，不能据此确定本科、研究生或其他实际学历。', detailOnly: true,
-      }),
-      narrativeVerdict('你的学习类型', '', list(profile.basis).length ? profile.basis : ['STUDY_PROFILE:' + (profile.key || 'composite')], {
-        sourceText: textOf(profile.sourceText),
-        outcomeText: ({
-        persistent_sha_yin: '任务和要求多时，更容易先找方法、问懂的人，再按一个明确顺序做。有人讲清重点时，压力比较容易变成进度；只催结果却不给方法，反而更容易耗在着急上。',
-        disciplined_guan_yin: '学习更偏向沿着明确要求一步步积累。考试范围清楚、有人把关时比较容易坚持；要求总在变时，花在适应规则上的时间会变多。',
-        inspired_breakthrough: '不喜欢一直照同一种方法重复，碰到有挑战的题更愿意钻进去。容易一时投入很深，也容易把基础练习放到后面。',
-        smart_and_hardworking_food_sha: '遇到难题时，更偏向把问题拆开，用练习把不会的部分补上。压力能促成行动，但任务一多，花在反复打磨上的时间也会增加。',
-        smart_and_hardworking_wound_sha: '遇到要求时，不太愿意只照着做，更想找到另一种解决办法。方法用对能省步骤，用在必须按标准作答的地方，也可能多绕弯路。',
-        smart_and_hardworking_food_officer: '学到一套规则以后，容易追问它为什么这样定。弄明白后比较愿意执行；只被要求照做时，容易把精力花在与要求较劲上。',
-        smart_action_regulation: '有明确要交出的东西时，比较容易停止反复琢磨，开始动手。只说多学一点，没有具体任务时，容易一直停在准备阶段。',
-        metal_water_clarity: '学习更偏向比较、分类、找前后关系。面对一堆信息时，会想先理出一套解释，而不是逐条硬记；解释想得太细时，也容易耽误练习。',
-        wood_fire_clarity: '学习更偏向用自己的话讲出来、写出来。能解释给别人听时，更容易记住；只追求表达顺畅，也容易跳过需要反复练熟的细节。',
-        composite: ''
-      })[profile.key] || '', detailOnly: profile.key === 'composite',
-      }),
-      dimensionVerdict('理解吸收', 'absorption', study.absorption),
-      dimensionVerdict('答题与表达', 'expression', study.expression),
-      dimensionVerdict('自律与应试', 'discipline', study.discipline),
-      dimensionVerdict('学会以后，能不能用起来', 'application', study.application),
-    ];
-    limitations.forEach(function (limitation) {
-      verdicts.push(narrativeVerdict('拉低学业表现的因素', '', limitation.basis || ['STUDY_LIMIT:' + limitation.key], {
-        sourceText: textOf(limitation.sourceText),
-        outcomeText: ({
-        excessive_ji_seal: '资料越收越多，真正练习的时间反而被挤掉。反复看已经熟悉的内容，会让人觉得一直在学，难点却仍旧没有做过。',
-        uncontrolled_output: '不耐烦重复练习，容易因为觉得题目太死板而跳步骤。会讲思路，却在该写的步骤和该记的细节上失分。',
-        wealth_breaks_seal: '费用、感情或别的现实事情，容易挤掉原本留给学习的时间。最直接的影响是复习被打断，落下的内容拖到考前才集中补。',
-        weak_body_strong_killers_no_seal: '要求越催越紧，自己却缺少能跟上的方法，容易花了很多时间仍做不完。几次受挫之后，可能干脆搁下最难的部分。',
-        weak_or_void_useful_god: '关键阶段依赖的帮助容易接不上，例如原先有人讲解，后来只能自己摸索。卡住的问题累积后，原定进度就容易拖延。'
-      })[limitation.key] || textOf(limitation.outcomeText), meaningKey: 'study:limitation:'+limitation.key,
-      }));
-    });
-    return {
-      grade: '',
-      level: levelLabel,
-      difficulty: '',
-      headline: headline,
-      painPoint: '',
-      paragraphs: [],
-      verdicts: verdicts,
-      note: '学业层级表示命局中的学习承接与应试潜力，不等于录取或学历承诺。',
+    // Read named structural evidence, never fill six generic learning cards or
+    // infer habits merely because a ten-god group is absent.
+    var riskCopy = {
+      wealth_breaks_seal: { title:'学习会被什么事情打断', weight:90,
+        text:'这条冲突落在学费、挣钱与学习时间之间。若为了处理费用或收入问题占掉上课和复习时间，具体会表现为缺课、赶不上复习进度，甚至延后考试；不是简单的“读书不好”。' },
+      weak_body_strong_killers_no_seal: { title:'密集考试下的压力', weight:85,
+        text:'这条冲突落在考试要求压过目前的准备量。几门课或几场考试接连赶时，容易出现题目做不完、最难的部分被反复搁置；要和知识已经掌握、只是临场紧张分开看。' },
+      uncontrolled_output: { title:'有思路，却丢了步骤分', weight:80,
+        text:'这条冲突更接近“想法有了，但答案没按要求写”。在按步骤和要点给分的考试中，跳步、漏写条件或写偏题，会让本来能拿到的分数丢掉。' },
+      excessive_ji_seal: { title:'准备很多，独立作答偏少', weight:65,
+        text:'这条取象重点是资料与练习失去平衡。若一直看讲解、收集笔记，却很少合上资料独立做题，真正不会的部分会被拖到考试前才暴露。' },
+      weak_or_void_useful_god: { title:'原来的学习帮助接不上', weight:70,
+        text:'这条风险对应原来依靠的课程、讲解或学习安排中断。若这种条件被岁运引动，原本有人带着解决的难点，会变成需要自己补上的缺口。' },
     };
+    list(study.limitations).forEach(function (row) {
+      var copy=riskCopy[row.key];
+      if(copy)add(row.key,copy.title,copy.text,textOf(row.sourceText),row.basis,copy.weight);
+    });
+    var obstacleCopy = [
+      { pattern:/伤官见官/, key:'answer_authority',title:'自己的答案与评分标准不一致',weight:88,
+        text:'这条学业冲突在“我认为这样答也对”和“老师按标准给分”之间。尤其在标准化考试里，个人见解、替代解法和规定步骤发生分歧时，容易因漏要点或格式不合要求失分；它并不等于理解力差。' },
+      { pattern:/官杀混杂/,key:'competing_requirements',title:'同时应对不同考试要求',weight:75,
+        text:'这条取象关注多套要求同时压过来：几门课、不同考试或不同老师的标准不一样。遇到这种情境时，复习范围来回切换，会挤掉把一类题练熟的时间；同一套答法也未必在另一场考试适用。' },
+      { pattern:/杀重无制/,key:'assessment_pressure',title:'准备量赶不上考试要求',weight:78,
+        text:'这条结构的学业压力更接近考试要求提高、练习却赶不上。若进入集中考试或高强度选拔，容易出现时间花了不少，题仍做不完的落差；不能仅凭这一点推成辍学。' },
+      { pattern:/枭神夺食/,key:'input_blocks_output',title:'已有思路被反复改动',weight:82,
+        text:'这条取象关注学习输入打断自己的作答：已经形成解法，却因反复换资料、改思路而迟迟写不完整。若发生在作业、论文或作品上，直接代价是返工和提交进度被拖住。' },
+    ];
+    list(study.obstacles).forEach(function (row) {
+      var copy=obstacleCopy.filter(function(item){return item.pattern.test(textOf(row.type));})[0];
+      if(copy)add(copy.key,copy.title,copy.text,textOf(row.conclusion),row.evidence,copy.weight);
+    });
+    if (profile.key && profile.key !== 'composite' && STUDY_PROFILE_COPY[profile.key]) {
+      add('profile:' + profile.key, '这个盘更值得采用的学习方式', profileCopy.outcomeText,
+        profileCopy.sourceText, profile.basis, 72);
+    }
+    candidates.sort(function(a,b){return b.weight-a.weight || a.key.localeCompare(b.key);});
+    var selected=candidates.slice(0,2);
+    // 财制印解决准备过多，与印重的风险讲的是同一件事；保留解决路径。
+    if(profile.key==='smart_action_regulation' && selected.some(function(row){return row.key==='excessive_ji_seal';})) {
+      selected=selected.filter(function(row){return row.key!=='excessive_ji_seal';});
+      var regulated=candidates.filter(function(row){return row.key==='profile:smart_action_regulation';})[0];
+      if(regulated && !selected.some(function(row){return row.key===regulated.key;}))selected.push(regulated);
+    }
+    var verdicts=selected.map(function(row){return narrativeVerdict(row.title,'',row.basis.length?row.basis:['STUDY_STRUCTURE:'+row.key],{
+      sourceText:row.source,outcomeText:row.outcome,meaningKey:'study:'+row.key,
+    });});
+    if(!verdicts.length)verdicts.push(narrativeVerdict('学业先对照实际作答','',['STUDY_SCOPE:NO_DISTINCT_EVENT'],{
+      sourceText:'本盘未形成可单独采用的学习冲突或完整学习路径；十神数量不补造经历。',
+      outcomeText:'本节先对照最近一次作答，分清知识不会、审题遗漏还是时间不够。某年是否升学、转学或中断学习，另看有具体岁运触发的事件。',
+      meaningKey:'study:baseline',
+    }));
+    verdicts.push(narrativeVerdict('学业结论的依据与范围','',['STUDY_SCOPE:STRUCTURE_NOT_EDUCATION'],{
+      sourceText:[study.absorption,study.expression,study.discipline,study.application].map(function(fact){return list(fact&&fact.evidence).map(textOf).join('；');}).filter(Boolean).join('。') || '学业结构与实际学历分别记录，不以传统十神数量推定学历。',
+      outcomeText:'以上是传统结构对应的具体冲突和适用情境，不是已经发生的经历。既往学历以实际反馈为准，不由印星数量或结构积分推算。',detailOnly:true,
+    }));
+    return {hideScore:true,grade:'',level:'学习结构参考',difficulty:'',
+      headline:selected.length ? '学业重点：'+selected.map(function(row){return row.title;}).join('；')+'。' : '先把实际学习问题分清，再看具体年份。',
+      painPoint:'',paragraphs:[],verdicts:verdicts,
+      note:'原局讲冲突出现的条件；具体哪年应在升学、考试或学业中断，要有对应岁运触发。'};
   }
 
   function buildRelationshipNarrative(facts) {
@@ -4002,14 +3932,14 @@
       if (/合|会/.test(row.type) && row.direction === 'adverse') return '两个人的联系会变紧，但也更容易出现明明相处不开心、又迟迟分不开；短暂靠近以后又冷下来。';
     }
     if (domains.indexOf('wealth') >= 0) {
-      if (row.direction === 'favorable' && row.type === '六冲') return '原来卡住收入或资产流动的部分被打破，进账、资金周转或资产调整更容易出现实质变化，但过程会先有波动。';
-      if (row.direction === 'favorable') return '这一年更容易看到实际进账，项目回款会更顺，手里的钱也更有机会存下来或变成资产。';
+      if (row.direction === 'favorable' && row.type === '六冲') return '原先卡住的款项或资金周转有松动的机会，但调整本身也会带来成本，最后能否多留下钱，还要看到账和支出。';
+      if (row.direction === 'favorable') return '钱款往来中的阻力有缓和机会。若之前有约好却没收到的款项，这是继续跟进的窗口；能否多存下钱，还要看实际到账和新增支出。';
       if (row.direction === 'adverse') return '这一年钱不是完全进不来，而是花出去得更快。项目垫款、家庭支出或合作分钱会增加，账面流水看着不少，最后真正留下的钱反而容易减少。';
       return '收入、支出或资产安排会发生变化，但现有证据不足以确定最后增加还是减少。';
     }
     if (domains.indexOf('career') >= 0) {
       return row.direction === 'favorable'
-        ? '工作上更容易接到重要任务，事情推进得比平时快。做出的成绩也更容易被领导或客户看见，职位、权限或收入有机会跟着往上动。'
+        ? '工作中原先卡在手续、要求不清或配合上的事情，有重新推进的机会。这里指办事阻力减轻，职位和工资是否变化，还取决于实际岗位安排。'
         : row.direction === 'adverse'
           ? /刑/.test(row.type || '')
             ? '工作里同一个问题容易反复出现，沟通不顺、临时改要求和返工会增多。人会比平时更忙，但结果出来得更慢。'
@@ -4018,12 +3948,12 @@
     }
     if (domains.indexOf('study') >= 0) {
       return row.direction === 'favorable'
-        ? '这一年学习和考试更容易出成绩，复习过的内容能真正用得上。考证、考试或作品评比，更容易拿到看得见的结果。'
+        ? '若复习原先卡在理解、资料或考试要求上，这些地方更容易获得帮助；考试能否过关，仍要看实际准备和临场表现。'
         : row.direction === 'adverse'
           ? '学习容易被工作和杂事打断，复习节奏不稳。考试时也容易因为分心、时间不够，把原本会做的题做错，成绩低于真实水平。'
           : '';
     }
-    if (row.direction === 'favorable') return '原来卡住的事情更容易往前推进，拖着不定的事更容易定下来，也更容易拿到看得见的结果。';
+    if (row.direction === 'favorable') return '原先受阻的安排有重新推动的机会，但这条线索还没有指向具体的钱款、工作或考试结果。';
     if (row.direction === 'adverse') return '事情更容易被临时变化打断，原本一次能做完的事会多跑几趟、多等一阵，结果也更容易反复。';
     return '该领域会出现明显变化和拉扯，但好坏暂不能定。';
   }
@@ -4036,6 +3966,34 @@
       seen[key] = true;
       return true;
     });
+  }
+
+  function timingDomainOutcome(rows, domain) {
+    var ordered = sortedTimingInteractions(rows);
+    var favorable = ordered.some(function (row) { return row.direction === 'favorable'; });
+    var adverse = ordered.some(function (row) { return row.direction === 'adverse'; });
+    var leads = prioritizedTimingInteractions(ordered);
+    var leadAdverse = leads.length && leads.every(function (row) { return row.direction === 'adverse'; });
+    var leadFavorable = leads.length && leads.every(function (row) { return row.direction === 'favorable'; });
+    if (favorable && adverse) {
+      // Opposing interactions are constraints on one domain, not two completed
+      // outcomes. Never concatenate "cash is retained" and "cash is lost".
+      var mixed = {
+        wealth: '钱款往来有转机，留钱却仍有压力：即使有人帮忙或收入机会增加，垫款、额外支出或合作分钱仍可能吃掉新增进账。最后多留还是少留，要看实际到账与这些成本。',
+        career: '工作中有些卡点能松动，但要求临时改变、配合不顺和返工的压力仍在。能继续做下去与职位、工资改善是两回事，额外付出仍可能吃掉前面的进展。',
+        study: '复习中有些卡点能解决，但分心、准备被打断或作答受阻的压力仍在。准备条件改善后，仍可能在临场时间分配和失分上吃亏。',
+        relationship: '联系或共同安排会增加，但原来的分歧还没解决。若反复争执一直拖着，两个人仍可能重新考虑是否继续相处。',
+        health: '日常安排有缓和的地方，也有继续占用休息时间的压力；不能因一件事好转就忽略反复赶事情的代价。',
+        general: '同一方面既有缓和条件，也有被打断、反复处理的压力。局部推进不等于最后已经拿到结果。',
+      };
+      var body = mixed[domain] || mixed.general;
+      if (leadAdverse) body += '其中不利作用更直接，缓和条件不能抵消主要压力。';
+      else if (leadFavorable) body += '其中有利作用更直接，但上述代价仍需一并计算。';
+      return body;
+    }
+    return uniqueTimingTexts(leads.map(function (row) {
+      return timingInteractionOutcome(Object.assign({}, row, { domains: [domain] }));
+    })).join(' ');
   }
 
   function timingDomainVerdicts(interactions) {
@@ -4070,11 +4028,30 @@
         return 'ANNUAL_INTERACTION:' + (row.id || row.type);
       }), {
         sourceText: uniqueTimingTexts(group.rows.map(function (row) { return row && row.sourceText; })).join(' '),
-        outcomeText: uniqueTimingTexts(group.rows.map(function (row) {
-          return timingInteractionOutcome(Object.assign({}, row, { domains: group.domains }));
-        })).join(' '),
+        outcomeText: timingDomainOutcome(group.rows, group.domains[0]),
       });
     });
+  }
+
+  function prioritizedTimingDomainVerdicts(interactions) {
+    // Priority selects the domains, not a one-sided subset of evidence within
+    // each domain. Lower-ranked conflicting effects still constrain its result.
+    var leadDomains = [];
+    prioritizedTimingInteractions(publicTimingInteractions(interactions)).forEach(function (row) {
+      var domains = list(row.domains);
+      if (!domains.length) domains = ['general'];
+      domains.forEach(function (domain) {
+        domain = domain === 'wellbeing' ? 'health' : domain;
+        if (leadDomains.indexOf(domain) < 0) leadDomains.push(domain);
+      });
+    });
+    return timingDomainVerdicts(publicTimingInteractions(interactions).map(function (row) {
+      var domains = list(row.domains);
+      if (!domains.length) domains = ['general'];
+      domains = domains.map(function (domain) { return domain === 'wellbeing' ? 'health' : domain; })
+        .filter(function (domain) { return leadDomains.indexOf(domain) >= 0; });
+      return domains.length ? Object.assign({}, row, { domains: domains }) : null;
+    }).filter(Boolean));
   }
 
   function timingDomainHeadline(interactions, directionLabel) {
@@ -4089,13 +4066,13 @@
     });
     var subject = domains.length ? domains.join('、') : '现实安排';
     var directionText = directionLabel === '偏有利'
-      ? '结果偏有利'
+      ? '局部作用偏有利，实际结果仍取决于同领域的限制'
       : directionLabel === '偏不利'
-        ? '结果偏不利'
+        ? '主要作用偏不利，缓和条件不能抵消具体代价'
         : directionLabel === '有利与压力并见'
-          ? '有进展，也有明显压力'
+          ? '支持和阻碍同时存在，局部帮助不等于全年顺利'
           : '变化会很明显，但好坏暂时不能定';
-    return subject + '是今年变化最明显的地方，' + directionText + '。';
+    return subject + '是本年被引动的重点，' + directionText + '。';
   }
 
   function aggregateFiveYearOutcomes(rows) {
@@ -4315,9 +4292,6 @@
     var hasTriggeredRisk = riskCopies.length > 0;
     var directionLabel = timingDirectionLabel(interactions);
     var decisiveInteractions = prioritizedTimingInteractions(interactions);
-    var decisiveOutcome = uniqueTimingTexts(timingDomainVerdicts(decisiveInteractions).map(function (row) {
-      return row.outcomeText;
-    })).join(' ');
     var reliefCopies = interactions.length || hasTriggeredRisk
       ? annualReliefCopies(year.reliefs, directionLabel === '偏不利' || hasTriggeredRisk, decisiveInteractions, directionLabel)
       : [];
@@ -4402,15 +4376,14 @@
     return {
       hideScore: true,
       headline: headline,
-      painPoint: interactions.length
-        ? directionLabel === '变化明显、好坏暂不能定'
-          ? decisiveOutcome + ' 综合同级变化后，好坏暂不能定。'
-          : decisiveOutcome
-        : hasTriggeredRisk
-          ? riskCopies[0].outcomeText
-          : '没有强引动不等于没有事情发生，只表示这套规则暂未识别明确窗口。',
+      // Domain/risk cards already contain the complete outcome. Repeating them
+      // before those cards makes the paid HTML read like duplicate paragraphs.
+      painPoint: '',
       paragraphs: [],
-      verdicts: verdicts.filter(function(v) { return list(v.basis).indexOf('ANNUAL_ROLE_BALANCE') < 0; }),
+      verdicts: verdicts.filter(function(v) { return list(v.basis).indexOf('ANNUAL_ROLE_BALANCE') < 0; }).map(function(v) {
+        if (v.outcomeText === headline) v.detailOnly = true;
+        return v;
+      }),
       note: year && year.daYun
         ? '以上年度结论依据流年、大运、原局喜忌及实际刑冲克害合化推演；未被岁运触发的原局信息不会被写成本年事件。'
         : '当前大运未纳入，只按流年与原局喜忌及实际刑冲克害合化推演；未被流年触发的原局信息不会被写成本年事件。',
@@ -4469,7 +4442,7 @@
       var reliefCopies = decisive.length || riskCopies.length
         ? annualReliefCopies(year && year.reliefs, directionLabel === '偏不利' || riskCopies.length > 0, decisive, directionLabel)
         : [];
-      var decisiveOutcome = uniqueTimingTexts(timingDomainVerdicts(decisive).map(function (row) {
+      var decisiveOutcome = uniqueTimingTexts(prioritizedTimingDomainVerdicts(interactions).map(function (row) {
         return row.outcomeText;
       })).join(' ');
       var adjudication = annualAdjudication(year);
@@ -4505,7 +4478,7 @@
           .concat(reliefCopies.map(function (copy) { return copy.sourceText; })).filter(Boolean).join(' '),
         summary: summary,
         prioritizedOutcome: decisive.length ? decisiveOutcome : baseSummary,
-        priorityOutcomes: decisive.length ? uniqueTimingTexts(timingDomainVerdicts(decisive).map(function (row) {
+        priorityOutcomes: decisive.length ? uniqueTimingTexts(prioritizedTimingDomainVerdicts(interactions).map(function (row) {
           return row.outcomeText;
         })) : [],
         priority: decisive.length ? timingInteractionPriority(decisive[0]) : 0,
@@ -4549,18 +4522,22 @@
         : '窗口待定';
       return row.year + '年' + role + (row.primaryEventLabel ? '（' + row.primaryEventLabel + '）' : '');
     }).join(' → ');
-    return {
-      hideScore: true,
-      headline: headline,
-      painPoint: highestYears.length && overallDirection === '变化明显、好坏暂不能定'
-        ? highestOutcome + ' 相关领域会明显变化或拉扯，但好坏暂不能定。'
-        : adverseYears.length
+    var overviewText = highestYears.length && overallDirection === '变化明显、好坏暂不能定'
+      ? highestOutcome + ' 相关领域会明显变化或拉扯，但好坏暂不能定。'
+      : adverseYears.length
         ? adverseYears.map(function (row) { return row.year + '年：' + row.prioritizedOutcome; }).join(' ')
         : highestYears.length
           ? highestOutcome
           : riskYears.length
-          ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
-          : '后续按每年的具体触发安排节奏；没有突出窗口的年份，不另行指定必然发生的事件。',
+            ? riskYears.map(function (row) { return row.year; }).join('、') + '年有风险信号被触发，具体表现以对应年份列出的结果为准。'
+            : '后续按每年的具体触发安排节奏；没有突出窗口的年份，不另行指定必然发生的事件。';
+    var overviewOutcomes = uniqueTimingTexts(highestYears.reduce(function(rows, year) {
+      return rows.concat(year.priorityOutcomes);
+    }, [])).filter(function(outcome) { return overviewText.indexOf(outcome) >= 0; });
+    return {
+      hideScore: true,
+      headline: headline,
+      painPoint: overviewText,
       paragraphs: [],
       verdicts: (daYunCommonVerdict ? [daYunCommonVerdict] : []).concat([narrativeVerdict('五年变化主线', '', ['FIVE_YEAR:INTERACTION_PRIORITY'], {
         sourceText: years.filter(function (row) { return row.sourceText; }).map(function (row) { return row.year + '年：' + row.sourceText; }).join(' '),
@@ -4572,6 +4549,14 @@
       years: years.map(function (row) {
         var clean = Object.assign({}, row);
         clean.isCurrentYear = !!(facts && facts.currentYear && Number(facts.currentYear.year) === Number(row.year));
+        var compact = clean.summary;
+        overviewOutcomes.forEach(function(outcome) {
+          if (outcome && compact.indexOf(outcome) >= 0) compact = compact.split(outcome).join('');
+        });
+        if (compact !== clean.summary && !clean.isCurrentYear) {
+          clean.fullSummary = clean.summary;
+          clean.summary = '本年与上方五年重点中的对应变化一致。' + compact.trim();
+        }
         delete clean.priority;
         delete clean.priorityCount;
         delete clean.riskTriggered;
@@ -4591,7 +4576,7 @@
     var school = life && (life.studyRelevant || life.status === 'student' || life.status === 'exam');
     var minor = life && life.age != null && life.age < 18;
     var work = !life || life.status === 'working';
-    return { career: school ? '学习任务与要求' : work ? '工作任务与要求' : life.status === 'transition' ? '求职与申请' : '办事与分工',
+    return { career: school ? '学习任务与要求' : work ? '工作任务与要求' : life.status === 'transition' ? '求职与申请' : life.status === 'unknown' && Number(life.age) >= 18 ? '工作与求职' : '办事与分工',
       study: '学习与考试', wealth: '进账与开支', relationship: minor ? '同伴相处' : '感情与相处', family: '家里的变化',
       change: '住处与计划', health: '作息与精力' }[domain] || '本年的变化';
   }
@@ -4609,18 +4594,19 @@
       seen[key] = true;
       return true;
     });
-    // Report ordering is not a new probability score. Real-life outcome scopes
-    // precede process detail; within a scope the existing ranking is retained.
+    // Report ordering is not a new probability score. A general relationship
+    // scenario cannot outrank stronger career evidence merely by its wording.
     return eligible.map(function(record,index) {
       var event = describeTimingEvent(record,adjudication,year.lifeContext,year);
-      return {record:record,index:index,priority:event.outcomeScope === 'process' ? 0 : 1};
+      var broadDomain = event.outcomeScope === 'domain' || /^relationship-(?:stability|bond)/.test(event.eventType);
+      return {record:record,index:index,priority:event.outcomeScope === 'process' ? 0 : broadDomain ? 1 : 2};
     }).sort(function(a,b) { return b.priority-a.priority || a.index-b.index; }).slice(0,2).map(function(row){return row.record;});
   }
 
   function annualEventVerdict(record, year, index) {
     var adjudication = annualAdjudication(year) || {};
     var event = describeTimingEvent(record,adjudication,year.lifeContext,year);
-    return narrativeVerdict(index ? '其次会被带动的方面' : '今年最可能应在哪件事', '', ['ANNUAL_EVENT:' + record.domain], {
+    return narrativeVerdict(index ? '其次会被带动的方面' : event.outcomeScope === 'domain' ? '今年更突出的方面' : '今年最可能应在哪件事', '', ['ANNUAL_EVENT:' + record.domain], {
       displayTitle: event.label,
       eventType: event.eventType, supportLevel: event.supportLevel, outcomeScope:event.outcomeScope,
       detailOnly:event.outcomeScope === 'process',
@@ -4887,16 +4873,20 @@
         relationshipStatus:Number(row.year)===Number(context.asOfYear) ? context.relationshipStatus : 'unknown', priorities:context.priorities},
         context.age===null ? null : context.asOfYear-context.age,Number(row.year));
       row.lifeContext = rowContext;
+      // Unknown schooling is not a denial of schooling. Preserve independently
+      // triggered annual study evidence, with a conditional reading context.
+      // The optional full study chapter still follows the explicit life status.
+      var allowAnnualStudy = rowContext.studyRelevant || rowContext.status === 'unknown';
       var original = annualAdjudication(row);
       if (original) {
-        var records = list(original.domainRecords).filter(function(record) { return rowContext.studyRelevant || record.domain !== 'study'; })
-          .map(function(record) { return Object.assign({},record,{label:record.domain==='career'&&rowContext.status!=='working'?(rowContext.studyRelevant?'学习任务与协作':rowContext.status==='transition'?'求职与方向调整':'生活事务与协作'):record.label,scenarioCandidates:list(record.scenarioCandidates).filter(function(item){return rowContext.studyRelevant || !/升学|考试|备考|学费|奖学金|录取/.test(textOf(item));})}); });
+        var records = list(original.domainRecords).filter(function(record) { return record.domain !== 'study' || rowContext.studyRelevant || allowAnnualStudy && record.hasIndependentAnnualTrigger; })
+          .map(function(record) { return Object.assign({},record,{label:record.domain==='career'&&rowContext.status!=='working'&&(rowContext.status!=='unknown'||rowContext.studyRelevant)?(rowContext.studyRelevant?'学习任务与协作':rowContext.status==='transition'?'求职与方向调整':'生活事务与协作'):record.label,scenarioCandidates:list(record.scenarioCandidates).filter(function(item){return allowAnnualStudy || !/升学|考试|备考|学费|奖学金|录取/.test(textOf(item));})}); });
         var adjudication = Object.assign({},original,{domainRecords:records,primaryEvent:records[0]||null,secondaryEvent:records[1]||null,
           lifeStage:{key:rowContext.stageKey,label:(rowContext.status==='unknown' ? ({child:'儿童阶段',education:'青少年阶段',launch:'青年阶段',development:'成年发展阶段',mature:'成熟阶段',late:'晚年阶段'}[rowContext.stageKey]||'年龄阶段未填写') : rowContext.label) + (rowContext.age === null ? '' : '（该年约'+rowContext.age+'岁）')},lifeContext:rowContext});
         row.eventAdjudication = adjudication;
         row.dynamic = Object.assign({},row.dynamic,{eventAdjudication:adjudication});
       }
-      if (!rowContext.studyRelevant) {
+      if (!allowAnnualStudy) {
         row.study = null;
         // Retain raw structural evidence separately; filter only its applicable report domains.
         row.originalInteractions = row.interactions;
@@ -5060,6 +5050,36 @@
             || Number(!!(b.reportFeedback&&b.reportFeedback.state==='repeated'))-Number(!!(a.reportFeedback&&a.reportFeedback.state==='repeated'))
             || a.reportOriginalRank-b.reportOriginalRank;
         });
+        // A single mechanism can offer a work consequence and a money consequence.
+        // Domain splitting above must not turn those unconfirmed alternatives into
+        // two predictions. Keep matching past outcomes when supplied; otherwise keep
+        // one existing top-ranked interpretation and retain the rest only as evidence.
+        var mechanismGroups = {};
+        eligible.forEach(function(record) {
+          if (!record.reportMechanismKey) return;
+          var group = mechanismGroups[record.reportMechanismKey] || (mechanismGroups[record.reportMechanismKey] = []);
+          group.push(record);
+        });
+        Object.keys(mechanismGroups).forEach(function(key) {
+          var group = mechanismGroups[key];
+          if (group.length < 2) return;
+          var matched = group.filter(function(record) {
+            return record.reportFeedback && ['tentative','repeated'].indexOf(record.reportFeedback.state) >= 0;
+          });
+          var seenOutcomes = {};
+          var retained = (matched.length ? matched : [group[0]]).filter(function(record) {
+            var eventKey = reportEventKey(record);
+            if (seenOutcomes[eventKey]) return false;
+            seenOutcomes[eventKey] = true;
+            return true;
+          });
+          group.forEach(function(record) {
+            if (retained.indexOf(record) >= 0) return;
+            record.reportVariantSuppressed = true;
+            record.reportSuppressionReason = 'same-mechanism-cross-domain-alternative';
+          });
+        });
+        eligible = eligible.filter(function(record) { return !record.reportVariantSuppressed; });
         adjudication.primaryEvent=eligible[0]||null;adjudication.secondaryEvent=eligible[1]||null;
         adjudication.domainRecords=eligible.concat(adjudication.domainRecords.filter(function(r){return eligible.indexOf(r)<0;}));
         row.reportReconciliation={changes:changes,scope:'annual_interpretation',futureConfirmed:false};

@@ -10,6 +10,7 @@ function ledger(f,records){for(const row of f.fiveYear.years){row.eventAdjudicat
 const record=(domain,score,independent=true)=>({domain,label:domain,activationScore:score,direction:'偏不利',hasIndependentAnnualTrigger:independent,eventCandidate:domain+'原候选',scenarioCandidates:[domain+'合成独立场景'],evidence:[domain+'合成独立结构']});
 const feedback=(domain,state='deprioritized',year=2026)=>({year,domain,state,label:domain,mechanismKey:'synthetic-mechanism',outcome:'合成复核原因',original:domain+'合成解释',sourceEvidence:['合成结构依据'],confirmedYears:state==='repeated'?[2021,2024]:[],deniedYears:[2024]});
 const Model=require('../js/calibration-model.js');
+const mechanismFixture=require('./helpers/imagery-mechanism-fixture');
 
 test('denied primary is withdrawn; next independent event replaces it everywhere without raw fallback',()=>{
  const f=build(),core=JSON.stringify(f.core),grade=f.wealth.narrative.grade;
@@ -70,7 +71,8 @@ test('revision HTML escapes original text and keeps it inside foldable PDF-compa
 test('professional candidates require activated named mechanisms, not just wealth or seal ten-gods',()=>{
  assert.deepEqual(Model.professionalCandidates('wealth',{triggers:[],stemRole:'财'}),[]);
  assert.deepEqual(Model.professionalCandidates('wealth',{triggers:[{type:'财制印',detail:'无财坏印'}]}),[]);
- const candidates=Model.professionalCandidates('wealth',{reportTriggeredRisks:[{type:'财破印'}],triggers:[{type:'比肩夺财'}]});
+ assert.deepEqual(Model.professionalCandidates('wealth',{reportTriggeredRisks:[{type:'财破印'}],triggers:[{type:'比肩夺财'}]}),[]);
+ const candidates=Model.professionalCandidates('wealth',mechanismFixture(['财破印','比肩夺财']));
  assert.equal(candidates.length,2);assert.notEqual(candidates[0].mechanism_key,candidates[1].mechanism_key);
  assert.match(candidates[0].detail,/正常消费.*不算损失/);
  assert.equal(Model.professionalCandidates('family',{triggers:[{type:'财破印'}]}).length,0);
@@ -78,7 +80,7 @@ test('professional candidates require activated named mechanisms, not just wealt
 
 test('rejecting wealth-breaks-seal loss retains peer-loss as a separate supported mechanism in the same domain',()=>{
  const f=build(),family=JSON.stringify(calc.analyzeParents(bazi,'male'));ledger(f,[record('wealth',10),record('career',8)]);
- const options=Model.professionalCandidates('wealth',{triggers:[{type:'财破印'},{type:'比肩夺财'}]});
+ const options=Model.professionalCandidates('wealth',mechanismFixture(['财破印','比肩夺财']));
  const events=[{event_key:'synthetic-2024',event_year:2024,domain:'wealth',answer:'no',options:[options[0]]}];
  const review=Model.buildReportReview(events,f.fiveYear.years.flatMap(row=>options.map(c=>({...c,year:row.year,hasIndependentAnnualTrigger:true}))),{currentYear:2026});
  assert.equal(review.adjustments.length,5);
@@ -92,14 +94,14 @@ test('rejecting wealth-breaks-seal loss retains peer-loss as a separate supporte
 });
 
 test('a rejected manifestation does not disprove another manifestation or a different professional mechanism',()=>{
- const loss=Model.professionalCandidates('wealth',{triggers:[{type:'财破印'}]})[0];
+ const loss=Model.professionalCandidates('wealth',mechanismFixture('财破印'))[0];
  const events=[{event_key:'loss-2024',event_year:2024,domain:'wealth',answer:'no',options:[loss]}];
  const review=Model.buildReportReview(events,[{...loss,year:2027,hasIndependentAnnualTrigger:true},{...loss,manifestation:'normal-spending',year:2027,hasIndependentAnnualTrigger:true},{...loss,mechanism_key:'rule:peer-takes-wealth',year:2027,hasIndependentAnnualTrigger:true}],{currentYear:2026});
  assert.equal(review.adjustments.length,1);assert.equal(review.adjustments[0].manifestation,'unexpected-loss:e2');
 });
 
 test('old broad ten-god answers cannot silently validate a newly named professional rule',()=>{
- const fresh=Model.professionalCandidates('wealth',{triggers:[{type:'财破印'}]})[0];
+ const fresh=Model.professionalCandidates('wealth',mechanismFixture('财破印'))[0];
  const old={...fresh,mechanism_key:'wealth:偏财',manifestation:'money-outflow'};
  const history=[2021,2024].map(year=>({event_key:'old-'+year,event_year:year,domain:'wealth',answer:'yes',selected_option:old.key,match_level:'exact',options:[old]}));
  assert.equal(Model.buildReportReview(history,[{...fresh,year:2027,hasIndependentAnnualTrigger:true}],{currentYear:2026}).adjustments.length,0);

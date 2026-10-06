@@ -6121,21 +6121,21 @@ function analyzeStudy(bazi) {
     const shiShangWX = wxSHENG[DAY_WX];
     const posCN = { year:'年柱', month:'月柱', day:'日柱', hour:'时柱' };
 
-    // 1. 印星力量统计
+    // 仅统计结构分布；数量不是学习能力、智力或最终学历的评分。
     let yinScore = 0, yinCount = 0;
-    let hasYearYin = false, hasMonthYin = false, hasDayYin = false, hasHourYin = false;
+    const yinExposed = [], yinHidden = [], outputExposed = [], outputHidden = [], guanExposed = [];
 
     ['year','month','day','hour'].forEach(pos => {
         const gWx = WU_XING[bazi[pos].gan];
         if (gWx === helpWX) {
             yinScore += 1.5; yinCount++;
-            if (pos === 'year') hasYearYin = true;
-            if (pos === 'month') hasMonthYin = true;
-            if (pos === 'day') hasDayYin = true;
-            if (pos === 'hour') hasHourYin = true;
+            yinExposed.push({ position: pos, gan: bazi[pos].gan, layer: '天干' });
         }
         getCangGan(bazi[pos].zhi).forEach(g => {
-            if (WU_XING[g] === helpWX) { yinScore += 0.5; yinCount++; }
+            if (WU_XING[g] === helpWX) {
+                yinScore += 0.5; yinCount++;
+                yinHidden.push({ position: pos, gan: g, layer: '藏干' });
+            }
         });
     });
 
@@ -6143,9 +6143,15 @@ function analyzeStudy(bazi) {
     let shiShangScore = 0;
     ['year','month','day','hour'].forEach(pos => {
         const gWx = WU_XING[bazi[pos].gan];
-        if (gWx === shiShangWX) shiShangScore += 1;
+        if (gWx === shiShangWX) {
+            shiShangScore += 1;
+            outputExposed.push({ position: pos, gan: bazi[pos].gan, layer: '天干' });
+        }
         getCangGan(bazi[pos].zhi).forEach(g => {
-            if (WU_XING[g] === shiShangWX) shiShangScore += 0.5;
+            if (WU_XING[g] === shiShangWX) {
+                shiShangScore += 0.5;
+                outputHidden.push({ position: pos, gan: g, layer: '藏干' });
+            }
         });
     });
 
@@ -6165,62 +6171,91 @@ function analyzeStudy(bazi) {
         if (bazi[pos].zhi === xueTangZhi) hasXueTang = true;
     });
 
-    // 5. 官星（代表自律和考运）
+    // 官杀用于标注考核、标准的传统取象，不把出现次数等同自律或考运。
     const wxKe = { '木':'金','火':'水','土':'木','金':'火','水':'土' };
     const guanWX = wxKe[DAY_WX];
     let guanScore = 0;
     ['year','month','day','hour'].forEach(pos => {
-        if (WU_XING[bazi[pos].gan] === guanWX) guanScore += 1;
+        if (WU_XING[bazi[pos].gan] === guanWX) {
+            guanScore += 1;
+            guanExposed.push({ position: pos, gan: bazi[pos].gan, layer: '天干' });
+        }
     });
+    // 透干统计不能代替通根检查；根气只表示藏干存在，不等于制化成立。
+    const guanRootPositions = ['year','month','day','hour'].filter(pos =>
+        getCangGan(bazi[pos].zhi).some(gan => WU_XING[gan] === guanWX));
+    const hasGuanRoot = guanRootPositions.length > 0;
 
-    // 6. 综合判断
-    let levelLabel, levelText;
-    const totalStudy = yinScore + guanScore * 0.5;
-
-    if (totalStudy >= 4) {
-        levelLabel = '学业优秀';
-        levelText = '命局中印星得力、官星有制，天生适合读书考试。对新知识的吸收速度快、理解力强，在升学考公考证方面有先天优势。学习对你而言不是负担，而是乐趣。';
-    } else if (totalStudy >= 2.5) {
-        levelLabel = '学业良好';
-        levelText = '具备正常的学习能力和读书兴趣，能够按部就班完成学业。如果大运流年再走印运或官运，有进一步提升的空间，关键时刻也能考出不错的成绩。';
-    } else if (totalStudy >= 1) {
-        levelLabel = '学业中等';
-        levelText = '传统书本学习可能不是你的最强天赋，但这不代表不聪明——你可能更擅长实践操作、人际交往或创意表达，适合技能型或应用型的学习方式。';
-    } else {
-        levelLabel = '学业需努力';
-        levelText = '命局中学业星不显，读书考试确实需要比别人多下功夫。但这往往意味着你的天赋在别处——实践、艺术、社交或运动方面可能有突出表现。找到适合自己的赛道很重要。';
+    const hasYin = yinCount > 0;
+    const hasOutput = outputExposed.length + outputHidden.length > 0;
+    const hasOfficer = guanExposed.length > 0 || hasGuanRoot;
+    function positionEvidence(rows) {
+        return rows.map(row => posCN[row.position] + row.layer + row.gan).join('、');
     }
+    const yinPosText = hasYin
+        ? '印星分布：' + positionEvidence(yinExposed.concat(yinHidden)) + '。'
+        : '四柱天干与藏干均未见印星；这项分布不表示学历低或理解力差。';
+    const rootText = guanScore > 0
+        ? (hasGuanRoot
+            ? '官杀透干，' + guanRootPositions.map(pos => posCN[pos] + '藏干').join('、') + '有同五行根气。'
+            : '官杀透干，但地支没有同五行藏干作根。')
+        : (hasGuanRoot ? '官杀藏于' + guanRootPositions.map(pos => posCN[pos]).join('、') + '，未透天干。' : '四柱天干与藏干均未见官杀。');
 
-    // 印星位置描述
-    let yinPosText = '';
-    if (hasYearYin) yinPosText += '· 年柱有印：家庭书香氛围较浓，或祖辈重视教育。';
-    if (hasMonthYin) yinPosText += '· 月柱有印：青少年时期学习环境好，易遇良师益友。';
-    if (hasDayYin) yinPosText += '· 日柱有印：自学能力强，会主动钻研感兴趣的领域。';
-    if (hasHourYin) yinPosText += '· 时柱有印：晚年仍有学习热情，或下一代学业运佳。';
-    if (!yinPosText) yinPosText = '· 印星不显于四柱，学习上需要更多外部督促和环境支持。';
-
-    // 综合建议
-    let adviceText = '';
-    if (yinScore >= 2 && shiShangScore >= 1) {
-        adviceText = '印星与食伤兼具，属于「学以致用」的聪明类型——既有扎实的学习能力，又有灵活的表达和创造力。适合教育、写作、科研、设计等需要深度思考与输出的领域。';
-    } else if (yinScore >= 2 && shiShangScore < 1) {
-        adviceText = '学习吸收能力强，但表达输出稍显不足。建议多写、多说、多动手，把学到的知识转化为实际能力，而非只停留在理解层面。';
-    } else if (yinScore < 2 && shiShangScore >= 1) {
-        adviceText = '属于「实践出真知」的类型——你可能不太喜欢死记硬背，但动手能力、创意和社交天赋突出。建议选择技能型、艺术型或应用型专业方向，让才华有用武之地。';
-    } else if (guanScore >= 1) {
-        adviceText = '官星有根，自律性较强，能够按计划坚持学习。适合需要毅力和纪律的学习路径，比如考公考研或长周期的专业深造。';
+    // 结构决定讨论哪种学习环节，不决定当事人的智力、学历或已发生经历。
+    let profileKey, levelLabel, levelText, adviceText;
+    if (hasYin && hasOutput) {
+        profileKey = 'input_output';
+        levelLabel = '理解与作答';
+        levelText = '这个盘同时见到印星与食伤，传统学业取象会把“看懂了”和“能独立做出来”分开看。备考重点是把理解变成完整答案，不能只凭听课时觉得会了就结束复习。';
+        adviceText = '如果看解析能懂、独立做题却卡住，先合上资料写出解题步骤，再对照漏掉的条件；已经能独立解题时，再练限时完成和检查。';
+    } else if (hasYin && hasOfficer) {
+        profileKey = 'input_assessment';
+        levelLabel = '复习与考核';
+        levelText = '这个盘的印星和官杀并见，传统取象会关注系统学习与考试要求的衔接。具体要看复习范围是否对准考纲、知识能否按题目要求写出来，而不是只看读了多少资料。';
+        adviceText = '正在准备升学或考证时，按考纲列出必会题型，每周做一次限时整卷；把错题分成知识不会、审题遗漏和时间不够，分别处理。';
+    } else if (hasOutput && hasOfficer) {
+        profileKey = 'output_assessment';
+        levelLabel = '思路与评分标准';
+        levelText = '这个盘的食伤与官杀并见，传统学业取象会把个人解题思路和外部评分标准放在一起看。重点不是有没有自己的想法，而是答案能否踩中得分点、满足题目要求。';
+        adviceText = '如果思路正确却总被扣分，把原答案和评分点逐项对照，补齐步骤、术语与论证；遇到开放题，再把自己的观点用例子和证据写实。';
+    } else if (hasYin) {
+        profileKey = 'input_check';
+        levelLabel = '读懂之后再自测';
+        levelText = '这个盘有印星，传统取象会先关注读书、课程和资料这一类知识输入。这里要检查的是学过的内容能否脱离教材复述，而不是把有印直接说成成绩好。';
+        adviceText = '学完一节后合上书，用自己的话写出三个要点，再完成一道不看答案的题；能复述、能独立应用，才进入下一节。';
+    } else if (hasOutput) {
+        profileKey = 'output_check';
+        levelLabel = '用作答检验掌握';
+        levelText = '这个盘的食伤比印星更容易在结构上看见，传统取象会先关注解题、写作、讲解和作品。它不能据此排除读研或科研，关键仍是拿实际完成的答案检验学习进度。';
+        adviceText = '学习新内容时，可以先做一题或写一段解释，找出具体卡住的知识点，再回到教材补上；不要只凭“有灵感”判断已经掌握。';
+    } else if (hasOfficer) {
+        profileKey = 'assessment_check';
+        levelLabel = '先拆清考试要求';
+        levelText = '这个盘的官杀线索更突出，传统学业取象会关注考核要求和期限。要把“什么时候考、考哪些题、差在哪里”拆清楚，不把官杀出现直接当成自律或录取保证。';
+        adviceText = '备考时先用一套真题定位差距，再按题型排复习时间；学校和专业的选择，以现有成绩、考试要求和实际兴趣为准。';
     } else {
-        adviceText = '学习之路需要更多自律和环境支持，找到自己真正感兴趣的方向会事半功倍。优势可能在非学术领域，选择适合的赛道比强行补短板更重要。';
+        profileKey = 'practice_baseline';
+        levelLabel = '从实际练习找重点';
+        levelText = '这个盘没有适合单独放大的印、食伤或官杀学习线索。学业分析直接落到最近的作答表现：知识没记住、理解有偏差，还是完成时间不够，处理方法各不相同。';
+        adviceText = '先做一次符合当前阶段的练习，记录错误原因；记忆问题用间隔复习，理解问题回到例题，时间问题用限时训练。';
     }
-
-    if (hasWenChang) adviceText += ' 另外，命带「文昌贵人」（位于' + wenChangPos + '），在考试和写作方面有加分——关键时刻容易超常发挥。';
-    if (hasXueTang) adviceText += ' 命带「学堂」，天生对知识有好奇心，适合需要持续学习的环境和职业。';
+    if (guanScore > 0) adviceText += ' ' + rootText;
+    const evidenceRows = [
+        { key: 'input', label: '读书与资料', detail: yinPosText },
+        { key: 'output', label: '表达与解题', detail: hasOutput ? '食伤分布：' + positionEvidence(outputExposed.concat(outputHidden)) + '。' : '四柱天干与藏干均未见食伤；这不代表不会表达或缺少创造力。' },
+        { key: 'assessment', label: '考试与标准', detail: rootText }
+    ];
+    const scopeText = '以上按原局结构讨论学习环节，不推定已取得的学历，也不据此断定辍学、复读或录取年份。具体往事须另结合对应岁运判断。';
 
     return {
         dayGan: DAY, wuXing: DAY_WX,
         yinScore: yinScore, yinCount: yinCount,
         shiShangScore: shiShangScore,
         guanScore: guanScore,
+        hasGuanRoot: hasGuanRoot, guanRootPositions: guanRootPositions,
+        profileKey: profileKey, evidenceRows: evidenceRows,
+        scoreMeaning: '十神分布统计，不是学习力、创造力、自律力或学历评分',
+        scopeText: scopeText,
         hasWenChang: hasWenChang, hasXueTang: hasXueTang,
         levelLabel: levelLabel, levelText: levelText,
         yinPosText: yinPosText, adviceText: adviceText

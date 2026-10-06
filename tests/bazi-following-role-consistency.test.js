@@ -3,6 +3,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { validateRootMeaning } = require('../lib/ai-conversation-evidence');
+const { validateChartEvidence } = require('../lib/ai-chart-evidence');
 
 // Constructed mechanism cases, not independently adjudicated accuracy labels.
 // Read source only; no production environment, API module loading or services.
@@ -97,7 +99,7 @@ function loadPureAiFunctions() {
   const source = read('api/ai-chat.js');
   const scopeModule = {exports:{}};
   vm.runInNewContext(read('lib/hepan-reply-scopes.js'), {module:scopeModule});
-  const scope = {hepanReplyScopes:scopeModule.exports.hepanReplyScopes};
+  const scope = {hepanReplyScopes:scopeModule.exports.hepanReplyScopes, validateRootMeaning, validateChartEvidence};
   function extract(start, end) {
     const a = source.indexOf(start), b = source.indexOf(end, a + start.length);
     assert.ok(a >= 0 && b > a, 'pure function extraction boundary changed');

@@ -1,6 +1,46 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const ai = require('../api/ai-chat.js')._test;
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+// Exercise the actual pure prompt/validator source without importing the API,
+// auth, production configuration or datastore initialization.
+function loadPureLibrary(name) {
+  const scope = { module:{ exports:{} } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../lib', name), 'utf8'), scope);
+  return scope.module.exports;
+}
+const ai = {
+  ...loadPureLibrary('ai-conversation-evidence.js'),
+  ...loadPureLibrary('ai-chart-evidence.js'),
+  ...loadPureLibrary('hepan-reply-scopes.js')
+};
+const apiSource = fs.readFileSync(path.join(__dirname, '../api/ai-chat.js'), 'utf8');
+const pureStart = apiSource.indexOf('function validateFrozenYongSelection(');
+const pureEnd = apiSource.indexOf('function buildHepanDaYunFactFallback(', pureStart);
+assert.ok(pureStart >= 0 && pureEnd > pureStart);
+vm.runInNewContext(apiSource.slice(pureStart, pureEnd), ai);
+
+test('legacy saved annual ranking without a full adjudication still answers an open requested-year question', () => {
+  const candidate={year:2020,domain:'career',label:'事业工作',direction:'条件性',confidence:'中',
+    hasIndependentAnnualTrigger:true,eventCandidate:'工作事项被引动',evidence:['旧年度候选保留的依据']};
+  const chart={timingAdjudication:{overall:[candidate]}};
+  const text=ai.buildTimingAdjudicationBrief('回看2020年最突出的事件是什么？',chart);
+  assert.match(text,/本轮年份强制锚点.*2020年/);
+  assert.match(text,/旧年度候选保留的依据/);
+  assert.doesNotMatch(text,/同年其他领域依据/);
+});
+
+test('AI keeps decade domain support separate from the requested annual direction', () => {
+  const record={domain:'career',label:'事业工作',direction:'条件性',confidence:'中',hasIndependentAnnualTrigger:true,
+    eventCandidate:'工作事项被引动',evidence:['当年具体作用'],scenarioCandidates:['机会与压力并存']};
+  const chart={timingAdjudication:{requestedYear:{year:2011,adjudication:{age:30,primaryEvent:record,domainRecords:[record],
+    daYunBackground:{domainRecords:[{domain:'career',label:'事业工作',direction:'偏有利',conclusion:'十年平台背景有支持'}]}}}}};
+  const brief=ai.buildTimingAdjudicationBrief('2011年工作如何？',chart);
+  assert.match(brief,/该领域方向=条件性/);
+  assert.match(brief,/对应十年背景（与当年分开）=事业工作·偏有利/);
+  assert.match(brief,/不能再用“这步运好\/坏”覆盖该年结果/);
+});
 
 test('老师傅式裁决层按问题选择旺衰、格局、喜用和现实反馈任务', () => {
   const instruction = ai.buildExpertAdjudicationInstruction(
@@ -101,7 +141,7 @@ test('高考能否录取必须先给方向裁决并可按出生年年推定高�
   assert.equal(ai.detectTimingQuestionYear('我高考那年能不能考上？', chart), 2026);
   const brief = ai.buildTimingAdjudicationBrief('我高考那年能不能考上？', chart);
   assert.match(brief, /事件级直接裁决.*比较困难/);
-  assert.match(brief, /最可能的现实落点.*临场发挥/);
+  assert.match(brief, /取象参考（不是已发生结果，不要求复述）.*临场发挥/);
 
   const evasive = ai.runReplyValidation(chart, '流年财破印，印星代表学习，情况需要综合分析，也存在多种可能。', '我高考那年能不能考上？');
   assert.ok(evasive.some(item => item.startsWith('E9-封闭问题未直接裁决')));
@@ -109,7 +149,7 @@ test('高考能否录取必须先给方向裁决并可按出生年年推定高�
   assert.equal(direct.some(item => item.startsWith('E9-')), false);
 });
 
-test('确定事件按事件正负极性裁决，离婚风险与结婚把握不能判反', () => {
+test('婚事完成和关系压力分开，领域偏不利不能机械判不婚或离婚', () => {
   const relationship = {
     domain:'relationship', label:'婚恋合作', direction:'偏不利', confidence:'高', activationScore:9,
     eventCandidate:'关系边界与稳定性受考验', evidence:['流年冲日支'], hasIndependentAnnualTrigger:true,
@@ -118,16 +158,108 @@ test('确定事件按事件正负极性裁决，离婚风险与结婚把握不�
   const chart = { type:'bazi', timingAdjudication:{ requestedYear:{ year:2027, adjudication:{ year:2027, age:29, primaryEvent:relationship, domainRecords:[relationship] } } } };
 
   const divorce = ai.buildTimingAdjudicationBrief('2027年会离婚吗？', chart);
-  assert.match(divorce, /用户问的是“离婚或分手”/);
-  assert.match(divorce, /关系破裂风险较高/);
+  assert.match(divorce, /用户问的是“离婚”/);
+  assert.doesNotMatch(divorce, /第一句话必须直接回答“关系破裂风险较高”/);
   const marriage = ai.buildTimingAdjudicationBrief('2027年能不能结婚？', chart);
-  assert.match(marriage, /用户问的是“关系确认或结婚”/);
-  assert.match(marriage, /推进比较困难/);
+  assert.match(marriage, /用户问的是“结婚完成”/);
+  assert.match(marriage, /没有经过案例验证的婚事完成分类器/);
+  assert.match(marriage, /配偶星参与、宫位及岁运具体作用/);
+  assert.doesNotMatch(marriage, /降低结婚|第一句话必须直接回答“推进比较困难”/);
 
   const evasive = ai.runReplyValidation(chart, '2027年婚恋合作受到流年冲日支影响，需要结合双方情况综合看。', '2027年会离婚吗？');
-  assert.ok(evasive.some(item => item.startsWith('E9-封闭问题未直接裁决')));
-  const direct = ai.runReplyValidation(chart, '结论：关系破裂风险较高。2027年婚恋合作方向偏不利，流年冲日支，争执与关系边界更容易受考验。', '2027年会离婚吗？');
+  assert.ok(evasive.some(item => item.startsWith('E9-婚恋事项答非所问')));
+  const direct = ai.runReplyValidation(chart, '离婚不是这条日支被冲就能定下来的结果；这里直接支持的是夫妻争执，尚没有解除婚姻的独立依据。', '2027年会离婚吗？');
   assert.equal(direct.some(item => item.startsWith('E9-')), false);
+});
+
+function relationshipChart(direction = '偏不利', independent = true) {
+  const record = {
+    domain:'relationship', label:'婚恋合作', direction, confidence:'高', activationScore:9,
+    eventCandidate:'伴侣相处的压力', evidence:['流年辛合丙日主', '丑刑日戌'],
+    hasIndependentAnnualTrigger:independent, concreteOutcomeEstablished:false,
+    relationshipScopes:['marriage']
+  };
+  return { type:'bazi', timingAdjudication:{ requestedYear:{ year:2021,
+    adjudication:{ year:2021, age:34, primaryEvent:record, domainRecords:[record] }
+  } } };
+}
+
+test('开放前事问答的婚事候选也不由相处吉凶裁决，明确问相处仍校验方向', () => {
+  for (const independent of [true, false]) {
+    const chart = relationshipChart('偏不利', independent);
+    const year = chart.timingAdjudication.requestedYear.year;
+    const reply = year + '年我优先列出结婚这个候选。婚事更容易推进，依据是年干合日主；这不代表夫妻相处顺利，是否完成要与事实对照。';
+    const warnings = ai.runReplyValidation(chart, reply, year + '年发生过什么具体事情？');
+    assert.equal(warnings.some(w => /^E8-(?:应期方向冲突|把大运背景冒充流年应期)/.test(w)), false);
+    const quality = ai.runReplyValidation(chart, '这一年婚恋方向偏有利，相处更容易推进，结婚也是一个候选。', year + '年感情整体如何？');
+    assert.ok(quality.some(w => w.startsWith('E8-应期方向冲突')));
+  }
+});
+
+test('positive marriage candidate is not blocked by adverse relationship quality or incomplete domain trigger flag', () => {
+  const q = '2021年会不会结婚？';
+  const answer = '我会把2021年结婚列为首选候选。辛财星与丙日主相合，岁运对关系位置的作用同时需要核对；相处有摩擦不等于婚事不能完成。这是传统取象候选，不是已发生事实。';
+  for (const direction of ['偏不利','偏有利','条件性']) {
+    for (const independent of [true,false]) {
+      const chart = relationshipChart(direction, independent);
+      const record = chart.timingAdjudication.requestedYear.adjudication.primaryEvent;
+      assert.equal(ai.closedOutcomeVerdict(record, q), null);
+      const warnings = ai.runReplyValidation(chart, answer, q);
+      assert.equal(warnings.some(w => /^E[89]-/.test(w)), false, warnings.join('\n'));
+    }
+  }
+});
+
+test('unverified completion-looking fields cannot create a marriage verdict', () => {
+  const record = relationshipChart('偏有利').timingAdjudication.requestedYear.adjudication.primaryEvent;
+  Object.assign(record, { marriageCompleted:true, outcome:'结婚', verified:true, confidence:'高' });
+  for (const q of ['2021年能不能结婚？','2021年会离婚吗？','2021年能领证吗？']) {
+    assert.equal(ai.closedOutcomeVerdict(record, q), null);
+  }
+});
+
+test('恋爱同居订婚领证婚礼离婚分居分手复合分别回答', () => {
+  const cases = [
+    ['能恋爱吗','恋爱或确定交往关系'],['能同居吗','同居'],['能订婚吗','订婚'],
+    ['能领证吗','登记领证'],['能登记结婚吗','登记领证'],['能办婚礼吗','举办婚礼'],
+    ['会结婚吗','结婚完成'],['会离婚吗','离婚'],['会分居吗','分居'],
+    ['会分手吗','分手'],['能复合吗','复合']
+  ];
+  for (const [q, expected] of cases) {
+    assert.equal(ai.detectRelationshipOutcomeEvent('2021年'+q).key, expected);
+    assert.equal(ai.detectTimingQuestionDomain(q), 'relationship');
+  }
+  for (const [q, wrong] of [
+    ['2021年能领证吗？','2021年恋爱有机会。'],
+    ['2021年能办婚礼吗？','2021年可以把领证列为候选。'],
+    ['2021年会离婚吗？','2021年有分居的倾向。'],
+    ['2021年会分居吗？','2021年可能会争吵。']
+  ]) assert.ok(ai.runReplyValidation(relationshipChart(), wrong, q).some(w => w.startsWith('E9-婚恋事项答非所问')));
+});
+
+test('已发生恋爱分手领证是背景，不成为本轮必须再预测的结局', () => {
+  const cases = [
+    ['我恋爱五年了，2021年能结婚吗？','结婚完成','2021年结婚是首选候选，具体仍要核对岁运依据。'],
+    ['去年分手，2021年能不能复合？','复合','2021年复合不是现有证据的首选；不能把联系恢复当成重新在一起。'],
+    ['已经领证，2021年能办婚礼吗？','举办婚礼','2021年办婚礼有推进线索，登记完成的背景不重复当作本年事件。']
+  ];
+  for (const [q, key, reply] of cases) {
+    assert.equal(ai.detectRelationshipOutcomeEvent(q).key, key);
+    assert.equal(ai.runReplyValidation(relationshipChart(), reply, q).some(w=>w.startsWith('E9-')), false);
+  }
+  assert.equal(ai.detectRelationshipOutcomeEvent('今年能领证和办婚礼吗？').key, '登记领证、举办婚礼');
+});
+
+test('只问相处质量与其他事件的方向契约仍保留', () => {
+  const chart = relationshipChart('偏不利');
+  const warnings = ai.runReplyValidation(chart, '2021年感情方向偏有利。', '2021年感情整体如何？');
+  assert.ok(warnings.some(w => w.startsWith('E8-应期方向冲突')));
+  const record = { direction:'偏不利', hasIndependentAnnualTrigger:true, activationScore:8 };
+  for (const [q, expected] of [
+    ['会不会破财？','破财风险较高'],['会不会失业？','岗位中断风险较高'],
+    ['能否考上？','比较困难'],['能不能升职？','推进比较困难'],
+    ['能不能回款？','兑现比较困难'],['会不会换工作？','变动倾向较强']
+  ]) assert.equal(ai.closedOutcomeVerdict(record,q),expected);
 });
 
 test('事故、破财、失业等负面事件使用风险高低而不是好运坏运套话', () => {

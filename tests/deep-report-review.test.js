@@ -1,6 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const test=require('node:test'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..'),model=require('../lib/calibration-model.js');
+const mechanismFixture=require('./helpers/imagery-mechanism-fixture');
 const option={key:'wealth:peer-loss',label:'合作支出',detail:'合作或人情使留存减少',domain:'wealth',manifestation:'loss',mechanism_key:'peer-wealth',evidence:['流年比劫作用'],followup_options:[{key:'borrow',label:'朋友借款'}]};
 const event=(year,extra={})=>({event_key:'year:'+year,event_year:year,domain:'wealth',prompt:year+'年实际更接近哪项？',options:[option],answer:'yes',match_level:'exact',selected_option:option.key,...extra});
 const future=(extra={})=>({...option,year:2027,hasIndependentAnnualTrigger:true,...extra});
@@ -56,7 +57,7 @@ function clientFixture({authenticated=false,stored=[],post}={}){
     alert(s){box.alerts.push(s);},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},
     Auth:{getToken:()=>authenticated?'mock-token':''},ChatPersistence:{chartIdentity:()=> 'chart-key'},
     ZhishiAIContext:{buildChartData:()=>({fourPillars:{},birthInfo:{}})},ZhishiCalibrationModel:model,
-    fetch(url,opts){if(opts.method==='POST')return post(JSON.parse(opts.body));return Promise.resolve({ok:true,json:async()=>({ready:true,calibration:{candidate_version:'bazi-cal-v13'},events:stored})});}};
+    fetch(url,opts){if(opts.method==='POST')return post(JSON.parse(opts.body));return Promise.resolve({ok:true,json:async()=>({ready:true,calibration:{candidate_version:'bazi-cal-v14'},events:stored})});}};
   box.window=box;
   let src=fs.readFileSync(path.join(root,'js/chart-calibration.js'),'utf8').replace('root.ZhishiCalibration.beforeAI = inspectFirstClick;','root.ZhishiCalibration.beforeAI = inspectFirstClick;root.__save=saveAnswer;');
   vm.runInNewContext(src,box);return {box,node,storage};
@@ -70,7 +71,8 @@ test('guest report opening reuses answers and returning to report invokes the ca
   assert.equal((await box.ZhishiCalibration.getReportReview({})).answered,1);
 });
 test('report bridge uses the frozen annual trigger without recalculating or changing facts',async()=>{
-  const picked=model.professionalCandidates('wealth',{triggers:[{type:'比肩夺财'}],reportLifeContext:{status:'unknown',age:34}})[0];
+  const evidence=mechanismFixture('比肩夺财',{status:'unknown',age:34});
+  const picked=model.professionalCandidates('wealth',evidence)[0];
   const {box}=clientFixture({stored:[event(2021,{options:[picked],selected_option:picked.key}),event(2024,{options:[picked],selected_option:picked.key})]});
   box._bazi={day:{gan:'甲'}};
   box.ZhishiAIContext.buildChartData=()=>({fourPillars:{},birthInfo:{year:1990,gender:'male'}});
@@ -78,6 +80,7 @@ test('report bridge uses the frozen annual trigger without recalculating or chan
   box.BaZiChain={analyzeLiuNian(){throw Error('Must not recalculate');}};
   const facts={fiveYear:{years:[{year:2027,daYunStatus:'active',daYun:{gan:'甲',zhi:'子'},pillar:{gan:'丁',zhi:'未'},
     dynamic:{triggers:[{type:'比肩夺财',detail:'财星受比劫牵动',isGood:false}],eventAdjudication:{domainRecords:[{domain:'wealth',hasIndependentAnnualTrigger:true}]}}}]}};
+  facts.core=evidence.reportMechanismContext;facts.fiveYear.years[0].dynamic.triggers=evidence.triggers;
   const before=JSON.stringify(facts),r=await box.ZhishiCalibration.getReportReview(facts);
   assert.equal(r.adjustments.length,1);assert.equal(r.adjustments[0].state,'repeated');assert.equal(JSON.stringify(facts),before);
   facts.fiveYear.years[0].dynamic.eventAdjudication.domainRecords[0].hasIndependentAnnualTrigger=false;
@@ -128,9 +131,9 @@ test('the same review adjustment in multiple future years is grouped without los
 
 test('common-process review explains cross-setting references, groups windows and escapes source text',()=>{
   const ctx={window:{},document:{readyState:'loading',addEventListener(){}}};vm.runInNewContext(fs.readFileSync(path.join(root,'js/result.js'),'utf8'),ctx);
-  const school=model.professionalCandidates('study',{triggers:[{type:'伤官见官'}],reportLifeContext:{status:'student',age:20}})[0];
+  const school=model.professionalCandidates('study',mechanismFixture('伤官见官',{status:'student',age:20}))[0];
   school.detail+='<img src=x onerror=alert(1)>';
-  const work=model.professionalCandidates('career',{triggers:[{type:'伤官见官'}],reportLifeContext:{status:'working',age:30}})[0];
+  const work=model.professionalCandidates('career',mechanismFixture('伤官见官',{status:'working',age:30}))[0];
   const r=review([event(2024,{options:[school],selected_option:school.key})],[{...work,year:2027,hasIndependentAnnualTrigger:true},{...work,year:2029,hasIndependentAnnualTrigger:true}]);
   const html=ctx.reportReviewHTML(r);assert.match(html,/可跨场景参考/);assert.match(html,/2027、2029年/);assert.match(html,/&lt;img/);assert.doesNotMatch(html,/<img|当前未找到/);assert.equal((html.match(/伤官见官 · 共同作用方式/g)||[]).length,1);
 });

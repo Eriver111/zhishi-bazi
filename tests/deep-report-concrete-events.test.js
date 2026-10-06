@@ -2,7 +2,8 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const Imagery=require('../js/report-imagery'),Model=require('../js/calibration-model');
 const root=path.join(__dirname,'..');
-const candidate=(status,domain='career')=>Imagery.candidates(domain,{triggers:[{type:'枭夺食',detail:'合成年度独立触发'}],reportLifeContext:{status,age:26}})[0];
+const mechanismFixture=require('./helpers/imagery-mechanism-fixture');
+const candidate=(status,domain='career')=>Imagery.candidates(domain,mechanismFixture('枭夺食',{status,age:26}))[0];
 const event=(option,year=2024,extra={})=>({event_key:'synthetic-'+year,event_year:year,answer:'yes',selected_option:option.key,match_level:'exact',options:[option],...extra});
 
 test('owl/seal questions state an actual returned submission and a missed deadline, not generic affairs',()=>{

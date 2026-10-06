@@ -72,7 +72,7 @@ function buildStudyFixture({ strength = '中和', sealRole = '用神', sealCount
 test('strong Ji seals do not automatically produce excellent study claims', () => {
   const result = buildStudyFixture({ strength: '偏强', sealRole: '忌神', sealCount: 4 });
   assert.notEqual(result.absorption.state, '天然优秀');
-  assert.match(result.absorption.conclusion, /思虑|行动|转化|需要输出/);
+  assert.match(result.absorption.conclusion, /独立练习|完整作答|检查/);
 });
 
 test('WenChang alone cannot decide study level', () => {
@@ -304,7 +304,7 @@ test('yangren output is always marked for manual review', () => {
   assert.equal(chain.confidence, 'limited');
 });
 
-test('weak body with officers and no seals produces conditional learning pressure only', () => {
+test('weak body plus an officer and no seal does not invent heavy-killer learning pressure', () => {
   const result = DeepReport.buildStudyFacts(chart({
     year: { gan: '丙', zhi: '巳' },
     month: { gan: '乙', zhi: '卯' },
@@ -314,7 +314,7 @@ test('weak body with officers and no seals produces conditional learning pressur
     yongJi: { yongShen: [], xiShen: [], jiShen: [] }, actionChains: [], structuralRisks: [], relationEvents: [],
   }, calculator);
   const pressure = findStudyChain(result, 'learning_pressure');
-  assert.equal(pressure.present, true);
+  assert.equal(pressure.present, false);
   assert.notEqual(pressure.confidence, 'strong');
   assert.match(pressure.conclusion, /压力|承载|条件/);
   assert.notEqual(findStudyChain(result, 'sha_yin').confidence, 'strong');
@@ -344,7 +344,7 @@ test('effective Sha-Yin with useful seal outranks Guan-Yin and yields a persiste
   assert.equal(shaYin.profile.key, 'persistent_sha_yin');
   assert.equal(guanYin.profile.key, 'disciplined_guan_yin');
   assert.ok(shaYin.profile.rank > guanYin.profile.rank);
-  assert.match(shaYin.profile.outcomeText, /不怕重复|肯下功夫|长期投入/);
+  assert.match(shaYin.profile.outcomeText, /准备周期长|教材或老师|按章节练习/);
 });
 
 test('useful wealth regulating an excessive Ji seal is positive unless wealth breaks the seal', () => {
@@ -416,35 +416,52 @@ test('metal-water and wood-fire clarity require actual chains and reject seasona
   assert.notEqual(scorched.profile.key, 'wood_fire_clarity');
 });
 
-test('authoritative severe study blockers lower the education band by at least two levels', () => {
+test('study obstructions retain concrete risks without subtracting an invented education score', () => {
   const bazi = chart({
     year: { gan: '壬', zhi: '子' }, month: { gan: '庚', zhi: '申' }, hour: { gan: '甲', zhi: '寅' },
   });
-  const base = buildProfileFacts(bazi, { pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'] });
-  for (const blocker of ['财坏印', '身弱杀旺无印', '用神无力且空亡']) {
+  for (const blocker of ['财坏印', '用神无力且空亡']) {
     const blocked = buildProfileFacts(bazi, {
       pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'],
       structuralRisks: [{ type: blocker, why: blocker }],
     });
-    assert.ok(blocked.educationBand.rank <= base.educationBand.rank - 2, blocker);
+    assert.ok(blocked.limitations.length > 0, blocker);
+    assert.equal(blocked.educationBand.rank, null);
+    assert.equal(blocked.educationBand.publicKey, 'not-estimated');
   }
 });
 
-test('study ranks expose only high ordinary or low public bands', () => {
-  assert.deepEqual(DeepReport.__test.publicStudyBand(9), { key: 'high', label: '高学历' });
-  assert.deepEqual(DeepReport.__test.publicStudyBand(6), { key: 'ordinary', label: '普通学历' });
-  assert.deepEqual(DeepReport.__test.publicStudyBand(2), { key: 'low', label: '低学历' });
-  assert.deepEqual(DeepReport.__test.publicStudyBand(3), { key: 'low', label: '低学历' });
-  assert.deepEqual(DeepReport.__test.publicStudyBand(4), { key: 'ordinary', label: '普通学历' });
-  assert.deepEqual(DeepReport.__test.publicStudyBand(7), { key: 'ordinary', label: '普通学历' });
-  assert.deepEqual(DeepReport.__test.publicStudyBand(8), { key: 'high', label: '高学历' });
+test('legacy education ranks are not treated as measured qualifications', () => {
+  for (const rank of [2, 3, 4, 6, 7, 8, 9]) {
+    assert.deepEqual(DeepReport.__test.publicStudyBand(rank), { key: 'not-estimated', label: '学习结构参考' });
+  }
 });
 
-test('study facts retain the internal rank but publish a three-band education result', () => {
+test('strong study profiles retain their structure without inventing an education floor', () => {
   const result = buildProfileFacts(chart({
     year: { gan: '壬', zhi: '子' }, month: { gan: '庚', zhi: '申' }, hour: { gan: '甲', zhi: '寅' },
   }), { pattern: '杀印相生格', actionChains: ['杀印相生'], yongShen: ['水'] });
-  assert.ok(result.educationBand.rank >= 8);
-  assert.equal(result.educationBand.publicKey, 'high');
-  assert.equal(result.educationBand.publicLabel, '高学历');
+  assert.equal(result.profile.key, 'persistent_sha_yin');
+  assert.equal(result.profile.educationFloor, undefined);
+  assert.equal(result.educationBand.rank, null);
+  assert.equal(result.educationBand.publicLabel, '学习结构参考');
+});
+
+test('missing seals and weak strength alone cannot manufacture heavy-killer pressure', () => {
+  const bazi = chart({ year:{gan:'庚',zhi:'酉'}, month:{gan:'乙',zhi:'卯'}, day:{gan:'甲',zhi:'寅'}, hour:{gan:'丁',zhi:'未'} });
+  const plain = buildProfileFacts(bazi, {strength:'偏弱'});
+  const heavy = buildProfileFacts(bazi, {strength:'偏弱', actionChains:['七杀旺且无制']});
+  const relieved = buildProfileFacts(bazi, {strength:'偏弱', pattern:'食神制杀格', actionChains:['七杀旺；食神制杀']});
+  assert.equal(findStudyChain(plain,'learning_pressure').present,false);
+  assert.equal(findStudyChain(heavy,'learning_pressure').present,true);
+  assert.equal(findStudyChain(relieved,'learning_pressure').present,false);
+});
+
+test('negated wealth-breaks-seal rule cannot become a study interruption risk', () => {
+  const bazi = chart({year:{gan:'戊',zhi:'辰'},month:{gan:'壬',zhi:'子'}});
+  for (const statement of ['没有财破印','财破印未成立','未见财坏印','不构成财破印']) {
+    const facts=buildProfileFacts(bazi,{actionChains:[statement]});
+    assert.equal(facts.limitations.some(row=>row.key==='wealth_breaks_seal'),false,statement);
+  }
+  assert.equal(buildProfileFacts(bazi,{actionChains:['财破印成立']}).limitations.some(row=>row.key==='wealth_breaks_seal'),true);
 });

@@ -23,7 +23,7 @@ function worker() {
     },
     caches: {
       open: async () => cache, match: cache.match,
-      keys: async () => ['zhishi-v60', 'zhishi-v62', 'another-app'],
+      keys: async () => ['zhishi-v60', 'zhishi-v62', 'zhishi-v63', 'another-app'],
       delete: async key => deleted.push(key),
     },
     self: {
@@ -143,5 +143,5 @@ test('only exact versioned shell resources use cache-first; business scripts rem
 
 test('activation removes only obsolete caches owned by this site', async () => {
   const sw = worker(); await sw.activate();
-  assert.deepEqual(sw.deleted, ['zhishi-v60']);
+  assert.deepEqual(sw.deleted, ['zhishi-v60', 'zhishi-v62']);
 });

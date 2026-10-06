@@ -178,7 +178,7 @@ test('non-working settings and paid-service hypotheses do not manufacture a busi
 
 test('event type is supplied only after independent evidence and does not select opposite endurance outcomes',()=>{
  assert.deepEqual(Imagery.candidates('career',{reportLifeContext:{status:'working',age:35},reportEventType:'submission-rework'}),[]);
- const analysis={triggers:[{type:'枭夺食',detail:'合成独立年度触发'}],reportLifeContext:{status:'working',age:35}};
+ const analysis=require('./helpers/imagery-mechanism-fixture')('枭夺食',{status:'working',age:35});
  const before=JSON.stringify(analysis),rows=Imagery.candidates('career',analysis);
  assert.equal(rows.length,1);
  assert.equal(rows[0].reportEventType,'submission-rework');

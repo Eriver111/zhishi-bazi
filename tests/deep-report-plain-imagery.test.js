@@ -2,6 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const crypto=require('node:crypto');
 const Imagery=require('../js/report-imagery');
 const Model=require('../js/calibration-model');
+const mechanismFixture=require('./helpers/imagery-mechanism-fixture');
 const states=['student','exam','working','transition','home','retired','unknown'];
 
 test('report wording does not change historical questions or their stored event identities',()=>{
@@ -76,7 +77,7 @@ test('historical learning context remains conditional and cannot borrow current 
 });
 
 test('candidate report prose and calibration question are separate fields with stable mechanism keys',()=>{
- const a={triggers:[{type:'枭夺食',detail:'合成年度独立触发'}],reportLifeContext:{status:'student',age:16}};
+ const a=mechanismFixture('枭夺食',{status:'student',age:16});
  const before=JSON.stringify(a),row=Imagery.candidates('study',a)[0];
  assert.equal(row.mechanism_key,'rule:seal-restrains-output');
  assert.match(row.detail,/正常修改并按时完成不算/);
@@ -101,7 +102,7 @@ test('direct report helper also respects the existing minor finance boundary',()
 });
 
 test('review model retains report scene and meaning identity without changing event identity',()=>{
- const option=Imagery.candidates('study',{triggers:[{type:'枭夺食',detail:'合成独立触发'}],reportLifeContext:{status:'student',age:20}})[0];
+ const option=Imagery.candidates('study',mechanismFixture('枭夺食',{status:'student',age:20}))[0];
  const candidate={...option,year:2027,hasIndependentAnnualTrigger:true};
  const review=Model.buildReportReview([], [candidate], {currentYear:2026});
  assert.equal(review.candidates.length,1);
