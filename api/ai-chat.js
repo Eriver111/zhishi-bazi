@@ -162,7 +162,7 @@ const SYSTEM_PROMPT = `你是"知时先生"，一位精通中国传统命理学�
 - **dayBranchAnalysis**（日支夫妻宫专项）：日支、十神映射、根气、冲合刑害及三合三会成员属于结构事实；“配偶性格、婚姻稳定度、聚散或矛盾程度”属于可校正推断。分析婚姻时应引用结构证据，但不得把 stability、ssDesc、summary 当作用户现实婚姻的既成事实。用户明确提供的恋爱、结婚、离婚、分居等经历优先，冲突时保留日支结构并重写解释。
 - **合盘 analysis**（双盘关系候选）：双方各自四柱、日主、旺衰、喜用忌、大运顺序及跨盘干支关系属于结构证据；契合评分只是规则启发式指数，不是现实相处质量、成功率或事件概率。ganDesc、zhiDesc、coreMode、yearlyAdvice、dosAndDonts、互补描述等均是可校正候选，不得当作双方已经发生的经历。用户明确陈述的实际关系、相处方式与事件优先，冲突时保留结构关系、撤回未兑现推断并重新解释。
 - **liuNianAnalysis**（流年三方互动）：流年干支、大运干支、原局关系以及岁运并临、天克地冲、三刑成员等属于结构事实；trigger 的现实事项、dangerScore/opportunityScore 和综合判词属于规则方向推断，不是事件已经发生或现实概率。分析今年运势时应以具体结构触发为依据并使用条件语言；用户已发生的实际情况优先，可用来校正触发最终落在哪个领域，但不能倒改流年干支与结构关系。
-- **timingAdjudication**（岁运应事裁决）：这是程序把原局方向、大运趋势、流年触发和实际年龄合并后的候选排序。current 给出当前年的主次落点，byDomain 给出学业、事业、财富、婚恋、家庭、身心、变动各自最值得核对的年份。它解决“什么年龄更可能应什么事、哪一年信号最集中”，但仍不是现实事实。回答应期问题时先读取用户所问领域，优先回答排名第一的年份和主事件，再给一个次选；禁止把七个领域全列一遍，也禁止把候选说成必然发生。
+- **timingAdjudication**（岁运应事领域裁决）：这是程序按年度结构触发和年龄生成的领域排序，大运背景另列。current/byDomain 只指示优先检查的领域和年份，不是已验证的具体事件分类器。用户指定领域时先检查该领域；开放前事问题须比较同年的各领域及天干、地支实际证据，首位领域不是必须回答的事件。eventCandidate/scenarioCandidates 是规则模板，不是新增证据，不能直接抄成发生过的事情。禁止把七个领域全列一遍，也禁止把候选说成必然发生。
 - **currentDaYun**（当前所处大运）：已精确计算，直接引用其干支和十神
 - **currentLiuNian**（当前流年）：已精确计算，结合大运分析流年运势时以此为准。若 chartData 中有当前大运和当前流年数据，直接使用，不要自行推算。
 - **relationEvents**（四柱关系事件）：系统枚举的天干五合、天干克、六冲、六害、刑、六合、三合局、半合、三会方、半会等事实层事件。对称关系（五合/六冲/六害/刑/六合）的 source/target 仅为规范排序、不赋因果语义；天干克保留真实克方方向。引用时按事件类型与柱位描述即可。
@@ -357,7 +357,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261006a');
+  res.setHeader('X-Zhishi-AI-Policy', '20261006b');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -1033,7 +1033,7 @@ function runReplyValidation(chartData, reply, question) {
     var domainSentences = opening.split(/[。；\n]/).filter(function(line) { return domainRe.test(line); });
     if (!domainSentences.length && requestedTimingDomain) {
       warnings.push('E8-缺少应期领域锚点：用户询问' + timingSelection.year + '年，回答必须先落到「' + timingRecord.label + '」而不是改答其他领域');
-    } else if (domainSentences.length && !relationshipOccurrenceReply) {
+    } else if (requestedTimingDomain && domainSentences.length && !relationshipOccurrenceReply) {
       var domainOpening = domainSentences.slice(0, 3).join('；');
       var saysPositive = /偏有利|有利为主|方向(?:是|为)?有利|向好|利大于弊|更容易推进/.test(domainOpening);
       // A concrete cost or pressure is not a claim that the entire domain is adverse.
@@ -1047,8 +1047,10 @@ function runReplyValidation(chartData, reply, question) {
         warnings.push('E8-应期方向冲突：' + timingSelection.year + '年「' + timingRecord.label + '」为条件性，回答却单向定成' + (saysPositive ? '有利' : '不利'));
       }
     }
-    if ((requestedTimingDomain || domainSentences.length) && !relationshipOccurrenceReply && timingRecord.hasIndependentAnnualTrigger === false && !/不是强应期|不构成强应期|没有[^。；\n]{0,18}(?:独立|集中)(?:结构)?触发|只能[^。；\n]{0,18}主题|不能[^。；\n]{0,18}具体事件/.test(opening)) {
-      warnings.push('E8-把大运背景冒充流年应期：该领域没有当年独立结构触发，回答必须明确只能定主题、不能断具体事件');
+    // A first-ranked domain is not the subject of an open retrospective query.
+    // Its missing trigger must not veto another domain or actual stem evidence.
+    if (requestedTimingDomain && !relationshipOccurrenceReply && timingRecord.hasIndependentAnnualTrigger === false && !/不是强应期|不构成强应期|(?:没有|未列出|未收录)[^。；\n]{0,18}(?:独立|集中)(?:结构|年度)?触发|只能[^。；\n]{0,18}主题|不能[^。；\n]{0,18}具体事件|不能仅凭[^。；\n]{0,24}(?:背景|主题)/.test(opening)) {
+      warnings.push('E8-把大运背景冒充流年应期：所问领域的评分记录未列出独立年度触发；不能仅凭大运背景或十神主题下事件结论。核对另列的年度天干、地支和实际路径，不得把本领域标记泛化成全年没有作用。');
     }
     if (isClosedOutcomeQuestion(question)) {
       var directOpening = String(reply).slice(0, 180);
@@ -1578,16 +1580,18 @@ function buildTimingAdjudicationBrief(question, chartData) {
     lines.push('【本轮年份强制锚点】' + exact.year + '年，年龄' + (exactAge === null || exactAge === undefined ? '待核' : exactAge + '岁')
       + (overallVerdict ? '；全年综合方向=' + overallVerdict : '')
       + (domain ? '；首要回答领域=' : '；内部排序首位（供核对）=') + exactRecord.label + '；该领域方向=' + exactRecord.direction + '；置信度=' + exactRecord.confidence
-      + '；候选落点=' + exactRecord.eventCandidate + '；依据=' + (exactRecord.evidence || []).join('；'));
-    if (exactRecord.scenarioCandidates && exactRecord.scenarioCandidates.length) {
-      lines.push((domain ? '本领域取象参考' : '排序首位的取象参考') + '（不是已发生结果，不要求复述）=' + exactRecord.scenarioCandidates.join('；'));
+      + '；依据=' + (exactRecord.evidence || []).join('；'));
+    if (domain && exactRecord.scenarioCandidates && exactRecord.scenarioCandidates.length) {
+      lines.push('本领域取象参考（规则模板，不是新增证据或已发生结果，不要求复述）=' + exactRecord.scenarioCandidates.join('；'));
     }
     if (!domain) {
       lines.push('用户没有限定领域，首位领域不是必须回答的答案。综合比较同年的实际证据，再选少量可核对事件；若首位只有泛化过程，不要为服从排名而舍弃其他领域的具体依据。没有被列为首位也不等于没有该类事件。不能把任意关系动作直接升级为结婚、离婚或失业。');
       (exact.adjudication && exact.adjudication.domainRecords || []).filter(function(record) {
-        return record && record !== exactRecord && record.domain !== exactRecord.domain && record.hasIndependentAnnualTrigger;
+        return record && record !== exactRecord && record.domain !== exactRecord.domain && (record.evidence || []).length;
       }).forEach(function(record) {
-        lines.push('同年其他领域依据：' + record.label + '；局部方向=' + record.direction + '；依据=' + (record.evidence || []).join('；'));
+        lines.push('同年其他领域依据：' + record.label + '；局部方向=' + record.direction
+          + '；该领域评分收录独立年度触发=' + (record.hasIndependentAnnualTrigger ? '是' : '否（不否定另列的年度作用事实）')
+          + '；依据=' + (record.evidence || []).join('；'));
         appendEventScope(record);
       });
     }
@@ -1603,12 +1607,14 @@ function buildTimingAdjudicationBrief(question, chartData) {
     if (exactRecord.hasIndependentAnnualTrigger === false) {
       lines.push(relationshipQuestion
         ? '本领域记录没有列出独立年度触发；这不是婚事完成模型的否决。须回到已提供的天干、藏星载体、宫位和岁运原始事实核对，确无所问事项依据时不硬断结果，不能只靠十神名称补出婚事。'
-        : '本领域只有大运背景或流年十神主题，没有当年刑冲合害等独立结构触发：可以回答“最可能涉及什么主题”，但必须明确它不是强应期，不能断具体事件会发生。');
+        : '当前' + (domain ? '所问' : '排序首位') + '领域的评分记录未收录独立年度触发。这个局部标记不代表全年没有结构作用，也不否定另列的年度天干、地支或连续路径事实。不能仅凭大运背景或十神主题断具体事件；另有当年实际作用时核对其对象、方向、阶段和制约，连通或同气本身也不证明现实结果。');
     }
-    lines.push('本轮回答须保留“' + exactRecord.label + '·' + exactRecord.direction + '”的结构依据，但不要把内部方向、置信度或“条件性候选”标签抄给用户。只取有支持的前1至2项事件；不把不同领域都改写成“安排被打断、重新调整、多花钱和时间”。这些只是过程或成本，不能代替一次可核对的事情，也不能把同一件事的成本算成第二次命中。根据各事件自己的证据区分收入增加、投资损失、购置资产，以及主动换工作、被辞退、录用等不同结果；不能因为它们都涉及钱或变动而互相替代。没有该事件依据时省略该项，不列多个场景让用户挑。条件性表示支持与代价并存，不等于没有内容可说。不能因缺少具体事故事实就断言“压力不在有人出事”，也不能反过来断言有人必定出事。若全年综合与所问领域不同，只解释与问题有关的差别，禁止全年分数覆盖领域裁决。');
+    lines.push((domain ? '本轮回答须保留所问领域“' + exactRecord.label + '·' + exactRecord.direction + '”的结构依据。'
+      : '本轮只锁定年份和真实结构事实，不强制保留排序首位领域或其方向。所选事情须使用它自己所属领域的依据；未选首位领域不需要解释或补答。')
+      + '不要把内部方向、置信度或“条件性候选”标签抄给用户。只取有支持的前1至2项事件；不把不同领域都改写成“安排被打断、重新调整、多花钱和时间”。这些只是过程或成本，不能代替一次可核对的事情，也不能把同一件事的成本算成第二次命中。根据各事件自己的证据区分收入增加、投资损失、购置资产，以及主动换工作、被辞退、录用等不同结果；不能因为它们都涉及钱或变动而互相替代。没有该事件依据时省略该项，不列多个场景让用户挑。条件性表示支持与代价并存，不等于没有内容可说。不能因缺少具体事故事实就断言“压力不在有人出事”，也不能反过来断言有人必定出事。若全年综合与所问领域不同，只解释与问题有关的差别，禁止全年分数覆盖领域裁决。');
     if (exactRecord.domain === 'relationship') lines.push('关系领域的方向描述相处支持或压力，不裁决婚事是否完成。关系有矛盾与当年结婚可以同时存在，不能仅因方向偏不利否决婚事，也不能因方向偏有利宣布已经结婚。区分婚事年份与婚后相处质量。');
     lines.push('不要给坏事加没有证据的上限：禁止“方向不算坏到底、不会太坏”等兜底。喜用运只表示扶抑层面的帮助，不证明十年现实顺利、有人搭手、有资源可用或事情最终能解决，更不能据此说“所以不是家里出事的格局”。没有事实反馈时，不能确认也不能排除家人出事。现实积极面必须有独立的事件依据，否则不必强凑好坏平衡。推断始终是传统取象，不能用“这一年的事实是”将它写成已验证经历。');
-    lines.push('用词检查：若依据只有喜用或帮身，写“扶抑层面有利”，不要缩写成“你个人顺、你自身状态得到补充、那十年顺”。这是结构关系，不是个人现实处境的事实。年龄只筛选合理场景，18岁不自动等于参加高考或刚进大学；用户没说在读时应写“若当时在读，可能影响学费或上学安排”。');
+    lines.push('用词检查：若依据只有喜用或帮身，写“扶抑层面有利”，不要缩写成“你个人顺、你自身状态得到补充、那十年顺”。这是结构关系，不是个人现实处境的事实。年龄只筛选合理场景，18岁不自动等于参加高考或刚进大学；成年人也可能在读、备考或考证，不得只凭年龄排除学业。未提供身份时不默认在读或在职，不据此补出学费、房租等开支。父母的婚姻与本人的婚恋必须区分主体。');
   } else if (exact && exact.year !== null && !exact.record) {
     lines.push('用户指定了' + exact.year + '年，但数据中没有该年或所问领域的有效裁决；必须承认无法确认，不得改用其他年份或只凭十神补断。');
     if (isClosedOutcomeQuestion(question)) lines.push('【封闭问题直接裁决】第一句话回答“目前不能确认”，然后只说明缺少哪项关键数据。');
@@ -1619,13 +1625,15 @@ function buildTimingAdjudicationBrief(question, chartData) {
       appendEventScope(row);
       lines.push('候选' + (index + 1) + '：' + row.year + '年（约' + (row.age === null ? '年龄待核' : row.age + '岁') + '，'
         + row.daYunGan + row.daYunZhi + '运/' + row.liuNianGan + row.liuNianZhi + '年）'
-        + row.label + '，' + row.direction + '，置信度' + row.confidence + '；最可能落点=' + row.eventCandidate
+        + row.label + '，' + row.direction + '，置信度' + row.confidence
         + '；依据=' + (row.evidence || []).join('；'));
     });
   }
   lines.push(relationshipQuestion
     ? '使用要求：先回答所问婚恋事项的首选判断与年份，必要时一句话说明不能据此确定哪项结果，再给最多3条实际依据。关系质量与事件完成分开；候选不是已发生事实，用户真实经历不符时承认未命中，不能把领证改解释成同居、把离婚改解释成争吵。'
-    : '使用要求：这是按原局方向、大运趋势、流年触发和实际年龄筛出的主次候选。未指定年份时先选最强的一年，必要时再给一个次选；回答时先给“能/难/不稳/不能确认”的直接裁决，再说最可能发生在哪个现实方面，最后最多给3条依据；不能把所有可能都罗列一遍，也不能把候选写成已发生事实。用户真实经历不符时，立即校正落点，不得嘴硬。');
+    : isClosedOutcomeQuestion(question)
+      ? '使用要求：先直接回答所问事项，再给最多3条对应的实际依据；领域方向不是事件已发生的事实，不把候选写成保证结果。用户真实经历不符时承认未命中。'
+      : '使用要求：先给少量有实际依据、可分别核对的事情及年份，再给最多3条依据。未指定年份时比较各年实际作用，不把排序第一自动当命中。没有具体事项的证据时只说明已经支持的影响，不用通用过程、成本或多个场景凑成两件事，不让用户替系统挑答案。候选不是已发生事实；用户真实经历不符时承认未命中，不换同义说法维护原判断。');
   return lines.join('\n');
 }
 

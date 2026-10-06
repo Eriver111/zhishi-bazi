@@ -90,7 +90,7 @@ test('岁运问答只注入所问领域的应期候选并强调主次裁决', ()
   assert.match(instruction, /2028年/);
   assert.match(instruction, /财破印被引动/);
   assert.doesNotMatch(instruction, /2030年/);
-  assert.match(instruction, /先选最强的一年.*再给一个次选/);
+  assert.match(instruction, /比较各年实际作用，不把排序第一自动当命中/);
 });
 
 test('明确年份和相对年份会精确读取该年裁决而非泛用候选榜', () => {
@@ -105,7 +105,8 @@ test('明确年份和相对年份会精确读取该年裁决而非泛用候选�
   const current = ai.buildTimingAdjudicationBrief('2026年最可能发生什么？', chart);
   assert.match(current, /本轮年份强制锚点.*2026年/);
   assert.match(current, /事业工作.*条件性/);
-  assert.match(current, /不是强应期/);
+  assert.match(current, /这个局部标记不代表全年没有结构作用/);
+  assert.doesNotMatch(current, /没有当年刑冲合害|本轮回答须保留/);
   assert.doesNotMatch(current, /2038年/);
 
   const next = ai.buildTimingAdjudicationBrief('明年会怎样？', chart);
@@ -114,17 +115,21 @@ test('明确年份和相对年份会精确读取该年裁决而非泛用候选�
   assert.equal(ai.detectTimingQuestionYear('我是1998年出生，想看2027年'), 2027);
 });
 
-test('回复校验阻断用全年偏吉覆盖具体领域裁决', () => {
+test('明确领域回复校验保留方向与背景边界，开放问不被首域绑定', () => {
+  const record={ domain:'career', label:'事业工作', activationScore:6, direction:'条件性', confidence:'中高', eventCandidate:'事业主题被引动', evidence:['流年食神'], hasIndependentAnnualTrigger:false };
   const chart = { type:'bazi', timingAdjudication:{ current:{
     year:2026, age:28,
-    primaryEvent:{ domain:'career', label:'事业工作', activationScore:6, direction:'条件性', confidence:'中高', eventCandidate:'事业主题被引动', evidence:['流年食神'], hasIndependentAnnualTrigger:false },
-    domainRecords:[]
+    primaryEvent:record,
+    domainRecords:[record]
   } } };
-  const wrong = ai.runReplyValidation(chart, '结论：2026年事业与求财方向偏有利，会出现明显推进。', '2026年最可能发生在哪个领域，是好还是坏？');
+  const reply='结论：2026年事业与求财方向偏有利，会出现明显推进。';
+  const wrong = ai.runReplyValidation(chart, reply, '2026年事业工作是好还是坏？');
   assert.ok(wrong.some(item => item.startsWith('E8-应期方向冲突')));
   assert.ok(wrong.some(item => item.startsWith('E8-把大运背景冒充流年应期')));
-  const right = ai.runReplyValidation(chart, '结论：2026年最容易引动事业工作，但方向是条件性的；这不是强应期，只能确定事业主题，不能断具体事件。', '2026年最可能发生在哪个领域，是好还是坏？');
+  const right = ai.runReplyValidation(chart, '结论：2026年最容易引动事业工作，但方向是条件性的；这不是强应期，只能确定事业主题，不能断具体事件。', '2026年事业工作是好还是坏？');
   assert.equal(right.some(item => item.startsWith('E8-')), false);
+  const open = ai.runReplyValidation(chart, reply, '回看2026年，最突出的事情是什么？');
+  assert.equal(open.some(item=>item.startsWith('E8-')),false,'first-domain score cannot adjudicate an open reply');
 });
 
 test('高考能否录取必须先给方向裁决并可按出生年年推定高考年份', () => {
@@ -141,7 +146,7 @@ test('高考能否录取必须先给方向裁决并可按出生年年推定高�
   assert.equal(ai.detectTimingQuestionYear('我高考那年能不能考上？', chart), 2026);
   const brief = ai.buildTimingAdjudicationBrief('我高考那年能不能考上？', chart);
   assert.match(brief, /事件级直接裁决.*比较困难/);
-  assert.match(brief, /取象参考（不是已发生结果，不要求复述）.*临场发挥/);
+  assert.match(brief, /取象参考（规则模板，不是新增证据或已发生结果，不要求复述）.*临场发挥/);
 
   const evasive = ai.runReplyValidation(chart, '流年财破印，印星代表学习，情况需要综合分析，也存在多种可能。', '我高考那年能不能考上？');
   assert.ok(evasive.some(item => item.startsWith('E9-封闭问题未直接裁决')));

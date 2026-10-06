@@ -131,6 +131,22 @@ test('same annual branch alone is branch repetition rather than full-pillar FuYi
   assert.equal(result.triggers.some(item => item.type === '地支重复'), true);
 });
 
+test('annual-decade stem control and branch clash do not assert a decade transition', () => {
+  const context = loadBrowserRuntime();
+  const base = chart('辛', '亥', '癸', '巳', '己', '酉', '乙', '亥');
+  const cycle = {gan:'己', zhi:'丑', startYear:2007, endYear:2016};
+  const yongJi = {yongShen:['火'], xiShen:['火','土'], jiShen:['水','木','金']};
+  const annual = context.BaZiChain.analyzeLiuNian(base, cycle, {gan:'乙', zhi:'未', year:2015}, yongJi);
+  const clash = annual.triggers.find(item => item.type === '岁运天克地冲');
+  assert.ok(clash);
+  assert.match(clash.detail, /天干相克、地支相冲/);
+  assert.match(clash.detail, /实际换运时间须以交运日期为准/);
+  assert.doesNotMatch(clash.detail, /旧运已断|新运未稳|运势转折之年/);
+  assert.equal(clash.isGood, false, 'explanation correction does not change existing direction');
+  const nonClash = context.BaZiChain.analyzeLiuNian(base, cycle, {gan:'丁', zhi:'酉', year:2017}, yongJi);
+  assert.equal(nonClash.triggers.some(item => item.type === '岁运天克地冲'), false);
+});
+
 test('an already-present annual branch cannot falsely complete a trine', () => {
   const context = loadBrowserRuntime();
   const base = chart('戊', '辰', '乙', '丑', '辛', '巳', '甲', '午');
@@ -272,7 +288,7 @@ test('core analysis degrades safely but reports chain failures for diagnosis', (
 test('all chain entry pages request the repaired script version', () => {
   for (const page of ['paipan.html', 'result.html', 'hepan-result.html']) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
-    assert.match(html, /js\/bazi-chain\.js\?v=15/, page);
+    assert.match(html, /js\/bazi-chain\.js\?v=20261006-case-fix2/, page);
   }
 });
 

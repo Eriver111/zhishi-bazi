@@ -7723,6 +7723,32 @@ function normalizeYongJiLists(xiShen, yongShen, jiShen) {
  * “原局正在做什么”和“该五行进入岁运时通常向好还是向坏”；具体干支再做二次复核。
  * 旧 yongShen/xiShen/jiShen 字段继续保留，供既有报告、大运和存量数据兼容。
  */
+function describeElementBenefit(wx, dayWx, relation, context) {
+  // Explain the settled selection; this layer must not infer strength or choose
+  // a new useful element from a generic Ten-God relationship.
+  var level = context.dmStr && context.dmStr.level || '';
+  var following = context.cong && context.cong.isCong;
+  if (following) {
+    var followingActions = {
+      '比劫':'维持同类气势', '印星':'生助所从气势',
+      '食伤':'承接并疏导所从气势', '财星':'顺应财星参与的作用链',
+      '官杀':'顺应官杀参与的作用链'
+    };
+    return '本局按' + (context.cong.name || '从格') + '顺势取用，' + wx + '作为' + relation +
+      '，作用在于' + followingActions[relation] + '；具体增减仍须核对原局顺势条件。';
+  }
+  var weak = level === '偏弱' || level === '极弱';
+  var strong = level === '偏强' || level === '极强';
+  var benefits = {
+    '比劫':wx + '与日主同类，' + (weak ? '能补充承载和行动力量' : '是否需要增加同类力量，须看已确定的格局与承载需求') + '；仍须兼顾生食伤与制财的作用',
+    '印星':wx + '生' + dayWx + '，' + (weak ? '能为日主提供生扶；要把这份帮助落实，仍需有效根气，并避免被财星制住' : '具体帮助须对应已经确定的制伤、化杀或格局任务，不能仅凭生身关系就认定需要继续生扶'),
+    '食伤':dayWx + '生' + wx + '，' + (strong ? '能疏导日主的力量' : weak ? '会继续消耗日主；能否发挥生财或制杀作用，须先核对承载与实际通路' : '把力量引入食伤通路；能否发挥生财或制杀作用，仍须有承接方和通路配合'),
+    '财星':wx + '可承接食伤或制约过重印星；有相应任务且日主承载足够时，才是可用的帮助',
+    '官杀':wx + '约束' + dayWx + '，' + (strong ? '可制衡较强日主；仍须核对制化条件及约束是否过量' : '取作喜用须有已确定的格局、制化或调候任务；同时核对克身压力，不能仅凭官杀有利就反推日主过强')
+  };
+  return benefits[relation];
+}
+
 function buildElementRoleLedger(bazi, lists, elementClassification, context) {
   var WX = ['木','火','土','金','水'];
   var positions = ['year','month','day','hour'];
@@ -8190,17 +8216,10 @@ function buildElementRoleLedger(bazi, lists, elementClassification, context) {
          (relation === '比劫' && !mechanismEvidence.byId.peer_support.established))) {
       natalRole = '作用受限';
     }
-    var benefitByRelation = {
-      '比劫':wx + '与日主同类，能补充承载和行动力量；是否需要继续增加，仍按本局强弱与格局取舍',
-      '印星':wx + '生' + dayWx + '，能为日主提供生扶；要把这份帮助落实，仍需有效根气，并避免被财星制住',
-      '食伤':dayWx + '生' + wx + '，能疏导日主的力量；继续转成生财或制杀作用，还需承接方和通路配合',
-      '财星':wx + '可承接食伤或制约过重印星；有相应任务且日主承载足够时，才是可用的帮助',
-      '官杀':wx + '约束' + dayWx + '，可制衡过强日主；若兼任调候，还要同时比较调候收益与克身压力'
-    };
     var tradeoff = {
       basis:present ? '原局' + facts[wx].state : '原局未现，属于等待补入的条件',
       benefit:fortuneRole === '用神' || fortuneRole === '喜神'
-        ? ((functionalTaskMap[wx] || []).length ? functionalTaskMap[wx][0].conclusion : benefitByRelation[relation])
+        ? ((functionalTaskMap[wx] || []).length ? functionalTaskMap[wx][0].conclusion : describeElementBenefit(wx, dayWx, relation, context))
         : tiaoHouElements.indexOf(wx) >= 0 ? wx + '虽非结构喜神，仍承担调候任务' : '当前没有把' + wx + '列为优先补入的力量',
       cost:risks.join('；') || '过量或改变通路时，须重新比较代价',
       established:effectiveActions.map(function(item) { return item.id; }),

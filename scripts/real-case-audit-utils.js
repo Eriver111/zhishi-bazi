@@ -6,7 +6,7 @@ async function engine(live=false, options={}) {
   const context={console,Date,Math,setTimeout,clearTimeout};context.window=context;vm.createContext(context);const hashes={};
   for(const file of files) {
     let source;
-    if(live){const response=await fetch('https://zhishi.online/js/'+file+(options.cacheTag?'?v='+encodeURIComponent(options.cacheTag):''),{cache:'no-store'});if(!response.ok)throw new Error('engine HTTP '+response.status);source=await response.text();}
+    if(live){const response=await fetch('https://zhishi.online/js/'+file+(options.cacheTag?'?v='+encodeURIComponent(options.cacheTag):''),{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('engine HTTP '+response.status);source=Buffer.from(await response.arrayBuffer()).toString('utf8');}
     else source=fs.readFileSync(path.join(root,'js',file),'utf8');
     hashes[file]=crypto.createHash('sha256').update(source).digest('hex');vm.runInContext(source,context,{filename:file,timeout:10000});
   }

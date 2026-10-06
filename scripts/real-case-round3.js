@@ -44,7 +44,8 @@ async function main(options = {}) {
     if (options.expectedHashes[file] !== hash) throw new Error('Release engine mismatch: '+file);
   }
   if (live && options.expectedPolicy) {
-    const probe=await fetch('https://zhishi.online/api/ai-chat',{method:'OPTIONS',cache:'no-store',signal:AbortSignal.timeout(15000)});
+    // The host handles OPTIONS before the API handler, so GET/405 carries the policy.
+    const probe=await fetch('https://zhishi.online/api/ai-chat',{method:'GET',cache:'no-store',signal:AbortSignal.timeout(15000)});
     if (probe.headers.get('x-zhishi-ai-policy') !== options.expectedPolicy) throw new Error('Release API policy mismatch; no AI request sent');
   }
   if (!live) for (const file of ['report-imagery.js','calibration-model.js']) {

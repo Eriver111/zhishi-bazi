@@ -2332,7 +2332,7 @@
     }
     // 2c. 流年与大运天克地冲
     if (stemControlsEither(lnGanWx, dyGanWx) && CHONG[lnZhi] === dyZhi) {
-      triggers.push({ type: '岁运天克地冲', severity: 'high', detail: '流年与大运天克地冲——运势转折之年，旧运已断新运未稳', isGood: false });
+      triggers.push({ type: '岁运天克地冲', severity: 'high', detail: '流年与当前大运的天干相克、地支相冲；只说明岁运之间有冲克作用，不代表旧运结束或新运开始，实际换运时间须以交运日期为准。', isGood: false });
       dangerScore += 3;
     }
 

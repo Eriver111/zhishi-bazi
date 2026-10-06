@@ -31,7 +31,7 @@ test('first AI click offers optional calibration and archive can reopen it', () 
   assert.match(client, /ZhishiCalibration\.beforeAI = inspectFirstClick/);
   assert.match(archive, /校对命盘/);
   assert.match(archive, /zhishi_open_archive_calibration/);
-  assert.match(result, /chart-calibration\.js\?v=20261006-case-fix/);
+  assert.match(result, /chart-calibration\.js\?v=20261006-case-fix2/);
 });
 
 test('calibration questions require matching Bazi mechanisms instead of broad event examples', () => {
@@ -54,7 +54,7 @@ test('calibration questions require matching Bazi mechanisms instead of broad ev
   assert.match(client, /motherDirect/);
   assert.match(client, /study_impact/);
   assert.match(client, /domainDirection/);
-  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v14'/);
+  assert.match(client, /CANDIDATE_VERSION = 'bazi-cal-v15'/);
   assert.match(client, /dedupeOptionDomains/);
   assert.match(client, /系统原判断/);
   assert.match(client, /sleep_energy/);
