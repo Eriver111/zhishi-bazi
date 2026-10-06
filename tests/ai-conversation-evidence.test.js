@@ -110,6 +110,21 @@ async function ask(app, history = [], chartData = { type: 'bazi' }) {
 const good = '目前没有足够依据具体指出一件新的往事，这一轮我不给你凑答案。';
 const bad = '日主无根，所以感情基础不牢，这段关系也就难以长久维持。';
 
+for(const free of [false,true])for(const repaired of [true,false])test(`${free?'free':'paid'} named-relation ${repaired?'repaired':'blocked'}: one full-argument retry, no charge for an invalid reply`,async()=>{
+ const chartData={type:'bazi',fourPillars:{year:{gan:'辛',zhi:'亥'},month:{gan:'癸',zhi:'巳'},day:{gan:'己',zhi:'酉'},hour:{gan:'乙',zhi:'亥'}}};
+ const badReply='天干癸水克日主己土，说明本人受到外部压力，所以原来的位置有被动挪动的可能。';
+ const corrected='生克方向应为己土克癸水。此前把方向写反，原来据此推出本人受到外部克制的论证应撤回，不能只替换一个干支字。';
+ const app=load([badReply,repaired?corrected:badReply],{free}),res=await ask(app,[],chartData);
+ assert.equal(app.requests.length,2,'at most one model repair');
+ assert.match(app.requests[1].messages.at(-1).content,/E10-明示五行生克方向错误/);
+ assert.match(app.requests[1].messages.at(-1).content,/正确关系是己土克癸水/);
+ assert.match(app.requests[1].messages.at(-1).content,/重新核对整个论证/);
+ assert.equal(res.statusCode,repaired?200:502);
+ assert.equal(app.events.filter(e=>e==='charge').length,repaired?1:0);
+ assert.equal(app.events.filter(e=>e==='save-assistant').length,repaired?1:0);
+ if(!repaired){assert.equal(res.body.code,'REPLY_EVIDENCE_VALIDATION_FAILED');assert.equal(res.body.charged,false);}
+});
+
 test('real handler corrects literal chart errors and provides a bounded fact ledger', async () => {
   const chartData={type:'bazi',fourPillars:{year:{gan:'辛',zhi:'酉'},month:{gan:'戊',zhi:'戌'},day:{gan:'甲',zhi:'戌'},hour:{gan:'丁',zhi:'卯'}}};
   const app=load(['日主无根，火有八个。因此表达上的消耗会很重，需要继续分析全局。','甲木在时支卯有同五行藏根，日支戌没有木根；根的作用仍须结合全局。']);

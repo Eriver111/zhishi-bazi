@@ -149,6 +149,87 @@ const annualChart=()=>({...chart(['丁巳','己酉','丁丑','癸卯']),daYun:{c
  {gan:'乙',zhi:'巳',startYear:2011,endYear:2020},{gan:'甲',zhi:'辰',startYear:2021,endYear:2030}
 ]}});
 const hasCode=(data,text,question,code)=>validateChartEvidence(data,text,question).some(w=>w.startsWith(code));
+
+test('captured live named-element and branch-pair mistakes trigger relation-specific corrections',()=>{
+ const examples=[
+  ['再加上寅木这个印星（主住处、文书、手续）和你的日支酉金相冲相克，钱和手续容易卡在同一个环节上反复。','地支六冲配对错误','寅申、酉卯'],
+  ['天干癸水克日主己土，地支卯木冲日支酉金。','五行生克方向错误','己土克癸水'],
+  ['依据是流年子水冲你的日支酉、又害时支未，日支是自身根基和伴侣宫。','地支六冲配对错误','子午、酉卯']
+ ];
+ for(const [reply,code,correct] of examples){
+  const found=validateChartEvidence(doctor,reply).filter(w=>w.startsWith('E10-明示'));
+  assert.equal(found.length,1,reply);assert.ok(found[0].includes(code));assert.ok(found[0].includes(correct));
+  assert.match(found[0],/重新核对整个论证/);
+ }
+});
+
+test('all explicit stem and branch element directions are checked without inferring effect or outcomes',()=>{
+ const literal={甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水',子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'};
+ const rules={生:{木:'火',火:'土',土:'金',金:'水',水:'木'},克:{木:'土',土:'水',水:'火',火:'金',金:'木'}};
+ for(const [a,x] of Object.entries(literal))for(const [b,y] of Object.entries(literal))for(const [kind,table] of Object.entries(rules)){
+  const text=a+x+kind+'日主'+b+y+'。';
+  assert.equal(hasCode(doctor,text,'','E10-明示五行生克方向错误'),table[x]!==y,text);
+ }
+ assert.equal(hasCode(doctor,'己土被癸水克。','','E10-明示五行生克方向错误'),true);
+ assert.equal(hasCode(doctor,'癸水被己土克。','','E10-明示五行生克方向错误'),false);
+ assert.equal(hasCode(doctor,'甲木克庚金，庚金克甲木。','','E10-明示五行生克方向错误'),true);
+ assert.equal(hasCode(doctor,'庚金克甲木，甲木克庚金。','','E10-明示五行生克方向错误'),true);
+ assert.equal(hasCode(doctor,'甲木与庚金相克，要看各自作用。','','E10-明示五行生克方向错误'),false);
+});
+
+test('every unordered branch pair respects fixed six-clash and six-combine tables in either direction',()=>{
+ const branches='子丑寅卯辰巳午未申酉戌亥';
+ const fixed={六冲:['子午','丑未','寅申','卯酉','辰戌','巳亥'],六合:['子丑','寅亥','卯戌','辰酉','巳申','午未']};
+ for(const a of branches)for(const b of branches)for(const [type,pairs] of Object.entries(fixed)){
+  const valid=pairs.includes(a+b)||pairs.includes(b+a);
+  for(const text of [a+'与日支'+b+type+'。',a+b+type+'。'])
+   assert.equal(hasCode(doctor,text,'','E10-明示地支'+type+'配对错误'),!valid,text);
+ }
+ for(const text of ['子水冲日支午火。','日支酉金与流年卯木相冲。','午火与未土六合。'])
+  assert.equal(hasCode(doctor,text,'','E10-明示地支'),false,text);
+ assert.equal(hasCode(doctor,'流年子水与日支酉金形成六合。','','E10-明示地支六合配对错误'),true);
+});
+
+test('quoted errors, denials, questions and hypotheses are not affirmative relation claims',()=>{
+ for(const text of [
+  '“天干癸水克日主己土”的说法是错的。',
+  '上轮说子水冲你的日支酉，需要纠正。',
+  '不能说子酉六冲。',
+  '不是寅木与酉金相冲。',
+  '子水冲日支酉，这个说法不对。',
+  '癸水克己土，这种判断不成立。',
+  '子水冲日支酉，这是错误的。',
+  '癸水克己土，这不对。',
+  '前文误写成癸水克己土，应纠正。',
+  '引文：子水与酉金相冲。',
+  '如果子水冲日支酉，要另论。',
+  '假设癸水克己土，就要重新推导。',
+  '若子酉六冲，另论。',
+  '假定寅与酉六合，另论。',
+  '子水冲日支酉吗？',
+  '是否癸水克己土，需要核对。',
+  '有人说“寅木与酉金相冲”，我不认同。',
+  '己土克癸水，不是癸水克己土。',
+  '子与午相冲，子与酉不是六冲。'
+ ])assert.equal(hasCode(doctor,text,'','E10-明示'),false,text);
+});
+
+test('literal relation guard does not reinterpret hidden stems, transformed qi or broad prose',()=>{
+ for(const text of [
+  '藏干作用另论，子水生戌土不是在说表层本五行。',
+  '按合化后的气看，寅木克酉金另论。',
+  '甲己化土后，甲木生庚金属于化气讨论。',
+  '子水的藏干与午火中的己土有合，不是地支六合。',
+  '巳与酉相合，属于半合线索。',
+  '寅与午有半合，不能冒充六合。',
+  '这段关系相冲，相互克制的感觉强。',
+  '你克制了自己的冲动。',
+  '子水冲动的表达要另看。',
+  '冲日支需要看实际流年的支是什么。'
+ ])assert.equal(hasCode(doctor,text,'','E10-明示'),false,text);
+ for(const data of [{...doctor,type:'hepan'}, {...doctor,type:'ziwei'}, null, {}])
+  assert.deepEqual(validateChartEvidence(data,'癸水克己土，子酉六冲。'),[]);
+});
 test('captured active-decade contradictions are not excused by a later parenthesis',()=>{
  const career=annualChart();
  for(const text of [
