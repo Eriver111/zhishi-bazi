@@ -235,13 +235,14 @@ test('合盘新中性元数据接管标签校验，旧清单不能重新拦截�
 });
 
 for (const repaired of [false, true]) {
-  test('AI未定首用的真实处理入口：一次修正后' + (repaired ? '通过才扣次' : '仍冲突不扣次、不保存回答'), async () => {
+  test('AI未定首用的真实处理入口：' + (repaired ? '一次修正通过才扣次' : '一次重新生成仍冲突不扣次、不保存回答'), async () => {
     const bad = '用神为土。土是当前唯一首要调节力量，建议据此理解五行方向。';
     const good = '核心用神尚未确定。现有五行取用证据不足，根气排序不能代替需求依据，需继续复核。';
-    const {handler, events, requests} = loadAI([bad, repaired ? good : bad]);
+    const {handler, events, requests} = loadAI(repaired ? [bad,good] : [bad,bad,bad,bad]);
     const res = {statusCode:200,setHeader(){},status(code){this.statusCode=code;return this;},json(body){this.body=body;return this;}};
     await handler({method:'POST',headers:{},body:{question:'这份判读应如何理解',chartData:{type:'bazi',yongJi:zero}}}, res);
-    assert.equal(requests.length, 2);
+    assert.equal(requests.length, repaired ? 2 : 4);
+    if(!repaired)assert.deepEqual(requests[2],requests[0]);
     assert.equal(res.statusCode, repaired ? 200 : 502);
     assert.equal(events.filter(e => e === 'charged').length, repaired ? 1 : 0);
     assert.equal(events.filter(e => e === 'save-assistant').length, repaired ? 1 : 0);

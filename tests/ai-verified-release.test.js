@@ -19,7 +19,7 @@ test('persistent invalid facts return a retryable failure before saving or consu
   const result=await h.request('请解释父母关系的依据。',chart);
   assert.equal(result.statusCode,502);assert.equal(result.body.code,'REPLY_EVIDENCE_VALIDATION_FAILED');
   assert.equal(result.body.charged,false);assert.equal(result.body.retryable,true);
-  assert.deepEqual(h.counters,{charged:0,saved:0});assert.equal(h.payloads.length,2);
+  assert.deepEqual(h.counters,{charged:0,saved:0});assert.equal(h.payloads.length,4);
 });
 test('failed correction transport does not release or charge for the invalid answer',async()=>{
   const h=createHarness(async(_,n)=>{if(n===2)throw Error('simulated unavailable');return response(wrong);});

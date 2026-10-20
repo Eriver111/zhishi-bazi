@@ -357,7 +357,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261020-verified-fixes');
+  res.setHeader('X-Zhishi-AI-Policy', '20261020-auto-validation-retry');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -436,7 +436,7 @@ module.exports = async function handler(req, res) {
 
           var freeGuard = beginAiRequest(req, { route: 'ai-chat', identity: userId });
           if (!freeGuard.ok) return res.status(429).json({ error: freeGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
-          var freeReply; try { freeReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
+          var freeReply; try { freeReply = await callAIWithValidationRetry(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
             freeGuard.release();
             return sendAiFailure(res, aiErr);
           }
@@ -461,7 +461,7 @@ module.exports = async function handler(req, res) {
             await saveUserChatHistory(userId, 'user', question, conversationMeta);
             var fallbackGuard = beginAiRequest(req, { route: 'ai-chat', identity: userId });
             if (!fallbackGuard.ok) return res.status(429).json({ error: fallbackGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
-            var paidReply; try { paidReply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
+            var paidReply; try { paidReply = await callAIWithValidationRetry(question, chartData, bazi, effectiveHistory, mode, response_mode, null, memorySummary, calibrationSummary); } catch(aiErr) {
               fallbackGuard.release();
               return sendAiFailure(res, aiErr);
             }
@@ -511,7 +511,7 @@ module.exports = async function handler(req, res) {
 
         var anonGuard = beginAiRequest(req, { route: 'ai-chat', identity: serverFingerprint });
         if (!anonGuard.ok) return res.status(429).json({ error: anonGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
-        var freeReplyAnon; try { freeReplyAnon = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, null, '', calibrationSummary); } catch(aiErr) {
+        var freeReplyAnon; try { freeReplyAnon = await callAIWithValidationRetry(question, chartData, bazi, effectiveHistory, mode, response_mode, null, '', calibrationSummary); } catch(aiErr) {
           anonGuard.release();
           return sendAiFailure(res, aiErr);
         }
@@ -627,7 +627,7 @@ module.exports = async function handler(req, res) {
     var paidGuard = beginAiRequest(req, { route: 'ai-chat', identity: userId || code });
     if (!paidGuard.ok) return res.status(429).json({ error: paidGuard.reason === 'concurrent' ? '上一次回答还在生成，请稍候' : '提问过于频繁，请稍后再试' });
     var reply; var aiMeta = {};
-    try { reply = await callAI(question, chartData, bazi, effectiveHistory, mode, response_mode, aiMeta, memorySummary, calibrationSummary); } catch(aiErr) {
+    try { reply = await callAIWithValidationRetry(question, chartData, bazi, effectiveHistory, mode, response_mode, aiMeta, memorySummary, calibrationSummary); } catch(aiErr) {
       console.error('AI call failed:', aiErr);
       paidGuard.release();
       return sendAiFailure(res, aiErr);
@@ -665,6 +665,7 @@ module.exports = async function handler(req, res) {
     if (qa_debug) {
       resp.validation_warnings = aiMeta.warnings || [];
       resp.v2_applied = !!aiMeta.v2Applied;
+      resp.validation_retry_count = aiMeta.validationRetryCount || 0;
       resp.expert_scorecard = aiMeta.expertScorecard || null;
     }
     return res.status(200).json(resp);
@@ -676,7 +677,31 @@ module.exports = async function handler(req, res) {
 };
 
 /**
- * 调用 AI API（提取为独立函数，支持免费和付费模式共用）
+ * Retry only a rejected, uncharged generation, inside the existing request and
+ * concurrency guard. Storage and charging stay outside this function. Each
+ * attempt uses the original question/context, never the rejected answer.
+ * One additional generation at most; each keeps its existing single V2 repair.
+ */
+async function callAIWithValidationRetry(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary, calibrationSummary) {
+  const retryableCodes = new Set([
+    'REPLY_EVIDENCE_VALIDATION_FAILED', 'TIMING_VALIDATION_FAILED',
+    'YONGJI_VALIDATION_FAILED', 'HEPAN_VALIDATION_FAILED'
+  ]);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const attemptMeta = {};
+    try {
+      const reply = await callAI(question, chartData, bazi, history, mode, responseMode, attemptMeta, memorySummary, calibrationSummary);
+      if (metaOut) Object.assign(metaOut, attemptMeta, { validationRetryCount: attempt });
+      return reply;
+    } catch (error) {
+      if (attempt !== 0 || !error || !retryableCodes.has(error.code)) throw error;
+      console.log('[ai-validator] generation rejected code=' + error.code + '; retry original question once before charging');
+    }
+  }
+}
+
+/**
+ * One generation and its bounded correction; shared by free and paid modes.
  */
 async function callAI(question, chartData, bazi, history, mode, responseMode, metaOut, memorySummary, calibrationSummary) {
   var requestedYear = detectTimingQuestionYear(question, chartData);

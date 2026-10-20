@@ -110,12 +110,13 @@ async function ask(app, history = [], chartData = { type: 'bazi' }) {
 const good = '目前没有足够依据具体指出一件新的往事，这一轮我不给你凑答案。';
 const bad = '日主无根，所以感情基础不牢，这段关系也就难以长久维持。';
 
-for(const free of [false,true])for(const repaired of [true,false])test(`${free?'free':'paid'} named-relation ${repaired?'repaired':'blocked'}: one full-argument retry, no charge for an invalid reply`,async()=>{
+for(const free of [false,true])for(const repaired of [true,false])test(`${free?'free':'paid'} named-relation ${repaired?'repaired':'blocked'}: bounded correction and regeneration, no charge for an invalid reply`,async()=>{
  const chartData={type:'bazi',fourPillars:{year:{gan:'辛',zhi:'亥'},month:{gan:'癸',zhi:'巳'},day:{gan:'己',zhi:'酉'},hour:{gan:'乙',zhi:'亥'}}};
  const badReply='天干癸水克日主己土，说明本人受到外部压力，所以原来的位置有被动挪动的可能。';
  const corrected='生克方向应为己土克癸水。此前把方向写反，原来据此推出本人受到外部克制的论证应撤回，不能只替换一个干支字。';
- const app=load([badReply,repaired?corrected:badReply],{free}),res=await ask(app,[],chartData);
- assert.equal(app.requests.length,2,'at most one model repair');
+ const app=load(repaired?[badReply,corrected]:[badReply,badReply,badReply,badReply],{free}),res=await ask(app,[],chartData);
+ assert.equal(app.requests.length,repaired?2:4,'one repair per generation, at most one extra generation');
+ if(!repaired)assert.deepEqual(app.requests[2],app.requests[0],'retry the original question and context');
  assert.match(app.requests[1].messages.map(m=>m.content).join("\n"),/E10-明示五行生克方向错误/);
  assert.match(app.requests[1].messages.map(m=>m.content).join("\n"),/正确关系是己土克癸水/);
  assert.match(app.requests[1].messages.map(m=>m.content).join("\n"),/重新核对整个论证/);
@@ -158,11 +159,13 @@ test('actual request retains older user context, excludes foreign browser histor
 
 for (const free of [false, true]) {
   for (const outcome of ['repaired', 'blocked', 'repair-error']) {
-    test(`${free ? 'free' : 'paid'} reply ${outcome}: correct once, never charge or save an invalid answer`, async () => {
-      const app = load([bad, outcome === 'repaired' ? good : outcome === 'blocked' ? bad : new Error('synthetic timeout')], { free });
+    test(`${free ? 'free' : 'paid'} reply ${outcome}: bounded recovery, never charge or save an invalid answer`, async () => {
+      const repairResult = outcome === 'repaired' ? good : outcome === 'blocked' ? bad : new Error('synthetic timeout');
+      const app = load(outcome === 'repaired' ? [bad,repairResult] : [bad,repairResult,bad,repairResult], { free });
       const res = await ask(app);
       const success = outcome === 'repaired';
-      assert.equal(app.requests.length, 2);
+      assert.equal(app.requests.length, success ? 2 : 4);
+      if(!success)assert.deepEqual(app.requests[2],app.requests[0]);
       assert.match(app.requests[1].messages.map(m=>m.content).join("\n"), /E10-根气含义误读/);
       assert.equal(res.statusCode, success ? 200 : 502);
       assert.equal(app.events.filter(e => e === 'charge').length, success ? 1 : 0);

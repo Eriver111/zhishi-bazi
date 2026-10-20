@@ -128,22 +128,25 @@ const routes = [
   { name: 'monthly membership', monthly: true }
 ];
 for (const route of routes) {
-  for (const outcome of ['blocked', 'repair-unavailable', 'repaired', 'valid']) {
+  for (const outcome of ['blocked', 'repair-unavailable', 'repaired', 'valid', 'regenerated']) {
     test(route.name + ': ' + outcome, async () => {
-      const replies = outcome === 'valid' ? [good] : [bad,
-        outcome === 'repaired' ? good : outcome === 'repair-unavailable' ? new Error('test timeout') : bad];
+      const repair = outcome === 'repair-unavailable' ? new Error('test timeout') : bad;
+      const replies = outcome === 'valid' ? [good] : outcome === 'repaired' ? [bad,good]
+        : outcome === 'regenerated' ? [bad,bad,good] : [bad,repair,bad,repair];
       const { handler, events, requests } = load({ ...route, replies });
       const res = response();
       await handler({ method: 'POST', headers: {}, body: {
         question: '相处应注意什么', chartData: fixture(),
         free_mode: route.free, free_id: route.free ? 'test-device' : undefined, code: route.code
       } }, res);
-      const success = outcome === 'repaired' || outcome === 'valid';
+      const success = outcome === 'repaired' || outcome === 'valid' || outcome === 'regenerated';
       assert.equal(res.statusCode, success ? 200 : 502);
-      assert.equal(requests.length, outcome === 'valid' ? 1 : 2);
+      assert.equal(requests.length, outcome === 'valid' ? 1 : outcome === 'repaired' ? 2 : outcome === 'regenerated' ? 3 : 4);
+      if(requests.length>2)assert.deepEqual(requests[2],requests[0], 'fresh generation keeps both identities and original question');
       const charges = events.filter(e => /^(free-|credit-)/.test(e));
       assert.deepEqual(charges, success && route.charge ? [route.charge] : []);
       assert.equal(events.filter(e => e === 'save-assistant').length, success ? 1 : 0);
+      assert.equal(events.filter(e => e === 'save-user').length, 1);
       assert.equal(events.filter(e => e === 'release').length, 1);
       if (success) assert.equal(res.body.reply, good);
       else {
