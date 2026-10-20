@@ -18,7 +18,7 @@ function loadRegionData() {
 }
 
 function loadLongitudeData() {
-  const source = fs.readFileSync(path.join(ROOT, 'js', 'county-longitudes.js'), 'utf8');
+  const source = fs.readFileSync(path.join(ROOT, 'js', 'county-longitudes.js'), 'utf8').replace(/\r\n/g, '\n');
   const context = { module: { exports: {} }, exports: {} };
   vm.runInNewContext(source, context, { filename: 'js/county-longitudes.js' });
   return context.module.exports.VERSION ? context.module.exports : context.CountyLongitudeData;
@@ -37,7 +37,7 @@ function flattenRegionData(regionData) {
 test('county longitude snapshot covers every selector path exactly once', () => {
   const paths = flattenRegionData(loadRegionData());
   const longitudeData = loadLongitudeData();
-  const source = fs.readFileSync(path.join(ROOT, 'js', 'county-longitudes.js'), 'utf8');
+  const source = fs.readFileSync(path.join(ROOT, 'js', 'county-longitudes.js'), 'utf8').replace(/\r\n/g, '\n');
   const recordsBlock = source.match(/"records": \{([\s\S]*?)\n  \},\n  "aliases": \{/);
   assert.ok(recordsBlock, 'missing generated records block');
   const generatedKeys = [...recordsBlock[1].matchAll(/^    "([^"]+)": \{$/gm)].map((match) => match[1]);

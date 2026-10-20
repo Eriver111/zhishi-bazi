@@ -6,7 +6,7 @@ const vm = require('node:vm');
 // Exercise the actual pure prompt/validator source without importing the API,
 // auth, production configuration or datastore initialization.
 function loadPureLibrary(name) {
-  const scope = { module:{ exports:{} } };
+  const scope = { module:{ exports:{} }, require(name) { assert.equal(name, './ai-explicit-action-claims'); return require('../lib/ai-explicit-action-claims'); } };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../lib', name), 'utf8'), scope);
   return scope.module.exports;
 }

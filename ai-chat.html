@@ -94,7 +94,8 @@ body{position:fixed;inset:0;width:100%}
 <script src="js/chat-viewport.js?v=2"></script>
 <script src="js/chat-persistence.js?v=4"></script>
 <script src="js/chat-resume.js?v=1"></script>
-<script src="js/chat-experience.js?v=2"></script>
+<script src="js/chat-experience.js?v=20261020-recovery"></script>
+<script src="js/ai-request-recovery.js?v=20261020"></script>
 <script>
 var AI={credits:0,code:'',messages:[],isWaiting:false,isMonthly:false,mode:'simple',freeRemaining:0,freeId:'',conversationId:'',chartKey:'',historyLoaded:false};
 
@@ -209,6 +210,7 @@ function addMsg(role,text){
   div.innerHTML='<div class="avatar">'+(role==='user'?'我':'师')+'</div><div class="bubble">'+ChatExperience.escape(text).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</div>';
   document.getElementById('messages').appendChild(div);
   ChatExperience.afterAppend(follow);
+  return div;
 }
 
 function toggleMode(){
@@ -223,7 +225,17 @@ function send(){
   var inp=document.getElementById('input');var text=inp.value.trim();if(!text)return;
   if(AI.freeRemaining<=0&&AI.credits<=0&&!AI.isMonthly){document.getElementById('quotaBar').style.display='flex';return}
   inp.value='';AI.isWaiting=true;document.getElementById('sendBtn').disabled=true;
-  ChatExperience.start(text);addMsg('user',text);showThinking();
+  ChatExperience.start(text);var userNode=addMsg('user',text);showThinking();
+  var questionEntry=AI.messages[AI.messages.length-1], messageList=AI.messages;
+  var requestSerial=AI.requestSerial=(AI.requestSerial||0)+1;
+  var requestScope=window.ChatResume && ChatResume.scope();
+  function currentRequest(){return AI.messages===messageList && AI.requestSerial===requestSerial && (!window.ChatResume || ChatResume.scope()===requestScope);}
+  function showFailure(data,message){
+    if(!currentRequest())return;
+    AiRequestRecovery.show({container:document.getElementById('messages'),input:inp,question:text,userNode:userNode,data:data,message:message,
+      isCurrent:function(){return currentRequest()&&!AI.isWaiting;},onRetry:send,
+      removeFailedQuestion:function(){var index=AI.messages.indexOf(questionEntry);if(index>=0)AI.messages.splice(index,1);}});
+  }
 
   var body={question:text,mode:AI.mode,history:AI.messages.slice(-6)};
   // 检测紫微/八字模式
@@ -249,14 +261,14 @@ function send(){
   ChatExperience.request('/api/ai-chat',{method:'POST',headers:headers,body:JSON.stringify(body)})
   .then(function(d){
     hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;
-    if(d.error){addMsg('ai',d.error);ChatExperience.finish(true);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
+    if(d.error){showFailure(d,d.error);ChatExperience.finish(true);if(d.free_exhausted){AI.freeRemaining=0;localStorage.setItem('ai_free_used','2');updateCreditsUI()}return}
     if(d.conversation_id){AI.conversationId=d.conversation_id;setHistoryButton('已保存',true)}
     var pre='';try{var cd3=body.chartData||{};if(cd3.pattern&&cd3.pattern.name)pre+='【系统判定】格局：'+cd3.pattern.name+'。';if(cd3.dayMasterStrength)pre+='日主旺衰：'+cd3.dayMasterStrength.level+'（'+cd3.dayMasterStrength.score+'/100）。';if(pre)pre+='以下为AI详细解读：\n\n---\n\n';}catch(ex){}addMsg('ai',pre+d.reply);
     if(d.is_free){AI.freeRemaining=d.free_remaining;var used=2-d.free_remaining;localStorage.setItem('ai_free_used',used);updateCreditsUI()}
     if(d.credits_left>=0){AI.credits=d.credits_left;updateCreditsUI()}
     if(d.is_monthly){AI.isMonthly=true;updateCreditsUI()}
     ChatExperience.finish(false);
-  }).catch(function(e){if(e.name==='IdentityChangedError')return;hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;addMsg('ai','连接中断或等待超时，回答可能仍在生成。请先查看历史记录，再决定是否重试。');ChatExperience.finish(true)});
+  }).catch(function(e){if(e.name==='IdentityChangedError')return;hideThinking();AI.isWaiting=false;document.getElementById('sendBtn').disabled=false;showFailure(null,'连接中断或等待超时，回答可能仍在生成。请先查看历史记录，再决定是否重试。');ChatExperience.finish(true)});
 }
 
 </script>

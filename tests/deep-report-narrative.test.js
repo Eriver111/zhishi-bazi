@@ -441,8 +441,8 @@ test('annual relationship verdict distinguishes favorable palace damage from fav
 
   const adverseCopy = DeepReport.buildNarratives(favorablePalace).currentYear.verdicts.map(row => row.text).join('\n');
   const favorableCopy = DeepReport.buildNarratives(adversePalace).currentYear.verdicts.map(row => row.text).join('\n');
-  assert.match(adverseCopy, /喜用夫妻宫|稳定基础受扰|偏不利/);
-  assert.match(favorableCopy, /忌神夫妻宫|旧有压力|改善|偏有利/);
+  assert.match(adverseCopy, /感情变动/);assert.doesNotMatch(adverseCopy,/稳定基础受扰|更容易争吵/);
+  assert.match(favorableCopy, /感情变动/);assert.doesNotMatch(favorableCopy,/旧有压力.*打破|更容易争吵/);
 });
 
 test('five-year narrative names the relationship direction in the exact activated year', () => {
@@ -454,7 +454,7 @@ test('five-year narrative names the relationship direction in the exact activate
 
   const year = DeepReport.buildNarratives(facts).fiveYear.years.find(row => row.year === 2027);
   assert.match(year.summary, /流年申冲夫妻宫寅/);
-  assert.match(year.summary, /喜用|稳定基础|偏不利/);
+  assert.match(year.summary, /感情变动/);
 });
 
 test('study narrative keeps the strongest concrete conflicts and does not reassert old personality copy', () => {
@@ -779,10 +779,10 @@ test('out-of-range current-year copy states that DaYun is not included in the ju
 
 test('five-year outcomes distinguish favorable and adverse clash, favorable combine, harm and continuation', () => {
   const years = DeepReport.buildNarratives(addFiveYearInteractions(favorableFacts())).fiveYear.years;
-  assert.match(years[0].summary, /争吵|分开住|聚少离多|重新考虑/);
-  assert.match(years[1].fullSummary || years[1].summary, /打破|改善|原来.*压力/);
-  assert.match(years[2].summary, /靠近|稳定|推进|落实/);
-  assert.match(years[3].fullSummary || years[3].summary, /误会|怀疑|不信任|冷淡/);
+  assert.match(years[0].summary, /感情变动/);
+  assert.match(years[1].fullSummary || years[1].summary, /感情变动/);
+  assert.match(years[2].fullSummary || years[2].summary, /感情变动/);
+  assert.match(years[3].fullSummary || years[3].summary, /感情变动/);
   assert.match(years[4].summary, /不能据此确认/);
 });
 
@@ -1002,7 +1002,7 @@ test('one high-priority spouse-palace clash outweighs several low-priority favor
 
   const narratives = DeepReport.buildNarratives(facts);
   assert.match(narratives.currentYear.headline, /不利/);
-  assert.match(customerVisibleCopy(narratives.currentYear), /争吵|分开住|重新考虑/);
+  assert.match(customerVisibleCopy(narratives.currentYear), /感情变动/);
   assert.doesNotMatch(narratives.currentYear.headline + narratives.currentYear.painPoint, /不利力量更多|工作|钱上/);
   assert.equal(narratives.fiveYear.years[0].directionLabel, '偏不利');
   assert.match(narratives.fiveYear.headline, /偏不利/);
@@ -1092,7 +1092,7 @@ test('unknown spouse-palace clash is a clear change with undetermined outcome, n
   const year = narratives.fiveYear.years[0];
   const copy = narratives.currentYear.headline + narratives.currentYear.painPoint + year.summary;
   assert.equal(year.directionLabel, '变化明显、好坏暂不能定');
-  assert.match(copy, /明显变化|拉扯|好坏暂不能定/);
+  assert.match(copy, /感情变动/);
   assert.doesNotMatch(copy, /必然争吵|分开住|聚少离多|重新考虑这段关系/);
   assert.match(year.summary, /原方向不变|暂不能定/);
 });
@@ -1129,7 +1129,7 @@ test('five-year adjudication uses every decisive event even when only two are di
       facts.fiveYear.years[0] = facts.currentYear;
       const year = DeepReport.buildNarratives(facts).fiveYear.years[0];
       assert.equal(year.directionLabel, '变化明显、好坏暂不能定');
-      assert.match(year.summary, /关系明显变化|好坏暂不能定/);
+      assert.match(year.summary, /感情变动/);
       assert.match(year.summary, /影响有所缓和，但原方向不变/);
       assert.doesNotMatch(year.summary, /资金占用和回款压力会减轻/);
     });

@@ -266,7 +266,10 @@
       return;
     }
 
-    addMessage('user', text);
+    var userNode = addMessage('user', text);
+    var questionEntry = AI.messages[AI.messages.length - 1];
+    var messageList = AI.messages;
+    var requestSerial = AI.requestSerial = (AI.requestSerial || 0) + 1;
     if ($input) $input.value = '';
     showTyping();
     AI.isWaiting = true;
@@ -293,8 +296,15 @@
     // 服务端生成实测 60-120s（2026-08-15 生产回归 6/12 盘超 60s），30s 超时会导致服务端已完成
     // 却扣分+保存，用户误以为失败而重试 → 双扣。改为 300s 与 Vercel 服务端上限对齐。
     var ctrl=new AbortController();
-    var timer=setTimeout(function(){ctrl.abort();hideTyping();addMessage('ai','AI 响应超时（5 分钟），请稍后重试。');AI.isWaiting=false;updateSendBtn()},300000);
+    var timer=setTimeout(function(){ctrl.abort();},300000);
     var resumeScope = window.ChatResume && ChatResume.scope();
+    function currentRequest() { return AI.messages === messageList && AI.requestSerial === requestSerial && (!window.ChatResume || ChatResume.scope() === resumeScope); }
+    function showFailure(data, message) {
+      if (!currentRequest()) return;
+      AiRequestRecovery.show({container:$messages,input:$input,question:text,userNode:userNode,data:data,message:message,
+        isCurrent:function(){return currentRequest() && !AI.isWaiting;},onRetry:sendMessage,
+        removeFailedQuestion:function(){var index=AI.messages.indexOf(questionEntry);if(index>=0)AI.messages.splice(index,1);}});
+    }
     var requestHeaders = { 'Content-Type': 'application/json' };
     if (window.Auth && window.Auth.isLoggedIn && window.Auth.isLoggedIn()) requestHeaders.Authorization = 'Bearer ' + window.Auth.getToken();
     fetch('/api/ai-chat', {
@@ -305,15 +315,16 @@
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      clearTimeout(timer);hideTyping();
-      if (window.ChatResume && ChatResume.scope() !== resumeScope) { AI.messages = []; AI.isWaiting = false; updateSendBtn(); return; }
+      clearTimeout(timer);
+      if (!currentRequest()) return;
+      hideTyping();
       if (data.error) {
         if (data.free_exhausted) {
           useFreeCredit(); // 确保本地也归零
           updateFreeDisplay();
           showBuyBar();
         }
-        addMessage('ai', '抱歉，' + data.error);
+        showFailure(data, data.error);
       } else {
         addMessage('ai', data.reply);
         if (window.ChatResume && body.chat_type) ChatResume.remember({type:body.chat_type,data:chartData},AI.messages,AI.mode,data.conversation_id,resumeScope);
@@ -334,8 +345,10 @@
       updateSendBtn();
     })
     .catch(function(e) {
-      clearTimeout(timer);hideTyping();
-      addMessage('ai', e.name==='AbortError'?'AI 响应超时（>30秒），请稍后重试或检查 DeepSeek 账户余额。':'网络异常，请稍后重试。');
+      clearTimeout(timer);
+      if (!currentRequest()) return;
+      hideTyping();
+      showFailure(null, '连接中断或等待超时，回答可能仍在生成。请先查看聊天记录，再决定是否重试。');
       AI.isWaiting = false;updateSendBtn();
     });
   }
@@ -989,7 +1002,7 @@
   }
 
   // ===== 消息 UI =====
-  function addMessage(role, content) { AI.messages.push({ role: role, content: content }); if ($emptyState) $emptyState.style.display = 'none'; var div = document.createElement('div'); div.className = 'message ' + (role === 'user' ? 'user' : 'ai'); var a = document.createElement('div'); a.className = 'msg-avatar'; a.textContent = role === 'user' ? '我' : '师'; var b = document.createElement('div'); b.className = 'msg-bubble'; b.innerHTML = renderMarkdown(content); div.appendChild(a); div.appendChild(b); $messages.appendChild(div); $messages.scrollTop = $messages.scrollHeight; }
+  function addMessage(role, content) { AI.messages.push({ role: role, content: content }); if ($emptyState) $emptyState.style.display = 'none'; var div = document.createElement('div'); div.className = 'message ' + (role === 'user' ? 'user' : 'ai'); var a = document.createElement('div'); a.className = 'msg-avatar'; a.textContent = role === 'user' ? '我' : '师'; var b = document.createElement('div'); b.className = 'msg-bubble'; b.innerHTML = renderMarkdown(content); div.appendChild(a); div.appendChild(b); $messages.appendChild(div); $messages.scrollTop = $messages.scrollHeight; return div; }
   function renderMarkdown(t) { if (!t) return ''; var h = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); h = h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>'); h = h.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>'); return '<p>'+h+'</p>'; }
   function showTyping() { hideTyping(); var d = document.createElement('div'); d.className = 'typing-indicator'; d.id = 'aiTyping'; d.innerHTML = '<span></span><span></span><span></span>'; $messages.appendChild(d); $messages.scrollTop = $messages.scrollHeight; }
   function hideTyping() { var e = document.getElementById('aiTyping'); if (e) e.remove(); }

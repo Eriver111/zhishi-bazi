@@ -116,9 +116,9 @@ for(const free of [false,true])for(const repaired of [true,false])test(`${free?'
  const corrected='生克方向应为己土克癸水。此前把方向写反，原来据此推出本人受到外部克制的论证应撤回，不能只替换一个干支字。';
  const app=load([badReply,repaired?corrected:badReply],{free}),res=await ask(app,[],chartData);
  assert.equal(app.requests.length,2,'at most one model repair');
- assert.match(app.requests[1].messages.at(-1).content,/E10-明示五行生克方向错误/);
- assert.match(app.requests[1].messages.at(-1).content,/正确关系是己土克癸水/);
- assert.match(app.requests[1].messages.at(-1).content,/重新核对整个论证/);
+ assert.match(app.requests[1].messages.map(m=>m.content).join("\n"),/E10-明示五行生克方向错误/);
+ assert.match(app.requests[1].messages.map(m=>m.content).join("\n"),/正确关系是己土克癸水/);
+ assert.match(app.requests[1].messages.map(m=>m.content).join("\n"),/重新核对整个论证/);
  assert.equal(res.statusCode,repaired?200:502);
  assert.equal(app.events.filter(e=>e==='charge').length,repaired?1:0);
  assert.equal(app.events.filter(e=>e==='save-assistant').length,repaired?1:0);
@@ -163,7 +163,7 @@ for (const free of [false, true]) {
       const res = await ask(app);
       const success = outcome === 'repaired';
       assert.equal(app.requests.length, 2);
-      assert.match(app.requests[1].messages.at(-1).content, /E10-根气含义误读/);
+      assert.match(app.requests[1].messages.map(m=>m.content).join("\n"), /E10-根气含义误读/);
       assert.equal(res.statusCode, success ? 200 : 502);
       assert.equal(app.events.filter(e => e === 'charge').length, success ? 1 : 0);
       assert.equal(app.events.filter(e => e === 'save-assistant').length, success ? 1 : 0);

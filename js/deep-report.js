@@ -2925,26 +2925,37 @@
       scenario:'日常出行的地点或次数容易改变，可能需要临时外出、反复往返；原先固定的时间安排也要跟着调整。'};
   }
 
+  function relationshipPalaceContacts(year) {
+    var seen = {};
+    return list(year && year.dynamic && year.dynamic.triggers).filter(function (t) {
+      if (!t || t.source === '大运' || t.active === false || t.layer === '天干') return false;
+      var positions = [t.target, t.targetPillar].concat(list(t.targetPositions)).filter(Boolean);
+      return (positions.length ? positions.indexOf('day') >= 0 : t.type === '流年合日支') &&
+        /六冲|刑|六害|六破|天克地冲|日支受扰|六合|三合|半合|三会|半会|流年合日支/.test(t.type || '');
+    }).map(function (t) {
+      var type = t.type === '流年合日支' ? '六合' : t.type;
+      return {type:type,source:t.source || '流年',evidence:t.detail || t.sourceText ||
+        (t.source || '流年') + type + '涉及日支'};
+    }).filter(function (row) {
+      var key = row.source + '|' + row.type + '|' + row.evidence;
+      if (seen[key]) return false;
+      seen[key] = true; return true;
+    }).sort(function (a,b) { return (a.type + '|' + a.evidence).localeCompare(b.type + '|' + b.evidence, 'zh-CN'); });
+  }
+
+  function relationshipChangeText(annual) {
+    return annual === false
+      ? '这步大运有感情变动线索；具体年份还要由当年作用来定位。'
+      : '这一年有感情变动线索。盘里的变化还不能直接说明是结婚还是分开，也不能据此认定两个人相处不好。';
+  }
+
   function relationshipTimingOutcome(record, year, life) {
     var age = life && life.age != null && life.age !== '' ? Number(life.age) : NaN;
-    if (!record || record.domain !== 'relationship' || !record.hasIndependentAnnualTrigger ||
-        !Number.isFinite(age) || age < 18) return null;
-    var triggers = list(year && year.dynamic && year.dynamic.triggers).filter(function (t) {
-      if (!t || t.source === '大运' || t.active === false || t.strengthensRisk === false || t.layer === '天干') return false;
-      var positions = [t.target, t.targetPillar].concat(list(t.targetPositions)).filter(Boolean);
-      return positions.length ? positions.indexOf('day') >= 0 : t.type === '流年合日支';
-    });
-    var adverse = triggers.some(function(t) { return /六冲|刑|六害|六破|天克地冲|日支受扰/.test(t.type || ''); });
-    var linked = triggers.some(function(t) { return /六合|三合|半合|流年合日支/.test(t.type || ''); });
-    // Palace movement identifies the relationship issue, not a marriage/divorce
-    // outcome. A helpful element cannot cancel an unresolved relationship conflict.
-    if (adverse) return { label:'感情稳定性与分合压力', eventType:'relationship-stability', supportLevel:'scenario', outcomeScope:'relationship',
-      scenario:'若已有交往对象，长期没有解决的分歧更容易摆到台面上，严重时会谈到疏远、分开或这段关系是否继续。刚开始接触的人，则更容易在是否认真相处上出现不同打算。' };
-    if (linked) return { label:'感情能否确定下来', eventType:'relationship-bond-closer', supportLevel:'scenario', outcomeScope:'relationship',
-      scenario:record.direction === '偏有利'
-        ? '若已有互有好感的人，这一年较适合观察能否从接触走向明确交往；已有稳定对象时，谈共同生活和长期安排的机会更集中。'
-        : '若已有互有好感或正在交往的人，关系会更需要一个明确说法：是否认真交往、是否把彼此放进长期安排。联系增多也可能带来牵扯，不等于已经谈妥婚事。' };
-    return null;
+    if (!record || record.domain !== 'relationship' || !record.hasIndependentAnnualTrigger || !Number.isFinite(age) || age < 18) return null;
+    var contacts = relationshipPalaceContacts(year);
+    if (!contacts.length) return null;
+    return { label:'感情变动', eventType:'relationship-palace-contact', supportLevel:'domain', outcomeScope:'relationship',
+      structuralOnly:true, eventEstablished:false, palaceContacts:contacts, scenario:relationshipChangeText(true) };
   }
 
   function timingOutcomeScope(record, event) {
@@ -3836,27 +3847,8 @@
 
   function annualRelationshipActivationText(activation) {
     activation = activation || {};
-    var sourceLabel = activation.source || '岁运';
-    var relationLabel = activation.type || '关系';
-    if (relationLabel === '六冲' && activation.direction === 'favorable') {
-      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为忌神，引动它的岁运支为' + activation.movingRole + '，所以原来让你觉得被管得多、明明相处不舒服却一直拖着的状态，有机会在这段时间被打破；但“冲”本身仍代表明显变化，可能先经历争吵、分开或重新决定关系，再看到改善。';
-    }
-    if (relationLabel === '六冲' && activation.direction === 'adverse') {
-      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '。夫妻宫本身为' + activation.palaceRole + '，原本能给你帮助、让关系稳定的部分被冲动，而引动它的岁运支为' + activation.movingRole + '，所以变化方向偏不利；两个人更容易争吵、分开住、聚少离多，或者重新考虑这段感情是否继续。';
-    }
-    if (relationLabel === '六冲') {
-      return sourceLabel + activation.movingBranch + '冲夫妻宫' + activation.palaceBranch + '，说明感情或共同生活会发生明显变化；但夫妻宫和岁运没有形成明确喜忌，所以只能确定“会动”，不能直接断定最后一定变好或变坏。';
-    }
-    if (relationLabel === '六合') {
-      return sourceLabel + activation.movingBranch + '合夫妻宫' + activation.palaceBranch + '，两个人的联系会变紧，感情更容易确定，也更容易把钱、家庭或生活安排绑在一起。' + (activation.direction === 'favorable' ? '宫位与岁运偏喜用，所以这种靠近更容易让关系稳定下来。' : activation.direction === 'adverse' ? '但这里带有忌神，所以也可能出现明明相处很累，却一直拖着、舍不得彻底分开的情况。' : '喜忌不明确，所以不能只凭这次相合判断最后是好是坏。');
-    }
-    if (relationLabel === '刑') {
-      return sourceLabel + activation.movingBranch + '刑夫妻宫' + activation.palaceBranch + '，两个人更容易互不服气，同一个问题吵完以后还会再出现，也容易重新翻出以前没有解决的旧账。';
-    }
-    if (relationLabel === '六害') {
-      return sourceLabel + activation.movingBranch + '害夫妻宫' + activation.palaceBranch + '，很多不满不一定当场说出来，但心里会慢慢积累；久了容易误会对方、怀疑对方，表面没大吵，关系却越来越冷。';
-    }
-    return sourceLabel + activation.movingBranch + '与夫妻宫' + activation.palaceBranch + '伏吟，以前在感情里反复出现的问题会再次被放大；夫妻宫为' + activation.palaceRole + '，原来相处得顺的部分会更明显，原来让你难受的问题也会更明显。';
+    var verb = {'六冲':'冲','六合':'合','刑':'刑','六害':'害','六破':'破'}[activation.type];
+    return (activation.source || '岁运') + (activation.movingBranch || '') + (verb || '与') + '夫妻宫' + (activation.palaceBranch || '') + (verb ? '。' : '有' + (activation.type || '接触') + '关系。') + relationshipChangeText(activation.source !== '大运');
   }
 
   function timingDirectionLabel(interactions) {
@@ -3922,15 +3914,7 @@
   function timingInteractionOutcome(row) {
     row = row || {};
     var domains = list(row.domains);
-    if (domains.indexOf('relationship') >= 0) {
-      if (row.type === '六冲' && row.direction === 'favorable') return '原来让你被管得多、明明相处不舒服却一直拖着的状态更容易被打破；但通常会先经历争吵、分开或重新决定关系。';
-      if (row.type === '六冲' && row.direction === 'adverse') return '感情稳定基础被打乱，两个人更容易争吵、分开住、聚少离多，或者重新考虑这段关系。';
-      if (row.type === '六冲') return '夫妻宫被冲，关系或共同生活会出现明显变化和拉扯；现有喜忌不足，所以只能确定关系会动，好坏暂不能定。';
-      if (row.type === '刑') return '两个人更容易互不服气，同一个问题反复争执，旧账也容易重新被翻出来。';
-      if (row.type === '六害') return '不满更容易憋在心里，久了会出现误会、怀疑、不信任或表面不吵但逐渐冷淡。';
-      if (/合|会/.test(row.type) && row.direction === 'favorable') return '两个人更容易靠近，关系确认、共同生活或未来安排会更容易稳定推进。';
-      if (/合|会/.test(row.type) && row.direction === 'adverse') return '两个人的联系会变紧，但也更容易出现明明相处不开心、又迟迟分不开；短暂靠近以后又冷下来。';
-    }
+    if (domains.indexOf('relationship') >= 0) return relationshipChangeText(row.source !== '大运');
     if (domains.indexOf('wealth') >= 0) {
       if (row.direction === 'favorable' && row.type === '六冲') return '原先卡住的款项或资金周转有松动的机会，但调整本身也会带来成本，最后能否多留下钱，还要看到账和支出。';
       if (row.direction === 'favorable') return '钱款往来中的阻力有缓和机会。若之前有约好却没收到的款项，这是继续跟进的窗口；能否多存下钱，还要看实际到账和新增支出。';
@@ -3970,6 +3954,7 @@
 
   function timingDomainOutcome(rows, domain) {
     var ordered = sortedTimingInteractions(rows);
+    if (domain === 'relationship') return relationshipChangeText(ordered.some(function(row) { return row.source !== '大运'; }));
     var favorable = ordered.some(function (row) { return row.direction === 'favorable'; });
     var adverse = ordered.some(function (row) { return row.direction === 'adverse'; });
     var leads = prioritizedTimingInteractions(ordered);
@@ -4598,7 +4583,7 @@
     // scenario cannot outrank stronger career evidence merely by its wording.
     return eligible.map(function(record,index) {
       var event = describeTimingEvent(record,adjudication,year.lifeContext,year);
-      var broadDomain = event.outcomeScope === 'domain' || /^relationship-(?:stability|bond)/.test(event.eventType);
+      var broadDomain = event.structuralOnly || event.outcomeScope === 'domain' || /^relationship-(?:stability|bond)/.test(event.eventType);
       return {record:record,index:index,priority:event.outcomeScope === 'process' ? 0 : broadDomain ? 1 : 2};
     }).sort(function(a,b) { return b.priority-a.priority || a.index-b.index; }).slice(0,2).map(function(row){return row.record;});
   }
@@ -4606,9 +4591,9 @@
   function annualEventVerdict(record, year, index) {
     var adjudication = annualAdjudication(year) || {};
     var event = describeTimingEvent(record,adjudication,year.lifeContext,year);
-    return narrativeVerdict(index ? '其次会被带动的方面' : event.outcomeScope === 'domain' ? '今年更突出的方面' : '今年最可能应在哪件事', '', ['ANNUAL_EVENT:' + record.domain], {
+    return narrativeVerdict(index ? '其次会被带动的方面' : (event.structuralOnly || event.outcomeScope === 'domain') ? '今年更突出的方面' : '今年最可能应在哪件事', '', ['ANNUAL_EVENT:' + record.domain], {
       displayTitle: event.label,
-      eventType: event.eventType, supportLevel: event.supportLevel, outcomeScope:event.outcomeScope,
+      eventType: event.eventType, supportLevel: event.supportLevel, outcomeScope:event.outcomeScope, structuralOnly:!!event.structuralOnly,
       detailOnly:event.outcomeScope === 'process',
       meaningKey: String(year.year) + ':' + reportEventKey(record),
       sourceText: list(record.evidence).concat(record.reportFeedback ? [record.reportFeedback.outcome] : [])

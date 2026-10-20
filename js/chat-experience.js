@@ -66,7 +66,7 @@
       clearTimeout(timer); if (controller) controller.abort();
       pending = ''; input.value = ''; AI.messages = []; AI.isWaiting = false; AI.conversationId = ''; AI.historyLoaded = false;
       hideThinking(); document.getElementById('sendBtn').disabled = false;
-      messages.querySelectorAll('.msg').forEach(function (node) { node.remove(); });
+      messages.querySelectorAll('.msg, .ai-request-notice').forEach(function (node) { node.remove(); });
       var empty = document.getElementById('emptyState'); if (empty) empty.style.display = '';
       status.hidden = true; latest.hidden = true; resizeInput();
       // A stale chart held by this page must not be carried into a new account.

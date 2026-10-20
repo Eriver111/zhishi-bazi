@@ -101,8 +101,8 @@ test('annual wording adapts only a supported current-year relationship outcome, 
    const before=JSON.stringify(y),event=Report.__test.describeTimingEvent(rec,y.eventAdjudication,y.lifeContext,y);
    assert.equal(event.eventType,baseline.eventType);assert.equal(event.supportLevel,baseline.supportLevel);assert.equal(event.outcomeScope,baseline.outcomeScope);
    assert.equal(JSON.stringify(y),before);
-   if(relationshipStatus==='single')assert.match(event.scenario,/^若(?:认识|开始)/);
-   if(relationshipStatus==='married'){assert.match(event.scenario,/现有婚姻/);assert.doesNotMatch(event.scenario,/互有好感|明确交往|交往对象|刚开始接触/);}
+   assert.equal(event.structuralOnly,true);assert.match(event.scenario,/感情变动/);
+   assert.doesNotMatch(event.scenario,/争吵|疏远|互有好感|明确交往|刚开始接触/);
   }
  }
  const noTrigger=yearWith([rec],2026,[],{relationshipStatus:'married'});
@@ -117,9 +117,10 @@ test('specialized combined-and-conflicting relationship outcomes retain both sig
  for(const relationshipStatus of ['single','dating','married']){
   const y=yearWith([rec],2026,[{type:'六合',target:'day'},{type:'六冲',target:'day'}],{relationshipStatus});
   const event=Report.__test.describeTimingEvent(rec,y.eventAdjudication,y.lifeContext,y);
-  assert.equal(event.eventType,'relationship-bond-with-conflict');
-  assert.match(event.scenario,/联系加深|靠近|牵连增加/);
-  assert.match(event.scenario,/反复|不稳|分歧/);
+  assert.equal(event.eventType,'relationship-palace-contact');
+  assert.equal(event.palaceContacts.length,2);
+  assert.match(event.scenario,/感情变动/);
+  assert.doesNotMatch(event.scenario,/争吵|疏远|分合压力/);
  }
 });
 

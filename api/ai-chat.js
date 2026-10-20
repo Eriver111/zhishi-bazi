@@ -357,7 +357,7 @@ function scheduleMemoryRefresh(userId, conversation, conversationMode) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('X-Zhishi-AI-Policy', '20261006c');
+  res.setHeader('X-Zhishi-AI-Policy', '20261020-verified-fixes');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -801,7 +801,7 @@ async function callAI(question, chartData, bazi, history, mode, responseMode, me
   if (chartData && requestedYear !== null) {
     messages.push({role:'system',content:'本轮最终依据（优先于历史回答；旧回答不构成事实）：\n'+buildTimingAdjudicationBrief(question,chartData)+'\n直接说明所问事情的主要影响。不要输出“方向待核、落点待核、待复核、条件性候选”等内部标签；用具体影响和必要条件说明含义。已有年度依据时，禁止照抄历史回答中的“该年数据未提供”。不要另写反证与边界栏目，也不要虚构已发生事件。'});
   }
-  messages.push({ role: 'system', content: buildConversationEvidence(question, history, mode) + chartEvidenceContext(chartData) });
+  messages.push({ role: 'system', content: buildConversationEvidence(question, history, mode) + chartEvidenceContext(chartData, question) });
   messages.push({ role: 'user', content: question });
 
   // 模拟模式
@@ -1267,6 +1267,13 @@ function runReplyValidation(chartData, reply, question) {
     var pcm;
     while ((pcm = patternClaimRe.exec(cleanReply)) !== null) {
       var claimedPattern = pcm[1].replace(/[“”「」'"\s]/g, '');
+      // 成败状态与主格名称是两个字段。“判为破格”并没有把偏财格改名。
+      if (claimedPattern === '成格' || claimedPattern === '破格') {
+        if (pt.status && (pt.status === '成格' || pt.status === '破格') && claimedPattern !== pt.status) {
+          warnings.push('E3-格局状态漂移：系统主格为「' + pt.name + '」、状态为「' + pt.status + '」，回复将状态判为「' + claimedPattern + '」；请分别核对主格和成败状态');
+        }
+        continue;
+      }
       if (claimedPattern !== pt.name && claimedPattern.indexOf(pt.name) < 0) {
         warnings.push('E3-格局名漂移：系统主格=「' + pt.name + '」，回复明确改判为「' + claimedPattern + '」；pattern.name 是冻结结论，其他流派只能作为差异说明');
       }
@@ -1735,6 +1742,9 @@ function buildExpertReplyScorecard(question, chartData, reply, knownWarnings) {
   return {
     total: total,
     grade: grade,
+    assessmentScope: 'automated-format-and-known-error-checks',
+    eventAccuracyAssessed: false,
+    causalRationaleVerified: false,
     characterCount: text.length,
     verbosityRisk: !/完整|全面|详细|展开|报告|逐项|所有方面/.test(q) && text.length > 1800,
     dimensions: dimensions,
@@ -1806,22 +1816,41 @@ function buildHepanIdentityFactFallback(chartData, warnings) {
  * 不得改冻结结论（旺衰档位/格局名与成破/用喜忌清单/structuralRisks 及 severity）。
  */
 function buildV2Instruction(hardWarnings) {
-  return '检测到你的上一份回答存在确定性结构事实错误或遗漏了用户直接询问的冻结结论，请逐条核实：\n' +
+  return '检测到你的上一份回答存在结构事实错误、依据与事件的直接等同，或遗漏了用户直接询问的冻结结论，请逐条核实：\n' +
     hardWarnings.map(function(w) { return '- ' + w; }).join('\n') +
-    '\n\n要求：只修正涉及上述错误的句子及其直接推论，或补上警告指出的必答锚点，保持其余回答逐字不变；' +
+    '\n\n要求：修正上述错误依据及所有依赖它的推论，包括开头主判断、正文和结尾总结；只有独立且未受影响的内容才保留。' +
+    '先检查原事件是否仍有独立依据：有才保留并说明依据；没有则撤回或重选，不能只替换星名、主体称呼或近义词后保留同一推论。不得用已否定的依据继续支撑结论，也不要求纠正后从坏变好；' +
     '不得修改系统冻结的日主旺衰档位、格局名与成格/破格状态、用神/喜神/忌神清单、structuralRisks 及其 severity；' +
-    '不要新增其他分析，直接输出完整修正稿。';
+    '不要新增其他分析，直接回答本轮问题；不要把内部修正底稿说成用户已经看过的“上一轮回答”，也不向用户叙述内部校验步骤。';
+}
+
+function buildV2Messages(baseMessages, originalReply, hardWarnings) {
+  var v2Messages = baseMessages.slice();
+  // A literal-fact error can invalidate the conclusion. Supplying the complete
+  // wrong story as an assistant draft encourages cosmetic rewrites. Re-answer
+  // from the original chart/history/question plus factual corrections instead.
+  // This never discloses feedback or instructs the model to reverse an outcome.
+  if (hardWarnings.length && hardWarnings.every(function(w) { return w.indexOf('E10-') === 0; })) {
+    var correction = {role:'system',content:'以下是本次回答必须遵守的逐字事实核对。请从原始命盘、用户背景及问题重新独立判断；不提供先前的错误答案作为底稿。\n' +
+      hardWarnings.map(function(w) { return '- ' + w; }).join('\n') +
+      '\n不能沿用依赖错误事实的理由，也不预设应当改判成功或失败。重新比较支持与反向作用，并保留冻结的旺衰、格局、喜用忌。' +
+      '只回答用户的问题，不补未提供的分数、名次、临场表现或过程，不向用户叙述内部检查步骤。'};
+    var last=v2Messages[v2Messages.length-1];
+    v2Messages.splice(last && last.role==='user' ? v2Messages.length-1 : v2Messages.length,0,correction);
+    return v2Messages;
+  }
+  v2Messages.push({ role: 'assistant', content: originalReply });
+  v2Messages.push({ role: 'user', content: buildV2Instruction(hardWarnings) });
+  return v2Messages;
 }
 
 /**
- * V2 定向自修正（GPT终裁 2026-08-14）：仅 hard 命中时调用，最多一次。
- * 原 messages + 原回答 + 修正指令 送回同模型；低温 0.3 做外科式修改。
- * 失败（网络/超时/空返回）返回 null，主回复原样返回，不影响扣费与保存。
+ * One same-model correction at most. Literal-fact-only failures are recomputed
+ * without the erroneous draft; other validation categories retain targeted
+ * repair. Null on transport/empty failure; the caller revalidates before delivery.
  */
 async function v2SelfCorrect(baseMessages, originalReply, hardWarnings) {
-  var v2Messages = baseMessages.slice();
-  v2Messages.push({ role: 'assistant', content: originalReply });
-  v2Messages.push({ role: 'user', content: buildV2Instruction(hardWarnings) });
+  var v2Messages = buildV2Messages(baseMessages, originalReply, hardWarnings);
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);

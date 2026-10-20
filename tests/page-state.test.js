@@ -55,7 +55,7 @@ test('all three standalone chats load recovery dependencies before the send hand
     const html=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
     const state=html.indexOf('src="/js/page-state.js?v=1"');
     const history=html.indexOf('src="js/chat-persistence.js?v=4"');
-    const recovery=html.indexOf('src="js/chat-experience.js?v=2"');
+    const recovery=html.indexOf('src="js/chat-experience.js?v=');
     assert.ok(state>=0 && history>state && recovery>history && recovery<html.indexOf('function send(){'),file);
     assert.match(html,/!event.isComposing/);
   }
@@ -63,7 +63,7 @@ test('all three standalone chats load recovery dependencies before the send hand
 const sendSource=chatHtml.slice(chatHtml.indexOf('function send(){'),chatHtml.indexOf('</script>',chatHtml.indexOf('function send(){')));
 function chat(chart, response) {
   const nodes={input:{value:'synthetic question'},sendBtn:{disabled:false},quotaBar:{style:{}}};
-  const calls={sent:0,thinking:false,finish:[],messages:[]};
+  const calls={sent:0,thinking:false,finish:[],messages:[],notices:[]};
   const context={
     AI:{freeRemaining:2,credits:0,isMonthly:false,isWaiting:false,messages:[],mode:'simple',freeId:'synthetic'},
     document:{getElementById:id=>nodes[id]}, window:{location:{search:''}},URLSearchParams,
@@ -71,6 +71,7 @@ function chat(chart, response) {
     addMsg:(role,content)=>calls.messages.push({role,content}),showThinking:()=>{calls.thinking=true;},hideThinking:()=>{calls.thinking=false;},
     currentChatContext:()=>({type:'bazi',data:chart}),ChatPersistence:{decorate(){}},
     ChatExperience:{start(){},finish:failed=>calls.finish.push(failed),request:()=>{calls.sent++;return response();}},
+    AiRequestRecovery:{show:options=>calls.notices.push(options)},
     updateCreditsUI(){},setHistoryButton(){},
   };
   vm.runInNewContext(sendSource,context);
@@ -86,5 +87,6 @@ test('repeated send while waiting makes only one request and a failure settles f
   p.context.send();p.nodes.input.value='another click';p.context.send();assert.equal(p.calls.sent,1);
   reject(Error('offline'));await new Promise(resolve=>setImmediate(resolve));
   assert.equal(p.context.AI.isWaiting,false);assert.equal(p.nodes.sendBtn.disabled,false);assert.deepEqual(p.calls.finish,[true]);
-  assert.match(p.calls.messages.at(-1).content,/先查看历史记录/);
+  assert.match(p.calls.notices.at(-1).message,/先查看历史记录/);
+  assert.equal(p.calls.messages.filter(m=>m.role==='ai').length,0);
 });

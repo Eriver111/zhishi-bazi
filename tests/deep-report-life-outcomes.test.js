@@ -72,7 +72,7 @@ test('adult students and exam takers retain day-palace relationship scope',()=>{
     y.eventAdjudication.lifeContext=y.lifeContext;
     const d=Report.__test.describeTimingEvent(r,y.eventAdjudication,y.lifeContext,y);
     assert.equal(d.outcomeScope,'relationship');
-    assert.match(d.scenario,/明确交往|共同生活/);
+    assert.match(d.scenario,/感情变动/);
     assert.doesNotMatch(d.scenario,/同学|交接|任务|一定结婚/);
   }
 });
@@ -92,9 +92,11 @@ test('unknown or nonfinite age and non-day cooperation do not become marriage wi
 test('a dedicated bonding paragraph cannot hide a concurrent unresolved day clash',()=>{
   const r=record('relationship','relationship-bond-closer',{reportScenario:'若有交往对象，彼此联系加深。'});
   const d=describe(r,{dynamic:{triggers:[{type:'六合',target:'day',source:'流年'},{type:'六冲',target:'day',source:'流年',isGood:null}]}});
-  assert.equal(d.eventType,'relationship-bond-with-conflict');
-  assert.match(d.scenario,/并存|不稳/);
-  assert.match(d.scenario,/分歧|疏远/);
+  assert.equal(d.eventType,'relationship-palace-contact');
+  assert.equal(d.structuralOnly,true);
+  assert.equal(d.palaceContacts.length,2);
+  assert.match(d.scenario,/感情变动/);
+  assert.doesNotMatch(d.scenario,/争吵|疏远|分合压力/);
   assert.doesNotMatch(d.scenario,/必定离婚|关系一定稳定/);
 });
 
