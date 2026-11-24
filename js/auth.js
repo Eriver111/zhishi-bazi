@@ -16,7 +16,7 @@ var Auth = (function () {
     try {
       var rows = JSON.parse(localStorage.getItem('zhishi_purchase_receipts') || '[]');
       return Array.isArray(rows) ? rows.filter(function(r) {
-        return r && /^wx_[a-f0-9]{24}$/.test(r.order_id) && typeof r.proof === 'string';
+        return r && /^(?:wx|ali)_[a-f0-9]{24}$/.test(r.order_id) && typeof r.proof === 'string';
       }) : [];
     } catch (_) { return []; }
   }

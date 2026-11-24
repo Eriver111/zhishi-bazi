@@ -3,6 +3,7 @@
  * Frontend payment polling for report, credit-pack and monthly orders.
  */
 const crypto = require('crypto');
+const { orderMethod } = require('../lib/xunhu-payment.js');
 const {
   getCreditsByOrderId,
   getReportOrder,
@@ -26,13 +27,14 @@ module.exports = async function handler(req, res) {
   try {
     const query = req.query || {};
     const orderId = query.orderId || query.out_trade_no || '';
-    if (!orderId) return res.status(400).json({ error: '缺少 orderId' });
+    if (typeof orderId !== 'string' || !orderId) return res.status(400).json({ error: '缺少或无效的订单号' });
 
-    if (String(orderId).startsWith('wx_')) {
-      if (!/^wx_[a-f0-9]{24}$/.test(orderId)) return res.status(400).json({ error: '订单号无效' });
+    if (/^(?:wx|ali)_/.test(orderId)) {
+      const method = orderMethod(orderId);
+      if (!method) return res.status(400).json({ error: '订单号无效' });
       const store = require('../lib/payment-order-store.js');
       const order = await store.get(orderId);
-      if (!order || order.provider !== 'xunhu' || order.payment_method !== 'wechat') {
+      if (!order || order.provider !== 'xunhu' || order.payment_method !== method) {
         return res.status(404).json({ error: '未找到订单' });
       }
       if (query.expected_type && query.expected_type !== order.report_type) {

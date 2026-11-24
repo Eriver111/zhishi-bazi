@@ -113,7 +113,7 @@
         <li>新功能优先体验</li>
         <li>支持随时续费</li>
       </ul>
-      <button class="pricing-btn btn-gold-pricing" onclick="buyCredits('monthly',29.9,'AI会员·30天')">¥29.9 开通</button>
+      <button class="pricing-btn btn-gold-pricing" onclick="buyCredits('monthly',29.9,'AI会员·30天')">¥29.9 支付宝开通</button>
     </div>
 
     
@@ -121,8 +121,8 @@
   <p class="pricing-note">所有方案前2次AI提问免费 · 兑换码绑定手机可找回<br>AI积分包与深度报告相互独立，购买AI提问积分不会自动解锁深度报告。</p>
 </div>
 
-<script src="js/auth.js?v=31"></script>
-<script src="js/payment.js?v=7"></script>
+<script src="js/auth.js?v=32"></script>
+<script src="js/payment.js?v=8"></script>
 
 <!-- 支付逻辑：与 paywall.js 统一 -->
 <script>
@@ -176,7 +176,7 @@ function buyCredits(mode, amount, name) {
   var modal = document.getElementById('creditQrModal');
   if (modal) modal.style.display = 'flex';
   var title = document.getElementById('qrModalTitle');
-  if (title) title.textContent = '扫码 ' + name + ' ' + amount + ' 元';
+  if (title) title.textContent = name + ' · ¥' + amount;
   var status = document.getElementById('qrStatus');
   if (status) status.textContent = '正在连接支付...';
   var retry = document.getElementById('qrRetryBtn');
@@ -193,7 +193,7 @@ function buyCredits(mode, amount, name) {
     if (myReqId !== _reqId) { allBtns.forEach(function(b) { b.disabled = false; }); return; }
     if (d.error) {
       if (status) status.textContent = '创建订单失败: ' + d.error;
-      if (retry) retry.style.display = 'block';
+      if (retry) retry.style.display = 'none';
       allBtns.forEach(function(b) { b.disabled = false; });
       return;
     }
@@ -231,7 +231,7 @@ function buyCredits(mode, amount, name) {
   })
   .catch(function(e) {
     if (status) status.textContent = e.name === 'AbortError' ? '连接超时，请重试' : e.message || '网络错误，请重试';
-    if (retry) retry.style.display = 'block';
+    if (retry) retry.style.display = _currentOrderId ? 'block' : 'none';
     allBtns.forEach(function(b) { b.disabled = false; });
   }).finally(function() { window._creditCreating=false; allBtns.forEach(function(b) { b.disabled=false; }); });
 }

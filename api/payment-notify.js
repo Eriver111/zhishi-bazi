@@ -1,18 +1,19 @@
 const gateway = require('../lib/xunhu-payment.js');
 const store = require('../lib/payment-order-store.js');
-const { isWechatOrder } = require('../lib/wechat-orders.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).send('fail');
   try {
     const params = req.body || {};
-    const cfg = gateway.config();
-    if (String(params.appid) !== cfg.appid || !gateway.verify(params, cfg.secret)) return res.status(400).send('fail');
-    if (!isWechatOrder(params.trade_order_id)) return res.status(400).send('fail');
+    const method = gateway.orderMethod(params.trade_order_id);
+    if (!method) return res.status(400).send('fail');
+    const cfg = gateway.credentials(process.env, method);
+    if (!cfg.appid || String(params.appid) !== cfg.appid ||
+        !gateway.verify(params, cfg.secret)) return res.status(400).send('fail');
     const order = await store.get(params.trade_order_id);
     const cents = gateway.moneyCents(params.total_fee);
-    if (!order || order.provider !== 'xunhu' || order.payment_method !== 'wechat' ||
+    if (!order || order.provider !== 'xunhu' || order.payment_method !== method ||
         order.provider_appid !== cfg.appid || cents !== order.amount_cents) return res.status(400).send('fail');
     // A return redirect or a refund notification can never unlock a purchase.
     if (params.status !== 'OD') return res.status(200).send('success');

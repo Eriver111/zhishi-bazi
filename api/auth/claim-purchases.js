@@ -1,5 +1,5 @@
 const { requireAuth } = require('../../lib/auth.js');
-const { verify } = require('../../lib/purchase-proof.js');
+const { verifyForOrder } = require('../../lib/purchase-proof.js');
 const store = require('../../lib/payment-order-store.js');
 
 module.exports = async function handler(req, res) {
@@ -12,7 +12,7 @@ module.exports = async function handler(req, res) {
   const results = [];
   try {
     for (const receipt of receipts) {
-      if (!verify(receipt, process.env.XUNHU_APPSECRET)) {
+      if (!verifyForOrder(receipt, process.env)) {
         results.push({ order_id: receipt && receipt.order_id, status: 'invalid' });
         continue;
       }

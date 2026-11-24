@@ -15,11 +15,14 @@ test('PostgreSQL payment transaction: replay, rollback, account ownership and pe
     await db.exec(migration);await db.exec(migration);
     const guestMigration=fs.readFileSync(path.join(__dirname,'../schema-guest-purchases.sql'),'utf8');
     await db.exec(guestMigration);await db.exec(guestMigration);
+    const alipayMigration=fs.readFileSync(path.join(__dirname,'../schema-xunhu-alipay.sql'),'utf8');
+    await db.exec("INSERT INTO payment_orders(order_id,provider,payment_method,provider_appid,kind,amount_cents,title,credits,redemption_code,return_path) VALUES ('wx_ffffffffffffffffffffffff','xunhu','wechat','fixture','credits',990,'Existing WeChat order',10,'EXISTING','/pricing?paid=existing')");
+    await db.exec(alipayMigration);await db.exec(alipayMigration);
     await db.exec("INSERT INTO users(id,email,password) VALUES(123,'fixture@example.test','not-a-real-password')");
     await db.exec("INSERT INTO users(id,email,password) VALUES(456,'other@example.test','not-a-real-password')");
     let sequence=0;
     async function make(kind='credits',extra={}){
-      const id='wx_'+(++sequence).toString(16).padStart(24,'0');
+      const id=(extra.payment_method==='alipay'?'ali_':'wx_')+(++sequence).toString(16).padStart(24,'0');
       const row={order_id:id,provider:'xunhu',payment_method:'wechat',provider_appid:'fixture',user_id:123,
         kind,amount_cents:990,title:'Fixture',return_path:'/pricing?paid='+id,
         ...(kind==='credits'?{credits:10,redemption_code:'CODE'+sequence}:kind==='monthly'?{days:30,redemption_code:'CODE'+sequence}:
@@ -28,6 +31,22 @@ test('PostgreSQL payment transaction: replay, rollback, account ownership and pe
     }
     const fulfill=(id,tx='tx_'+id,app='fixture',amount=990)=>db.query('SELECT fulfill_wechat_payment($1,$2,$3,$4)',[id,app,amount,tx]);
     const claim=async(id,user=123)=>(await db.query('SELECT claim_wechat_purchase($1,$2) AS status',[id,user])).rows[0].status;
+    await fulfill('wx_'+'f'.repeat(24));
+    await assert.rejects(make('credits',{payment_method:'alipay',order_id:'wx_'+'a'.repeat(24)}),/check constraint/);
+    for(const [kind,extra,table] of [
+      ['credits',{},'user_credits'],['monthly',{amount_cents:2990},'user_subscriptions'],['report',{},'report_orders'],
+      ['report',{report_type:'hepan'},'payment_orders']
+    ]){
+      const id=await make(kind,{payment_method:'alipay',provider_appid:'ali-app',user_id:null,...extra});
+      const amount=extra.amount_cents||990,tx='tx_'+id;
+      await assert.rejects(fulfill(id,tx,'fixture',amount),/verification/);
+      await assert.rejects(fulfill(id,tx,'ali-app',1),/verification/);
+      await fulfill(id,tx,'ali-app',amount);
+      await fulfill(id,tx,'ali-app',amount);
+      assert.equal(await claim(id),'paid');
+      const rows=(await db.query('SELECT user_id FROM '+table+' WHERE order_id=$1',[id])).rows;
+      assert.equal(rows.length,1);assert.equal(Number(rows[0].user_id),123);
+    }
     for (const kind of ['credits','monthly','report','hepan']) {
       for (const before of [true,false]) {
         const id=await make(kind==='hepan'?'report':kind,{user_id:null,...(kind==='hepan'?{report_type:'hepan'}:{})});
@@ -53,7 +72,7 @@ test('PostgreSQL payment transaction: replay, rollback, account ownership and pe
     await db.query('DELETE FROM report_orders WHERE order_id=$1',[missing]);
     await assert.rejects(claim(missing),/binding failed/);
     assert.equal((await db.query('SELECT user_id FROM payment_orders WHERE order_id=$1',[missing])).rows[0].user_id,null);
-    assert.equal(await claim('wx_'+'f'.repeat(24)),'unavailable');
+    assert.equal(await claim('wx_'+'e'.repeat(24)),'unavailable');
     for(const kind of ['credits','monthly','report']){
       const id=await make(kind);await Promise.all([fulfill(id),fulfill(id),fulfill(id)]);
       const table=kind==='credits'?'user_credits':kind==='monthly'?'user_subscriptions':'report_orders';
@@ -71,7 +90,7 @@ test('PostgreSQL payment transaction: replay, rollback, account ownership and pe
     await assert.rejects(fulfill(second,'shared_tx'),/unique/);
     assert.equal((await db.query('SELECT * FROM user_credits WHERE order_id=$1',[second])).rows.length,0);
     assert.equal((await db.query('SELECT status FROM payment_orders WHERE order_id=$1',[second])).rows[0].status,'pending');
-    const collision=await make('credits',{redemption_code:'CODE1'});
+    const collision=await make('credits',{redemption_code:'EXISTING'});
     await assert.rejects(fulfill(collision),/unique/);
     assert.equal((await db.query('SELECT status FROM payment_orders WHERE order_id=$1',[collision])).rows[0].status,'pending');
     const guest=await make('credits',{user_id:null});await fulfill(guest);

@@ -21,7 +21,7 @@ test('binding proof is order-specific, signed, time-limited and independent of p
 
 function api({user={uid:123},claim=async()=> 'paid'}={}) {
   const calls=[];
-  const context={module:{exports:{}},process:{env:{XUNHU_APPSECRET:secret}},require(name){
+  const context={module:{exports:{}},process:{env:{XUNHU_APPSECRET:secret,XUNHU_ALIPAY_APPSECRET:'synthetic-alipay-secret'}},require(name){
     if(name.endsWith('/auth.js'))return {requireAuth:()=>user};
     if(name.endsWith('/purchase-proof.js'))return proof;
     if(name.endsWith('/payment-order-store.js'))return {claim:async(...args)=>{calls.push(args);return claim(...args)}};
@@ -47,6 +47,14 @@ test('claim API never reports success when durable binding fails and does not le
   const a=api({claim:async()=>{throw new Error('private database details')}});
   const r=await a.call([proof.issue(id,secret)]);
   assert.equal(r.code,503);assert.doesNotMatch(JSON.stringify(r.body),/private/);
+});
+
+test('Alipay guest purchase binds with its own receipt, while a WeChat-signed receipt is rejected',async()=>{
+  const alipayOrder='ali_'+'a'.repeat(24),a=api();
+  const r=await a.call([proof.issue(alipayOrder,secret),proof.issue(alipayOrder,'synthetic-alipay-secret')]);
+  assert.equal(r.body.results[0].status,'invalid');
+  assert.equal(r.body.results[1].status,'paid');
+  assert.deepEqual(a.calls,[[alipayOrder,123]]);
 });
 
 test('create-order stores the receipt before the caller can navigate to the cashier',async()=>{

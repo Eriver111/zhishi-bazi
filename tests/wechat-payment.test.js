@@ -11,6 +11,8 @@ const PaymentFlow = require('../js/payment.js');
 const env = { XUNHU_APPID: 'fixture-app', XUNHU_APPSECRET: 'fixture-secret',
   XUNHU_API_URL: 'https://gateway.example/payment/do.html', SITE_URL: 'https://site.example',
   PAY_PID: 'legacy-fixture', PAY_KEY: 'legacy-secret', TOKEN_SECRET: 'fixture-token' };
+const alipayEnv = { PAY_ALIPAY_ENABLED: 'true', XUNHU_ALIPAY_APPID: 'ali-fixture-app',
+  XUNHU_ALIPAY_APPSECRET: 'ali-fixture-secret', XUNHU_ALIPAY_API_URL: 'https://ali-gateway.example/payment/do.html' };
 const id = 'wx_' + '1'.repeat(24);
 const order = { order_id: id, provider: 'xunhu', payment_method: 'wechat', provider_appid: env.XUNHU_APPID,
   kind: 'credits', amount_cents: 990, status: 'pending', return_path: '/pricing?paid=' + id };
@@ -37,7 +39,8 @@ function app(overrides = {}) {
         events.push('gateway');
         if (overrides.fetch) return overrides.fetch(url, options);
         const body = { errcode: 0, url: 'https://cashier.example/mobile', url_qrcode: 'https://cashier.example/qr.png' };
-        body.hash = gateway.sign(body, env.XUNHU_APPSECRET);
+        body.hash = gateway.sign(body, url === alipayEnv.XUNHU_ALIPAY_API_URL
+          ? alipayEnv.XUNHU_ALIPAY_APPSECRET : env.XUNHU_APPSECRET);
         return { ok: true, json: async () => body };
       },
       require(dep) {
@@ -69,7 +72,9 @@ function notification(fields = {}) {
 test('legacy credentials alone cannot re-enable Alipay; dual channels require opt-in', () => {
   assert.deepEqual(channels.availableMethods({ PAY_PID: 'p', PAY_KEY: 'k' }), []);
   assert.deepEqual(channels.availableMethods(env).map(m => m.id), ['wechat']);
-  assert.deepEqual(channels.availableMethods({ ...env, PAY_ALIPAY_ENABLED: 'true' }).map(m => m.id), ['wechat', 'alipay']);
+  assert.deepEqual(channels.availableMethods({ ...env, PAY_ALIPAY_ENABLED: 'true' }).map(m => m.id), ['wechat']);
+  assert.deepEqual(channels.availableMethods({ ...env, ...alipayEnv }).map(m => m.id), ['wechat', 'alipay']);
+  assert.deepEqual(channels.availableMethods({ ...env, ...alipayEnv, PAY_ALIPAY_ENABLED: 'false' }, 'monthly'), []);
   assert.throws(() => channels.selectMethod('alipay', env));
   assert.equal(channels.selectMethod('', env), 'wechat');
 });
@@ -117,7 +122,7 @@ test('WeChat frontend explains external-browser flow without creating an order',
 });
 
 for (const [mode, cents, kind, count] of [['credit_3',490,'credits',3],['credit_10',990,'credits',10],
-  ['credit_20',1490,'credits',20],['credit_pack',990,'credits',10],['monthly',2990,'monthly',30],['ai-chat',500,'credits',5]]) {
+  ['credit_20',1490,'credits',20],['credit_pack',990,'credits',10],['ai-chat',500,'credits',5]]) {
   test(mode + ' saves server-owned price/user/product before signed JSON gateway request', async () => {
     const a = app({ env: { PAY_PID: '', PAY_KEY: '' }, fetch: async (url, options) => {
       const body = JSON.parse(options.body);
@@ -146,6 +151,97 @@ test('both report types retain their identity and return address', async () => {
   const h=await a.call('create-order',{hash:'synthetic-chart-pair',amount:0.01});
   const ho=a.orders.get(h.body.out_trade_no); assert.equal(ho.report_type,'hepan'); assert.equal(ho.amount_cents,1390);
   assert.equal(ho.return_path,'/hepan-result.html?a=fixture'); assert.notEqual(bo.report_key,ho.report_key);
+  assert.equal(bo.user_id,null);
+  assert.equal(bo.report_key,require('../lib/report-identity.js').makeReportKey('bazi',
+    {year:2000,month:6,day:15,hour:6,gender:'female'}));
+  assert.match(ho.order_id,/^wx_[a-f0-9]{24}$/);
+});
+
+test('monthly advertises only Alipay, rejects explicit WeChat, and never falls back', async () => {
+  const a = app({env:alipayEnv});
+  const listing = await a.call('payment-methods', {}, 'GET', {mode:'monthly'});
+  assert.equal(JSON.stringify(listing.body),JSON.stringify({methods:[{id:'alipay',label:'支付宝',in_app_supported:false}],default_method:'alipay'}));
+  assert.equal((await a.call('create-order',{mode:'monthly',payment_method:'wechat'})).code,503);
+  assert.deepEqual(a.events,[]);
+  const result=await a.call('create-order',{mode:'monthly',amount:0.01,token:'valid-fixture'});
+  assert.equal(result.code,200);
+  const o=a.orders.get(result.body.out_trade_no);
+  assert.equal(o.kind,'monthly');assert.equal(o.days,30);assert.equal(o.amount_cents,2990);assert.equal(o.user_id,123);
+  assert.equal(o.payment_method,'alipay');assert.match(o.order_id,/^ali_[a-f0-9]{24}$/);
+  for (const env of [undefined,{...alipayEnv,PAY_ALIPAY_ENABLED:'false'}]) {
+    const disabled=app({env});
+    assert.equal((await disabled.call('payment-methods',{},'GET',{mode:'monthly'})).body.methods.length,0);
+    assert.equal((await disabled.call('create-order',{mode:'monthly'})).code,503);
+    assert.deepEqual(disabled.events,[]);
+  }
+});
+
+test('Alipay signs its own orders, uses the supplied H5 and desktop QR destinations and rejects an in-WeChat request', async () => {
+  const a=app({env:alipayEnv,fetch:async(url,options)=>{
+    const body=JSON.parse(options.body);
+    assert.equal(url,alipayEnv.XUNHU_ALIPAY_API_URL);
+    assert.equal(body.appid,alipayEnv.XUNHU_ALIPAY_APPID);
+    assert.equal(body.total_fee,'9.90');
+    assert.equal(gateway.verify(body,alipayEnv.XUNHU_ALIPAY_APPSECRET),true);
+    assert.equal(gateway.verify(body,env.XUNHU_APPSECRET),false);
+    assert.match(body.return_url,/\/api\/payment-return\?order=ali_/);
+    const data={errcode:0,url:'https://cashier.example/alipay',url_qrcode:'https://cashier.example/alipay-qr.png'};
+    data.hash=gateway.sign(data,alipayEnv.XUNHU_ALIPAY_APPSECRET);
+    return {ok:true,json:async()=>data};
+  }});
+  const r=await a.call('create-order',{mode:'credit_10',payment_method:'alipay'});
+  assert.equal(r.code,200);assert.deepEqual(a.events,['save','gateway']);
+  assert.equal(r.body.payment_provider,'xunhu');assert.equal(r.body.payment_method,'alipay');
+  assert.deepEqual(PaymentFlow.resolvePayment(r.body),{payUrl:'https://cashier.example/alipay',qrContent:'',qrImageUrl:'https://cashier.example/alipay-qr.png'});
+  assert.equal(PaymentFlow.resolvePayment({...r.body,qr_image:''}).qrImageUrl,'');
+  assert.equal(require('../lib/purchase-proof.js').verifyForOrder(r.body.purchase_receipt,alipayEnv),true);
+  const wx=app({env:{...alipayEnv,XUNHU_WECHAT_IN_APP_ENABLED:'true'},headers:{'user-agent':'iPhone MicroMessenger/8.0'}});
+  assert.equal((await wx.call('create-order',{mode:'monthly',payment_method:'alipay'})).code,409);
+  assert.deepEqual(wx.events,[]);
+});
+
+test('Alipay notification and return stay on the original channel even after disabling new orders', async () => {
+  const a=app({env:{...alipayEnv,PAY_ALIPAY_ENABLED:'false'}});
+  const orderId='ali_'+'2'.repeat(24), appid=alipayEnv.XUNHU_ALIPAY_APPID, secret=alipayEnv.XUNHU_ALIPAY_APPSECRET;
+  const row={...order,order_id:orderId,payment_method:'alipay',provider_appid:appid,return_path:'/pricing?paid='+orderId};
+  a.orders.set(orderId,row);
+  const fields={appid,trade_order_id:orderId,total_fee:'9.90',status:'OD',open_order_id:'alipay_tx'};
+  assert.equal((await a.call('payment-notify',{...fields,hash:gateway.sign(fields,env.XUNHU_APPSECRET)})).code,400);
+  const wrongAmount={...fields,total_fee:'0.01'};
+  assert.equal((await a.call('payment-notify',{...wrongAmount,hash:gateway.sign(wrongAmount,secret)})).code,400);
+  const response=await a.call('payment-return',{},'GET',{order:orderId});
+  assert.equal(response.code,302);assert.equal(response.headers.Location,row.return_path);
+  assert.equal((await a.call('check-order',{},'GET',{out_trade_no:orderId})).body.paid,false);
+  assert.equal(a.events.some(Array.isArray),false);
+  assert.equal((await a.call('payment-notify',{...fields,hash:gateway.sign(fields,secret)})).body,'success');
+  assert.deepEqual(a.events.at(-1),['fulfill',orderId,appid,990,'alipay_tx']);
+  a.orders.set(orderId,{...row,status:'paid'});
+  assert.equal((await a.call('check-order',{},'GET',{out_trade_no:orderId})).body.paid,true);
+  assert.equal((await a.call('callback',{out_trade_no:orderId})).code,400);
+});
+
+test('direct pillar orders retain the exact chart on H5 return with or without a matched birth clock', async () => {
+  const a=app({env:alipayEnv});
+  for (const timing of ['unknown','matched']) {
+    const report_params={mode:'pillars',timing,gender:'male',enteredPillars:{year:'戊辰',month:'己巳',day:'庚午',hour:'辛未'},
+      ...(timing==='matched'?{year:1990,month:6,day:15,hour:8,clock:9}:{})};
+    const r=await a.call('create-order',{payment_method:'alipay',report_params,token:'valid-fixture',amount:0.01});
+    assert.equal(r.code,200);
+    const row=a.orders.get(r.body.out_trade_no);
+    assert.equal(row.amount_cents,990);assert.equal(row.user_id,123);
+    const path=new URL((await a.call('payment-return',{},'GET',{order:row.order_id})).headers.Location,env.SITE_URL);
+    assert.equal(path.pathname,'/result.html');
+    const fields={mode:'pillars',timing,gender:'male',yg:'戊',yz:'辰',mg:'己',mz:'巳',dg:'庚',dz:'午',hg:'辛',hz:'未'};
+    if(timing==='matched')Object.assign(fields,{year:'1990',month:'6',day:'15',hour:'8',clock:'9'});
+    assert.deepEqual(Object.fromEntries(path.searchParams),fields);
+  }
+});
+
+test('an already owned BaZi report remains available without creating a new order', async () => {
+  const a=app({env:alipayEnv,database:{hasPaidReport:async()=>true}});
+  const r=await a.call('create-order',{payment_method:'alipay',year:2000,month:6,day:15,hour:6,gender:'female',token:'valid-fixture'});
+  assert.equal(r.body.already_unlocked,true);
+  assert.deepEqual(a.events,[]);
 });
 
 test('storage failure stops gateway creation and conceals internal errors', async () => {
@@ -156,7 +252,7 @@ test('storage failure stops gateway creation and conceals internal errors', asyn
 
 test('unsigned or tampered gateway responses cannot yield a payable URL', async () => {
   const a=app({fetch:async()=>({ok:true,json:async()=>({errcode:0,url:'https://bad.example',hash:'0'.repeat(32)})})});
-  const res=await a.call('create-order',{mode:'credit_10'}); assert.equal(res.code,500); assert.equal(res.body.pay_url,undefined);
+  const res=await a.call('create-order',{mode:'credit_10'}); assert.equal(res.code,502); assert.equal(res.body.pay_url,undefined);
 });
 
 test('callback grants only after exact signed order/app/amount/status validation', async () => {

@@ -5,13 +5,14 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const PaymentFlow = require('../js/payment.js');
+const xunhu = require('../lib/xunhu-payment.js');
+const gatewaySecret = 'fixture-only-secret';
 const SYNTHETIC_DETAIL = 'internal-provider.example pid=fixture-merchant key=fixture-only-secret trace=private-stack';
 
 // Isolated handler execution: do not import the real store, auth or environment.
 function load(name, { gateway, database = {}, authenticated = false } = {}) {
   const events = [];
   const db = {
-    createReportOrder: async () => events.push('create-report'),
     hasPaidReport: async () => false,
     getReportOrder: async () => null,
     getCreditsByOrderId: async () => null,
@@ -24,12 +25,21 @@ function load(name, { gateway, database = {}, authenticated = false } = {}) {
     '../lib/report-identity.js': require('../lib/report-identity.js'),
     '../lib/supabase.js': db,
     '../lib/payment-channels.js': require('../lib/payment-channels.js'),
+    '../lib/xunhu-payment.js': xunhu,
+    './xunhu-payment.js': null,
+    './report-identity.js': require('../lib/report-identity.js'),
+    './payment-contract.js': require('../lib/payment-contract.js'),
+    './supabase.js': db,
+    './payment-order-store.js': { create: async order => { events.push('save'); return order; } },
+    './purchase-proof.js': require('../lib/purchase-proof.js'),
     '../lib/auth.js': { verifyToken: () => authenticated ? { uid: 123 } : null }
   };
   const sandbox = {
-    module: { exports: {} }, URLSearchParams, Buffer,
-    process: { env: { PAY_ALIPAY_ENABLED: 'true', PAY_DEFAULT_METHOD: 'alipay', PAY_PID: 'fixture-merchant', PAY_KEY: 'fixture-only-secret',
-      SITE_URL: 'https://site.example', PAY_API_URL: 'https://internal-provider.example/mapi.php', TOKEN_SECRET: 'fixture-token-only' } },
+    module: { exports: {} }, URL, URLSearchParams, Buffer, AbortSignal,
+    process: { env: { PAY_ALIPAY_ENABLED: 'true', PAY_DEFAULT_METHOD: 'alipay', PAY_PID: 'fixture-merchant', PAY_KEY: gatewaySecret,
+      XUNHU_ALIPAY_APPID: 'fixture-merchant', XUNHU_ALIPAY_APPSECRET: gatewaySecret,
+      XUNHU_ALIPAY_API_URL: 'https://internal-provider.example/payment/do.html',
+      SITE_URL: 'https://site.example', TOKEN_SECRET: 'fixture-token-only' } },
     console: { log() {}, warn() {}, error() {} },
     require(id) {
       assert.ok(Object.hasOwn(dependencies, id), 'unexpected dependency: ' + id);
@@ -41,6 +51,14 @@ function load(name, { gateway, database = {}, authenticated = false } = {}) {
       return gateway(url, options);
     }
   };
+  function isolatedModule(file) {
+    const filename = path.join(root, file);
+    const context = { ...sandbox, module: { exports: {} } };
+    vm.runInNewContext(fs.readFileSync(filename, 'utf8'), context, { filename });
+    return context.module.exports;
+  }
+  dependencies['./xunhu-payment.js'] = isolatedModule('lib/xunhu-payment.js');
+  dependencies['../lib/xunhu-orders.js'] = isolatedModule('lib/xunhu-orders.js');
   const filename = path.join(root, 'api', name + '.js');
   vm.runInNewContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename });
   return { handler: sandbox.module.exports, events };
@@ -60,8 +78,8 @@ const orders = {
   bazi: { year: 2000, month: 6, day: 15, hour: 6, gender: 'female' }
 };
 const failures = {
-  'raw response': async () => ({ text: async () => '<html>' + SYNTHETIC_DETAIL + '</html>' }),
-  'upstream rejection': async () => ({ text: async () => JSON.stringify({ code: 0, msg: SYNTHETIC_DETAIL }) }),
+  'raw response': async () => ({ ok: true, json: async () => { throw new SyntaxError('<html>' + SYNTHETIC_DETAIL + '</html>'); } }),
+  'upstream rejection': async () => ({ ok: true, json: async () => ({ errcode: 1, errmsg: SYNTHETIC_DETAIL }) }),
   'network exception': async () => { throw new Error(SYNTHETIC_DETAIL); }
 };
 
@@ -107,18 +125,16 @@ for (const orderId of ['bazi_fixture_order', 'hepan_fixture_order', 'credit10_fi
 }
 
 test('successful orders preserve actual cashier and QR destinations', async () => {
-  const { handler } = load('create-order', { gateway: async () => ({ text: async () => JSON.stringify({
-    code: 1, payurl: 'https://cashier.example/pay/order',
-    qrcode: 'alipays://platformapi/startapp?saId=10000007',
-    img: 'https://cashier.example/qrcode/order.png', msg: SYNTHETIC_DETAIL,
-    key: 'fixture-only-secret', pid: 'fixture-merchant'
-  }) }) });
+  const data = { errcode: 0, url: 'https://cashier.example/pay/order',
+    url_qrcode: 'https://cashier.example/qrcode/order.png', errmsg: SYNTHETIC_DETAIL };
+  data.hash = xunhu.sign(data, gatewaySecret);
+  const { handler } = load('create-order', { gateway: async () => ({ok:true,json:async()=>data}) });
   const res = response();
   await handler({ method: 'POST', body: orders.credits, headers: {} }, res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.pay_url, 'https://cashier.example/pay/order');
   assert.equal(res.body.qr_image, 'https://cashier.example/qrcode/order.png');
-  assert.equal(res.body.qr_content, 'alipays://platformapi/startapp?saId=10000007');
+  assert.equal(res.body.qr_content, '');
   assert.doesNotMatch(JSON.stringify(res.body), /fixture-only-secret|fixture-merchant|private-stack/);
 });
 

@@ -48,7 +48,7 @@
 
     if (!qrContent && legacyQr && !looksLikeImageUrl(legacyQr)) qrContent = legacyQr;
     if (!payUrl && isSafePaymentDestination(qrContent)) payUrl = qrContent;
-    if (!qrContent && payUrl && data.payment_method !== 'wechat') qrContent = payUrl;
+    if (!qrContent && payUrl && data.payment_method !== 'wechat' && data.payment_provider !== 'xunhu') qrContent = payUrl;
 
     if (!isSafePaymentDestination(qrContent)) qrContent = '';
 
@@ -141,15 +141,20 @@
   }
 
   async function createOrder(body) {
-    var response = await request('/api/payment-methods');
+    var monthly = body.mode === 'monthly';
+    var response = await request(monthly ? '/api/payment-methods?mode=monthly' : '/api/payment-methods');
     if (!response.ok) throw new Error('暂时无法获取支付方式，请稍后重试');
     var data = await response.json();
     var methods = Array.isArray(data.methods) ? data.methods.filter(function(m) { return m && (m.id === 'wechat' || m.id === 'alipay'); }) : [];
-    var method = await chooseMethod(methods, data.default_method);
-    var selected = methods.find(function(m) { return m.id === method; });
-    if (method === 'wechat' && /MicroMessenger/i.test(navigator.userAgent) && selected.in_app_supported !== true) {
-      throw new Error('请点击微信右上角“…”选择“在浏览器打开”，再进行付款');
+    if (monthly) {
+      methods = methods.filter(function(m) { return m.id === 'alipay'; });
+      if (!methods.length) throw new Error('月度会员仅支持支付宝，目前暂不可购买');
     }
+    if (/MicroMessenger/i.test(navigator.userAgent) && methods.length) {
+      methods = methods.filter(function(m) { return m.id === 'wechat' && m.in_app_supported === true; });
+      if (!methods.length) throw new Error('请点击微信右上角“…”选择“在浏览器打开”，再选择微信或支付宝付款');
+    }
+    var method = await chooseMethod(methods, data.default_method);
     var created = await request('/api/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.assign({}, body, { payment_method: method })) });
     if (created.ok) {
